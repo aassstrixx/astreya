@@ -109,7 +109,7 @@ h3{font-size:clamp(20px,1.8vw,24px);line-height:1.22}
 .pop-in{animation:pop .55s var(--ease) backwards}
 
 /* ============ Header ============ */
-.hdr{position:sticky;top:0;z-index:60;background:var(--milk);border-bottom:1px solid var(--line-soft)}
+.hdr{position:sticky;top:env(safe-area-inset-top,0px);z-index:60;background:var(--milk);border-bottom:1px solid var(--line-soft)}
 .hdr-in{height:var(--hdr);display:flex;align-items:center;justify-content:space-between;gap:24px}
 .logo{display:inline-flex;flex-direction:column;align-items:center;line-height:1;color:var(--blue)}
 .lg-mark{width:38px;height:auto;aspect-ratio:120/100;--lm:var(--navy)}
@@ -511,7 +511,8 @@ form{display:grid;gap:14px;margin-top:20px}
 .ok .tick{width:64px;height:64px;border-radius:50%;background:rgba(47,91,214,.1);color:var(--blue);display:grid;place-items:center;margin:0 auto 18px}
 .ok .tick .ic{width:28px;height:28px;stroke-width:2}
 .ok p{color:var(--muted);margin-top:10px}
-#toast{position:fixed;left:50%;bottom:28px;translate:-50% 30px;z-index:190;background:var(--navy);color:var(--milk);padding:14px 22px;border-radius:var(--pill);font:600 14px/1 var(--sans);opacity:0;pointer-events:none;transition:opacity .35s,translate .45s var(--ease)}
+.copy-box{margin:18px 0 4px;padding:16px 18px;border-radius:14px;border:1px dashed var(--line);background:#fff;text-align:left;font:500 13px/1.6 var(--sans);color:var(--navy);white-space:pre-wrap;overflow-wrap:anywhere;max-height:200px;overflow:auto;user-select:all;-webkit-user-select:all}
+#toast{position:fixed;left:50%;bottom:calc(28px + env(safe-area-inset-bottom,0px));translate:-50% 30px;z-index:190;background:var(--navy);color:var(--milk);padding:14px 22px;border-radius:var(--pill);font:600 14px/1 var(--sans);opacity:0;pointer-events:none;transition:opacity .35s,translate .45s var(--ease)}
 #toast.show{opacity:1;translate:-50% 0}
 
 /* ============ Responsive ============ */
@@ -527,7 +528,7 @@ form{display:grid;gap:14px;margin-top:20px}
 }
 @media (max-width:900px){
   .burger{display:inline-flex}
-  .nav{position:fixed;left:0;right:0;top:var(--hdr);bottom:0;background:var(--milk);flex-direction:column;align-items:flex-start;gap:0;padding:14px var(--gut) 40px;overflow:auto;transform:translateX(100%);transition:transform .4s var(--ease);visibility:hidden}
+  .nav{position:fixed;left:0;right:0;top:calc(var(--hdr) + env(safe-area-inset-top,0px));bottom:0;background:var(--milk);flex-direction:column;align-items:flex-start;gap:0;padding:14px var(--gut) 40px;overflow:auto;transform:translateX(100%);transition:transform .4s var(--ease);visibility:hidden}
   .menu-open .nav{transform:none;visibility:visible}
   .nav a.nl{font-size:17px;letter-spacing:.1em;width:100%;padding:20px 0;border-bottom:1px dashed var(--line)}
   .hdr-cta .btn{display:none}
@@ -1064,10 +1065,10 @@ function vHome(){
   </div></section>
 
   <section class="stats"><div class="wrap stats-grid">
-    <div class="stat reveal"><b data-count="20">0</b><span>лет обучаем специалистов</span></div>
-    <div class="stat reveal"><b data-count="${BRANDS.length}">0</b><span>брендов в портфеле</span></div>
-    <div class="stat reveal"><b data-count="${OFFICES.length}">0</b><span>города присутствия</span></div>
-    <div class="stat reveal"><b data-count="${TEACHERS.length}">0</b><span>преподавателя</span></div>
+    <div class="stat reveal"><b data-count="20">20</b><span>лет обучаем специалистов</span></div>
+    <div class="stat reveal"><b data-count="${BRANDS.length}">${BRANDS.length}</b><span>брендов в портфеле</span></div>
+    <div class="stat reveal"><b data-count="${OFFICES.length}">${OFFICES.length}</b><span>города присутствия</span></div>
+    <div class="stat reveal"><b data-count="${TEACHERS.length}">${TEACHERS.length}</b><span>преподавателя</span></div>
   </div></section>
 
   <section class="sec"><div class="wrap">
@@ -1376,10 +1377,20 @@ const ROUTES = [
   {re:/^\/company$/,           view:() => vCompany(),       title:'Компания',           nav:'/company'}
 ];
 
-function parseHash(){
-  const raw = location.hash.replace(/^#/, '') || '/';
+function parseHash(h = location.hash){
+  let raw = h.replace(/^#/, '') || '/';
+  if (raw[0] !== '/') raw = '/' + raw;            // простые якоря: #catalog -> /catalog
   const [path, qs] = raw.split('?');
   return {path: path.replace(/\/+$/, '') || '/', params: new URLSearchParams(qs || '')};
+}
+const keyOf = r => r.path + '?' + r.params.toString();
+let routeKey = null;
+/* Переход по ссылке: маршрутизируем сами и лишь затем пробуем обновить location.hash */
+function routeTo(h, byClick){
+  const r = parseHash(h), key = keyOf(r);
+  if (key === routeKey) { if (byClick) window.scrollTo({top:0, behavior: reduceMotion ? 'auto' : 'smooth'}); return; }
+  routeKey = key;
+  goTo(r);
 }
 
 /* Параметры каталога из ссылок вида #/catalog?brand=dermatime&task=acne */
@@ -1437,8 +1448,8 @@ async function goTo(r){
   busy = false;
   if (pending) { const p = pending; pending = null; goTo(p); }
 }
-addEventListener('hashchange', () => goTo(parseHash()));
-history.scrollRestoration = 'manual';
+addEventListener('hashchange', () => routeTo(location.hash));
+try { history.scrollRestoration = 'manual'; } catch (_) {}
 
 /* ==========================================================================
    СКРОЛЛ: прогресс, появление секций, счётчики
@@ -1459,6 +1470,7 @@ function runCounter(el){
   el.dataset.run = '1';
   const to = +el.dataset.count, dur = 1500, t0 = performance.now();
   if (reduceMotion) { el.textContent = to; return; }
+  el.textContent = '0';
   const tick = t => {
     const p = Math.min(1, (t - t0) / dur), e = 1 - Math.pow(1 - p, 3);
     el.textContent = Math.round(to * e);
@@ -1601,13 +1613,26 @@ function submitForm(form){
     '', `Сообщение: ${v('msg') || '—'}`, '', 'Согласие на обработку персональных данных: да', 'Отправлено с сайта «Астрея».'
   ].filter((x, i) => x !== '' || i > 0).join('\r\n');
   const href = `mailto:${CONTACT.email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
-  const a = document.createElement('a'); a.href = href; document.body.appendChild(a); a.click(); a.remove();
+  mailDraft = `Кому: ${CONTACT.email}\nТема: ${subject}\n\n${body.replace(/\r\n/g, '\n')}`;
+  const a = document.createElement('a'); a.href = href; document.body.appendChild(a); a.click(); a.remove();   // удобство: может не сработать
 
   $('.dlg', modal).innerHTML = `<button class="x" data-act="close" aria-label="Закрыть">${I.close}</button>
-    <div class="ok"><div class="tick">${I.check}</div><h2 id="m-title" style="margin-top:0">Письмо подготовлено</h2>
-    <p>Мы открыли вашу почтовую программу с заполненной заявкой — осталось нажать «Отправить».</p>
-    <p style="font-size:14px">Не открылось? Напишите на <a href="${href}" style="border-bottom:1px dashed;font-weight:600">${CONTACT.email}</a> или позвоните: <a href="tel:${CONTACT.phoneRaw}" style="border-bottom:1px dashed;font-weight:600">${CONTACT.phone}</a>.</p>
-    <div class="row" style="justify-content:center;margin-top:24px"><button class="btn btn-fill" data-act="close">Готово</button></div></div>`;
+    <div class="ok"><div class="tick">${I.check}</div><h2 id="m-title" style="margin-top:0">Заявка подготовлена</h2>
+    <p>Письмо ещё не отправлено. Отправьте его на <b>${CONTACT.email}</b>: откройте почтовую программу кнопкой ниже или скопируйте текст.</p>
+    <div class="copy-box" id="mail-text" tabindex="0">${esc(mailDraft)}</div>
+    <div class="row" style="justify-content:center;margin-top:18px">
+      <a class="btn btn-fill" href="${esc(href)}">Открыть в почтовой программе</a>
+      <button class="btn btn-ghost" data-act="copy" data-what="letter">Скопировать письмо</button>
+      <button class="btn btn-lnk" data-act="copy" data-what="address">Скопировать адрес</button>
+    </div>
+    <p style="font-size:13px;margin-top:16px">Или позвоните: ${CONTACT.phone}</p></div>`;
+}
+let mailDraft = '';
+async function copyText(text, msg){
+  try { await navigator.clipboard.writeText(text); toast(msg); return; } catch (_) {}
+  const box = $('#mail-text');                          // запасной вариант: выделить текст для Ctrl+C
+  if (box) { const r = document.createRange(); r.selectNodeContents(box); const sel = getSelection(); sel.removeAllRanges(); sel.addRange(r); }
+  toast('Текст выделен — нажмите Ctrl+C или ⌘C');
 }
 
 /* ==========================================================================
@@ -1615,6 +1640,14 @@ function submitForm(form){
    ========================================================================== */
 document.addEventListener('click', e => {
   if (e.target === modal) { closeModal(); return; }
+  const nav = e.target.closest('a[href^="#/"]');
+  if (nav && !e.metaKey && !e.ctrlKey && !e.shiftKey) {
+    e.preventDefault();
+    const h = nav.getAttribute('href');
+    routeTo(h, true);
+    try { if (location.hash !== h) location.hash = h; } catch (_) {}
+    return;
+  }
   const t = e.target.closest('[data-act]');
   if (!t) { if (state.activeBrand && !e.target.closest('.bgrid')) setBrand(null); return; }
   const act = t.dataset.act, id = t.dataset.id;
@@ -1625,6 +1658,7 @@ document.addEventListener('click', e => {
     case 'menu':        toggleMenu(); break;
     case 'form':        openForm(t.dataset.type, t.dataset.ref); break;
     case 'close':       closeModal(); break;
+    case 'copy':        t.dataset.what === 'address' ? copyText(CONTACT.email, 'Адрес скопирован') : copyText(mailDraft, 'Письмо скопировано'); break;
     case 'brand-card':  setBrand(state.activeBrand === id ? null : id); break;   // повторный клик по активной — сброс
     case 'brand-back':  setBrand(null); break;
     case 'pick':        setPick(id); break;
@@ -1682,6 +1716,7 @@ function endSplash(){
 }
 letters($('#sp-word'), 'Астрея', .3);
 letters($('#sp-sub'), 'Профессиональная косметика', 1);
+routeKey = keyOf(parseHash());
 renderRoute(parseHash());                       // первый рендер под сплэшем
 if (reduceMotion) { $('#splash').remove(); splashDone = booted = true; initReveal(); }
 else {
