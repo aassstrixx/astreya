@@ -1,0 +1,1694 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Астрея — дистрибьютор профессиональной косметики</title>
+<meta name="description" content="ООО «Астрея» — дистрибьютор профессиональной косметики: Dermatime, Keenwell, Endocare, Neoretin, Heliocare, Biretix, Iraltone, EVA, Elancyl. Каталог, учебный центр, представительства.">
+<meta name="theme-color" content="#f5f2ec">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 100'%3E%3Cpath d='M6 92 52 14Q60 2 68 14L114 92H92L60 40 28 92Z' fill='%230b1a33'/%3E%3Ccircle cx='60' cy='85' r='7' fill='%23b9c2d0'/%3E%3C/svg%3E">
+<script>document.documentElement.classList.add('js')</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<!-- У Fraunces нет кириллицы (только latin/latin-ext/vietnamese), поэтому русские заголовки
+     набираются парным по контрасту Playfair Display; латиница и цифры — Fraunces. -->
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Playfair+Display:ital,wght@0,500;0,600;1,400;1,500&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+/* ============ Tokens ============ */
+:root{
+  --navy:#0b1a33; --navy-2:#132a4f;
+  --milk:#f5f2ec; --milk-2:#faf8f4;
+  --silver:#b9c2d0; --slate:#66758f; --muted:#56647d;
+  --blue:#2f5bd6; --blue-d:#2347b0;
+  --line:rgba(11,26,51,.16); --line-soft:rgba(11,26,51,.09);
+  --serif:'Fraunces','Playfair Display',Georgia,'Times New Roman',serif;
+  --sans:'Manrope',system-ui,-apple-system,'Segoe UI',Roboto,Arial,sans-serif;
+  --r:14px; --r-lg:22px; --r-xl:30px; --pill:999px;
+  --sh:0 1px 2px rgba(11,26,51,.05),0 10px 28px -14px rgba(11,26,51,.18);
+  --sh-h:0 2px 4px rgba(11,26,51,.06),0 26px 48px -22px rgba(11,26,51,.34);
+  --ease:cubic-bezier(.22,.7,.2,1);
+  --gut:clamp(20px,5vw,72px); --maxw:1240px; --hdr:74px;
+}
+*,*::before,*::after{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%;scroll-behavior:smooth}
+body{margin:0;background:var(--milk);color:var(--navy);font:400 16px/1.6 var(--sans);-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;overflow-x:hidden}
+body.locked{overflow:hidden}
+img,svg{display:block;max-width:100%}
+a{color:inherit;text-decoration:none}
+button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:pointer}
+h1,h2,h3,h4,p,ul,ol,figure{margin:0}
+ul,ol{padding:0;list-style:none}
+:focus-visible{outline:2px solid var(--blue);outline-offset:3px;border-radius:6px}
+::selection{background:var(--navy);color:var(--milk)}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+.wrap{max-width:var(--maxw);margin:0 auto;padding:0 var(--gut)}
+.sec{padding:clamp(60px,8.5vw,120px) 0}
+.sec.tint{background:var(--milk-2);border-block:1px solid var(--line-soft)}
+.dash{border:0;border-top:1px dashed var(--line);margin:0}
+
+/* ============ Typography ============ */
+.serif{font-family:var(--serif)}
+h1,h2,h3{font-family:var(--serif);font-weight:500;letter-spacing:-.012em}
+h1{font-size:clamp(38px,5.6vw,76px);line-height:1.04}
+h2{font-size:clamp(30px,3.7vw,50px);line-height:1.08}
+h3{font-size:clamp(20px,1.8vw,24px);line-height:1.22}
+.lead{font-size:clamp(17px,1.5vw,19px);line-height:1.65;color:var(--muted);max-width:56ch}
+.eyebrow{display:inline-flex;align-items:center;gap:12px;font:600 12px/1 var(--sans);letter-spacing:.16em;text-transform:uppercase;color:var(--slate)}
+.eyebrow::before{content:"";width:30px;border-top:1px dashed var(--slate)}
+.muted{color:var(--muted)}
+.tag{display:inline-flex;align-items:center;gap:6px;padding:5px 11px;border-radius:var(--pill);border:1px solid var(--line);font:600 11px/1 var(--sans);letter-spacing:.08em;text-transform:uppercase;color:var(--muted);background:transparent}
+.tag.blue{border-color:transparent;background:rgba(47,91,214,.1);color:var(--blue-d)}
+.ic{width:18px;height:18px;flex:none;fill:none;stroke:currentColor;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
+
+/* ============ Buttons ============ */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:10px;padding:14px 26px;border-radius:var(--pill);font:600 14px/1 var(--sans);letter-spacing:.02em;border:1px solid transparent;transition:transform .3s var(--ease),background-color .25s,color .25s,border-color .25s,box-shadow .3s;white-space:nowrap}
+.btn .ic{transition:transform .3s var(--ease)}
+.btn:hover .ic{transform:translateX(3px)}
+.btn-fill{background:var(--blue);color:#fff}
+.btn-fill:hover{background:var(--blue-d);transform:translateY(-2px);box-shadow:0 14px 26px -14px rgba(47,91,214,.7)}
+.btn-ghost{border-color:rgba(11,26,51,.28);color:var(--navy)}
+.btn-ghost:hover{background:var(--navy);border-color:var(--navy);color:var(--milk);transform:translateY(-2px)}
+.btn-sm{padding:10px 18px;font-size:13px}
+.btn-lnk{padding:10px 6px;color:var(--muted);font-weight:600;font-size:13px}
+.btn-lnk:hover{color:var(--navy)}
+.lnk{display:inline-flex;align-items:center;gap:8px;font:600 12px/1 var(--sans);letter-spacing:.14em;text-transform:uppercase;color:var(--navy);padding-bottom:6px;border-bottom:1px dashed var(--slate);transition:color .2s,border-color .2s}
+.lnk:hover{color:var(--blue);border-color:var(--blue)}
+.lnk .ic{width:16px;height:16px;transition:transform .3s var(--ease)}
+.lnk:hover .ic{transform:translateX(4px)}
+.row{display:flex;flex-wrap:wrap;gap:12px;align-items:center}
+
+/* ============ Progress / curtain / splash ============ */
+#progress{position:fixed;left:0;top:0;height:3px;width:100%;background:var(--blue);transform:scaleX(0);transform-origin:left;z-index:120;pointer-events:none}
+#curtain{position:fixed;inset:0;z-index:150;display:flex;pointer-events:none}
+#curtain i{flex:1;background:var(--navy);transform:scaleY(0);transform-origin:bottom;transition:transform .34s cubic-bezier(.65,0,.35,1);transition-delay:calc(var(--i)*42ms)}
+#curtain.in i{transform:scaleY(1);transform-origin:bottom}
+#curtain.out i{transform:scaleY(0);transform-origin:top}
+#curtain.in{pointer-events:all}
+
+#splash{position:fixed;inset:0;z-index:200;background:var(--navy);color:var(--milk);display:grid;place-items:center;transition:opacity .45s ease,visibility .45s}
+#splash.hide{opacity:0;visibility:hidden}
+.sp-in{text-align:center;padding:0 24px;cursor:pointer}
+.sp-mark{width:clamp(70px,10vw,96px);margin:0 auto 14px;--lm:#f5f2ec;--lp:1;opacity:0;transform:translateY(14px);animation:spUp .8s .05s var(--ease) forwards}
+.sp-word{display:flex;justify-content:center;font:500 clamp(54px,10vw,104px)/1.15 var(--serif);letter-spacing:.02em}
+.sp-word .ch,.sp-sub .ch{display:inline-block;overflow:hidden;vertical-align:top}
+.sp-word .ch>span,.sp-sub .ch>span{display:inline-block;transform:translateY(112%);animation:chUp .72s var(--ease) forwards;animation-delay:calc(.25s + var(--i)*.075s)}
+.sp-sub{display:flex;justify-content:center;flex-wrap:wrap;font:600 clamp(10px,1.3vw,13px)/1.6 var(--sans);letter-spacing:.32em;text-transform:uppercase;color:var(--silver);margin-top:2px}
+.sp-sub .ch>span{animation-delay:calc(.85s + var(--i)*.028s)}
+.sp-line{display:block;width:clamp(90px,14vw,140px);height:1px;margin:24px auto 18px;background:var(--silver);transform:scaleX(0);animation:lineIn .6s 1.15s var(--ease) forwards}
+.sp-tag{font:500 clamp(13px,1.5vw,16px)/1.4 var(--serif);font-style:italic;color:var(--silver);opacity:0;animation:fadeIn .6s 1.4s ease forwards}
+@keyframes chUp{to{transform:none}}
+@keyframes lineIn{to{transform:scaleX(1)}}
+@keyframes fadeIn{to{opacity:1}}
+@keyframes spUp{to{opacity:1;transform:none}}
+
+/* ============ Reveal ============ */
+.reveal{transition:opacity .85s var(--ease) var(--rd,0ms),translate .85s var(--ease) var(--rd,0ms),transform .4s var(--ease),box-shadow .4s var(--ease),background-color .3s,border-color .3s,color .3s}
+.js .reveal{opacity:0;translate:0 30px}
+.js .reveal.in{opacity:1;translate:0 0}
+
+.pop-in{animation:pop .55s var(--ease) backwards}
+
+/* ============ Header ============ */
+.hdr{position:sticky;top:0;z-index:60;background:var(--milk);border-bottom:1px solid var(--line-soft)}
+.hdr-in{height:var(--hdr);display:flex;align-items:center;justify-content:space-between;gap:24px}
+.logo{display:inline-flex;flex-direction:column;align-items:center;line-height:1;color:var(--blue)}
+.lg-mark{width:38px;height:auto;aspect-ratio:120/100;--lm:var(--navy)}
+.lg-word{font:600 17px/1 var(--serif);letter-spacing:.03em;color:var(--blue);margin-top:3px}
+.logo.inv .lg-mark{--lm:var(--milk)}
+.logo.inv .lg-word{color:var(--milk)}
+.logo.lg .lg-mark{width:74px}
+.logo.lg .lg-word{font-size:30px;margin-top:6px}
+.nav{display:flex;align-items:center;gap:clamp(16px,2.4vw,34px)}
+.nav a.nl{font:600 12px/1 var(--sans);letter-spacing:.14em;text-transform:uppercase;color:var(--navy);padding:10px 0;border-bottom:1px dashed transparent;transition:color .2s,border-color .2s}
+.nav a.nl:hover{color:var(--blue)}
+.nav a.nl.on{border-bottom-color:var(--blue);color:var(--blue)}
+.hdr-cta{display:flex;align-items:center;gap:14px}
+.hdr-phone{font:600 14px/1 var(--sans);letter-spacing:.01em;white-space:nowrap}
+.burger{display:none;width:44px;height:44px;border-radius:50%;border:1px solid var(--line);align-items:center;justify-content:center}
+.burger i{display:block;width:18px;height:1.5px;background:var(--navy);position:relative;transition:background .2s}
+.burger i::before,.burger i::after{content:"";position:absolute;left:0;width:18px;height:1.5px;background:var(--navy);transition:transform .3s var(--ease)}
+.burger i::before{top:-6px}.burger i::after{top:6px}
+.menu-open .burger i{background:transparent}
+.menu-open .burger i::before{transform:translateY(6px) rotate(45deg)}
+.menu-open .burger i::after{transform:translateY(-6px) rotate(-45deg)}
+
+/* ============ Hero ============ */
+.hero{position:relative;padding:clamp(36px,6vw,84px) 0 clamp(56px,7vw,96px);overflow:hidden}
+.hero-grid{display:grid;grid-template-columns:minmax(0,1.05fr) minmax(0,.95fr);gap:clamp(24px,4vw,64px);align-items:center}
+.hero h1{margin:22px 0 24px;font-size:clamp(34px,3.9vw,56px);line-height:1.08;hyphens:auto}
+.hero h1 em{font-style:italic;font-weight:400;color:var(--blue)}
+.hero .lead{margin-bottom:34px}
+.hero-facts{display:flex;flex-wrap:wrap;gap:10px 26px;margin-top:38px;padding-top:22px;border-top:1px dashed var(--line);font:600 12px/1.4 var(--sans);letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+.hero-facts span{display:inline-flex;align-items:center;gap:9px}
+.hero-facts span::before{content:"";width:6px;height:6px;border-radius:50%;background:var(--blue)}
+.pearl-wrap{position:relative;width:100%;max-width:540px;aspect-ratio:1;margin-inline:auto}
+.halo{position:absolute;inset:-6%;border-radius:50%;background:radial-gradient(closest-side,rgba(47,91,214,.13),rgba(185,194,208,.14) 55%,transparent 76%)}
+.ring{position:absolute;border-radius:50%;border:1px dashed rgba(102,117,143,.55)}
+.ring.r1{inset:1%;animation:spin 90s linear infinite}
+.ring.r2{inset:9%;border-style:solid;border-color:rgba(102,117,143,.2);animation:spin 140s linear infinite reverse}
+.ring .od{position:absolute;top:-5px;left:50%;width:10px;height:10px;margin-left:-5px;border-radius:50%;background:var(--silver);box-shadow:0 0 0 4px rgba(185,194,208,.28)}
+.ring.r2 .od{background:var(--blue);top:auto;bottom:-5px;box-shadow:0 0 0 4px rgba(47,91,214,.16)}
+.pearl{position:absolute;inset:17%;border-radius:50%;animation:floaty 8s ease-in-out infinite;
+  background:radial-gradient(circle at 33% 27%,#fff 0,#fdfbf7 12%,#eeeae2 34%,#cdd3de 62%,#8f9db4 100%);
+  box-shadow:inset -22px -28px 50px rgba(102,117,143,.42),inset 14px 16px 34px rgba(255,255,255,.85),0 46px 70px -34px rgba(47,91,214,.5),0 0 80px 8px rgba(185,194,208,.45)}
+.pearl::before{content:"";position:absolute;inset:0;border-radius:50%;mix-blend-mode:soft-light;background:conic-gradient(from 200deg at 55% 55%,rgba(47,91,214,0),rgba(47,91,214,.34),rgba(226,160,184,.34),rgba(150,214,198,.3),rgba(47,91,214,0) 82%)}
+.pearl::after{content:"";position:absolute;left:17%;top:11%;width:30%;height:19%;border-radius:50%;background:radial-gradient(closest-side,rgba(255,255,255,.95),rgba(255,255,255,0));transform:rotate(-28deg)}
+.hero-card{position:absolute;left:0;bottom:2%;max-width:290px;background:var(--milk-2);border:1px solid var(--line-soft);border-radius:12px;padding:16px 18px;box-shadow:var(--sh)}
+.hero-card b{display:block;font:600 11px/1.35 var(--sans);letter-spacing:.12em;text-transform:uppercase}
+.hero-card hr{margin:10px 0}
+.hero-card p{font-size:13px;line-height:1.5;color:var(--muted)}
+.hero-chip{position:absolute;right:2%;top:10%;background:#fff;border:1px solid var(--line-soft);border-radius:var(--pill);padding:9px 16px;font:600 11px/1 var(--sans);letter-spacing:.12em;text-transform:uppercase;box-shadow:var(--sh);display:flex;align-items:center;gap:8px}
+.hero-chip::before{content:"";width:7px;height:7px;border-radius:50%;background:#3aa76d}
+@keyframes floaty{0%,100%{transform:translateY(-8px)}50%{transform:translateY(10px)}}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* ============ Stats ============ */
+.stats{border-block:1px dashed var(--line)}
+.stats-grid{display:grid;grid-template-columns:repeat(4,1fr)}
+.stat{padding:clamp(26px,3.6vw,46px) clamp(14px,2vw,30px);border-left:1px dashed var(--line)}
+.stat:first-child{border-left:0}
+.stat b{display:block;font:500 clamp(44px,6vw,80px)/1 var(--serif);letter-spacing:-.02em}
+.stat b sup{font-size:.4em;vertical-align:top;position:relative;top:.35em;margin-left:2px;color:var(--blue)}
+.stat span{display:block;margin-top:12px;font:600 12px/1.4 var(--sans);letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+
+/* ============ Section head ============ */
+.sec-head{display:flex;align-items:flex-end;justify-content:space-between;gap:24px;flex-wrap:wrap;margin-bottom:clamp(28px,4vw,52px)}
+.sec-head h2{margin-top:16px;max-width:20ch}
+.sec-head .lead{margin-top:14px}
+.sec-head>.lead{max-width:38ch;margin:0}
+
+/* ============ Cards ============ */
+.grid{display:grid;gap:clamp(14px,1.8vw,22px)}
+.g2{grid-template-columns:repeat(2,1fr)}
+.g3{grid-template-columns:repeat(3,1fr)}
+.g4{grid-template-columns:repeat(4,1fr)}
+.card{position:relative;background:#fff;border-radius:var(--r-lg);box-shadow:var(--sh);overflow:hidden}
+.card.hov:hover{transform:translateY(-7px);box-shadow:0 2px 4px rgba(11,26,51,.05),0 30px 52px -24px var(--cs,rgba(47,91,214,.5))}
+@supports (color:color-mix(in srgb,red,blue)){.card.hov:hover{box-shadow:0 2px 4px rgba(11,26,51,.05),0 30px 52px -24px color-mix(in srgb,var(--cc,#2f5bd6) 62%,transparent)}}
+.card.hov::after{content:"";position:absolute;inset:0;pointer-events:none;background:linear-gradient(105deg,transparent 38%,rgba(255,255,255,.55) 50%,transparent 62%);transform:translateX(-125%);transition:transform .9s var(--ease);z-index:2}
+.card.hov:hover::after{transform:translateX(125%)}
+.card-pad{padding:clamp(20px,2.2vw,28px)}
+
+/* ---- Seminar card ---- */
+.sem{display:flex;flex-direction:column;gap:16px;height:100%}
+.sem-top{display:flex;gap:18px;align-items:flex-start}
+.date{flex:none;width:74px;text-align:center;padding:10px 0 12px;border-radius:16px;background:var(--milk);border:1px solid var(--line-soft)}
+.date b{display:block;font:500 34px/1 var(--serif)}
+.date span{display:block;margin-top:5px;font:700 10px/1 var(--sans);letter-spacing:.16em;text-transform:uppercase;color:var(--blue)}
+.sem h3{font-size:20px;margin:2px 0 8px}
+.sem-meta{display:grid;gap:6px;font-size:13.5px;color:var(--muted)}
+.sem-meta div{display:flex;gap:9px;align-items:flex-start}
+.sem-meta .ic{width:16px;height:16px;margin-top:3px;color:var(--slate)}
+.sem-foot{margin-top:auto;display:flex;justify-content:space-between;align-items:center;gap:10px;padding-top:16px;border-top:1px dashed var(--line)}
+
+/* ---- Picker ---- */
+.picker{background:#fff;border-radius:var(--r-xl);box-shadow:var(--sh);padding:clamp(22px,4vw,52px)}
+.chips{display:flex;flex-wrap:wrap;gap:10px}
+.chip{padding:11px 20px;border-radius:var(--pill);border:1px solid var(--line);font:600 14px/1 var(--sans);color:var(--navy);background:transparent;transition:background-color .25s,color .25s,border-color .25s,transform .3s var(--ease)}
+.chip:hover{border-color:var(--navy);transform:translateY(-2px)}
+.chip.on{background:var(--navy);border-color:var(--navy);color:var(--milk)}
+.chip small{font-weight:600;opacity:.6;margin-left:6px}
+.pick-out{margin-top:clamp(24px,3vw,40px);padding-top:clamp(22px,3vw,34px);border-top:1px dashed var(--line);display:grid;grid-template-columns:.9fr 1.4fr;gap:clamp(20px,4vw,56px);animation:pop .55s var(--ease)}
+@keyframes pop{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
+.pick-out h3{margin:12px 0 10px}
+.mini-brands{display:grid;gap:10px;margin-top:20px}
+.mb{display:flex;align-items:center;gap:14px;padding:12px 14px;border-radius:14px;border:1px solid var(--line-soft);background:var(--milk-2);transition:transform .3s var(--ease),border-color .25s,background-color .25s}
+.mb:hover{transform:translateX(4px);border-color:var(--blue);background:#fff}
+.mb i{width:38px;height:38px;border-radius:11px;flex:none;background:linear-gradient(135deg,var(--c1),var(--c2))}
+.mb b{display:block;font:500 18px/1.2 var(--serif)}
+.mb span{font-size:12.5px;color:var(--muted);line-height:1.3;display:block}
+.mb .ic{margin-left:auto;color:var(--slate)}
+.mini-prods{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;align-content:start}
+
+/* ---- Brand grid (3x3, key feature) ---- */
+.bgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:clamp(14px,1.8vw,22px);padding:14px}
+.bcard{position:relative;min-height:300px;border-radius:var(--r-lg);background:#fff;box-shadow:var(--sh);cursor:pointer;overflow:hidden;z-index:1;display:flex;flex-direction:column;
+  transition:translate .85s var(--ease) var(--rd,0ms),opacity .85s var(--ease) var(--rd,0ms),transform .55s var(--ease),box-shadow .5s var(--ease)}
+.bcard::before{content:"";position:absolute;inset:0;background:rgba(11,26,51,.6);opacity:0;transition:opacity .45s ease;z-index:6;pointer-events:none;border-radius:inherit}
+.bcard::after{content:"";position:absolute;inset:0;pointer-events:none;background:linear-gradient(105deg,transparent 38%,rgba(255,255,255,.5) 50%,transparent 62%);transform:translateX(-125%);transition:transform .9s var(--ease);z-index:5}
+.bgrid:not(.has-active) .bcard:hover{transform:translateY(-7px);box-shadow:0 2px 4px rgba(11,26,51,.05),0 30px 52px -24px var(--cs)}
+.bgrid:not(.has-active) .bcard:hover::after{transform:translateX(125%)}
+.bcard .band{position:relative;height:108px;flex:none;background:linear-gradient(105deg,var(--c1) 0%,var(--c2) 100%);color:var(--ink);padding:18px 22px;display:flex;align-items:flex-end;justify-content:space-between;overflow:hidden}
+.bcard .band::before{content:"";position:absolute;right:-30px;top:-46px;width:150px;height:150px;border-radius:50%;border:1px dashed currentColor;opacity:.32}
+.bcard .band::after{content:"";position:absolute;right:26px;top:22px;width:22px;height:22px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#fff,#e5e1d9 55%,#a9b4c6);box-shadow:0 6px 12px -6px rgba(0,0,0,.35)}
+.bcard .nm{font:500 clamp(26px,2.5vw,32px)/1 var(--serif);letter-spacing:-.01em;position:relative;z-index:1}
+.bcard .ix{font:600 11px/1 var(--sans);letter-spacing:.14em;opacity:.8;position:relative;z-index:1}
+.bcard .low{position:relative;flex:1;padding:18px 22px 20px;display:grid}
+.bc-front,.bc-back{grid-area:1/1}
+.bc-front,.bc-back{transition:opacity .35s ease,transform .5s var(--ease)}
+.bc-front{padding-bottom:36px}
+.bc-front .sp{font-size:15px;line-height:1.45;color:var(--navy);font-weight:600;margin-bottom:12px}
+.bc-front .hint{position:absolute;left:22px;bottom:18px;font:600 11px/1 var(--sans);letter-spacing:.14em;text-transform:uppercase;color:var(--slate);display:flex;align-items:center;gap:8px}
+.bc-front .hint::after{content:"+";display:grid;place-items:center;width:22px;height:22px;border:1px solid var(--line);border-radius:50%;font-size:14px;letter-spacing:0}
+.bc-back{position:relative;opacity:0;transform:translateY(12px);pointer-events:none;display:flex;flex-direction:column;gap:12px}
+.bc-back p{font-size:13.5px;line-height:1.55;color:var(--muted)}
+.bc-back .row{gap:8px;margin-top:auto}
+.bgrid.has-active .bcard:not(.is-active){transform:scale(.955);box-shadow:none}
+.bgrid.has-active .bcard:not(.is-active)::before{opacity:1}
+.bgrid.has-active .bcard:not(.is-active) .band{filter:saturate(.75)}
+.bcard.is-active{z-index:20;transform:scale(1.075);box-shadow:0 2px 6px rgba(11,26,51,.08),0 44px 70px -30px var(--cs,rgba(11,26,51,.6));cursor:default}
+.bcard.is-active .bc-front{opacity:0;transform:translateY(-8px);pointer-events:none}
+.bcard.is-active .bc-back{opacity:1;transform:none;pointer-events:all;transition-delay:.12s}
+.bcard.is-active .hint{display:none}
+.bcard:focus-visible{outline-offset:4px}
+.tasks-line{display:flex;flex-wrap:wrap;gap:6px}
+.tasks-line .tag{padding:4px 9px;font-size:10px}
+
+/* ---- Product card & art ---- */
+.pcard{display:flex;flex-direction:column}
+.art{position:relative;height:200px;display:grid;place-items:end center;padding-bottom:26px;overflow:hidden;background:radial-gradient(ellipse at 50% 30%,#fff 0,color-mix(in srgb,var(--c1) 13%,#f5f2ec) 100%)}
+.art::before{content:"";position:absolute;inset:auto -20% -46% -20%;height:70%;border-radius:50%;background:color-mix(in srgb,var(--c1) 16%,transparent)}
+.pk{position:relative;width:64px;height:128px;transition:transform .5s var(--ease);transform-origin:50% 100%}
+.pcard:hover .pk{transform:translateY(-8px) rotate(-3deg)}
+.pk i{position:absolute;display:block}
+.pk .sh{left:-14%;right:-14%;bottom:-9px;height:14px;border-radius:50%;background:radial-gradient(closest-side,rgba(11,26,51,.28),transparent);transform:none}
+.pk .cap{left:50%;top:0;width:44%;height:24px;transform:translateX(-50%);border-radius:5px 5px 2px 2px;background:linear-gradient(90deg,#c9cfda,#fff 42%,#aab4c6)}
+.pk .body{left:0;right:0;top:22px;bottom:0;border-radius:14px 14px 10px 10px;background:linear-gradient(90deg,rgba(0,0,0,.16),transparent 24%,rgba(255,255,255,.4) 46%,transparent 72%,rgba(0,0,0,.18)),linear-gradient(180deg,var(--c1),var(--c2));box-shadow:0 10px 22px -12px rgba(11,26,51,.55)}
+.pk .lbl{position:absolute;left:13%;right:13%;top:34%;height:36%;border-radius:4px;background:linear-gradient(#0b1a33,#0b1a33) 14% 30%/46% 3px no-repeat,linear-gradient(rgba(11,26,51,.55),rgba(11,26,51,.55)) 14% 56%/68% 2px no-repeat,linear-gradient(rgba(11,26,51,.35),rgba(11,26,51,.35)) 14% 76%/52% 2px no-repeat,rgba(255,255,255,.92)}
+.pk .hd{display:none}
+.pk-pump .hd{display:block;left:50%;top:-14px;width:36px;height:9px;margin-left:-12px;border-radius:5px 5px 2px 2px;background:linear-gradient(90deg,#c9cfda,#fff 45%,#aab4c6)}
+.pk-pump .hd::after{content:"";position:absolute;left:12px;top:8px;width:7px;height:8px;background:#aab4c6}
+.pk-pump .cap{width:34%;height:18px;top:6px}
+.pk-pump .body{top:22px}
+.pk-dropper{width:56px;height:132px}
+.pk-dropper .hd{display:block;left:50%;top:-28px;width:24px;height:38px;margin-left:-12px;border-radius:13px 13px 4px 4px;background:linear-gradient(90deg,#1b2a44,#4a5a78 45%,#16233b)}
+.pk-dropper .cap{width:52%;height:16px;top:8px;background:linear-gradient(90deg,#8c98ad,#dfe4ec 45%,#6f7d95)}
+.pk-jar{width:104px;height:74px}
+.pk-jar .cap{left:0;width:100%;height:26px;transform:none;border-radius:8px 8px 4px 4px;background:linear-gradient(90deg,#c9cfda,#fff 40%,#aab4c6)}
+.pk-jar .body{top:24px;border-radius:5px 5px 16px 16px}
+.pk-jar .lbl{top:26%;height:52%}
+.pk-tube{width:58px;height:138px}
+.pk-tube .cap{top:auto;bottom:0;width:42%;height:26px;border-radius:3px 3px 6px 6px}
+.pk-tube .body{top:0;bottom:24px;border-radius:4px 4px 2px 2px;clip-path:polygon(0 0,100% 0,100% 84%,86% 100%,14% 100%,0 84%);box-shadow:none}
+.pk-tube .body::before{content:"";position:absolute;left:0;right:0;top:0;height:10px;background:repeating-linear-gradient(90deg,rgba(0,0,0,.2) 0 2px,transparent 2px 5px)}
+.pk-tube .lbl{top:24%;height:38%}
+.pk-box{width:112px;height:84px}
+.pk-box .cap{display:none}
+.pk-box .body{top:0;border-radius:6px;transform:skewY(-3deg)}
+.pk-box .lbl{top:22%;height:56%}
+.pk-device{width:44px;height:146px}
+.pk-device .hd{display:block;left:50%;top:-30px;width:58px;height:58px;margin-left:-29px;border-radius:50%;background:radial-gradient(circle at 34% 28%,#fff,#ece7df 45%,#b6bfcf);box-shadow:0 10px 22px -10px rgba(11,26,51,.5)}
+.pk-device .cap{width:100%;height:10px;top:26px;border-radius:5px;background:linear-gradient(90deg,var(--c1),var(--c2))}
+.pk-device .body{top:22px;border-radius:22px 22px 22px 22px;background:linear-gradient(90deg,rgba(0,0,0,.14),rgba(255,255,255,.55) 40%,rgba(0,0,0,.1)),linear-gradient(180deg,#f7f3ec,#c9cfda)}
+.pk-device .lbl{left:38%;right:38%;top:40%;height:24%;border-radius:20px;background:linear-gradient(180deg,var(--c1),var(--c2))}
+.pk-bottle .body{border-radius:16px 16px 10px 10px}
+.pcard .pb{padding:20px 22px 22px;display:flex;flex-direction:column;gap:9px;flex:1}
+.pcard .bl{display:flex;align-items:flex-start;gap:8px;font:700 10.5px/1.4 var(--sans);letter-spacing:.16em;text-transform:uppercase;color:var(--slate)}
+.pcard .bl i{flex:none;margin-top:3px;width:8px;height:8px;border-radius:50%;background:linear-gradient(135deg,var(--c1),var(--c2))}
+.pcard h3{font-size:19px;line-height:1.2}
+.pcard p{font-size:13.5px;line-height:1.55;color:var(--muted);display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+.pcard .pf{margin-top:auto;padding-top:14px;display:flex;align-items:center;justify-content:space-between;gap:8px}
+.newtag{position:absolute;left:14px;top:14px;z-index:3;padding:5px 10px;border-radius:var(--pill);background:var(--navy);color:var(--milk);font:700 10px/1 var(--sans);letter-spacing:.14em;text-transform:uppercase}
+.mini-p{background:var(--milk-2);border:1px solid var(--line-soft);border-radius:16px;overflow:hidden;transition:transform .3s var(--ease),box-shadow .3s}
+.mini-p:hover{transform:translateY(-4px);box-shadow:var(--sh)}
+.mini-p .art{height:120px;padding-bottom:16px}
+.mini-p .art .pk{transform:scale(.62);transform-origin:50% 100%}
+.mini-p:hover .pk{transform:scale(.62) translateY(-6px)}
+.mini-p div.t{padding:10px 12px 12px;font:600 12.5px/1.3 var(--sans)}
+.mini-p div.t small{display:block;font-weight:600;font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--slate);margin-bottom:3px}
+
+/* ---- Promo ---- */
+.promo{background:var(--navy);color:var(--milk);border-radius:var(--r-xl);padding:clamp(28px,5vw,68px);display:grid;grid-template-columns:1fr 1fr;gap:clamp(24px,5vw,72px);position:relative;overflow:hidden}
+.promo::before{content:"";position:absolute;right:-120px;bottom:-160px;width:420px;height:420px;border-radius:50%;border:1px dashed rgba(185,194,208,.35)}
+.promo .eyebrow{color:var(--silver)}
+.promo .eyebrow::before{border-color:var(--silver)}
+.promo h2{margin:18px 0 16px}
+.promo p{color:var(--silver);max-width:44ch}
+.promo .fine{margin-top:22px;font-size:12.5px;color:var(--slate)}
+.calc{position:relative;z-index:1;background:rgba(245,242,236,.06);border:1px solid rgba(185,194,208,.25);border-radius:var(--r-lg);padding:clamp(20px,3vw,34px)}
+.calc .sum{font:500 clamp(34px,4.2vw,52px)/1 var(--serif);letter-spacing:-.01em}
+.calc .sum small{font:600 12px/1 var(--sans);letter-spacing:.14em;text-transform:uppercase;color:var(--silver);display:block;margin-bottom:10px}
+input[type=range]{-webkit-appearance:none;appearance:none;width:100%;height:4px;border-radius:4px;background:linear-gradient(90deg,var(--blue) var(--p,0%),rgba(185,194,208,.3) var(--p,0%));margin:26px 0 22px;outline-offset:8px}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:24px;height:24px;border-radius:50%;background:var(--milk);border:5px solid var(--blue);cursor:grab;transition:transform .2s}
+input[type=range]::-webkit-slider-thumb:hover{transform:scale(1.15)}
+input[type=range]::-moz-range-thumb{width:16px;height:16px;border-radius:50%;background:var(--milk);border:5px solid var(--blue);cursor:grab}
+.tiers{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.tier{padding:12px 10px;border-radius:14px;border:1px dashed rgba(185,194,208,.4);text-align:center;transition:background-color .3s,border-color .3s,color .3s}
+.tier b{display:block;font:500 26px/1 var(--serif)}
+.tier span{display:block;margin-top:6px;font:600 10.5px/1.3 var(--sans);letter-spacing:.08em;text-transform:uppercase;color:var(--silver)}
+.tier.on{background:var(--milk);border-color:var(--milk);color:var(--navy);border-style:solid}
+.tier.on span{color:var(--muted)}
+.save{margin-top:20px;padding-top:18px;border-top:1px dashed rgba(185,194,208,.35);display:flex;justify-content:space-between;align-items:baseline;gap:12px;font-size:14px;color:var(--silver)}
+.save b{font:500 26px/1 var(--serif);color:var(--milk)}
+
+/* ---- Articles / videos / news ---- */
+.art-card{display:flex;flex-direction:column;height:100%}
+.art-card .cov{height:132px;position:relative;background:linear-gradient(105deg,var(--c1),var(--c2));display:flex;align-items:flex-end;padding:14px 20px;color:var(--ink,#fff)}
+.art-card .cov::before{content:"";position:absolute;right:-24px;top:-40px;width:130px;height:130px;border-radius:50%;border:1px dashed currentColor;opacity:.35}
+.art-card .cov span{font:700 10.5px/1 var(--sans);letter-spacing:.16em;text-transform:uppercase;position:relative}
+.art-card .ab{padding:20px 22px 22px;display:flex;flex-direction:column;gap:12px;flex:1}
+.art-card h3{font-size:20px}
+.art-card .meta{margin-top:auto;padding-top:12px;display:flex;justify-content:space-between;font-size:12.5px;color:var(--slate);font-weight:600}
+.video{display:flex;flex-direction:column;height:100%}
+.video .th{position:relative;aspect-ratio:16/10;background:linear-gradient(120deg,var(--c1),var(--c2));display:grid;place-items:center;overflow:hidden}
+.video .th::before{content:"";position:absolute;left:-14%;bottom:-40%;width:70%;aspect-ratio:1;border-radius:50%;border:1px dashed rgba(255,255,255,.4)}
+.video .play{width:60px;height:60px;border-radius:50%;background:rgba(255,255,255,.94);display:grid;place-items:center;color:var(--navy);transition:transform .35s var(--ease)}
+.video:hover .play{transform:scale(1.12)}
+.video .play .ic{width:22px;height:22px;fill:currentColor;stroke:none;margin-left:3px}
+.video .dur{position:absolute;right:12px;bottom:12px;padding:4px 9px;border-radius:var(--pill);background:rgba(11,26,51,.78);color:#fff;font:700 11px/1 var(--sans);letter-spacing:.06em}
+.video .vb{padding:16px 18px 20px}
+.video h3{font-size:17px;line-height:1.3}
+.video .vb small{display:block;margin-top:6px;font-size:12.5px;color:var(--slate);font-weight:600}
+.news-row{display:grid;grid-template-columns:130px 1fr auto;gap:clamp(16px,3vw,40px);align-items:center;padding:clamp(20px,2.6vw,30px) 0;border-bottom:1px dashed var(--line);transition:padding .35s var(--ease)}
+.news-row:hover{padding-left:14px}
+.news-row .nd{font:600 12px/1.4 var(--sans);letter-spacing:.14em;text-transform:uppercase;color:var(--slate)}
+.news-row h3{font-size:clamp(20px,2vw,26px);margin-bottom:6px}
+.news-row p{color:var(--muted);font-size:14.5px;max-width:64ch}
+.tabs{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:26px}
+.feat{display:grid;grid-template-columns:1.15fr .85fr;border-radius:var(--r-xl);overflow:hidden;background:var(--navy);color:var(--milk);margin-bottom:clamp(30px,4vw,56px)}
+.feat .fb{padding:clamp(26px,4.5vw,60px);display:flex;flex-direction:column;gap:18px;justify-content:center}
+.feat .fb p{color:var(--silver)}
+.feat .fv{position:relative;min-height:240px;background:linear-gradient(140deg,var(--blue),#8ea8f0);display:grid;place-items:center;overflow:hidden}
+.feat .fv::before{content:"";position:absolute;width:120%;aspect-ratio:1;border-radius:50%;border:1px dashed rgba(255,255,255,.45)}
+.feat .fv b{position:relative;font:500 clamp(70px,9vw,132px)/1 var(--serif);color:#fff}
+.feat .fv b small{font-size:.38em}
+
+/* ---- Catalog ---- */
+.cat-tiles{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
+.cat-tile{position:relative;text-align:left;padding:22px 22px 20px;border-radius:var(--r-lg);border:1px dashed var(--line);background:transparent;display:flex;flex-direction:column;gap:26px;min-height:132px;transition:transform .35s var(--ease),background-color .3s,border-color .3s,box-shadow .35s}
+.cat-tile:hover{transform:translateY(-5px);background:#fff;border-style:solid;border-color:transparent;box-shadow:var(--sh-h)}
+.cat-tile b{font:500 20px/1.2 var(--serif)}
+.cat-tile span{font:600 11px/1 var(--sans);letter-spacing:.14em;text-transform:uppercase;color:var(--slate)}
+.cat-tile.on{background:var(--navy);border-color:var(--navy);color:var(--milk);border-style:solid}
+.cat-tile.on span{color:var(--silver)}
+.toolbar{display:grid;gap:18px;margin:clamp(26px,3.5vw,44px) 0 26px;padding:clamp(18px,2.4vw,26px);background:#fff;border-radius:var(--r-lg);box-shadow:var(--sh)}
+.search{position:relative;flex:1;min-width:220px}
+.search .ic{position:absolute;left:18px;top:50%;translate:0 -50%;color:var(--slate);pointer-events:none}
+.search input{width:100%;padding:15px 20px 15px 48px;border-radius:var(--pill);border:1px solid var(--line);background:var(--milk-2);font:500 15px/1 var(--sans);color:var(--navy);transition:border-color .2s,box-shadow .2s,background-color .2s}
+.search input::placeholder{color:var(--slate)}
+.search input:focus{outline:none;border-color:var(--blue);background:#fff;box-shadow:0 0 0 4px rgba(47,91,214,.12)}
+.tb-row{display:flex;gap:16px;align-items:center;flex-wrap:wrap}
+.tb-lab{font:700 11px/1 var(--sans);letter-spacing:.16em;text-transform:uppercase;color:var(--slate);min-width:86px}
+.res-line{display:flex;justify-content:space-between;align-items:center;gap:14px;margin-bottom:20px;font:600 13px/1 var(--sans);color:var(--muted)}
+.empty{padding:60px 20px;text-align:center;border:1px dashed var(--line);border-radius:var(--r-lg);color:var(--muted)}
+.empty b{display:block;font:500 26px/1.2 var(--serif);color:var(--navy);margin-bottom:8px}
+.note{margin-top:34px;padding:16px 20px;border:1px dashed var(--line);border-radius:14px;font-size:13px;color:var(--muted);display:flex;gap:12px;align-items:flex-start}
+.note .ic{margin-top:2px;color:var(--slate)}
+
+/* ---- Brands page & brand page ---- */
+.bl-card{display:flex;flex-direction:column;height:100%;min-height:250px}
+.bl-card .band{height:104px;padding:16px 20px;display:flex;align-items:flex-end;background:linear-gradient(105deg,var(--c1),var(--c2));color:var(--ink);position:relative;overflow:hidden}
+.bl-card .band::before{content:"";position:absolute;right:-34px;top:-52px;width:150px;height:150px;border-radius:50%;border:1px dashed currentColor;opacity:.32}
+.bl-card .band b{font:500 30px/1 var(--serif);position:relative}
+.bl-card .bb{padding:18px 20px 20px;display:flex;flex-direction:column;gap:12px;flex:1}
+.bl-card .bb p{font-size:14px;color:var(--muted);line-height:1.55}
+.bl-card .bb .lnk{margin-top:auto;align-self:flex-start}
+.b-hero{padding:clamp(34px,6vw,84px) 0 clamp(30px,4vw,56px)}
+.crumbs{display:flex;gap:10px;align-items:center;font:600 12px/1 var(--sans);letter-spacing:.14em;text-transform:uppercase;color:var(--slate);margin-bottom:clamp(20px,3vw,36px);flex-wrap:wrap}
+.crumbs a:hover{color:var(--blue)}
+.b-title{font:500 clamp(54px,12vw,168px)/.98 var(--serif);letter-spacing:-.03em;padding-bottom:.08em;background:linear-gradient(100deg,var(--c1) 0%,var(--c2) 100%);-webkit-background-clip:text;background-clip:text;color:transparent;-webkit-text-fill-color:transparent;word-break:break-word}
+.b-sub{margin-top:14px;font:400 clamp(20px,2.4vw,30px)/1.3 var(--serif);max-width:32ch}
+.b-cols{display:grid;grid-template-columns:1.3fr .7fr;gap:clamp(24px,5vw,80px);margin-top:clamp(30px,4vw,56px);align-items:start}
+.b-cols p+p{margin-top:16px}
+.b-cols .txt p{color:var(--muted);font-size:17px;line-height:1.7}
+.facts{display:grid;gap:0;border-top:1px dashed var(--line)}
+.fact{padding:18px 0;border-bottom:1px dashed var(--line)}
+.fact small{display:block;font:700 10.5px/1 var(--sans);letter-spacing:.16em;text-transform:uppercase;color:var(--slate);margin-bottom:8px}
+.fact b{font:500 21px/1.25 var(--serif)}
+.sib{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:clamp(50px,7vw,90px)}
+.sib a{display:flex;flex-direction:column;gap:10px;padding:26px 28px;border-radius:var(--r-lg);border:1px dashed var(--line);transition:transform .35s var(--ease),background-color .3s,box-shadow .35s,border-color .3s}
+.sib a:hover{background:#fff;border-color:transparent;box-shadow:var(--sh-h);transform:translateY(-5px)}
+.sib a small{font:700 11px/1 var(--sans);letter-spacing:.16em;text-transform:uppercase;color:var(--slate);display:flex;align-items:center;gap:8px}
+.sib a b{font:500 clamp(28px,3.4vw,44px)/1.05 var(--serif);background:linear-gradient(100deg,var(--c1),var(--c2));-webkit-background-clip:text;background-clip:text;color:transparent;-webkit-text-fill-color:transparent;padding-bottom:.06em}
+.sib a.nx{text-align:right;align-items:flex-end}
+.sib a.nx small{flex-direction:row-reverse}
+
+/* ---- Academy / company ---- */
+.steps{display:grid;grid-template-columns:repeat(4,1fr);gap:0;counter-reset:st}
+.step{padding:6px 26px 6px 0;position:relative}
+.step + .step{padding-left:26px;border-left:1px dashed var(--line)}
+.step i{font:500 54px/1 var(--serif);font-style:normal;color:var(--blue);display:block;margin-bottom:16px}
+.step h3{font-size:20px;margin-bottom:8px}
+.step p{font-size:14px;color:var(--muted);line-height:1.6}
+.sem-list{border-top:1px dashed var(--line)}
+.sem-item{display:grid;grid-template-columns:96px 1.5fr 1fr auto;gap:clamp(14px,3vw,36px);align-items:center;padding:clamp(18px,2.4vw,28px) 0;border-bottom:1px dashed var(--line)}
+.sem-item .date{width:80px}
+.sem-item h3{font-size:clamp(18px,1.8vw,22px);margin-bottom:8px}
+.sem-item .who{font-size:14px;color:var(--muted)}
+.sem-item .who b{display:block;font-weight:700;color:var(--navy);font-size:13px;margin-bottom:2px}
+.faq{border-top:1px dashed var(--line)}
+.faq-q{width:100%;display:flex;justify-content:space-between;align-items:center;gap:20px;text-align:left;padding:24px 0;font:500 clamp(19px,1.9vw,24px)/1.25 var(--serif);border-bottom:1px dashed var(--line);transition:color .2s}
+.faq-q:hover{color:var(--blue)}
+.pm{position:relative;width:34px;height:34px;flex:none;border-radius:50%;border:1px solid var(--line);transition:background-color .3s,border-color .3s,transform .4s var(--ease)}
+.pm::before,.pm::after{content:"";position:absolute;left:50%;top:50%;width:12px;height:1.5px;background:currentColor;translate:-50% -50%;transition:transform .35s var(--ease)}
+.pm::after{transform:rotate(90deg)}
+.faq-item.open .pm{background:var(--navy);border-color:var(--navy);color:var(--milk);transform:rotate(180deg)}
+.faq-item.open .pm::after{transform:rotate(0)}
+.faq-a{display:grid;grid-template-rows:0fr;transition:grid-template-rows .45s var(--ease)}
+.faq-a>div{overflow:hidden}
+.faq-a p{padding:18px 0 26px;max-width:68ch;color:var(--muted);border-bottom:1px dashed var(--line)}
+.faq-item.open .faq-a{grid-template-rows:1fr}
+.faq-item.open .faq-q{border-bottom-color:transparent}
+.tcard{display:flex;flex-direction:column;gap:16px;height:100%}
+.avatar{width:76px;height:76px;border-radius:50%;display:grid;place-items:center;font:500 30px/1 var(--serif);color:var(--milk);background:linear-gradient(135deg,var(--navy),var(--slate));position:relative}
+.avatar::after{content:"";position:absolute;inset:-6px;border-radius:50%;border:1px dashed var(--silver)}
+.tcard h3{font-size:21px}
+.tcard p{font-size:14px;color:var(--muted);line-height:1.55}
+.cities{display:grid;grid-template-columns:repeat(2,1fr);gap:clamp(14px,1.8vw,22px)}
+.city{padding:clamp(22px,2.6vw,34px);display:flex;flex-direction:column;gap:14px;height:100%}
+.city h3{font-size:28px}
+.city .li{display:flex;gap:12px;align-items:flex-start;font-size:14.5px;color:var(--muted)}
+.city .li .ic{margin-top:4px;color:var(--slate)}
+.city .li a{color:var(--navy);font-weight:600;border-bottom:1px dashed var(--slate)}
+.city .li a:hover{color:var(--blue);border-color:var(--blue)}
+.city .li b{color:var(--navy);font-weight:700}
+.linkcards{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
+.linkcard{display:flex;flex-direction:column;justify-content:space-between;gap:34px;padding:24px;border-radius:var(--r-lg);border:1px dashed var(--line);min-height:170px;text-align:left;transition:transform .35s var(--ease),background-color .3s,box-shadow .35s,border-color .3s}
+.linkcard:hover{background:#fff;border-color:transparent;box-shadow:var(--sh-h);transform:translateY(-5px)}
+.linkcard b{font:500 22px/1.2 var(--serif)}
+.linkcard span{display:flex;justify-content:space-between;align-items:center;font:600 11px/1 var(--sans);letter-spacing:.14em;text-transform:uppercase;color:var(--slate)}
+.forms-band{display:grid;grid-template-columns:1fr 1fr;gap:clamp(14px,1.8vw,22px)}
+.fb-card{padding:clamp(26px,3.4vw,46px);display:flex;flex-direction:column;gap:16px;align-items:flex-start}
+.fb-card.dark{background:var(--navy);color:var(--milk)}
+.fb-card.dark p{color:var(--silver)}
+.fb-card.dark .btn-fill{background:var(--milk);color:var(--navy)}
+.fb-card.dark .btn-fill:hover{background:#fff}
+.about-grid{display:grid;grid-template-columns:1.1fr .9fr;gap:clamp(24px,5vw,80px);align-items:start}
+.about-grid .txt p{color:var(--muted);font-size:17px;line-height:1.75}
+.about-grid .txt p+p{margin-top:16px}
+.why{display:grid;gap:0;border-top:1px dashed var(--line)}
+.why div{padding:22px 0;border-bottom:1px dashed var(--line);display:grid;grid-template-columns:44px 1fr;gap:14px}
+.why i{font:500 26px/1 var(--serif);font-style:normal;color:var(--blue)}
+.why b{display:block;font:500 21px/1.25 var(--serif);margin-bottom:6px}
+.why p{font-size:14.5px;color:var(--muted)}
+.page-head{padding:clamp(40px,6vw,88px) 0 clamp(26px,3.6vw,48px)}
+.page-head h1{margin:20px 0 18px;font-size:clamp(40px,6vw,84px)}
+
+/* ============ Footer ============ */
+.ftr{background:var(--navy);color:var(--milk);padding:clamp(48px,6vw,84px) 0 30px;margin-top:0}
+.ftr-grid{display:grid;grid-template-columns:1.3fr 1fr 1fr 1.2fr;gap:clamp(24px,4vw,56px)}
+.ftr h4{font:700 11px/1 var(--sans);letter-spacing:.18em;text-transform:uppercase;color:var(--silver);margin-bottom:20px}
+.ftr li{margin-bottom:11px;font-size:14.5px}
+.ftr a{color:var(--milk);opacity:.86;transition:opacity .2s,color .2s}
+.ftr a:hover{opacity:1;color:#fff;text-decoration:underline;text-decoration-style:dashed;text-underline-offset:4px}
+.ftr .about{margin-top:22px;font-size:14px;color:var(--silver);max-width:34ch}
+.ftr-bottom{margin-top:clamp(36px,5vw,64px);padding-top:22px;border-top:1px dashed rgba(185,194,208,.3);display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap;font-size:12.5px;color:var(--silver)}
+
+/* ============ Modal / toast ============ */
+#modal{position:fixed;inset:0;z-index:180;display:none;align-items:center;justify-content:center;padding:20px;background:rgba(11,26,51,.56)}
+#modal.open{display:flex;animation:fadeIn2 .3s ease}
+@keyframes fadeIn2{from{opacity:0}to{opacity:1}}
+.dlg{position:relative;width:100%;max-width:580px;max-height:calc(100vh - 40px);overflow:auto;background:var(--milk-2);border-radius:var(--r-xl);padding:clamp(24px,4vw,42px);box-shadow:0 40px 80px -30px rgba(11,26,51,.6);animation:dlgIn .45s var(--ease)}
+@keyframes dlgIn{from{opacity:0;transform:translateY(24px) scale(.97)}to{opacity:1;transform:none}}
+.dlg h2{font-size:clamp(26px,3vw,34px);margin:14px 0 8px}
+.dlg .ctx{display:inline-block;margin:6px 0 4px;padding:8px 14px;border-radius:12px;background:rgba(47,91,214,.09);color:var(--blue-d);font:600 13px/1.4 var(--sans)}
+.x{position:absolute;right:16px;top:16px;width:40px;height:40px;border-radius:50%;border:1px solid var(--line);display:grid;place-items:center;transition:background-color .25s,color .25s,transform .3s var(--ease)}
+.x:hover{background:var(--navy);color:var(--milk);transform:rotate(90deg)}
+form{display:grid;gap:14px;margin-top:20px}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.fld{display:grid;gap:7px}
+.fld label{font:700 11px/1 var(--sans);letter-spacing:.14em;text-transform:uppercase;color:var(--slate)}
+.fld input,.fld textarea{width:100%;padding:13px 16px;border-radius:12px;border:1px solid var(--line);background:#fff;font:500 15px/1.4 var(--sans);color:var(--navy);transition:border-color .2s,box-shadow .2s}
+.fld textarea{min-height:96px;resize:vertical}
+.fld input:focus,.fld textarea:focus{outline:none;border-color:var(--blue);box-shadow:0 0 0 4px rgba(47,91,214,.12)}
+.fld.bad input,.fld.bad textarea{border-color:#c0392b}
+.fld .err{display:none;font-size:12px;color:#b03024;font-weight:600}
+.fld.bad .err{display:block}
+.agree{display:flex;gap:12px;align-items:flex-start;font-size:13px;line-height:1.5;color:var(--muted);cursor:pointer}
+.agree input{width:20px;height:20px;margin:1px 0 0;accent-color:var(--blue);flex:none}
+.agree.bad{color:#b03024}
+.ok{text-align:center;padding:20px 0 6px}
+.ok .tick{width:64px;height:64px;border-radius:50%;background:rgba(47,91,214,.1);color:var(--blue);display:grid;place-items:center;margin:0 auto 18px}
+.ok .tick .ic{width:28px;height:28px;stroke-width:2}
+.ok p{color:var(--muted);margin-top:10px}
+#toast{position:fixed;left:50%;bottom:28px;translate:-50% 30px;z-index:190;background:var(--navy);color:var(--milk);padding:14px 22px;border-radius:var(--pill);font:600 14px/1 var(--sans);opacity:0;pointer-events:none;transition:opacity .35s,translate .45s var(--ease)}
+#toast.show{opacity:1;translate:-50% 0}
+
+/* ============ Responsive ============ */
+@media (max-width:1100px){
+  .hdr-phone{display:none}
+  .g4{grid-template-columns:repeat(2,1fr)}
+  .cat-tiles{grid-template-columns:repeat(2,1fr)}
+  .linkcards{grid-template-columns:repeat(2,1fr)}
+  .ftr-grid{grid-template-columns:1fr 1fr}
+  .sem-item{grid-template-columns:84px 1fr auto}
+  .sem-item .who{grid-column:2/3;grid-row:2}
+  .sem-item .go{grid-column:3;grid-row:1/3}
+}
+@media (max-width:900px){
+  .burger{display:inline-flex}
+  .nav{position:fixed;left:0;right:0;top:var(--hdr);bottom:0;background:var(--milk);flex-direction:column;align-items:flex-start;gap:0;padding:14px var(--gut) 40px;overflow:auto;transform:translateX(100%);transition:transform .4s var(--ease);visibility:hidden}
+  .menu-open .nav{transform:none;visibility:visible}
+  .nav a.nl{font-size:17px;letter-spacing:.1em;width:100%;padding:20px 0;border-bottom:1px dashed var(--line)}
+  .hdr-cta .btn{display:none}
+  .hero-grid{grid-template-columns:1fr}
+  .pearl-wrap{max-width:400px;margin-bottom:64px}
+  .hero-card{left:0;right:0;bottom:-56px;max-width:none}
+  .stats-grid{grid-template-columns:repeat(2,1fr)}
+  .stat:nth-child(3){border-left:0}
+  .stat:nth-child(n+3){border-top:1px dashed var(--line)}
+  .g3{grid-template-columns:repeat(2,1fr)}
+  .bgrid{grid-template-columns:repeat(2,1fr)}
+  .bgrid .bcard:last-child{grid-column:1/-1}
+  .pick-out,.promo,.b-cols,.about-grid,.forms-band,.feat{grid-template-columns:1fr}
+  .steps{grid-template-columns:repeat(2,1fr);row-gap:32px}
+  .step:nth-child(3){padding-left:0;border-left:0}
+  .sib{grid-template-columns:1fr}
+  .cities{grid-template-columns:1fr}
+  .news-row{grid-template-columns:1fr;gap:10px}
+  .news-row:hover{padding-left:0}
+}
+@media (max-width:640px){
+  :root{--hdr:66px}
+  .g2,.g3,.g4{grid-template-columns:1fr}
+  .bgrid{grid-template-columns:1fr;padding:10px}
+  .bgrid .bcard:last-child{grid-column:auto}
+  .bcard{min-height:0}
+  .bcard.is-active{transform:scale(1.03)}
+  .mini-prods{grid-template-columns:repeat(2,1fr)}
+  .cat-tiles{grid-template-columns:1fr 1fr}
+  .linkcards{grid-template-columns:1fr}
+  .linkcard{min-height:130px}
+  .cat-tile{min-height:112px;padding:16px}
+  .cat-tile b{font-size:17px}
+  .steps{grid-template-columns:1fr}
+  .step,.step+.step{padding:0;border-left:0}
+  .ftr-grid{grid-template-columns:1fr}
+  .two{grid-template-columns:1fr}
+  .tiers{gap:6px}
+  .tier b{font-size:22px}
+  .sem-item{grid-template-columns:1fr;gap:12px}
+  .sem-item .who,.sem-item .go{grid-column:auto;grid-row:auto}
+  .sem-item .date{display:flex;width:auto;gap:10px;align-items:baseline;justify-content:flex-start;padding:8px 14px;text-align:left}
+  .sem-item .date b{font-size:24px}
+  .sem-item .date span{margin:0}
+  .tb-lab{min-width:100%}
+  .hero-chip{right:0}
+  .stat{padding-inline:12px}
+  .lg-mark{width:32px}.lg-word{font-size:15px}
+}
+@media (prefers-reduced-motion:reduce){
+  html{scroll-behavior:auto}
+  *,*::before,*::after{animation-duration:.01ms!important;animation-delay:0ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important;transition-delay:0ms!important}
+  .js .reveal{opacity:1;translate:0 0}
+}
+</style>
+</head>
+<body>
+<!-- Логотип: гора-силуэт в форме буквы «А», жемчужина у основания. Слово «Астрея» — отдельно, синим засечковым. Без «ООО» в графике. -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+  <defs>
+    <radialGradient id="lg-p" cx="34%" cy="28%" r="78%">
+      <stop offset="0" stop-color="#ffffff"/><stop offset=".42" stop-color="#ece8e0"/><stop offset="1" stop-color="#8f9db4"/>
+    </radialGradient>
+    <symbol id="lm" viewBox="0 0 120 100">
+      <path d="M6 92 L52 14 Q60 2 68 14 L114 92 L92 92 L60 40 L28 92 Z" style="fill:var(--lm,#0b1a33)"/>
+      <path d="M60 8 L68 14 L114 92 L92 92 L60 40 Z" style="fill:var(--lf,rgba(255,255,255,.13))"/>
+      <path d="M38 76 L48 64 L54 70 L60 60 L66 70 L72 64 L82 76 Z" style="fill:var(--lr,#2f5bd6)"/>
+      <circle cx="60" cy="86" r="6.2" fill="url(#lg-p)"/>
+    </symbol>
+  </defs>
+</svg>
+
+<div id="progress" aria-hidden="true"></div>
+
+<div id="splash" aria-hidden="true">
+  <div class="sp-in" id="sp-in">
+    <svg class="sp-mark" viewBox="0 0 120 100" style="--lm:#f5f2ec;--lf:rgba(11,26,51,.12);--lr:#5b82ee"><use href="#lm" width="120" height="100"/></svg>
+    <div class="sp-word" id="sp-word"></div>
+    <div class="sp-sub" id="sp-sub"></div>
+    <i class="sp-line"></i>
+    <p class="sp-tag">Наука. Забота. Результат.</p>
+  </div>
+</div>
+<div id="curtain" aria-hidden="true"></div>
+
+<header class="hdr" id="hdr">
+  <div class="wrap hdr-in">
+    <a href="#/" class="logo" aria-label="Астрея — на главную">
+      <svg class="lg-mark" viewBox="0 0 120 100" aria-hidden="true"><use href="#lm" width="120" height="100"/></svg>
+      <span class="lg-word">Астрея</span>
+    </a>
+    <nav class="nav" id="nav" aria-label="Основная навигация">
+      <a class="nl" href="#/" data-nav="/">Главная</a>
+      <a class="nl" href="#/catalog" data-nav="/catalog">Каталог</a>
+      <a class="nl" href="#/brands" data-nav="/brands">Бренды</a>
+      <a class="nl" href="#/academy" data-nav="/academy">Обучение</a>
+      <a class="nl" href="#/news" data-nav="/news">Новости и акции</a>
+      <a class="nl" href="#/company" data-nav="/company">Компания</a>
+    </nav>
+    <div class="hdr-cta">
+      <a class="hdr-phone" href="tel:+74959255162">+7 (495) 925-51-62</a>
+      <button class="btn btn-fill btn-sm" data-act="form" data-type="partner">Стать партнёром</button>
+      <button class="burger" id="burger" data-act="menu" aria-label="Меню" aria-expanded="false" aria-controls="nav"><i></i></button>
+    </div>
+  </div>
+</header>
+
+<main id="app" tabindex="-1"></main>
+
+<footer class="ftr">
+  <div class="wrap">
+    <div class="ftr-grid">
+      <div>
+        <a href="#/" class="logo inv lg" aria-label="Астрея — на главную">
+          <svg class="lg-mark" viewBox="0 0 120 100" aria-hidden="true" style="--lf:rgba(11,26,51,.12);--lr:#5b82ee"><use href="#lm" width="120" height="100"/></svg>
+          <span class="lg-word">Астрея</span>
+        </a>
+        <p class="about">ООО «Астрея» — дистрибьютор профессиональной косметики. Обучаем специалистов и работаем с оригинальной продукцией.</p>
+      </div>
+      <div>
+        <h4>Разделы</h4>
+        <ul>
+          <li><a href="#/catalog">Каталог</a></li>
+          <li><a href="#/brands">Бренды</a></li>
+          <li><a href="#/academy">Обучение</a></li>
+          <li><a href="#/news">Новости и акции</a></li>
+          <li><a href="#/company">Компания</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4>Бренды</h4>
+        <ul id="ftr-brands"></ul>
+      </div>
+      <div>
+        <h4>Центральный офис</h4>
+        <ul>
+          <li>Москва, проезд Березовой рощи, д. 8, 3-й этаж</li>
+          <li><a href="tel:+74959255162">+7 (495) 925-51-62</a></li>
+          <li><a href="mailto:9255162@mail.ru">9255162@mail.ru</a></li>
+          <li>Пн–Пт, 10:00–18:00</li>
+        </ul>
+      </div>
+    </div>
+    <div class="ftr-bottom">
+      <span>© 2026 ООО «Астрея». Все права защищены.</span>
+      <span>Сведения на сайте носят справочный характер и не являются публичной офертой.</span>
+    </div>
+  </div>
+</footer>
+
+<div id="modal" aria-hidden="true"></div>
+<div id="toast" role="status" aria-live="polite"></div>
+
+<script>
+'use strict';
+/* ==========================================================================
+   ДАННЫЕ
+   Проверено по открытым источникам (acosm.ru / academy.acosm.ru в выдаче поиска):
+     • состав брендов и их специализация, контакты представительств, режим семинаров
+       (10:30–18:00), бесплатность базовых семинаров, преподаватель С. В. Савиных.
+   Демонстрационные (ПРОВЕРИТЬ/ЗАМЕНИТЬ по acosm.ru): даты и темы семинаров, тренеры без ФИО,
+   названия статей/видео/новостей, позиции каталога, пороги скидок.
+   ========================================================================== */
+const CONTACT = {
+  email:'9255162@mail.ru',
+  phone:'+7 (495) 925-51-62', phoneRaw:'+74959255162',
+  site:'https://acosm.ru', catalog:'https://acosm.ru/catalog/',
+  academy:'https://academy.acosm.ru/', about:'https://acosm.ru/o-kompanii/',
+  distributors:'https://acosm.ru/o-kompanii/distributor/',
+  youtube:'https://www.youtube.com/channel/UCocy5hvx4TxN2552Tlnh-SA'
+};
+
+/* Задачи клиента для интерактивного подбора */
+const TASKS = [
+  {id:'acne',    label:'Акне',               note:'Логика ухода: мягкое очищение, регуляция себума и ретиноидный уход с обязательным восстановлением барьера кожи.', brands:['biretix','dermatime','endocare','heliocare']},
+  {id:'pigment', label:'Пигментация',        note:'Работа с пигментом всегда идёт в связке с ежедневной фотозащитой — без неё результат не закрепляется.',          brands:['neoretin','dermatime','heliocare','endocare']},
+  {id:'antiage', label:'Антивозраст',        note:'Сочетание кабинетных протоколов, регенерации и домашнего ухода, продлевающего эффект процедур.',                  brands:['endocare','dermatime','keenwell','heliocare']},
+  {id:'sun',     label:'Фотозащита',         note:'Фотоиммунозащита — основа любого протокола: от пилингов до депигментации.',                                        brands:['heliocare','neoretin']},
+  {id:'sens',    label:'Чувствительная кожа',note:'Мягкая подготовка, бережное восстановление после процедур и минеральная фотозащита.',                              brands:['dermatime','endocare','heliocare','biretix']},
+  {id:'body',    label:'Тело и фигура',      note:'Комплексный подход к коррекции фигуры: профессиональные программы и домашнее продолжение.',                       brands:['elancyl','keenwell']},
+  {id:'hair',    label:'Волосы и кожа головы',note:'Трихологический подход: диагностика причины и поддерживающий уход за кожей головы.',                              brands:['iraltone']},
+  {id:'intim',   label:'Интимное здоровье',  note:'Аппаратное решение для женского интимного здоровья — для специалистов и партнёров.',                                brands:['eva']}
+];
+
+/* Бренды: c1→c2 — градиент полосы, ink — цвет текста на полосе */
+const BRANDS = [
+  {id:'dermatime', name:'Dermatime', group:'Испания', tag:'Химические пилинги, мезотерапия и домашний космецевтический уход',
+   c1:'#2f5bd6', c2:'#9db4f5', ink:'#fff', site:'https://acosm.ru/catalog/dermatime',
+   desc:'Испанский бренд эстетической косметологии: химические пилинги, препараты для мезотерапии и домашний уход, продлевающий результат процедур в кабинете.',
+   long:['Dermatime — испанский бренд для профессиональной эстетики. В линейках представлены химические пилинги (в том числе молочные), препараты до- и постпилинговой подготовки, мезотерапевтические средства и домашняя космецевтика.',
+         'Каталог включает серии для эстетики лица, такие как Elastense и Acidcure. Специалисты учебного центра «Астреи» разбирают протоколы Dermatime на семинарах и мастер-классах.'],
+   facts:[['Направления','Пилинги · мезотерапия · домашний уход'],['Страна','Испания'],['Обучение','Семинары учебного центра «Астреи»']]},
+  {id:'keenwell', name:'Keenwell', group:'Испания', tag:'Эстетика лица и тела, декоративная косметика',
+   c1:'#1c2f5a', c2:'#c3a6b0', ink:'#fff', site:'https://acosm.ru/catalog/keenwell',
+   desc:'Испанский бренд с комплексным подходом: профессиональные программы для лица и тела и декоративная косметика — тональные средства и корректоры.',
+   long:['Keenwell объединяет три направления: эстетику лица, эстетику тела и декоративную косметику. Это позволяет строить полный цикл ухода — от кабинетной программы до макияжа.',
+         'В разделе декоративной косметики представлены тональные средства и корректоры; программы для тела дополняют работу с лицом и позволяют предлагать клиенту единый подход.'],
+   facts:[['Направления','Лицо · тело · декоративная косметика'],['Страна','Испания'],['Обучение','Семинары учебного центра «Астреи»']]},
+  {id:'endocare', name:'Endocare', group:'Cantabria Labs', tag:'Антивозрастная регенерация кожи',
+   c1:'#66758f', c2:'#c6cfdd', ink:'#fff', site:CONTACT.catalog,
+   desc:'Линия Cantabria Labs для регенерации кожи и антивозрастного ухода на основе технологии SCA® Biorepair.',
+   long:['Endocare — бренд Cantabria Labs, посвящённый восстановлению кожи. Технология SCA® Biorepair лежит в основе средств для антивозрастного ухода и реабилитации кожи после процедур.',
+         'Линия хорошо сочетается с пилингами и другими кабинетными протоколами, помогая выстроить домашний уход клиента после процедуры.'],
+   facts:[['Технология','SCA® Biorepair'],['Направление','Антивозрастная регенерация'],['Концерн','Cantabria Labs']]},
+  {id:'neoretin', name:'Neoretin', group:'Cantabria Labs', tag:'Депигментирующая система Discrom Control',
+   c1:'#6a5a8c', c2:'#cbbfe0', ink:'#fff', site:CONTACT.catalog,
+   desc:'Система Neoretin Discrom Control для работы с гиперпигментацией: Whitening Booster System и технология RetinSphere®.',
+   long:['Neoretin Discrom Control — депигментирующая система, в которой сочетаются Whitening Booster System и технология RetinSphere®.',
+         'Линия предназначена для комплексных протоколов по работе с пигментацией и, как правило, применяется вместе с ежедневной фотозащитой.'],
+   facts:[['Технологии','Whitening Booster System · RetinSphere®'],['Направление','Депигментация'],['Концерн','Cantabria Labs']]},
+  {id:'heliocare', name:'Heliocare', group:'Cantabria Labs', tag:'Фотоиммунозащита с технологией Fernblock®',
+   c1:'#e6a93a', c2:'#f8e3b4', ink:'#0b1a33', site:CONTACT.catalog,
+   desc:'Фотоиммунозащита Cantabria Labs на основе Fernblock®: ежедневная защита кожи от солнца в связке с любым протоколом.',
+   long:['Heliocare — линия солнцезащитных средств Cantabria Labs с технологией Fernblock®. Основной акцент — фотоиммунозащита: не только защита от ожогов, но и поддержка кожи на фоне процедур.',
+         'Heliocare логично включать в любой протокол — от пилингов до депигментации — как обязательный ежедневный этап ухода.'],
+   facts:[['Технология','Fernblock®'],['Направление','Фотоиммунозащита'],['Концерн','Cantabria Labs']]},
+  {id:'biretix', name:'Biretix', group:'Cantabria Labs', tag:'Ретиноиды нового поколения для терапии акне',
+   c1:'#2f7f7a', c2:'#a7d3cd', ink:'#fff', site:CONTACT.catalog,
+   desc:'Линия Cantabria Labs на основе ретиноидов нового поколения с технологией RetinSphere® для ухода за кожей с акне.',
+   long:['Biretix — линия для кожи, склонной к акне. Ретиноиды нового поколения и технология RetinSphere® используются в составе средств для ухода в рамках терапии.',
+         'Линия включает средства для очищения, ухода и увлажнения, что позволяет выстроить полный домашний протокол.'],
+   facts:[['Технология','RetinSphere®'],['Направление','Акне и постакне'],['Концерн','Cantabria Labs']]},
+  {id:'iraltone', name:'Iraltone', group:'Cantabria Labs', tag:'Трихологическая линия с доказанной эффективностью',
+   c1:'#5b6b4a', c2:'#c5d0b3', ink:'#fff', site:CONTACT.catalog,
+   desc:'Трихологическая линия Cantabria Labs для ухода за волосами и кожей головы с научно доказанной эффективностью.',
+   long:['Iraltone — трихологическая линия для ухода за волосами и кожей головы. Средства подходят для использования как в кабинете специалиста, так и дома.',
+         'Тема трихологии регулярно разбирается на семинарах учебного центра с участием врача-трихолога.'],
+   facts:[['Направление','Трихология'],['Формат','Кабинет и домашний уход'],['Концерн','Cantabria Labs']]},
+  {id:'eva', name:'EVA', group:'Аппаратное решение', tag:'RF-устройство для интимного здоровья женщин',
+   c1:'#a25a6e', c2:'#e6bfc9', ink:'#fff', site:CONTACT.catalog,
+   desc:'EVA — RF-устройство для женского интимного здоровья, представленное в России компанией «Астрея».',
+   long:['EVA — устройство с радиочастотным воздействием, предназначенное для женского интимного здоровья.',
+         'Информацию об условиях поставки, обучении и работе с устройством уточняйте у менеджеров «Астреи».'],
+   facts:[['Тип','RF-устройство'],['Направление','Интимное здоровье'],['Поставка','Через «Астрею»']]},
+  {id:'elancyl', name:'Elancyl', group:'Cantabria Labs', tag:'Экспертные решения для коррекции фигуры',
+   c1:'#94603f', c2:'#ecd0bb', ink:'#fff', site:CONTACT.catalog,
+   desc:'Elancyl — экспертные решения в области похудения и моделирования тела от Cantabria Labs.',
+   long:['Elancyl — линия для работы с телом: похудение и моделирование фигуры. Средства подходят для домашнего продолжения программ, которые клиент проходит в кабинете.',
+         'В связке с Keenwell направление тела позволяет предложить клиенту комплексный подход.'],
+   facts:[['Направление','Тело и фигура'],['Формат','Домашний уход'],['Концерн','Cantabria Labs']]}
+];
+BRANDS.forEach(b=>{ b.tasks = TASKS.filter(t=>t.brands.includes(b.id)).map(t=>t.id); });
+
+/* Направления каталога (Эстетика лица, Химические пилинги, Декоративная косметика — как на acosm.ru) */
+const CATS = [
+  {id:'face',  name:'Эстетика лица'},
+  {id:'peel',  name:'Химические пилинги'},
+  {id:'body',  name:'Эстетика тела'},
+  {id:'decor', name:'Декоративная косметика'},
+  {id:'sun',   name:'Фотозащита'},
+  {id:'home',  name:'Домашний уход'},
+  {id:'hair',  name:'Волосы и кожа головы'},
+  {id:'device',name:'Аппаратные решения'}
+];
+
+/* Позиции каталога — демонстрационные (type = форма CSS-иллюстрации) */
+const PRODUCTS = [
+  {id:'dt-elastense', brand:'dermatime', cat:'face',  type:'dropper', name:'Elastense',                 desc:'Препарат серии Elastense для эстетики лица в профессиональных протоколах.', tasks:['antiage'], isNew:true},
+  {id:'dt-acidcure',  brand:'dermatime', cat:'face',  type:'bottle',  name:'Acidcure',                  desc:'Серия Acidcure для эстетики лица: процедуры в условиях кабинета.', tasks:['acne','pigment'], isNew:true},
+  {id:'dt-milk',      brand:'dermatime', cat:'peel',  type:'bottle',  name:'Молочные пилинги',          desc:'Линейка молочных химических пилингов для профессионального применения.', tasks:['pigment','antiage','sens']},
+  {id:'dt-prep',      brand:'dermatime', cat:'peel',  type:'jar',     name:'Пре- и постпилинговый уход',desc:'Подготовка кожи к пилингу и восстановление после процедуры.', tasks:['sens']},
+  {id:'dt-home',      brand:'dermatime', cat:'home',  type:'pump',    name:'Домашняя космецевтика',     desc:'Домашний уход, продлевающий результат кабинетных процедур.', tasks:['antiage','sens']},
+  {id:'dt-meso',      brand:'dermatime', cat:'face',  type:'box',     name:'Препараты для мезотерапии', desc:'Профессиональные мезотерапевтические препараты для работы в кабинете.', tasks:['antiage']},
+
+  {id:'kw-fluid',     brand:'keenwell',  cat:'decor', type:'pump',    name:'Тональный флюид',           desc:'Тональные средства из линии декоративной косметики Keenwell.', tasks:['antiage'], isNew:true},
+  {id:'kw-corr',      brand:'keenwell',  cat:'decor', type:'tube',    name:'Корректор',                 desc:'Корректоры для маскировки несовершенств кожи.', tasks:['pigment']},
+  {id:'kw-face',      brand:'keenwell',  cat:'face',  type:'jar',     name:'Программа эстетики лица',   desc:'Профессиональные и домашние средства для эстетики лица.', tasks:['antiage']},
+  {id:'kw-serum',     brand:'keenwell',  cat:'face',  type:'dropper', name:'Сыворотка для лица',        desc:'Концентрированный уход как часть программы для лица.', tasks:['antiage','pigment']},
+  {id:'kw-body',      brand:'keenwell',  cat:'body',  type:'tube',    name:'Программа эстетики тела',   desc:'Средства для профессиональных процедур по телу.', tasks:['body']},
+
+  {id:'ec-serum',     brand:'endocare',  cat:'face',  type:'dropper', name:'Сыворотка SCA® Biorepair',  desc:'Регенерация и антивозрастной уход на основе технологии SCA® Biorepair.', tasks:['antiage','sens'], isNew:true},
+  {id:'ec-cream',     brand:'endocare',  cat:'home',  type:'jar',     name:'Регенерирующий крем',       desc:'Восстановление кожи после процедур и в ежедневном уходе.', tasks:['antiage','sens']},
+  {id:'ec-amp',       brand:'endocare',  cat:'face',  type:'box',     name:'Ампулы для кабинета',       desc:'Ампулы для профессиональных протоколов регенерации.', tasks:['antiage']},
+
+  {id:'nr-gel',       brand:'neoretin',  cat:'face',  type:'jar',     name:'Discrom Control · гель-крем',desc:'Депигментирующий уход: Whitening Booster System и RetinSphere®.', tasks:['pigment']},
+  {id:'nr-serum',     brand:'neoretin',  cat:'face',  type:'dropper', name:'Discrom Control · сыворотка',desc:'Сыворотка депигментирующей системы для комплексных протоколов.', tasks:['pigment'], isNew:true},
+  {id:'nr-fluid',     brand:'neoretin',  cat:'sun',   type:'bottle',  name:'Discrom Control · флюид SPF 50+', desc:'Депигментирующий уход с ежедневной фотозащитой.', tasks:['pigment','sun']},
+
+  {id:'hc-fluid',     brand:'heliocare', cat:'sun',   type:'bottle',  name:'Солнцезащитный флюид SPF 50+', desc:'Фотоиммунозащита с технологией Fernblock® для ежедневного применения.', tasks:['sun','pigment','antiage']},
+  {id:'hc-gel',       brand:'heliocare', cat:'sun',   type:'tube',    name:'Гель для жирной кожи',      desc:'Лёгкая текстура для кожи, склонной к несовершенствам.', tasks:['sun','acne']},
+  {id:'hc-mineral',   brand:'heliocare', cat:'sun',   type:'tube',    name:'Минеральный крем SPF 50+',  desc:'Фотозащита для чувствительной кожи.', tasks:['sun','sens'], isNew:true},
+
+  {id:'br-gel',       brand:'biretix',   cat:'face',  type:'tube',    name:'Гель против несовершенств', desc:'Ретиноиды нового поколения и RetinSphere® для кожи с акне.', tasks:['acne']},
+  {id:'br-clean',     brand:'biretix',   cat:'face',  type:'pump',    name:'Очищающий гель',            desc:'Очищение кожи, склонной к акне, — первый шаг протокола.', tasks:['acne']},
+  {id:'br-cream',     brand:'biretix',   cat:'home',  type:'jar',     name:'Увлажняющий крем',          desc:'Восстановление и комфорт кожи на фоне терапии.', tasks:['acne','sens']},
+
+  {id:'ir-lotion',    brand:'iraltone',  cat:'hair',  type:'dropper', name:'Лосьон для кожи головы',    desc:'Трихологический уход с научно доказанной эффективностью.', tasks:['hair'], isNew:true},
+  {id:'ir-shampoo',   brand:'iraltone',  cat:'hair',  type:'bottle',  name:'Шампунь',                   desc:'Ежедневный уход за кожей головы и волосами.', tasks:['hair']},
+  {id:'ir-amp',       brand:'iraltone',  cat:'hair',  type:'box',     name:'Ампулы для трихопротоколов',desc:'Ампулы для работы со специалистом-трихологом.', tasks:['hair']},
+
+  {id:'eva-dev',      brand:'eva',       cat:'device',type:'device',  name:'EVA',                       desc:'RF-устройство для интимного здоровья женщин.', tasks:['intim'], isNew:true},
+
+  {id:'el-gel',       brand:'elancyl',   cat:'body',  type:'tube',    name:'Антицеллюлитный гель',      desc:'Экспертные решения для моделирования фигуры.', tasks:['body']},
+  {id:'el-firm',      brand:'elancyl',   cat:'body',  type:'jar',     name:'Крем для упругости кожи',   desc:'Домашнее продолжение программ по телу.', tasks:['body']},
+  {id:'el-stretch',   brand:'elancyl',   cat:'body',  type:'tube',    name:'Против растяжек',           desc:'Средство для ухода за кожей тела в период изменения объёмов.', tasks:['body']}
+];
+
+/* Учебный центр */
+const CITIES = ['Москва','Санкт-Петербург','Ростов-на-Дону','Симферополь','Онлайн'];
+const SEMINARS = [
+  {id:'s1', date:'2026-10-14', city:'Москва',          fmt:'Очно',   time:'10:30–18:00', brand:'dermatime', title:'Химические пилинги Dermatime: протоколы и практика',           speaker:'Савиных С. В.', place:'проезд Березовой рощи, 8'},
+  {id:'s2', date:'2026-10-21', city:'Санкт-Петербург', fmt:'Очно',   time:'10:30–18:00', brand:'keenwell',  title:'Keenwell: эстетика лица и тела — программа и мастер-класс',    speaker:'Тренер направления Keenwell', place:'БЦ «Медведь», Б. Конюшенная, 27'},
+  {id:'s3', date:'2026-10-28', city:'Онлайн',          fmt:'Вебинар',time:'12:00–13:30', brand:'heliocare', title:'Фотозащита в протоколе: как объяснить клиенту и что выбрать',   speaker:'Савиных С. В.', place:'Ссылку пришлём после регистрации'},
+  {id:'s4', date:'2026-11-05', city:'Ростов-на-Дону',  fmt:'Очно',   time:'10:30–18:00', brand:'dermatime', title:'Dermatime: мезотерапия и домашний уход после процедур',        speaker:'Тренер направления Dermatime', place:'ул. Мурлычева, 30/28'},
+  {id:'s5', date:'2026-11-12', city:'Москва',          fmt:'Очно',   time:'10:30–18:00', brand:'neoretin',  title:'Гиперпигментация: Neoretin Discrom Control и Endocare',        speaker:'Тренер направления Cantabria Labs', place:'проезд Березовой рощи, 8'},
+  {id:'s6', date:'2026-11-19', city:'Симферополь',     fmt:'Очно',   time:'10:30–18:00', brand:'keenwell',  title:'Эстетика тела: программы Keenwell и Elancyl',                  speaker:'Тренер направления Keenwell', place:'Адрес — по телефону +7 (978) 069-34-40'},
+  {id:'s7', date:'2026-12-03', city:'Онлайн',          fmt:'Вебинар',time:'12:00–13:30', brand:'iraltone',  title:'Трихология в практике косметолога: Iraltone',                  speaker:'Савиных С. В.', place:'Ссылку пришлём после регистрации'}
+];
+const TEACHERS = [
+  {name:'Савиных Софья Владимировна', spec:'Врач-косметолог, дерматолог, трихолог. Эксперт-методолог по профессиональной косметике ООО «Астрея».', topics:['Пилинги','Трихология','Фотозащита'], mono:'С'},
+  {name:'Тренер направления Dermatime', spec:'Химические пилинги и мезотерапия. Практические мастер-классы для специалистов.', topics:['Пилинги','Мезотерапия'], mono:'D'},
+  {name:'Тренер направления Keenwell', spec:'Эстетика лица и тела, программы для кабинета и декоративная косметика.', topics:['Лицо','Тело','Макияж'], mono:'K'},
+  {name:'Тренер направления Cantabria Labs', spec:'Фотозащита, депигментация, антивозрастной уход и работа с акне.', topics:['Heliocare','Neoretin','Biretix'], mono:'C'}
+];
+const STEPS = [
+  {t:'Выберите семинар', p:'Найдите тему и город в расписании — очно или в формате вебинара.'},
+  {t:'Оставьте заявку',  p:'Заполните форму: письмо с вашими данными откроется в почтовой программе.'},
+  {t:'Получите подтверждение', p:'Менеджер учебного центра свяжется с вами и подтвердит участие.'},
+  {t:'Приходите на обучение', p:'Базовые семинары проходят с 10:30 до 18:00: теория чередуется с практикой.'}
+];
+const FAQ = [
+  {q:'Кто может пройти обучение?', a:'Семинары рассчитаны на специалистов в области косметологии и эстетики. Если сомневаетесь, подойдёт ли вам формат, напишите нам — менеджер подскажет подходящую программу.'},
+  {q:'Сколько стоит участие?', a:'Базовые семинары и мастер-классы учебного центра «Астреи» бесплатные. По условиям отдельных программ уточняйте у менеджера при регистрации.'},
+  {q:'Как проходит день обучения?', a:'Базовые семинары проходят с 10:30 до 18:00: теоретические блоки чередуются с практическими мастер-классами, где можно увидеть эффект процедур и препаратов вживую.'},
+  {q:'Как записаться на семинар?', a:'Выберите семинар в расписании и нажмите «Записаться» — откроется форма заявки. Также можно позвонить по телефону +7 (495) 925-51-62.'},
+  {q:'Есть ли обучение онлайн?', a:'Да, часть тем проходит в формате вебинаров — формат указан в карточке каждого мероприятия.'},
+  {q:'Проходят ли семинары в регионах?', a:'Да, в расписании указаны Москва, Санкт-Петербург, Ростов-на-Дону и Симферополь. Контакты представительств — на странице «Компания».'}
+];
+const ARTICLES = [
+  {tag:'Пилинги',    title:'Химические пилинги: как выстроить протокол и сохранить результат', min:7, date:'2026-09-22', brand:'dermatime'},
+  {tag:'Фотозащита', title:'SPF в кабинете косметолога: почему фотозащита — часть протокола',  min:6, date:'2026-09-15', brand:'heliocare'},
+  {tag:'Пигментация',title:'Гиперпигментация: логика подбора домашнего ухода',                 min:8, date:'2026-09-08', brand:'neoretin'},
+  {tag:'Акне',       title:'Акне и ретиноиды: что важно знать специалисту',                    min:9, date:'2026-08-30', brand:'biretix'},
+  {tag:'Трихология', title:'Трихология в практике косметолога: с чего начать консультацию',    min:7, date:'2026-08-21', brand:'iraltone'},
+  {tag:'Тело',       title:'Эстетика тела: комплексный подход к коррекции фигуры',             min:6, date:'2026-08-12', brand:'elancyl'}
+];
+const VIDEOS = [
+  {title:'Мастер-класс: химический пилинг Dermatime',       dur:'42:10', brand:'dermatime'},
+  {title:'Эстетика тела Keenwell: протокол шаг за шагом',   dur:'31:45', brand:'keenwell'},
+  {title:'Heliocare: как рассказать клиенту о фотозащите',  dur:'18:20', brand:'heliocare'},
+  {title:'Новинки каталога: обзор для специалистов',        dur:'12:05', brand:'endocare'}
+];
+const NEWS = [
+  {kind:'sale', date:'2026-09-24', title:'Скидки по объёму закупки: программа для партнёров', text:'Чем больше закупка — тем выше скидка. Рассчитайте выгоду в калькуляторе на главной странице.'},
+  {kind:'edu',  date:'2026-09-20', title:'Открыта запись на осенние семинары учебного центра', text:'Москва, Санкт-Петербург, Ростов-на-Дону, Симферополь и онлайн. Базовые семинары — бесплатно.'},
+  {kind:'news', date:'2026-09-16', title:'В каталоге: EVA — RF-устройство для интимного здоровья', text:'Новое аппаратное направление для специалистов и партнёров «Астреи».'},
+  {kind:'news', date:'2026-09-10', title:'Осенний старт: подберите фотозащиту к протоколу',     text:'Heliocare и Neoretin Discrom Control — рекомендации по сочетанию в кабинетных протоколах.'},
+  {kind:'news', date:'2026-09-03', title:'Новинки Dermatime: Elastense и Acidcure',             text:'Серии для эстетики лица теперь в каталоге — обсудим протоколы на ближайших семинарах.'},
+  {kind:'edu',  date:'2026-08-27', title:'Вебинар по трихологии: Iraltone',                     text:'Разбираем консультацию и подбор ухода вместе с врачом-трихологом.'}
+];
+const NEWS_KINDS = {sale:'Акция', news:'Новость', edu:'Обучение'};
+const DISCOUNTS = [{from:50000,pct:5},{from:150000,pct:10},{from:300000,pct:15}]; // пример: уточняйте у менеджера
+const OFFICES = [
+  {city:'Москва', role:'Центральный офис', addr:'проезд Березовой рощи, д. 8, 3-й этаж (м. Полежаевская, Динамо)', hours:'Пн–Пт, 10:00–18:00',
+   phones:[['+7 (495) 925-51-62','Тел. / WhatsApp']], emails:['9255162@mail.ru']},
+  {city:'Санкт-Петербург', role:'Представительство', addr:'191186, Большая Конюшенная ул., д. 27, БЦ «Медведь», офис 406 (м. Невский проспект)',
+   phones:[['+7 (921) 420-47-35','Офис'],['+7 (929) 119-53-92','Корякина Наталья'],['+7 (921) 182-86-75','Лебедева Виктория']], emails:[]},
+  {city:'Симферополь', role:'Представительство · Крым', addr:'Адрес представительства уточняйте по телефону',
+   phones:[['+7 (978) 069-34-40','Крым']], emails:[]},
+  {city:'Ростов-на-Дону', role:'Представительство', addr:'ул. Мурлычева, д. 30/28, пом. 1',
+   phones:[['+7 (936) 777-69-02','Борисовская Светлана'],['+7 (926) 888-37-86','Нецеля Екатерина']], emails:['borisovskaya.s@acosm.ru','necelya.ekaterina@acosm.ru']}
+];
+
+/* ==========================================================================
+   УТИЛИТЫ
+   ========================================================================== */
+const $  = (s, r = document) => r.querySelector(s);
+const $$ = (s, r = document) => [...r.querySelectorAll(s)];
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const brand = id => BRANDS.find(b => b.id === id);
+const cat   = id => CATS.find(c => c.id === id);
+const task  = id => TASKS.find(t => t.id === id);
+const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
+const rub = n => n.toLocaleString('ru-RU') + ' ₽';
+const MON_S = ['янв','фев','мар','апр','май','июн','июл','авг','сен','окт','ноя','дек'];
+const MON_G = ['января','февраля','марта','апреля','мая','июня','июля','августа','сентября','октября','ноября','декабря'];
+const dparts = iso => { const [y, m, d] = iso.split('-').map(Number); return {d, m: MON_S[m-1], full: `${d} ${MON_G[m-1]} ${y}`}; };
+const bstyle = b => `--c1:${b.c1};--c2:${b.c2};--ink:${b.ink};--cc:${b.c1};--cs:color-mix(in srgb,${b.c1} 58%,transparent)`;
+const wait = ms => new Promise(r => setTimeout(r, ms));
+
+const I = {
+  arrow:'<svg class="ic" viewBox="0 0 20 20" aria-hidden="true"><path d="M3.5 10h13M11.5 5l5 5-5 5"/></svg>',
+  search:'<svg class="ic" viewBox="0 0 20 20" aria-hidden="true"><circle cx="9" cy="9" r="5.5"/><path d="m13.2 13.2 3.8 3.8"/></svg>',
+  phone:'<svg class="ic" viewBox="0 0 20 20" aria-hidden="true"><path d="M5 3h3l1.4 3.6-1.8 1.2a9 9 0 0 0 4.6 4.6l1.2-1.8L17 12v3a2 2 0 0 1-2 2A12 12 0 0 1 3 5a2 2 0 0 1 2-2Z"/></svg>',
+  mail:'<svg class="ic" viewBox="0 0 20 20" aria-hidden="true"><rect x="3" y="4.5" width="14" height="11" rx="2"/><path d="m3.5 6 6.5 5 6.5-5"/></svg>',
+  pin:'<svg class="ic" viewBox="0 0 20 20" aria-hidden="true"><path d="M10 17.5s5.5-4.7 5.5-9a5.5 5.5 0 0 0-11 0c0 4.3 5.5 9 5.5 9Z"/><circle cx="10" cy="8.5" r="2"/></svg>',
+  clock:'<svg class="ic" viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="7"/><path d="M10 6v4.2l2.8 1.6"/></svg>',
+  user:'<svg class="ic" viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="7" r="3.2"/><path d="M3.8 16.5c.8-3 3.2-4.5 6.2-4.5s5.4 1.5 6.2 4.5"/></svg>',
+  play:'<svg class="ic" viewBox="0 0 20 20" aria-hidden="true"><path d="M5 3.5v13l11-6.5z"/></svg>',
+  check:'<svg class="ic" viewBox="0 0 20 20" aria-hidden="true"><path d="m4.5 10.5 3.5 3.5 7.5-8"/></svg>',
+  close:'<svg class="ic" viewBox="0 0 20 20" aria-hidden="true"><path d="m5 5 10 10M15 5 5 15"/></svg>',
+  info:'<svg class="ic" viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="7.5"/><path d="M10 9v4.5M10 6.6v.1"/></svg>'
+};
+
+/* Состояние интерфейса */
+const state = {pick:'acne', catBrand:'all', catCat:'all', catTask:'all', catQ:'', brTask:'all', brQ:'', city:'all', newsKind:'all', activeBrand:null, calc:100000};
+
+const upcomingSeminars = () => {
+  const today = new Date().toISOString().slice(0, 10);
+  const up = SEMINARS.filter(s => s.date >= today);
+  return up.length ? up : SEMINARS.slice(-3);
+};
+const chip = (label, act, id, on, extra = '') =>
+  `<button class="chip${on ? ' on' : ''}" data-act="${act}" data-id="${id}" aria-pressed="${on}">${label}${extra}</button>`;
+
+/* ==========================================================================
+   КОМПОНЕНТЫ
+   ========================================================================== */
+/* CSS-иллюстрация упаковки (без реальных фото) */
+function art(p){
+  const b = brand(p.brand);
+  return `<div class="art" style="${bstyle(b)}"><div class="pk pk-${p.type}"><i class="sh"></i><i class="hd"></i><i class="cap"></i><i class="body"><b class="lbl"></b></i></div></div>`;
+}
+
+function productCard(p, i = -1){
+  const b = brand(p.brand);
+  const motion = i >= 0 ? `pop-in" style="${bstyle(b)};animation-delay:${Math.min(i, 10) * 35}ms` : `reveal" style="${bstyle(b)}`;
+  return `<article class="card hov pcard ${motion}">
+    ${p.isNew ? '<span class="newtag">Новинка</span>' : ''}
+    ${art(p)}
+    <div class="pb">
+      <div class="bl"><i></i>${b.name} · ${cat(p.cat).name}</div>
+      <h3>${p.name}</h3>
+      <p>${p.desc}</p>
+      <div class="pf">
+        <button class="btn btn-ghost btn-sm" data-act="form" data-type="product" data-ref="${p.id}">Запросить</button>
+        <a class="lnk" href="#/brand/${b.id}">Бренд</a>
+      </div>
+    </div>
+  </article>`;
+}
+
+function seminarCard(s){
+  const b = brand(s.brand), d = dparts(s.date);
+  return `<article class="card hov sem card-pad reveal" style="${bstyle(b)}">
+    <div class="sem-top">
+      <div class="date"><b>${d.d}</b><span>${d.m}</span></div>
+      <div><span class="tag blue">${s.fmt} · ${s.city}</span><h3 style="margin-top:12px">${s.title}</h3></div>
+    </div>
+    <div class="sem-meta">
+      <div>${I.clock}<span>${s.time}</span></div>
+      <div>${I.user}<span>${s.speaker}</span></div>
+      <div>${I.pin}<span>${s.place}</span></div>
+    </div>
+    <div class="sem-foot"><span class="tag">${b.name}</span><button class="btn btn-fill btn-sm" data-act="form" data-type="seminar" data-ref="${s.id}">Записаться</button></div>
+  </article>`;
+}
+
+function articleCard(a){
+  const b = brand(a.brand);
+  return `<a class="card hov art-card reveal" href="${CONTACT.academy}" target="_blank" rel="noopener" style="${bstyle(b)}">
+    <div class="cov"><span>${a.tag}</span></div>
+    <div class="ab"><h3>${a.title}</h3><div class="meta"><span>${dparts(a.date).full}</span><span>${a.min} мин чтения</span></div></div>
+  </a>`;
+}
+
+function brandCard(b, i){
+  return `<article class="bcard reveal" data-act="brand-card" data-id="${b.id}" tabindex="0" aria-expanded="false" style="${bstyle(b)}">
+    <div class="band"><span class="nm">${b.name}</span><span class="ix">${String(i + 1).padStart(2, '0')}</span></div>
+    <div class="low">
+      <div class="bc-front">
+        <p class="sp">${b.tag}</p>
+        <div class="tasks-line">${b.tasks.slice(0, 3).map(t => `<span class="tag">${task(t).label}</span>`).join('')}</div>
+        <span class="hint">Подробнее</span>
+      </div>
+      <div class="bc-back">
+        <p>${b.desc}</p>
+        <div class="row">
+          <a class="btn btn-fill btn-sm" href="#/catalog?brand=${b.id}">Смотреть ассортимент</a>
+          <a class="btn btn-ghost btn-sm" href="${b.site}" target="_blank" rel="noopener">Каталог на сайте</a>
+          <button class="btn btn-lnk" data-act="brand-back">Назад</button>
+        </div>
+      </div>
+    </div>
+  </article>`;
+}
+
+function pickOut(id){
+  const t = task(id);
+  const prods = PRODUCTS.filter(p => p.tasks.includes(id)).slice(0, 6);
+  return `<div class="pick-out">
+    <div>
+      <span class="eyebrow">Задача</span>
+      <h3>${t.label}</h3>
+      <p class="muted">${t.note}</p>
+      <div class="mini-brands">${t.brands.map(brand).map(b => `<a class="mb" href="#/brand/${b.id}" style="${bstyle(b)}"><i></i><div><b>${b.name}</b><span>${b.tag}</span></div>${I.arrow}</a>`).join('')}</div>
+    </div>
+    <div>
+      <span class="eyebrow">Что подойдёт</span>
+      <div class="mini-prods" style="margin-top:18px">${prods.map(p => { const b = brand(p.brand); return `<a class="mini-p" href="#/brand/${b.id}">${art(p)}<div class="t"><small>${b.name}</small>${p.name}</div></a>`; }).join('')}</div>
+      <div class="row" style="margin-top:22px"><a class="btn btn-ghost btn-sm" href="#/catalog?task=${id}">Открыть в каталоге ${I.arrow}</a></div>
+      <p class="muted" style="margin-top:16px;font-size:12.5px">Подбор ориентировочный: протокол определяет специалист по результатам консультации.</p>
+    </div>
+  </div>`;
+}
+
+function calcBlock(){
+  return `<div class="calc">
+    <div class="sum"><small>Сумма закупки</small><span id="calc-sum">${rub(state.calc)}</span></div>
+    <input type="range" id="calc-range" min="0" max="500000" step="10000" value="${state.calc}" aria-label="Сумма закупки">
+    <div class="tiers">${DISCOUNTS.map((d, i) => `<div class="tier" data-tier="${i}"><b>${d.pct}%</b><span>от ${rub(d.from)}</span></div>`).join('')}</div>
+    <div class="save"><span id="calc-tier"></span><b id="calc-save"></b></div>
+  </div>`;
+}
+
+const pageHead = (eyebrow, title, lead) => `<header class="page-head"><span class="eyebrow reveal">${eyebrow}</span><h1 class="reveal">${title}</h1>${lead ? `<p class="lead reveal">${lead}</p>` : ''}</header>`;
+
+/* ==========================================================================
+   СТРАНИЦЫ (функции, возвращающие HTML-строки)
+   ========================================================================== */
+function vHome(){
+  const sems = upcomingSeminars().slice(0, 3);
+  const fresh = PRODUCTS.filter(p => p.isNew).slice(0, 4);
+  return `
+  <section class="hero"><div class="wrap hero-grid">
+    <div>
+      <span class="eyebrow reveal">Официальный дистрибьютор</span>
+      <h1 class="reveal">Профессиональная косметика для тех, кто работает <em>с кожей всерьёз</em></h1>
+      <p class="lead reveal">Dermatime, Keenwell и Cantabria Labs: оригинальная продукция, каталог для специалистов и учебный центр, где мы учим работать с ней на практике.</p>
+      <div class="row reveal">
+        <a class="btn btn-fill" href="#/catalog">Смотреть каталог ${I.arrow}</a>
+        <a class="btn btn-ghost" href="#/academy">Записаться на семинар</a>
+      </div>
+      <div class="hero-facts reveal"><span>Оригинальная продукция</span><span>Обучение специалистов</span><span>${OFFICES.length} города присутствия</span></div>
+    </div>
+    <div class="pearl-wrap reveal">
+      <div class="halo"></div>
+      <div class="ring r1"><i class="od"></i></div>
+      <div class="ring r2"><i class="od"></i></div>
+      <div class="pearl" role="img" aria-label="Жемчужина — символ бережной точности"></div>
+      <div class="hero-chip">Запись на семинары открыта</div>
+      <div class="hero-card"><b>Дистрибьютор Dermatime, Keenwell, Cantabria Labs</b><hr class="dash"><p>Бренды для кабинета и домашнего ухода — с поддержкой обучения.</p></div>
+    </div>
+  </div></section>
+
+  <section class="stats"><div class="wrap stats-grid">
+    <div class="stat reveal"><b data-count="20">0</b><span>лет обучаем специалистов</span></div>
+    <div class="stat reveal"><b data-count="${BRANDS.length}">0</b><span>брендов в портфеле</span></div>
+    <div class="stat reveal"><b data-count="${OFFICES.length}">0</b><span>города присутствия</span></div>
+    <div class="stat reveal"><b data-count="${TEACHERS.length}">0</b><span>преподавателя</span></div>
+  </div></section>
+
+  <section class="sec"><div class="wrap">
+    <div class="sec-head"><div><span class="eyebrow">Учебный центр</span><h2>Ближайшие семинары</h2></div><a class="lnk" href="#/academy">Всё расписание ${I.arrow}</a></div>
+    <div class="grid g3">${sems.map(seminarCard).join('')}</div>
+  </div></section>
+
+  <section class="sec tint"><div class="wrap">
+    <div class="sec-head"><div><span class="eyebrow">Подбор по задаче</span><h2>С чем вы работаете сегодня?</h2></div><p class="lead">Выберите задачу клиента — покажем подходящие бренды и товары.</p></div>
+    <div class="picker reveal">
+      <div class="chips" role="group" aria-label="Задача клиента">${TASKS.map(t => chip(t.label, 'pick', t.id, t.id === state.pick)).join('')}</div>
+      <div id="pick-out" aria-live="polite">${pickOut(state.pick)}</div>
+    </div>
+  </div></section>
+
+  <section class="sec"><div class="wrap">
+    <div class="sec-head"><div><span class="eyebrow">Бренды</span><h2>Девять брендов — один подход</h2></div><a class="lnk" href="#/brands">Все бренды ${I.arrow}</a></div>
+    <div class="bgrid" id="bgrid">${BRANDS.map(brandCard).join('')}</div>
+    <p class="muted" style="margin-top:14px;font-size:13px;text-align:center">Нажмите на карточку — раскроем описание бренда. Повторное нажатие сбрасывает выбор.</p>
+  </div></section>
+
+  <section class="sec tint"><div class="wrap">
+    <div class="sec-head"><div><span class="eyebrow">Каталог</span><h2>Новинки ассортимента</h2></div><a class="lnk" href="#/catalog">Весь каталог ${I.arrow}</a></div>
+    <div class="grid g4">${fresh.map(p => productCard(p)).join('')}</div>
+  </div></section>
+
+  <section class="sec"><div class="wrap">
+    <div class="promo reveal">
+      <div>
+        <span class="eyebrow">Партнёрская программа</span>
+        <h2>Скидки по объёму закупки</h2>
+        <p>Чем крупнее закупка, тем выгоднее условия. Передвиньте ползунок и посмотрите, какая скидка вам доступна.</p>
+        <div class="row" style="margin-top:28px"><button class="btn btn-fill" data-act="form" data-type="partner">Стать партнёром</button></div>
+        <p class="fine">Расчёт ориентировочный. Точные условия и пороги скидок подтверждает менеджер.</p>
+      </div>
+      ${calcBlock()}
+    </div>
+  </div></section>
+
+  <section class="sec" style="padding-top:0"><div class="wrap">
+    <div class="sec-head"><div><span class="eyebrow">Учебный центр</span><h2>Свежие статьи</h2></div><a class="lnk" href="#/academy">Все материалы ${I.arrow}</a></div>
+    <div class="grid g3">${ARTICLES.slice(0, 3).map(articleCard).join('')}</div>
+  </div></section>`;
+}
+
+/* ---- Каталог ---- */
+function filterProducts(){
+  const q = state.catQ.trim().toLowerCase();
+  return PRODUCTS.filter(p => {
+    const b = brand(p.brand);
+    if (state.catBrand !== 'all' && p.brand !== state.catBrand) return false;
+    if (state.catCat   !== 'all' && p.cat   !== state.catCat)   return false;
+    if (state.catTask  !== 'all' && !p.tasks.includes(state.catTask)) return false;
+    if (q) {
+      const hay = `${p.name} ${p.desc} ${b.name} ${cat(p.cat).name} ${p.tasks.map(t => task(t).label).join(' ')}`.toLowerCase();
+      if (!q.split(/\s+/).every(w => hay.includes(w))) return false;
+    }
+    return true;
+  });
+}
+function catResults(){
+  const list = filterProducts();
+  const active = state.catBrand !== 'all' || state.catCat !== 'all' || state.catTask !== 'all' || state.catQ.trim();
+  const head = `<div class="res-line"><span>Найдено: ${list.length} из ${PRODUCTS.length}</span>${active ? '<button class="lnk" data-act="cat-reset">Сбросить фильтры</button>' : ''}</div>`;
+  if (!list.length) return head + '<div class="empty"><b>Ничего не нашлось</b>Измените запрос или сбросите фильтры.</div>';
+  return head + `<div class="grid g4">${list.map((p, i) => productCard(p, i)).join('')}</div>`;
+}
+function vCatalog(){
+  return `<div class="wrap">
+    ${pageHead('Каталог', 'Каталог продукции', 'Направления, бренды и задачи — фильтруйте ассортимент так, как думает специалист.')}
+    <div class="cat-tiles" id="cat-tiles">${CATS.map(c => {
+      const n = PRODUCTS.filter(p => p.cat === c.id).length;
+      return `<button class="cat-tile reveal${state.catCat === c.id ? ' on' : ''}" data-act="cat-tile" data-id="${c.id}" aria-pressed="${state.catCat === c.id}"><span>${n} поз.</span><b>${c.name}</b></button>`;
+    }).join('')}</div>
+    <div class="toolbar reveal" id="results">
+      <div class="tb-row"><label class="search"><span class="sr">Поиск по каталогу</span>${I.search}<input id="cat-q" type="search" placeholder="Поиск по названию, бренду или задаче" value="${esc(state.catQ)}" autocomplete="off"></label></div>
+      <div class="tb-row"><span class="tb-lab">Бренд</span><div class="chips" id="cat-brands">${chip('Все', 'cat-brand', 'all', state.catBrand === 'all')}${BRANDS.map(b => chip(b.name, 'cat-brand', b.id, state.catBrand === b.id)).join('')}</div></div>
+      <div class="tb-row"><span class="tb-lab">Задача</span><div class="chips" id="cat-tasks">${chip('Любая', 'cat-task', 'all', state.catTask === 'all')}${TASKS.map(t => chip(t.label, 'cat-task', t.id, state.catTask === t.id)).join('')}</div></div>
+    </div>
+    <div id="cat-out" aria-live="polite">${catResults()}</div>
+    <div class="note">${I.info}<span>Ассортимент на этой странице демонстрационный. Актуальный каталог, описания и документы — на <a href="${CONTACT.catalog}" target="_blank" rel="noopener" style="border-bottom:1px dashed;font-weight:600">acosm.ru/catalog</a>.</span></div>
+    <div style="height:clamp(60px,8vw,110px)"></div>
+  </div>`;
+}
+function syncCatalog(){
+  $$('#cat-tiles .cat-tile').forEach(t => { const on = t.dataset.id === state.catCat; t.classList.toggle('on', on); t.setAttribute('aria-pressed', on); });
+  $$('#cat-brands .chip').forEach(c => { const on = c.dataset.id === state.catBrand; c.classList.toggle('on', on); c.setAttribute('aria-pressed', on); });
+  $$('#cat-tasks .chip').forEach(c => { const on = c.dataset.id === state.catTask; c.classList.toggle('on', on); c.setAttribute('aria-pressed', on); });
+  const out = $('#cat-out'); if (out) out.innerHTML = catResults();
+}
+
+/* ---- Бренды ---- */
+function brandsList(){
+  const q = state.brQ.trim().toLowerCase();
+  const list = BRANDS.filter(b => (state.brTask === 'all' || b.tasks.includes(state.brTask)) &&
+    (!q || `${b.name} ${b.tag} ${b.desc} ${b.group} ${b.tasks.map(t => task(t).label).join(' ')}`.toLowerCase().includes(q)));
+  if (!list.length) return '<div class="empty"><b>Бренды не найдены</b>Измените запрос или выберите другую задачу.</div>';
+  return `<div class="grid g3">${list.map((b, i) => `<a class="card hov bl-card pop-in" href="#/brand/${b.id}" style="${bstyle(b)};animation-delay:${i * 40}ms">
+    <div class="band"><b>${b.name}</b></div>
+    <div class="bb"><span class="tag">${b.group}</span><p>${b.tag}</p><div class="tasks-line">${b.tasks.slice(0, 3).map(t => `<span class="tag">${task(t).label}</span>`).join('')}</div><span class="lnk">Страница бренда ${I.arrow}</span></div>
+  </a>`).join('')}</div>`;
+}
+function vBrands(){
+  return `<div class="wrap">
+    ${pageHead('Бренды', 'Наши бренды', 'Портфель «Астреи»: испанская профессиональная косметика, линии Cantabria Labs и аппаратное решение EVA.')}
+    <div class="toolbar reveal">
+      <div class="tb-row"><label class="search"><span class="sr">Поиск по брендам</span>${I.search}<input id="br-q" type="search" placeholder="Название бренда или направление" value="${esc(state.brQ)}" autocomplete="off"></label></div>
+      <div class="tb-row"><span class="tb-lab">Задача</span><div class="chips" id="br-tasks">${chip('Любая', 'br-task', 'all', state.brTask === 'all')}${TASKS.map(t => chip(t.label, 'br-task', t.id, state.brTask === t.id)).join('')}</div></div>
+    </div>
+    <div id="br-out" aria-live="polite">${brandsList()}</div>
+    <div style="height:clamp(60px,8vw,110px)"></div>
+  </div>`;
+}
+function vBrand(id){
+  const b = brand(id);
+  if (!b) return v404();
+  const i = BRANDS.indexOf(b), n = BRANDS.length;
+  const prev = BRANDS[(i - 1 + n) % n], next = BRANDS[(i + 1) % n];
+  const prods = PRODUCTS.filter(p => p.brand === b.id);
+  return `<div class="wrap" style="${bstyle(b)}">
+    <section class="b-hero">
+      <nav class="crumbs reveal" aria-label="Хлебные крошки"><a href="#/">Главная</a><span>/</span><a href="#/brands">Бренды</a><span>/</span><span>${b.name}</span></nav>
+      <span class="eyebrow reveal">${b.group}</span>
+      <h1 class="b-title reveal" style="margin-top:14px">${b.name}</h1>
+      <p class="b-sub reveal">${b.tag}</p>
+      <div class="row reveal" style="margin-top:34px">
+        <a class="btn btn-fill" href="#/catalog?brand=${b.id}">Смотреть ассортимент ${I.arrow}</a>
+        <a class="btn btn-ghost" href="${b.site}" target="_blank" rel="noopener">Каталог на сайте</a>
+        <button class="btn btn-lnk" data-act="form" data-type="question" data-ref="Бренд ${b.name}">Запросить условия</button>
+      </div>
+      <div class="b-cols">
+        <div class="txt reveal">${b.long.map(p => `<p>${p}</p>`).join('')}<div class="tasks-line" style="margin-top:24px">${b.tasks.map(t => `<span class="tag blue">${task(t).label}</span>`).join('')}</div></div>
+        <div class="facts reveal">${b.facts.map(([k, v]) => `<div class="fact"><small>${k}</small><b>${v}</b></div>`).join('')}</div>
+      </div>
+    </section>
+    <section class="sec" style="padding-top:clamp(30px,4vw,56px)">
+      <div class="sec-head"><div><span class="eyebrow">Ассортимент</span><h2>Товары ${b.name}</h2></div><a class="lnk" href="#/catalog?brand=${b.id}">В каталоге ${I.arrow}</a></div>
+      <div class="grid g3">${prods.map(p => productCard(p)).join('')}</div>
+      <nav class="sib" aria-label="Соседние бренды">
+        <a class="reveal" href="#/brand/${prev.id}" style="${bstyle(prev)}"><small>${I.arrow.replace('<svg class="ic"', '<svg class="ic" style="transform:scaleX(-1)"')} Предыдущий</small><b>${prev.name}</b></a>
+        <a class="nx reveal" href="#/brand/${next.id}" style="${bstyle(next)}"><small>Следующий ${I.arrow}</small><b>${next.name}</b></a>
+      </nav>
+    </section>
+  </div>`;
+}
+
+/* ---- Обучение ---- */
+function semList(){
+  const all = upcomingSeminars();
+  const list = state.city === 'all' ? all : all.filter(s => s.city === state.city);
+  if (!list.length) return '<div class="empty"><b>В этом городе пока нет мероприятий</b>Оставьте заявку — сообщим, когда откроется запись.</div>';
+  return `<div class="sem-list">${list.map((s, i) => {
+    const d = dparts(s.date), b = brand(s.brand);
+    return `<article class="sem-item pop-in" style="animation-delay:${i * 45}ms">
+      <div class="date"><b>${d.d}</b><span>${d.m}</span></div>
+      <div><span class="tag blue">${s.fmt} · ${s.city}</span><h3 style="margin-top:10px">${s.title}</h3>
+        <div class="sem-meta"><div>${I.clock}<span>${s.time}</span></div><div>${I.pin}<span>${s.place}</span></div></div></div>
+      <div class="who"><b>Спикер</b>${s.speaker}<br><span class="tag" style="margin-top:8px">${b.name}</span></div>
+      <div class="go"><button class="btn btn-fill btn-sm" data-act="form" data-type="seminar" data-ref="${s.id}">Записаться</button></div>
+    </article>`;
+  }).join('')}</div>`;
+}
+function vAcademy(){
+  const cityChips = ['all', ...CITIES].map(c => chip(c === 'all' ? 'Все города' : c, 'city', c, state.city === c)).join('');
+  return `
+  <div class="wrap">
+    ${pageHead('Обучение', 'Учебный центр «Астреи»', 'Бесплатные семинары и мастер-классы: теория чередуется с практикой. Базовые семинары проходят с 10:30 до 18:00.')}
+    <div class="row reveal"><button class="btn btn-fill" data-act="scroll" data-target="sched">Смотреть расписание ${I.arrow}</button><a class="btn btn-ghost" href="tel:${CONTACT.phoneRaw}">${CONTACT.phone}</a></div>
+  </div>
+
+  <section class="sec"><div class="wrap">
+    <div class="sec-head"><div><span class="eyebrow">Как записаться</span><h2>Четыре шага до семинара</h2></div></div>
+    <div class="steps">${STEPS.map((s, i) => `<div class="step reveal"><i>${i + 1}</i><h3>${s.t}</h3><p>${s.p}</p></div>`).join('')}</div>
+  </div></section>
+
+  <section class="sec" id="sched" style="padding-top:0"><div class="wrap">
+    <hr class="dash" style="margin-bottom:clamp(50px,7vw,90px)">
+    <div class="sec-head"><div><span class="eyebrow">Расписание</span><h2>Ближайшие семинары</h2></div></div>
+    <div class="chips reveal" id="city-chips" style="margin-bottom:28px">${cityChips}</div>
+    <div id="sem-out" aria-live="polite">${semList()}</div>
+    <div class="note">${I.info}<span>Расписание ориентировочное: актуальные даты и адреса подтверждает менеджер учебного центра. Полная версия — на <a href="${CONTACT.academy}" target="_blank" rel="noopener" style="border-bottom:1px dashed;font-weight:600">academy.acosm.ru</a>.</span></div>
+  </div></section>
+
+  <section class="sec tint"><div class="wrap">
+    <div class="sec-head"><div><span class="eyebrow">Преподаватели</span><h2>Практики, которые учат практике</h2></div></div>
+    <div class="grid g4">${TEACHERS.map(t => `<article class="card hov tcard card-pad reveal"><div class="avatar">${t.mono}</div><h3>${t.name}</h3><p>${t.spec}</p><div class="tasks-line">${t.topics.map(x => `<span class="tag">${x}</span>`).join('')}</div></article>`).join('')}</div>
+  </div></section>
+
+  <section class="sec"><div class="wrap">
+    <div class="sec-head"><div><span class="eyebrow">Видео</span><h2>Видео-подборка мастер-классов</h2></div><a class="lnk" href="${CONTACT.youtube}" target="_blank" rel="noopener">Канал на YouTube ${I.arrow}</a></div>
+    <div class="grid g4">${VIDEOS.map(v => { const b = brand(v.brand); return `<a class="card hov video reveal" href="${CONTACT.youtube}" target="_blank" rel="noopener" style="${bstyle(b)}"><div class="th"><span class="play">${I.play}</span><span class="dur">${v.dur}</span></div><div class="vb"><h3>${v.title}</h3><small>YouTube · Астрея Косметология</small></div></a>`; }).join('')}</div>
+  </div></section>
+
+  <section class="sec" style="padding-top:0"><div class="wrap">
+    <div class="sec-head"><div><span class="eyebrow">Вопросы и ответы</span><h2>Частые вопросы</h2></div></div>
+    <div class="faq reveal">${FAQ.map(f => `<div class="faq-item"><button class="faq-q" data-act="faq" aria-expanded="false"><span>${f.q}</span><i class="pm"></i></button><div class="faq-a"><div><p>${f.a}</p></div></div></div>`).join('')}</div>
+  </div></section>
+
+  <section class="sec" style="padding-top:0"><div class="wrap">
+    <div class="sec-head"><div><span class="eyebrow">Статьи</span><h2>Материалы для специалистов</h2></div><a class="lnk" href="${CONTACT.academy}" target="_blank" rel="noopener">academy.acosm.ru ${I.arrow}</a></div>
+    <div class="grid g3">${ARTICLES.slice(0, 3).map(articleCard).join('')}</div>
+  </div></section>`;
+}
+
+/* ---- Новости и акции ---- */
+function newsList(){
+  const list = NEWS.filter(n => state.newsKind === 'all' || n.kind === state.newsKind);
+  if (!list.length) return '<div class="empty"><b>Пока пусто</b>Здесь появятся новые материалы.</div>';
+  return `<div style="border-top:1px dashed var(--line)">${list.map((n, i) => {
+    const cta = n.kind === 'sale' ? `<button class="lnk" data-act="form" data-type="question" data-ref="${n.title}">Узнать условия ${I.arrow}</button>`
+              : n.kind === 'edu'  ? `<a class="lnk" href="#/academy">К расписанию ${I.arrow}</a>`
+              :                     `<a class="lnk" href="#/catalog">В каталог ${I.arrow}</a>`;
+    return `<article class="news-row pop-in" style="animation-delay:${i * 40}ms">
+      <div class="nd">${dparts(n.date).full}<br><span class="tag${n.kind === 'sale' ? ' blue' : ''}" style="margin-top:8px">${NEWS_KINDS[n.kind]}</span></div>
+      <div><h3>${n.title}</h3><p>${n.text}</p></div>
+      ${cta}
+    </article>`;
+  }).join('')}</div>`;
+}
+function vNews(){
+  const max = Math.max(...DISCOUNTS.map(d => d.pct));
+  const kinds = [['all', 'Все'], ['sale', 'Акции'], ['news', 'Новости'], ['edu', 'Обучение']];
+  return `<div class="wrap">
+    ${pageHead('Новости и акции', 'Новости и акции', 'Новинки каталога, программы для партнёров и события учебного центра.')}
+    <article class="feat reveal">
+      <div class="fb">
+        <span class="tag" style="align-self:flex-start;border-color:rgba(185,194,208,.45);color:var(--silver)">Акция</span>
+        <h2>Скидки по объёму закупки</h2>
+        <p>Партнёрская программа «Астреи»: чем больше закупка, тем выше скидка. Рассчитайте выгоду на главной странице или уточните условия у менеджера.</p>
+        <div class="row"><button class="btn btn-fill" style="background:var(--milk);color:var(--navy)" data-act="form" data-type="question" data-ref="Скидки по объёму закупки">Узнать условия</button></div>
+      </div>
+      <div class="fv" aria-hidden="true"><b>до ${max}<small>%</small></b></div>
+    </article>
+    <div class="tabs reveal" id="news-tabs">${kinds.map(([id, l]) => chip(l, 'news-kind', id, state.newsKind === id)).join('')}</div>
+    <div id="news-out" aria-live="polite">${newsList()}</div>
+    <div style="height:clamp(60px,8vw,110px)"></div>
+  </div>`;
+}
+
+/* ---- Компания ---- */
+function officeCard(o){
+  return `<article class="card hov city reveal">
+    <span class="tag blue" style="align-self:flex-start">${o.role}</span>
+    <h3>${o.city}</h3>
+    <div class="li">${I.pin}<span>${o.addr}</span></div>
+    ${o.hours ? `<div class="li">${I.clock}<span>${o.hours}</span></div>` : ''}
+    ${o.phones.map(([p, l]) => `<div class="li">${I.phone}<span><a href="tel:${p.replace(/[^+\d]/g, '')}">${p}</a> · ${l}</span></div>`).join('')}
+    ${o.emails.map(m => `<div class="li">${I.mail}<span><a href="mailto:${m}">${m}</a></span></div>`).join('')}
+  </article>`;
+}
+function vCompany(){
+  return `<div class="wrap">
+    ${pageHead('Компания', 'ООО «Астрея»', 'Дистрибьютор профессиональной косметики: бренды, обучение специалистов и поддержка партнёров в регионах.')}
+    <section class="about-grid">
+      <div class="txt reveal">
+        <p>ООО «Астрея» — дистрибьютор профессиональной косметики. Мы представляем в России бренды Dermatime, Keenwell и Cantabria Labs (Endocare, Neoretin, Heliocare, Biretix, Iraltone, Elancyl), а также устройство EVA.</p>
+        <p>В ассортименте — дерматологические и космецевтические препараты для профессионального и домашнего ухода за кожей лица и тела, волосами и кожей головы.</p>
+        <p>Сотрудничество с «Астреей» — это защита от контрафактной и некачественной продукции и доступ к учебному центру, где специалистов обучают работать с препаратами на практике.</p>
+      </div>
+      <div class="why reveal">
+        <div><i>01</i><span><b>Оригинальная продукция</b><p>Работа с официальным дистрибьютором защищает от подделок.</p></span></div>
+        <div><i>02</i><span><b>Учебный центр</b><p>Более 20 лет развиваем методику семинаров: теория и практика в одном дне.</p></span></div>
+        <div><i>03</i><span><b>Поддержка в регионах</b><p>Москва, Санкт-Петербург, Ростов-на-Дону и Крым — рядом с партнёрами.</p></span></div>
+      </div>
+    </section>
+
+    <section class="sec">
+      <div class="sec-head"><div><span class="eyebrow">Представительства</span><h2>Контакты по городам</h2></div></div>
+      <div class="cities">${OFFICES.map(officeCard).join('')}</div>
+    </section>
+
+    <section class="sec" style="padding-top:0">
+      <div class="sec-head"><div><span class="eyebrow">Информация</span><h2>Документы и сотрудничество</h2></div></div>
+      <div class="linkcards">
+        <a class="linkcard reveal" href="${CONTACT.about}" target="_blank" rel="noopener"><b>Документы и сертификаты</b><span>На acosm.ru ${I.arrow}</span></a>
+        <a class="linkcard reveal" href="${CONTACT.distributors}" target="_blank" rel="noopener"><b>Официальные дистрибьюторы</b><span>На acosm.ru ${I.arrow}</span></a>
+        <button class="linkcard reveal" data-act="form" data-type="partner"><b>Сотрудничество</b><span>Оставить заявку ${I.arrow}</span></button>
+        <button class="linkcard reveal" data-act="form" data-type="question" data-ref="Вакансии"><b>Вакансии</b><span>Написать нам ${I.arrow}</span></button>
+      </div>
+    </section>
+
+    <section class="sec" style="padding-top:0">
+      <div class="forms-band">
+        <article class="card fb-card reveal"><span class="eyebrow">Партнёрам</span><h2 style="font-size:clamp(26px,3vw,38px)">Стать партнёром</h2><p class="muted">Расскажите о своей компании — обсудим условия, обучение и поставки.</p><button class="btn btn-fill" data-act="form" data-type="partner">Оставить заявку ${I.arrow}</button></article>
+        <article class="card fb-card dark reveal"><span class="eyebrow" style="color:var(--silver)">Обратная связь</span><h2 style="font-size:clamp(26px,3vw,38px)">Задать вопрос</h2><p>Ответим по почте или телефону в рабочее время: пн–пт, 10:00–18:00.</p><button class="btn btn-fill" data-act="form" data-type="question">Написать нам ${I.arrow}</button></article>
+      </div>
+    </section>
+  </div>`;
+}
+
+function v404(){
+  return `<div class="wrap"><header class="page-head"><span class="eyebrow">404</span><h1>Страница не найдена</h1><p class="lead">Возможно, ссылка устарела. Вернитесь на главную или откройте каталог.</p><div class="row" style="margin-top:28px"><a class="btn btn-fill" href="#/">На главную</a><a class="btn btn-ghost" href="#/catalog">В каталог</a></div></header></div>`;
+}
+
+/* ==========================================================================
+   РОУТЕР (hash) + ЕДИНЫЙ РЕНДЕРЕР В #app
+   ========================================================================== */
+const app = $('#app');
+const ROUTES = [
+  {re:/^\/$/,                  view:() => vHome(),         title:'Дистрибьютор профессиональной косметики', nav:'/'},
+  {re:/^\/catalog$/,           view:() => vCatalog(),       title:'Каталог',            nav:'/catalog'},
+  {re:/^\/brands$/,            view:() => vBrands(),        title:'Бренды',             nav:'/brands'},
+  {re:/^\/brand\/([\w-]+)$/,   view:m  => vBrand(m[1]),     title:null,                 nav:'/brands'},
+  {re:/^\/academy$/,           view:() => vAcademy(),       title:'Обучение',           nav:'/academy'},
+  {re:/^\/news$/,              view:() => vNews(),          title:'Новости и акции',    nav:'/news'},
+  {re:/^\/company$/,           view:() => vCompany(),       title:'Компания',           nav:'/company'}
+];
+
+function parseHash(){
+  const raw = location.hash.replace(/^#/, '') || '/';
+  const [path, qs] = raw.split('?');
+  return {path: path.replace(/\/+$/, '') || '/', params: new URLSearchParams(qs || '')};
+}
+
+/* Параметры каталога из ссылок вида #/catalog?brand=dermatime&task=acne */
+function applyCatalogParams(p){
+  const b = p.get('brand'), c = p.get('cat'), t = p.get('task');
+  state.catBrand = brand(b) ? b : 'all';
+  state.catCat   = cat(c)   ? c : 'all';
+  state.catTask  = task(t)  ? t : 'all';
+  state.catQ     = p.get('q') || '';
+}
+
+let currentRoute = null;
+function renderRoute(r){
+  let route = null, match = null;
+  for (const x of ROUTES) { match = r.path.match(x.re); if (match) { route = x; break; } }
+  state.activeBrand = null;
+  if (route && route.nav === '/catalog') applyCatalogParams(r.params);
+  if (route && route.nav === '/brands' && !match[1]) { state.brTask = 'all'; state.brQ = ''; }
+  if (route && route.nav === '/academy') state.city = 'all';
+  if (route && route.nav === '/news') state.newsKind = 'all';
+
+  app.innerHTML = route ? route.view(match) : v404();
+  currentRoute = route;
+
+  let title = route ? route.title : 'Страница не найдена';
+  if (route && route.re.source.includes('brand') && match[1]) { const b = brand(match[1]); title = b ? b.name : 'Бренд'; }
+  document.title = `${title} — Астрея`;
+  $$('[data-nav]').forEach(a => {
+    const on = route && a.dataset.nav === route.nav;
+    a.classList.toggle('on', !!on);
+    on ? a.setAttribute('aria-current', 'page') : a.removeAttribute('aria-current');
+  });
+  closeMenu();
+  window.scrollTo({top:0, left:0, behavior:'instant'});
+  updateProgress();
+  const calc = $('#calc-range'); if (calc) updCalc();
+  initReveal();
+}
+
+/* Переход между страницами: «шторка» из вертикальных полос со сдвигом по времени */
+const curtain = $('#curtain');
+curtain.innerHTML = Array.from({length:8}, (_, i) => `<i style="--i:${i}"></i>`).join('');
+let busy = false, pending = null, booted = false;
+
+async function goTo(r){
+  if (!booted || reduceMotion) { renderRoute(r); return; }
+  if (busy) { pending = r; return; }
+  busy = true;
+  curtain.classList.remove('out'); curtain.classList.add('in');
+  await wait(690);
+  renderRoute(r);
+  curtain.classList.remove('in'); curtain.classList.add('out');
+  await wait(690);
+  curtain.classList.remove('out');
+  busy = false;
+  if (pending) { const p = pending; pending = null; goTo(p); }
+}
+addEventListener('hashchange', () => goTo(parseHash()));
+history.scrollRestoration = 'manual';
+
+/* ==========================================================================
+   СКРОЛЛ: прогресс, появление секций, счётчики
+   ========================================================================== */
+const bar = $('#progress');
+let ticking = false;
+function updateProgress(){
+  const max = document.documentElement.scrollHeight - innerHeight;
+  bar.style.transform = `scaleX(${max > 0 ? Math.min(1, scrollY / max) : 0})`;
+  ticking = false;
+}
+addEventListener('scroll', () => { if (!ticking) { ticking = true; requestAnimationFrame(updateProgress); } }, {passive:true});
+addEventListener('resize', updateProgress);
+
+let io = null, splashDone = false;
+function runCounter(el){
+  if (el.dataset.run) return;
+  el.dataset.run = '1';
+  const to = +el.dataset.count, dur = 1500, t0 = performance.now();
+  if (reduceMotion) { el.textContent = to; return; }
+  const tick = t => {
+    const p = Math.min(1, (t - t0) / dur), e = 1 - Math.pow(1 - p, 3);
+    el.textContent = Math.round(to * e);
+    if (p < 1) requestAnimationFrame(tick);
+  };
+  requestAnimationFrame(tick);
+}
+function initReveal(){
+  if (!splashDone) return;                       // пока идёт сплэш, контент прячется под ним
+  if (io) io.disconnect();
+  const targets = $$('.reveal:not(.in), [data-count]:not([data-run])', app);
+  if (!('IntersectionObserver' in window)) { targets.forEach(el => { el.classList.add('in'); if (el.dataset.count) runCounter(el); }); return; }
+  io = new IntersectionObserver(entries => {
+    let i = 0;                                   // задержка по индексу элемента в пачке
+    entries.forEach(en => {
+      if (!en.isIntersecting) return;
+      const el = en.target;
+      io.unobserve(el);
+      if (el.dataset.count !== undefined) runCounter(el);
+      if (el.classList.contains('reveal')) { el.style.setProperty('--rd', Math.min(i, 8) * 85 + 'ms'); el.classList.add('in'); i++; }
+    });
+  }, {threshold:.12, rootMargin:'0px 0px -5% 0px'});
+  targets.forEach(t => io.observe(t));
+}
+
+/* ==========================================================================
+   ИНТЕРАКТИВ: бренды, подбор, калькулятор, фильтры, меню
+   ========================================================================== */
+function setBrand(id){
+  state.activeBrand = id;
+  const g = $('#bgrid'); if (!g) return;
+  g.classList.toggle('has-active', !!id);
+  $$('.bcard', g).forEach(c => {
+    const on = c.dataset.id === id;
+    c.classList.toggle('is-active', on);
+    c.setAttribute('aria-expanded', on);
+    if (on) c.scrollIntoView({block:'nearest', behavior: reduceMotion ? 'auto' : 'smooth'});
+  });
+}
+function setPick(id){
+  state.pick = id;
+  $$('[data-act="pick"]').forEach(c => { const on = c.dataset.id === id; c.classList.toggle('on', on); c.setAttribute('aria-pressed', on); });
+  $('#pick-out').innerHTML = pickOut(id);
+}
+function updCalc(){
+  const v = state.calc, r = $('#calc-range'); if (!r) return;
+  r.style.setProperty('--p', (v / +r.max * 100) + '%');
+  $('#calc-sum').textContent = rub(v);
+  let tier = -1;
+  DISCOUNTS.forEach((d, i) => { if (v >= d.from) tier = i; });
+  $$('.tier').forEach((t, i) => t.classList.toggle('on', i === tier));
+  const d = tier >= 0 ? DISCOUNTS[tier] : null;
+  $('#calc-tier').textContent = d ? `Ваша скидка — ${d.pct}%` : `До первой скидки — ${rub(DISCOUNTS[0].from - v)}`;
+  $('#calc-save').textContent = d ? rub(Math.round(v * d.pct / 100)) : '—';
+}
+function toggleMenu(){
+  const open = document.body.classList.toggle('menu-open');
+  $('#burger').setAttribute('aria-expanded', open);
+  document.body.classList.toggle('locked', open);
+}
+function closeMenu(){
+  if (!document.body.classList.contains('menu-open')) return;
+  document.body.classList.remove('menu-open', 'locked');
+  $('#burger').setAttribute('aria-expanded', 'false');
+}
+const toast = (() => { let t; return msg => { const el = $('#toast'); el.textContent = msg; el.classList.add('show'); clearTimeout(t); t = setTimeout(() => el.classList.remove('show'), 3600); }; })();
+
+/* ==========================================================================
+   ФОРМЫ: модальное окно → mailto с предзаполненной темой и телом письма
+   ========================================================================== */
+const FORMS = {
+  seminar:  {title:'Запись на семинар',  lead:'Оставьте контакты — менеджер учебного центра подтвердит участие и вышлет детали.', subject:'Регистрация на семинар',  ph:'Количество участников, вопросы организаторам…'},
+  partner:  {title:'Стать партнёром',    lead:'Расскажите о своей компании — свяжемся и обсудим условия сотрудничества.',       subject:'Заявка на партнёрство',    ph:'Название компании, формат работы, интересующие бренды…'},
+  question: {title:'Задать вопрос',      lead:'Напишите нам — ответим по почте или телефону в рабочее время.',                    subject:'Вопрос с сайта',           ph:'Ваш вопрос…'},
+  product:  {title:'Запрос по товару',   lead:'Уточним наличие и условия поставки и вышлем информацию.',                          subject:'Запрос по товару',         ph:'Что именно вас интересует?'}
+};
+let formCtx = null, lastFocus = null;
+const modal = $('#modal');
+
+function openForm(type, ref){
+  const f = FORMS[type] || FORMS.question;
+  let ctx = '';
+  if (type === 'seminar') { const s = SEMINARS.find(x => x.id === ref); if (s) ctx = `${s.title} — ${dparts(s.date).full}, ${s.city}`; }
+  else if (type === 'product') { const p = PRODUCTS.find(x => x.id === ref); if (p) ctx = `${brand(p.brand).name} · ${p.name}`; }
+  else if (ref) ctx = ref;
+  formCtx = {type, ctx, subject: f.subject};
+  lastFocus = document.activeElement;
+  modal.innerHTML = `<div class="dlg" role="document">
+    <button class="x" data-act="close" aria-label="Закрыть">${I.close}</button>
+    <span class="eyebrow">Заявка</span>
+    <h2 id="m-title">${f.title}</h2>
+    <p class="muted">${f.lead}</p>
+    ${ctx ? `<span class="ctx">${esc(ctx)}</span>` : ''}
+    <form id="lead-form" novalidate>
+      <div class="two">
+        <div class="fld"><label for="f-name">Имя *</label><input id="f-name" name="name" autocomplete="name" required><span class="err">Укажите имя</span></div>
+        <div class="fld"><label for="f-city">Город *</label><input id="f-city" name="city" autocomplete="address-level2" required><span class="err">Укажите город</span></div>
+      </div>
+      <div class="two">
+        <div class="fld"><label for="f-email">Email *</label><input id="f-email" name="email" type="email" autocomplete="email" required><span class="err">Проверьте адрес почты</span></div>
+        <div class="fld"><label for="f-phone">Телефон</label><input id="f-phone" name="phone" type="tel" autocomplete="tel" placeholder="+7"><span class="err">Проверьте номер телефона</span></div>
+      </div>
+      <div class="fld"><label for="f-msg">Сообщение</label><textarea id="f-msg" name="msg" placeholder="${esc(f.ph)}"></textarea></div>
+      <label class="agree" id="f-agree-wrap"><input type="checkbox" id="f-agree" name="agree"><span>Я согласен(-на) на обработку персональных данных для ответа на обращение.</span></label>
+      <div class="row" style="margin-top:6px"><button class="btn btn-fill" type="submit">Отправить ${I.arrow}</button><button class="btn btn-lnk" type="button" data-act="close">Отмена</button></div>
+    </form>
+  </div>`;
+  modal.classList.add('open');
+  modal.setAttribute('aria-hidden', 'false');
+  modal.setAttribute('aria-labelledby', 'm-title');
+  document.body.classList.add('locked');
+  setTimeout(() => $('#f-name')?.focus(), 40);
+}
+function closeModal(){
+  if (!modal.classList.contains('open')) return;
+  modal.classList.remove('open');
+  modal.innerHTML = '';
+  modal.setAttribute('aria-hidden', 'true');
+  if (!document.body.classList.contains('menu-open')) document.body.classList.remove('locked');
+  lastFocus && lastFocus.focus && lastFocus.focus();
+}
+function submitForm(form){
+  const v = n => form.elements[n].value.trim();
+  const bad = (id, cond) => { $('#' + id).closest('.fld').classList.toggle('bad', cond); return cond; };
+  const digits = v('phone').replace(/\D/g, '');
+  const errors = [
+    bad('f-name', !v('name')),
+    bad('f-city', !v('city')),
+    bad('f-email', !/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(v('email'))),
+    bad('f-phone', !!v('phone') && (digits.length < 10 || digits.length > 15))
+  ];
+  const agreeBad = !form.elements.agree.checked;
+  $('#f-agree-wrap').classList.toggle('bad', agreeBad);
+  if (errors.some(Boolean) || agreeBad) { (form.querySelector('.bad input') || form.querySelector('.agree.bad input'))?.focus(); return; }
+
+  const subject = `${formCtx.subject}${formCtx.ctx ? ': ' + formCtx.ctx : ''}`;
+  const body = [
+    formCtx.ctx ? `Тема: ${formCtx.ctx}` : '',
+    `Имя: ${v('name')}`, `Город: ${v('city')}`, `Email: ${v('email')}`, `Телефон: ${v('phone') || '—'}`,
+    '', `Сообщение: ${v('msg') || '—'}`, '', 'Согласие на обработку персональных данных: да', 'Отправлено с сайта «Астрея».'
+  ].filter((x, i) => x !== '' || i > 0).join('\r\n');
+  const href = `mailto:${CONTACT.email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+  const a = document.createElement('a'); a.href = href; document.body.appendChild(a); a.click(); a.remove();
+
+  $('.dlg', modal).innerHTML = `<button class="x" data-act="close" aria-label="Закрыть">${I.close}</button>
+    <div class="ok"><div class="tick">${I.check}</div><h2 id="m-title" style="margin-top:0">Письмо подготовлено</h2>
+    <p>Мы открыли вашу почтовую программу с заполненной заявкой — осталось нажать «Отправить».</p>
+    <p style="font-size:14px">Не открылось? Напишите на <a href="${href}" style="border-bottom:1px dashed;font-weight:600">${CONTACT.email}</a> или позвоните: <a href="tel:${CONTACT.phoneRaw}" style="border-bottom:1px dashed;font-weight:600">${CONTACT.phone}</a>.</p>
+    <div class="row" style="justify-content:center;margin-top:24px"><button class="btn btn-fill" data-act="close">Готово</button></div></div>`;
+}
+
+/* ==========================================================================
+   СОБЫТИЯ (делегирование)
+   ========================================================================== */
+document.addEventListener('click', e => {
+  if (e.target === modal) { closeModal(); return; }
+  const t = e.target.closest('[data-act]');
+  if (!t) { if (state.activeBrand && !e.target.closest('.bgrid')) setBrand(null); return; }
+  const act = t.dataset.act, id = t.dataset.id;
+  const link = e.target.closest('a[href]');
+  if (act === 'brand-card' && link && t.contains(link)) return;      // ссылки внутри карточки бренда работают как обычно
+  if (act !== 'brand-card' && state.activeBrand && !e.target.closest('.bgrid')) setBrand(null);
+  switch (act) {
+    case 'menu':        toggleMenu(); break;
+    case 'form':        openForm(t.dataset.type, t.dataset.ref); break;
+    case 'close':       closeModal(); break;
+    case 'brand-card':  setBrand(state.activeBrand === id ? null : id); break;   // повторный клик по активной — сброс
+    case 'brand-back':  setBrand(null); break;
+    case 'pick':        setPick(id); break;
+    case 'cat-tile':    state.catCat = state.catCat === id ? 'all' : id; syncCatalog(); $('#results')?.scrollIntoView({behavior: reduceMotion ? 'auto' : 'smooth', block:'start'}); break;
+    case 'cat-brand':   state.catBrand = id; syncCatalog(); break;
+    case 'cat-task':    state.catTask = id; syncCatalog(); break;
+    case 'cat-reset':   Object.assign(state, {catBrand:'all', catCat:'all', catTask:'all', catQ:''}); { const q = $('#cat-q'); if (q) q.value = ''; } syncCatalog(); break;
+    case 'br-task':     state.brTask = id; $$('#br-tasks .chip').forEach(c => { const on = c.dataset.id === id; c.classList.toggle('on', on); c.setAttribute('aria-pressed', on); }); $('#br-out').innerHTML = brandsList(); break;
+    case 'city':        state.city = id; $$('#city-chips .chip').forEach(c => { const on = c.dataset.id === id; c.classList.toggle('on', on); c.setAttribute('aria-pressed', on); }); $('#sem-out').innerHTML = semList(); break;
+    case 'news-kind':   state.newsKind = id; $$('#news-tabs .chip').forEach(c => { const on = c.dataset.id === id; c.classList.toggle('on', on); c.setAttribute('aria-pressed', on); }); $('#news-out').innerHTML = newsList(); break;
+    case 'faq': { const it = t.closest('.faq-item'), open = it.classList.toggle('open'); t.setAttribute('aria-expanded', open); break; }
+    case 'scroll':      document.getElementById(t.dataset.target)?.scrollIntoView({behavior: reduceMotion ? 'auto' : 'smooth', block:'start'}); break;
+  }
+});
+document.addEventListener('input', e => {
+  const t = e.target;
+  if (t.id === 'cat-q') { state.catQ = t.value; syncCatalog(); }
+  else if (t.id === 'br-q') { state.brQ = t.value; $('#br-out').innerHTML = brandsList(); }
+  else if (t.id === 'calc-range') { state.calc = +t.value; updCalc(); }
+  else if (t.closest && t.closest('.fld.bad')) t.closest('.fld').classList.remove('bad');
+});
+document.addEventListener('submit', e => { if (e.target.id === 'lead-form') { e.preventDefault(); submitForm(e.target); } });
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') { if (modal.classList.contains('open')) closeModal(); else if (state.activeBrand) setBrand(null); else closeMenu(); return; }
+  if ((e.key === 'Enter' || e.key === ' ') && e.target.classList && e.target.classList.contains('bcard')) {
+    e.preventDefault(); setBrand(state.activeBrand === e.target.dataset.id ? null : e.target.dataset.id); return;
+  }
+  if (e.key === 'Tab' && modal.classList.contains('open')) {          // ловушка фокуса в модальном окне
+    const f = $$('button, input, textarea, a[href]', modal).filter(x => !x.disabled && x.offsetParent !== null);
+    if (!f.length) return;
+    const first = f[0], last = f[f.length - 1];
+    if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+    else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+  }
+});
+
+/* ==========================================================================
+   СТАРТ: футер, сплэш (~2.4 с), первый рендер
+   ========================================================================== */
+$('#ftr-brands').innerHTML = BRANDS.map(b => `<li><a href="#/brand/${b.id}">${b.name}</a></li>`).join('');
+
+function letters(el, text, gap){
+  el.innerHTML = [...text].map((c, i) => c === ' '
+    ? `<span class="ch" style="width:${gap}em"></span>`
+    : `<span class="ch"><span style="--i:${i}">${c}</span></span>`).join('');
+}
+function endSplash(){
+  const sp = $('#splash'); if (!sp || sp.classList.contains('hide')) return;
+  sp.classList.add('hide');
+  document.body.classList.remove('locked');
+  setTimeout(() => { sp.remove(); }, 480);
+  splashDone = true;
+  booted = true;
+  initReveal();
+}
+letters($('#sp-word'), 'Астрея', .3);
+letters($('#sp-sub'), 'Профессиональная косметика', 1);
+renderRoute(parseHash());                       // первый рендер под сплэшем
+if (reduceMotion) { $('#splash').remove(); splashDone = booted = true; initReveal(); }
+else {
+  document.body.classList.add('locked');
+  $('#sp-in').addEventListener('click', endSplash);
+  setTimeout(endSplash, 2000);                  // 2000 мс + 450 мс плавного исчезновения ≈ 2.45 с
+}
+</script>
+</body>
+</html>
