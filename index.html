@@ -7,14 +7,7 @@
 <meta name="description" content="ООО «Астрея» — дистрибьютор профессиональной косметики: Dermatime, Keenwell, Endocare, Neoretin, Heliocare, Biretix, Iraltone, EVA, Elancyl. Каталог, учебный центр, представительства.">
 <meta name="theme-color" content="#f5f2ec">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 100'%3E%3Cpath d='M6 92 52 14Q60 2 68 14L114 92H92L60 40 28 92Z' fill='%230b1a33'/%3E%3Ccircle cx='60' cy='85' r='7' fill='%23b9c2d0'/%3E%3C/svg%3E">
-<script>
-(function(){var d=document.documentElement,p=null;d.classList.add('js');
-try{p=localStorage.getItem('astreya-motion')}catch(e){}
-if(!p){var m=/astreya-motion=(\w+)/.exec(window.name||'');if(m)p=m[1]}
-var os=!!(window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches);
-if(p==='calm'||(os&&p!=='full'))d.classList.add('calm');
-window.__motion={pref:p,os:os};})();
-</script>
+<script>document.documentElement.classList.add('js')</script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <!-- У Fraunces нет кириллицы (только latin/latin-ext/vietnamese), поэтому русские заголовки
@@ -515,13 +508,6 @@ form{display:grid;gap:14px;margin-top:20px}
 .ok .tick .ic{width:28px;height:28px;stroke-width:2}
 .ok p{color:var(--muted);margin-top:10px}
 .copy-box{margin:18px 0 4px;padding:16px 18px;border-radius:14px;border:1px dashed var(--line);background:#fff;text-align:left;font:500 13px/1.6 var(--sans);color:var(--navy);white-space:pre-wrap;overflow-wrap:anywhere;max-height:200px;overflow:auto;user-select:all;-webkit-user-select:all}
-.motion-note{position:fixed;left:clamp(12px,3vw,32px);right:clamp(12px,3vw,32px);bottom:calc(20px + env(safe-area-inset-bottom,0px));z-index:170;max-width:560px;display:grid;gap:12px;padding:18px 20px;border-radius:var(--r-lg);background:var(--navy);color:var(--milk);box-shadow:0 30px 60px -24px rgba(11,26,51,.6);animation:pop .7s var(--ease-out)}
-.motion-note p{font-size:14px;line-height:1.55;color:var(--silver)}
-.motion-note b{color:var(--milk);font-weight:700}
-.motion-note .btn-lnk{color:var(--silver)}
-.motion-note .btn-lnk:hover{color:#fff}
-.mo-toggle{font:600 12.5px/1.4 var(--sans);color:var(--silver);border-bottom:1px dashed rgba(185,194,208,.5);padding-bottom:2px;transition:color .2s}
-.mo-toggle:hover{color:#fff}
 #toast{position:fixed;left:50%;bottom:calc(28px + env(safe-area-inset-bottom,0px));translate:-50% 30px;z-index:190;background:var(--navy);color:var(--milk);padding:14px 22px;border-radius:var(--pill);font:600 14px/1 var(--sans);opacity:0;pointer-events:none;transition:opacity .35s,translate .45s var(--ease)}
 #toast.show{opacity:1;translate:-50% 0}
 
@@ -597,8 +583,8 @@ form{display:grid;gap:14px;margin-top:20px}
 
 /* --- curtain: полосы + титр раздела --- */
 #curtain{position:fixed;inset:0;z-index:150;pointer-events:none}
-#curtain .cs{position:absolute;inset:0;display:flex}
-#curtain .cs i{flex:1;background:var(--navy);transform:scaleY(0);transform-origin:bottom;transition:transform .52s var(--ease-io);transition-delay:calc(var(--i)*38ms)}
+#curtain .cs{position:absolute;inset:-2px;display:flex}
+#curtain .cs i{flex:1;background:var(--navy);box-shadow:1px 0 0 var(--navy),-1px 0 0 var(--navy);transform:scaleY(0);transform-origin:bottom;will-change:transform;transition:transform .52s var(--ease-io);transition-delay:calc(var(--i)*38ms)}
 #curtain.in .cs i{transform:scaleY(1);transform-origin:bottom}
 #curtain.out .cs i{transform:scaleY(0);transform-origin:top}
 #curtain.instant .cs i{transition:none}
@@ -722,35 +708,6 @@ body::after{content:"";position:fixed;inset:0;z-index:90;pointer-events:none;bac
 #modal.closing .dlg{animation:dlgOut .3s var(--ease-io) forwards}
 .dlg{animation:dlgIn .6s var(--ease-out)}
 
-/* --- спокойный режим (система просит «уменьшить движение» или выбрано вручную):
-       остаются мягкие появления и медленное «дыхание» шара; нет сдвигов, параллакса, бегущих строк --- */
-html.calm{scroll-behavior:auto}
-.js.calm .reveal{translate:0 0;scale:1;transition:opacity .9s ease var(--rd,0ms),transform .3s ease,box-shadow .3s ease,background-color .3s,border-color .3s,color .3s}
-.js.calm .reveal.pushin,.js.calm .reveal .band,.js.calm .reveal .cov,.js.calm .reveal .th,.js.calm .reveal .art{scale:1}
-.js.calm .split .w>span{transform:none;opacity:0;transition:opacity .9s ease calc(var(--sd,0ms) + var(--i)*45ms)}
-.js.calm .split.in .w>span{opacity:1}
-.js.calm .b-title.reveal{clip-path:none;opacity:0;transition:opacity 1s ease var(--rd,0ms)}
-.js.calm .b-title.reveal.in{opacity:1}
-.js.calm .pearl-wrap .pearl,.js.calm .pearl-wrap .ring{scale:1;transition:opacity 1.4s ease .1s}
-.js.calm .pearl-wrap .hero-chip,.js.calm .pearl-wrap .hero-card{translate:0 0;transition:opacity 1s ease .5s}
-.calm .pearl{animation:floatyCalm 10s ease-in-out infinite}
-@keyframes floatyCalm{0%,100%{transform:translateY(-3px)}50%{transform:translateY(4px)}}
-.calm .ly,.calm .par,.calm .hero-copy{transform:none!important}
-.calm .mq-track{animation:none;width:auto;flex-wrap:wrap;justify-content:center}
-.calm .mq-set[aria-hidden]{display:none}
-.calm .mq-set{flex-wrap:wrap;justify-content:center}
-.calm .marquee{-webkit-mask-image:none;mask-image:none}
-.calm #curtain .cs i{transform:none!important;transition:opacity .4s ease!important}
-.calm #curtain .cs i{opacity:0}
-.calm #curtain.in .cs i{opacity:1}
-.calm #curtain.out .cs i{opacity:0}
-.calm .ct b .ch>span{transform:none;animation:none}
-.calm .ct .ct-line{transform:none;animation:none}
-.calm .sp-in.leave{transform:none}
-.js.calm .eyebrow.in::before{animation-duration:.6s}
-.calm .btn{translate:0 0}
-.calm .btn-fill::after{display:none}
-.js.calm:not(.ready) .hdr-in>*{translate:0 0}
 </style>
 </head>
 <body>
@@ -842,7 +799,6 @@ html.calm{scroll-behavior:auto}
     </div>
     <div class="ftr-bottom">
       <span>© 2026 ООО «Астрея». Все права защищены.</span>
-      <button class="mo-toggle" id="mo-toggle" data-act="motion-toggle" type="button"></button>
       <span>Сведения на сайте носят справочный характер и не являются публичной офертой.</span>
     </div>
   </div>
@@ -1070,8 +1026,6 @@ const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt
 const brand = id => BRANDS.find(b => b.id === id);
 const cat   = id => CATS.find(c => c.id === id);
 const task  = id => TASKS.find(t => t.id === id);
-const MOTION = window.__motion || {pref:null, os:false};
-const reduceMotion = document.documentElement.classList.contains('calm');   // «спокойный» режим: мягкие появления без сдвигов
 const rub = n => n.toLocaleString('ru-RU') + ' ₽';
 const MON_S = ['янв','фев','мар','апр','май','июн','июл','авг','сен','окт','ноя','дек'];
 const MON_G = ['января','февраля','марта','апреля','мая','июня','июля','августа','сентября','октября','ноября','декабря'];
@@ -1562,7 +1516,7 @@ let routeKey = null;
 /* Переход по ссылке: маршрутизируем сами и лишь затем пробуем обновить location.hash */
 function routeTo(h, byClick){
   const r = parseHash(h), key = keyOf(r);
-  if (key === routeKey) { if (byClick) window.scrollTo({top:0, behavior: reduceMotion ? 'auto' : 'smooth'}); return; }
+  if (key === routeKey) { if (byClick) window.scrollTo({top:0, behavior:'smooth'}); return; }
   routeKey = key;
   goTo(r);
 }
@@ -1619,10 +1573,10 @@ async function goTo(r){
   busy = true;
   setCurtainLabel(routeLabel(r));
   curtain.classList.remove('out'); curtain.classList.add('in');
-  await wait(reduceMotion ? 420 : 820);          // полосы закрылись, читается титр раздела
-  renderRoute(r, reduceMotion ? 120 : 470);
+  await wait(820);          // полосы закрылись, читается титр раздела
+  renderRoute(r, 470);
   curtain.classList.remove('in'); curtain.classList.add('out');
-  await wait(reduceMotion ? 430 : 700);
+  await wait(700);
   curtain.classList.remove('out');
   busy = false;
   if (pending) { const p = pending; pending = null; goTo(p); }
@@ -1647,7 +1601,7 @@ let io = null, splashDone = false;
 function runCounter(el){
   if (el.dataset.run) return;
   el.dataset.run = '1';
-  const to = +el.dataset.count, dur = reduceMotion ? 900 : 1500, t0 = performance.now();
+  const to = +el.dataset.count, dur = 1500, t0 = performance.now();
   el.textContent = '0';
   const tick = t => {
     const p = Math.min(1, (t - t0) / dur), e = 1 - Math.pow(1 - p, 3);
@@ -1690,7 +1644,7 @@ function setBrand(id){
     const on = c.dataset.id === id;
     c.classList.toggle('is-active', on);
     c.setAttribute('aria-expanded', on);
-    if (on) c.scrollIntoView({block:'nearest', behavior: reduceMotion ? 'auto' : 'smooth'});
+    if (on) c.scrollIntoView({block:'nearest', behavior:'smooth'});
   });
 }
 function setPick(id){
@@ -1702,7 +1656,7 @@ function tweenNum(el, to, fmt){
   const from = el.dataset.v === undefined ? to : +el.dataset.v;
   el.dataset.v = to;
   cancelAnimationFrame(el._r);
-  if (reduceMotion || from === to) { el.textContent = fmt(to); return; }
+  if (from === to) { el.textContent = fmt(to); return; }
   const t0 = performance.now(), dur = 460;
   const tick = t => { const p = Math.min(1, (t - t0) / dur), e = 1 - Math.pow(1 - p, 3); el.textContent = fmt(Math.round(from + (to - from) * e)); if (p < 1) el._r = requestAnimationFrame(tick); };
   el._r = requestAnimationFrame(tick);
@@ -1786,7 +1740,7 @@ function closeModal(){
     modal.setAttribute('aria-hidden', 'true');
     if (!document.body.classList.contains('menu-open')) document.body.classList.remove('locked');
     lastFocus && lastFocus.focus && lastFocus.focus();
-  }, reduceMotion ? 0 : 300);
+  }, 300);
 }
 function submitForm(form){
   const v = n => form.elements[n].value.trim();
@@ -1854,14 +1808,11 @@ document.addEventListener('click', e => {
     case 'menu':        toggleMenu(); break;
     case 'form':        openForm(t.dataset.type, t.dataset.ref); break;
     case 'close':       closeModal(); break;
-    case 'motion-full': setMotion('full'); break;
-    case 'motion-keep': setMotion('calm'); break;
-    case 'motion-toggle': setMotion(reduceMotion ? 'full' : 'calm'); break;
     case 'copy':        t.dataset.what === 'address' ? copyText(CONTACT.email, 'Адрес скопирован') : copyText(mailDraft, 'Письмо скопировано'); break;
     case 'brand-card':  setBrand(state.activeBrand === id ? null : id); break;   // повторный клик по активной — сброс
     case 'brand-back':  setBrand(null); break;
     case 'pick':        setPick(id); break;
-    case 'cat-tile':    state.catCat = state.catCat === id ? 'all' : id; syncCatalog(); $('#results')?.scrollIntoView({behavior: reduceMotion ? 'auto' : 'smooth', block:'start'}); break;
+    case 'cat-tile':    state.catCat = state.catCat === id ? 'all' : id; syncCatalog(); $('#results')?.scrollIntoView({behavior:'smooth', block:'start'}); break;
     case 'cat-brand':   state.catBrand = id; syncCatalog(); break;
     case 'cat-task':    state.catTask = id; syncCatalog(); break;
     case 'cat-reset':   Object.assign(state, {catBrand:'all', catCat:'all', catTask:'all', catQ:''}); { const q = $('#cat-q'); if (q) q.value = ''; } syncCatalog(); break;
@@ -1869,7 +1820,7 @@ document.addEventListener('click', e => {
     case 'city':        state.city = id; $$('#city-chips .chip').forEach(c => { const on = c.dataset.id === id; c.classList.toggle('on', on); c.setAttribute('aria-pressed', on); }); $('#sem-out').innerHTML = semList(); break;
     case 'news-kind':   state.newsKind = id; $$('#news-tabs .chip').forEach(c => { const on = c.dataset.id === id; c.classList.toggle('on', on); c.setAttribute('aria-pressed', on); }); $('#news-out').innerHTML = newsList(); break;
     case 'faq': { const it = t.closest('.faq-item'), open = it.classList.toggle('open'); t.setAttribute('aria-expanded', open); break; }
-    case 'scroll':      document.getElementById(t.dataset.target)?.scrollIntoView({behavior: reduceMotion ? 'auto' : 'smooth', block:'start'}); break;
+    case 'scroll':      document.getElementById(t.dataset.target)?.scrollIntoView({behavior:'smooth', block:'start'}); break;
   }
 });
 document.addEventListener('input', e => {
@@ -1926,7 +1877,7 @@ function sStep(){
   if (Math.abs(sTarget - sCur) < .5) { sCur = sTarget; sRaf = 0; } else sRaf = requestAnimationFrame(sStep);
   window.scrollTo({top:sCur, behavior:'instant'});
 }
-if (!reduceMotion && matchMedia('(hover:hover) and (pointer:fine)').matches) {
+if (matchMedia('(hover:hover) and (pointer:fine)').matches) {
   addEventListener('wheel', e => {
     if (e.ctrlKey || e.defaultPrevented || Math.abs(e.deltaX) > Math.abs(e.deltaY)) return;
     if (document.body.classList.contains('locked') || modal.classList.contains('open') || scrollsInside(e.target)) return;
@@ -1960,7 +1911,7 @@ function parTick(){
   fadeItems.forEach(el => { el.style.opacity = (1 - y * .9).toFixed(3); el.style.transform = `translate3d(0,${(-y * 40).toFixed(1)}px,0)`; });
   parRaf = moving ? requestAnimationFrame(parTick) : 0;
 }
-function parKick(){ if (!parRaf && !reduceMotion) parRaf = requestAnimationFrame(parTick); }
+function parKick(){ if (!parRaf) parRaf = requestAnimationFrame(parTick); }
 
 /* Курсор: свет и глубина «жемчужины», 3D-наклон карточек, магнитные кнопки */
 const hp = {x:0, y:0, tx:0, ty:0, raf:0};
@@ -1972,7 +1923,7 @@ function hpTick(){
   hp.raf = (Math.abs(hp.tx - hp.x) > .002 || Math.abs(hp.ty - hp.y) > .002) ? requestAnimationFrame(hpTick) : 0;
 }
 let tiltEl = null, magEl = null;
-if (!reduceMotion && matchMedia('(hover:hover) and (pointer:fine)').matches) {
+if (matchMedia('(hover:hover) and (pointer:fine)').matches) {
   document.addEventListener('pointermove', e => {
     if (e.pointerType !== 'mouse') return;
     if (scrollY < innerHeight) { hp.tx = e.clientX / innerWidth * 2 - 1; hp.ty = e.clientY / innerHeight * 2 - 1; if (!hp.raf) hp.raf = requestAnimationFrame(hpTick); }
@@ -2020,25 +1971,6 @@ function setCurtainLabel(t){
   $('.ct', curtain).innerHTML = `<small>Астрея</small><b>${[...t].map((c, i) => c === ' ' ? '<span class="ch" style="width:.28em"></span>' : `<span class="ch"><span style="--i:${i}">${c}</span></span>`).join('')}</b><span class="ct-line"></span>`;
 }
 
-/* Выбор режима анимации: сохраняем в localStorage (запасной вариант — window.name) и перезагружаем */
-function setMotion(v){
-  try { localStorage.setItem('astreya-motion', v); } catch (_) {}
-  try { window.name = 'astreya-motion=' + v; } catch (_) {}
-  if ((v === 'calm') === reduceMotion) { $('#motion-note')?.remove(); return; }   // режим уже совпадает
-  location.reload();
-}
-function initMotionUI(){
-  const t = $('#mo-toggle');
-  if (t) t.textContent = reduceMotion ? 'Анимации: спокойные — включить полные' : 'Анимации: полные — сделать спокойнее';
-  if (MOTION.os && !MOTION.pref) {
-    const n = document.createElement('div');
-    n.className = 'motion-note'; n.id = 'motion-note'; n.setAttribute('role', 'region'); n.setAttribute('aria-label', 'Анимации');
-    n.innerHTML = `<p><b>В вашей системе включено «уменьшение движения».</b> Поэтому анимации сайта приглушены: остались только мягкие появления. Можно включить полные — шторки, движение шара, параллакс.</p>
-      <div class="row"><button class="btn btn-fill btn-sm" data-act="motion-full">Включить полные анимации</button><button class="btn btn-lnk" data-act="motion-keep">Оставить спокойные</button></div>`;
-    document.body.appendChild(n);
-  }
-}
-
 /* ==========================================================================
    СТАРТ: футер, сплэш (~2.4 с), первый рендер
    ========================================================================== */
@@ -2067,15 +1999,11 @@ async function endSplash(){
 }
 letters($('#sp-word'), 'Астрея', .3);
 letters($('#sp-sub'), 'Профессиональная косметика', 1);
-initMotionUI();
 routeKey = keyOf(parseHash());
 renderRoute(parseHash());                       // первый рендер под сплэшем
-if (reduceMotion) { $('#splash').remove(); document.documentElement.classList.add('ready'); splashDone = booted = true; initReveal(); }
-else {
-  document.body.classList.add('locked');
-  $('#sp-in').addEventListener('click', endSplash);
-  setTimeout(endSplash, 1650);                  // буквы → уход титров (0.3 с) → полосы поднимаются: сплэш ≈ 2.3 с до открытия страницы
-}
+document.body.classList.add('locked');
+$('#sp-in').addEventListener('click', endSplash);
+setTimeout(endSplash, 1650);                    // буквы → уход титров (0.3 с) → полосы поднимаются: сплэш ≈ 2.3 с до открытия страницы
 </script>
 </body>
 </html>
