@@ -7,7 +7,14 @@
 <meta name="description" content="ООО «Астрея» — дистрибьютор профессиональной косметики: Dermatime, Keenwell, Endocare, Neoretin, Heliocare, Biretix, Iraltone, EVA, Elancyl. Каталог, учебный центр, представительства.">
 <meta name="theme-color" content="#f5f2ec">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 100'%3E%3Cpath d='M6 92 52 14Q60 2 68 14L114 92H92L60 40 28 92Z' fill='%230b1a33'/%3E%3Ccircle cx='60' cy='85' r='7' fill='%23b9c2d0'/%3E%3C/svg%3E">
-<script>document.documentElement.classList.add('js')</script>
+<script>
+(function(){var d=document.documentElement,p=null;d.classList.add('js');
+try{p=localStorage.getItem('astreya-motion')}catch(e){}
+if(!p){var m=/astreya-motion=(\w+)/.exec(window.name||'');if(m)p=m[1]}
+var os=!!(window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches);
+if(p==='calm'||(os&&p!=='full'))d.classList.add('calm');
+window.__motion={pref:p,os:os};})();
+</script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <!-- У Fraunces нет кириллицы (только latin/latin-ext/vietnamese), поэтому русские заголовки
@@ -508,6 +515,13 @@ form{display:grid;gap:14px;margin-top:20px}
 .ok .tick .ic{width:28px;height:28px;stroke-width:2}
 .ok p{color:var(--muted);margin-top:10px}
 .copy-box{margin:18px 0 4px;padding:16px 18px;border-radius:14px;border:1px dashed var(--line);background:#fff;text-align:left;font:500 13px/1.6 var(--sans);color:var(--navy);white-space:pre-wrap;overflow-wrap:anywhere;max-height:200px;overflow:auto;user-select:all;-webkit-user-select:all}
+.motion-note{position:fixed;left:clamp(12px,3vw,32px);right:clamp(12px,3vw,32px);bottom:calc(20px + env(safe-area-inset-bottom,0px));z-index:170;max-width:560px;display:grid;gap:12px;padding:18px 20px;border-radius:var(--r-lg);background:var(--navy);color:var(--milk);box-shadow:0 30px 60px -24px rgba(11,26,51,.6);animation:pop .7s var(--ease-out)}
+.motion-note p{font-size:14px;line-height:1.55;color:var(--silver)}
+.motion-note b{color:var(--milk);font-weight:700}
+.motion-note .btn-lnk{color:var(--silver)}
+.motion-note .btn-lnk:hover{color:#fff}
+.mo-toggle{font:600 12.5px/1.4 var(--sans);color:var(--silver);border-bottom:1px dashed rgba(185,194,208,.5);padding-bottom:2px;transition:color .2s}
+.mo-toggle:hover{color:#fff}
 #toast{position:fixed;left:50%;bottom:calc(28px + env(safe-area-inset-bottom,0px));translate:-50% 30px;z-index:190;background:var(--navy);color:var(--milk);padding:14px 22px;border-radius:var(--pill);font:600 14px/1 var(--sans);opacity:0;pointer-events:none;transition:opacity .35s,translate .45s var(--ease)}
 #toast.show{opacity:1;translate:-50% 0}
 
@@ -635,7 +649,10 @@ body::after{content:"";position:fixed;inset:0;z-index:90;pointer-events:none;bac
 .halo{animation:breathe 7s ease-in-out infinite}
 @keyframes breathe{0%,100%{transform:scale(1);opacity:.85}50%{transform:scale(1.07);opacity:1}}
 .pearl{background:radial-gradient(circle at var(--lx) var(--ly),#fff 0,#fdfbf7 12%,#eeeae2 34%,#cdd3de 62%,#8f9db4 100%)}
-.pearl::before{animation:spin 36s linear infinite}
+.pearl::before{mix-blend-mode:normal;background:conic-gradient(from 0deg at 50% 50%,rgba(47,91,214,0),rgba(110,140,235,.30) 18%,rgba(236,170,196,.30) 38%,rgba(150,214,198,.27) 58%,rgba(47,91,214,0) 78%);-webkit-mask-image:radial-gradient(circle closest-side at 50% 50%,transparent 38%,rgba(0,0,0,.55) 68%,#000 96%);mask-image:radial-gradient(circle closest-side at 50% 50%,transparent 38%,rgba(0,0,0,.55) 68%,#000 96%);animation:spin 16s linear infinite}
+.ring.r1{animation:spin 42s linear infinite}
+.ring.r2{animation:spin 64s linear infinite reverse}
+.ring .od{width:12px;height:12px;margin-left:-6px;top:-6px}
 .pearl::after{left:calc(17% + (var(--lx) - 33%) * .55);top:calc(11% + (var(--ly) - 27%) * .55)}
 .js .pearl-wrap.reveal{opacity:1;translate:none}
 .js .pearl-wrap .pearl{scale:.55;opacity:0;transition:scale 2.3s var(--ease-out) .15s,opacity 1.5s ease .15s}
@@ -705,18 +722,35 @@ body::after{content:"";position:fixed;inset:0;z-index:90;pointer-events:none;bac
 #modal.closing .dlg{animation:dlgOut .3s var(--ease-io) forwards}
 .dlg{animation:dlgIn .6s var(--ease-out)}
 
-@media (prefers-reduced-motion:reduce){
-  html{scroll-behavior:auto}
-  *,*::before,*::after{animation-duration:.01ms!important;animation-delay:0ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important;transition-delay:0ms!important}
-  .js .reveal{opacity:1;translate:0 0;scale:1}
-  .js .split .w>span{transform:none}
-  .js .pearl-wrap .pearl,.js .pearl-wrap .ring,.js .pearl-wrap .halo,.js .pearl-wrap .hero-chip,.js .pearl-wrap .hero-card{opacity:1;scale:1;translate:0 0}
-  .js .b-title.reveal{clip-path:none}
-  .js:not(.ready) .hdr-in>*{opacity:1;translate:0 0}
-  .par,.hero-copy,.ly{transform:none!important}
-  .mq-track{animation:none}
-  .js .reveal .band,.js .reveal .cov,.js .reveal .th,.js .reveal .art{scale:1}
-}
+/* --- спокойный режим (система просит «уменьшить движение» или выбрано вручную):
+       остаются мягкие появления и медленное «дыхание» шара; нет сдвигов, параллакса, бегущих строк --- */
+html.calm{scroll-behavior:auto}
+.js.calm .reveal{translate:0 0;scale:1;transition:opacity .9s ease var(--rd,0ms),transform .3s ease,box-shadow .3s ease,background-color .3s,border-color .3s,color .3s}
+.js.calm .reveal.pushin,.js.calm .reveal .band,.js.calm .reveal .cov,.js.calm .reveal .th,.js.calm .reveal .art{scale:1}
+.js.calm .split .w>span{transform:none;opacity:0;transition:opacity .9s ease calc(var(--sd,0ms) + var(--i)*45ms)}
+.js.calm .split.in .w>span{opacity:1}
+.js.calm .b-title.reveal{clip-path:none;opacity:0;transition:opacity 1s ease var(--rd,0ms)}
+.js.calm .b-title.reveal.in{opacity:1}
+.js.calm .pearl-wrap .pearl,.js.calm .pearl-wrap .ring{scale:1;transition:opacity 1.4s ease .1s}
+.js.calm .pearl-wrap .hero-chip,.js.calm .pearl-wrap .hero-card{translate:0 0;transition:opacity 1s ease .5s}
+.calm .pearl{animation:floatyCalm 10s ease-in-out infinite}
+@keyframes floatyCalm{0%,100%{transform:translateY(-3px)}50%{transform:translateY(4px)}}
+.calm .ly,.calm .par,.calm .hero-copy{transform:none!important}
+.calm .mq-track{animation:none;width:auto;flex-wrap:wrap;justify-content:center}
+.calm .mq-set[aria-hidden]{display:none}
+.calm .mq-set{flex-wrap:wrap;justify-content:center}
+.calm .marquee{-webkit-mask-image:none;mask-image:none}
+.calm #curtain .cs i{transform:none!important;transition:opacity .4s ease!important}
+.calm #curtain .cs i{opacity:0}
+.calm #curtain.in .cs i{opacity:1}
+.calm #curtain.out .cs i{opacity:0}
+.calm .ct b .ch>span{transform:none;animation:none}
+.calm .ct .ct-line{transform:none;animation:none}
+.calm .sp-in.leave{transform:none}
+.js.calm .eyebrow.in::before{animation-duration:.6s}
+.calm .btn{translate:0 0}
+.calm .btn-fill::after{display:none}
+.js.calm:not(.ready) .hdr-in>*{translate:0 0}
 </style>
 </head>
 <body>
@@ -808,6 +842,7 @@ body::after{content:"";position:fixed;inset:0;z-index:90;pointer-events:none;bac
     </div>
     <div class="ftr-bottom">
       <span>© 2026 ООО «Астрея». Все права защищены.</span>
+      <button class="mo-toggle" id="mo-toggle" data-act="motion-toggle" type="button"></button>
       <span>Сведения на сайте носят справочный характер и не являются публичной офертой.</span>
     </div>
   </div>
@@ -1035,7 +1070,8 @@ const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt
 const brand = id => BRANDS.find(b => b.id === id);
 const cat   = id => CATS.find(c => c.id === id);
 const task  = id => TASKS.find(t => t.id === id);
-const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
+const MOTION = window.__motion || {pref:null, os:false};
+const reduceMotion = document.documentElement.classList.contains('calm');   // «спокойный» режим: мягкие появления без сдвигов
 const rub = n => n.toLocaleString('ru-RU') + ' ₽';
 const MON_S = ['янв','фев','мар','апр','май','июн','июл','авг','сен','окт','ноя','дек'];
 const MON_G = ['января','февраля','марта','апреля','мая','июня','июля','августа','сентября','октября','ноября','декабря'];
@@ -1578,15 +1614,15 @@ curtain.innerHTML = '<div class="cs">' + Array.from({length:8}, (_, i) => `<i st
 let busy = false, pending = null, booted = false;
 
 async function goTo(r){
-  if (!booted || reduceMotion) { renderRoute(r); return; }
+  if (!booted) { renderRoute(r); return; }
   if (busy) { pending = r; return; }
   busy = true;
   setCurtainLabel(routeLabel(r));
   curtain.classList.remove('out'); curtain.classList.add('in');
-  await wait(820);                               // полосы закрылись, читается титр раздела
-  renderRoute(r, 470);
+  await wait(reduceMotion ? 420 : 820);          // полосы закрылись, читается титр раздела
+  renderRoute(r, reduceMotion ? 120 : 470);
   curtain.classList.remove('in'); curtain.classList.add('out');
-  await wait(700);
+  await wait(reduceMotion ? 430 : 700);
   curtain.classList.remove('out');
   busy = false;
   if (pending) { const p = pending; pending = null; goTo(p); }
@@ -1611,8 +1647,7 @@ let io = null, splashDone = false;
 function runCounter(el){
   if (el.dataset.run) return;
   el.dataset.run = '1';
-  const to = +el.dataset.count, dur = 1500, t0 = performance.now();
-  if (reduceMotion) { el.textContent = to; return; }
+  const to = +el.dataset.count, dur = reduceMotion ? 900 : 1500, t0 = performance.now();
   el.textContent = '0';
   const tick = t => {
     const p = Math.min(1, (t - t0) / dur), e = 1 - Math.pow(1 - p, 3);
@@ -1819,6 +1854,9 @@ document.addEventListener('click', e => {
     case 'menu':        toggleMenu(); break;
     case 'form':        openForm(t.dataset.type, t.dataset.ref); break;
     case 'close':       closeModal(); break;
+    case 'motion-full': setMotion('full'); break;
+    case 'motion-keep': setMotion('calm'); break;
+    case 'motion-toggle': setMotion(reduceMotion ? 'full' : 'calm'); break;
     case 'copy':        t.dataset.what === 'address' ? copyText(CONTACT.email, 'Адрес скопирован') : copyText(mailDraft, 'Письмо скопировано'); break;
     case 'brand-card':  setBrand(state.activeBrand === id ? null : id); break;   // повторный клик по активной — сброс
     case 'brand-back':  setBrand(null); break;
@@ -1982,6 +2020,25 @@ function setCurtainLabel(t){
   $('.ct', curtain).innerHTML = `<small>Астрея</small><b>${[...t].map((c, i) => c === ' ' ? '<span class="ch" style="width:.28em"></span>' : `<span class="ch"><span style="--i:${i}">${c}</span></span>`).join('')}</b><span class="ct-line"></span>`;
 }
 
+/* Выбор режима анимации: сохраняем в localStorage (запасной вариант — window.name) и перезагружаем */
+function setMotion(v){
+  try { localStorage.setItem('astreya-motion', v); } catch (_) {}
+  try { window.name = 'astreya-motion=' + v; } catch (_) {}
+  if ((v === 'calm') === reduceMotion) { $('#motion-note')?.remove(); return; }   // режим уже совпадает
+  location.reload();
+}
+function initMotionUI(){
+  const t = $('#mo-toggle');
+  if (t) t.textContent = reduceMotion ? 'Анимации: спокойные — включить полные' : 'Анимации: полные — сделать спокойнее';
+  if (MOTION.os && !MOTION.pref) {
+    const n = document.createElement('div');
+    n.className = 'motion-note'; n.id = 'motion-note'; n.setAttribute('role', 'region'); n.setAttribute('aria-label', 'Анимации');
+    n.innerHTML = `<p><b>В вашей системе включено «уменьшение движения».</b> Поэтому анимации сайта приглушены: остались только мягкие появления. Можно включить полные — шторки, движение шара, параллакс.</p>
+      <div class="row"><button class="btn btn-fill btn-sm" data-act="motion-full">Включить полные анимации</button><button class="btn btn-lnk" data-act="motion-keep">Оставить спокойные</button></div>`;
+    document.body.appendChild(n);
+  }
+}
+
 /* ==========================================================================
    СТАРТ: футер, сплэш (~2.4 с), первый рендер
    ========================================================================== */
@@ -2010,6 +2067,7 @@ async function endSplash(){
 }
 letters($('#sp-word'), 'Астрея', .3);
 letters($('#sp-sub'), 'Профессиональная косметика', 1);
+initMotionUI();
 routeKey = keyOf(parseHash());
 renderRoute(parseHash());                       // первый рендер под сплэшем
 if (reduceMotion) { $('#splash').remove(); document.documentElement.classList.add('ready'); splashDone = booted = true; initReveal(); }
