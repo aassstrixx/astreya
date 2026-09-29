@@ -666,30 +666,18 @@ body::after{content:"";position:fixed;inset:0;z-index:90;pointer-events:none;bac
 .hero-copy{will-change:transform,opacity}
 
 /* --- фоновый знак за «жемчужиной»: гора + дуга (тот же вектор, что в логотипе), крупно, пик уходит за верхний край, дуга проходит сквозь жемчужину.
-   Отрисовка идёт одним движением: дуга слева направо сквозь жемчужину → правая нога снизу вверх до пика → левая нога вниз влево; по тому же пути бежит световая точка --- */
+   Отрисовка (JS, heroMarkStart) идёт одним движением: дуга слева направо сквозь жемчужину → правая нога снизу вверх до пика → левая нога вниз влево;
+   по этому пути один раз пролетает световой шарик, размер которого следует толщине линии. Края мягкие --- */
 .hero-copy{position:relative;z-index:2}
-.pearl-wrap{z-index:1}
+.pearl-wrap{z-index:1;--hx:.7%;--hy:.66%;--hdx:-7%;--hdy:6%}
 .hero-mark>*{pointer-events:none}
 .hm-sway{position:absolute;inset:0;animation:hmSway 26s ease-in-out infinite alternate,hmBreath 15s ease-in-out infinite alternate}
 @keyframes hmSway{from{transform:rotate(-.9deg)}to{transform:rotate(.9deg)}}
 @keyframes hmBreath{from{scale:1}to{scale:1.018}}
-.hm{position:absolute;left:-31.3%;top:-88.9%;width:255.5%;height:185%;max-width:none;overflow:visible;pointer-events:none;
-  fill:url(#hm-g);stroke:#6f86b8;stroke-opacity:.34;stroke-width:.22;stroke-linejoin:round}
-.hm-mp{fill:none;stroke:#fff;stroke-opacity:1;stroke-dasharray:1 1;stroke-dashoffset:1}
-.js .pearl-wrap.in #hm-mk-a .hm-mp{animation:hmDraw 1.4s cubic-bezier(.4,0,1,.8) .6s forwards}
-.js .pearl-wrap.in #hm-mk-m .hm-mp{animation:hmDraw 2.5s cubic-bezier(0,.2,.5,1) 2s forwards}
-@keyframes hmDraw{to{stroke-dashoffset:0}}
-.hm-dot{fill:url(#hm-dot-g);stroke:none;opacity:0;offset-rotate:0deg;offset-path:path("M97.5 667L109.5 659.7L121.5 652.6L133.5 646.5L145.5 640.6L157.5 635.6L169.5 630.7L181.5 626.5L193.5 622.5L205.5 618.9L217.5 615.6L229.5 612.6L241.5 609.9L253.5 607.5L265.5 605.4L277.5 603.7L289.5 602.3L301.5 601.2L313.5 600.7L325.5 600.6L337.5 601L349.5 602.2L361.5 604L373.5 607.6L385.5 614.6L397.5 622L409.5 629.7L421.5 637.9L433.5 646.4L440 651.1L446 656L447 658L193 372L46.5 726.2")}
-.js .pearl-wrap.in .hm-dot{animation:hmRun 20s linear .6s infinite}
-@keyframes hmRun{
-  0%{offset-distance:0%;opacity:0;animation-timing-function:cubic-bezier(.4,0,1,.8)}
-  .5%{opacity:1}
-  7%{offset-distance:33.09%;animation-timing-function:cubic-bezier(0,.2,.5,1)}
-  19.2%{opacity:1}
-  19.5%{offset-distance:100%;opacity:0}
-  100%{offset-distance:100%;opacity:0}
-}
-@media (max-width:900px){.hero-mark{opacity:.62}.hm-sway{scale:.8;animation:hmSway 26s ease-in-out infinite alternate}}
+.hm{position:absolute;left:calc(50% + var(--hdx) - 126*var(--hx));top:calc(50% + var(--hdy) - 284.7*var(--hy));width:calc(396*var(--hx));height:calc(379*var(--hy));max-width:none;overflow:visible;pointer-events:none;
+  fill:url(#hm-g);stroke:none}
+#hm-dot{fill:url(#hm-dot-g);opacity:0}
+@media (max-width:900px){.pearl-wrap{--hx:.72%;--hy:.72%;--hdx:0%;--hdy:0%}.hero-mark{opacity:.68}}
 
 /* --- бегущая строка брендов --- */
 .marquee{border-block:1px dashed var(--line);overflow:hidden;padding:clamp(18px,2.4vw,30px) 0;-webkit-mask-image:linear-gradient(90deg,transparent,#000 9%,#000 91%,transparent);mask-image:linear-gradient(90deg,transparent,#000 9%,#000 91%,transparent)}
@@ -1228,7 +1216,7 @@ function vHome(){
       <div class="hero-facts reveal"><span>Оригинальная продукция</span><span>Обучение специалистов</span><span>${OFFICES.length} города присутствия</span></div>
     </div>
     <div class="pearl-wrap reveal par" data-par="0.1">
-      <div class="ly hero-mark" style="--z:.3" aria-hidden="true"><div class="hm-sway"><svg class="hm" viewBox="49 341 396 379" preserveAspectRatio="none"><mask id="hm-mk-m" maskUnits="userSpaceOnUse" x="0" y="300" width="500" height="480"><path class="hm-mp" style="stroke-width:90" pathLength="1" d="M447 658L193 372L46.5 726.2"/></mask><mask id="hm-mk-a" maskUnits="userSpaceOnUse" x="0" y="300" width="500" height="480"><path class="hm-mp" style="stroke-width:46" pathLength="1" d="M97.5 667L109.5 659.7L121.5 652.6L133.5 646.5L145.5 640.6L157.5 635.6L169.5 630.7L181.5 626.5L193.5 622.5L205.5 618.9L217.5 615.6L229.5 612.6L241.5 609.9L253.5 607.5L265.5 605.4L277.5 603.7L289.5 602.3L301.5 601.2L313.5 600.7L325.5 600.6L337.5 601L349.5 602.2L361.5 604L373.5 607.6L385.5 614.6L397.5 622L409.5 629.7L421.5 637.9L433.5 646.4L440 651.1L446 656"/></mask><use href="#p-mountain" mask="url(#hm-mk-m)"/><use href="#p-arc" mask="url(#hm-mk-a)"/><ellipse class="hm-dot" rx="8.3" ry="11"/></svg></div></div>
+      <div class="ly hero-mark" style="--z:.3" aria-hidden="true"><div class="hm-sway"><svg class="hm" viewBox="49 341 396 379" preserveAspectRatio="none"><defs><linearGradient id="hm-ga" gradientUnits="userSpaceOnUse" x1="-1022" y1="0" x2="-1000" y2="0"><stop offset="0" stop-color="#fff"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></linearGradient><linearGradient id="hm-gr" gradientUnits="userSpaceOnUse" x1="804.9" y1="1038" x2="789.8" y2="1022"><stop offset="0" stop-color="#fff"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></linearGradient><linearGradient id="hm-gl" gradientUnits="userSpaceOnUse" x1="413.3" y1="-82.2" x2="404.2" y2="-62.2"><stop offset="0" stop-color="#fff"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></linearGradient><mask id="hm-mk-a" maskUnits="userSpaceOnUse" x="0" y="300" width="500" height="480"><rect x="0" y="300" width="500" height="480" fill="url(#hm-ga)"/></mask><mask id="hm-mk-m" maskUnits="userSpaceOnUse" x="0" y="300" width="500" height="480"><polygon points="124.6,48.2 258.8,740.4 1436.9,511.8 1302.6,-180.3" fill="url(#hm-gr)"/><polygon points="136.4,45.9 270.6,738.1 -907.4,966.6 -1041.7,274.5" fill="url(#hm-gl)"/></mask><filter id="hm-soft" x="-2%" y="-2%" width="104%" height="104%" color-interpolation-filters="sRGB"><feGaussianBlur stdDeviation="0.55"/></filter></defs><g filter="url(#hm-soft)"><use href="#p-mountain" mask="url(#hm-mk-m)"/><use href="#p-arc" mask="url(#hm-mk-a)"/></g><ellipse id="hm-dot" cx="97.5" cy="667" rx="1" ry="1"/></svg></div></div>
       <div class="ly" style="--z:.5"><div class="halo"></div></div>
       <div class="ly" style="--z:1"><div class="ring r1"><i class="od"></i></div></div>
       <div class="ly" style="--z:1.7"><div class="ring r2"><i class="od"></i></div></div>
@@ -1660,6 +1648,48 @@ function runCounter(el){
   };
   requestAnimationFrame(tick);
 }
+/* Знак за «жемчужиной»: мягкая отрисовка вдоль одного пути. Фронт каждой части (дуга, правая и левая ноги) — линейный градиент-маска,
+   шарик летит по центру линии один раз и меняет размер вместе с её толщиной. Координаты — в единицах логотипа. */
+const HM = {
+  P:[[97.5,667.0],[109.5,659.7],[121.5,652.6],[133.5,646.5],[145.5,640.6],[157.5,635.6],[169.5,630.7],[181.5,626.5],[193.5,622.5],[205.5,618.9],[217.5,615.6],[229.5,612.6],[241.5,609.9],[253.5,607.5],[265.5,605.4],[277.5,603.7],[289.5,602.3],[301.5,601.2],[313.5,600.7],[325.5,600.6],[337.5,601.0],[349.5,602.2],[361.5,604.0],[373.5,607.6],[385.5,614.6],[397.5,622.0],[409.5,629.7],[421.5,637.9],[433.5,646.4],[440,651.1],[446,656],[447,658],[426.2,635.9],[405.4,613.9],[384.6,591.8],[363.9,569.7],[343.1,547.6],[322.3,525.6],[301.5,503.5],[280.7,481.4],[260.0,459.4],[239.2,437.3],[218.4,415.2],[197.6,393.1],[185.0,420.9],[172.4,448.7],[159.8,476.4],[147.2,504.2],[134.6,531.9],[122.0,559.7],[109.5,587.4],[96.9,615.2],[84.3,642.9],[71.7,670.7],[59.1,698.4],[46.5,726.2]],
+  T:[0.0,4.0,7.6,10.4,12.5,14.3,15.9,17.3,18.6,19.8,21.1,22.5,24.0,25.6,27.4,29.1,30.9,32.7,34.4,35.8,36.9,37.7,37.6,34.8,28.6,21.4,15.0,9.4,5.0,2.0,0.5,1.0,4.1,8.7,13.6,18.4,23.2,28.0,32.9,37.7,42.5,44.8,39.4,35.2,42.6,48.7,45.9,40.7,35.4,30.2,24.9,19.6,14.4,9.1,4.2,0.0],
+  ia:30, im:43, F:22, V:255,
+  O:[447, 658], M:[197.6, 393.1], u:[-0.6856, -0.728], v:[-0.4132, 0.9106]
+};
+function heroMarkStart(wrap, manual){
+  const svg = wrap.querySelector('svg.hm'); if (!svg) return;
+  const $g = id => svg.querySelector('#' + id), ga = $g('hm-ga'), gr = $g('hm-gr'), gl = $g('hm-gl'), dot = $g('hm-dot');
+  if (!ga || !gr || !gl || !dot) return;
+  const {P, T, ia, im, F, V, O, M, u, v} = HM, n = P.length, L = [0];
+  for (let i = 1; i < n; i++) L.push(L[i - 1] + Math.hypot(P[i][0] - P[i - 1][0], P[i][1] - P[i - 1][1]));
+  const S = L[n - 1], sA = L[ia], sR0 = L[ia + 1], sM = L[im], total = S + F + 12, dur = total / V * 1000;
+  const at = s => {                                  // точка пути и толщина линии на длине s
+    let i = 1; while (i < n - 1 && L[i] < s) i++;
+    const t = Math.max(0, Math.min(1, (s - L[i - 1]) / (L[i] - L[i - 1])));
+    return [P[i - 1][0] + (P[i][0] - P[i - 1][0]) * t, P[i - 1][1] + (P[i][1] - P[i - 1][1]) * t, T[i - 1] + (T[i] - T[i - 1]) * t];
+  };
+  const put = (g, x1, y1, x2, y2) => { g.setAttribute('x1', x1); g.setAttribute('y1', y1); g.setAttribute('x2', x2); g.setAttribute('y2', y2); };
+  const ease = k => .5 * k + .25 * (1 - Math.cos(Math.PI * k));
+  const r = svg.getBoundingClientRect(), sx = r.width / 396 || 1, sy = r.height / 379 || 1, sk = (sx + sy) / 2;
+  const t0 = performance.now() + 600;
+  const frame = now => {
+    if (!svg.isConnected) return;
+    const k = Math.min(1, Math.max(0, (now - t0) / dur)), s = ease(k) * total, sp = Math.min(s, S), p = at(sp);
+    const fx = s <= sA ? p[0] : at(sA)[0] + (s - sA);                    // дуга: вертикальный фронт
+    put(ga, fx - F, 0, fx, 0);
+    const cr = s - sR0, qx = O[0] + u[0] * cr, qy = O[1] + u[1] * cr;    // правая нога: фронт вдоль её оси
+    put(gr, qx - u[0] * F, qy - u[1] * F, qx, qy);
+    const cl = s - sM, lx = M[0] + v[0] * cl, ly = M[1] + v[1] * cl;     // левая нога
+    put(gl, lx - v[0] * F, ly - v[1] * F, lx, ly);
+    const R = Math.max(1.5, .4 * p[2]) * sk;                             // радиус шарика (px) следует толщине линии
+    dot.setAttribute('cx', p[0].toFixed(2)); dot.setAttribute('cy', p[1].toFixed(2));
+    dot.setAttribute('rx', (R / sx).toFixed(2)); dot.setAttribute('ry', (R / sy).toFixed(2));
+    dot.style.opacity = k <= 0 ? 0 : Math.min(1, s / 26) * (s <= S ? 1 : Math.max(0, 1 - (s - S) / 12));
+    if (k < 1 && !manual) requestAnimationFrame(frame);
+  };
+  if (manual) { frame.t0 = t0; return frame; }
+  requestAnimationFrame(frame);
+}
 let revealTok = 0;
 function scheduleReveal(ms){ const t = ++revealTok; setTimeout(() => { if (t === revealTok) initReveal(); }, ms); }
 function initReveal(){
@@ -1672,6 +1702,7 @@ function initReveal(){
     if (el.classList.contains('reveal')) el.style.setProperty('--rd', Math.min(i, 8) * 90 + 'ms');
     if (el.classList.contains('split')) el.style.setProperty('--sd', Math.min(i, 5) * 70 + 'ms');
     el.classList.add('in');
+    if (el.classList.contains('pearl-wrap')) { try { heroMarkStart(el); } catch (e) {} }
   };
   if (!('IntersectionObserver' in window)) { targets.forEach(show); return; }
   io = new IntersectionObserver(entries => {
