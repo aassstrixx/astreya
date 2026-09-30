@@ -49,7 +49,7 @@ module.exports = function homeRedesign(ctx, C, P, parts, {events, val}) {
   /* ---------- 2. Почему Астрея (editorial: крупные номера, тонкие линии) ---------- */
   const why = `<section class="rd-sec rd-why"><div class="wrap rd-why-grid">
     <div class="rd-why-head reveal"><span class="eyebrow">${esc(rd.why.eyebrow)}</span><h2>${esc(rd.why.title)}</h2></div>
-    <ol class="rd-why-list">${rd.why.pick.map((k, i) => content.advantages[k]).filter(Boolean).map((a, i) => `<li class="rd-why-item reveal"><span class="rd-no" aria-hidden="true">${String(i + 1).padStart(2, '0')}</span><div><h3>${esc(a.title)}</h3><p>${esc(a.text)}</p></div></li>`).join('')}</ol>
+    <ol class="rd-why-list">${rd.why.pick.map((k, i) => content.advantages[k]).filter(Boolean).map((a, i) => `<li class="rd-why-item reveal"><span class="rd-no" aria-hidden="true">${i + 1}</span><div><h3>${esc(a.title)}</h3><p>${esc(a.text)}</p></div></li>`).join('')}</ol>
   </div></section>`;
 
   /* ---------- 3. Решения по задачам (CLINICAL, крупные кликабельные карточки; первая — двойная) ---------- */
@@ -120,7 +120,7 @@ module.exports = function homeRedesign(ctx, C, P, parts, {events, val}) {
   const au = rd.audience;
   const forWhom = `<section class="rd-sec rd-clinical rd-aud"><div class="wrap rd-aud-grid">
     <div class="rd-aud-head reveal"><span class="eyebrow">${esc(au.eyebrow)}</span><h2>${esc(au.title)}</h2></div>
-    <div class="rd-aud-list">${au.items.map((a, i) => `<article class="rd-aud-item reveal"><span class="rd-no" aria-hidden="true">${String(i + 1).padStart(2, '0')}</span><h3>${esc(a.title)}</h3><p>${esc(a.text)}</p><a class="lnk" href="${C.u(P, a.href.split('#')[0])}${a.href.includes('#') ? '#' + a.href.split('#')[1] : ''}">${esc(a.cta)} ${I.arrow}</a></article>`).join('')}</div>
+    <div class="rd-aud-list">${au.items.map((a, i) => `<article class="rd-aud-item reveal"><span class="rd-no" aria-hidden="true">${i + 1}</span><h3>${esc(a.title)}</h3><p>${esc(a.text)}</p><a class="lnk" href="${C.u(P, a.href.split('#')[0])}${a.href.includes('#') ? '#' + a.href.split('#')[1] : ''}">${esc(a.cta)} ${I.arrow}</a></article>`).join('')}</div>
   </div></section>`;
 
   /* ---------- 9. Новости ---------- */
@@ -138,7 +138,7 @@ module.exports = function homeRedesign(ctx, C, P, parts, {events, val}) {
   const finalCta = `<section class="rd-sec rd-final"><div class="wrap"><div class="rd-final-band reveal pushin">
     <div class="rd-final-copy"><span class="eyebrow">${esc(f.eyebrow)}</span><h2>${esc(f.title)}</h2><p>${esc(f.text)}</p>
       <div class="row">${C.partnerBtn(P, 'home-final-cta', 'btn btn-light')}<a class="btn btn-ghost-inv" href="tel:${ctx.site.contacts.phoneRaw}" data-track="phone_click">${I.phone} ${esc(ctx.site.contacts.phone)}</a></div></div>
-    <ul class="rd-perks">${f.perks.map((t, i) => `<li><span aria-hidden="true">${String(i + 1).padStart(2, '0')}</span>${esc(t)}</li>`).join('')}</ul>
+    <ul class="rd-perks">${f.perks.map(t => `<li>${esc(t)}</li>`).join('')}</ul>
   </div></div></section>`;
 
   /* порядок: воздух → цифры → причины → решения → бренды → подборщик → продукты → эксперт-блок → обучение → аудитория → новости → логотипы → призыв */

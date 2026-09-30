@@ -66,7 +66,7 @@
 .rd-why-item:last-child{border-bottom:1px solid var(--line)}
 .rd-why-item h3{font-size:clamp(24px,2.6vw,34px);line-height:1.12}
 .rd-why-item p{margin-top:12px;color:var(--muted);max-width:46ch}
-.rd-why-item:hover .rd-no{color:var(--blue)}
+.rd-why-item.lit .rd-no{color:var(--blue)}   /* подсвечивается номер пункта, который сейчас в центре экрана (js/redesign.js); при наведении не меняется */
 
 /* ---------- Решения по задачам ---------- */
 /* Решения: слева текст и задачи, справа фото 04 (~38 %) */
@@ -159,11 +159,10 @@
 .rd-aud-head h2{margin-top:16px;max-width:13ch;font-size:clamp(32px,4.1vw,58px);line-height:1.04}
 .rd-aud-list{display:grid;grid-template-columns:1fr 1fr;gap:0 clamp(18px,3vw,44px)}
 .rd-aud-item{display:flex;flex-direction:column;gap:12px;padding:clamp(22px,2.8vw,36px) 0;border-top:1px solid var(--line)}
-.rd-aud-item .rd-no{font-size:clamp(40px,4.4vw,64px)}
+.rd-aud-item .rd-no{font-size:clamp(40px,4.4vw,64px);color:var(--blue)}   /* все номера одного цвета, без подсветки при наведении */
 .rd-aud-item h3{font-size:clamp(22px,2.2vw,28px);line-height:1.15}
 .rd-aud-item p{color:var(--muted);font-size:15px;line-height:1.6}
 .rd-aud-item .lnk{margin-top:auto;align-self:flex-start}
-.rd-aud-item:hover .rd-no{color:var(--blue)}
 
 /* ---------- Наши бренды (логотипы) ---------- */
 .rd-wall-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));border-top:1px solid var(--line);border-left:1px solid var(--line)}
@@ -183,7 +182,6 @@
 .rd-perks{position:relative;z-index:1;display:grid;gap:0}
 .rd-perks li{display:flex;align-items:baseline;gap:18px;padding:18px 0;border-top:1px solid rgba(255,255,255,.22);font:500 clamp(20px,2vw,27px)/1.2 var(--serif)}
 .rd-perks li:last-child{border-bottom:1px solid rgba(255,255,255,.22)}
-.rd-perks span{font:600 11px/1 var(--sans);letter-spacing:.16em;color:rgba(255,255,255,.6)}
 
 /* ---------- страница «Бренды»: группы ---------- */
 .br-group{grid-column:1/-1;display:flex;align-items:baseline;gap:12px;margin:clamp(14px,2vw,28px) 0 0;padding-top:clamp(18px,2.4vw,30px);border-top:1px solid var(--line);font:500 clamp(26px,3vw,40px)/1.1 var(--serif)}

@@ -40,4 +40,22 @@
     }
   });
 
+
+  /* «Почему Астрея»: подсветка цифр при скролле — светится номер пункта, ближайшего к центру экрана, пока список на экране */
+  let raf = 0;
+  function whyLit() {
+    const list = document.querySelector('.rd-why-list'); if (!list) return;
+    const items = Array.prototype.slice.call(list.querySelectorAll('.rd-why-item')), vh = window.innerHeight, lr = list.getBoundingClientRect();
+    let best = null, bd = 1e9;
+    if (lr.bottom > 0 && lr.top < vh) items.forEach(function (it) { const r = it.getBoundingClientRect(), d = Math.abs(r.top + r.height / 2 - vh * 0.5); if (d < bd) { bd = d; best = it; } });
+    items.forEach(function (it) { it.classList.toggle('lit', it === best); });
+  }
+  function schedule() { if (!raf) raf = requestAnimationFrame(function () { raf = 0; whyLit(); }); }
+  addEventListener('scroll', schedule, {passive: true});
+  addEventListener('resize', schedule);
+  addEventListener('load', schedule);
+  document.addEventListener('DOMContentLoaded', schedule);
+  const mainEl = document.getElementById('main');
+  if (mainEl && window.MutationObserver) new MutationObserver(schedule).observe(mainEl, {childList: true});
+  schedule();
 })();
