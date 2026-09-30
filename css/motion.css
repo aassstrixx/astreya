@@ -142,12 +142,8 @@ body::after{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;bac
 .mq-set a:hover{color:var(--blue)}
 /* логотипы в бегущей строке: размер по «площади» (см. logoPx), на телефонах мельче */
 .mq-set a.mq-l{display:flex;align-items:center;padding:0 clamp(22px,3.2vw,46px)}
-/* логотипы окрашены цветом заголовков сайта (--navy #0b1a33) CSS-фильтром — работает и с векторами, и с PNG, и при открытии с диска;
-   при наведении подсвечиваются синим (--blue #2f5bd6), как прежние названия. Цепочки фильтров одинаковой формы, поэтому переход плавный */
-.mq-logo{display:block;width:calc(var(--lw,120)*var(--mq-k,1)*1px);height:auto;max-height:88px;object-fit:contain;
-  filter:brightness(0) saturate(100%) invert(71%) sepia(87%) saturate(407%) hue-rotate(184deg) brightness(30%) contrast(150%) drop-shadow(0 0 0 rgba(47,91,214,0));
-  transition:filter .45s var(--ease-out)}
-.mq-set a.mq-l:hover .mq-logo,.mq-set a.mq-l:focus-visible .mq-logo{filter:brightness(0) saturate(100%) invert(16%) sepia(68%) saturate(418%) hue-rotate(187deg) brightness(225%) contrast(163%) drop-shadow(0 6px 14px rgba(47,91,214,.34))}
+/* логотипы окрашены цветом заголовков сайта (--navy #0b1a33) CSS-фильтром — работает и с векторами, и с PNG, и при открытии с диска; при наведении не меняются (строка только останавливается) */
+.mq-logo{display:block;width:calc(var(--lw,120)*var(--mq-k,1)*1px);height:auto;max-height:88px;object-fit:contain;filter:brightness(0) saturate(100%) invert(71%) sepia(87%) saturate(407%) hue-rotate(184deg) brightness(30%) contrast(150%)}
 @media (max-width:700px){.marquee{--mq-k:.72}}
 .mq-set i{width:11px;height:11px;border-radius:50%;flex:none;background:radial-gradient(circle at 35% 30%,#fff,#e5e1d9 55%,#a9b4c6);box-shadow:0 5px 10px -5px rgba(11,26,51,.45)}
 @keyframes mq{to{transform:translateX(-50%)}}
