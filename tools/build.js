@@ -21,7 +21,16 @@ const partners = require('../src/pages/partners.js');
 const {searchPage, legalPage} = require('../src/pages/misc.js');
 
 const ROOT = path.join(__dirname, '..');
-const ctx = load(), C = components(ctx), L = layoutFactory(ctx, C);
+const ctx = load();
+/* версия ресурсов (?v=…) в ссылках на CSS/JS: меняется при любой правке стилей, скриптов или данных — браузер и CDN не показывают устаревшие файлы */
+ctx.assetVersion = (() => {
+  const h = require('crypto').createHash('md5');
+  const list = d => fs.readdirSync(path.join(__dirname, '..', d)).filter(f => /\.(css|js|json)$/.test(f) && f !== 'data.js').sort().map(f => path.join(__dirname, '..', d, f));
+  [...list('css'), ...list('js'), ...list('data')].forEach(f => h.update(fs.readFileSync(f)));
+  fs.readdirSync(path.join(__dirname, '..', 'assets', 'brands')).sort().forEach(f => h.update(fs.readFileSync(path.join(__dirname, '..', 'assets', 'brands', f))));
+  return h.digest('hex').slice(0, 8);
+})();
+const C = components(ctx), L = layoutFactory(ctx, C);
 const {site, content} = ctx;
 const BUILD_DATE = new Date().toISOString().slice(0, 10);
 const trunc = (s, n = 158) => { s = String(s).replace(/\s+/g, ' ').trim(); return s.length <= n ? s : s.slice(0, n - 1).replace(/[\s,;:.—-]+\S*$/, '') + '…'; };

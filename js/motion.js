@@ -190,7 +190,7 @@
   const pages = new Map();
   function fetchPage(url) {
     const key = url.split('#')[0];
-    if (!pages.has(key)) pages.set(key, fetch(key, {credentials: 'same-origin'}).then(r => { if (!r.ok) throw new Error(r.status); return r.text(); })
+    if (!pages.has(key)) pages.set(key, fetch(key, {credentials: 'same-origin', cache: 'no-cache'}).then(r => { if (!r.ok) throw new Error(r.status); return r.text(); })
       .then(t => new DOMParser().parseFromString(t, 'text/html')).catch(e => { pages.delete(key); throw e; }));
     return pages.get(key);
   }

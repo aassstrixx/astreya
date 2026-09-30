@@ -106,6 +106,9 @@ module.exports = function components(ctx) {
     ? logoImg(P, b, cls, `Логотип ${b.name}`)
     : `<span class="blogo mono ${cls}" role="img" aria-label="Логотип ${esc(b.name)}">${esc(b.name.slice(0, 1))}</span>`;
 
+  /* страница бренда: крупный логотип вместо текстового заголовка (h1 остаётся, название — в alt) */
+  const heroLogo = (P, b) => `<img class="b-logo" src="${esc(u(P, b.logo))}" alt="${esc(b.name)}"${b.logoW ? ` width="${b.logoW}" height="${b.logoH}"` : ''} decoding="async">`;
+
   const brandCardHome = (P, b, i) => `<article class="bcard reveal" data-act="brand-card" data-id="${b.id}" tabindex="0" aria-expanded="false" style="${bstyle(b)}">
     <div class="band${b.logo ? ' has-logo' : ''}">${b.logo ? logoImg(P, b, 'bl-img', b.name) : `<span class="nm">${esc(b.name)}</span>`}<span class="ix">${String(i + 1).padStart(2, '0')}</span></div>
     <div class="low">
@@ -171,5 +174,5 @@ module.exports = function components(ctx) {
   const noteBox = html => `<div class="note">${I.info}<span>${html}</span></div>`;
 
   return {u, purl, burl, eurl, nurl, art, tag, tasksLine, timeTag, chip, crumbs, pageHead, secHead, lnk, partnerBtn, productCard, eventCard, eventRow,
-    newsCard, newsStyle, articleCard, logoMark, brandCardHome, brandCardList, advantageCards, officeCard, ctaBand, noteBox, FMT_KEY};
+    newsCard, newsStyle, articleCard, logoMark, heroLogo, brandCardHome, brandCardList, advantageCards, officeCard, ctaBand, noteBox, FMT_KEY};
 };

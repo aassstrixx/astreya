@@ -16,6 +16,7 @@ const EARLY = `(function(d){var h=d.documentElement;h.classList.add('js');try{va
 
 module.exports = function layout(ctx, C) {
   const {site} = ctx, {u} = C;
+  const ver = ctx.assetVersion ? '?v=' + ctx.assetVersion : '';
   const base = site.url.replace(/\/?$/, '/');
   const absUrl = p => p === 'index.html' ? base : base + p;
   const nav = [['Каталог', 'catalog.html', '/catalog'], ['Бренды', 'brands.html', '/brands'], ['Обучение', 'training.html', '/training'], ['Новости', 'news.html', '/news'], ['Компания', 'company.html', '/company']];
@@ -166,7 +167,7 @@ ${P.key === 'home' ? `<script>${LEGACY}</script>\n` : ''}
      Шрифты подключаются асинхронно: страница стартует сразу, даже если Google Fonts медленный (у всех гарнитур есть запасные — см. --serif / --sans). -->
 <script>(function(){var l=document.createElement('link');l.rel='stylesheet';l.href='${FONTS}';document.head.appendChild(l);})();</script>
 <noscript><link href="${FONTS}" rel="stylesheet"></noscript>
-${CSS.map(n => `<link rel="stylesheet" href="${u(P, `css/${n}.css`)}">`).join('\n')}
+${CSS.map(n => `<link rel="stylesheet" href="${u(P, `css/${n}.css`)}${ver}">`).join('\n')}
 ${ld.map(o => `<script type="application/ld+json">${JSON.stringify(o)}</script>`).join('\n')}
 </head>
 <body data-page="${P.key}" data-nav="${P.nav || ''}" data-root="${P.root}">
@@ -188,7 +189,7 @@ ${searchPanel(P)}
 <div id="modal" aria-hidden="true"></div>
 <div id="toast" role="status" aria-live="polite"></div>
 
-${JS.map(n => `<script src="${u(P, `js/${n}.js`)}" defer></script>`).join('\n')}
+${JS.map(n => `<script src="${u(P, `js/${n}.js`)}${ver}" defer></script>`).join('\n')}
 </body>
 </html>
 `;
