@@ -8,7 +8,7 @@ module.exports = function homeRedesign(ctx, C, P, parts, {events, val}) {
   const rd = ctx.redesign, brands = ctx.brands, tasks = ctx.tasks, content = ctx.content, h = content.home;
 
   /* крупный логотип «Астрея» на заднем плане секции (вместо слова); цвет задаётся CSS (--lm), прозрачность 5–6 % */
-  const bgLogo = rd.bgLogo ? '<div class="rd-bglogo" aria-hidden="true"><svg viewBox="46 338 836 436"><use href="#logo-art"/></svg></div>' : '';
+  const bgLogo = rd.bgLogo ? '<div class="rd-bglogo" aria-hidden="true"><svg viewBox="49.8 341.6 829.5 428.9" preserveAspectRatio="xMidYMid meet"><use href="#logo-art"/></svg></div>' : '';
 
   /* ---------- 1. Астрея в цифрах (CLINICAL + фоновый логотип) ---------- */
   const statItems = [...h.stats, ...rd.stats.extra].filter(s => s.value !== null && s.value !== undefined);

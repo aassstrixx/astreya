@@ -16,12 +16,13 @@
 .rd-no{font:500 clamp(54px,7vw,104px)/.9 var(--serif);letter-spacing:-.03em;color:rgba(47,91,214,.24);transition:color .45s var(--ease)}
 .rd-ph{display:inline-block;margin-left:8px;padding:2px 8px;border-radius:var(--pill);border:1px dashed var(--slate);font:600 10px/1.6 var(--sans);letter-spacing:.12em;text-transform:uppercase;font-style:normal;color:var(--slate);vertical-align:middle}
 
-/* крупный логотип «Астрея» на заднем плане (5–6 %) */
+/* крупный логотип «Астрея» на заднем плане (5–6 %): строго по центру секции (по горизонтали и вертикали), без сдвигов и анимации;
+   viewBox обрезан по самому рисунку, поэтому центр рисунка = центр секции. Ширина — как у прежнего слова (до 1630 px), но не выше 90 % высоты секции */
 .rd-bgword{overflow:hidden}
-.rd-bglogo{position:absolute;left:50%;top:50%;width:min(1180px,112%);transform:translate(-50%,-50%);opacity:.055;pointer-events:none;user-select:none;--lm:var(--navy)}
-.rd-bglogo svg{width:100%;height:auto}
+.rd-bglogo{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;opacity:.055;pointer-events:none;user-select:none;--lm:var(--navy);transform:none}
+.rd-bglogo svg{display:block;width:min(1630px,96%);height:90%;max-width:none}
 .rd-editorial .rd-bglogo{--lm:#fff;opacity:.05}
-.rd-bgword>*{position:relative;z-index:1}
+.rd-bgword>*:not(.rd-bglogo){position:relative;z-index:1}
 
 /* ---------- Астрея в цифрах ---------- */
 .rd-stats-grid{display:grid;grid-template-columns:minmax(0,.9fr) minmax(0,1.3fr);gap:clamp(32px,6vw,100px);align-items:center}
@@ -230,5 +231,5 @@
   .rd-next{flex-wrap:wrap}
   .rd-ed-p1{--h:160px}.rd-ed-p2{--h:215px}.rd-ed-p3{--h:190px}
   .rd-wall .mq-logo{--mq-k:.95}
-  .rd-bglogo{width:96%}
+  .rd-bglogo svg{width:98%;height:84%}
 }
