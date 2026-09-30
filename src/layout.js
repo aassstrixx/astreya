@@ -16,6 +16,7 @@ const EARLY = `(function(d){var h=d.documentElement;h.classList.add('js');try{va
 
 module.exports = function layout(ctx, C) {
   const {site} = ctx, {u} = C;
+  const showNote = !!site.demoNotice && !(ctx.redesign && ctx.redesign.ui && ctx.redesign.ui.showDemoNotices === false);   // пометка «демо-данные» в подвале (в режиме доработок скрывается флагом redesign.ui)
   const rd = !!site.redesign, cssList = rd ? [...CSS, 'redesign'] : CSS, jsList = rd ? [...JS, 'redesign'] : JS;   // слой доработок включается одним флагом site.redesign
   const ver = ctx.assetVersion ? '?v=' + ctx.assetVersion : '';
   const base = site.url.replace(/\/?$/, '/');
@@ -97,7 +98,7 @@ module.exports = function layout(ctx, C) {
       <span>© ${esc(site.nameLatin)}, ${site.year}</span>
       <span class="ftr-legal"><a href="${u(P, 'privacy.html')}">Политика конфиденциальности</a><a href="${u(P, 'terms.html')}">Пользовательское соглашение</a></span>
     </div>
-    ${site.demoNotice ? `<p class="ftr-note">${esc(site.demoNotice)}</p>` : ''}
+    ${showNote ? `<p class="ftr-note">${esc(site.demoNotice)}</p>` : ''}
   </div>
 </footer>`;
 
@@ -122,7 +123,7 @@ module.exports = function layout(ctx, C) {
       <span>© ${esc(site.nameLatin)}, ${site.year}</span>
       <span class="ftr-legal"><a href="${u(P, 'privacy.html')}">Политика конфиденциальности</a><a href="${u(P, 'terms.html')}">Пользовательское соглашение</a></span>
     </div>
-    ${site.demoNotice ? `<p class="ftr-note">${esc(site.demoNotice)}</p>` : ''}
+    ${showNote ? `<p class="ftr-note">${esc(site.demoNotice)}</p>` : ''}
   </div>
 </footer>`; };
 

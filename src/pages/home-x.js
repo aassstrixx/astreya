@@ -7,14 +7,36 @@ const {esc, I} = S;
 module.exports = function homeRedesign(ctx, C, P, parts, {events, val}) {
   const rd = ctx.redesign, brands = ctx.brands, tasks = ctx.tasks, content = ctx.content, h = content.home;
 
+  /* фото 01–05 (data/redesign.json → photos): каждое — только в своём блоке */
+  const ph = k => rd.photos[k];
+  const img = (k, cls = '', extra = '') => { const f = ph(k); return `<img${cls ? ` class="${cls}"` : ''} src="${C.u(P, f.src)}" alt="${esc(f.alt)}" width="${f.w}" height="${f.h}"${extra} decoding="async">`; };
+  const showDemo = !rd.ui || rd.ui.showDemoNotices !== false;
+
   /* крупный логотип «Астрея» на заднем плане секции (вместо слова); цвет задаётся CSS (--lm), прозрачность 5–6 % */
   const bgLogo = rd.bgLogo ? '<div class="rd-bglogo" aria-hidden="true"><svg viewBox="49.8 341.6 829.5 428.9" preserveAspectRatio="xMidYMid meet"><use href="#logo-art"/></svg></div>' : '';
 
+
+  /* ---------- 0. О компании: фото 02 слева (~42 %), текст справа ---------- */
+  const ab = h.about;
+  const about = `<section class="sec rd-about" id="about"><div class="wrap about-home rd-about-grid">
+    <figure class="rd-about-photo reveal">${img('about', '', ' loading="lazy"')}<figcaption>${esc(ctx.site.tagline)}</figcaption></figure>
+    <div class="ah-copy">
+      <span class="eyebrow">${esc(ab.eyebrow)}</span>
+      <h2>${esc(ab.title)}</h2>
+      ${ab.text.map(t => `<p class="reveal">${esc(t)}</p>`).join('')}
+      <ul class="ticks reveal">${ab.points.map(t => `<li>${I.check}<span>${esc(t)}</span></li>`).join('')}</ul>
+      <div class="row reveal" style="margin-top:30px"><a class="btn btn-ghost" href="${C.u(P, 'company.html')}">О компании ${I.arrow}</a></div>
+    </div>
+  </div></section>`;
+
+  /* ---------- 0. Hero: фото 01 вместо жемчужины (кольца-орбиты с логотипами остаются) ---------- */
+  const hero = parts.hero.replace(/<div class="pearl" role="img"[^>]*><\/div>/, `<div class="pearl pearl-photo">${img('hero', '', ' fetchpriority="high"')}</div>`);
+
   /* ---------- 1. Астрея в цифрах (CLINICAL + фоновый логотип) ---------- */
   const statItems = [...h.stats, ...rd.stats.extra].filter(s => s.value !== null && s.value !== undefined);
-  const stats = `<section class="rd-sec rd-clinical rd-stats rd-bgword" aria-label="${esc(rd.stats.eyebrow)}">${bgLogo}<div class="wrap rd-stats-grid">
+  const stats = `<section class="rd-sec rd-clinical rd-stats" aria-label="${esc(rd.stats.eyebrow)}"><div class="rd-stats-photo" aria-hidden="true">${img('numbers', '', ' loading="lazy"')}</div><div class="wrap rd-stats-grid">
     <div class="rd-stats-copy reveal"><span class="eyebrow">${esc(rd.stats.eyebrow)}</span><h2>${esc(rd.stats.title)}</h2></div>
-    <div class="rd-nums">${statItems.map(s => `<div class="rd-num reveal"><b data-count="${val(s)}"${s.suffix ? ` data-suffix="${esc(s.suffix)}"` : ''}>${val(s)}</b><span>${esc(s.label)}</span>${s.note ? `<i class="snote">${esc(s.note)}</i>` : ''}${s.placeholder ? '<em class="rd-ph">демо-данные</em>' : ''}</div>`).join('')}</div>
+    <div class="rd-nums">${statItems.map(s => `<div class="rd-num reveal"><b data-count="${val(s)}"${s.suffix ? ` data-suffix="${esc(s.suffix)}"` : ''}>${val(s)}</b><span>${esc(s.label)}</span>${s.note ? `<i class="snote">${esc(s.note)}</i>` : ''}${s.placeholder && showDemo ? '<em class="rd-ph">демо-данные</em>' : ''}</div>`).join('')}</div>
   </div></section>`;
 
   /* ---------- 2. Почему Астрея (editorial: крупные номера, тонкие линии) ---------- */
@@ -24,7 +46,7 @@ module.exports = function homeRedesign(ctx, C, P, parts, {events, val}) {
   </div></section>`;
 
   /* ---------- 3. Решения по задачам (CLINICAL, крупные кликабельные карточки; первая — двойная) ---------- */
-  const solutions = `<section class="rd-sec rd-clinical rd-solutions" id="solutions"><div class="wrap">
+  const solutions = `<section class="rd-sec rd-clinical rd-solutions" id="solutions"><div class="wrap rd-sol-grid"><div class="rd-sol-main">
     <header class="rd-head reveal"><span class="eyebrow">${esc(rd.solutions.eyebrow)}</span><h2>${esc(rd.solutions.title)}</h2><p class="lead">${esc(rd.solutions.lead)}</p></header>
     <div class="rd-tasks">${tasks.map((t, i) => {
       const n = ctx.products.filter(p => p.tasks.includes(t.id)).length, bs = t.brands.map(id => ctx.brandById[id]).filter(Boolean);
@@ -35,7 +57,8 @@ module.exports = function homeRedesign(ctx, C, P, parts, {events, val}) {
         <div class="rd-task-logos" aria-hidden="true">${bs.slice(0, 4).map(b => C.slotLogo(P, b, 1500)).join('')}</div>
         <div class="rd-task-foot"><span>${bs.length} ${S.plural(bs.length, 'бренд', 'бренда', 'брендов')} · ${n} ${S.plural(n, 'позиция', 'позиции', 'позиций')}</span><span class="rd-go">Подобрать ${I.arrow}</span></div>
       </a>`;
-    }).join('')}</div>
+    }).join('')}</div></div>
+    <figure class="rd-sol-photo reveal">${img('solutions', '', ' loading="lazy"')}</figure>
   </div></section>`;
 
   /* ---------- 4. Подборщик: прежний + шаг «Для кого?» (js/redesign.js) ---------- */
@@ -53,16 +76,15 @@ module.exports = function homeRedesign(ctx, C, P, parts, {events, val}) {
 
   /* ---------- 6. Editorial-блок (графит): крупная мысль + реальная продукция брендов либо фото специалиста ---------- */
   const ed = rd.editorial;
-  const edVisual = ed.photo
-    ? `<figure class="rd-ed-photo reveal"><img src="${C.u(P, ed.photo)}" alt="${esc(ed.photoAlt || '')}" loading="lazy" decoding="async"></figure>`
-    : `<div class="rd-ed-trio reveal" aria-label="Продукция брендов">${ed.products.map((p, i) => { const b = ctx.brandById[p.brand]; return `<figure class="rd-ed-p rd-ed-p${i + 1}"><img src="${C.u(P, p.src)}" alt="" width="${p.w}" height="${p.h}" loading="lazy" decoding="async"><figcaption>${esc(b.name)}</figcaption></figure>`; }).join('')}</div>`;
+  const trio = `<div class="rd-ed-trio" aria-label="Продукция брендов">${ed.products.map((p, i) => { const b = ctx.brandById[p.brand]; return `<figure class="rd-ed-p rd-ed-p${i + 1}"><img src="${C.u(P, p.src)}" alt="" width="${p.w}" height="${p.h}" loading="lazy" decoding="async"><figcaption>${esc(b.name)}</figcaption></figure>`; }).join('')}</div>`;
   const editorial = `<section class="rd-sec rd-editorial rd-bgword">${bgLogo}<div class="wrap rd-ed-grid">
+    <figure class="rd-ed-photo reveal">${img(ed.photo, '', ' loading="lazy"')}</figure>
     <div class="rd-ed-copy">
       <span class="eyebrow reveal">${esc(ed.eyebrow)}</span>
       <h2 class="reveal"><span class="l1">${ed.lead.map(esc).join('<br>')}</span><span class="l2">${ed.accent.map(esc).join('<br>')}</span></h2>
       <div class="row reveal"><a class="btn btn-light" href="${C.u(P, ed.cta.href)}">${esc(ed.cta.label)} ${I.arrow}</a></div>
+      ${trio}
     </div>
-    ${edVisual}
   </div></section>`;
 
   /* ---------- 7. Обучение специалистов (асимметрия: визуал слева, текст и ближайшее мероприятие справа) ---------- */
@@ -114,5 +136,5 @@ module.exports = function homeRedesign(ctx, C, P, parts, {events, val}) {
   </div></div></section>`;
 
   /* порядок: воздух → цифры → причины → решения → бренды → подборщик → продукты → эксперт-блок → обучение → аудитория → новости → логотипы → призыв */
-  return [parts.hero, parts.marquee, parts.about, stats, why, solutions, parts.brands.replace('class="sec tint"', 'class="rd-sec"'), picker, featured, editorial, training, forWhom, news, wall, finalCta].join('\n\n  ');
+  return [hero, parts.marquee, about, stats, why, solutions, parts.brands.replace('class="sec tint"', 'class="rd-sec"'), picker, featured, editorial, training, forWhom, news, wall, finalCta].join('\n\n  ');
 };

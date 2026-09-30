@@ -30,7 +30,7 @@ module.exports = function catalog(ctx, C, P) {
     <h2 class="sr">Товары каталога</h2>
     <div class="grid g4" id="cat-grid">${products.map((p, i) => C.productCard(P, p, i)).join('')}</div>
     <div class="empty" id="cat-empty" hidden><b>Ничего не нашлось</b>Измените запрос или сбросьте фильтры.</div>
-    ${C.noteBox(`Ассортимент на этой странице демонстрационный (placeholder). Актуальный каталог, описания и документы — на <a href="${site.contacts.ext.catalog}" target="_blank" rel="noopener" style="border-bottom:1px dashed;font-weight:600">acosm.ru/catalog</a>.`)}
+    ${C.noteBox(`${ctx.redesign && ctx.redesign.ui && ctx.redesign.ui.showDemoNotices === false ? '' : 'Ассортимент на этой странице демонстрационный (placeholder). '}Актуальный каталог, описания и документы — на <a href="${site.contacts.ext.catalog}" target="_blank" rel="noopener" style="border-bottom:1px dashed;font-weight:600">acosm.ru/catalog</a>.`)}
     <div style="height:clamp(60px,8vw,110px)"></div>
   </div>`;
 };
