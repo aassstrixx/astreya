@@ -1,6 +1,21 @@
 const S = require('../../js/shared.js');
 const {esc, I, bstyle, dparts} = S;
 
+/* Преподаватели в режиме доработок: сразу после «Четырёх шагов до семинара». Данные — data/redesign.json → teachers (фото и описание добавляются туда же) */
+function teachersRd(ctx, C, P) {
+  const t = ctx.redesign.teachers;
+  return `<section class="rd-sec rd-clinical rd-teachers" id="teachers"><div class="wrap">
+    <header class="rd-head reveal"><span class="eyebrow">${esc(t.eyebrow)}</span><h2>${esc(t.title)}</h2><p class="lead">${esc(t.lead)}</p></header>
+    <div class="rd-tgrid">${t.items.map((p, i) => `<article class="rd-tc reveal">
+      <div class="rd-tc-photo">${p.photo ? `<img src="${C.u(P, p.photo)}" alt="${esc(p.last + ' ' + p.first)}" loading="lazy" decoding="async">` : `<span class="rd-tc-mono" aria-hidden="true">${esc(p.last.charAt(0) + p.first.charAt(0))}</span>`}<span class="rd-tc-no" aria-hidden="true">${String(i + 1).padStart(2, '0')}</span></div>
+      <p class="rd-tc-first">${esc(p.first)}</p>
+      <h3 class="rd-tc-last">${esc(p.last)}</h3>
+      <p class="rd-tc-role">${esc(p.role)}</p>
+      ${p.bio ? `<p class="rd-tc-bio">${esc(p.bio)}</p>` : ''}
+    </article>`).join('')}</div>
+  </div></section>`;
+}
+
 function trainingPage(ctx, C, P) {
   const {training, site, sortedEvents} = ctx;
   const ext = site.contacts.ext;
@@ -16,6 +31,8 @@ function trainingPage(ctx, C, P) {
     <div class="steps">${training.steps.map((s, i) => `<div class="step reveal"><i>${i + 1}</i><h3>${esc(s.t)}</h3><p>${esc(s.p)}</p></div>`).join('')}</div>
   </div></section>
 
+  ${ctx.redesign && ctx.redesign.teachers ? teachersRd(ctx, C, P) : ''}
+
   <section class="sec" id="sched" style="padding-top:0"><div class="wrap">
     <hr class="dash" style="margin-bottom:clamp(50px,7vw,90px)">
     ${C.secHead('Расписание', 'Ближайшие мероприятия')}
@@ -26,10 +43,10 @@ function trainingPage(ctx, C, P) {
     ${C.noteBox(`Расписание ориентировочное: актуальные даты и адреса подтверждает менеджер учебного центра. Полная версия — на <a href="${ext.academy}" target="_blank" rel="noopener" style="border-bottom:1px dashed;font-weight:600">academy.acosm.ru</a>.`)}
   </div></section>
 
-  <section class="sec tint"><div class="wrap">
+  ${ctx.redesign && ctx.redesign.teachers ? '' : `<section class="sec tint"><div class="wrap">
     ${C.secHead('Преподаватели', 'Практики, которые учат практике')}
     <div class="grid g4">${training.teachers.map(t => `<article class="card hov tcard card-pad reveal"><div class="avatar" aria-hidden="true">${esc(t.mono)}</div><h3>${esc(t.name)}</h3><p>${esc(t.spec)}</p><div class="tasks-line">${t.topics.map(x => C.tag(x)).join('')}</div></article>`).join('')}</div>
-  </div></section>
+  </div></section>`}
 
   <section class="sec"><div class="wrap">
     ${C.secHead('Видео', 'Видео-подборка мастер-классов', `<a class="lnk" href="${ext.youtube}" target="_blank" rel="noopener">Канал на YouTube ${I.arrow}</a>`)}
