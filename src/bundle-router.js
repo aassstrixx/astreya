@@ -16,10 +16,9 @@
     if (path === cur && query === (vq ? '?' + vq : '')) { if (hash) scrollToHash(hash); else window.scrollTo({top: 0, behavior: 'smooth'}); return; }
     busy = true;
     const curtain = $('#curtain'), main = $('#main');
-    const pl = M.payloadFor(path, null), CT = window.AstCurtain;
-    if (CT) CT.fill(pl, false);
+    M.curtainLabel(M.labelFor(new URL(path, 'http://x/' + dirOf(cur)).href));
     curtain.classList.remove('out'); curtain.classList.add('in');
-    await A.wait(M.T.close(pl));
+    await A.wait(820);
     main.innerHTML = pg.main; cur = path; vq = (query || '').replace(/^\?/, '');
     document.title = pg.title;
     document.body.setAttribute('data-page', pg.key); document.body.setAttribute('data-nav', pg.nav || ''); main.setAttribute('data-page', pg.key);
@@ -27,12 +26,10 @@
     A.closeMenu(); A.closeSearch(); A.closeModal();
     window.scrollTo({top: 0, left: 0, behavior: 'instant'}); if (M.cancelSmooth) M.cancelSmooth();
     const hdr = $('#hdr'); if (hdr) hdr.classList.remove('hide');
-    A.initPage(document);
-    await A.wait(M.T.hold(pl));                                     // готовый титр стоит, его можно прочитать
-    M.scan(main, M.T.reveal);
+    A.initPage(document); M.scan(main, 470);
     curtain.classList.remove('in'); curtain.classList.add('out');
     if (push) { try { history.pushState({p: path, q: query || ''}, '', '#/' + path + (query || '')); } catch (e) {} }
-    await A.wait(520); curtain.classList.remove('out'); busy = false;
+    await A.wait(700); curtain.classList.remove('out'); busy = false;
     if (hash) scrollToHash(hash);
   }
   A.showPage = show;

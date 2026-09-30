@@ -7,7 +7,7 @@
   const $$ = (s, r) => Array.from((r || document).querySelectorAll(s));
   const esc = A.esc, I = A.I;
   const wait = ms => new Promise(r => setTimeout(r, ms));
-  const ROOT = document.body.getAttribute('data-root') || '';
+  const ROOT = window.__ASTREYA_BUNDLE ? '' : (function () { try { return new URL(document.body.getAttribute('data-root') || './', location.href).href; } catch (e) { return document.body.getAttribute('data-root') || ''; } })();   // абсолютный адрес корня сайта: не меняется при подмене страниц
   Object.assign(A, {$, $$, wait, D, ROOT});
 
   /* ---------- конфигурация: сюда подключаются форма и аналитика ---------- */

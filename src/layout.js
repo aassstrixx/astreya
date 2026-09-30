@@ -7,21 +7,12 @@ const {esc, I} = S;
 const logoDefs = fs.readFileSync(path.join(__dirname, 'partials', 'logo-defs.html'), 'utf8');
 const FONTS = 'https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Playfair+Display:ital,wght@0,500;0,600;1,400;1,500&family=Manrope:wght@400;500;600;700&display=swap';
 const CSS = ['base', 'components', 'pages', 'responsive', 'motion'];
-const JS = ['shared', 'data', 'core', 'motion', 'pages'];
+const JS = ['shared', 'data', 'core', 'motion', 'pages', 'hero-mark'];
 
 /* Ранний скрипт: класс js, «уже видели заставку», «пришли с переходом» — до первой отрисовки, чтобы не было мигания */
 /* Совместимость со старыми ссылками одностраничной версии (#/catalog?brand=…, #/brand/keenwell, #/academy…) — только на главной */
 const LEGACY = `(function(l){var m=l.hash.match(/^#\\/(catalog|brands|brand\\/[\\w-]+|academy|news|company)(\\?.*)?$/);if(!m)return;var t=m[1],q=m[2]||'',u=t==='academy'?'training.html':t.indexOf('brand/')===0?'brands/'+t.slice(6)+'.html':t+'.html';l.replace(u+q);})(location);`;
-const EARLY = `(function(d){var h=d.documentElement;h.classList.add('js');try{if(sessionStorage.getItem('astreya:seen'))h.classList.add('seen');var n=sessionStorage.getItem('astreya:nav');if(n){var o=JSON.parse(n);if(o&&Date.now()-o.t<8000)h.classList.add('nav-in');else sessionStorage.removeItem('astreya:nav')}}catch(e){}})(document);`;
-
-/* Шторка переходов. Полосы лежат в самой разметке (при переходе страница открывается уже «закрытой»), а этот встроенный скрипт до первой
-   отрисовки вписывает в шторку титр раздела или логотип (для главной) — уже в готовом виде, без повторной анимации. Тот же код рисует
-   титр и на уходящей странице (js/motion.js), поэтому оба кадра совпадают пиксель в пиксель. */
-const CURTAIN_JS = `(function(w,d){function T(t){var s='',i,c,a=Array.from(t);for(i=0;i<a.length;i++){c=a[i];s+=c===' '?'<span class="ch" style="width:.28em"></span>':'<span class="ch"><span style="--i:'+i+'">'+c+'</span></span>'}return'<small>Астрея</small><b>'+s+'</b><span class="ct-line"></span>'}
-function L(){var art=d.getElementById('logo-art');if(!art)return'';var m='',l='',n=0,ps=art.querySelectorAll('.pc'),j,k,p,V='viewBox="46 338 836 436" aria-hidden="true"';for(j=0;j<ps.length;j++){p=ps[j];k=p.getAttribute('data-k');var dd='<path fill-rule="evenodd" d="'+p.getAttribute('d')+'"/>';if(k==='mountain'||k==='arc')m+=dd;else l+='<svg class="sl-lt" style="--i:'+(n++)+'" '+V+'>'+dd+'</svg>'}var pl=art.querySelector('.pl');return'<div class="ct-logo" role="img" aria-label="Астрея"><svg class="sl-mark" '+V+'>'+m+'</svg>'+l+'<svg class="sl-pearl" '+V+'><circle cx="'+pl.getAttribute('cx')+'" cy="'+pl.getAttribute('cy')+'" r="'+pl.getAttribute('r')+'" fill="url(#lg-p)"/></svg></div>'}
-function F(pl,st){var ct=d.querySelector('#curtain .ct');if(!ct||!pl)return;ct.className='ct'+(st?' static':'')+(pl.home?' is-logo':'');ct.innerHTML=pl.home?L():T(pl.label||'')}
-w.AstCurtain={fill:F};try{var n=sessionStorage.getItem('astreya:nav');if(n){var o=JSON.parse(n);if(o&&Date.now()-o.t<8000)F(o,true)}}catch(e){}})(window,document);`;
-
+const EARLY = `(function(d){var h=d.documentElement;h.classList.add('js');try{var n=sessionStorage.getItem('astreya:nav');if(n){var o=JSON.parse(n);if(o&&Date.now()-o.t<8000)h.classList.add('nav-in');else sessionStorage.removeItem('astreya:nav')}}catch(e){}})(document);`;
 
 module.exports = function layout(ctx, C) {
   const {site} = ctx, {u} = C;
@@ -182,9 +173,8 @@ ${ld.map(o => `<script type="application/ld+json">${JSON.stringify(o)}</script>`
 <a class="skip" href="#main">К основному содержимому</a>
 ${logoDefs}
 <div id="progress" aria-hidden="true"></div>
-${P.key === 'home' ? splash : ''}
+${splash}
 <div id="curtain" aria-hidden="true"><div class="cs">${Array.from({length: 8}, (_, i) => `<i style="--i:${i}"></i>`).join('')}</div><div class="ct" aria-hidden="true"></div></div>
-<script>${CURTAIN_JS}</script>
 
 ${header(P)}
 
@@ -199,7 +189,6 @@ ${searchPanel(P)}
 <div id="toast" role="status" aria-live="polite"></div>
 
 ${JS.map(n => `<script src="${u(P, `js/${n}.js`)}" defer></script>`).join('\n')}
-${P.key === 'home' ? `<script src="${u(P, 'js/hero-mark.js')}" defer></script>` : ''}
 </body>
 </html>
 `;

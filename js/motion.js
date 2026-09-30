@@ -160,48 +160,119 @@
   M.scan = (root, delay) => { root = root || $('#main'); splitAll(root); collectMotion(root); delay ? M.scheduleReveal(root, delay) : initReveal(root); };
 
   /* ---------- шторка: переходы между страницами ----------
-     Ритм (мс): полосы закрываются ≈650 → титр «пишется» по буквам → переход на новую страницу, где шторка уже закрыта и титр стоит
-     готовым (без повторной анимации) → пауза-«чтение» → полосы поднимаются ≈650 → через 300 мс от начала подъёма появляется контент.
-     Для главной вместо слова «Астрея» собирается логотип компании. */
+     Как в прежней версии сайта: страница не перезагружается. Полосы шторки закрываются (820 мс), пока читается титр раздела,
+     содержимое <main> подменяется на новое (берётся из настоящей страницы), полосы поднимаются (700 мс), блоки появляются через 470 мс.
+     Если подмена невозможна (файл открыт с диска, нет сети) — обычный переход по ссылке под той же шторкой. */
   const curtain = $('#curtain');
-  const CT = window.AstCurtain || {fill: () => {}};
-  const LABELS = {'catalog': 'Каталог', 'brands': 'Бренды', 'brand': 'Бренд', 'training': 'Обучение', 'news': 'Новости', 'company': 'Компания', 'contacts': 'Контакты', 'partners': 'Партнёрам', 'search': 'Поиск', 'privacy': 'Документы', 'terms': 'Документы'};
-  const payloadFor = (url, override) => {
+  const LABELS = {'catalog': 'Каталог', 'brands': 'Бренды', 'training': 'Обучение', 'news': 'Новости и акции', 'company': 'Компания', 'contacts': 'Контакты', 'partners': 'Партнёрам', 'search': 'Поиск', 'privacy': 'Документы', 'terms': 'Документы'};
+  const labelFor = url => {
     const seg = new URL(url, location.href).pathname.split('/').filter(Boolean);
     const last = (seg[seg.length - 1] || 'index').replace(/\.html$/, '');
     const dir = seg.length > 1 ? seg[seg.length - 2] : '';
-    if (override) return {label: override, home: false, t: Date.now()};
-    if (last === 'index' || !seg.length) return {label: 'Астрея', home: true, t: Date.now()};
-    const label = dir === 'brands' ? 'Бренды' : dir === 'products' ? 'Каталог' : dir === 'training' ? 'Обучение' : dir === 'news' ? 'Новости' : (LABELS[last] || 'Астрея');
-    return {label, home: false, t: Date.now()};
+    if (dir === 'brands') { const b = (A.D.brands || []).find(x => x.id === last); return b ? b.name : 'Бренды'; }
+    if (dir === 'products') return 'Каталог'; if (dir === 'training') return 'Обучение'; if (dir === 'news') return 'Новости и акции';
+    return last === 'index' || !seg.length ? 'Главная' : (LABELS[last] || 'Астрея');
   };
-  M.T = {
-    close: pl => pl.home ? 760 : 120 + 14 * (Array.from(pl.label).length - 1) + 320 + 60,   // пока титр дописывается на закрытой шторке
-    hold: pl => pl.home ? 240 : 200,                                                        // сколько готовый титр стоит после перехода
-    reveal: 160                                                                             // контент появляется через это время после начала подъёма
-  };
-  M.payloadFor = payloadFor;
+  function setCurtainLabel(t) {
+    const ct = $('.ct', curtain); if (!ct) return;
+    ct.innerHTML = `<small>Астрея</small><b>${Array.from(t).map((c, i) => c === ' ' ? '<span class="ch" style="width:.28em"></span>' : `<span class="ch"><span style="--i:${i}">${c}</span></span>`).join('')}</b><span class="ct-line"></span>`;
+  }
   if (curtain && !$('.cs', curtain)) curtain.innerHTML = '<div class="cs">' + Array.from({length: 8}, (_, i) => `<i style="--i:${i}"></i>`).join('') + '</div><div class="ct" aria-hidden="true"></div>';
+  M.curtainLabel = setCurtainLabel; M.labelFor = labelFor;
+
+  const canSwap = !window.__ASTREYA_BUNDLE && /^https?:$/.test(location.protocol) && 'fetch' in window && 'DOMParser' in window && 'pushState' in history;
+  const abs = (el, url) => {                                // ссылки в подменяемом содержимом считаются от адреса НОВОЙ страницы
+    ['href', 'src', 'action'].forEach(at => el.querySelectorAll('[' + at + ']').forEach(n => {
+      const v = n.getAttribute(at); if (!v || v.charAt(0) === '#') return;
+      try { n.setAttribute(at, new URL(v, url).href); } catch (e) {}
+    }));
+  };
+  const pages = new Map();
+  function fetchPage(url) {
+    const key = url.split('#')[0];
+    if (!pages.has(key)) pages.set(key, fetch(key, {credentials: 'same-origin'}).then(r => { if (!r.ok) throw new Error(r.status); return r.text(); })
+      .then(t => new DOMParser().parseFromString(t, 'text/html')).catch(e => { pages.delete(key); throw e; }));
+    return pages.get(key);
+  }
+  document.addEventListener('pointerover', e => {            // страницу можно подгрузить заранее, пока курсор над ссылкой
+    if (!canSwap) return;
+    const a = e.target.closest && e.target.closest('a[href]'); if (!a) return;
+    try { const u = new URL(a.href, location.href); if (u.host === location.host && /\.html$/.test(u.pathname) && u.pathname !== location.pathname) fetchPage(u.href).catch(() => {}); } catch (err) {}
+  }, {passive: true});
+
+  function syncHead(doc) {
+    document.title = doc.title;
+    const copy = (sel, at) => { const n = doc.querySelector(sel), c = document.querySelector(sel); if (n && c) c.setAttribute(at, n.getAttribute(at)); };
+    copy('meta[name="description"]', 'content'); copy('link[rel="canonical"]', 'href');
+    ['og:title', 'og:description', 'og:url', 'og:type', 'og:image'].forEach(k => copy(`meta[property="${k}"]`, 'content'));
+    ['twitter:title', 'twitter:description', 'twitter:image'].forEach(k => copy(`meta[name="${k}"]`, 'content'));
+    const rb = doc.querySelector('meta[name="robots"]'), rc = document.querySelector('meta[name="robots"]');
+    if (rb && !rc) document.head.appendChild(rb.cloneNode()); else if (!rb && rc) rc.remove();
+    $$('script[type="application/ld+json"]', document.head).forEach(x => x.remove());
+    $$('script[type="application/ld+json"]', doc).forEach(x => { const sc = document.createElement('script'); sc.type = 'application/ld+json'; sc.textContent = x.textContent; document.head.appendChild(sc); });
+  }
+  function swapIn(doc, url) {
+    const main = $('#main'), nm = doc.getElementById('main'); if (!main || !nm) throw new Error('no main');
+    abs(nm, url);
+    main.innerHTML = nm.innerHTML;
+    ['data-page', 'data-nav'].forEach(at => { body.setAttribute(at, doc.body.getAttribute(at) || ''); });
+    main.setAttribute('data-page', doc.body.getAttribute('data-page') || '');
+    syncHead(doc);
+    const nav = doc.body.getAttribute('data-nav') || '';
+    $$('#nav .nl').forEach(a => { const on = a.getAttribute('data-nav') === nav; a.classList.toggle('on', on); on ? a.setAttribute('aria-current', 'page') : a.removeAttribute('aria-current'); });
+  }
+
+  let busy = false, pending = null;
+  async function go(url, push) {
+    if (busy) { pending = {url, push}; return; }
+    busy = true;
+    const u = new URL(url, location.href);
+    setCurtainLabel(labelFor(u.href));
+    curtain.classList.remove('out'); curtain.classList.add('in');
+    let doc = null;
+    const got = fetchPage(u.href).then(d => { doc = d; }).catch(() => {});
+    await wait(820);                                        // полосы закрылись, читается титр раздела
+    await got;
+    if (!doc) { location.href = u.href; return; }            // подмена не удалась — обычный переход
+    try {
+      swapIn(doc, u.href);
+      if (push) history.pushState({}, '', u.href);
+    } catch (e) { location.href = u.href; return; }
+    A.closeMenu(); A.closeSearch(); A.closeModal();
+    window.scrollTo({top: 0, left: 0, behavior: 'instant'});
+    M.cancelSmooth();
+    const hdr = $('#hdr'); if (hdr) hdr.classList.remove('hide');
+    A.initPage(document);
+    M.scan($('#main'), 470);
+    updateProgress();
+    curtain.classList.remove('in'); curtain.classList.add('out');
+    if (u.hash) setTimeout(() => { const el = document.getElementById(decodeURIComponent(u.hash.slice(1))); if (el) el.scrollIntoView({behavior: 'smooth', block: 'start'}); }, 900);
+    await wait(700);
+    curtain.classList.remove('out');
+    busy = false;
+    if (pending) { const p = pending; pending = null; go(p.url, p.push); }
+  }
+  M.go = go;
+  addEventListener('popstate', () => { if (canSwap) go(location.href, false); });
 
   let leaving = false;
-  M.navigate = function (url, override) {                  // переход на другую страницу: шторка закрывается, титр пишется, затем обычная навигация
+  M.navigate = function (url) {                            // запасной путь (файл с диска): шторка закрывается, затем обычный переход
+    if (canSwap) { go(url, true); return; }
     if (leaving) return; leaving = true;
-    const pl = payloadFor(url, override);
-    store.set('astreya:nav', JSON.stringify(pl));
+    store.set('astreya:nav', JSON.stringify({t: Date.now()}));
     if (!curtain) { location.href = url; return; }
-    CT.fill(pl, false);
+    setCurtainLabel(labelFor(url));
     curtain.classList.remove('out'); curtain.classList.add('in');
-    setTimeout(() => { location.href = url; }, M.T.close(pl));
-    setTimeout(() => { leaving = false; store.del('astreya:nav'); }, 4500);   // на случай, если навигация не состоялась
+    setTimeout(() => { location.href = url; }, 820);
+    setTimeout(() => { leaving = false; store.del('astreya:nav'); }, 4500);
   };
-  const readNav = () => { let pl = null; try { pl = JSON.parse(store.get('astreya:nav') || 'null'); } catch (e) {} store.del('astreya:nav'); return pl && pl.t && Date.now() - pl.t < 8000 ? pl : null; };
-  M.openCurtain = async function (pl) {                    // пришли по переходу: шторка уже закрыта и титр на месте — даём его прочитать, затем поднимаем
-    curtain.classList.add('in');                           // .nav-in держит полосы закрытыми до первой отрисовки
-    await wait(M.T.hold(pl || {}));
+  M.liftAfterNav = async function () {                     // пришли обычным переходом: шторка уже закрыта — поднимаем её
+    store.del('astreya:nav');
+    curtain.classList.add('in');
     await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
     html.classList.remove('nav-in');
     curtain.classList.remove('in'); curtain.classList.add('out');
-    await wait(520);
+    await wait(700);
     curtain.classList.remove('out');
   };
   document.addEventListener('click', e => {
@@ -215,9 +286,9 @@
     if (u.pathname === location.pathname && u.hash) return;                                // якорь на этой же странице
     e.preventDefault();
     A.closeMenu(); A.closeSearch();
-    (A.navigate || M.navigate)(u.href, a.getAttribute('data-ct') || null);
+    M.navigate(u.href);
   });
-  addEventListener('pageshow', e => { if (e.persisted && curtain) { leaving = false; curtain.classList.remove('in', 'out'); html.classList.remove('nav-in'); } });
+  addEventListener('pageshow', e => { if (e.persisted && curtain) { leaving = false; busy = false; curtain.classList.remove('in', 'out'); html.classList.remove('nav-in'); } });
 
   /* ---------- заставка (только главная, один раз за сессию) ---------- */
   function letters(el, text, gap) {
@@ -270,12 +341,13 @@
     updateProgress();
   }
   M.boot = function () {
-    const first = !html.classList.contains('seen'), fromNav = html.classList.contains('nav-in');
-    store.set('astreya:seen', '1');
     try { history.scrollRestoration = 'manual'; } catch (e) {}
-    if (body.getAttribute('data-page') === 'home' && first && $('#splash')) { requestAnimationFrame(() => setTimeout(runSplash, 0)); return; }
+    /* ссылки шапки, подвала и поиска остаются в документе при подмене содержимого — делаем их абсолютными, чтобы они не «ехали» вместе с адресом */
+    if (!window.__ASTREYA_BUNDLE) $$('#hdr [href], .ftr [href], #srch [href], #hdr [action], #srch [action]').forEach(n => { ['href', 'action'].forEach(at => { const v = n.getAttribute(at); if (v && v.charAt(0) !== '#') { try { n.setAttribute(at, new URL(v, location.href).href); } catch (e) {} } }); });
+    const fromNav = html.classList.contains('nav-in');
+    if ($('#splash') && !fromNav) { requestAnimationFrame(() => setTimeout(runSplash, 0)); return; }   // заставка — при каждой загрузке/обновлении страницы
     const sp = $('#splash'); if (sp) sp.remove();
-    if (fromNav) { const pl = readNav(); if (pl) CT.fill(pl, true); M.openCurtain(pl); finish(M.T.hold(pl || {}) + M.T.reveal); } else finish(60);
+    if (fromNav) { M.liftAfterNav(); finish(340); } else finish(60);
   };
   A.navigate = M.navigate;
   /* defer-скрипты выполняются при readyState «interactive», но до DOMContentLoaded — запускаемся после них (pages.js, hero-mark.js) */
