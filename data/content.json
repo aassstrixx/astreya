@@ -21,9 +21,9 @@
     "lead": "Астрея (Astreya) — дистрибьютор профессиональной косметики: оригинальные бренды Dermatime, Keenwell и Cantabria Labs, каталог для специалистов и учебный центр. Работаем с косметологами, клиниками и салонами.",
     "chip": "Запись на семинары открыта",
     "orbits": [
-      {"orbit": "r3", "src": "assets/hero/keenwell-mask.webp", "w": 246, "h": 560, "height": 150, "angle": 70},
-      {"orbit": "r1", "src": "assets/hero/iraltone-shampoo.webp", "w": 200, "h": 560, "height": 150, "angle": 248},
-      {"orbit": "r2", "src": "assets/hero/dermatime-micellar.webp", "w": 205, "h": 560, "height": 146, "angle": 160}
+      {"orbit": "r3", "brand": "keenwell", "width": 100, "angle": 70},
+      {"orbit": "r1", "src": "assets/brands/cantabria-labs-h.svg", "w": 458, "h": 74, "width": 136, "angle": 248},
+      {"orbit": "r2", "brand": "dermatime", "width": 72, "angle": 160}
     ],
     "card": {"title": "Дистрибьютор Dermatime, Keenwell, Cantabria Labs", "text": "Бренды для кабинета и домашнего ухода — с поддержкой обучения."},
     "facts": ["Оригинальная продукция", "Обучение специалистов"],

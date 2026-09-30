@@ -12,7 +12,7 @@ module.exports = function bundle({pages, layout, root, out}) {
     .replace(/<link rel="stylesheet"[^>]*>\n?/g, '');
   /* картинки логотипов: в одном файле нет обычных путей, поэтому кладём их в отдельный JSON (data: URI, по одному разу) и подставляем роутером */
   const assets = {};
-  const inline = html => html.replace(/src="(?:\.\.\/)*(assets\/(?:brands|hero)\/[\w.-]+)"/g, (m, f) => {
+  const inline = html => html.replace(/src="(?:\.\.\/)*(assets\/brands\/[\w.-]+)"/g, (m, f) => {
     if (!assets[f]) assets[f] = 'data:image/' + (f.endsWith('.svg') ? 'svg+xml' : f.split('.').pop()) + ';base64,' + fs.readFileSync(path.join(root, f)).toString('base64');
     return `data-asset="${f}"`;
   });

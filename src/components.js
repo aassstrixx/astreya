@@ -119,6 +119,11 @@ module.exports = function components(ctx) {
     ? `<div class="slot-logo"><img src="${esc(u(P, b.logo))}" alt=""${b.logoW ? ` width="${b.logoW}" height="${b.logoH}" style="--lw:${logoPx(b, A)}"` : ''} loading="lazy" decoding="async"></div>`
     : '<i></i>';
 
+  /* «Предыдущий/Следующий» бренд: логотип вместо названия (название — в alt) */
+  const sibLogo = (P, b) => b.logo
+    ? `<span class="sib-logo"><img src="${esc(u(P, b.logo))}" alt="${esc(b.name)}"${b.logoW ? ` width="${b.logoW}" height="${b.logoH}" style="--lw:${logoPx(b, 9000)}"` : ''} loading="lazy" decoding="async"></span>`
+    : `<b>${esc(b.name)}</b>`;
+
   const heroLogo = (P, b) => `<img class="b-logo" src="${esc(u(P, b.logo))}" alt="${esc(b.name)}"${b.logoW ? ` width="${b.logoW}" height="${b.logoH}" style="--lw:${logoPx(b, 105000)}"` : ''} decoding="async">`;
 
   const brandCardHome = (P, b, i) => `<article class="bcard reveal" data-act="brand-card" data-id="${b.id}" tabindex="0" aria-expanded="false" style="${bstyle(b)}">
@@ -162,6 +167,8 @@ module.exports = function components(ctx) {
     ${o.emails.map(m => `<div class="li">${I.mail}<span><a href="mailto:${m}">${esc(m)}</a></span></div>`).join('')}
   </article>`;
 
+  /* вместо шара в блоках-призывах — логотип «Астрея» (светлый вариант на тёмном фоне; тот же вектор, что в подвале) */
+  const ctaLogo = '<div class="cb-art" aria-hidden="true"><span class="logo inv"><svg class="lgo" viewBox="46 338 836 436"><use href="#logo-art"/></svg></span></div>';
   const ctaBand = (P, place = 'cta-band') => `<section class="sec"><div class="wrap">
     <div class="cta-band reveal pushin">
       <div class="cb-copy">
@@ -170,7 +177,7 @@ module.exports = function components(ctx) {
         <p>Оригинальная продукция, обучение вашей команды и поддержка менеджеров. Оставьте заявку — мы свяжемся и обсудим условия сотрудничества.</p>
         <div class="row">${partnerBtn(P, place, 'btn btn-light')}<a class="btn btn-ghost-inv" href="tel:${phoneHref}" data-track="phone_click">${I.phone} ${esc(site.contacts.phone)}</a></div>
       </div>
-      <div class="cb-art" aria-hidden="true"><i class="cb-ring"></i><i class="cb-pearl"></i></div>
+      ${ctaLogo}
     </div>
   </div></section>`;
 
@@ -186,5 +193,5 @@ module.exports = function components(ctx) {
   const noteBox = html => `<div class="note">${I.info}<span>${html}</span></div>`;
 
   return {u, purl, burl, eurl, nurl, art, tag, tasksLine, timeTag, chip, crumbs, pageHead, secHead, lnk, partnerBtn, productCard, eventCard, eventRow,
-    newsCard, newsStyle, articleCard, logoMark, heroLogo, marqueeLogo, slotLogo, brandCardHome, brandCardList, advantageCards, officeCard, ctaBand, noteBox, FMT_KEY};
+    newsCard, newsStyle, articleCard, logoMark, heroLogo, marqueeLogo, slotLogo, sibLogo, brandCardHome, brandCardList, advantageCards, officeCard, ctaLogo, ctaBand, noteBox, FMT_KEY};
 };

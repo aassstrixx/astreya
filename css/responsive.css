@@ -19,7 +19,7 @@
   .hdr-cta .btn{display:none}
   .hero-grid{grid-template-columns:1fr}
   .pearl-wrap{max-width:400px;margin-bottom:64px}
-  .pearl-wrap{--k:.62}
+  .pearl-wrap{--k:.58}
   .ring.r3{inset:6%}.ring.r1{inset:11.5%}.ring.r2{inset:17%}.pearl{inset:21%}
   .hero-card{left:0;right:0;bottom:-56px;max-width:none}
   .stats-grid{grid-template-columns:repeat(2,1fr)}
@@ -88,7 +88,7 @@
   .about-home,.p-hero,.p-cols,.e-cols,.reg-card,.form-card,.map-row,.split-panel,.cta-band{grid-template-columns:1fr}
   .p-side,.e-side{position:static}
   .ah-visual{aspect-ratio:1.5}
-  .cb-art{max-width:150px;justify-self:start;order:-1}
+  .cb-art{max-width:190px;justify-self:start;justify-content:flex-start;order:-1}
   .e-top{grid-template-columns:1fr}
   .date.big{width:auto;display:flex;gap:12px;align-items:baseline;justify-content:flex-start;padding:10px 18px;text-align:left;border-radius:18px;justify-self:start}
   .date.big b{font-size:36px}

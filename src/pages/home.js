@@ -6,8 +6,9 @@ const heroMark = fs.readFileSync(path.join(__dirname, '..', 'partials', 'hero-ma
 
 module.exports = function home(ctx, C, P) {
   const {content, brands, tasks, site} = ctx, h = content.home;
-  /* продукция на орбитах шара (data/content.json → home.orbits): вырезанные фото, не меняют ориентацию при вращении */
-  const orbit = k => { const o = h.orbits.find(x => x.orbit === k); return o ? `<span class="arm" style="--a:${o.angle}deg"><span class="orb"><img src="${C.u(P, o.src)}" alt="" width="${o.w}" height="${o.h}" style="--lh:${o.height}" decoding="async"></span></span>` : ''; };
+  /* логотипы на орбитах шара (data/content.json → home.orbits): без плашек, не меняют ориентацию при вращении; brand — из данных брендов, иначе src/w/h */
+  const orbit = k => { const o = h.orbits.find(x => x.orbit === k); if (!o) return ''; const b = o.brand ? ctx.brandById[o.brand] : null, src = b ? b.logo : o.src, w = b ? b.logoW : o.w, hh = b ? b.logoH : o.h;
+    return `<span class="arm" style="--a:${o.angle}deg"><span class="orb"><img src="${C.u(P, src)}" alt="" width="${w}" height="${hh}" style="--lw:${o.width}" decoding="async"></span></span>`; };
   const today = new Date().toISOString().slice(0, 10);
   const up = ctx.sortedEvents.filter(e => e.date >= today);
   const events = (up.length ? up : ctx.sortedEvents.slice(-4)).slice(0, 4);

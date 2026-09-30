@@ -76,11 +76,11 @@ function brandPage(ctx, C, P, b) {
           <div class="row"><a class="btn btn-light" href="${C.u(P, 'partners.html')}" data-track="partner_cta" data-place="brand-cta">Стать партнёром ${I.arrow}</a>
             <button class="btn btn-ghost-inv" type="button" data-act="form" data-type="question" data-ref="Бренд ${esc(b.name)}: запрос условий">Запросить условия</button></div>
         </div>
-        <div class="cb-art" aria-hidden="true"><i class="cb-ring"></i><i class="cb-pearl"></i></div>
+        ${C.ctaLogo}
       </div>
       <nav class="sib" aria-label="Соседние бренды">
-        <a class="reveal" href="${C.burl(P, prev)}" style="${S.bstyle(prev)}"><small>${I.back} Предыдущий</small><b>${esc(prev.name)}</b></a>
-        <a class="nx reveal" href="${C.burl(P, next)}" style="${S.bstyle(next)}"><small>Следующий ${I.arrow}</small><b>${esc(next.name)}</b></a>
+        <a class="reveal" href="${C.burl(P, prev)}" style="${S.bstyle(prev)}"><small>${I.back} Предыдущий</small>${C.sibLogo(P, prev)}</a>
+        <a class="nx reveal" href="${C.burl(P, next)}" style="${S.bstyle(next)}"><small>Следующий ${I.arrow}</small>${C.sibLogo(P, next)}</a>
       </nav>
     </section>
   </div>`;

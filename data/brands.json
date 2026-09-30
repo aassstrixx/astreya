@@ -28,7 +28,7 @@
       ]
     ],
     "country": "Испания",
-    "logo": "assets/brands/dermatime.png"
+    "logo": "assets/brands/dermatime.svg"
   },
   {
     "id": "keenwell",
@@ -59,7 +59,7 @@
       ]
     ],
     "country": "Испания",
-    "logo": "assets/brands/keenwell.png"
+    "logo": "assets/brands/keenwell.svg"
   },
   {
     "id": "endocare",
