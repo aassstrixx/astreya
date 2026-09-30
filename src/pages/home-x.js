@@ -58,7 +58,6 @@ module.exports = function homeRedesign(ctx, C, P, parts, {events, val}) {
     <div class="rd-tasks">${tasks.map((t, i) => {
       const n = ctx.products.filter(p => p.tasks.includes(t.id)).length, bs = t.brands.map(id => ctx.brandById[id]).filter(Boolean);
       return `<a class="rd-task reveal${i === 0 ? ' rd-task-lead' : ''}" href="${C.u(P, 'catalog.html')}?task=${t.id}" data-track="catalog_click" data-place="solutions">
-        <span class="rd-task-no" aria-hidden="true">${String(i + 1).padStart(2, '0')}</span>
         <h3>${esc(t.label)}</h3>
         ${i === 0 ? `<p>${esc(t.note)}</p>` : ''}
         <div class="rd-task-logos" aria-hidden="true">${bs.slice(0, 4).map(b => C.slotLogo(P, b, 1500)).join('')}</div>
@@ -120,7 +119,7 @@ module.exports = function homeRedesign(ctx, C, P, parts, {events, val}) {
   const au = rd.audience;
   const forWhom = `<section class="rd-sec rd-clinical rd-aud"><div class="wrap rd-aud-grid">
     <div class="rd-aud-head reveal"><span class="eyebrow">${esc(au.eyebrow)}</span><h2>${esc(au.title)}</h2></div>
-    <div class="rd-aud-list">${au.items.map((a, i) => `<article class="rd-aud-item reveal"><span class="rd-no" aria-hidden="true">${i + 1}</span><h3>${esc(a.title)}</h3><p>${esc(a.text)}</p><a class="lnk" href="${C.u(P, a.href.split('#')[0])}${a.href.includes('#') ? '#' + a.href.split('#')[1] : ''}">${esc(a.cta)} ${I.arrow}</a></article>`).join('')}</div>
+    <div class="rd-aud-list">${au.items.map((a, i) => `<article class="rd-aud-item reveal"><h3>${esc(a.title)}</h3><p>${esc(a.text)}</p><a class="lnk" href="${C.u(P, a.href.split('#')[0])}${a.href.includes('#') ? '#' + a.href.split('#')[1] : ''}">${esc(a.cta)} ${I.arrow}</a></article>`).join('')}</div>
   </div></section>`;
 
   /* ---------- 9. Новости ---------- */
