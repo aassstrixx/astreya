@@ -69,7 +69,7 @@
 .bcard .nm{font:500 clamp(26px,2.5vw,32px)/1 var(--serif);letter-spacing:-.01em;position:relative;z-index:1}
 .bcard .ix{font:600 11px/1 var(--sans);letter-spacing:.14em;opacity:.8;position:relative;z-index:1}
 /* логотип бренда вместо текстового названия: одноцветный (белый или тёмный по цвету текста плашки), исходный оттенок — на светлом фоне (страница бренда) */
-.band .bl-img{position:relative;z-index:1;display:block;width:auto;height:auto;max-width:min(262px,calc(100% - 40px));max-height:84px;object-fit:contain;object-position:left center;filter:brightness(0) invert(1)}
+.band .bl-img{position:relative;z-index:1;display:block;width:calc(var(--lw,140)*1px);height:auto;max-width:min(262px,calc(100% - 40px));max-height:88px;object-fit:contain;object-position:left center;filter:brightness(0) invert(1)}
 .band .bl-img.ink-dark{filter:brightness(0)}
 .band.has-logo{align-items:center}
 .bcard .band.has-logo .ix{align-self:flex-end}
@@ -261,12 +261,12 @@ input[type=range]::-moz-range-thumb{width:16px;height:16px;border-radius:50%;bac
 
 /* ============ Страница бренда ============ */
 .b-line{display:flex;align-items:center;gap:16px;flex-wrap:wrap}
-/* страница бренда: логотип в размер прежней надписи (исходный цвет; файл не растягивается выше своего размера) */
+/* страница бренда: логотип в размер прежней надписи (исходный цвет); размер по «площади» — как на карточках, см. logoPx в src/components.js */
 .b-hero .b-title{margin-top:14px}
 .b-hero .b-title-logo{margin-top:clamp(20px,2.6vw,32px)}
 .b-title-logo+.b-sub{margin-top:clamp(24px,3vw,38px)}
 .b-title.b-title-logo{background:none;-webkit-text-fill-color:currentColor;color:inherit;font-size:0;line-height:0;padding:0}
-.b-logo{display:block;width:auto;height:auto;max-width:min(100%,780px);max-height:clamp(120px,22vw,270px);object-fit:contain;object-position:left center}
+.b-logo{display:block;width:min(calc(var(--lw,420)*1px),100%);max-width:780px;height:auto;object-fit:contain;object-position:left center}
 
 /* ============ Страница товара ============ */
 .p-top{padding:clamp(28px,4vw,56px) 0 clamp(20px,3vw,40px)}

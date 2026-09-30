@@ -20,11 +20,12 @@ function load() {
 
   brands.forEach(b => { b.tasks = ctx.tasks.filter(t => t.brands.includes(b.id)).map(t => t.id); });
 
-  /* логотипы брендов: размеры из заголовка PNG (для width/height в разметке — без скачков вёрстки) */
+  /* логотипы брендов: размеры из заголовка PNG / viewBox SVG (для width/height в разметке — без скачков вёрстки) */
   brands.forEach(b => {
     if (!b.logo) return;
     const f = path.join(dir, '..', b.logo);
     if (!fs.existsSync(f)) { console.warn(`Нет файла логотипа: ${b.logo} (бренд ${b.id}) — будет показана монограмма`); b.logo = null; return; }
+    if (/\.svg$/i.test(f)) { const m = fs.readFileSync(f, 'utf8').match(/viewBox="\s*[\d.-]+[\s,]+[\d.-]+[\s,]+([\d.]+)[\s,]+([\d.]+)/); if (m) { b.logoW = +m[1]; b.logoH = +m[2]; } return; }
     const h = fs.readFileSync(f).subarray(0, 24);
     if (h.toString('latin1', 1, 4) === 'PNG') { b.logoW = h.readUInt32BE(16); b.logoH = h.readUInt32BE(20); }
   });

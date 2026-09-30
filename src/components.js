@@ -100,14 +100,16 @@ module.exports = function components(ctx) {
 
   /* ---------------- бренд ---------------- */
   /* логотип бренда: картинка (если задан b.logo) или монограмма; путь строится от корня сайта страницы P */
+  /* гармоничный размер: логотипы разной формы приводятся к одной «площади» (ширина ≈ √(A·пропорция)), у плотных/тяжёлых знаков поправка logoScale */
+  const logoPx = (b, A) => b.logoW && b.logoH ? Math.round(Math.sqrt(A * b.logoW / b.logoH) * (b.logoScale || 1) * 10) / 10 : 0;
   const darkInk = b => !/^#?f{3,6}$/i.test(b.ink || '#fff');        // тёмный текст на светлой плашке → логотип чёрный, иначе белый
-  const logoImg = (P, b, cls, alt) => `<img class="${`blogo ${cls}${cls.includes('bl-img') && darkInk(b) ? ' ink-dark' : ''}`.trim()}" src="${esc(u(P, b.logo))}" alt="${esc(alt)}"${b.logoW ? ` width="${b.logoW}" height="${b.logoH}"` : ''} loading="lazy" decoding="async">`;
+  const logoImg = (P, b, cls, alt) => `<img class="${`blogo ${cls}${cls.includes('bl-img') && darkInk(b) ? ' ink-dark' : ''}`.trim()}" src="${esc(u(P, b.logo))}" alt="${esc(alt)}"${b.logoW ? ` width="${b.logoW}" height="${b.logoH}"` : ''}${cls.includes('bl-img') && logoPx(b, 11000) ? ` style="--lw:${logoPx(b, 11000)}"` : ''} loading="lazy" decoding="async">`;
   const logoMark = (P, b, cls = '') => b.logo
     ? logoImg(P, b, cls, `Логотип ${b.name}`)
     : `<span class="blogo mono ${cls}" role="img" aria-label="Логотип ${esc(b.name)}">${esc(b.name.slice(0, 1))}</span>`;
 
   /* страница бренда: крупный логотип вместо текстового заголовка (h1 остаётся, название — в alt) */
-  const heroLogo = (P, b) => `<img class="b-logo" src="${esc(u(P, b.logo))}" alt="${esc(b.name)}"${b.logoW ? ` width="${b.logoW}" height="${b.logoH}"` : ''} decoding="async">`;
+  const heroLogo = (P, b) => `<img class="b-logo" src="${esc(u(P, b.logo))}" alt="${esc(b.name)}"${b.logoW ? ` width="${b.logoW}" height="${b.logoH}" style="--lw:${logoPx(b, 105000)}"` : ''} decoding="async">`;
 
   const brandCardHome = (P, b, i) => `<article class="bcard reveal" data-act="brand-card" data-id="${b.id}" tabindex="0" aria-expanded="false" style="${bstyle(b)}">
     <div class="band${b.logo ? ' has-logo' : ''}">${b.logo ? logoImg(P, b, 'bl-img', b.name) : `<span class="nm">${esc(b.name)}</span>`}<span class="ix">${String(i + 1).padStart(2, '0')}</span></div>

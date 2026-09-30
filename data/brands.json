@@ -91,7 +91,7 @@
     ],
     "country": "Испания",
     "countryNote": "страна концерна Cantabria Labs",
-    "logo": "assets/brands/endocare.png"
+    "logo": "assets/brands/endocare.svg"
   },
   {
     "id": "neoretin",
@@ -123,7 +123,7 @@
     ],
     "country": "Испания",
     "countryNote": "страна концерна Cantabria Labs",
-    "logo": "assets/brands/neoretin.png"
+    "logo": "assets/brands/neoretin.svg"
   },
   {
     "id": "heliocare",
@@ -155,7 +155,7 @@
     ],
     "country": "Испания",
     "countryNote": "страна концерна Cantabria Labs",
-    "logo": "assets/brands/heliocare.png"
+    "logo": "assets/brands/heliocare.svg"
   },
   {
     "id": "biretix",
@@ -187,7 +187,7 @@
     ],
     "country": "Испания",
     "countryNote": "страна концерна Cantabria Labs",
-    "logo": "assets/brands/biretix.png"
+    "logo": "assets/brands/biretix.svg"
   },
   {
     "id": "iraltone",
@@ -219,7 +219,7 @@
     ],
     "country": "Испания",
     "countryNote": "страна концерна Cantabria Labs",
-    "logo": "assets/brands/iraltone.png"
+    "logo": "assets/brands/iraltone.svg"
   },
   {
     "id": "eva",
@@ -250,7 +250,8 @@
       ]
     ],
     "country": null,
-    "logo": "assets/brands/eva.png"
+    "logo": "assets/brands/eva.png",
+    "logoScale": 0.88
   },
   {
     "id": "elancyl",
