@@ -76,13 +76,11 @@
 .bc-mark{position:absolute;right:18px;top:16px;z-index:1;width:78px;line-height:0;pointer-events:none}
 .bc-mark .lgo{width:100%;height:auto;filter:brightness(0) invert(1);opacity:.95}
 .bcard .nm{font:500 clamp(26px,2.5vw,32px)/1 var(--serif);letter-spacing:-.01em;position:relative;z-index:1}
-.bcard .ix{font:600 11px/1 var(--sans);letter-spacing:.14em;opacity:.8;position:relative;z-index:1}
 /* логотип бренда вместо текстового названия: одноцветный (белый или тёмный по цвету текста плашки), исходный оттенок — на светлом фоне (страница бренда) */
 .band .bl-img{position:relative;z-index:1;display:block;width:calc(var(--lw,140)*1px);height:auto;max-width:min(262px,calc(100% - 40px));max-height:88px;object-fit:contain;object-position:left center;filter:brightness(0) invert(1)}
 .band .bl-img.ink-dark{filter:brightness(0)}
 .band.has-logo{align-items:center}
 .bcard .band .bl-img{max-width:min(250px,calc(100% - 106px))}
-.bcard .band.has-logo .ix{align-self:flex-end}
 .bcard .low{position:relative;flex:1;padding:18px 22px 20px;display:grid}
 .bc-front,.bc-back{grid-area:1/1}
 .bc-front,.bc-back{transition:opacity .35s ease,transform .5s var(--ease)}

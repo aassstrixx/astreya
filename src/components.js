@@ -130,7 +130,7 @@ module.exports = function components(ctx) {
   const astreyaMark = '<span class="bc-mark" aria-hidden="true"><svg class="lgo" viewBox="46 338 836 436"><use href="#logo-art"/></svg></span>';
 
   const brandCardHome = (P, b, i) => `<article class="bcard reveal" data-act="brand-card" data-id="${b.id}" tabindex="0" aria-expanded="false" style="${bstyle(b)}">
-    <div class="band${b.logo ? ' has-logo' : ''}">${b.logo ? logoImg(P, b, 'bl-img', b.name) : `<span class="nm">${esc(b.name)}</span>`}${astreyaMark}<span class="ix">${String(i + 1).padStart(2, '0')}</span></div>
+    <div class="band${b.logo ? ' has-logo' : ''}">${b.logo ? logoImg(P, b, 'bl-img', b.name) : `<span class="nm">${esc(b.name)}</span>`}${astreyaMark}</div>
     <div class="low">
       <div class="bc-front">
         <p class="sp">${esc(b.tag)}</p>
