@@ -19,7 +19,13 @@ module.exports = function homeRedesign(ctx, C, P, parts, {events, val}) {
   /* ---------- 0. О компании: фото 02 слева (~42 %), текст справа ---------- */
   const ab = h.about;
   const about = `<section class="sec rd-about" id="about"><div class="wrap about-home rd-about-grid">
-    <figure class="rd-about-photo reveal">${img('about', '', ' loading="lazy"')}<figcaption>${esc(ctx.site.tagline)}</figcaption></figure>
+    <div class="rd-about-media">
+      <figure class="rd-about-photo reveal">${img('about', '', ' loading="lazy"')}<figcaption>${esc(ctx.site.tagline)}</figcaption></figure>
+      <div class="rd-about-pair">
+        <figure class="rd-about-p2 reveal">${img('about2', '', ' loading="lazy"')}</figure>
+        <figure class="rd-about-p3 reveal">${img('about3', '', ' loading="lazy"')}</figure>
+      </div>
+    </div>
     <div class="ah-copy">
       <span class="eyebrow">${esc(ab.eyebrow)}</span>
       <h2>${esc(ab.title)}</h2>
@@ -29,13 +35,14 @@ module.exports = function homeRedesign(ctx, C, P, parts, {events, val}) {
     </div>
   </div></section>`;
 
-  /* ---------- 0. Hero: фото 01 вместо жемчужины (кольца-орбиты с логотипами остаются) ---------- */
-  const hero = parts.hero.replace(/<div class="pearl" role="img"[^>]*><\/div>/, `<div class="pearl pearl-photo">${img('hero', '', ' fetchpriority="high"')}</div>`);
+  /* ---------- 0. Hero: шар с орбитами — как прежде; фото 01 — мягкий фон слева, за текстом ---------- */
+  const hero = parts.hero.replace('<section class="hero">', `<section class="hero"><div class="hero-bgphoto" aria-hidden="true">${img('hero', '', ' fetchpriority="high"')}</div>`);
 
   /* ---------- 1. Астрея в цифрах (CLINICAL + фоновый логотип) ---------- */
   const statItems = [...h.stats, ...rd.stats.extra].filter(s => s.value !== null && s.value !== undefined);
-  const stats = `<section class="rd-sec rd-clinical rd-stats" aria-label="${esc(rd.stats.eyebrow)}"><div class="rd-stats-photo" aria-hidden="true">${img('numbers', '', ' loading="lazy"')}</div><div class="wrap rd-stats-grid">
+  const stats = `<section class="rd-sec rd-clinical rd-stats" aria-label="${esc(rd.stats.eyebrow)}"><div class="wrap rd-stats-grid">
     <div class="rd-stats-copy reveal"><span class="eyebrow">${esc(rd.stats.eyebrow)}</span><h2>${esc(rd.stats.title)}</h2></div>
+    <figure class="rd-stats-pack reveal">${img('numbers', '', ' loading="lazy"')}</figure>
     <div class="rd-nums">${statItems.map(s => `<div class="rd-num reveal"><b data-count="${val(s)}"${s.suffix ? ` data-suffix="${esc(s.suffix)}"` : ''}>${val(s)}</b><span>${esc(s.label)}</span>${s.note ? `<i class="snote">${esc(s.note)}</i>` : ''}${s.placeholder && showDemo ? '<em class="rd-ph">демо-данные</em>' : ''}</div>`).join('')}</div>
   </div></section>`;
 
@@ -58,7 +65,7 @@ module.exports = function homeRedesign(ctx, C, P, parts, {events, val}) {
         <div class="rd-task-foot"><span>${bs.length} ${S.plural(bs.length, 'бренд', 'бренда', 'брендов')} · ${n} ${S.plural(n, 'позиция', 'позиции', 'позиций')}</span><span class="rd-go">Подобрать ${I.arrow}</span></div>
       </a>`;
     }).join('')}</div></div>
-    <figure class="rd-sol-photo reveal">${img('solutions', '', ' loading="lazy"')}</figure>
+    <div class="rd-sol-side"><div class="rd-sol-stick"><figure class="rd-sol-photo reveal">${img('solutions', '', ' loading="lazy"')}</figure></div></div>
   </div></section>`;
 
   /* ---------- 4. Подборщик: прежний + шаг «Для кого?» (js/redesign.js) ---------- */
