@@ -176,9 +176,9 @@
     return {label, home: false, t: Date.now()};
   };
   M.T = {
-    close: pl => pl.home ? 1080 : 200 + 20 * (Array.from(pl.label).length - 1) + 430 + 60,   // пока титр дописывается на закрытой шторке
-    hold: pl => pl.home ? 340 : 330,                                                        // сколько готовый титр стоит после перехода
-    reveal: 300                                                                             // контент появляется через это время после начала подъёма
+    close: pl => pl.home ? 760 : 120 + 14 * (Array.from(pl.label).length - 1) + 320 + 60,   // пока титр дописывается на закрытой шторке
+    hold: pl => pl.home ? 240 : 200,                                                        // сколько готовый титр стоит после перехода
+    reveal: 160                                                                             // контент появляется через это время после начала подъёма
   };
   M.payloadFor = payloadFor;
   if (curtain && !$('.cs', curtain)) curtain.innerHTML = '<div class="cs">' + Array.from({length: 8}, (_, i) => `<i style="--i:${i}"></i>`).join('') + '</div><div class="ct" aria-hidden="true"></div>';
@@ -201,7 +201,7 @@
     await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
     html.classList.remove('nav-in');
     curtain.classList.remove('in'); curtain.classList.add('out');
-    await wait(760);
+    await wait(520);
     curtain.classList.remove('out');
   };
   document.addEventListener('click', e => {
@@ -247,8 +247,8 @@
     await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
     curtain.classList.remove('instant', 'in'); curtain.classList.add('out');           // и поднимается полосами
     body.classList.remove('locked');
-    finish(340);                                           // сцена начинается, когда полосы уже поднимаются
-    await wait(720);
+    finish(200);                                           // сцена начинается, когда полосы уже поднимаются
+    await wait(520);
     curtain.classList.remove('out');
   }
   function runSplash() {

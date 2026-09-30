@@ -32,7 +32,7 @@
     M.scan(main, M.T.reveal);
     curtain.classList.remove('in'); curtain.classList.add('out');
     if (push) { try { history.pushState({p: path, q: query || ''}, '', '#/' + path + (query || '')); } catch (e) {} }
-    await A.wait(700); curtain.classList.remove('out'); busy = false;
+    await A.wait(520); curtain.classList.remove('out'); busy = false;
     if (hash) scrollToHash(hash);
   }
   A.showPage = show;
