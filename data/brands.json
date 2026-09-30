@@ -67,7 +67,7 @@
     "group": "Cantabria Labs",
     "tag": "Антивозрастная регенерация кожи",
     "c1": "#66758f",
-    "c2": "#c6cfdd",
+    "c2": "#bcc6d5",
     "ink": "#fff",
     "site": "https://acosm.ru/catalog/",
     "desc": "Линия Cantabria Labs для регенерации кожи и антивозрастного ухода на основе технологии SCA® Biorepair.",
@@ -130,9 +130,9 @@
     "name": "Heliocare",
     "group": "Cantabria Labs",
     "tag": "Фотоиммунозащита с технологией Fernblock®",
-    "c1": "#e6a93a",
-    "c2": "#f8e3b4",
-    "ink": "#0b1a33",
+    "c1": "#dd5f22",
+    "c2": "#f09a5c",
+    "ink": "#fff",
     "site": "https://acosm.ru/catalog/",
     "desc": "Фотоиммунозащита Cantabria Labs на основе Fernblock®: ежедневная защита кожи от солнца в связке с любым протоколом.",
     "long": [
@@ -155,7 +155,7 @@
     ],
     "country": "Испания",
     "countryNote": "страна концерна Cantabria Labs",
-    "logo": null
+    "logo": "assets/brands/heliocare.png"
   },
   {
     "id": "biretix",
@@ -187,7 +187,7 @@
     ],
     "country": "Испания",
     "countryNote": "страна концерна Cantabria Labs",
-    "logo": null
+    "logo": "assets/brands/biretix.png"
   },
   {
     "id": "iraltone",
@@ -219,7 +219,7 @@
     ],
     "country": "Испания",
     "countryNote": "страна концерна Cantabria Labs",
-    "logo": null
+    "logo": "assets/brands/iraltone.png"
   },
   {
     "id": "eva",
@@ -227,7 +227,7 @@
     "group": "Аппаратное решение",
     "tag": "RF-устройство для интимного здоровья женщин",
     "c1": "#a25a6e",
-    "c2": "#e6bfc9",
+    "c2": "#d4a5b1",
     "ink": "#fff",
     "site": "https://acosm.ru/catalog/",
     "desc": "EVA — RF-устройство для женского интимного здоровья, представленное в России компанией «Астрея».",
@@ -250,7 +250,7 @@
       ]
     ],
     "country": null,
-    "logo": null
+    "logo": "assets/brands/eva.png"
   },
   {
     "id": "elancyl",
@@ -258,7 +258,7 @@
     "group": "Cantabria Labs",
     "tag": "Экспертные решения для коррекции фигуры",
     "c1": "#94603f",
-    "c2": "#ecd0bb",
+    "c2": "#d0ac93",
     "ink": "#fff",
     "site": "https://acosm.ru/catalog/",
     "desc": "Elancyl — экспертные решения в области похудения и моделирования тела от Cantabria Labs.",
@@ -282,6 +282,6 @@
     ],
     "country": "Испания",
     "countryNote": "страна концерна Cantabria Labs",
-    "logo": null
+    "logo": "assets/brands/elancyl.png"
   }
 ]
