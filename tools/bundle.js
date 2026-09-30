@@ -25,7 +25,7 @@ module.exports = function bundle({pages, ctx, layout, root, out}) {
     dataPages[p.path] = {key: p.P.key, nav: p.P.nav || '', title: t.replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&#39;/g, "'"), main: inline(m[1])};
   }
   const css = ['base', 'components', 'pages', 'responsive', 'motion', ...(rd ? ['redesign'] : [])].map(n => read(`css/${n}.css`)).join('\n');
-  const js = 'window.__ASTREYA_BUNDLE = true;\n' + ['shared', 'data', 'core', 'motion', 'pages', 'hero-mark', ...(rd ? ['redesign'] : [])].map(n => read(`js/${n}.js`)).join('\n;\n') + '\n;\n' + read('src/bundle-router.js');
+  const js = 'window.__ASTREYA_BUNDLE = true;\n' + (rd ? "document.body.classList.add('rd');   /* тег <body> в автономной сборке не сохраняется, а правила слоя доработок привязаны к body.rd */\n" : '') + ['shared', 'data', 'core', 'motion', 'pages', 'hero-mark', ...(rd ? ['redesign'] : [])].map(n => read(`js/${n}.js`)).join('\n;\n') + '\n;\n' + read('src/bundle-router.js');
   const fonts = home.match(/<script>\(function\(\)\{var l=document\.createElement\('link'\);[\s\S]*?<\/script>/)[0];
   const early = home.match(/<script>\(function\(d\)\{var h=d\.documentElement;[\s\S]*?<\/script>/)[0];
   const json = JSON.stringify(dataPages).replace(/</g, '\\u003c').replace(/\u2028/g, '\\u2028').replace(/\u2029/g, '\\u2029');
