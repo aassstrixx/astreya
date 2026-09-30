@@ -258,8 +258,8 @@
     "name": "Elancyl",
     "group": "Cantabria Labs",
     "tag": "Экспертные решения для коррекции фигуры",
-    "c1": "#94603f",
-    "c2": "#d0ac93",
+    "c1": "#5d9c2f",
+    "c2": "#8eba6d",
     "ink": "#fff",
     "site": "https://acosm.ru/catalog/",
     "desc": "Elancyl — экспертные решения в области похудения и моделирования тела от Cantabria Labs.",
@@ -283,6 +283,7 @@
     ],
     "country": "Испания",
     "countryNote": "страна концерна Cantabria Labs",
-    "logo": "assets/brands/elancyl.png"
+    "logo": "assets/brands/elancyl.png",
+    "logoScale": 0.9
   }
 ]
