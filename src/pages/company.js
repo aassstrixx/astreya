@@ -25,7 +25,7 @@ module.exports = function company(ctx, C, P) {
       <div class="split-panel reveal pushin">
         <div><span class="eyebrow">Профессионалам</span><h2>${esc(cp.professionals.title)}</h2>${cp.professionals.text.map(t => `<p>${esc(t)}</p>`).join('')}
           <div class="row" style="margin-top:22px"><a class="btn btn-fill" href="${C.u(P, 'catalog.html')}" data-track="catalog_click" data-place="company">Перейти в каталог ${I.arrow}</a></div></div>
-        <ul class="brand-list" aria-label="Бренды">${brands.map(b => `<li><a href="${C.burl(P, b)}" style="${bstyle(b)}"><i></i><b>${esc(b.name)}</b><span>${esc(b.tag)}</span></a></li>`).join('')}</ul>
+        <ul class="brand-list" aria-label="Бренды">${brands.map(b => `<li><a href="${C.burl(P, b)}" style="${bstyle(b)}">${C.slotLogo(P, b, 3600)}<b>${esc(b.name)}</b><span>${esc(b.tag)}</span></a></li>`).join('')}</ul>
       </div>
     </section>
 

@@ -19,6 +19,8 @@
   .hdr-cta .btn{display:none}
   .hero-grid{grid-template-columns:1fr}
   .pearl-wrap{max-width:400px;margin-bottom:64px}
+  .pearl-wrap{--k:.58}
+  .ring.r3{inset:6%}.ring.r1{inset:11.5%}.ring.r2{inset:17%}.pearl{inset:21%}
   .hero-card{left:0;right:0;bottom:-56px;max-width:none}
   .stats-grid{grid-template-columns:repeat(2,1fr)}
   .stat:nth-child(3){border-left:0}
@@ -115,3 +117,4 @@
   .stat{padding-inline:8px}
   .page-head h1,.hero h1{overflow-wrap:anywhere}
 }
+@media (max-width:520px){.mb .slot-logo{--slot-w:84px;--slot-h:40px}.mb{gap:10px}}

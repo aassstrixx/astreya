@@ -109,6 +109,16 @@ module.exports = function components(ctx) {
     : `<span class="blogo mono ${cls}" role="img" aria-label="Логотип ${esc(b.name)}">${esc(b.name.slice(0, 1))}</span>`;
 
   /* страница бренда: крупный логотип вместо текстового заголовка (h1 остаётся, название — в alt) */
+  /* бегущая строка: логотип в исходных цветах (у бренда без логотипа — его название текстом) */
+  const marqueeLogo = (P, b) => b.logo
+    ? `<img class="mq-logo" src="${esc(u(P, b.logo))}" alt="${esc(b.name)}"${b.logoW ? ` width="${b.logoW}" height="${b.logoH}" style="--lw:${logoPx(b, 10000)}"` : ''} decoding="async">`
+    : esc(b.name);
+
+  /* небольшой логотип вместо цветного квадрата рядом с названием бренда (исходные цвета; название — текстом рядом, поэтому alt пустой) */
+  const slotLogo = (P, b, A) => b.logo
+    ? `<div class="slot-logo"><img src="${esc(u(P, b.logo))}" alt=""${b.logoW ? ` width="${b.logoW}" height="${b.logoH}" style="--lw:${logoPx(b, A)}"` : ''} loading="lazy" decoding="async"></div>`
+    : '<i></i>';
+
   const heroLogo = (P, b) => `<img class="b-logo" src="${esc(u(P, b.logo))}" alt="${esc(b.name)}"${b.logoW ? ` width="${b.logoW}" height="${b.logoH}" style="--lw:${logoPx(b, 105000)}"` : ''} decoding="async">`;
 
   const brandCardHome = (P, b, i) => `<article class="bcard reveal" data-act="brand-card" data-id="${b.id}" tabindex="0" aria-expanded="false" style="${bstyle(b)}">
@@ -176,5 +186,5 @@ module.exports = function components(ctx) {
   const noteBox = html => `<div class="note">${I.info}<span>${html}</span></div>`;
 
   return {u, purl, burl, eurl, nurl, art, tag, tasksLine, timeTag, chip, crumbs, pageHead, secHead, lnk, partnerBtn, productCard, eventCard, eventRow,
-    newsCard, newsStyle, articleCard, logoMark, heroLogo, brandCardHome, brandCardList, advantageCards, officeCard, ctaBand, noteBox, FMT_KEY};
+    newsCard, newsStyle, articleCard, logoMark, heroLogo, marqueeLogo, slotLogo, brandCardHome, brandCardList, advantageCards, officeCard, ctaBand, noteBox, FMT_KEY};
 };

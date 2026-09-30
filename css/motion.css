@@ -45,7 +45,7 @@
 /* --- curtain: полосы + титр раздела --- */
 #curtain{position:fixed;inset:0;z-index:150;pointer-events:none}
 #curtain .cs{position:absolute;inset:-2px;display:flex}
-#curtain .cs i{flex:1;background:var(--navy);box-shadow:1px 0 0 var(--navy),-1px 0 0 var(--navy);transform:scaleY(0);transform-origin:bottom;will-change:transform;transition:transform .52s var(--ease-io);transition-delay:calc(var(--i)*38ms)}
+#curtain .cs i{flex:1;background:var(--navy);box-shadow:1px 0 0 var(--navy),-1px 0 0 var(--navy);transform:scaleY(0);transform-origin:top;will-change:transform;transition:transform .52s var(--ease-io);transition-delay:calc(var(--i)*38ms)}   /* исходное состояние — origin top: снятие .out посреди подъёма не перебрасывает полосы вниз */
 #curtain.in .cs i{transform:scaleY(1);transform-origin:bottom}
 #curtain.out .cs i{transform:scaleY(0);transform-origin:top}
 #curtain.instant .cs i{transition:none}
@@ -97,9 +97,14 @@ body::after{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;bac
 @keyframes breathe{0%,100%{transform:scale(1);opacity:.85}50%{transform:scale(1.07);opacity:1}}
 .pearl{background:radial-gradient(circle at var(--lx) var(--ly),#fff 0,#fdfbf7 12%,#eeeae2 34%,#cdd3de 62%,#8f9db4 100%)}
 .pearl::before{mix-blend-mode:normal;background:conic-gradient(from 0deg at 50% 50%,rgba(47,91,214,0),rgba(110,140,235,.30) 18%,rgba(236,170,196,.30) 38%,rgba(150,214,198,.27) 58%,rgba(47,91,214,0) 78%);-webkit-mask-image:radial-gradient(circle closest-side at 50% 50%,transparent 38%,rgba(0,0,0,.55) 68%,#000 96%);mask-image:radial-gradient(circle closest-side at 50% 50%,transparent 38%,rgba(0,0,0,.55) 68%,#000 96%);animation:spin 16s linear infinite}
+.ring.r3{animation:spin 84s linear infinite}
 .ring.r1{animation:spin 42s linear infinite}
 .ring.r2{animation:spin 64s linear infinite reverse}
-.ring .od{width:12px;height:12px;margin-left:-6px;top:-6px}
+.ly>.ring{pointer-events:none}
+/* плашка крутится навстречу своей орбите с той же скоростью → остаётся прямой */
+.ring.r3 .orb{animation:spin 84s linear infinite reverse}
+.ring.r1 .orb{animation:spin 42s linear infinite reverse}
+.ring.r2 .orb{animation:spin 64s linear infinite}
 .pearl::after{left:calc(17% + (var(--lx) - 33%) * .55);top:calc(11% + (var(--ly) - 27%) * .55)}
 .js .pearl-wrap.reveal{opacity:1;translate:none}
 .js .pearl-wrap .pearl{scale:.55;opacity:0;transition:scale 2.3s var(--ease-out) .15s,opacity 1.5s ease .15s}
@@ -129,12 +134,16 @@ body::after{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;bac
 
 /* --- бегущая строка брендов --- */
 .marquee{border-block:1px dashed var(--line);overflow:hidden;padding:clamp(18px,2.4vw,30px) 0;-webkit-mask-image:linear-gradient(90deg,transparent,#000 9%,#000 91%,transparent);mask-image:linear-gradient(90deg,transparent,#000 9%,#000 91%,transparent)}
-.mq-track{display:flex;width:max-content;animation:mq 56s linear infinite}
+.mq-track{display:flex;width:max-content;animation:mq 46s linear infinite}
 .marquee:hover .mq-track{animation-play-state:paused}
 .mq-set{display:flex;align-items:center;flex:none}
 .mq-set li{display:flex;align-items:center;flex:none}
 .mq-set a{font:500 italic clamp(30px,4.4vw,58px)/1.1 var(--serif);color:var(--navy);padding:0 clamp(16px,2.4vw,34px);transition:color .35s var(--ease-out)}
 .mq-set a:hover{color:var(--blue)}
+/* логотипы в бегущей строке: размер по «площади» (см. logoPx), на телефонах мельче */
+.mq-set a.mq-l{display:flex;align-items:center;padding:0 clamp(22px,3.2vw,46px)}
+.mq-logo{display:block;width:calc(var(--lw,120)*var(--mq-k,1)*1px);height:auto;max-height:88px;object-fit:contain}
+@media (max-width:700px){.marquee{--mq-k:.72}}
 .mq-set i{width:11px;height:11px;border-radius:50%;flex:none;background:radial-gradient(circle at 35% 30%,#fff,#e5e1d9 55%,#a9b4c6);box-shadow:0 5px 10px -5px rgba(11,26,51,.45)}
 @keyframes mq{to{transform:translateX(-50%)}}
 

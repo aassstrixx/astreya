@@ -319,7 +319,7 @@
     curtain.classList.remove('instant', 'in'); curtain.classList.add('out');           // и поднимается полосами
     body.classList.remove('locked');
     finish(200);                                           // сцена начинается, когда полосы уже поднимаются
-    await wait(520);
+    await wait(840);                                       // последняя полоса заканчивает через 8×38 + 520 мс
     curtain.classList.remove('out');
   }
   function runSplash() {

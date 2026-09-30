@@ -6,6 +6,13 @@ const heroMark = fs.readFileSync(path.join(__dirname, '..', 'partials', 'hero-ma
 
 module.exports = function home(ctx, C, P) {
   const {content, brands, tasks, site} = ctx, h = content.home;
+  /* логотип на орбите: Dermatime, Keenwell — из данных брендов; Cantabria Labs — горизонтальный знак (assets/brands/cantabria-labs-h.svg) */
+  const orbitLogo = {
+    keenwell: {src: ctx.brandById.keenwell.logo, w: ctx.brandById.keenwell.logoW, h: ctx.brandById.keenwell.logoH, lw: 100},
+    dermatime: {src: ctx.brandById.dermatime.logo, w: ctx.brandById.dermatime.logoW, h: ctx.brandById.dermatime.logoH, lw: 72},
+    cantabria: {src: 'assets/brands/cantabria-labs-h.svg', w: 458, h: 74, lw: 136}
+  };
+  const orbit = (id, angle) => { const o = orbitLogo[id]; return `<span class="arm" style="--a:${angle}deg"><span class="orb"><img src="${C.u(P, o.src)}" alt="" width="${o.w}" height="${o.h}" style="--lw:${o.lw}" decoding="async"></span></span>`; };
   const today = new Date().toISOString().slice(0, 10);
   const up = ctx.sortedEvents.filter(e => e.date >= today);
   const events = (up.length ? up : ctx.sortedEvents.slice(-4)).slice(0, 4);
@@ -21,7 +28,7 @@ module.exports = function home(ctx, C, P) {
         <span class="eyebrow in">Задача</span>
         <h3>${esc(t.label)}</h3>
         <p class="muted">${esc(t.note)}</p>
-        <div class="mini-brands">${t.brands.map(id => ctx.brandById[id]).map(b => `<a class="mb" href="${C.burl(P, b)}" style="${bstyle(b)}"><i></i><div><b>${esc(b.name)}</b><span>${esc(b.tag)}</span></div>${I.arrow}</a>`).join('')}</div>
+        <div class="mini-brands">${t.brands.map(id => ctx.brandById[id]).map(b => `<a class="mb" href="${C.burl(P, b)}" style="${bstyle(b)}">${C.slotLogo(P, b, 3300)}<div><b>${esc(b.name)}</b><span>${esc(b.tag)}</span></div>${I.arrow}</a>`).join('')}</div>
       </div>
       <div>
         <span class="eyebrow in">Что подойдёт</span>
@@ -47,16 +54,17 @@ module.exports = function home(ctx, C, P) {
     <div class="pearl-wrap reveal par" data-par="0.1">
       ${heroMark}
       <div class="ly" style="--z:.5"><div class="halo"></div></div>
-      <div class="ly" style="--z:1"><div class="ring r1"><i class="od"></i></div></div>
-      <div class="ly" style="--z:1.7"><div class="ring r2"><i class="od"></i></div></div>
+      <div class="ly" style="--z:.7"><div class="ring r3" aria-hidden="true">${orbit('keenwell', 70)}</div></div>
       <div class="ly" style="--z:2.8"><div class="pearl" role="img" aria-label="Жемчужина — символ бережной точности"></div></div>
+      <div class="ly" style="--z:2.9"><div class="ring r1" aria-hidden="true">${orbit('cantabria', 248)}</div></div>
+      <div class="ly" style="--z:3"><div class="ring r2" aria-hidden="true">${orbit('dermatime', 160)}</div></div>
       <div class="ly" style="--z:4.2"><div class="hero-chip">${esc(h.chip)}</div></div>
       <div class="ly" style="--z:3.4"><div class="hero-card"><b>${esc(h.card.title)}</b><hr class="dash"><p>${esc(h.card.text)}</p></div></div>
     </div>
   </div></section>
 
   <section class="marquee reveal" aria-label="Бренды портфеля">
-    <div class="mq-track">${[0, 1].map(k => `<ul class="mq-set"${k ? ' aria-hidden="true"' : ''}>${brands.map(b => `<li><a href="${C.burl(P, b)}"${k ? ' tabindex="-1"' : ''}>${esc(b.name)}</a><i></i></li>`).join('')}</ul>`).join('')}</div>
+    <div class="mq-track">${[0, 1].map(k => `<ul class="mq-set"${k ? ' aria-hidden="true"' : ''}>${brands.map(b => `<li><a${b.logo ? ' class="mq-l"' : ''} href="${C.burl(P, b)}"${k ? ' tabindex="-1"' : ''}>${C.marqueeLogo(P, b)}</a><i></i></li>`).join('')}</ul>`).join('')}</div>
   </section>
 
   <section class="sec" id="about"><div class="wrap about-home">
