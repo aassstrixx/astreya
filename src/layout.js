@@ -1,0 +1,195 @@
+/* Оболочка страницы: <head> (SEO), шапка, подвал, оверлеи, скрипты. Единая для всех страниц. */
+const fs = require('fs');
+const path = require('path');
+const S = require('../js/shared.js');
+const {esc, I} = S;
+
+const logoDefs = fs.readFileSync(path.join(__dirname, 'partials', 'logo-defs.html'), 'utf8');
+const FONTS = 'https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Playfair+Display:ital,wght@0,500;0,600;1,400;1,500&family=Manrope:wght@400;500;600;700&display=swap';
+const CSS = ['base', 'components', 'pages', 'responsive', 'motion'];
+const JS = ['shared', 'data', 'core', 'motion', 'pages'];
+
+/* Ранний скрипт: класс js, «уже видели заставку», «пришли с переходом» — до первой отрисовки, чтобы не было мигания */
+const EARLY = `(function(d){var h=d.documentElement;h.classList.add('js');try{if(sessionStorage.getItem('astreya:seen'))h.classList.add('seen');if(sessionStorage.getItem('astreya:nav'))h.classList.add('nav-in')}catch(e){}})(document);`;
+
+module.exports = function layout(ctx, C) {
+  const {site} = ctx, {u} = C;
+  const base = site.url.replace(/\/?$/, '/');
+  const absUrl = p => p === 'index.html' ? base : base + p;
+  const nav = [['Каталог', 'catalog.html', '/catalog'], ['Бренды', 'brands.html', '/brands'], ['Обучение', 'training.html', '/training'], ['Новости', 'news.html', '/news'], ['Компания', 'company.html', '/company']];
+  const c = site.contacts;
+
+  const header = P => `<header class="hdr" id="hdr">
+  <div class="wrap hdr-in">
+    <a href="${u(P, 'index.html')}" class="logo" style="--i:0" aria-label="Астрея — на главную">
+      <svg class="lgo" viewBox="46 338 836 436" aria-hidden="true"><use href="#logo-art"/></svg>
+    </a>
+    <nav class="nav" id="nav" style="--i:1" aria-label="Основная навигация">
+      ${nav.map(([t, href, key]) => `<a class="nl${P.nav === key ? ' on' : ''}" href="${u(P, href)}" data-nav="${key}"${P.nav === key ? ' aria-current="page"' : ''}>${t}</a>`).join('\n      ')}
+      <div class="nav-extra">
+        <form class="nav-search" role="search" action="${u(P, 'search.html')}" method="get">
+          <label class="search"><span class="sr">Поиск по сайту</span>${I.search}<input type="search" name="q" placeholder="Поиск по сайту" autocomplete="off"></label>
+        </form>
+        <a class="btn btn-fill" href="${u(P, 'partners.html')}" data-track="partner_cta" data-place="menu">Стать партнёром ${I.arrow}</a>
+        <div class="nav-contacts">
+          <a href="tel:${c.phoneRaw}" data-track="phone_click">${I.phone} ${esc(c.phone)}</a>
+          <a href="mailto:${c.email}" data-track="email_click">${I.mail} ${esc(c.email)}</a>
+          <span>${I.clock} ${esc(c.hours)}</span>
+        </div>
+      </div>
+    </nav>
+    <div class="hdr-cta" style="--i:2">
+      <button class="icon-btn" type="button" data-act="search" aria-label="Открыть поиск" aria-expanded="false" aria-controls="srch">${I.search}</button>
+      <a class="btn btn-fill btn-sm hdr-partner" href="${u(P, 'partners.html')}" data-track="partner_cta" data-place="header">Стать партнёром</a>
+      <button class="burger" id="burger" type="button" data-act="menu" aria-label="Меню" aria-expanded="false" aria-controls="nav"><i></i></button>
+    </div>
+  </div>
+</header>`;
+
+  const footer = P => `<footer class="ftr">
+  <div class="wrap">
+    <div class="ftr-grid">
+      <div class="ftr-brand">
+        <a href="${u(P, 'index.html')}" class="logo inv big" aria-label="Астрея — на главную">
+          <svg class="lgo" viewBox="46 338 836 436" aria-hidden="true"><use href="#logo-art"/></svg>
+        </a>
+        <p class="about">«Астрея» — дистрибьютор профессиональной косметики. Оригинальная продукция, обучение и поддержка специалистов.</p>
+      </div>
+      <div>
+        <h4>Компания</h4>
+        <ul>
+          <li><a href="${u(P, 'company.html')}">О компании</a></li>
+          <li><a href="${u(P, 'contacts.html')}">Контакты</a></li>
+          <li><a href="${u(P, 'news.html')}">Новости</a></li>
+          <li><a href="${u(P, 'training.html')}">Обучение</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4>Каталог</h4>
+        <ul>
+          <li><a href="${u(P, 'catalog.html')}" data-track="catalog_click">Все продукты</a></li>
+          <li><a href="${u(P, 'catalog.html')}#categories">Категории</a></li>
+          <li><a href="${u(P, 'brands.html')}">Бренды</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4>Партнёрам</h4>
+        <ul>
+          <li><a href="${u(P, 'partners.html')}" data-track="partner_cta" data-place="footer">Стать партнёром</a></li>
+          <li><a href="${u(P, 'contacts.html')}#support">Поддержка</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4>Контакты</h4>
+        <ul>
+          <li><a href="tel:${c.phoneRaw}" data-track="phone_click">${esc(c.phone)}</a></li>
+          <li><a href="mailto:${c.email}" data-track="email_click">${esc(c.email)}</a></li>
+          <li>${esc(c.address)}</li>
+          <li class="muted-l">${esc(c.hours)}</li>
+        </ul>
+      </div>
+    </div>
+    <div class="ftr-bottom">
+      <span>© ${esc(site.nameLatin)}, ${site.year}</span>
+      <span class="ftr-legal"><a href="${u(P, 'privacy.html')}">Политика конфиденциальности</a><a href="${u(P, 'terms.html')}">Пользовательское соглашение</a></span>
+    </div>
+    ${site.demoNotice ? `<p class="ftr-note">${esc(site.demoNotice)}</p>` : ''}
+  </div>
+</footer>`;
+
+  const searchPanel = P => `<div id="srch" class="srch" role="dialog" aria-modal="true" aria-label="Поиск по сайту" hidden>
+  <div class="srch-box wrap">
+    <form class="srch-form" role="search" action="${u(P, 'search.html')}" method="get">
+      <label class="search"><span class="sr">Поиск по товарам, брендам, новостям и обучению</span>${I.search}<input id="srch-q" type="search" name="q" placeholder="Товары, бренды, новости, обучение…" autocomplete="off"></label>
+      <button class="x" type="button" data-act="search-close" aria-label="Закрыть поиск">${I.close}</button>
+    </form>
+    <div class="srch-hints" id="srch-hints"><span>Популярное:</span>${ctx.content.searchHints.map(h => `<a class="chip" href="${u(P, 'search.html')}?q=${encodeURIComponent(h)}">${esc(h)}</a>`).join('')}</div>
+    <div class="srch-out" id="srch-out" aria-live="polite"></div>
+  </div>
+</div>`;
+
+  const splash = `<div id="splash" aria-hidden="true">
+  <div class="sp-in" id="sp-in">
+    <div class="sp-logo" id="sp-logo" role="img" aria-label="Астрея"></div>
+    <div class="sp-sub" id="sp-sub"></div>
+    <i class="sp-line"></i>
+    <p class="sp-tag">${esc(site.tagline)}</p>
+  </div>
+</div>`;
+
+  const orgLd = {'@context': 'https://schema.org', '@type': 'Organization', name: site.name, alternateName: site.nameLatin, url: base,
+    logo: base + 'assets/logo-512.png', email: c.email, telephone: c.phone,
+    address: {'@type': 'PostalAddress', addressLocality: 'Москва', streetAddress: 'проезд Березовой рощи, д. 8', addressCountry: 'RU'}};
+  const siteLd = {'@context': 'https://schema.org', '@type': 'WebSite', name: site.name, url: base,
+    potentialAction: {'@type': 'SearchAction', target: base + 'search.html?q={search_term_string}', 'query-input': 'required name=search_term_string'}};
+
+  /* P: {key, path, depth, root, nav, title, description, ogType, image, noindex, jsonld:[]} */
+  function shell(P, body) {
+    const url = absUrl(P.path), img = base + (P.image || 'assets/og-image.png');
+    const ld = [...(P.key === 'home' ? [orgLd, siteLd] : []), ...(P.jsonld || [])];
+    const bread = P.breadcrumbs && P.breadcrumbs.length ? {'@context': 'https://schema.org', '@type': 'BreadcrumbList',
+      itemListElement: P.breadcrumbs.map((b, i) => ({'@type': 'ListItem', position: i + 1, name: b[0], item: absUrl(b[1])}))} : null;
+    if (bread) ld.push(bread);
+    return `<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>${esc(P.title)}</title>
+<meta name="description" content="${esc(P.description)}">
+${P.noindex ? '<meta name="robots" content="noindex,follow">\n' : ''}<meta name="theme-color" content="#f5f2ec">
+<link rel="canonical" href="${url}">
+<meta property="og:type" content="${P.ogType || 'website'}">
+<meta property="og:site_name" content="${esc(site.name)}">
+<meta property="og:locale" content="ru_RU">
+<meta property="og:title" content="${esc(P.title)}">
+<meta property="og:description" content="${esc(P.description)}">
+<meta property="og:url" content="${url}">
+<meta property="og:image" content="${img}">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="${esc(site.name)} — профессиональная косметика">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="${esc(P.title)}">
+<meta name="twitter:description" content="${esc(P.description)}">
+<meta name="twitter:image" content="${img}">
+<link rel="icon" href="${u(P, 'assets/favicon.svg')}" type="image/svg+xml">
+<link rel="icon" href="${u(P, 'assets/favicon-32.png')}" type="image/png" sizes="32x32">
+<link rel="apple-touch-icon" href="${u(P, 'assets/apple-touch-icon.png')}">
+<script>${EARLY}</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<!-- У Fraunces нет кириллицы, поэтому русские заголовки набираются парным по контрасту Playfair Display; латиница и цифры — Fraunces.
+     Шрифты подключаются асинхронно: страница стартует сразу, даже если Google Fonts медленный (у всех гарнитур есть запасные — см. --serif / --sans). -->
+<script>(function(){var l=document.createElement('link');l.rel='stylesheet';l.href='${FONTS}';document.head.appendChild(l);})();</script>
+<noscript><link href="${FONTS}" rel="stylesheet"></noscript>
+${CSS.map(n => `<link rel="stylesheet" href="${u(P, `css/${n}.css`)}">`).join('\n')}
+${ld.map(o => `<script type="application/ld+json">${JSON.stringify(o)}</script>`).join('\n')}
+</head>
+<body data-page="${P.key}" data-nav="${P.nav || ''}" data-root="${P.root}">
+<a class="skip" href="#main">К основному содержимому</a>
+${logoDefs}
+<div id="progress" aria-hidden="true"></div>
+${P.key === 'home' ? splash : ''}
+<div id="curtain" aria-hidden="true"></div>
+
+${header(P)}
+
+<main id="main" tabindex="-1" data-page="${P.key}">
+${body}
+</main>
+
+${footer(P)}
+
+${searchPanel(P)}
+<div id="modal" aria-hidden="true"></div>
+<div id="toast" role="status" aria-live="polite"></div>
+
+${JS.map(n => `<script src="${u(P, `js/${n}.js`)}" defer></script>`).join('\n')}
+${P.key === 'home' ? `<script src="${u(P, 'js/hero-mark.js')}" defer></script>` : ''}
+</body>
+</html>
+`;
+  }
+  return {shell, absUrl, base, nav};
+};

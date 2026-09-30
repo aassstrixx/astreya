@@ -1,0 +1,637 @@
+[
+  {
+    "id": "dt-elastense",
+    "slug": "dermatime-elastense",
+    "brand": "dermatime",
+    "cat": "face",
+    "kind": "prep",
+    "type": "dropper",
+    "name": "Elastense",
+    "desc": "Препарат серии Elastense для эстетики лица в профессиональных протоколах.",
+    "tasks": [
+      "antiage"
+    ],
+    "isNew": true,
+    "volume": null,
+    "sku": null,
+    "usage": null,
+    "indications": null,
+    "docs": [],
+    "details": null,
+    "featured": true
+  },
+  {
+    "id": "dt-acidcure",
+    "slug": "dermatime-acidcure",
+    "brand": "dermatime",
+    "cat": "face",
+    "kind": "prep",
+    "type": "bottle",
+    "name": "Acidcure",
+    "desc": "Серия Acidcure для эстетики лица: процедуры в условиях кабинета.",
+    "tasks": [
+      "acne",
+      "pigment"
+    ],
+    "isNew": true,
+    "volume": null,
+    "sku": null,
+    "usage": null,
+    "indications": null,
+    "docs": [],
+    "details": null,
+    "featured": true
+  },
+  {
+    "id": "dt-milk",
+    "slug": "dermatime-molochnye-pilingi",
+    "brand": "dermatime",
+    "cat": "peel",
+    "kind": "peel",
+    "type": "bottle",
+    "name": "Молочные пилинги",
+    "desc": "Линейка молочных химических пилингов для профессионального применения.",
+    "tasks": [
+      "pigment",
+      "antiage",
+      "sens"
+    ],
+    "volume": null,
+    "sku": null,
+    "usage": null,
+    "indications": null,
+    "docs": [],
+    "details": null,
+    "featured": false
+  },
+  {
+    "id": "dt-prep",
+    "slug": "dermatime-pre-i-postpilingovyy-uhod",
+    "brand": "dermatime",
+    "cat": "peel",
+    "kind": "care",
+    "type": "jar",
+    "name": "Пре- и постпилинговый уход",
+    "desc": "Подготовка кожи к пилингу и восстановление после процедуры.",
+    "tasks": [
+      "sens"
+    ],
+    "volume": null,
+    "sku": null,
+    "usage": null,
+    "indications": null,
+    "docs": [],
+    "details": null,
+    "featured": false
+  },
+  {
+    "id": "dt-home",
+    "slug": "dermatime-domashnyaya-kosmetsevtika",
+    "brand": "dermatime",
+    "cat": "home",
+    "kind": "care",
+    "type": "pump",
+    "name": "Домашняя космецевтика",
+    "desc": "Домашний уход, продлевающий результат кабинетных процедур.",
+    "tasks": [
+      "antiage",
+      "sens"
+    ],
+    "volume": null,
+    "sku": null,
+    "usage": null,
+    "indications": null,
+    "docs": [],
+    "details": null,
+    "featured": false
+  },
+  {
+    "id": "dt-meso",
+    "slug": "dermatime-preparaty-dlya-mezoterapii",
+    "brand": "dermatime",
+    "cat": "face",
+    "kind": "ampoule",
+    "type": "box",
+    "name": "Препараты для мезотерапии",
+    "desc": "Профессиональные мезотерапевтические препараты для работы в кабинете.",
+    "tasks": [
+      "antiage"
+    ],
+    "volume": null,
+    "sku": null,
+    "usage": null,
+    "indications": null,
+    "docs": [],
+    "details": null,
+    "featured": false
+  },
+  {
+    "id": "kw-fluid",
+    "slug": "keenwell-tonalnyy-flyuid",
+    "brand": "keenwell",
+    "cat": "decor",
+    "kind": "decor",
+    "type": "pump",
+    "name": "Тональный флюид",
+    "desc": "Тональные средства из линии декоративной косметики Keenwell.",
+    "tasks": [
+      "antiage"
+    ],
+    "isNew": true,
+    "volume": null,
+    "sku": null,
+    "usage": null,
+    "indications": null,
+    "docs": [],
+    "details": null,
+    "featured": true
+  },
+  {
+    "id": "kw-corr",
+    "slug": "keenwell-korrektor",
+    "brand": "keenwell",
+    "cat": "decor",
+    "kind": "decor",
+    "type": "tube",
+    "name": "Корректор",
+    "desc": "Корректоры для маскировки несовершенств кожи.",
+    "tasks": [
+      "pigment"
+    ],
+    "volume": null,
+    "sku": null,
+    "usage": null,
+    "indications": null,
+    "docs": [],
+    "details": null,
+    "featured": false
+  },
+  {
+    "id": "kw-face",
+    "slug": "keenwell-programma-estetiki-litsa",
+    "brand": "keenwell",
+    "cat": "face",
+    "kind": "program",
+    "type": "jar",
+    "name": "Программа эстетики лица",
+    "desc": "Профессиональные и домашние средства для эстетики лица.",
+    "tasks": [
+      "antiage"
+    ],
+    "volume": null,
+    "sku": null,
+    "usage": null,
+    "indications": null,
+    "docs": [],
+    "details": null,
+    "featured": false
+  },
+  {
+    "id": "kw-serum",
+    "slug": "keenwell-syvorotka-dlya-litsa",
+    "brand": "keenwell",
+    "cat": "face",
+    "kind": "serum",
+    "type": "dropper",
+    "name": "Сыворотка для лица",
+    "desc": "Концентрированный уход как часть программы для лица.",
+    "tasks": [
+      "antiage",
+      "pigment"
+    ],
+    "volume": null,
+    "sku": null,
+    "usage": null,
+    "indications": null,
+    "docs": [],
+    "details": null,
+    "featured": false
+  },
+  {
+    "id": "kw-body",
+    "slug": "keenwell-programma-estetiki-tela",
+    "brand": "keenwell",
+    "cat": "body",
+    "kind": "program",
+    "type": "tube",
+    "name": "Программа эстетики тела",
+    "desc": "Средства для профессиональных процедур по телу.",
+    "tasks": [
+      "body"
+    ],
+    "volume": null,
+    "sku": null,
+    "usage": null,
+    "indications": null,
+    "docs": [],
+    "details": null,
+    "featured": false
+  },
+  {
+    "id": "ec-serum",
+    "slug": "endocare-syvorotka-sca-biorepair",
+    "brand": "endocare",
+    "cat": "face",
+    "kind": "serum",
+    "type": "dropper",
+    "name": "Сыворотка SCA® Biorepair",
+    "desc": "Регенерация и антивозрастной уход на основе технологии SCA® Biorepair.",
+    "tasks": [
+      "antiage",
+      "sens"
+    ],
+    "isNew": true,
+    "actives": [
+      "SCA® Biorepair"
+    ],
+    "volume": null,
+    "sku": null,
+    "usage": null,
+    "indications": null,
+    "docs": [],
+    "details": null,
+    "featured": true
+  },
+  {
+    "id": "ec-cream",
+    "slug": "endocare-regeneriruyuschiy-krem",
+    "brand": "endocare",
+    "cat": "home",
+    "kind": "cream",
+    "type": "jar",
+    "name": "Регенерирующий крем",
+    "desc": "Восстановление кожи после процедур и в ежедневном уходе.",
+    "tasks": [
+      "antiage",
+      "sens"
+    ],
+    "volume": null,
+    "sku": null,
+    "usage": null,
+    "indications": null,
+    "docs": [],
+    "details": null,
+    "featured": false
+  },
+  {
+    "id": "ec-amp",
+    "slug": "endocare-ampuly-dlya-kabineta",
+    "brand": "endocare",
+    "cat": "face",
+    "kind": "ampoule",
+    "type": "box",
+    "name": "Ампулы для кабинета",
+    "desc": "Ампулы для профессиональных протоколов регенерации.",
+    "tasks": [
+      "antiage"
+    ],
+    "volume": null,
+    "sku": null,
+    "usage": null,
+    "indications": null,
+    "docs": [],
+    "details": null,
+    "featured": false
+  },
+  {
+    "id": "nr-gel",
+    "slug": "neoretin-discrom-control-gel-krem",
+    "brand": "neoretin",
+    "cat": "face",
+    "kind": "cream",
+    "type": "jar",
+    "name": "Discrom Control · гель-крем",
+    "desc": "Депигментирующий уход: Whitening Booster System и RetinSphere®.",
+    "tasks": [
+      "pigment"
+    ],
+    "actives": [
+      "Whitening Booster System",
+      "RetinSphere®"
+    ],
+    "volume": null,
+    "sku": null,
+    "usage": null,
+    "indications": null,
+    "docs": [],
+    "details": null,
+    "featured": false
+  },
+  {
+    "id": "nr-serum",
+    "slug": "neoretin-discrom-control-syvorotka",
+    "brand": "neoretin",
+    "cat": "face",
+    "kind": "serum",
+    "type": "dropper",
+    "name": "Discrom Control · сыворотка",
+    "desc": "Сыворотка депигментирующей системы для комплексных протоколов.",
+    "tasks": [
+      "pigment"
+    ],
+    "isNew": true,
+    "volume": null,
+    "sku": null,
+    "usage": null,
+    "indications": null,
+    "docs": [],
+    "details": null,
+    "featured": true
+  },
+  {
+    "id": "nr-fluid",
+    "slug": "neoretin-discrom-control-flyuid-spf-50",
+    "brand": "neoretin",
+    "cat": "sun",
+    "kind": "sun",
+    "type": "bottle",
+    "name": "Discrom Control · флюид SPF 50+",
+    "desc": "Депигментирующий уход с ежедневной фотозащитой.",
+    "tasks": [
+      "pigment",
+      "sun"
+    ],
+    "volume": null,
+    "sku": null,
+    "usage": null,
+    "indications": null,
+    "docs": [],
+    "details": null,
+    "featured": false
+  },
+  {
+    "id": "hc-fluid",
+    "slug": "heliocare-solntsezaschitnyy-flyuid-spf-50",
+    "brand": "heliocare",
+    "cat": "sun",
+    "kind": "sun",
+    "type": "bottle",
+    "name": "Солнцезащитный флюид SPF 50+",
+    "desc": "Фотоиммунозащита с технологией Fernblock® для ежедневного применения.",
+    "tasks": [
+      "sun",
+      "pigment",
+      "antiage"
+    ],
+    "actives": [
+      "Fernblock®"
+    ],
+    "volume": null,
+    "sku": null,
+    "usage": null,
+    "indications": null,
+    "docs": [],
+    "details": null,
+    "featured": false
+  },
+  {
+    "id": "hc-gel",
+    "slug": "heliocare-gel-dlya-zhirnoy-kozhi",
+    "brand": "heliocare",
+    "cat": "sun",
+    "kind": "sun",
+    "type": "tube",
+    "name": "Гель для жирной кожи",
+    "desc": "Лёгкая текстура для кожи, склонной к несовершенствам.",
+    "tasks": [
+      "sun",
+      "acne"
+    ],
+    "volume": null,
+    "sku": null,
+    "usage": null,
+    "indications": null,
+    "docs": [],
+    "details": null,
+    "featured": false
+  },
+  {
+    "id": "hc-mineral",
+    "slug": "heliocare-mineralnyy-krem-spf-50",
+    "brand": "heliocare",
+    "cat": "sun",
+    "kind": "sun",
+    "type": "tube",
+    "name": "Минеральный крем SPF 50+",
+    "desc": "Фотозащита для чувствительной кожи.",
+    "tasks": [
+      "sun",
+      "sens"
+    ],
+    "isNew": true,
+    "volume": null,
+    "sku": null,
+    "usage": null,
+    "indications": null,
+    "docs": [],
+    "details": null,
+    "featured": true
+  },
+  {
+    "id": "br-gel",
+    "slug": "biretix-gel-protiv-nesovershenstv",
+    "brand": "biretix",
+    "cat": "face",
+    "kind": "gel",
+    "type": "tube",
+    "name": "Гель против несовершенств",
+    "desc": "Ретиноиды нового поколения и RetinSphere® для кожи с акне.",
+    "tasks": [
+      "acne"
+    ],
+    "actives": [
+      "Ретиноиды нового поколения",
+      "RetinSphere®"
+    ],
+    "volume": null,
+    "sku": null,
+    "usage": null,
+    "indications": null,
+    "docs": [],
+    "details": null,
+    "featured": false
+  },
+  {
+    "id": "br-clean",
+    "slug": "biretix-ochischayuschiy-gel",
+    "brand": "biretix",
+    "cat": "face",
+    "kind": "cleanse",
+    "type": "pump",
+    "name": "Очищающий гель",
+    "desc": "Очищение кожи, склонной к акне, — первый шаг протокола.",
+    "tasks": [
+      "acne"
+    ],
+    "volume": null,
+    "sku": null,
+    "usage": null,
+    "indications": null,
+    "docs": [],
+    "details": null,
+    "featured": false
+  },
+  {
+    "id": "br-cream",
+    "slug": "biretix-uvlazhnyayuschiy-krem",
+    "brand": "biretix",
+    "cat": "home",
+    "kind": "cream",
+    "type": "jar",
+    "name": "Увлажняющий крем",
+    "desc": "Восстановление и комфорт кожи на фоне терапии.",
+    "tasks": [
+      "acne",
+      "sens"
+    ],
+    "volume": null,
+    "sku": null,
+    "usage": null,
+    "indications": null,
+    "docs": [],
+    "details": null,
+    "featured": false
+  },
+  {
+    "id": "ir-lotion",
+    "slug": "iraltone-loson-dlya-kozhi-golovy",
+    "brand": "iraltone",
+    "cat": "hair",
+    "kind": "hair",
+    "type": "dropper",
+    "name": "Лосьон для кожи головы",
+    "desc": "Трихологический уход с научно доказанной эффективностью.",
+    "tasks": [
+      "hair"
+    ],
+    "isNew": true,
+    "volume": null,
+    "sku": null,
+    "usage": null,
+    "indications": null,
+    "docs": [],
+    "details": null,
+    "featured": true
+  },
+  {
+    "id": "ir-shampoo",
+    "slug": "iraltone-shampun",
+    "brand": "iraltone",
+    "cat": "hair",
+    "kind": "hair",
+    "type": "bottle",
+    "name": "Шампунь",
+    "desc": "Ежедневный уход за кожей головы и волосами.",
+    "tasks": [
+      "hair"
+    ],
+    "volume": null,
+    "sku": null,
+    "usage": null,
+    "indications": null,
+    "docs": [],
+    "details": null,
+    "featured": false
+  },
+  {
+    "id": "ir-amp",
+    "slug": "iraltone-ampuly-dlya-trihoprotokolov",
+    "brand": "iraltone",
+    "cat": "hair",
+    "kind": "ampoule",
+    "type": "box",
+    "name": "Ампулы для трихопротоколов",
+    "desc": "Ампулы для работы со специалистом-трихологом.",
+    "tasks": [
+      "hair"
+    ],
+    "volume": null,
+    "sku": null,
+    "usage": null,
+    "indications": null,
+    "docs": [],
+    "details": null,
+    "featured": false
+  },
+  {
+    "id": "eva-dev",
+    "slug": "eva",
+    "brand": "eva",
+    "cat": "device",
+    "kind": "device",
+    "type": "device",
+    "name": "EVA",
+    "desc": "RF-устройство для интимного здоровья женщин.",
+    "tasks": [
+      "intim"
+    ],
+    "isNew": true,
+    "volume": null,
+    "sku": null,
+    "usage": null,
+    "indications": null,
+    "docs": [],
+    "details": null,
+    "featured": true
+  },
+  {
+    "id": "el-gel",
+    "slug": "elancyl-antitsellyulitnyy-gel",
+    "brand": "elancyl",
+    "cat": "body",
+    "kind": "gel",
+    "type": "tube",
+    "name": "Антицеллюлитный гель",
+    "desc": "Экспертные решения для моделирования фигуры.",
+    "tasks": [
+      "body"
+    ],
+    "volume": null,
+    "sku": null,
+    "usage": null,
+    "indications": null,
+    "docs": [],
+    "details": null,
+    "featured": false
+  },
+  {
+    "id": "el-firm",
+    "slug": "elancyl-krem-dlya-uprugosti-kozhi",
+    "brand": "elancyl",
+    "cat": "body",
+    "kind": "cream",
+    "type": "jar",
+    "name": "Крем для упругости кожи",
+    "desc": "Домашнее продолжение программ по телу.",
+    "tasks": [
+      "body"
+    ],
+    "volume": null,
+    "sku": null,
+    "usage": null,
+    "indications": null,
+    "docs": [],
+    "details": null,
+    "featured": false
+  },
+  {
+    "id": "el-stretch",
+    "slug": "elancyl-protiv-rastyazhek",
+    "brand": "elancyl",
+    "cat": "body",
+    "kind": "care",
+    "type": "tube",
+    "name": "Против растяжек",
+    "desc": "Средство для ухода за кожей тела в период изменения объёмов.",
+    "tasks": [
+      "body"
+    ],
+    "volume": null,
+    "sku": null,
+    "usage": null,
+    "indications": null,
+    "docs": [],
+    "details": null,
+    "featured": false
+  }
+]
