@@ -16,6 +16,7 @@ const EARLY = `(function(d){var h=d.documentElement;h.classList.add('js');try{va
 
 module.exports = function layout(ctx, C) {
   const {site} = ctx, {u} = C;
+  const rd = !!site.redesign, cssList = rd ? [...CSS, 'redesign'] : CSS, jsList = rd ? [...JS, 'redesign'] : JS;   // слой доработок включается одним флагом site.redesign
   const ver = ctx.assetVersion ? '?v=' + ctx.assetVersion : '';
   const base = site.url.replace(/\/?$/, '/');
   const absUrl = p => p === 'index.html' ? base : base + p;
@@ -100,6 +101,31 @@ module.exports = function layout(ctx, C) {
   </div>
 </footer>`;
 
+  /* расширенный подвал (site.redesign): колонки из data/redesign.json → footer; ссылки ведут только на существующие страницы и якоря */
+  const footerRd = P => { const f = ctx.redesign.footer;
+    return `<footer class="ftr ftr-rd">
+  <div class="wrap">
+    <div class="ftr-rd-top">
+      <div class="ftr-brand">
+        <a href="${u(P, 'index.html')}" class="logo inv big" aria-label="Астрея — на главную"><svg class="lgo" viewBox="46 338 836 436" aria-hidden="true"><use href="#logo-art"/></svg></a>
+        <p class="about">${esc(f.tagline)}</p>
+      </div>
+      <ul class="ftr-rd-contacts">
+        <li><a href="tel:${c.phoneRaw}" data-track="phone_click">${esc(c.phone)}</a></li>
+        <li><a href="mailto:${c.email}" data-track="email_click">${esc(c.email)}</a></li>
+        <li>${esc(c.address)}</li>
+        <li class="muted-l">${esc(c.hours)}</li>
+      </ul>
+    </div>
+    <div class="ftr-rd-cols">${f.columns.map(col => `<div><h2 class="ftr-h">${esc(col.title)}</h2><ul>${col.links.map(([t, h]) => `<li><a href="${u(P, h)}">${esc(t)}</a></li>`).join('')}</ul></div>`).join('')}</div>
+    <div class="ftr-bottom">
+      <span>© ${esc(site.nameLatin)}, ${site.year}</span>
+      <span class="ftr-legal"><a href="${u(P, 'privacy.html')}">Политика конфиденциальности</a><a href="${u(P, 'terms.html')}">Пользовательское соглашение</a></span>
+    </div>
+    ${site.demoNotice ? `<p class="ftr-note">${esc(site.demoNotice)}</p>` : ''}
+  </div>
+</footer>`; };
+
   const searchPanel = P => `<div id="srch" class="srch" role="dialog" aria-modal="true" aria-label="Поиск по сайту" hidden>
   <div class="srch-box wrap">
     <form class="srch-form" role="search" action="${u(P, 'search.html')}" method="get">
@@ -167,10 +193,10 @@ ${P.key === 'home' ? `<script>${LEGACY}</script>\n` : ''}
      Шрифты подключаются асинхронно: страница стартует сразу, даже если Google Fonts медленный (у всех гарнитур есть запасные — см. --serif / --sans). -->
 <script>(function(){var l=document.createElement('link');l.rel='stylesheet';l.href='${FONTS}';document.head.appendChild(l);})();</script>
 <noscript><link href="${FONTS}" rel="stylesheet"></noscript>
-${CSS.map(n => `<link rel="stylesheet" href="${u(P, `css/${n}.css`)}${ver}">`).join('\n')}
+${cssList.map(n => `<link rel="stylesheet" href="${u(P, `css/${n}.css`)}${ver}">`).join('\n')}
 ${ld.map(o => `<script type="application/ld+json">${JSON.stringify(o)}</script>`).join('\n')}
 </head>
-<body data-page="${P.key}" data-nav="${P.nav || ''}" data-root="${P.root}">
+<body${rd ? ' class="rd"' : ''} data-page="${P.key}" data-nav="${P.nav || ''}" data-root="${P.root}">
 <a class="skip" href="#main">К основному содержимому</a>
 ${logoDefs}
 <div id="progress" aria-hidden="true"></div>
@@ -183,13 +209,13 @@ ${header(P)}
 ${body}
 </main>
 
-${footer(P)}
+${rd ? footerRd(P) : footer(P)}
 
 ${searchPanel(P)}
 <div id="modal" aria-hidden="true"></div>
 <div id="toast" role="status" aria-live="polite"></div>
 
-${JS.map(n => `<script src="${u(P, `js/${n}.js`)}${ver}" defer></script>`).join('\n')}
+${jsList.map(n => `<script src="${u(P, `js/${n}.js`)}${ver}" defer></script>`).join('\n')}
 </body>
 </html>
 `;

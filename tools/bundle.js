@@ -3,7 +3,8 @@
 const fs = require('fs');
 const path = require('path');
 
-module.exports = function bundle({pages, layout, root, out}) {
+module.exports = function bundle({pages, ctx, layout, root, out}) {
+  const rd = !!(ctx && ctx.site && ctx.site.redesign);
   const read = f => fs.readFileSync(path.join(root, f), 'utf8');
   const home = pages.find(p => p.path === 'index.html').html;
   const body = home.slice(home.indexOf('<body'), home.lastIndexOf('</body>'));
@@ -12,7 +13,7 @@ module.exports = function bundle({pages, layout, root, out}) {
     .replace(/<link rel="stylesheet"[^>]*>\n?/g, '');
   /* картинки логотипов: в одном файле нет обычных путей, поэтому кладём их в отдельный JSON (data: URI, по одному разу) и подставляем роутером */
   const assets = {};
-  const inline = html => html.replace(/src="(?:\.\.\/)*(assets\/brands\/[\w.-]+)"/g, (m, f) => {
+  const inline = html => html.replace(/src="(?:\.\.\/)*(assets\/(?:brands|photos)\/[\w.-]+)"/g, (m, f) => {
     if (!assets[f]) assets[f] = 'data:image/' + (f.endsWith('.svg') ? 'svg+xml' : f.split('.').pop()) + ';base64,' + fs.readFileSync(path.join(root, f)).toString('base64');
     return `data-asset="${f}"`;
   });
@@ -23,8 +24,8 @@ module.exports = function bundle({pages, layout, root, out}) {
     const t = p.html.match(/<title>([^<]*)<\/title>/)[1];
     dataPages[p.path] = {key: p.P.key, nav: p.P.nav || '', title: t.replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&#39;/g, "'"), main: inline(m[1])};
   }
-  const css = ['base', 'components', 'pages', 'responsive', 'motion'].map(n => read(`css/${n}.css`)).join('\n');
-  const js = 'window.__ASTREYA_BUNDLE = true;\n' + ['shared', 'data', 'core', 'motion', 'pages', 'hero-mark'].map(n => read(`js/${n}.js`)).join('\n;\n') + '\n;\n' + read('src/bundle-router.js');
+  const css = ['base', 'components', 'pages', 'responsive', 'motion', ...(rd ? ['redesign'] : [])].map(n => read(`css/${n}.css`)).join('\n');
+  const js = 'window.__ASTREYA_BUNDLE = true;\n' + ['shared', 'data', 'core', 'motion', 'pages', 'hero-mark', ...(rd ? ['redesign'] : [])].map(n => read(`js/${n}.js`)).join('\n;\n') + '\n;\n' + read('src/bundle-router.js');
   const fonts = home.match(/<script>\(function\(\)\{var l=document\.createElement\('link'\);[\s\S]*?<\/script>/)[0];
   const early = home.match(/<script>\(function\(d\)\{var h=d\.documentElement;[\s\S]*?<\/script>/)[0];
   const json = JSON.stringify(dataPages).replace(/</g, '\\u003c').replace(/\u2028/g, '\\u2028').replace(/\u2029/g, '\\u2029');

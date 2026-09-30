@@ -11,6 +11,7 @@ function load() {
   const site = read('site'), content = read('content'), catalog = read('catalog'), training = read('training');
   const brands = read('brands'), products = read('products'), events = read('events'), newsRaw = read('news');
   const ctx = {site, content, brands, products, events, training};
+  ctx.redesign = site.redesign ? read('redesign') : null;      // слой доработок (см. README → «Доработки и откат»)
 
   ctx.cats = catalog.cats; ctx.tasks = catalog.tasks; ctx.kinds = catalog.kinds;
   ctx.brandById = byId(brands); ctx.catById = byId(ctx.cats); ctx.taskById = byId(ctx.tasks); ctx.kindById = byId(ctx.kinds);

@@ -28,15 +28,17 @@ module.exports = function home(ctx, C, P) {
       </div>
       <div>
         <span class="eyebrow in">Что подойдёт</span>
-        <div class="mini-prods" style="margin-top:18px">${prods.map(p => { const b = ctx.brandById[p.brand]; return `<a class="mini-p" href="${C.purl(P, p)}">${C.art(P, p)}<div class="t"><small>${esc(b.name)}</small>${esc(p.name)}</div></a>`; }).join('')}</div>
+        <div class="mini-prods" style="margin-top:18px">${prods.map(p => { const b = ctx.brandById[p.brand]; return `<a class="mini-p" href="${C.purl(P, p)}"${ctx.redesign ? ` data-cat="${p.cat}"` : ''}>${C.art(P, p)}<div class="t"><small>${esc(b.name)}</small>${esc(p.name)}</div></a>`; }).join('')}</div>
         <div class="row" style="margin-top:22px"><a class="btn btn-ghost btn-sm" href="${C.u(P, 'catalog.html')}?task=${t.id}" data-track="catalog_click">Открыть в каталоге ${I.arrow}</a></div>
         <p class="muted" style="margin-top:16px;font-size:12.5px">Подбор ориентировочный: протокол определяет специалист по результатам консультации.</p>
       </div>
     </div>`;
   };
 
-  return `
-  <section class="hero"><div class="wrap hero-grid">
+
+  /* секции главной: прежняя вёрстка собирается подряд; при site.redesign порядок и состав задаёт src/pages/home-x.js */
+  const parts = {};
+  parts.hero = `<section class="hero"><div class="wrap hero-grid">
     <div class="hero-copy" data-fade>
       <span class="eyebrow reveal">${esc(h.eyebrow)}</span>
       <h1>${h.h1}</h1>
@@ -57,13 +59,13 @@ module.exports = function home(ctx, C, P) {
       <div class="ly" style="--z:4.2"><div class="hero-chip">${esc(h.chip)}</div></div>
       <div class="ly" style="--z:3.4"><div class="hero-card"><b>${esc(h.card.title)}</b><hr class="dash"><p>${esc(h.card.text)}</p></div></div>
     </div>
-  </div></section>
+  </div></section>`;
 
-  <section class="marquee reveal" aria-label="Бренды портфеля">
+  parts.marquee = `<section class="marquee reveal" aria-label="Бренды портфеля">
     <div class="mq-track">${[0, 1].map(k => `<ul class="mq-set"${k ? ' aria-hidden="true"' : ''}>${brands.map(b => `<li><a${b.logo ? ' class="mq-l"' : ''} href="${C.burl(P, b)}"${k ? ' tabindex="-1"' : ''}>${C.marqueeLogo(P, b)}</a><i></i></li>`).join('')}</ul>`).join('')}</div>
-  </section>
+  </section>`;
 
-  <section class="sec" id="about"><div class="wrap about-home">
+  parts.about = `<section class="sec" id="about"><div class="wrap about-home">
     <div class="ah-copy">
       <span class="eyebrow">${esc(h.about.eyebrow)}</span>
       <h2>${esc(h.about.title)}</h2>
@@ -75,46 +77,49 @@ module.exports = function home(ctx, C, P) {
       <svg class="lgo ah-logo" viewBox="46 338 836 436"><use href="#logo-art"/></svg>
       <p>${esc(site.tagline)}</p>
     </aside>
-  </div></section>
+  </div></section>`;
 
-  <section class="stats" aria-label="Астрея в цифрах"><div class="wrap stats-grid">
+  parts.stats = `<section class="stats" aria-label="Астрея в цифрах"><div class="wrap stats-grid">
     ${h.stats.map(s => `<div class="stat reveal"><b data-count="${val(s)}"${s.suffix ? ` data-suffix="${esc(s.suffix)}"` : ''}>${val(s)}</b><span>${esc(s.label)}</span>${s.note ? `<i class="snote">${esc(s.note)}</i>` : ''}</div>`).join('')}
-  </div></section>
+  </div></section>`;
 
-  <section class="sec"><div class="wrap">
+  parts.advantages = `<section class="sec"><div class="wrap">
     ${C.secHead('Преимущества', 'Почему специалисты выбирают Астрею')}
     ${C.advantageCards(content.advantages)}
-  </div></section>
+  </div></section>`;
 
-  <section class="sec tint"><div class="wrap">
+  parts.brands = `<section class="sec tint"><div class="wrap">
     ${C.secHead('Бренды', `${brands.length} ${S.plural(brands.length, 'бренд', 'бренда', 'брендов')} — один подход`, C.lnk(C.u(P, 'brands.html'), 'Все бренды'))}
     <div class="bgrid" id="bgrid">${brands.map((b, i) => C.brandCardHome(P, b, i)).join('')}</div>
     <p class="muted" style="margin-top:14px;font-size:13px;text-align:center">Нажмите на карточку — раскроем описание бренда. Повторное нажатие сбрасывает выбор.</p>
-  </div></section>
+  </div></section>`;
 
-  <section class="sec"><div class="wrap">
+  parts.picker = `<section class="sec"><div class="wrap">
     ${C.secHead('Подбор по задаче', 'С чем вы работаете сегодня?', '<p class="lead">Выберите задачу клиента — покажем подходящие бренды и товары.</p>')}
     <div class="picker reveal pushin" id="picker">
       <div class="chips" role="group" aria-label="Задача клиента">${tasks.map((t, i) => C.chip(esc(t.label), 'pick', t.id, i === 0)).join('')}</div>
       <div id="pick-out" aria-live="polite">${tasks.map(pickOut).join('')}</div>
     </div>
-  </div></section>
+  </div></section>`;
 
-  <section class="sec tint"><div class="wrap">
+  parts.featured = `<section class="sec tint"><div class="wrap">
     ${C.secHead('Каталог', 'Рекомендуемые продукты', C.lnk(C.u(P, 'catalog.html'), 'Весь каталог', 'data-track="catalog_click"'))}
     <div class="grid g4">${featured.map((p, i) => C.productCard(P, p, i)).join('')}</div>
-  </div></section>
+  </div></section>`;
 
-  <section class="sec"><div class="wrap">
+  parts.events = `<section class="sec"><div class="wrap">
     ${C.secHead('Учебный центр', 'Ближайшие семинары', C.lnk(C.u(P, 'training.html'), 'Всё расписание'))}
     <div class="grid g3 events-grid" id="home-events">${events.slice(0, 3).map(e => C.eventCard(P, e)).join('')}</div>
     <p class="muted train-note">Базовые семинары и мастер-классы бесплатные и проходят с 10:30 до 18:00: теория чередуется с практикой.</p>
-  </div></section>
+  </div></section>`;
 
-  <section class="sec tint"><div class="wrap">
+  parts.news = `<section class="sec tint"><div class="wrap">
     ${C.secHead('Новости и акции', 'Что нового', C.lnk(C.u(P, 'news.html'), 'Все новости'))}
     <div class="grid g3">${ctx.news.slice(0, 3).map(n => C.newsCard(P, n)).join('')}</div>
-  </div></section>
+  </div></section>`;
 
-  ${C.ctaBand(P, 'home-cta')}`;
+  parts.cta = `${C.ctaBand(P, 'home-cta')}`;
+
+  const classic = Object.values(parts).join('\n\n  ');
+  return ctx.redesign ? require('./home-x.js')(ctx, C, P, parts, {events, featured, val}) : classic;
 };

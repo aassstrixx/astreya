@@ -11,10 +11,20 @@ function brandsPage(ctx, C, P) {
       <div class="tb-row"><span class="tb-lab">Задача</span><div class="chips" id="br-tasks">${C.chip('Любая', 'br-task', 'all', true)}${tasks.map(t => C.chip(esc(t.label), 'br-task', t.id, false)).join('')}</div></div>
     </div>
     <h2 class="sr">Список брендов</h2>
-    <div class="grid g3" id="br-grid">${brands.map(b => C.brandCardList(P, b)).join('')}</div>
+    <div class="grid g3" id="br-grid">${brandCards(ctx, C, P)}</div>
     <div class="empty" id="br-empty" hidden><b>Бренды не найдены</b>Измените запрос или выберите другую задачу.</div>
     <div style="height:clamp(60px,8vw,110px)"></div>
   </div>`;
+}
+
+/* список карточек; при site.redesign — две группы: косметика и аппаратные решения (заголовки скрываются фильтром, если в группе нет результатов) */
+function brandCards(ctx, C, P) {
+  const {brands, redesign} = ctx;
+  if (!redesign) return brands.map(b => C.brandCardList(P, b)).join('');
+  const bp = redesign.brandsPage, dev = new Set(bp.deviceIds);
+  const cos = brands.filter(b => !dev.has(b.id)), dv = brands.filter(b => dev.has(b.id));
+  return `<h2 class="br-group reveal">${esc(bp.groups.cosmetic)}<small>${cos.length}</small></h2>${cos.map(b => C.brandCardList(P, b)).join('')}` +
+    (dv.length ? `<h2 class="br-group br-group-dev reveal">${esc(bp.groups.device)}<small>${dv.length}</small></h2><p class="br-dev-note muted">${esc(bp.deviceNote)}</p>${dv.map(b => C.brandCardList(P, b)).join('')}` : '');
 }
 
 function brandPage(ctx, C, P, b) {
@@ -62,10 +72,14 @@ function brandPage(ctx, C, P, b) {
       <div class="grid g3">${prods.map((p, k) => C.productCard(P, p, k)).join('')}</div>
     </section>
 
+    ${ctx.redesign ? brandTasks(ctx, C, P, b) : ''}
+
     ${events.length ? `<section class="sec" style="padding-top:0">
       ${C.secHead('Обучение', `Мероприятия по ${esc(b.name)}`, C.lnk(C.u(P, 'training.html'), 'Всё расписание'))}
       <div class="grid g3 events-grid">${events.slice(0, 3).map(e => C.eventCard(P, e)).join('')}</div>
     </section>` : ''}
+
+    ${ctx.redesign ? brandMaterials(ctx, C, P, b) : ''}
 
     <section class="sec" style="padding-top:0">
       <div class="cta-band cta-brand reveal pushin">
@@ -84,6 +98,26 @@ function brandPage(ctx, C, P, b) {
       </nav>
     </section>
   </div>`;
+}
+
+/* «Решения по задачам» бренда: только задачи, связанные с брендом в data/catalog.json */
+function brandTasks(ctx, C, P, b) {
+  if (!b.tasks.length) return '';
+  return `<section class="sec rd-b-tasks" style="padding-top:0">
+      ${C.secHead('Решения по задачам', `С чем работает ${esc(b.name)}`)}
+      <div class="rd-b-tasklist">${b.tasks.map((id, i) => { const t = ctx.taskById[id], n = ctx.products.filter(p => p.brand === b.id && p.tasks.includes(id)).length;
+        return `<a class="rd-b-task reveal" href="${C.u(P, 'catalog.html')}?brand=${b.id}&task=${id}" data-track="catalog_click" data-place="brand-tasks"><span class="rd-no" aria-hidden="true">${String(i + 1).padStart(2, '0')}</span><h3>${esc(t.label)}</h3><span class="rd-b-count">${n} ${S.plural(n, 'позиция', 'позиции', 'позиций')} ${I.arrow}</span></a>`; }).join('')}</div>
+    </section>`;
+}
+
+/* «Материалы»: статьи учебного центра, привязанные к бренду (data/training.json → articles); если их нет — блок не показывается */
+function brandMaterials(ctx, C, P, b) {
+  const list = ctx.training.articles.filter(a => a.brand === b.id);
+  if (!list.length) return '';
+  return `<section class="sec" style="padding-top:0">
+      ${C.secHead('Материалы', `Статьи по ${esc(b.name)}`, C.lnk(C.u(P, 'training.html') + '#materials', 'Все материалы'))}
+      <div class="grid g3">${list.slice(0, 3).map(C.articleCard).join('')}</div>
+    </section>`;
 }
 
 function partnerLink(C, P, place) {

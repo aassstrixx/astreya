@@ -1,0 +1,231 @@
+/* redesign.css — слой доработок (включается флагом site.redesign, класс .rd на <body>).
+   Всё здесь — надстройка поверх base/components/pages/motion: выключите флаг — файл не подключается, сайт возвращается к прежнему виду.
+   Карточки брендов (главная и страница «Бренды») от этого слоя НЕ зависят; их базовый вид лежит в pages.css / components.css.
+   Типы секций: AIR (молочный, по умолчанию) · CLINICAL (холодный серо-зелёный) · EDITORIAL (графит) · ACCENT (фирменный синий). */
+
+.rd{--clin:#e7eded;--clin-2:#f0f4f4;--graphite:#14171c;--graphite-2:#1d2128;--ink-soft:rgba(243,241,236,.66)}
+
+/* ---------- каркас секций ---------- */
+.rd-sec{position:relative;padding:clamp(64px,9vw,132px) 0}
+.rd-clinical{background:var(--clin);border-block:1px solid rgba(11,26,51,.06)}
+.rd-head{max-width:760px;margin-bottom:clamp(30px,4.4vw,60px)}
+.rd-head h2{margin-top:16px;max-width:18ch}
+.rd-head .lead{margin-top:16px;max-width:54ch}
+.rd-head-row{max-width:none;display:flex;align-items:flex-end;justify-content:space-between;gap:24px;flex-wrap:wrap}
+.rd-head-row h2{max-width:22ch}
+.rd-no{font:500 clamp(54px,7vw,104px)/.9 var(--serif);letter-spacing:-.03em;color:rgba(47,91,214,.24);transition:color .45s var(--ease)}
+.rd-ph{display:inline-block;margin-left:8px;padding:2px 8px;border-radius:var(--pill);border:1px dashed var(--slate);font:600 10px/1.6 var(--sans);letter-spacing:.12em;text-transform:uppercase;font-style:normal;color:var(--slate);vertical-align:middle}
+
+/* крупное фоновое слово (5–8 %) */
+.rd-bgword{overflow:hidden}
+.rd-bgword::before{content:attr(data-word);position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);font:600 clamp(150px,27vw,430px)/1 var(--serif);letter-spacing:-.02em;white-space:nowrap;color:var(--navy);opacity:.045;pointer-events:none;user-select:none}
+.rd-bgword>*{position:relative;z-index:1}
+
+/* ---------- Астрея в цифрах ---------- */
+.rd-stats-grid{display:grid;grid-template-columns:minmax(0,.9fr) minmax(0,1.3fr);gap:clamp(32px,6vw,100px);align-items:center}
+.rd-stats-copy h2{margin-top:16px;max-width:15ch;font-size:clamp(30px,3.9vw,54px)}
+.rd-nums{display:grid;grid-template-columns:1fr 1fr}
+.rd-num{padding:clamp(22px,3vw,40px) clamp(14px,2.2vw,34px);border-top:1px solid var(--line)}
+.rd-num:nth-child(even){border-left:1px solid var(--line)}
+.rd-num b{display:block;font:500 clamp(54px,7.4vw,112px)/1 var(--serif);letter-spacing:-.03em}
+.rd-num b[data-suffix]::after{content:attr(data-suffix);font-size:.4em;vertical-align:top;position:relative;top:.3em;margin-left:3px;color:var(--blue)}
+.rd-num span{display:block;margin-top:14px;font:600 12px/1.45 var(--sans);letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+.rd-num .snote{display:block;margin-top:4px;font:500 12.5px/1.4 var(--sans);font-style:normal;color:var(--slate)}
+
+/* ---------- Почему Астрея ---------- */
+.rd-why-grid{display:grid;grid-template-columns:minmax(0,5fr) minmax(0,7fr);gap:clamp(32px,7vw,120px);align-items:start}
+.rd-why-head{position:sticky;top:calc(var(--hdr) + 40px)}
+.rd-why-head h2{margin-top:16px;max-width:12ch;font-size:clamp(34px,4.6vw,66px);line-height:1.02}
+.rd-why-list{counter-reset:none}
+.rd-why-item{display:grid;grid-template-columns:clamp(84px,11vw,150px) minmax(0,1fr);gap:clamp(12px,2vw,28px);align-items:start;padding:clamp(22px,3vw,40px) 0;border-top:1px solid var(--line)}
+.rd-why-item:last-child{border-bottom:1px solid var(--line)}
+.rd-why-item h3{font-size:clamp(24px,2.6vw,34px);line-height:1.12}
+.rd-why-item p{margin-top:12px;color:var(--muted);max-width:46ch}
+.rd-why-item:hover .rd-no{color:var(--blue)}
+
+/* ---------- Решения по задачам ---------- */
+.rd-tasks{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:16px}
+.rd-task{position:relative;display:flex;flex-direction:column;gap:14px;min-height:230px;padding:clamp(22px,2.4vw,30px);border-radius:var(--r-lg);background:#fff;box-shadow:var(--sh);transition:transform .45s var(--ease),box-shadow .45s var(--ease)}
+.rd-task:hover{transform:translateY(-4px);box-shadow:var(--sh-h)}
+.rd-task-no{font:600 11px/1 var(--sans);letter-spacing:.16em;color:var(--slate)}
+.rd-task h3{font-size:clamp(23px,2.2vw,30px);line-height:1.1}
+.rd-task p{color:var(--muted);font-size:15px;line-height:1.6;max-width:44ch}
+.rd-task-logos{display:flex;flex-wrap:wrap;gap:6px 18px;margin-top:auto}
+.rd-task-logos .slot-logo{--slot-w:auto;--slot-h:26px;width:auto}
+.rd-task-logos .slot-logo img{width:auto;max-width:70px;height:auto;max-height:24px}
+.rd-task-logos .slot-logo:nth-child(n+4){display:none}
+.rd-task-foot{display:flex;white-space:nowrap;align-items:center;justify-content:space-between;gap:12px;padding-top:14px;border-top:1px dashed var(--line);font:600 11px/1.3 var(--sans);letter-spacing:.1em;text-transform:uppercase;color:var(--slate)}
+.rd-go{display:inline-flex;align-items:center;gap:8px;color:var(--navy);transition:color .25s,gap .35s var(--ease)}
+.rd-go .ic{width:15px;height:15px}
+.rd-task:hover .rd-go{color:var(--blue);gap:12px}
+/* малые карточки: подпись со счётчиком и стрелка в одну строку (без длинного слова «Подобрать») */
+.rd-task:not(.rd-task-lead) .rd-task-foot{flex-wrap:nowrap}
+.rd-task:not(.rd-task-lead) .rd-go{font-size:0;gap:0}
+.rd-task:not(.rd-task-lead) .rd-go .ic{width:18px;height:18px}
+.rd-task-logos{align-items:center;min-height:30px}
+.rd-task-lead{grid-column:span 2;grid-row:span 2;background:linear-gradient(160deg,var(--navy) 0%,var(--navy-2) 100%);color:var(--milk)}
+.rd-task-lead h3{font-size:clamp(36px,4.2vw,58px);line-height:1.02}
+.rd-task-lead p{color:rgba(245,242,236,.72)}
+.rd-task-lead .rd-task-no,.rd-task-lead .rd-task-foot{color:var(--silver)}
+.rd-task-lead .rd-task-foot{border-color:rgba(185,194,208,.3)}
+.rd-task-lead .rd-go{color:var(--milk)}
+.rd-task-lead:hover .rd-go{color:#fff}
+.rd-task-lead .rd-task-logos .slot-logo img{filter:brightness(0) invert(1);opacity:.85}
+.rd-task:last-child{grid-column:span 2}
+
+/* кнопка «Запросить» в карточке товара не вылезает за край при узкой колонке */
+.rd .pcard .pf{flex-wrap:wrap;gap:10px 12px}
+
+/* ---------- Подборщик: шаг «Для кого?» ---------- */
+.rd-pick-step{display:flex;align-items:center;gap:14px 20px;flex-wrap:wrap;margin:18px 0 26px;padding-top:18px;border-top:1px dashed var(--line)}
+.rd-pick-step .chips{flex:1 1 auto}
+.rd-pick-empty{margin:-8px 0 22px;padding:14px 18px;border-radius:var(--r);background:#fff;border:1px dashed var(--line);color:var(--muted);font-size:14px}
+.rd .picker{background:#fff}
+
+/* ---------- EDITORIAL (графит) ---------- */
+.rd-editorial{background:var(--graphite);color:#f3f1ec;padding-block:clamp(72px,10vw,150px)}
+.rd-editorial::before{color:#fff;opacity:.045}
+.rd-editorial .eyebrow{color:var(--silver)}
+.rd-editorial .eyebrow::before{border-color:var(--silver)}
+.rd-ed-grid{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,.85fr);gap:clamp(32px,6vw,100px);align-items:center}
+.rd-ed-copy h2{margin:24px 0 36px;font-size:clamp(34px,4.7vw,68px);line-height:1.04;font-weight:500;letter-spacing:-.02em}
+.rd-ed-copy .l1{display:block;color:var(--ink-soft)}
+.rd-ed-copy .l2{display:block;margin-top:.5em;color:#fff}
+.rd-ed-trio{display:grid;grid-template-columns:repeat(3,auto);justify-content:center;align-items:end;gap:clamp(10px,2.4vw,34px);position:relative;padding-bottom:18px}
+.rd-ed-trio::after{content:"";position:absolute;left:4%;right:4%;bottom:6px;height:34px;border-radius:50%;background:radial-gradient(closest-side,rgba(255,255,255,.14),transparent);z-index:0}
+.rd-ed-p{position:relative;z-index:1;margin:0;display:flex;flex-direction:column;align-items:center;gap:14px}
+.rd-ed-p img{width:auto;height:var(--h);filter:drop-shadow(0 26px 26px rgba(0,0,0,.5))}
+.rd-ed-p1{--h:clamp(190px,21vw,300px)}
+.rd-ed-p2{--h:clamp(250px,28vw,410px)}
+.rd-ed-p3{--h:clamp(220px,24vw,350px)}
+.rd-ed-p figcaption{font:600 10.5px/1 var(--sans);letter-spacing:.2em;text-transform:uppercase;color:var(--silver)}
+.rd-ed-photo{margin:0;border-radius:var(--r-xl);overflow:hidden;aspect-ratio:4/5}
+.rd-ed-photo img{width:100%;height:100%;object-fit:cover}
+
+/* ---------- Обучение ---------- */
+.rd-train-grid{display:grid;grid-template-columns:minmax(0,.9fr) minmax(0,1.1fr);gap:clamp(32px,6vw,100px);align-items:center}
+.rd-train-art{position:relative;aspect-ratio:4/5;border-radius:var(--r-xl);overflow:hidden;background:radial-gradient(120% 80% at 20% 0%,#2a4fa8 0%,var(--navy) 62%);color:var(--milk);display:flex;flex-direction:column;align-items:flex-start;justify-content:space-between;padding:clamp(24px,3vw,44px)}
+.rd-train-art::after{content:"";position:absolute;right:-18%;bottom:-18%;width:70%;aspect-ratio:1;border-radius:50%;border:1px dashed rgba(185,194,208,.35)}
+.rd-train-art .lgo{height:auto;width:min(240px,62%);--lm:var(--milk)}
+.rd-train-art ul{display:grid;gap:10px;font:500 clamp(26px,3vw,40px)/1.1 var(--serif);position:relative;z-index:1}
+.rd-train-art li{padding-bottom:10px;border-bottom:1px solid rgba(185,194,208,.25)}
+.rd-train-photo{margin:0;border-radius:var(--r-xl);overflow:hidden;aspect-ratio:4/5}
+.rd-train-photo img{width:100%;height:100%;object-fit:cover}
+.rd-train-copy h2{margin-top:16px;font-size:clamp(34px,4.4vw,62px);line-height:1.04}
+.rd-sub{margin-top:18px;font:700 12px/1.5 var(--sans);letter-spacing:.18em;text-transform:uppercase;color:var(--blue)}
+.rd-train-copy>.muted{margin-top:16px;max-width:52ch}
+.rd-next{display:flex;align-items:center;gap:18px;margin-top:28px;padding:18px 20px;border-radius:var(--r-lg);background:#fff;box-shadow:var(--sh);transition:transform .4s var(--ease),box-shadow .4s var(--ease)}
+.rd-next:hover{transform:translateY(-3px);box-shadow:var(--sh-h)}
+.rd-next>.ic{margin-left:auto;flex:none;color:var(--slate)}
+.rd-date{display:grid;place-items:center;flex:none;width:64px;height:68px;border-radius:var(--r);background:var(--navy);color:var(--milk)}
+.rd-date b{font:500 26px/1 var(--serif)}
+.rd-date i{font:600 10px/1 var(--sans);letter-spacing:.14em;text-transform:uppercase;font-style:normal;color:var(--silver);margin-top:-14px}
+.rd-next-t{display:grid;gap:4px;min-width:0}
+.rd-next-t small{font:700 10.5px/1 var(--sans);letter-spacing:.16em;text-transform:uppercase;color:var(--slate)}
+.rd-next-t b{font:500 19px/1.25 var(--serif)}
+.rd-next-t em{font-style:normal;font-size:13px;color:var(--muted)}
+.rd-events{margin-top:clamp(40px,5vw,72px)}
+
+/* ---------- Для кого Астрея ---------- */
+.rd-aud-grid{display:grid;grid-template-columns:minmax(0,.8fr) minmax(0,1.4fr);gap:clamp(32px,6vw,100px);align-items:start}
+.rd-aud-head{position:sticky;top:calc(var(--hdr) + 40px)}
+.rd-aud-head h2{margin-top:16px;max-width:13ch;font-size:clamp(32px,4.1vw,58px);line-height:1.04}
+.rd-aud-list{display:grid;grid-template-columns:1fr 1fr;gap:0 clamp(18px,3vw,44px)}
+.rd-aud-item{display:flex;flex-direction:column;gap:12px;padding:clamp(22px,2.8vw,36px) 0;border-top:1px solid var(--line)}
+.rd-aud-item .rd-no{font-size:clamp(40px,4.4vw,64px)}
+.rd-aud-item h3{font-size:clamp(22px,2.2vw,28px);line-height:1.15}
+.rd-aud-item p{color:var(--muted);font-size:15px;line-height:1.6}
+.rd-aud-item .lnk{margin-top:auto;align-self:flex-start}
+.rd-aud-item:hover .rd-no{color:var(--blue)}
+
+/* ---------- Наши бренды (логотипы) ---------- */
+.rd-wall-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));border-top:1px solid var(--line);border-left:1px solid var(--line)}
+.rd-wall-grid li{border-right:1px solid var(--line);border-bottom:1px solid var(--line)}
+.rd-wall-grid a{display:flex;align-items:center;justify-content:center;min-height:clamp(120px,14vw,190px);padding:24px;transition:background-color .35s var(--ease)}
+.rd-wall-grid a:hover{background:#fff}
+.rd-wall .mq-logo{filter:none;--mq-k:1.3;max-width:100%}
+
+/* ---------- Финальный призыв (ACCENT) ---------- */
+.rd-final{padding-top:0}
+.rd-final-band{position:relative;overflow:hidden;display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,.7fr);gap:clamp(28px,5vw,80px);align-items:center;padding:clamp(34px,6.4vw,96px);border-radius:var(--r-xl);color:#fff;background:linear-gradient(118deg,#0b1a33 0%,#13306b 52%,#2f5bd6 135%)}
+.rd-final-band::after{content:"";position:absolute;right:-12%;top:-40%;width:62%;aspect-ratio:1;border-radius:50%;border:1px dashed rgba(255,255,255,.22);pointer-events:none}
+.rd-final-band .eyebrow{color:rgba(255,255,255,.72)}
+.rd-final-band .eyebrow::before{border-color:rgba(255,255,255,.55)}
+.rd-final-copy h2{margin:18px 0 18px;max-width:14ch;font-size:clamp(36px,5.2vw,74px);line-height:1.02}
+.rd-final-copy p{max-width:48ch;margin-bottom:30px;color:rgba(255,255,255,.78)}
+.rd-perks{position:relative;z-index:1;display:grid;gap:0}
+.rd-perks li{display:flex;align-items:baseline;gap:18px;padding:18px 0;border-top:1px solid rgba(255,255,255,.22);font:500 clamp(20px,2vw,27px)/1.2 var(--serif)}
+.rd-perks li:last-child{border-bottom:1px solid rgba(255,255,255,.22)}
+.rd-perks span{font:600 11px/1 var(--sans);letter-spacing:.16em;color:rgba(255,255,255,.6)}
+
+/* ---------- страница «Бренды»: группы ---------- */
+.br-group{grid-column:1/-1;display:flex;align-items:baseline;gap:12px;margin:clamp(14px,2vw,28px) 0 0;padding-top:clamp(18px,2.4vw,30px);border-top:1px solid var(--line);font:500 clamp(26px,3vw,40px)/1.1 var(--serif)}
+.br-group:first-child{margin-top:0;padding-top:0;border-top:0}
+.br-group small{font:600 12px/1 var(--sans);letter-spacing:.14em;color:var(--slate)}
+.br-dev-note{grid-column:1/-1;margin:-10px 0 0;font-size:14px}
+.br-group-dev{color:var(--navy)}
+
+/* ---------- страница бренда: решения по задачам ---------- */
+.rd-b-tasklist{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:0 clamp(18px,3vw,40px)}
+.rd-b-task{display:flex;flex-direction:column;gap:10px;padding:clamp(18px,2.4vw,28px) 0;border-top:1px solid var(--line);transition:border-color .3s}
+.rd-b-task .rd-no{font-size:clamp(38px,4vw,56px)}
+.rd-b-task h3{font-size:clamp(21px,2vw,26px);line-height:1.15}
+.rd-b-count{display:inline-flex;align-items:center;gap:8px;margin-top:auto;font:600 11px/1.3 var(--sans);letter-spacing:.12em;text-transform:uppercase;color:var(--slate);transition:color .25s,gap .3s var(--ease)}
+.rd-b-count .ic{width:15px;height:15px}
+.rd-b-task:hover{border-color:var(--cc,var(--blue))}
+.rd-b-task:hover .rd-no{color:var(--cc,var(--blue))}
+.rd-b-task:hover .rd-b-count{color:var(--navy);gap:12px}
+
+/* ---------- подвал ---------- */
+.ftr-rd-top{display:flex;justify-content:space-between;align-items:flex-start;gap:32px 48px;flex-wrap:wrap;padding-bottom:clamp(28px,4vw,48px);border-bottom:1px dashed rgba(185,194,208,.3)}
+.ftr-rd .ftr-brand .about{margin-top:18px;max-width:28ch;font:500 clamp(17px,1.6vw,21px)/1.35 var(--serif);color:var(--milk)}
+.ftr-rd-contacts{display:grid;gap:8px;font-size:15px;text-align:left;min-width:min(280px,100%)}
+.ftr-rd-contacts li{margin:0}
+.ftr-rd-cols{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:clamp(24px,3.4vw,56px);padding-top:clamp(28px,4vw,48px)}
+@media (max-width:760px){.ftr-rd-cols{grid-template-columns:1fr 1fr}}
+@media (max-width:420px){.ftr-rd-cols{grid-template-columns:1fr}}
+
+/* ---------- микроанимации (лёгкие; только transform/opacity, целые пиксели — текст остаётся чётким) ---------- */
+.rd .lnk{position:relative}
+.rd .lnk::after{content:"";position:absolute;left:0;bottom:-1px;height:1px;width:0;background:var(--blue);transition:width .45s var(--ease)}
+.rd .lnk:hover::after{width:100%}
+.rd .pcard .art .pk{transition:transform .8s var(--ease)}
+.rd .pcard:hover .art .pk{transform:translateY(-6px) scale(1.04)}
+.rd .newscard .cov,.rd .newscard .th{transition:transform .9s var(--ease)}
+.rd .newscard:hover .cov,.rd .newscard:hover .th{transform:scale(1.03)}
+/* карточки брендов: мягкое поднятие, смена фона и лёгкое увеличение логотипа при наведении (только надстройка — базовый вид карточек не меняется) */
+.rd .bgrid:not(.has-active) .bcard:hover{transform:translateY(-4px)}
+.rd .bcard .band .bl-img{transition:transform .8s var(--ease)}
+.rd .bgrid:not(.has-active) .bcard:hover .band .bl-img{transform:scale(1.04)}
+.rd .bcard .low{transition:background-color .4s var(--ease)}
+.rd .bgrid:not(.has-active) .bcard:hover .low{background:var(--milk-2)}
+.rd .bl-card{transition:transform .45s var(--ease),box-shadow .45s var(--ease)}
+.rd .bl-card:hover{transform:translateY(-4px)}
+.rd .bl-card .band .bl-img{transition:transform .8s var(--ease)}
+.rd .bl-card:hover .band .bl-img{transform:scale(1.04)}
+.rd .bl-card .bl-foot .lnk .ic,.rd .bcard .hint{transition:transform .35s var(--ease)}
+.rd .bl-card:hover .bl-foot .lnk .ic{transform:translateX(4px)}
+
+/* ---------- адаптивность ---------- */
+@media (max-width:1000px){
+  .rd-stats-grid,.rd-why-grid,.rd-ed-grid,.rd-train-grid,.rd-aud-grid,.rd-final-band{grid-template-columns:1fr}
+  .rd-why-head,.rd-aud-head{position:static}
+  .rd-tasks{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .rd-task:last-child{grid-column:auto}
+  .rd-task-lead{grid-row:auto}
+  .rd-wall-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .rd-train-photo{aspect-ratio:16/10}
+  .rd-train-art{aspect-ratio:auto;gap:32px}
+  .rd-train-art .lgo{width:min(210px,58%)}
+  .rd-ed-trio{order:-1}
+}
+@media (max-width:640px){
+  .rd-tasks,.rd-aud-list{grid-template-columns:1fr}
+  .rd-task-lead{grid-column:auto}
+  .rd-nums{grid-template-columns:1fr 1fr}
+  .rd-num{padding-inline:12px}
+  .rd-why-item{grid-template-columns:64px minmax(0,1fr)}
+  .rd-next{flex-wrap:wrap}
+  .rd-ed-p1{--h:160px}.rd-ed-p2{--h:215px}.rd-ed-p3{--h:190px}
+  .rd-wall .mq-logo{--mq-k:.95}
+}

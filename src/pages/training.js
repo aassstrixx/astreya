@@ -41,7 +41,7 @@ function trainingPage(ctx, C, P) {
     <div class="faq reveal">${training.faq.map(f => `<div class="faq-item"><button class="faq-q" type="button" data-act="faq" aria-expanded="false"><span>${esc(f.q)}</span><i class="pm"></i></button><div class="faq-a"><div><p>${esc(f.a)}</p></div></div></div>`).join('')}</div>
   </div></section>
 
-  <section class="sec" style="padding-top:0"><div class="wrap">
+  <section class="sec"${ctx.redesign ? ' id="materials"' : ''} style="padding-top:0"><div class="wrap">
     ${C.secHead('Статьи', 'Материалы для специалистов', `<a class="lnk" href="${ext.academy}" target="_blank" rel="noopener">academy.acosm.ru ${I.arrow}</a>`)}
     <div class="grid g3">${training.articles.slice(0, 3).map(C.articleCard).join('')}</div>
   </div></section>

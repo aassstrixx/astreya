@@ -11,12 +11,12 @@ brands/<бренд>.html      страницы брендов (9)
 products/<товар>.html    страницы товаров (30)
 training/<мероприятие>.html   страницы мероприятий (7)
 news/<новость>.html      страницы новостей (9)
-css/   base · components · pages · responsive · motion
-js/    shared (общий код для Node и браузера) · data (генерируется) · core · motion · pages · hero-mark
-assets/ favicon, иконки, og-image; assets/brands/ — логотипы брендов
+css/   base · components · pages · responsive · motion · redesign (слой доработок)
+js/    shared (общий код для Node и браузера) · data (генерируется) · core · motion · pages · hero-mark · redesign (слой доработок)
+assets/ favicon, иконки, og-image; assets/brands/ — логотипы брендов; assets/photos/ — фото для слоя доработок
 data/  ВСЕ данные и тексты сайта (см. data/README.md)
 src/   шаблоны страниц (функции, возвращающие HTML)
-tools/ build.js — сборка · check.js — проверка · bundle.js — автономная сборка
+tools/ build.js — сборка · check.js — проверка · bundle.js — автономная сборка · redesign.js — включить/выключить слой доработок
 sitemap.xml robots.txt
 ```
 
@@ -81,6 +81,20 @@ node tools/check.js      # проверить: битые ссылки и яко
 
 У каждой страницы свои `title`, `description`, `canonical`, Open Graph/Twitter, favicon; JSON-LD: Organization + WebSite (главная), BreadcrumbList, FAQPage (обучение).
 `robots.txt` и `sitemap.xml` собираются автоматически (страница поиска закрыта от индексации). Адрес сайта для canonical/sitemap — `site.json` → `url`.
+
+## Доработки и откат
+
+Сайт состоит из двух слоёв, которые можно откатывать независимо:
+
+| Слой | Что входит | Где лежит |
+|---|---|---|
+| **Карточки 9 брендов** (остаётся всегда) | логотипы на карточках главной и страницы «Бренды», белый знак «Астрея» в углу карточки, цвета шапок | `data/brands.json`, `assets/brands/`, `css/pages.css` (`.bcard`, `.bl-card`, `.band`, `.bc-mark`), `src/components.js` (`brandCardHome`, `brandCardList`) |
+| **Доработки по большому ТЗ** (включаются флагом) | новые секции главной, смена фонов, группы на «Брендах», расширенные страницы брендов, подвал, шаг «Для кого?» в подборщике, микроанимации | `data/redesign.json`, `css/redesign.css`, `js/redesign.js`, `src/pages/home-x.js`, ветки `ctx.redesign` в `src/` |
+
+* **Быстрый откат доработок без git:** `npm run redesign:off` (то же: `node tools/redesign.js off`) — ставит `site.redesign = false` в `data/site.json`, пересобирает и проверяет сайт. Вернуть: `npm run redesign:on`. Карточки брендов при этом остаются.
+* **Откат через git:** контрольная точка — коммит `2c778d6` (тег `cards-baseline`, если он есть локально): `git reset --hard cards-baseline` возвращает состояние «всё, что сделано до доработок, включая карточки». Точечно: `git revert <коммит доработок>`.
+* Слой доработок ничего не удаляет и не переписывает в прежних шаблонах: при выключенном флаге `redesign.css`/`redesign.js` не подключаются, страницы собираются прежними шаблонами.
+* Данные слоя (подписи, порядок, заглушки) — в `data/redesign.json`; заглушки помечены `placeholder` и подсвечены на странице («демо-данные»). Фото специалиста/обучения — поля `photo` (пока `null`; положите файл в `assets/photos/`).
 
 ## Что сознательно не делалось на этом этапе
 

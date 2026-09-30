@@ -5,7 +5,11 @@
   "description": "Сайт Астреи: статические страницы, генерируются из data/*.json (без зависимостей)",
   "scripts": {
     "build": "node tools/build.js",
-    "check": "node tools/check.js"
+    "check": "node tools/check.js",
+    "redesign:off": "node tools/redesign.js off",
+    "redesign:on": "node tools/redesign.js on"
   },
-  "engines": {"node": ">=16"}
+  "engines": {
+    "node": ">=16"
+  }
 }

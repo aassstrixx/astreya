@@ -5,6 +5,7 @@
   "tagline": "Наука. Забота. Результат.",
   "lang": "ru",
   "year": 2026,
+  "redesign": true,
   "url": "https://aassstrixx.github.io/astreya/",
   "demoNotice": "Демонстрационные данные: ассортимент, расписание, новости и пороги скидок — placeholder. Актуальную информацию уточняйте у менеджеров.",
   "formEndpoint": "",

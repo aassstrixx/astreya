@@ -107,6 +107,7 @@
       const toks = A.tokens(qEl.value); let n = 0;
       cards.forEach(c => { const ok = (task === 'all' || c.dataset.tasks.split(' ').indexOf(task) !== -1) && toks.every(t => c.dataset.q.indexOf(t) !== -1); c.hidden = !ok; if (ok) n++; });
       $('#br-empty').hidden = n > 0;
+      $$('.br-group, .br-dev-note', grid).forEach(h => { let el = h.nextElementSibling, any = false; while (el && !el.classList.contains('br-group')) { if (el.classList.contains('bl-card') && !el.hidden) any = true; el = el.nextElementSibling; } h.hidden = !any; });
     }
     qEl.addEventListener('input', debounce(apply, 120));
     A.actions['br-task'] = (t, id) => { task = id; setOn($('#br-tasks'), id); apply(); };
