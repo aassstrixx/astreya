@@ -20,6 +20,8 @@ for (const f of files) {
   if (title) { if (titles.has(title)) err(`дубль title с ${titles.get(title)}`); titles.set(title, rel); if (title.length > 90) warns.push(`${rel}: длинный title (${title.length})`); }
   if (desc) { if (descs.has(desc)) err(`дубль description с ${descs.get(desc)}`); descs.set(desc, rel); if (desc.length > 170) warns.push(`${rel}: длинный description (${desc.length})`); }
   const h1 = (html.match(/<h1[\s>]/g) || []).length; if (h1 !== 1) err(`h1: ${h1} (нужен ровно один)`);
+  // порядок заголовков: без пропуска уровней (h1 → h3 недопустимо)
+  { let prev = 0; for (const m of html.matchAll(/<h([1-6])[\s>]/g)) { const l = +m[1]; if (prev && l > prev + 1) { err(`пропуск уровня заголовка: h${prev} → h${l}`); break; } prev = l; } }
   (html.match(/<img\b[^>]*>/g) || []).forEach(t => { if (!/\salt="/.test(t)) err(`img без alt: ${t.slice(0, 60)}`); });
   const ids = idsOf(html);
   for (const m of html.matchAll(/(?:href|src)="([^"]+)"/g)) {

@@ -79,7 +79,9 @@
   .nav-contacts{display:grid;gap:12px;font-size:15px;font-weight:600}
   .nav-contacts a,.nav-contacts span{display:flex;gap:10px;align-items:center}
   .nav-contacts .ic{color:var(--slate)}
-  .filters-toggle{display:inline-flex}
+  .filters-toggle{display:inline-flex;align-self:flex-start}
+  .tb-top{flex-direction:column;align-items:stretch}
+  .tb-top .filters-toggle{align-self:flex-start}
   .filters{display:none;grid-template-columns:repeat(2,1fr)}
   .filters-open .filters{display:grid}
   .about-home,.p-hero,.p-cols,.e-cols,.reg-card,.form-card,.map-row,.split-panel,.cta-band{grid-template-columns:1fr}
@@ -108,4 +110,9 @@
   .p-visual .art{height:300px}
   .p-visual .pk{transform:scale(1.5)}
   .ftr-legal{gap:8px 18px}
+}
+@media (max-width:380px){
+  .stat b{font-size:40px}
+  .stat{padding-inline:8px}
+  .page-head h1,.hero h1{overflow-wrap:anywhere}
 }

@@ -13,6 +13,7 @@ module.exports = function contacts(ctx, C, P) {
   ];
   return `<div class="wrap">
     ${C.pageHead('Контакты', 'Свяжитесь с Астреей', 'Центральный офис в Москве и представительства в регионах. Позвоните, напишите или оставьте заявку — ответим в рабочее время.')}
+    <h2 class="sr">Способы связи</h2>
     <div class="grid g4 contact-cards">${cards.map(k => `<article class="card card-pad ccard reveal"><span class="adv-ic">${k.ic}</span><h3>${k.t}</h3><p class="cv">${k.v}</p><p class="muted small">${k.s}</p></article>`).join('')}</div>
 
     <section class="sec">
@@ -24,7 +25,7 @@ module.exports = function contacts(ctx, C, P) {
               <a class="btn btn-ghost btn-sm" href="https://www.google.com/maps/search/?api=1&query=${q}" target="_blank" rel="noopener">Google Maps ${I.external}</a></div></div>
         </div>
         <div class="form-card stack card reveal" id="support">
-          <div><span class="eyebrow in">Обратная связь</span><h2 style="font-size:clamp(26px,3vw,36px)">Написать нам</h2>
+          <div><span class="eyebrow in">Обратная связь</span><h2 style="font-size:var(--fs-h2-sm)">Написать нам</h2>
             <p class="muted">Вопрос по продукции, обучению или сотрудничеству — ответим по почте или телефону.</p></div>
           ${S.formHTML('contact', {root: P.root, uid: 'ct'})}
         </div>

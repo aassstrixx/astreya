@@ -1,0 +1,76 @@
+# Астрея (Astreya) — сайт дистрибьютора профессиональной косметики
+
+Статический многостраничный сайт без бэкенда и без внешних зависимостей. Страницы генерируются из `data/*.json` скриптом на Node.js
+(только стандартная библиотека), поэтому сайт открывается с любого хостинга, в том числе с GitHub Pages, и с диска.
+
+## Структура
+
+```
+index.html catalog.html brands.html training.html news.html company.html contacts.html partners.html search.html privacy.html terms.html
+brands/<бренд>.html      страницы брендов (9)
+products/<товар>.html    страницы товаров (30)
+training/<мероприятие>.html   страницы мероприятий (7)
+news/<новость>.html      страницы новостей (9)
+css/   base · components · pages · responsive · motion
+js/    shared (общий код для Node и браузера) · data (генерируется) · core · motion · pages · hero-mark
+assets/ favicon, иконки, og-image
+data/  ВСЕ данные и тексты сайта (см. data/README.md)
+src/   шаблоны страниц (функции, возвращающие HTML)
+tools/ build.js — сборка · check.js — проверка · bundle.js — автономная сборка
+sitemap.xml robots.txt
+```
+
+HTML-файлы в корне и в `brands/ products/ training/ news/` — **результат сборки**: не правьте их руками, меняйте `data/` или `src/` и запускайте сборку.
+
+## Сборка и проверка
+
+```bash
+node tools/build.js      # собрать сайт (страницы, js/data.js, sitemap.xml, robots.txt)
+node tools/check.js      # проверить: битые ссылки и якоря, один <h1>, уникальные title/description, canonical, порядок заголовков
+```
+
+Требуется Node.js 16+. `npm run build` / `npm run check` делают то же самое.
+Автономный файл (все страницы в одном HTML, для предпросмотра или публикации там, где нет обычных файлов): `node tools/build.js --bundle=astreya.html`.
+
+## Как менять содержимое
+
+| Что | Где |
+|---|---|
+| Контакты, график, мессенджер, адрес сайта (`url`), офисы, скидки, заглушка «демо-данные» | `data/site.json` |
+| Тексты главной, «Партнёрам», «Компании», SEO-заголовки и описания страниц | `data/content.json` |
+| Бренды | `data/brands.json` |
+| Товары (в т.ч. объём, артикул, документы, показания, способ применения) | `data/products.json` |
+| Категории, задачи, типы продукта | `data/catalog.json` |
+| Мероприятия | `data/events.json` |
+| Преподаватели, шаги записи, FAQ, видео, статьи | `data/training.json` |
+| Новости и акции | `data/news.json` |
+
+Поля, которых нет в данных (объём, артикул, показания, способ применения, документы, программа мероприятия, реквизиты), на страницах показываются как
+«Уточняется — запросите у менеджера»: ничего не выдумывается. Как только вы заполните поле в JSON, соответствующий блок появится сам.
+Всё демонстрационное помечено (`demo: true` и текст в подвале `demoNotice` в `site.json` — удалите его, когда данные станут реальными;
+вместе с ним включится разметка Product/Event/NewsArticle для поисковиков).
+
+## Формы
+
+Формы (партнёр, запись на мероприятие, запрос по товару, вопрос) работают в двух режимах:
+
+* **Без бэкенда (по умолчанию):** готовится письмо на `contacts.email` (открывается почтовая программа, есть кнопки «скопировать»). Интерфейс честно пишет «Заявка подготовлена», а не «отправлена».
+* **С бэкендом:** укажите URL в `data/site.json` → `formEndpoint` и пересоберите. Форма отправит `POST` с JSON:
+  `{type, context, name, phone, email, city, org, spec, msg, page, sent_at, consent}`; ответ 2xx — успех, иначе показывается ошибка с сохранёнными данными и запасными контактами.
+  Состояния: отправка → успех / ошибка. В форме есть скрытое поле-ловушка для ботов.
+
+## Аналитика
+
+Реальных идентификаторов нет. Все события уходят в `window.dataLayer` и в DOM-событие `astreya:track`; если на странице подключён `gtag`/`ym`, вызываются и они
+(укажите номера в `js/core.js` → `A.config`). События: `partner_cta` (кнопки «Стать партнёром», с `place`), `form_open`, `form_submit`, `form_error`,
+`phone_click`, `email_click`, `messenger_click`, `catalog_click`, `catalog_view`, `catalog_filter`, `product_card_click`, `product_view`, `product_request`,
+`event_register`, `brand_card_click`, `search`, `search_result_click`, `picker_select`. Разметка: атрибуты `data-track="…" data-place="…"`.
+
+## SEO
+
+У каждой страницы свои `title`, `description`, `canonical`, Open Graph/Twitter, favicon; JSON-LD: Organization + WebSite (главная), BreadcrumbList, FAQPage (обучение).
+`robots.txt` и `sitemap.xml` собираются автоматически (страница поиска закрыта от индексации). Адрес сайта для canonical/sitemap — `site.json` → `url`.
+
+## Что сознательно не делалось на этом этапе
+
+Безопасность (CSP, антиспам на сервере), оптимизация производительности, страница 404, серверная часть/CRM, онлайн-оплата, личный кабинет.

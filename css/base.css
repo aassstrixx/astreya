@@ -16,8 +16,9 @@
   --gut:clamp(20px,5vw,72px); --maxw:1240px; --hdr:84px;
   /* дизайн-система: шкала отступов, радиусы, состояния, типографика */
   --sp-1:4px; --sp-2:8px; --sp-3:12px; --sp-4:16px; --sp-5:24px; --sp-6:32px; --sp-7:48px; --sp-8:72px; --sp-9:112px;
-  --r-sm:10px;
+  --r-sm:12px;
   --ok:#2f8f5b; --err:#b03024; --err-bg:rgba(176,48,36,.07);
+  --fs-h1-page:clamp(31px,6vw,84px); --fs-h1-detail:clamp(32px,4.4vw,58px); --fs-h2-sm:clamp(26px,3vw,38px);
   --fs-sm:13px; --fs-body:16px; --fs-lead:clamp(17px,1.5vw,19px);
   --focus:0 0 0 4px rgba(47,91,214,.14);
 }
@@ -39,6 +40,7 @@ ul,ol{padding:0;list-style:none}
 .skip:focus{top:12px}
 .small{font-size:var(--fs-sm)}
 .sec{padding:clamp(60px,8.5vw,120px) 0}
+[id]{scroll-margin-top:calc(var(--hdr) + 24px)}
 .sec.tint{background:var(--milk-2);border-block:1px solid var(--line-soft)}
 .dash{border:0;border-top:1px dashed var(--line);margin:0}
 

@@ -5,8 +5,9 @@
   const A = window.Astreya, {$, $$, D, I, esc} = A;
   const today = () => new Date().toISOString().slice(0, 10);
   const setOn = (box, id, attr) => $$('.chip', box).forEach(c => { const on = c.getAttribute(attr || 'data-id') === id; c.classList.toggle('on', on); c.setAttribute('aria-pressed', String(on)); });
-  const params = () => new URLSearchParams(location.search);
-  const writeUrl = p => { try { const s = p.toString(); history.replaceState(null, '', location.pathname + (s ? '?' + s : '') + location.hash); } catch (e) {} };
+  /* query/URL можно подменить (A.query / A.writeQuery) — так работает автономная сборка без настоящих адресов */
+  const params = () => A.query ? A.query() : new URLSearchParams(location.search);
+  const writeUrl = p => { if (A.writeQuery) { A.writeQuery(p); return; } try { const s = p.toString(); history.replaceState(null, '', location.pathname + (s ? '?' + s : '') + location.hash); } catch (e) {} };
   const debounce = (fn, ms) => { let t; return function () { clearTimeout(t); const a = arguments; t = setTimeout(() => fn.apply(null, a), ms); }; };
   const brandName = id => (D.brands.find(b => b.id === id) || {}).name || id;
   const catName = id => (D.cats.find(c => c.id === id) || {}).name || id;

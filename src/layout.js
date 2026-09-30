@@ -10,6 +10,8 @@ const CSS = ['base', 'components', 'pages', 'responsive', 'motion'];
 const JS = ['shared', 'data', 'core', 'motion', 'pages'];
 
 /* Ранний скрипт: класс js, «уже видели заставку», «пришли с переходом» — до первой отрисовки, чтобы не было мигания */
+/* Совместимость со старыми ссылками одностраничной версии (#/catalog?brand=…, #/brand/keenwell, #/academy…) — только на главной */
+const LEGACY = `(function(l){var m=l.hash.match(/^#\\/(catalog|brands|brand\\/[\\w-]+|academy|news|company)(\\?.*)?$/);if(!m)return;var t=m[1],q=m[2]||'',u=t==='academy'?'training.html':t.indexOf('brand/')===0?'brands/'+t.slice(6)+'.html':t+'.html';l.replace(u+q);})(location);`;
 const EARLY = `(function(d){var h=d.documentElement;h.classList.add('js');try{if(sessionStorage.getItem('astreya:seen'))h.classList.add('seen');if(sessionStorage.getItem('astreya:nav'))h.classList.add('nav-in')}catch(e){}})(document);`;
 
 module.exports = function layout(ctx, C) {
@@ -56,7 +58,7 @@ module.exports = function layout(ctx, C) {
         <p class="about">«Астрея» — дистрибьютор профессиональной косметики. Оригинальная продукция, обучение и поддержка специалистов.</p>
       </div>
       <div>
-        <h4>Компания</h4>
+        <h2 class="ftr-h">Компания</h2>
         <ul>
           <li><a href="${u(P, 'company.html')}">О компании</a></li>
           <li><a href="${u(P, 'contacts.html')}">Контакты</a></li>
@@ -65,7 +67,7 @@ module.exports = function layout(ctx, C) {
         </ul>
       </div>
       <div>
-        <h4>Каталог</h4>
+        <h2 class="ftr-h">Каталог</h2>
         <ul>
           <li><a href="${u(P, 'catalog.html')}" data-track="catalog_click">Все продукты</a></li>
           <li><a href="${u(P, 'catalog.html')}#categories">Категории</a></li>
@@ -73,14 +75,14 @@ module.exports = function layout(ctx, C) {
         </ul>
       </div>
       <div>
-        <h4>Партнёрам</h4>
+        <h2 class="ftr-h">Партнёрам</h2>
         <ul>
           <li><a href="${u(P, 'partners.html')}" data-track="partner_cta" data-place="footer">Стать партнёром</a></li>
           <li><a href="${u(P, 'contacts.html')}#support">Поддержка</a></li>
         </ul>
       </div>
       <div>
-        <h4>Контакты</h4>
+        <h2 class="ftr-h">Контакты</h2>
         <ul>
           <li><a href="tel:${c.phoneRaw}" data-track="phone_click">${esc(c.phone)}</a></li>
           <li><a href="mailto:${c.email}" data-track="email_click">${esc(c.email)}</a></li>
@@ -157,6 +159,7 @@ ${P.noindex ? '<meta name="robots" content="noindex,follow">\n' : ''}<meta name=
 <link rel="icon" href="${u(P, 'assets/favicon-32.png')}" type="image/png" sizes="32x32">
 <link rel="apple-touch-icon" href="${u(P, 'assets/apple-touch-icon.png')}">
 <script>${EARLY}</script>
+${P.key === 'home' ? `<script>${LEGACY}</script>\n` : ''}
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <!-- У Fraunces нет кириллицы, поэтому русские заголовки набираются парным по контрасту Playfair Display; латиница и цифры — Fraunces.

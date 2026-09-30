@@ -1,0 +1,26 @@
+# Данные сайта
+
+Единственный источник содержимого. После правки запустите `node tools/build.js`.
+
+## Что проверено, а что — placeholder
+
+* **Проверено по открытым источникам (acosm.ru / academy.acosm.ru):** состав брендов и их направления, контакты офисов и представительств, режим семинаров (10:30–18:00),
+  бесплатность базовых семинаров, преподаватель С. В. Савиных.
+* **Демонстрационное (заменить):** карточки товаров (30 позиций — без объёма, артикулов, документов), даты и темы мероприятий (`demo: true`), тренеры без ФИО,
+  новости и акции (`demo: true`), пороги скидок (5/10/15 % — пример), число «20 лет» (из описания учебного центра — уточнить формулировку), реквизиты (`null` → «Уточняется»).
+* **Страна бренда:** Dermatime и Keenwell — «Испания» (по описанию бренда); линии Cantabria Labs — «страна концерна: Испания»; EVA — не указана (`null`).
+* **Логотипы брендов:** пока вордмарк/монограмма. Положите файл в `assets/brands/<id>.svg` и укажите путь в поле `logo` бренда.
+* **Фото товаров:** пока CSS-иллюстрация упаковки (`type`: bottle, dropper, jar, pump, tube, box, device).
+
+## Поля
+
+**products.json** — `id, slug, brand, cat, kind, type, name, desc, tasks[], isNew, featured` и необязательные (пока `null`/пусто → «Уточняется»):
+`volume, sku, usage, indications[], actives[], docs[{title,url}], details[]` (полное описание абзацами; если пусто — собирается из `desc` и данных бренда).
+
+**events.json** — `id, slug, date (YYYY-MM-DD), city, fmt ("Очно"|"Вебинар"), time, brand, title, teacher (id из training.json), speaker, place, description, seats (число или null), demo`.
+Прошедшие мероприятия автоматически скрываются в списках и на странице мероприятия.
+
+**news.json** — `categories[]` (news, sale, novelty, edu, event) и `items[]` с `slug, category, date, title, excerpt, body[], cta{type,ref,query}, related{brands,products,events}`.
+В тексте можно использовать `{{discounts}}` — подставятся пороги из `site.json`.
+
+**site.json** — `url` (адрес сайта для canonical и sitemap), `formEndpoint`, `demoNotice` (пустая строка убирает заметку в подвале и включает Product/Event/NewsArticle JSON-LD).

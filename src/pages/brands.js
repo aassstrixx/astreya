@@ -10,6 +10,7 @@ function brandsPage(ctx, C, P) {
       <div class="tb-top"><label class="search"><span class="sr">Поиск по брендам</span>${I.search}<input id="br-q" type="search" placeholder="Название бренда или направление" autocomplete="off"></label></div>
       <div class="tb-row"><span class="tb-lab">Задача</span><div class="chips" id="br-tasks">${C.chip('Любая', 'br-task', 'all', true)}${tasks.map(t => C.chip(esc(t.label), 'br-task', t.id, false)).join('')}</div></div>
     </div>
+    <h2 class="sr">Список брендов</h2>
     <div class="grid g3" id="br-grid">${brands.map(b => C.brandCardList(P, b)).join('')}</div>
     <div class="empty" id="br-empty" hidden><b>Бренды не найдены</b>Измените запрос или выберите другую задачу.</div>
     <div style="height:clamp(60px,8vw,110px)"></div>

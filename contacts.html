@@ -25,6 +25,7 @@
 <link rel="icon" href="assets/favicon-32.png" type="image/png" sizes="32x32">
 <link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
 <script>(function(d){var h=d.documentElement;h.classList.add('js');try{if(sessionStorage.getItem('astreya:seen'))h.classList.add('seen');if(sessionStorage.getItem('astreya:nav'))h.classList.add('nav-in')}catch(e){}})(document);</script>
+
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <!-- У Fraunces нет кириллицы, поэтому русские заголовки набираются парным по контрасту Playfair Display; латиница и цифры — Fraunces.
@@ -106,6 +107,7 @@
 <main id="main" tabindex="-1" data-page="contacts">
 <div class="wrap">
     <header class="page-head"><span class="eyebrow reveal">Контакты</span><h1 class="reveal">Свяжитесь с Астреей</h1><p class="lead reveal">Центральный офис в Москве и представительства в регионах. Позвоните, напишите или оставьте заявку — ответим в рабочее время.</p></header>
+    <h2 class="sr">Способы связи</h2>
     <div class="grid g4 contact-cards"><article class="card card-pad ccard reveal"><span class="adv-ic"><svg class="ic" viewBox="0 0 20 20" aria-hidden="true" focusable="false"><path d="M5 3h3l1.4 3.6-1.8 1.2a9 9 0 0 0 4.6 4.6l1.2-1.8L17 12v3a2 2 0 0 1-2 2A12 12 0 0 1 3 5a2 2 0 0 1 2-2Z"/></svg></span><h3>Телефон</h3><p class="cv"><a href="tel:+74959255162" data-track="phone_click">+7 (495) 925-51-62</a></p><p class="muted small">Пн–Пт, 10:00–18:00</p></article><article class="card card-pad ccard reveal"><span class="adv-ic"><svg class="ic" viewBox="0 0 20 20" aria-hidden="true" focusable="false"><rect x="3" y="4.5" width="14" height="11" rx="2"/><path d="m3.5 6 6.5 5 6.5-5"/></svg></span><h3>Email</h3><p class="cv"><a href="mailto:9255162@mail.ru" data-track="email_click">9255162@mail.ru</a></p><p class="muted small">Ответим в рабочее время</p></article><article class="card card-pad ccard reveal"><span class="adv-ic"><svg class="ic" viewBox="0 0 20 20" aria-hidden="true" focusable="false"><path d="M10 2.8a7.2 7.2 0 0 0-6.2 10.8L3 17.2l3.7-.9A7.2 7.2 0 1 0 10 2.8Z"/><path d="M7.4 7.2c.2 2.2 2.4 4.4 4.6 4.6l1-1-1.7-1-.7.6c-.7-.3-1.4-1-1.7-1.7l.6-.7-1-1.7Z"/></svg></span><h3>WhatsApp</h3><p class="cv"><a href="https://wa.me/74959255162" target="_blank" rel="noopener" data-track="messenger_click">Написать в WhatsApp</a></p><p class="muted small">Тот же номер, что и телефон</p></article><article class="card card-pad ccard reveal"><span class="adv-ic"><svg class="ic" viewBox="0 0 20 20" aria-hidden="true" focusable="false"><path d="M10 17.5s5.5-4.7 5.5-9a5.5 5.5 0 0 0-11 0c0 4.3 5.5 9 5.5 9Z"/><circle cx="10" cy="8.5" r="2"/></svg></span><h3>Центральный офис</h3><p class="cv">Москва, проезд Березовой рощи, д. 8, 3-й этаж</p><p class="muted small">м. Полежаевская, Динамо</p></article></div>
 
     <section class="sec">
@@ -117,7 +119,7 @@
               <a class="btn btn-ghost btn-sm" href="https://www.google.com/maps/search/?api=1&query=%D0%9C%D0%BE%D1%81%D0%BA%D0%B2%D0%B0%2C%20%D0%BF%D1%80%D0%BE%D0%B5%D0%B7%D0%B4%20%D0%91%D0%B5%D1%80%D0%B5%D0%B7%D0%BE%D0%B2%D0%BE%D0%B9%20%D1%80%D0%BE%D1%89%D0%B8%2C%20%D0%B4.%208%2C%203-%D0%B9%20%D1%8D%D1%82%D0%B0%D0%B6" target="_blank" rel="noopener">Google Maps <svg class="ic" viewBox="0 0 20 20" aria-hidden="true" focusable="false"><path d="M8 4.5H5A1.5 1.5 0 0 0 3.5 6v9A1.5 1.5 0 0 0 5 16.5h9a1.5 1.5 0 0 0 1.5-1.5v-3M11.5 3.5h5v5M16.5 3.5l-7 7"/></svg></a></div></div>
         </div>
         <div class="form-card stack card reveal" id="support">
-          <div><span class="eyebrow in">Обратная связь</span><h2 style="font-size:clamp(26px,3vw,36px)">Написать нам</h2>
+          <div><span class="eyebrow in">Обратная связь</span><h2 style="font-size:var(--fs-h2-sm)">Написать нам</h2>
             <p class="muted">Вопрос по продукции, обучению или сотрудничеству — ответим по почте или телефону.</p></div>
           <form class="lead-form" data-form="contact" data-ref="" novalidate>
       <div class="two"><div class="fld" data-f="name"><label for="ct-name">Имя <span class="req" aria-hidden="true">*</span></label><input id="ct-name" name="name" type="text" autocomplete="name" required aria-required="true"><span class="err" id="ct-name-err">Укажите имя</span></div><div class="fld" data-f="email"><label for="ct-email">Email <span class="req" aria-hidden="true">*</span></label><input id="ct-email" name="email" type="email" autocomplete="email" required aria-required="true"><span class="err" id="ct-email-err">Проверьте адрес почты</span></div></div>
@@ -190,7 +192,7 @@
         <p class="about">«Астрея» — дистрибьютор профессиональной косметики. Оригинальная продукция, обучение и поддержка специалистов.</p>
       </div>
       <div>
-        <h4>Компания</h4>
+        <h2 class="ftr-h">Компания</h2>
         <ul>
           <li><a href="company.html">О компании</a></li>
           <li><a href="contacts.html">Контакты</a></li>
@@ -199,7 +201,7 @@
         </ul>
       </div>
       <div>
-        <h4>Каталог</h4>
+        <h2 class="ftr-h">Каталог</h2>
         <ul>
           <li><a href="catalog.html" data-track="catalog_click">Все продукты</a></li>
           <li><a href="catalog.html#categories">Категории</a></li>
@@ -207,14 +209,14 @@
         </ul>
       </div>
       <div>
-        <h4>Партнёрам</h4>
+        <h2 class="ftr-h">Партнёрам</h2>
         <ul>
           <li><a href="partners.html" data-track="partner_cta" data-place="footer">Стать партнёром</a></li>
           <li><a href="contacts.html#support">Поддержка</a></li>
         </ul>
       </div>
       <div>
-        <h4>Контакты</h4>
+        <h2 class="ftr-h">Контакты</h2>
         <ul>
           <li><a href="tel:+74959255162" data-track="phone_click">+7 (495) 925-51-62</a></li>
           <li><a href="mailto:9255162@mail.ru" data-track="email_click">9255162@mail.ru</a></li>

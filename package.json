@@ -1,0 +1,11 @@
+{
+  "name": "astreya-site",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Сайт Астреи: статические страницы, генерируются из data/*.json (без зависимостей)",
+  "scripts": {
+    "build": "node tools/build.js",
+    "check": "node tools/check.js"
+  },
+  "engines": {"node": ">=16"}
+}

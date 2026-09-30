@@ -182,6 +182,7 @@
   }
   if (curtain) curtain.innerHTML = '<div class="cs">' + Array.from({length: 8}, (_, i) => `<i style="--i:${i}"></i>`).join('') + '</div><div class="ct" aria-hidden="true"></div>';
 
+  M.curtainLabel = setCurtainLabel; M.labelFor = labelFor;
   let leaving = false;
   M.navigate = function (url, label) {                     // переход на другую страницу: шторка закрывается, затем обычная навигация
     if (leaving) return; leaving = true;
