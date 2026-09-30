@@ -99,12 +99,15 @@ module.exports = function components(ctx) {
   };
 
   /* ---------------- бренд ---------------- */
-  const logoMark = (b, cls = '') => b.logo
-    ? `<img class="blogo ${cls}" src="${esc(b.logo)}" alt="Логотип ${esc(b.name)}" loading="lazy">`
+  /* логотип бренда: картинка (если задан b.logo) или монограмма; путь строится от корня сайта страницы P */
+  const darkInk = b => !/^#?f{3,6}$/i.test(b.ink || '#fff');        // тёмный текст на светлой плашке → логотип чёрный, иначе белый
+  const logoImg = (P, b, cls, alt) => `<img class="${`blogo ${cls}${cls.includes('bl-img') && darkInk(b) ? ' ink-dark' : ''}`.trim()}" src="${esc(u(P, b.logo))}" alt="${esc(alt)}"${b.logoW ? ` width="${b.logoW}" height="${b.logoH}"` : ''} loading="lazy" decoding="async">`;
+  const logoMark = (P, b, cls = '') => b.logo
+    ? logoImg(P, b, cls, `Логотип ${b.name}`)
     : `<span class="blogo mono ${cls}" role="img" aria-label="Логотип ${esc(b.name)}">${esc(b.name.slice(0, 1))}</span>`;
 
   const brandCardHome = (P, b, i) => `<article class="bcard reveal" data-act="brand-card" data-id="${b.id}" tabindex="0" aria-expanded="false" style="${bstyle(b)}">
-    <div class="band"><span class="nm">${esc(b.name)}</span><span class="ix">${String(i + 1).padStart(2, '0')}</span></div>
+    <div class="band${b.logo ? ' has-logo' : ''}">${b.logo ? logoImg(P, b, 'bl-img', b.name) : `<span class="nm">${esc(b.name)}</span>`}<span class="ix">${String(i + 1).padStart(2, '0')}</span></div>
     <div class="low">
       <div class="bc-front">
         <p class="sp">${esc(b.tag)}</p>
@@ -126,8 +129,8 @@ module.exports = function components(ctx) {
     const n = ctx.products.filter(p => p.brand === b.id).length;
     const hay = norm([b.name, b.tag, b.desc, b.group, b.country, b.tasks.map(t => taskById[t].label).join(' ')].join(' '));
     return `<article class="card hov bl-card reveal" style="${bstyle(b)}" data-id="${b.id}" data-tasks="${b.tasks.join(' ')}" data-q="${esc(hay)}">
-    <div class="band">${logoMark(b, 'on-band')}<b>${esc(b.name)}</b></div>
-    <div class="bb"><div class="tasks-line">${tag(b.group)}${b.country ? tag(b.country) : ''}</div><h3 class="sr">${esc(b.name)}</h3><p>${esc(b.tag)}</p>${tasksLine(b.tasks, '', 3)}
+    <div class="band${b.logo ? ' has-logo' : ''}">${b.logo ? logoImg(P, b, 'bl-img', b.name) : `${logoMark(P, b, 'on-band')}<b>${esc(b.name)}</b>`}</div>
+    <div class="bb"><div class="tasks-line">${tag(b.group)}${b.country && b.country !== b.group ? tag(b.country) : ''}</div><h3 class="sr">${esc(b.name)}</h3><p>${esc(b.tag)}</p>${tasksLine(b.tasks, '', 3)}
       <div class="bl-foot"><span class="muted small">${n} ${S.plural(n, 'позиция', 'позиции', 'позиций')} в каталоге</span><a class="lnk stretch" href="${burl(P, b)}" data-track="brand_card_click" data-brand="${b.id}">О бренде ${I.arrow}</a></div></div>
   </article>`;
   };

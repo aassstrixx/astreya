@@ -28,7 +28,7 @@
       ]
     ],
     "country": "Испания",
-    "logo": null
+    "logo": "assets/brands/dermatime.png"
   },
   {
     "id": "keenwell",
@@ -59,7 +59,7 @@
       ]
     ],
     "country": "Испания",
-    "logo": null
+    "logo": "assets/brands/keenwell.png"
   },
   {
     "id": "endocare",
@@ -91,7 +91,7 @@
     ],
     "country": "Испания",
     "countryNote": "страна концерна Cantabria Labs",
-    "logo": null
+    "logo": "assets/brands/endocare.png"
   },
   {
     "id": "neoretin",
@@ -123,7 +123,7 @@
     ],
     "country": "Испания",
     "countryNote": "страна концерна Cantabria Labs",
-    "logo": null
+    "logo": "assets/brands/neoretin.png"
   },
   {
     "id": "heliocare",

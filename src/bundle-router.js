@@ -4,6 +4,9 @@
   'use strict';
   const A = window.Astreya, M = A.motion, $ = A.$;
   const PAGES = JSON.parse(document.getElementById('astreya-pages').textContent);
+  const ASSETS = JSON.parse(document.getElementById('astreya-assets').textContent);
+  const fixAssets = root => root.querySelectorAll('img[data-asset]').forEach(i => { const a = ASSETS[i.getAttribute('data-asset')]; if (a) i.src = a; i.removeAttribute('data-asset'); });
+  fixAssets(document);
   let cur = 'index.html', vq = '', busy = false;
   const dirOf = p => p.indexOf('/') > -1 ? p.slice(0, p.lastIndexOf('/') + 1) : '';
   const resolve = (href, from) => { const u = new URL(href, 'http://x/' + dirOf(from)); return {path: u.pathname.replace(/^\//, '') || 'index.html', query: u.search, hash: u.hash}; };
@@ -19,7 +22,7 @@
     M.curtainLabel(M.labelFor(new URL(path, 'http://x/' + dirOf(cur)).href));
     curtain.classList.remove('out'); curtain.classList.add('in');
     await A.wait(820);
-    main.innerHTML = pg.main; cur = path; vq = (query || '').replace(/^\?/, '');
+    main.innerHTML = pg.main; fixAssets(main); cur = path; vq = (query || '').replace(/^\?/, '');
     document.title = pg.title;
     document.body.setAttribute('data-page', pg.key); document.body.setAttribute('data-nav', pg.nav || ''); main.setAttribute('data-page', pg.key);
     A.$$('#nav .nl').forEach(a => { const on = a.getAttribute('data-nav') === pg.nav; a.classList.toggle('on', on); on ? a.setAttribute('aria-current', 'page') : a.removeAttribute('aria-current'); });

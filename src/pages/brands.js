@@ -31,7 +31,7 @@ function brandPage(ctx, C, P, b) {
   return `<div class="wrap" style="${S.bstyle(b)}">
     <section class="b-hero">
       ${C.crumbs(P, [['Главная', 'index.html'], ['Бренды', 'brands.html'], [b.name, `brands/${b.id}.html`]])}
-      <div class="b-line reveal">${C.logoMark(b)}<span class="eyebrow">${esc(b.group)}${b.country ? ' · ' + esc(b.country) : ''}</span></div>
+      <div class="b-line reveal">${C.logoMark(P, b)}<span class="eyebrow">${esc(b.group)}${b.country && b.country !== b.group ? ' · ' + esc(b.country) : ''}</span></div>
       <h1 class="b-title reveal" style="margin-top:14px">${esc(b.name)}</h1>
       <p class="b-sub reveal">${esc(b.tag)}</p>
       <div class="row reveal" style="margin-top:34px">

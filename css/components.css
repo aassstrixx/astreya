@@ -230,7 +230,7 @@
 .blogo.mono{display:grid;place-items:center;width:46px;height:46px;border-radius:14px;font:500 26px/1 var(--serif);color:var(--ink,#fff);background:linear-gradient(135deg,var(--c1),var(--c2));box-shadow:0 8px 18px -10px var(--c1)}
 img.blogo{height:46px;width:auto;max-width:120px;object-fit:contain}
 .bl-card .band{position:relative}
-.bl-card .band .blogo{position:absolute;left:20px;top:16px;background:rgba(255,255,255,.22);border:1px solid rgba(255,255,255,.45);box-shadow:none;width:38px;height:38px;font-size:21px;border-radius:12px}
+.bl-card .band .blogo:not(.bl-img){position:absolute;left:20px;top:16px;background:rgba(255,255,255,.22);border:1px solid rgba(255,255,255,.45);box-shadow:none;width:38px;height:38px;font-size:21px;border-radius:12px}
 .bl-foot{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-top:auto;padding-top:14px}
 .bl-card .bl-foot .lnk{margin-top:0;align-self:auto}
 .date.big{width:clamp(108px,14vw,156px);padding:18px 0 20px;border-radius:24px}

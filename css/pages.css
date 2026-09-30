@@ -68,6 +68,11 @@
 .bcard .band::after{content:"";position:absolute;right:26px;top:22px;width:22px;height:22px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#fff,#e5e1d9 55%,#a9b4c6);box-shadow:0 6px 12px -6px rgba(0,0,0,.35)}
 .bcard .nm{font:500 clamp(26px,2.5vw,32px)/1 var(--serif);letter-spacing:-.01em;position:relative;z-index:1}
 .bcard .ix{font:600 11px/1 var(--sans);letter-spacing:.14em;opacity:.8;position:relative;z-index:1}
+/* логотип бренда вместо текстового названия: одноцветный (белый или тёмный по цвету текста плашки), исходный оттенок — на светлом фоне (страница бренда) */
+.band .bl-img{position:relative;z-index:1;display:block;width:auto;height:auto;max-width:min(200px,calc(100% - 44px));max-height:68px;object-fit:contain;object-position:left center;filter:brightness(0) invert(1)}
+.band .bl-img.ink-dark{filter:brightness(0)}
+.band.has-logo{align-items:center}
+.bcard .band.has-logo .ix{align-self:flex-end}
 .bcard .low{position:relative;flex:1;padding:18px 22px 20px;display:grid}
 .bc-front,.bc-back{grid-area:1/1}
 .bc-front,.bc-back{transition:opacity .35s ease,transform .5s var(--ease)}
@@ -257,6 +262,7 @@ input[type=range]::-moz-range-thumb{width:16px;height:16px;border-radius:50%;bac
 /* ============ Страница бренда ============ */
 .b-line{display:flex;align-items:center;gap:16px;flex-wrap:wrap}
 .b-line .blogo.mono{width:54px;height:54px;font-size:30px;border-radius:16px}
+.b-line img.blogo{height:auto;width:auto;max-height:54px;max-width:min(170px,55vw);object-fit:contain}
 
 /* ============ Страница товара ============ */
 .p-top{padding:clamp(28px,4vw,56px) 0 clamp(20px,3vw,40px)}

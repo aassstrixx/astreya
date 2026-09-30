@@ -10,11 +10,18 @@ module.exports = function bundle({pages, layout, root, out}) {
   let chrome = body.replace(/^<body[^>]*>\n?/, '')
     .replace(/<script src="[^"]+" defer><\/script>\n?/g, '')
     .replace(/<link rel="stylesheet"[^>]*>\n?/g, '');
+  /* картинки логотипов: в одном файле нет обычных путей, поэтому кладём их в отдельный JSON (data: URI, по одному разу) и подставляем роутером */
+  const assets = {};
+  const inline = html => html.replace(/src="(?:\.\.\/)*(assets\/brands\/[\w.-]+)"/g, (m, f) => {
+    if (!assets[f]) assets[f] = 'data:image/' + (f.endsWith('.svg') ? 'svg+xml' : f.split('.').pop()) + ';base64,' + fs.readFileSync(path.join(root, f)).toString('base64');
+    return `data-asset="${f}"`;
+  });
+  chrome = inline(chrome);
   const dataPages = {};
   for (const p of pages) {
     const m = p.html.match(/<main id="main"[^>]*>\n([\s\S]*?)\n<\/main>/);
     const t = p.html.match(/<title>([^<]*)<\/title>/)[1];
-    dataPages[p.path] = {key: p.P.key, nav: p.P.nav || '', title: t.replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&#39;/g, "'"), main: m[1]};
+    dataPages[p.path] = {key: p.P.key, nav: p.P.nav || '', title: t.replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&#39;/g, "'"), main: inline(m[1])};
   }
   const css = ['base', 'components', 'pages', 'responsive', 'motion'].map(n => read(`css/${n}.css`)).join('\n');
   const js = 'window.__ASTREYA_BUNDLE = true;\n' + ['shared', 'data', 'core', 'motion', 'pages', 'hero-mark'].map(n => read(`js/${n}.js`)).join('\n;\n') + '\n;\n' + read('src/bundle-router.js');
@@ -22,7 +29,8 @@ module.exports = function bundle({pages, layout, root, out}) {
   const early = home.match(/<script>\(function\(d\)\{var h=d\.documentElement;[\s\S]*?<\/script>/)[0];
   const json = JSON.stringify(dataPages).replace(/</g, '\\u003c').replace(/\u2028/g, '\\u2028').replace(/\u2029/g, '\\u2029');
   chrome = chrome.replace(/(<p class="ftr-note">)[^<]*(<\/p>)/, '$1Прототип сайта. Ассортимент, расписание, новости и пороги скидок — демонстрационные данные (placeholder); не является официальным сайтом ООО «Астрея».$2');
-  const html = `<title>Астрея</title>\n${early}\n${fonts}\n<style>\n${css}\n</style>\n${chrome}\n<script id="astreya-pages" type="application/json">${json}</script>\n<script>\n${js.replace(/<\/script>/g, '<\\/script>')}\n</script>\n`;
+  const assetsJson = JSON.stringify(assets).replace(/</g, '\\u003c');
+  const html = `<title>Астрея</title>\n${early}\n${fonts}\n<style>\n${css}\n</style>\n${chrome}\n<script id="astreya-pages" type="application/json">${json}</script>\n<script id="astreya-assets" type="application/json">${assetsJson}</script>\n<script>\n${js.replace(/<\/script>/g, '<\\/script>')}\n</script>\n`;
   fs.writeFileSync(out, html);
   console.log(`Автономная сборка: ${out} (${(Buffer.byteLength(html) / 1024).toFixed(0)} КБ, страниц: ${pages.length})`);
 };

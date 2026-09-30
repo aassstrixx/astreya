@@ -13,7 +13,7 @@ training/<мероприятие>.html   страницы мероприятий
 news/<новость>.html      страницы новостей (9)
 css/   base · components · pages · responsive · motion
 js/    shared (общий код для Node и браузера) · data (генерируется) · core · motion · pages · hero-mark
-assets/ favicon, иконки, og-image
+assets/ favicon, иконки, og-image; assets/brands/ — логотипы брендов
 data/  ВСЕ данные и тексты сайта (см. data/README.md)
 src/   шаблоны страниц (функции, возвращающие HTML)
 tools/ build.js — сборка · check.js — проверка · bundle.js — автономная сборка
