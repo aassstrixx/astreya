@@ -71,7 +71,6 @@
 .bcard::before{content:"";position:absolute;inset:0;background:rgba(11,26,51,.6);opacity:0;transition:opacity .45s ease;z-index:6;pointer-events:none;border-radius:inherit}
 .bgrid:not(.has-active) .bcard:hover{box-shadow:var(--sh),0 0 0 1px color-mix(in srgb,var(--cc,#2f5bd6) 60%,transparent)}
 .bcard .band{position:relative;height:124px;flex:none;background:linear-gradient(105deg,var(--c1) 0%,var(--c2) 100%);color:var(--ink);padding:18px 22px;display:flex;align-items:flex-end;justify-content:space-between;overflow:hidden}
-.bcard .band::before{content:"";position:absolute;right:-30px;top:-46px;width:150px;height:150px;border-radius:50%;border:1px dashed currentColor;opacity:.32}
 /* вместо жемчужины в углу шапки — белый логотип «Астрея» */
 .bcard .band::after{display:none}
 .bc-mark{position:absolute;right:18px;top:16px;z-index:1;width:78px;line-height:0;pointer-events:none}
@@ -151,7 +150,6 @@ input[type=range]::-moz-range-thumb{width:16px;height:16px;border-radius:50%;bac
 /* ---- Brands page & brand page ---- */
 .bl-card{display:flex;flex-direction:column;height:100%;min-height:250px}
 .bl-card .band{height:124px;padding:18px 20px;display:flex;align-items:flex-end;background:linear-gradient(105deg,var(--c1),var(--c2));color:var(--ink);position:relative;overflow:hidden}
-.bl-card .band::before{content:"";position:absolute;right:-34px;top:-52px;width:150px;height:150px;border-radius:50%;border:1px dashed currentColor;opacity:.32}
 .bl-card .band .bl-img{max-width:min(250px,calc(100% - 106px))}
 .bl-card .band b{font:500 30px/1 var(--serif);position:relative}
 .bl-card .bb{padding:18px 20px 20px;display:flex;flex-direction:column;gap:12px;flex:1}
