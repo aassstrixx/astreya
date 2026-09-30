@@ -15,10 +15,10 @@
 .ring.r3{inset:0;border-color:rgba(102,117,143,.32);animation:spin 90s linear infinite}
 .ring.r1{inset:6.5%;animation:spin 90s linear infinite}
 .ring.r2{inset:13%;border-style:solid;border-color:rgba(102,117,143,.2);animation:spin 140s linear infinite reverse}
-/* логотипы на орбитах (вместо маленьких шариков): плечо .arm задаёт стартовый угол, плашка .orb встаёт на окружность и вращается в обратную сторону — логотип всегда прямой */
+/* продукция на орбитах (вместо маленьких шариков): плечо .arm задаёт стартовый угол, .orb встаёт на окружность и вращается в обратную сторону — предмет всегда прямой */
 .arm{position:absolute;inset:0;transform:rotate(var(--a,0deg));pointer-events:none}
-.orb{position:absolute;left:50%;top:0;translate:-50% -50%;rotate:calc(-1*var(--a,0deg));display:flex;align-items:center;justify-content:center;padding:8px 14px;background:rgba(255,255,255,.95);border:1px solid var(--line-soft);border-radius:14px;box-shadow:var(--sh)}
-.orb img{display:block;width:calc(var(--lw,80)*var(--k,1)*1px);height:auto}
+.orb{position:absolute;left:50%;top:0;translate:-50% -50%;rotate:calc(-1*var(--a,0deg));display:flex}
+.orb img{display:block;width:auto;height:calc(var(--lh,110)*var(--k,1)*1px);filter:drop-shadow(0 12px 12px rgba(11,26,51,.22))}
 .pearl{position:absolute;inset:17%;border-radius:50%;animation:floaty 8s ease-in-out infinite;
   background:radial-gradient(circle at 33% 27%,#fff 0,#fdfbf7 12%,#eeeae2 34%,#cdd3de 62%,#8f9db4 100%);
   box-shadow:inset -22px -28px 50px rgba(102,117,143,.42),inset 14px 16px 34px rgba(255,255,255,.85),0 46px 70px -34px rgba(47,91,214,.5),0 0 80px 8px rgba(185,194,208,.45)}

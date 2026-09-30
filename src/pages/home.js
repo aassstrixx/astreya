@@ -6,13 +6,8 @@ const heroMark = fs.readFileSync(path.join(__dirname, '..', 'partials', 'hero-ma
 
 module.exports = function home(ctx, C, P) {
   const {content, brands, tasks, site} = ctx, h = content.home;
-  /* логотип на орбите: Dermatime, Keenwell — из данных брендов; Cantabria Labs — горизонтальный знак (assets/brands/cantabria-labs-h.svg) */
-  const orbitLogo = {
-    keenwell: {src: ctx.brandById.keenwell.logo, w: ctx.brandById.keenwell.logoW, h: ctx.brandById.keenwell.logoH, lw: 100},
-    dermatime: {src: ctx.brandById.dermatime.logo, w: ctx.brandById.dermatime.logoW, h: ctx.brandById.dermatime.logoH, lw: 72},
-    cantabria: {src: 'assets/brands/cantabria-labs-h.svg', w: 458, h: 74, lw: 136}
-  };
-  const orbit = (id, angle) => { const o = orbitLogo[id]; return `<span class="arm" style="--a:${angle}deg"><span class="orb"><img src="${C.u(P, o.src)}" alt="" width="${o.w}" height="${o.h}" style="--lw:${o.lw}" decoding="async"></span></span>`; };
+  /* продукция на орбитах шара (data/content.json → home.orbits): вырезанные фото, не меняют ориентацию при вращении */
+  const orbit = k => { const o = h.orbits.find(x => x.orbit === k); return o ? `<span class="arm" style="--a:${o.angle}deg"><span class="orb"><img src="${C.u(P, o.src)}" alt="" width="${o.w}" height="${o.h}" style="--lh:${o.height}" decoding="async"></span></span>` : ''; };
   const today = new Date().toISOString().slice(0, 10);
   const up = ctx.sortedEvents.filter(e => e.date >= today);
   const events = (up.length ? up : ctx.sortedEvents.slice(-4)).slice(0, 4);
@@ -54,10 +49,10 @@ module.exports = function home(ctx, C, P) {
     <div class="pearl-wrap reveal par" data-par="0.1">
       ${heroMark}
       <div class="ly" style="--z:.5"><div class="halo"></div></div>
-      <div class="ly" style="--z:.7"><div class="ring r3" aria-hidden="true">${orbit('keenwell', 70)}</div></div>
+      <div class="ly" style="--z:.7"><div class="ring r3" aria-hidden="true">${orbit('r3')}</div></div>
       <div class="ly" style="--z:2.8"><div class="pearl" role="img" aria-label="Жемчужина — символ бережной точности"></div></div>
-      <div class="ly" style="--z:2.9"><div class="ring r1" aria-hidden="true">${orbit('cantabria', 248)}</div></div>
-      <div class="ly" style="--z:3"><div class="ring r2" aria-hidden="true">${orbit('dermatime', 160)}</div></div>
+      <div class="ly" style="--z:2.9"><div class="ring r1" aria-hidden="true">${orbit('r1')}</div></div>
+      <div class="ly" style="--z:3"><div class="ring r2" aria-hidden="true">${orbit('r2')}</div></div>
       <div class="ly" style="--z:4.2"><div class="hero-chip">${esc(h.chip)}</div></div>
       <div class="ly" style="--z:3.4"><div class="hero-card"><b>${esc(h.card.title)}</b><hr class="dash"><p>${esc(h.card.text)}</p></div></div>
     </div>
