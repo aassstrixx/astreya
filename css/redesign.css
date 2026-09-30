@@ -16,18 +16,21 @@
 .rd-no{font:500 clamp(54px,7vw,104px)/.9 var(--serif);letter-spacing:-.03em;color:rgba(47,91,214,.24);transition:color .45s var(--ease)}
 .rd-ph{display:inline-block;margin-left:8px;padding:2px 8px;border-radius:var(--pill);border:1px dashed var(--slate);font:600 10px/1.6 var(--sans);letter-spacing:.12em;text-transform:uppercase;font-style:normal;color:var(--slate);vertical-align:middle}
 
-/* крупное фоновое слово (5–8 %) */
+/* крупный логотип «Астрея» на заднем плане (5–6 %) */
 .rd-bgword{overflow:hidden}
-.rd-bgword::before{content:attr(data-word);position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);font:600 clamp(150px,27vw,430px)/1 var(--serif);letter-spacing:-.02em;white-space:nowrap;color:var(--navy);opacity:.045;pointer-events:none;user-select:none}
+.rd-bglogo{position:absolute;left:50%;top:50%;width:min(1180px,112%);transform:translate(-50%,-50%);opacity:.055;pointer-events:none;user-select:none;--lm:var(--navy)}
+.rd-bglogo svg{width:100%;height:auto}
+.rd-editorial .rd-bglogo{--lm:#fff;opacity:.05}
 .rd-bgword>*{position:relative;z-index:1}
 
 /* ---------- Астрея в цифрах ---------- */
 .rd-stats-grid{display:grid;grid-template-columns:minmax(0,.9fr) minmax(0,1.3fr);gap:clamp(32px,6vw,100px);align-items:center}
 .rd-stats-copy h2{margin-top:16px;max-width:15ch;font-size:clamp(30px,3.9vw,54px)}
-.rd-nums{display:grid;grid-template-columns:1fr 1fr}
+.rd-nums{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}
+.rd-stats-grid>*,.rd-nums>*{min-width:0}
 .rd-num{padding:clamp(22px,3vw,40px) clamp(14px,2.2vw,34px);border-top:1px solid var(--line)}
 .rd-num:nth-child(even){border-left:1px solid var(--line)}
-.rd-num b{display:block;font:500 clamp(54px,7.4vw,112px)/1 var(--serif);letter-spacing:-.03em}
+.rd-num b{display:block;font:500 clamp(44px,7.4vw,112px)/1 var(--serif);letter-spacing:-.03em}
 .rd-num b[data-suffix]::after{content:attr(data-suffix);font-size:.4em;vertical-align:top;position:relative;top:.3em;margin-left:3px;color:var(--blue)}
 .rd-num span{display:block;margin-top:14px;font:600 12px/1.45 var(--sans);letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
 .rd-num .snote{display:block;margin-top:4px;font:500 12.5px/1.4 var(--sans);font-style:normal;color:var(--slate)}
@@ -84,7 +87,6 @@
 
 /* ---------- EDITORIAL (графит) ---------- */
 .rd-editorial{background:var(--graphite);color:#f3f1ec;padding-block:clamp(72px,10vw,150px)}
-.rd-editorial::before{color:#fff;opacity:.045}
 .rd-editorial .eyebrow{color:var(--silver)}
 .rd-editorial .eyebrow::before{border-color:var(--silver)}
 .rd-ed-grid{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,.85fr);gap:clamp(32px,6vw,100px);align-items:center}
@@ -228,4 +230,5 @@
   .rd-next{flex-wrap:wrap}
   .rd-ed-p1{--h:160px}.rd-ed-p2{--h:215px}.rd-ed-p3{--h:190px}
   .rd-wall .mq-logo{--mq-k:.95}
+  .rd-bglogo{width:96%}
 }

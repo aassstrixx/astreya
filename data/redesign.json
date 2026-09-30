@@ -1,7 +1,8 @@
 {
   "_comment": "Слой доработок (включается флагом site.redesign в data/site.json; выключите — и сайт вернётся к прежнему виду, карточки брендов остаются). Все факты берутся из остальных файлов data/; здесь — подписи, структура и ЗАГЛУШКИ. Заглушки помечены \"placeholder\": их нужно заменить реальными данными/фото.",
 
-  "bgWord": "АСТРЕЯ",
+  "_bgLogo": "Крупный логотип «Астрея» на заднем плане секций (вместо слова): включается true/false.",
+  "bgLogo": true,
 
   "stats": {
     "eyebrow": "Астрея в цифрах",
@@ -40,9 +41,9 @@
     "photo": null,
     "photoAlt": "",
     "products": [
-      {"brand": "keenwell", "src": "assets/photos/keenwell-mask.webp", "w": 246, "h": 560},
-      {"brand": "dermatime", "src": "assets/photos/dermatime-micellar.webp", "w": 205, "h": 560},
-      {"brand": "iraltone", "src": "assets/photos/iraltone-shampoo.webp", "w": 200, "h": 560}
+      {"brand": "keenwell", "src": "assets/photos/keenwell-mask.webp", "w": 398, "h": 900},
+      {"brand": "dermatime", "src": "assets/photos/dermatime-micellar.webp", "w": 277, "h": 900},
+      {"brand": "iraltone", "src": "assets/photos/iraltone-shampoo.webp", "w": 328, "h": 900}
     ]
   },
 
