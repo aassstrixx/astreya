@@ -40,7 +40,6 @@
   .bgrid{grid-template-columns:1fr;padding:10px}
   .bgrid .bcard:last-child{grid-column:auto}
   .bcard{min-height:0}
-  .bcard.is-active{transform:scale(1.03)}
   .mini-prods{grid-template-columns:repeat(2,1fr)}
   .cat-tiles{grid-template-columns:1fr 1fr}
   .linkcards{grid-template-columns:1fr}

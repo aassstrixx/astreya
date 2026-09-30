@@ -45,19 +45,31 @@
 /* --- curtain: полосы + титр раздела --- */
 #curtain{position:fixed;inset:0;z-index:150;pointer-events:none}
 #curtain .cs{position:absolute;inset:-2px;display:flex}
-#curtain .cs i{flex:1;background:var(--navy);box-shadow:1px 0 0 var(--navy),-1px 0 0 var(--navy);transform:scaleY(0);transform-origin:bottom;will-change:transform;transition:transform .52s var(--ease-io);transition-delay:calc(var(--i)*38ms)}
+#curtain .cs i{flex:1;background:var(--navy);box-shadow:1px 0 0 var(--navy),-1px 0 0 var(--navy);transform:scaleY(0);transform-origin:bottom;will-change:transform;transition:transform .44s var(--ease-io);transition-delay:calc(var(--i)*30ms)}
 #curtain.in .cs i{transform:scaleY(1);transform-origin:bottom}
 #curtain.out .cs i{transform:scaleY(0);transform-origin:top}
 #curtain.instant .cs i{transition:none}
 #curtain.in{pointer-events:all}
 #curtain::after{content:"";position:absolute;inset:0;background:var(--grain-lt);opacity:.09;pointer-events:none}
 .ct{position:absolute;inset:0;display:grid;place-content:center;justify-items:center;gap:16px;padding:0 24px;text-align:center;color:var(--milk);opacity:0;transition:opacity .25s ease;z-index:1}
-#curtain.in .ct{opacity:1;transition-delay:.3s}
+#curtain.in .ct{opacity:1;transition-delay:.15s}
 .ct small{font:700 11px/1 var(--sans);letter-spacing:.32em;text-transform:uppercase;color:var(--silver)}
 .ct b{display:flex;flex-wrap:wrap;justify-content:center;font:500 clamp(40px,8vw,96px)/1.12 var(--serif);letter-spacing:.01em}
-.ct b .ch{display:inline-block;overflow:hidden;vertical-align:top}
-.ct b .ch>span{display:inline-block;transform:translateY(112%);animation:chUp .75s var(--ease-out) forwards;animation-delay:calc(.28s + var(--i)*.03s)}
-.ct .ct-line{display:block;width:96px;height:1px;background:var(--silver);transform:scaleX(0);animation:lineIn .8s var(--ease-out) .5s forwards}
+.ct b .ch{display:inline-block;overflow:hidden;vertical-align:top;padding:.08em .03em .3em;margin:-.08em -.03em -.3em}   /* поля под маской — чтобы хвосты р, у, д, ы не обрезались */
+.ct b .ch>span{display:inline-block;transform:translateY(140%);animation:chUp .45s var(--ease-out) forwards;animation-delay:calc(.24s + var(--i)*.02s)}
+.ct .ct-line{display:block;width:96px;height:1px;background:var(--silver);transform:scaleX(0);animation:lineIn .4s var(--ease-out) .5s forwards}
+/* готовый титр на новой странице: без повторной анимации */
+.ct.static b .ch>span{animation:none;transform:none}
+.ct.static .ct-line{animation:none;transform:scaleX(1)}
+/* логотип вместо слова «Астрея» при возврате на главную: тот же набор слоёв, что в заставке, но быстрее */
+.ct.is-logo small,.ct.is-logo .ct-line{display:none}
+.ct-logo{position:relative;width:min(64vw,380px);aspect-ratio:836/436}
+.ct-logo svg{position:absolute;inset:0;width:100%;height:100%;overflow:visible;opacity:0;animation-fill-mode:both}
+.ct-logo path{fill:var(--milk)}
+.ct-logo .sl-mark{transform-origin:14% 96%;animation:markIn .65s var(--ease-out) .38s both}
+.ct-logo .sl-lt{animation:ltIn .48s var(--ease-out) calc(.46s + var(--i)*.035s) both}
+.ct-logo .sl-pearl{animation:pearlDrop .62s cubic-bezier(.3,.7,.3,1) .5s both}
+.ct.static .ct-logo svg{animation:none;opacity:1;transform:none}
 
 /* --- splash: уход контента, затем шторка --- */
 #splash::after{content:"";position:absolute;inset:0;background:var(--grain-lt);opacity:.09;pointer-events:none}
@@ -87,7 +99,7 @@
 
 /* --- hero: режиссура --- */
 .hero-grid{position:relative;z-index:1}
-body::after{content:"";position:fixed;inset:0;z-index:90;pointer-events:none;background:var(--grain);opacity:.055}
+body::after{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;background:var(--grain);opacity:.055}
 .promo::after,.feat::after,.ftr::after{content:"";position:absolute;inset:0;pointer-events:none;background:var(--grain-lt);opacity:.07;z-index:2}
 .ftr{position:relative}
 .pearl-wrap{--px:0;--py:0;--lx:33%;--ly:27%}
@@ -111,7 +123,6 @@ body::after{content:"";position:fixed;inset:0;z-index:90;pointer-events:none;bac
 .js .pearl-wrap .hero-chip,.js .pearl-wrap .hero-card{opacity:0;translate:0 22px;transition:opacity 1.1s ease 1.2s,translate 1.3s var(--ease-out) 1.2s}
 .js .pearl-wrap.in .hero-chip,.js .pearl-wrap.in .hero-card{opacity:1;translate:0 0}
 .par{transition:opacity 1.1s var(--ease-out) var(--rd,0ms),translate 1.3s var(--ease-out) var(--rd,0ms)}
-.hero-copy{will-change:transform,opacity}
 
 /* --- фоновый знак за «жемчужиной»: гора + дуга (тот же вектор, что в логотипе), крупно, пик уходит за верхний край, дуга проходит сквозь жемчужину.
    Отрисовка (JS, heroMarkStart) идёт одним движением: дуга слева направо сквозь жемчужину → правая нога снизу вверх до пика → левая нога вниз влево;
@@ -146,11 +157,9 @@ body::after{content:"";position:fixed;inset:0;z-index:90;pointer-events:none;bac
 .ready .hdr-in>*{opacity:1;translate:0 0;transition:opacity 1s ease calc(.15s + var(--i,0)*.1s),translate 1.1s var(--ease-out) calc(.15s + var(--i,0)*.1s),transform .45s var(--ease-out)}
 
 /* --- кнопки, ссылки, навигация --- */
-.btn{position:relative;overflow:hidden;translate:var(--mx,0px) var(--my,0px);transition:transform .4s var(--ease-out),translate .5s var(--ease-out),background-color .3s,background-size .6s var(--ease-out),color .3s,border-color .3s,box-shadow .4s}
-.btn-fill::after{content:"";position:absolute;inset:0;pointer-events:none;background:linear-gradient(105deg,transparent 36%,rgba(255,255,255,.38) 50%,transparent 64%);transform:translateX(-125%);transition:transform .9s var(--ease-out)}
-.btn-fill:hover::after{transform:translateX(125%)}
+.btn{position:relative;overflow:hidden;transition:background-color .3s,background-size .6s var(--ease-out),color .3s,border-color .3s,box-shadow .3s}
 .btn-ghost{background:linear-gradient(var(--navy),var(--navy)) no-repeat 0 100%/0% 100%}
-.btn-ghost:hover{background:linear-gradient(var(--navy),var(--navy)) no-repeat 0 100%/100% 100%;border-color:var(--navy);color:var(--milk);transform:translateY(-2px)}
+.btn-ghost:hover{background:linear-gradient(var(--navy),var(--navy)) no-repeat 0 100%/100% 100%;border-color:var(--navy);color:var(--milk)}
 .lnk{position:relative}
 .lnk::after{content:"";position:absolute;left:0;right:0;bottom:-1px;height:1px;background:currentColor;transform:scaleX(0);transform-origin:left;transition:transform .6s var(--ease-out)}
 .lnk:hover::after{transform:scaleX(1)}
@@ -163,15 +172,8 @@ body::after{content:"";position:fixed;inset:0;z-index:90;pointer-events:none;bac
 .bcard{transition:translate 1.3s var(--ease-out) var(--rd,0ms),opacity 1.1s var(--ease-out) var(--rd,0ms),scale 1.5s var(--ease-out) var(--rd,0ms),transform .65s var(--ease-out),box-shadow .55s var(--ease)}
 .bgrid.has-active .bcard:not(.is-active){transition-delay:var(--rd,0ms),var(--rd,0ms),var(--rd,0ms),calc(var(--dist,0)*75ms),calc(var(--dist,0)*75ms)}
 .bgrid.has-active .bcard:not(.is-active)::before{transition:opacity .6s ease calc(var(--dist,0)*75ms)}
-.bcard.is-active{transform:scale(1.075)}
 .bcard .band::before{transition:transform 1.2s var(--ease-out)}
 .bcard.is-active .band::before{transform:scale(1.35) translate(-14px,10px)}
-
-/* --- 3D-наклон карточек за курсором --- */
-@media (hover:hover) and (pointer:fine){
-  .card.hov:hover{transform:perspective(1100px) translateY(-7px) rotateX(var(--rx,0deg)) rotateY(var(--ry,0deg))}
-  .bgrid:not(.has-active) .bcard:hover{transform:perspective(1100px) translateY(-7px) rotateX(var(--rx,0deg)) rotateY(var(--ry,0deg))}
-}
 
 /* --- бренд-страница: титул «проявляется» шторкой слева направо --- */
 .js .b-title.reveal{opacity:1;translate:0 0;clip-path:inset(-8% 100% -8% -2%);transition:clip-path 1.7s var(--ease-io) var(--rd,0ms)}

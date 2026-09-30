@@ -78,14 +78,17 @@
       p.el.style.transform = `translate3d(0,${p.cur.toFixed(2)}px,0)`;
     });
     const y = Math.min(1, scrollNow / (vh * .75));
-    fadeItems.forEach(el => { el.style.opacity = (1 - y * .9).toFixed(3); el.style.transform = `translate3d(0,${(-y * 40).toFixed(1)}px,0)`; });
+    fadeItems.forEach(el => {                         // в покое слой не создаём: текст hero остаётся чётким (без растеризации в отдельном слое)
+      if (y < .002) { el.style.opacity = ''; el.style.transform = ''; return; }
+      el.style.opacity = (1 - y * .9).toFixed(3); el.style.transform = `translate3d(0,${Math.round(-y * 40)}px,0)`;
+    });
     parRaf = moving ? requestAnimationFrame(parTick) : 0;
   }
   function parKick() { if (!parRaf && M.done && (parItems.length || fadeItems.length)) parRaf = requestAnimationFrame(parTick); }
   addEventListener('resize', () => { measurePar(); parKick(); });
   if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => { measurePar(); parKick(); });
 
-  /* ---------- курсор: свет «жемчужины», 3D-наклон карточек, магнитные кнопки ---------- */
+  /* ---------- курсор: свет и глубина «жемчужины» (карточки и кнопки не двигаются — текст остаётся чётким) ---------- */
   const hp = {x: 0, y: 0, tx: 0, ty: 0, raf: 0};
   function hpTick() {
     const w = $('.pearl-wrap'); if (!w) { hp.raf = 0; return; }
@@ -94,20 +97,10 @@
     w.style.setProperty('--lx', (33 + hp.x * 15).toFixed(1) + '%'); w.style.setProperty('--ly', (27 + hp.y * 13).toFixed(1) + '%');
     hp.raf = (Math.abs(hp.tx - hp.x) > .002 || Math.abs(hp.ty - hp.y) > .002) ? requestAnimationFrame(hpTick) : 0;
   }
-  let tiltEl = null, magEl = null;
   if (matchMedia('(hover:hover) and (pointer:fine)').matches) {
     document.addEventListener('pointermove', e => {
       if (e.pointerType !== 'mouse') return;
       if (scrollY < innerHeight && $('.pearl-wrap')) { hp.tx = e.clientX / innerWidth * 2 - 1; hp.ty = e.clientY / innerHeight * 2 - 1; if (!hp.raf) hp.raf = requestAnimationFrame(hpTick); }
-      const card = e.target.closest ? e.target.closest('.card.hov, .bgrid:not(.has-active) .bcard') : null;
-      if (card !== tiltEl) { if (tiltEl) { tiltEl.style.setProperty('--rx', '0deg'); tiltEl.style.setProperty('--ry', '0deg'); } tiltEl = card; }
-      if (card) {
-        const r = card.getBoundingClientRect(), nx = (e.clientX - r.left) / r.width - .5, ny = (e.clientY - r.top) / r.height - .5, k = r.width > 520 ? 3 : 8;
-        card.style.setProperty('--ry', (nx * k).toFixed(2) + 'deg'); card.style.setProperty('--rx', (-ny * k).toFixed(2) + 'deg');
-      }
-      const btn = e.target.closest ? e.target.closest('.btn') : null;
-      if (btn !== magEl) { if (magEl) { magEl.style.setProperty('--mx', '0px'); magEl.style.setProperty('--my', '0px'); } magEl = btn; }
-      if (btn) { const r = btn.getBoundingClientRect(); btn.style.setProperty('--mx', ((e.clientX - r.left - r.width / 2) * .16).toFixed(1) + 'px'); btn.style.setProperty('--my', ((e.clientY - r.top - r.height / 2) * .24).toFixed(1) + 'px'); }
     }, {passive: true});
     html.addEventListener('mouseleave', () => { hp.tx = hp.ty = 0; if (!hp.raf) hp.raf = requestAnimationFrame(hpTick); });
   }
@@ -166,37 +159,45 @@
   M.scheduleReveal = (root, ms) => { const t = ++revealTok; setTimeout(() => { if (t === revealTok) initReveal(root); }, ms); };
   M.scan = (root, delay) => { root = root || $('#main'); splitAll(root); collectMotion(root); delay ? M.scheduleReveal(root, delay) : initReveal(root); };
 
-  /* ---------- шторка: переходы между страницами ---------- */
+  /* ---------- шторка: переходы между страницами ----------
+     Ритм (мс): полосы закрываются ≈650 → титр «пишется» по буквам → переход на новую страницу, где шторка уже закрыта и титр стоит
+     готовым (без повторной анимации) → пауза-«чтение» → полосы поднимаются ≈650 → через 300 мс от начала подъёма появляется контент.
+     Для главной вместо слова «Астрея» собирается логотип компании. */
   const curtain = $('#curtain');
-  const LABELS = {'catalog': 'Каталог', 'brands': 'Бренды', 'brand': 'Бренд', 'training': 'Обучение', 'news': 'Новости', 'company': 'Компания', 'contacts': 'Контакты', 'partners': 'Партнёрам', 'search': 'Поиск', 'products': 'Каталог', 'index': 'Астрея', 'privacy': 'Документы', 'terms': 'Документы'};
-  const labelFor = url => {
+  const CT = window.AstCurtain || {fill: () => {}};
+  const LABELS = {'catalog': 'Каталог', 'brands': 'Бренды', 'brand': 'Бренд', 'training': 'Обучение', 'news': 'Новости', 'company': 'Компания', 'contacts': 'Контакты', 'partners': 'Партнёрам', 'search': 'Поиск', 'privacy': 'Документы', 'terms': 'Документы'};
+  const payloadFor = (url, override) => {
     const seg = new URL(url, location.href).pathname.split('/').filter(Boolean);
     const last = (seg[seg.length - 1] || 'index').replace(/\.html$/, '');
     const dir = seg.length > 1 ? seg[seg.length - 2] : '';
-    if (dir === 'brands') return 'Бренды'; if (dir === 'products') return 'Каталог'; if (dir === 'training') return 'Обучение'; if (dir === 'news') return 'Новости';
-    return LABELS[last] || 'Астрея';
+    if (override) return {label: override, home: false, t: Date.now()};
+    if (last === 'index' || !seg.length) return {label: 'Астрея', home: true, t: Date.now()};
+    const label = dir === 'brands' ? 'Бренды' : dir === 'products' ? 'Каталог' : dir === 'training' ? 'Обучение' : dir === 'news' ? 'Новости' : (LABELS[last] || 'Астрея');
+    return {label, home: false, t: Date.now()};
   };
-  function setCurtainLabel(t) {
-    const ct = $('.ct', curtain); if (!ct) return;
-    ct.innerHTML = `<small>Астрея</small><b>${Array.from(t).map((c, i) => c === ' ' ? '<span class="ch" style="width:.28em"></span>' : `<span class="ch"><span style="--i:${i}">${c}</span></span>`).join('')}</b><span class="ct-line"></span>`;
-  }
-  if (curtain) curtain.innerHTML = '<div class="cs">' + Array.from({length: 8}, (_, i) => `<i style="--i:${i}"></i>`).join('') + '</div><div class="ct" aria-hidden="true"></div>';
+  M.T = {
+    close: pl => pl.home ? 1080 : 200 + 20 * (Array.from(pl.label).length - 1) + 430 + 60,   // пока титр дописывается на закрытой шторке
+    hold: pl => pl.home ? 340 : 330,                                                        // сколько готовый титр стоит после перехода
+    reveal: 300                                                                             // контент появляется через это время после начала подъёма
+  };
+  M.payloadFor = payloadFor;
+  if (curtain && !$('.cs', curtain)) curtain.innerHTML = '<div class="cs">' + Array.from({length: 8}, (_, i) => `<i style="--i:${i}"></i>`).join('') + '</div><div class="ct" aria-hidden="true"></div>';
 
-  M.curtainLabel = setCurtainLabel; M.labelFor = labelFor;
   let leaving = false;
-  M.navigate = function (url, label) {                     // переход на другую страницу: шторка закрывается, затем обычная навигация
+  M.navigate = function (url, override) {                  // переход на другую страницу: шторка закрывается, титр пишется, затем обычная навигация
     if (leaving) return; leaving = true;
-    store.set('astreya:nav', label || labelFor(url));
+    const pl = payloadFor(url, override);
+    store.set('astreya:nav', JSON.stringify(pl));
     if (!curtain) { location.href = url; return; }
-    setCurtainLabel(label || labelFor(url));
+    CT.fill(pl, false);
     curtain.classList.remove('out'); curtain.classList.add('in');
-    setTimeout(() => { location.href = url; }, 640);
-    setTimeout(() => { leaving = false; }, 3000);          // на случай, если навигация не состоялась
+    setTimeout(() => { location.href = url; }, M.T.close(pl));
+    setTimeout(() => { leaving = false; store.del('astreya:nav'); }, 4500);   // на случай, если навигация не состоялась
   };
-  M.openCurtain = async function () {                      // мы пришли по переходу: шторка уже закрыта, поднимаем её
-    const label = store.get('astreya:nav'); store.del('astreya:nav');
-    if (label) setCurtainLabel(label);
+  const readNav = () => { let pl = null; try { pl = JSON.parse(store.get('astreya:nav') || 'null'); } catch (e) {} store.del('astreya:nav'); return pl && pl.t && Date.now() - pl.t < 8000 ? pl : null; };
+  M.openCurtain = async function (pl) {                    // пришли по переходу: шторка уже закрыта и титр на месте — даём его прочитать, затем поднимаем
     curtain.classList.add('in');                           // .nav-in держит полосы закрытыми до первой отрисовки
+    await wait(M.T.hold(pl || {}));
     await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
     html.classList.remove('nav-in');
     curtain.classList.remove('in'); curtain.classList.add('out');
@@ -274,7 +275,7 @@
     try { history.scrollRestoration = 'manual'; } catch (e) {}
     if (body.getAttribute('data-page') === 'home' && first && $('#splash')) { requestAnimationFrame(() => setTimeout(runSplash, 0)); return; }
     const sp = $('#splash'); if (sp) sp.remove();
-    if (fromNav) { M.openCurtain(); finish(340); } else finish(60);
+    if (fromNav) { const pl = readNav(); if (pl) CT.fill(pl, true); M.openCurtain(pl); finish(M.T.hold(pl || {}) + M.T.reveal); } else finish(60);
   };
   A.navigate = M.navigate;
   /* defer-скрипты выполняются при readyState «interactive», но до DOMContentLoaded — запускаемся после них (pages.js, hero-mark.js) */

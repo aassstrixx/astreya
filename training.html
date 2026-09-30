@@ -24,7 +24,7 @@
 <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
 <link rel="icon" href="assets/favicon-32.png" type="image/png" sizes="32x32">
 <link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
-<script>(function(d){var h=d.documentElement;h.classList.add('js');try{if(sessionStorage.getItem('astreya:seen'))h.classList.add('seen');if(sessionStorage.getItem('astreya:nav'))h.classList.add('nav-in')}catch(e){}})(document);</script>
+<script>(function(d){var h=d.documentElement;h.classList.add('js');try{if(sessionStorage.getItem('astreya:seen'))h.classList.add('seen');var n=sessionStorage.getItem('astreya:nav');if(n){var o=JSON.parse(n);if(o&&Date.now()-o.t<8000)h.classList.add('nav-in');else sessionStorage.removeItem('astreya:nav')}}catch(e){}})(document);</script>
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -72,7 +72,11 @@
 
 <div id="progress" aria-hidden="true"></div>
 
-<div id="curtain" aria-hidden="true"></div>
+<div id="curtain" aria-hidden="true"><div class="cs"><i style="--i:0"></i><i style="--i:1"></i><i style="--i:2"></i><i style="--i:3"></i><i style="--i:4"></i><i style="--i:5"></i><i style="--i:6"></i><i style="--i:7"></i></div><div class="ct" aria-hidden="true"></div></div>
+<script>(function(w,d){function T(t){var s='',i,c,a=Array.from(t);for(i=0;i<a.length;i++){c=a[i];s+=c===' '?'<span class="ch" style="width:.28em"></span>':'<span class="ch"><span style="--i:'+i+'">'+c+'</span></span>'}return'<small>Астрея</small><b>'+s+'</b><span class="ct-line"></span>'}
+function L(){var art=d.getElementById('logo-art');if(!art)return'';var m='',l='',n=0,ps=art.querySelectorAll('.pc'),j,k,p,V='viewBox="46 338 836 436" aria-hidden="true"';for(j=0;j<ps.length;j++){p=ps[j];k=p.getAttribute('data-k');var dd='<path fill-rule="evenodd" d="'+p.getAttribute('d')+'"/>';if(k==='mountain'||k==='arc')m+=dd;else l+='<svg class="sl-lt" style="--i:'+(n++)+'" '+V+'>'+dd+'</svg>'}var pl=art.querySelector('.pl');return'<div class="ct-logo" role="img" aria-label="Астрея"><svg class="sl-mark" '+V+'>'+m+'</svg>'+l+'<svg class="sl-pearl" '+V+'><circle cx="'+pl.getAttribute('cx')+'" cy="'+pl.getAttribute('cy')+'" r="'+pl.getAttribute('r')+'" fill="url(#lg-p)"/></svg></div>'}
+function F(pl,st){var ct=d.querySelector('#curtain .ct');if(!ct||!pl)return;ct.className='ct'+(st?' static':'')+(pl.home?' is-logo':'');ct.innerHTML=pl.home?L():T(pl.label||'')}
+w.AstCurtain={fill:F};try{var n=sessionStorage.getItem('astreya:nav');if(n){var o=JSON.parse(n);if(o&&Date.now()-o.t<8000)F(o,true)}}catch(e){}})(window,document);</script>
 
 <header class="hdr" id="hdr">
   <div class="wrap hdr-in">
