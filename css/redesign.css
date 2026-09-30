@@ -25,8 +25,8 @@
 .rd-bgword>*:not(.rd-bglogo){position:relative;z-index:1}
 
 /* ---------- Hero: шар с орбитами — как прежде; фото 01 — мягкий фон слева, за текстом ---------- */
-.rd .hero-bgphoto{position:absolute;left:0;top:0;bottom:0;width:min(66%,980px);z-index:0;pointer-events:none;
-  -webkit-mask-image:radial-gradient(ellipse 72% 86% at 34% 46%,#000 26%,transparent 78%);mask-image:radial-gradient(ellipse 72% 86% at 34% 46%,#000 26%,transparent 78%)}
+.rd .hero-bgphoto{position:absolute;left:-19%;top:0;bottom:0;width:min(70%,1040px);z-index:0;pointer-events:none;
+  -webkit-mask-image:radial-gradient(ellipse 70% 86% at 42% 46%,#000 26%,transparent 80%);mask-image:radial-gradient(ellipse 70% 86% at 42% 46%,#000 26%,transparent 80%)}
 .rd .hero-bgphoto img{width:100%;height:100%;object-fit:cover;object-position:46% 28%;opacity:.22;filter:grayscale(.6) contrast(.9) brightness(1.08);mix-blend-mode:multiply}
 
 /* ---------- О компании: фото 02 слева (~42 %), текст справа ---------- */
@@ -41,19 +41,13 @@
 .rd-about-p2 img{width:100%;height:auto;aspect-ratio:1/1;object-fit:cover;object-position:50% 40%;display:block}
 .rd-about-p3{margin-top:clamp(28px,4.4vw,64px)}
 .rd-about-p3 img{width:100%;height:auto;aspect-ratio:4/5;object-fit:cover;object-position:50% 22%;display:block}
-.rd-about-photo figcaption{position:absolute;left:0;right:0;bottom:0;padding:38px 22px 18px;font:500 italic clamp(15px,1.5vw,19px)/1.3 var(--serif);color:#fff;background:linear-gradient(to top,color-mix(in srgb,var(--navy) 72%,transparent),transparent)}
+.rd-about-photo figcaption,.rd-about-p2 figcaption,.rd-about-p3 figcaption{position:absolute;left:0;right:0;bottom:0;padding:38px 20px 16px;font:500 italic clamp(16px,1.7vw,22px)/1.2 var(--serif);color:#fff;background:linear-gradient(to top,color-mix(in srgb,var(--navy) 72%,transparent),transparent)}
+.rd-about-p2,.rd-about-p3{position:relative}
+.rd-about-p2 figcaption,.rd-about-p3 figcaption{padding:30px 16px 13px;font-size:clamp(15px,1.5vw,19px)}
 
 /* ---------- Астрея в цифрах (сетка) ---------- */
-.rd-stats-grid{display:grid;grid-template-columns:minmax(0,1.02fr) minmax(0,1fr);grid-template-areas:"copy copy" "pack nums";gap:clamp(28px,4vw,64px) clamp(32px,6vw,100px);align-items:center}
-.rd-stats-copy{grid-area:copy}
-.rd-stats-pack{grid-area:pack}
-.rd-nums{grid-area:nums}
-/* фото 03: продукция на «подиуме» (круг из палитры) — крупно и хорошо видно; цифры справа остаются главными */
-.rd-stats-pack{position:relative;margin:0;padding:clamp(18px,3vw,44px) 0 clamp(26px,4vw,54px)}
-.rd-stats-pack::before{content:"";position:absolute;left:50%;top:48%;width:min(86%,520px);aspect-ratio:1;transform:translate(-50%,-50%);border-radius:50%;background:radial-gradient(circle at 50% 38%,#fff 0,color-mix(in srgb,var(--mist) 60%,#fff) 62%,color-mix(in srgb,var(--mist) 100%,var(--slate) 6%) 100%);box-shadow:inset 0 0 0 1px rgba(255,255,255,.7)}
-.rd-stats-pack::after{content:"";position:absolute;left:12%;right:12%;bottom:clamp(14px,2.6vw,34px);height:clamp(18px,2.6vw,34px);border-radius:50%;background:radial-gradient(closest-side,rgba(11,26,51,.28),transparent)}
-.rd-stats-pack img{position:relative;z-index:1;display:block;width:108%;max-width:none;margin-left:-4%;height:auto;filter:drop-shadow(0 18px 18px rgba(11,26,51,.16))}
-.rd-stats-copy h2{margin-top:16px;max-width:22ch;font-size:clamp(30px,3.9vw,54px)}
+.rd-stats-grid{display:grid;grid-template-columns:minmax(0,.9fr) minmax(0,1.3fr);gap:clamp(32px,6vw,100px);align-items:center}
+.rd-stats-copy h2{margin-top:16px;max-width:15ch;font-size:clamp(30px,3.9vw,54px)}
 .rd-nums{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}
 .rd-stats-grid>*,.rd-nums>*{min-width:0}
 .rd-num{padding:clamp(22px,3vw,40px) clamp(14px,2.2vw,34px);border-top:1px solid var(--line)}
@@ -76,14 +70,15 @@
 
 /* ---------- Решения по задачам ---------- */
 /* Решения: слева текст и задачи, справа фото 04 (~38 %) */
-.rd-sol-grid{display:grid;grid-template-columns:minmax(0,1.62fr) minmax(0,1fr);gap:clamp(28px,4.4vw,72px);align-items:start}
+.rd-sol-grid{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,1fr);gap:clamp(28px,4.4vw,72px);align-items:stretch}
 .rd-sol-main{min-width:0}
-.rd-sol-grid{align-items:stretch}
 .rd-sol-side{position:relative;min-width:0}
-/* фото не едет вместе с текстом слева: держится по центру экрана, пока идёт блок; появляется при скролле (.reveal) */
-.rd-sol-stick{position:sticky;top:var(--hdr);height:calc(100vh - var(--hdr));min-height:420px;display:grid;place-items:center}
-.rd-sol-photo{width:100%;margin:0;border-radius:var(--r-xl);overflow:hidden;aspect-ratio:4/5;max-height:calc(100vh - var(--hdr) - 48px);box-shadow:var(--sh-h);background:var(--mist)}
-.rd-sol-photo img{width:100%;height:100%;object-fit:cover;object-position:76% 50%}
+/* без JS: фото «прилипает» по центру экрана; с JS (.fx) — фиксируется по центру и плавно появляется, пока идёт блок (js/redesign.js) */
+.rd-sol-stick{position:sticky;top:0;height:100vh;min-height:480px;display:grid;place-items:center}
+.rd-sol-photo{width:100%;margin:0;border-radius:var(--r-xl);overflow:hidden;height:min(80vh,780px);box-shadow:var(--sh-h);background:var(--mist)}
+.rd-sol-photo img{width:100%;height:100%;object-fit:cover;object-position:46% 50%;display:block}
+.rd-sol-photo.fx{position:fixed;z-index:5;left:var(--fx-l,60%);top:50%;width:var(--fx-w,38%);height:min(82vh,var(--fx-h,780px));max-width:none;border-radius:var(--r-xl) 0 0 var(--r-xl);transform:translateY(-50%);opacity:0;visibility:hidden;pointer-events:none;transition:opacity .7s var(--ease),visibility 0s linear .7s}
+.rd-sol-photo.fx.on{opacity:1;visibility:visible;transition:opacity .7s var(--ease),visibility 0s}
 .rd-tasks{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
 .rd-tasks>*{min-width:0}
 .rd-task{position:relative;display:flex;flex-direction:column;gap:14px;min-height:230px;padding:clamp(22px,2.4vw,30px);border-radius:var(--r-lg);background:#fff;box-shadow:var(--sh);transition:transform .45s var(--ease),box-shadow .45s var(--ease)}
@@ -249,14 +244,11 @@
 
 /* ---------- адаптивность ---------- */
 @media (max-width:1000px){
-  .rd-stats-grid{grid-template-columns:1fr;grid-template-areas:"copy" "pack" "nums"}
-  .rd-stats-pack{max-width:520px;margin-inline:auto;width:100%}
-  .rd-stats-pack img{width:100%;margin-left:0}
-  .rd-why-grid,.rd-ed-grid,.rd-train-grid,.rd-aud-grid,.rd-final-band,.rd-about-grid,.rd-sol-grid{grid-template-columns:1fr}
+  .rd-stats-grid,.rd-why-grid,.rd-ed-grid,.rd-train-grid,.rd-aud-grid,.rd-final-band,.rd-about-grid,.rd-sol-grid{grid-template-columns:1fr}
   .rd .hero-bgphoto{width:100%;bottom:auto;height:62%;-webkit-mask-image:radial-gradient(ellipse 80% 80% at 50% 28%,#000 10%,transparent 76%);mask-image:radial-gradient(ellipse 80% 80% at 50% 28%,#000 10%,transparent 76%)}
   .rd .hero-bgphoto img{opacity:.2}
   .rd-sol-stick{position:static;height:auto;min-height:0;display:block}
-  .rd-sol-photo{aspect-ratio:4/3;max-height:none}
+  .rd-sol-photo{height:auto;aspect-ratio:4/3}
   .rd-sol-photo img{object-position:70% 40%}
   .rd-ed-photo{aspect-ratio:4/4.4}
   .rd-why-head,.rd-aud-head{position:static}

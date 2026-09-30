@@ -39,4 +39,26 @@
       setTimeout(apply, 0);                          // сменилась задача — применяем выбранный режим к новой выдаче
     }
   });
+
+  /* «Решения по задачам»: фото закреплено по центру экрана и не едет вместе с текстом; только плавно появляется/исчезает, пока блок на экране.
+     Ширина — от левого края правой колонки до правого края окна. На планшетах и телефонах (≤ 1000 px) — обычное фото под списком. */
+  let raf = 0;
+  function solPhoto() {
+    const f = document.querySelector('.rd-sol-photo'); if (!f) return;
+    const sec = f.closest('.rd-solutions'), side = f.closest('.rd-sol-side');
+    if (!sec || !side || document.documentElement.clientWidth <= 1000) { f.classList.remove('fx', 'on'); return; }
+    const vw = document.documentElement.clientWidth, vh = window.innerHeight, sr = side.getBoundingClientRect(), r = sec.getBoundingClientRect();
+    f.classList.add('fx');
+    f.style.setProperty('--fx-l', sr.left + 'px');
+    f.style.setProperty('--fx-w', Math.max(240, vw - sr.left) + 'px');
+    f.classList.toggle('on', r.top < vh * 0.5 && r.bottom > vh * 0.5);
+  }
+  function schedule() { if (!raf) raf = requestAnimationFrame(function () { raf = 0; solPhoto(); }); }
+  addEventListener('scroll', schedule, {passive: true});
+  addEventListener('resize', schedule);
+  addEventListener('load', schedule);
+  document.addEventListener('DOMContentLoaded', schedule);
+  const mainEl = document.getElementById('main');
+  if (mainEl && window.MutationObserver) new MutationObserver(schedule).observe(mainEl, {childList: true});
+  schedule();
 })();

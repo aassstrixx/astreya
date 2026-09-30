@@ -154,6 +154,8 @@ module.exports = function layout(ctx, C) {
     potentialAction: {'@type': 'SearchAction', target: base + 'search.html?q={search_term_string}', 'query-input': 'required name=search_term_string'}};
 
   /* P: {key, path, depth, root, nav, title, description, ogType, image, noindex, jsonld:[]} */
+  /* картинки из assets/ получают ?v=<хэш> (как css/js): после замены файла браузер/CDN не показывают старый кэш */
+  const verAssets = html => ver ? html.replace(/(\ssrc=")((?:\.\.\/)*assets\/[^"?#]+)(")/g, '$1$2' + ver + '$3') : html;
   function shell(P, body) {
     const url = absUrl(P.path), img = base + (P.image || 'assets/og-image.png');
     const ld = [...(P.key === 'home' ? [orgLd, siteLd] : []), ...(P.jsonld || [])];
@@ -221,5 +223,5 @@ ${jsList.map(n => `<script src="${u(P, `js/${n}.js`)}${ver}" defer></script>`).j
 </html>
 `;
   }
-  return {shell, absUrl, base, nav};
+  return {shell: (P, body) => verAssets(shell(P, body)), absUrl, base, nav};
 };
