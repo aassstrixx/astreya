@@ -53,7 +53,7 @@ module.exports = function homeRedesign(ctx, C, P, parts, {events, val}) {
   </div></section>`;
 
   /* ---------- 3. Решения по задачам (CLINICAL, крупные кликабельные карточки; первая — двойная) ---------- */
-  const solutions = `<section class="rd-sec rd-clinical rd-solutions" id="solutions"><div class="wrap rd-sol-grid"><div class="rd-sol-main">
+  const solutions = `<section class="rd-sec rd-clinical rd-solutions" id="solutions"><div class="wrap">
     <header class="rd-head reveal"><span class="eyebrow">${esc(rd.solutions.eyebrow)}</span><h2>${esc(rd.solutions.title)}</h2><p class="lead">${esc(rd.solutions.lead)}</p></header>
     <div class="rd-tasks">${tasks.map((t, i) => {
       const n = ctx.products.filter(p => p.tasks.includes(t.id)).length, bs = t.brands.map(id => ctx.brandById[id]).filter(Boolean);
@@ -64,8 +64,7 @@ module.exports = function homeRedesign(ctx, C, P, parts, {events, val}) {
         <div class="rd-task-logos" aria-hidden="true">${bs.slice(0, 4).map(b => C.slotLogo(P, b, 1500)).join('')}</div>
         <div class="rd-task-foot"><span>${bs.length} ${S.plural(bs.length, 'бренд', 'бренда', 'брендов')} · ${n} ${S.plural(n, 'позиция', 'позиции', 'позиций')}</span><span class="rd-go">Подобрать ${I.arrow}</span></div>
       </a>`;
-    }).join('')}</div></div>
-    <div class="rd-sol-side"><div class="rd-sol-stick"><figure class="rd-sol-photo">${img('solutions', '', ' loading="lazy"')}</figure></div></div>
+    }).join('')}</div>
   </div></section>`;
 
   /* ---------- 4. Подборщик: прежний + шаг «Для кого?» (js/redesign.js) ---------- */
