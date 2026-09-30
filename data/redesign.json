@@ -41,8 +41,8 @@
     "photo": null,
     "photoAlt": "",
     "products": [
-      {"brand": "keenwell", "src": "assets/photos/keenwell-mask.webp", "w": 406, "h": 900},
-      {"brand": "dermatime", "src": "assets/photos/dermatime-micellar.webp", "w": 278, "h": 900},
+      {"brand": "keenwell", "src": "assets/photos/keenwell-mask.webp", "w": 397, "h": 900},
+      {"brand": "dermatime", "src": "assets/photos/dermatime-micellar.webp", "w": 279, "h": 900},
       {"brand": "iraltone", "src": "assets/photos/iraltone-shampoo.webp", "w": 329, "h": 900}
     ]
   },
