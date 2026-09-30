@@ -206,7 +206,6 @@
 .rd-tc-photo img{width:100%;height:100%;object-fit:cover;object-position:50% 20%;display:block;transition:transform 1.1s var(--ease)}
 .rd-tc:hover .rd-tc-photo img{transform:scale(1.04)}
 .rd-tc-mono{position:absolute;inset:0;display:grid;place-items:center;font:500 clamp(54px,6vw,92px)/1 var(--serif);letter-spacing:.02em;color:color-mix(in srgb,var(--navy) 38%,transparent)}
-.rd-tc-no{position:absolute;left:14px;top:12px;font:600 11px/1 var(--sans);letter-spacing:.16em;color:var(--slate);mix-blend-mode:normal;text-shadow:0 0 6px rgba(255,255,255,.7)}
 .rd-tc-first{margin-top:16px;font:600 11px/1.4 var(--sans);letter-spacing:.14em;text-transform:uppercase;color:var(--slate)}
 .rd-tc-last{margin-top:4px;font:500 clamp(22px,2vw,28px)/1.1 var(--serif)}
 .rd-tc-role{margin-top:10px;padding-top:10px;border-top:1px dashed var(--line);font-size:13.5px;line-height:1.5;color:var(--muted)}

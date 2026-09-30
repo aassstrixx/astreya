@@ -7,7 +7,7 @@ function teachersRd(ctx, C, P) {
   return `<section class="rd-sec rd-clinical rd-teachers" id="teachers"><div class="wrap">
     <header class="rd-head reveal"><span class="eyebrow">${esc(t.eyebrow)}</span><h2>${esc(t.title)}</h2><p class="lead">${esc(t.lead)}</p></header>
     <div class="rd-tgrid">${t.items.map((p, i) => `<article class="rd-tc reveal">
-      <div class="rd-tc-photo">${p.photo ? `<img src="${C.u(P, p.photo)}" alt="${esc(p.last + ' ' + p.first)}" loading="lazy" decoding="async">` : `<span class="rd-tc-mono" aria-hidden="true">${esc(p.last.charAt(0) + p.first.charAt(0))}</span>`}<span class="rd-tc-no" aria-hidden="true">${String(i + 1).padStart(2, '0')}</span></div>
+      <div class="rd-tc-photo">${p.photo ? `<img src="${C.u(P, p.photo)}" alt="${esc(p.last + ' ' + p.first)}" width="280" height="300" loading="lazy" decoding="async">` : `<span class="rd-tc-mono" aria-hidden="true">${esc(p.last.charAt(0) + p.first.charAt(0))}</span>`}</div>
       <p class="rd-tc-first">${esc(p.first)}</p>
       <h3 class="rd-tc-last">${esc(p.last)}</h3>
       <p class="rd-tc-role">${esc(p.role)}</p>
