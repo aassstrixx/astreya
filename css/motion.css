@@ -54,6 +54,12 @@
 .ct{position:absolute;inset:0;display:grid;place-content:center;justify-items:center;gap:16px;padding:0 24px;text-align:center;color:var(--milk);opacity:0;transition:opacity .25s ease;z-index:1}
 #curtain.in .ct{opacity:1;transition-delay:.3s}
 .ct small{font:700 11px/1 var(--sans);letter-spacing:.32em;text-transform:uppercase;color:var(--silver)}
+/* белый знак «Астрея» над титром и логотип бренда вместо названия */
+.ct-astreya{display:block;width:clamp(64px,6.4vw,88px);--lm:#fff;opacity:0;transform:translateY(10px);animation:ctIn .7s var(--ease-out) .12s forwards}
+.ct-astreya svg{display:block;width:100%;height:auto;max-width:none}
+.ct-brand{display:block;opacity:0;transform:translateY(26px);animation:ctIn .85s var(--ease-out) .26s forwards}
+.ct-brand img{display:block;width:calc(var(--lw,240)*1px);max-width:78vw;max-height:30vh;height:auto;object-fit:contain;filter:brightness(0) invert(1)}
+@keyframes ctIn{to{opacity:1;transform:none}}
 .ct b{display:flex;flex-wrap:wrap;justify-content:center;font:500 clamp(40px,8vw,96px)/1.12 var(--serif);letter-spacing:.01em}
 .ct b .ch{display:inline-block;overflow:hidden;vertical-align:top;padding:.08em .03em .3em;margin:-.08em -.03em -.3em}   /* поля под маской — чтобы хвосты р, у, д, ы не обрезались */
 .ct b .ch>span{display:inline-block;transform:translateY(140%);animation:chUp .75s var(--ease-out) forwards;animation-delay:calc(.28s + var(--i)*.03s)}

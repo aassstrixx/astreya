@@ -9,6 +9,7 @@
   const wait = ms => new Promise(r => setTimeout(r, ms));
   const ROOT = window.__ASTREYA_BUNDLE ? '' : (function () { try { return new URL(document.body.getAttribute('data-root') || './', location.href).href; } catch (e) { return document.body.getAttribute('data-root') || ''; } })();   // абсолютный адрес корня сайта: не меняется при подмене страниц
   Object.assign(A, {$, $$, wait, D, ROOT});
+  A.assetUrl = p => window.__ASTREYA_BUNDLE ? ((A.assets || {})[p] || '') : ROOT + p;     // путь к картинке из data/ (в автономной сборке — data:-адрес)
 
   /* ---------- конфигурация: сюда подключаются форма и аналитика ---------- */
   A.config = {

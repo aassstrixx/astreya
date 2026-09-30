@@ -107,7 +107,7 @@ const index = [
 ];
 const data = {
   site: {name: site.name, contacts: {email: site.contacts.email, phone: site.contacts.phone, phoneRaw: site.contacts.phoneRaw, hours: site.contacts.hours}, formEndpoint: site.formEndpoint || '', discounts: site.discounts},
-  brands: ctx.brands.map(b => ({id: b.id, name: b.name})),
+  brands: ctx.brands.map(b => ({id: b.id, name: b.name, logo: b.logo || undefined, logoW: b.logoW, logoH: b.logoH, logoScale: b.logoScale})),
   cats: ctx.cats, tasks: ctx.tasks.map(t => ({id: t.id, label: t.label})), kinds: ctx.kinds,
   products: ctx.products.map(p => ({id: p.id, slug: p.slug, name: p.name, brand: p.brand})),
   events: ctx.sortedEvents.map(e => ({id: e.id, slug: e.slug, title: e.title, date: e.date, city: e.city})),

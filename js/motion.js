@@ -165,20 +165,31 @@
      Если подмена невозможна (файл открыт с диска, нет сети) — обычный переход по ссылке под той же шторкой. */
   const curtain = $('#curtain');
   const LABELS = {'catalog': 'Каталог', 'brands': 'Бренды', 'training': 'Обучение', 'news': 'Новости и акции', 'company': 'Компания', 'contacts': 'Контакты', 'partners': 'Партнёрам', 'search': 'Поиск', 'privacy': 'Документы', 'terms': 'Документы'};
-  const labelFor = url => {
+  const pathInfo = url => {
     const seg = new URL(url, location.href).pathname.split('/').filter(Boolean);
-    const last = (seg[seg.length - 1] || 'index').replace(/\.html$/, '');
-    const dir = seg.length > 1 ? seg[seg.length - 2] : '';
-    if (dir === 'brands') { const b = (A.D.brands || []).find(x => x.id === last); return b ? b.name : 'Бренды'; }
+    return {seg, last: (seg[seg.length - 1] || 'index').replace(/\.html$/, ''), dir: seg.length > 1 ? seg[seg.length - 2] : ''};
+  };
+  const brandFor = url => { const {last, dir} = pathInfo(url); return dir === 'brands' ? (A.D.brands || []).find(x => x.id === last) || null : null; };
+  const labelFor = url => {
+    const {seg, last, dir} = pathInfo(url);
+    if (dir === 'brands') { const b = brandFor(url); return b ? b.name : 'Бренды'; }
     if (dir === 'products') return 'Каталог'; if (dir === 'training') return 'Обучение'; if (dir === 'news') return 'Новости и акции';
     return last === 'index' || !seg.length ? 'Главная' : (LABELS[last] || 'Астрея');
   };
-  function setCurtainLabel(t) {
+  /* титр шторки: сверху — белый знак «Астрея» (вместо маленькой надписи); по центру — название раздела, а для страницы бренда — его белый логотип */
+  const MARK = '<span class="ct-astreya" aria-hidden="true"><svg viewBox="49.8 341.6 829.5 428.9"><use href="#logo-art"/></svg></span>';
+  function setCurtainLabel(t, brand) {
     const ct = $('.ct', curtain); if (!ct) return;
-    ct.innerHTML = `<small>Астрея</small><b>${Array.from(t).map((c, i) => c === ' ' ? '<span class="ch" style="width:.28em"></span>' : `<span class="ch"><span style="--i:${i}">${c}</span></span>`).join('')}</b><span class="ct-line"></span>`;
+    const src = brand && brand.logo ? A.assetUrl(brand.logo) : '';
+    const title = src
+      ? `<span class="ct-brand"><img src="${src}" alt="" style="--lw:${Math.round(Math.sqrt(60000 * brand.logoW / brand.logoH) * (brand.logoScale || 1))}"></span>`
+      : `<b>${Array.from(t).map((c, i) => c === ' ' ? '<span class="ch" style="width:.28em"></span>' : `<span class="ch"><span style="--i:${i}">${c}</span></span>`).join('')}</b>`;
+    ct.innerHTML = MARK + title + '<span class="ct-line"></span>';
   }
+  const curtainLabelFor = url => setCurtainLabel(labelFor(url), brandFor(url));
   if (curtain && !$('.cs', curtain)) curtain.innerHTML = '<div class="cs">' + Array.from({length: 8}, (_, i) => `<i style="--i:${i}"></i>`).join('') + '</div><div class="ct" aria-hidden="true"></div>';
-  M.curtainLabel = setCurtainLabel; M.labelFor = labelFor;
+  (window.requestIdleCallback || (f => setTimeout(f, 1500)))(() => (A.D.brands || []).forEach(b => { const u = b.logo && A.assetUrl(b.logo); if (u) { const i = new Image(); i.decoding = 'async'; i.src = u; } }));
+  M.curtainLabel = setCurtainLabel; M.labelFor = labelFor; M.curtainLabelFor = curtainLabelFor;
 
   const canSwap = !window.__ASTREYA_BUNDLE && /^https?:$/.test(location.protocol) && 'fetch' in window && 'DOMParser' in window && 'pushState' in history;
   const abs = (el, url) => {                                // ссылки в подменяемом содержимом считаются от адреса НОВОЙ страницы
@@ -227,7 +238,7 @@
     if (busy) { pending = {url, push}; return; }
     busy = true;
     const u = new URL(url, location.href);
-    setCurtainLabel(labelFor(u.href));
+    curtainLabelFor(u.href);
     curtain.classList.remove('out'); curtain.classList.add('in');
     let doc = null;
     const got = fetchPage(u.href).then(d => { doc = d; }).catch(() => {});
@@ -261,7 +272,7 @@
     if (leaving) return; leaving = true;
     store.set('astreya:nav', JSON.stringify({t: Date.now()}));
     if (!curtain) { location.href = url; return; }
-    setCurtainLabel(labelFor(url));
+    curtainLabelFor(url);
     curtain.classList.remove('out'); curtain.classList.add('in');
     setTimeout(() => { location.href = url; }, 820);
     setTimeout(() => { leaving = false; store.del('astreya:nav'); }, 4500);

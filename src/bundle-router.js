@@ -5,6 +5,7 @@
   const A = window.Astreya, M = A.motion, $ = A.$;
   const PAGES = JSON.parse(document.getElementById('astreya-pages').textContent);
   const ASSETS = JSON.parse(document.getElementById('astreya-assets').textContent);
+  A.assets = ASSETS;
   const fixAssets = root => root.querySelectorAll('img[data-asset]').forEach(i => { const a = ASSETS[i.getAttribute('data-asset')]; if (a) i.src = a; i.removeAttribute('data-asset'); });
   fixAssets(document);
   let cur = 'index.html', vq = '', busy = false;
@@ -19,7 +20,7 @@
     if (path === cur && query === (vq ? '?' + vq : '')) { if (hash) scrollToHash(hash); else window.scrollTo({top: 0, behavior: 'smooth'}); return; }
     busy = true;
     const curtain = $('#curtain'), main = $('#main');
-    M.curtainLabel(M.labelFor(new URL(path, 'http://x/' + dirOf(cur)).href));
+    M.curtainLabelFor(new URL(path, 'http://x/' + dirOf(cur)).href);
     curtain.classList.remove('out'); curtain.classList.add('in');
     await A.wait(820);
     main.innerHTML = pg.main; fixAssets(main); cur = path; vq = (query || '').replace(/^\?/, '');

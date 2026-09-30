@@ -115,8 +115,8 @@ module.exports = function components(ctx) {
     : esc(b.name);
 
   /* небольшой логотип вместо цветного квадрата рядом с названием бренда (исходные цвета; название — текстом рядом, поэтому alt пустой) */
-  const slotLogo = (P, b, A) => b.logo
-    ? `<div class="slot-logo"><img src="${esc(u(P, b.logo))}" alt=""${b.logoW ? ` width="${b.logoW}" height="${b.logoH}" style="--lw:${logoPx(b, A)}"` : ''} loading="lazy" decoding="async"></div>`
+  const slotLogo = (P, b, A, alt = '') => b.logo
+    ? `<div class="slot-logo"><img src="${esc(u(P, b.logo))}" alt="${esc(alt)}"${b.logoW ? ` width="${b.logoW}" height="${b.logoH}" style="--lw:${logoPx(b, A)}"` : ''} loading="lazy" decoding="async"></div>`
     : '<i></i>';
 
   /* «Предыдущий/Следующий» бренд: логотип вместо названия (название — в alt) */
@@ -126,8 +126,11 @@ module.exports = function components(ctx) {
 
   const heroLogo = (P, b) => `<img class="b-logo" src="${esc(u(P, b.logo))}" alt="${esc(b.name)}"${b.logoW ? ` width="${b.logoW}" height="${b.logoH}" style="--lw:${logoPx(b, 105000)}"` : ''} decoding="async">`;
 
+  /* белый знак «Астрея» в правом верхнем углу цветной шапки карточки бренда (главная и страница «Бренды») */
+  const astreyaMark = '<span class="bc-mark" aria-hidden="true"><svg class="lgo" viewBox="46 338 836 436"><use href="#logo-art"/></svg></span>';
+
   const brandCardHome = (P, b, i) => `<article class="bcard reveal" data-act="brand-card" data-id="${b.id}" tabindex="0" aria-expanded="false" style="${bstyle(b)}">
-    <div class="band${b.logo ? ' has-logo' : ''}">${b.logo ? logoImg(P, b, 'bl-img', b.name) : `<span class="nm">${esc(b.name)}</span>`}<span class="bc-mark" aria-hidden="true"><svg class="lgo" viewBox="46 338 836 436"><use href="#logo-art"/></svg></span><span class="ix">${String(i + 1).padStart(2, '0')}</span></div>
+    <div class="band${b.logo ? ' has-logo' : ''}">${b.logo ? logoImg(P, b, 'bl-img', b.name) : `<span class="nm">${esc(b.name)}</span>`}${astreyaMark}<span class="ix">${String(i + 1).padStart(2, '0')}</span></div>
     <div class="low">
       <div class="bc-front">
         <p class="sp">${esc(b.tag)}</p>
@@ -149,7 +152,7 @@ module.exports = function components(ctx) {
     const n = ctx.products.filter(p => p.brand === b.id).length;
     const hay = norm([b.name, b.tag, b.desc, b.group, b.country, b.tasks.map(t => taskById[t].label).join(' ')].join(' '));
     return `<article class="card hov bl-card reveal" style="${bstyle(b)}" data-id="${b.id}" data-tasks="${b.tasks.join(' ')}" data-q="${esc(hay)}">
-    <div class="band${b.logo ? ' has-logo' : ''}">${b.logo ? logoImg(P, b, 'bl-img', b.name) : `${logoMark(P, b, 'on-band')}<b>${esc(b.name)}</b>`}</div>
+    <div class="band${b.logo ? ' has-logo' : ''}">${b.logo ? logoImg(P, b, 'bl-img', b.name) : `${logoMark(P, b, 'on-band')}<b>${esc(b.name)}</b>`}${astreyaMark}</div>
     <div class="bb"><div class="tasks-line">${tag(b.group)}${b.country && b.country !== b.group ? tag(b.country) : ''}</div><h3 class="sr">${esc(b.name)}</h3><p>${esc(b.tag)}</p>${tasksLine(b.tasks, '', 3)}
       <div class="bl-foot"><span class="muted small">${n} ${S.plural(n, 'позиция', 'позиции', 'позиций')} в каталоге</span><a class="lnk stretch" href="${burl(P, b)}" data-track="brand_card_click" data-brand="${b.id}">О бренде ${I.arrow}</a></div></div>
   </article>`;
