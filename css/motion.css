@@ -142,7 +142,16 @@ body::after{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;bac
 .mq-set a:hover{color:var(--blue)}
 /* логотипы в бегущей строке: размер по «площади» (см. logoPx), на телефонах мельче */
 .mq-set a.mq-l{display:flex;align-items:center;padding:0 clamp(22px,3.2vw,46px)}
-.mq-logo{display:block;width:calc(var(--lw,120)*var(--mq-k,1)*1px);height:auto;max-height:88px;object-fit:contain}
+.mq-set li{position:relative}
+.mq-set li:hover,.mq-set li:focus-within{z-index:2}
+/* логотипы перекрашены в синий сайта (#2f5bd6) CSS-фильтром: работает и с векторами, и с PNG, и при открытии с диска */
+.mq-logo{display:block;width:calc(var(--lw,120)*var(--mq-k,1)*1px);height:auto;max-height:88px;object-fit:contain;opacity:1;
+  filter:brightness(0) saturate(100%) invert(16%) sepia(68%) saturate(418%) hue-rotate(187deg) brightness(225%) contrast(163%) drop-shadow(0 0 0 rgba(47,91,214,0));
+  transition:opacity .35s var(--ease-out),filter .5s var(--ease-out),transform .55s var(--ease-out)}
+/* наведение: позиция выходит вперёд и подсвечивается, остальные приглушаются; строка при этом стоит */
+.mq-set a.mq-l:hover .mq-logo,.mq-set a.mq-l:focus-visible .mq-logo{opacity:1;transform:scale(1.1);
+  filter:brightness(0) saturate(100%) invert(16%) sepia(68%) saturate(418%) hue-rotate(187deg) brightness(225%) contrast(163%) drop-shadow(0 8px 16px rgba(47,91,214,.4))}
+.mq-track:hover .mq-set li:not(:hover):not(:focus-within) .mq-logo{opacity:.38}
 @media (max-width:700px){.marquee{--mq-k:.72}}
 .mq-set i{width:11px;height:11px;border-radius:50%;flex:none;background:radial-gradient(circle at 35% 30%,#fff,#e5e1d9 55%,#a9b4c6);box-shadow:0 5px 10px -5px rgba(11,26,51,.45)}
 @keyframes mq{to{transform:translateX(-50%)}}
