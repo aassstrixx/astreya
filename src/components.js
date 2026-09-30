@@ -176,7 +176,7 @@ module.exports = function components(ctx) {
     <div class="cta-band reveal pushin">
       <div class="cb-copy">
         <span class="eyebrow">Партнёрам</span>
-        <h2>Станьте партнёром Astreya</h2>
+        <h2>Станьте партнёром Астреи</h2>
         <p>Оригинальная продукция, обучение вашей команды и поддержка менеджеров. Оставьте заявку — мы свяжемся и обсудим условия сотрудничества.</p>
         <div class="row">${partnerBtn(P, place, 'btn btn-light')}<a class="btn btn-ghost-inv" href="tel:${phoneHref}" data-track="phone_click">${I.phone} ${esc(site.contacts.phone)}</a></div>
       </div>

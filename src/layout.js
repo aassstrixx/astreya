@@ -95,7 +95,7 @@ module.exports = function layout(ctx, C) {
       </div>
     </div>
     <div class="ftr-bottom">
-      <span>© ${esc(site.nameLatin)}, ${site.year}</span>
+      <span>© ${esc(site.name)}, ${site.year}</span>
       <span class="ftr-legal"><a href="${u(P, 'privacy.html')}">Политика конфиденциальности</a><a href="${u(P, 'terms.html')}">Пользовательское соглашение</a></span>
     </div>
     ${showNote ? `<p class="ftr-note">${esc(site.demoNotice)}</p>` : ''}
@@ -120,7 +120,7 @@ module.exports = function layout(ctx, C) {
     </div>
     <div class="ftr-rd-cols">${f.columns.map(col => `<div><h2 class="ftr-h">${esc(col.title)}</h2><ul>${col.links.map(([t, h]) => `<li><a href="${u(P, h)}">${esc(t)}</a></li>`).join('')}</ul></div>`).join('')}</div>
     <div class="ftr-bottom">
-      <span>© ${esc(site.nameLatin)}, ${site.year}</span>
+      <span>© ${esc(site.name)}, ${site.year}</span>
       <span class="ftr-legal"><a href="${u(P, 'privacy.html')}">Политика конфиденциальности</a><a href="${u(P, 'terms.html')}">Пользовательское соглашение</a></span>
     </div>
     ${showNote ? `<p class="ftr-note">${esc(site.demoNotice)}</p>` : ''}
