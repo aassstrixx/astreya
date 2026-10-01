@@ -3,7 +3,11 @@
    В конце камера ныряет в крем, экран заливается молочным (как фон главной) и сцена уезжает вверх, открывая героя.
    Подключается только на главной и только пока data/redesign.json → jar.enabled = true. */
 
-.jar-story{position:relative;height:600vh;margin-top:calc(var(--hdr) * -1);background:var(--navy)}
+.jar-story{position:relative;height:600vh;margin:calc(var(--hdr) * -1) 0 -40vh;background:var(--navy)}
+/* главная заезжает на последние 40vh сцены: когда экран уже молочный, заголовок и фон героя «всплывают» прямо из него, без пустого экрана */
+.jar-story ~ .hero{z-index:1}
+/* верх героя «тает» в молоко: фон, фото и знак обрезаются верхней кромкой героя — пока он въезжает на экран, кромка не должна быть видна */
+.jar-story ~ .hero::before{content:"";position:absolute;left:0;right:0;top:0;height:clamp(110px,18vh,190px);background:linear-gradient(var(--milk),rgba(245,242,236,0));z-index:1;pointer-events:none}
 .js-stage{position:sticky;top:0;height:100vh;height:100lvh;overflow:hidden;background:var(--navy);isolation:isolate}
 .js-cv{position:absolute;inset:0;width:100%;height:100%;display:block;opacity:0;transition:opacity .9s ease}
 .jar-story.ready .js-cv{opacity:1}
@@ -17,6 +21,9 @@
 .js-caps{position:absolute;inset:0;pointer-events:none}
 .js-cap{position:absolute;left:var(--gut);bottom:clamp(76px,15vh,170px);margin:0;display:flex;align-items:center;gap:clamp(12px,1.6vw,22px);color:var(--milk);
   opacity:var(--o,0);transform:translate3d(0,var(--y,22px),0);will-change:opacity,transform}
+.js-cap.dk{color:var(--navy)}
+.js-cap.dk b{text-shadow:0 2px 36px rgba(245,242,236,.45)}
+.js-cap.dk i{background:var(--navy)}
 .js-cap i{display:block;width:clamp(26px,5vw,70px);height:1px;background:var(--silver);transform:scaleX(var(--o,0));transform-origin:left center}
 .js-cap b{font:500 clamp(40px,7.6vw,118px)/1 var(--serif);letter-spacing:-.02em;text-shadow:0 2px 40px rgba(4,10,24,.55)}
 
@@ -37,6 +44,7 @@
 
 /* шапка поверх сцены: прозрачная, светлая; в конце сцены возвращается к обычной */
 body.jar-on:not(.menu-open) .hdr{background:transparent;border-bottom-color:transparent;--navy:var(--milk);--lm:var(--milk);--line:rgba(245,242,236,.32);--line-soft:rgba(245,242,236,.16);-webkit-backdrop-filter:none;backdrop-filter:none}
+body.jar-on:not(.menu-open) .hdr .logo{--lm:var(--milk)}
 .hdr{transition:transform .6s var(--ease-out),background-color .5s ease,border-color .5s ease}
 
 @media (max-width:640px){

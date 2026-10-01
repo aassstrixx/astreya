@@ -57,9 +57,10 @@
   }
 
   /* ---------- параллакс слоёв и уход hero-текста ---------- */
-  let parItems = [], fadeItems = [], parRaf = 0;
+  let parItems = [], fadeItems = [], parRaf = 0, heroBase = 0;
   function measurePar() {
     scrollNow = scrollY;
+    heroBase = A.heroBase ? A.heroBase() : 0;                 // с вступлением (баночка) hero начинается не с нуля прокрутки: уход текста считаем от его места
     parItems.forEach(p => { if (!p.host.isConnected) return; const r = p.host.getBoundingClientRect(); p.top = r.top + scrollNow; p.h = r.height; });
   }
   function collectMotion(root) {
@@ -77,7 +78,7 @@
       if (Math.abs(tgt - p.cur) > .05) moving = true;
       p.el.style.transform = `translate3d(0,${p.cur.toFixed(2)}px,0)`;
     });
-    const y = Math.min(1, scrollNow / (vh * .75));
+    const y = Math.max(0, Math.min(1, (scrollNow - heroBase) / (vh * .75)));
     fadeItems.forEach(el => {                         // в покое слой не создаём: текст hero остаётся чётким (без растеризации в отдельном слое)
       if (y < .002) { el.style.opacity = ''; el.style.transform = ''; return; }
       el.style.opacity = (1 - y * .9).toFixed(3); el.style.transform = `translate3d(0,${Math.round(-y * 40)}px,0)`;
@@ -100,7 +101,7 @@
   if (matchMedia('(hover:hover) and (pointer:fine)').matches) {
     document.addEventListener('pointermove', e => {
       if (e.pointerType !== 'mouse') return;
-      if (scrollY < innerHeight && $('.pearl-wrap')) { hp.tx = e.clientX / innerWidth * 2 - 1; hp.ty = e.clientY / innerHeight * 2 - 1; if (!hp.raf) hp.raf = requestAnimationFrame(hpTick); }
+      if (scrollY - heroBase < innerHeight && $('.pearl-wrap')) { hp.tx = e.clientX / innerWidth * 2 - 1; hp.ty = e.clientY / innerHeight * 2 - 1; if (!hp.raf) hp.raf = requestAnimationFrame(hpTick); }
     }, {passive: true});
     html.addEventListener('mouseleave', () => { hp.tx = hp.ty = 0; if (!hp.raf) hp.raf = requestAnimationFrame(hpTick); });
   }

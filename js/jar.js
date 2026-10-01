@@ -10,6 +10,7 @@
   const A = window.Astreya || {};
   const clamp = (x, a, b) => Math.max(a, Math.min(b, x));
   const ease = x => x * x * (3 - 2 * x);
+  const blend = x => ease(clamp((x - 0.22) / 0.56, 0, 1));    // чистый кадр держится дольше, смешивание — только на середине шага: этикетка при вращении не двоится
   const pad = i => String(i).padStart(3, '0');
   const portraitMQ = window.matchMedia('(max-aspect-ratio: 11/10)');
   let ctrl = null;
@@ -74,7 +75,7 @@
       ctx2d.drawImage(im, (W - dw) / 2, (H - dh) / 2, dw, dh);
     }
     function paint() {
-      const i0 = Math.floor(cur), a = cur - i0, im0 = nearest(clamp(i0, 0, N - 1));
+      const i0 = Math.floor(cur), a = blend(cur - i0), im0 = nearest(clamp(i0, 0, N - 1));
       if (!im0) return;
       ctx2d.imageSmoothingEnabled = true; ctx2d.imageSmoothingQuality = 'high';
       drawImg(im0, 1);
@@ -92,10 +93,10 @@
         c.el.style.setProperty('--y', ((1 - o) * 26 * (p < (c.a + c.b) / 2 ? 1 : -1)).toFixed(1) + 'px');
       });
       stage.style.setProperty('--cue', (1 - clamp(p / 0.035, 0, 1)).toFixed(3));
-      const sk = 1 - clamp((p - 0.9) / 0.06, 0, 1);
+      const sk = 1 - clamp((p - 0.84) / 0.05, 0, 1);
       stage.style.setProperty('--skip', sk.toFixed(3)); if (skip) skip.classList.toggle('gone', sk < 0.05);
-      stage.style.setProperty('--m', ease(clamp((p - 0.84) / 0.13, 0, 1)).toFixed(3));
-      document.body.classList.toggle('jar-on', inView && p < 0.9);
+      stage.style.setProperty('--m', ease(clamp((p - 0.74) / 0.16, 0, 1)).toFixed(3));
+      document.body.classList.toggle('jar-on', inView && p < 0.56);       // светлая шапка — только пока фон тёмный; на светлом креме возвращается обычная
     }
 
     /* ---- прокрутка → цель; цикл догоняет цель с затуханием ---- */
@@ -108,7 +109,7 @@
       if (dead) { running = false; return; }
       const m = measure(); target = m.p * (N - 1);
       const dt = last ? Math.min(0.1, (t - last) / 1000) : 0.016; last = t;
-      const k = 1 - Math.exp(-dt / 0.085);
+      const k = 1 - Math.exp(-dt / 0.07);
       cur += (target - cur) * k;
       if (Math.abs(target - cur) < 0.004) cur = target;
       if (m.inView || !firstDrawn) paint();
@@ -121,7 +122,9 @@
     addEventListener('resize', onResize);
     portraitMQ.addEventListener && portraitMQ.addEventListener('change', resize);
     if (skip) skip.addEventListener('click', () => {
-      const m = measure(); scrollTo({top: scrollY + m.top + m.total + 2, behavior: 'smooth'});
+      const hero = root.nextElementSibling, hh = (document.getElementById('hdr') || {}).offsetHeight || 0;
+      const to = hero ? hero.getBoundingClientRect().top + scrollY - hh : root.getBoundingClientRect().bottom + scrollY;
+      scrollTo({top: Math.round(to), behavior: 'smooth'});
     });
     resize();
     return {
@@ -140,6 +143,12 @@
     try { ctrl = create(root); } catch (e) { root.classList.add('jar-off'); ctrl = null; }
   }
   window.Astreya = A; A.jar = {init, get ctrl() { return ctrl; }};
+  /* где в документе «покой» героя (его верх под шапкой): от этой прокрутки считается уход текста героя (js/motion.js) */
+  A.heroBase = function () {
+    const r = document.getElementById('jar-story'), hero = r && r.nextElementSibling;
+    if (!r || !hero || !r.offsetHeight) return 0;
+    return Math.max(0, Math.round(hero.getBoundingClientRect().top + scrollY - ((document.getElementById('hdr') || {}).offsetHeight || 0)));
+  };
 
   /* подключаемся к инициализации страницы: при первой загрузке и после подмены содержимого (автономная сборка/переходы) */
   const prev = A.initPage;
