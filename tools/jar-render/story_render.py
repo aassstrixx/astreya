@@ -10,6 +10,8 @@
     python3 story_render.py info
     python3 story_render.py still <номер_кадра> out.png [--res 1280x720] [--samples 8] [--total 150]
     python3 story_render.py anim <с> <по> outdir [--res 1280x720] [--samples 8] [--total 150]     # готовые кадры пропускаются
+Для чёткости при скролле: --noblur (без motion blur — на стоп-кадрах он выглядит смазанным), --filter 1.0 (уже фильтр пикселя),
+--samples-late N --late-p 0.6 (меньше сэмплов на гладком креме).
 Кадры: outdir/f00000.png …; затем tools/jar-render/encode_web.py собирает WebP для assets/jar/.
 """
 import math
@@ -58,10 +60,21 @@ def story_keys(lean):
     return K
 
 
+OPT = {"blur": True, "filter": None, "late": None, "late_p": 0.6}      # --noblur: без motion blur (для скролла кадры должны быть резкими); --filter 1.0: уже фильтр пикселя
+
+
 def parse(argv):
     res, samples, total, rest, i = (1280, 720), 8, 150, [], 0
     while i < len(argv):
-        if argv[i] == "--res":
+        if argv[i] == "--noblur":
+            OPT["blur"] = False; i += 1
+        elif argv[i] == "--samples-late":
+            OPT["late"] = int(argv[i + 1]); i += 2
+        elif argv[i] == "--late-p":
+            OPT["late_p"] = float(argv[i + 1]); i += 2
+        elif argv[i] == "--filter":
+            OPT["filter"] = float(argv[i + 1]); i += 2
+        elif argv[i] == "--res":
             res = tuple(int(x) for x in argv[i + 1].lower().split("x")); i += 2
         elif argv[i] == "--samples":
             samples = int(argv[i + 1]); i += 2
@@ -100,6 +113,9 @@ def apply_story(frame, total, lean):
 def bake(frame, total, lean):
     """как L.bake_motion, но по времени сюжета: ключи ±0.4 кадра исходного ролика для motion blur"""
     sc = bpy.context.scene
+    if not OPT["blur"]:
+        apply_story(frame, total, lean)
+        return
     bpy.context.preferences.edit.keyframe_new_interpolation_type = "LINEAR"
     objs = [L.S["cam"], L.S["focus"], L.S["rig"], L.S["glass"], L.S["lid"]]
     for o in objs:
@@ -134,6 +150,10 @@ def main():
     L.HERE = HERE
     L.camera_keys = lambda lean: story_keys(lean)
     sc = L.build_scene(res, samples)
+    if not OPT["blur"]:
+        sc.render.use_motion_blur = False
+    if OPT["filter"]:
+        sc.cycles.filter_width = OPT["filter"]
     recolor()
     lean = L.solve_lean_pose()
     cmd = args[0]
@@ -154,6 +174,8 @@ def main():
             if os.path.exists(path):
                 continue
             t0 = time.time()
+            if OPT["late"]:                                          # поздние кадры (нырок в гладкий крем) — меньше сэмплов: шум там незаметен
+                sc.cycles.samples = OPT["late"] if f / max(1, total - 1) >= OPT["late_p"] else samples
             bake(f, total, lean)
             sc.render.filepath = path
             bpy.ops.render.render(write_still=True)

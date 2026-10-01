@@ -19,12 +19,10 @@
 
 /* слова девиза: проявляются и уходят по ходу прокрутки (--o и --y выставляет JS) */
 .js-caps{position:absolute;inset:0;pointer-events:none}
-.js-cap{position:absolute;left:var(--gut);bottom:clamp(76px,15vh,170px);margin:0;display:flex;align-items:center;gap:clamp(12px,1.6vw,22px);color:var(--milk);
+.js-cap{position:absolute;left:var(--gut);bottom:clamp(76px,15vh,170px);margin:0;display:block;color:var(--milk);
   opacity:var(--o,0);transform:translate3d(0,var(--y,22px),0);will-change:opacity,transform}
 .js-cap.dk{color:var(--navy)}
 .js-cap.dk b{text-shadow:0 2px 36px rgba(245,242,236,.45)}
-.js-cap.dk i{background:var(--navy)}
-.js-cap i{display:block;width:clamp(26px,5vw,70px);height:1px;background:var(--silver);transform:scaleX(var(--o,0));transform-origin:left center}
 .js-cap b{font:500 clamp(40px,7.6vw,118px)/1 var(--serif);letter-spacing:-.02em;text-shadow:0 2px 40px rgba(4,10,24,.55)}
 
 /* подсказка «Листайте» и кнопка «Пропустить» */

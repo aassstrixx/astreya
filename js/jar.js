@@ -10,7 +10,7 @@
   const A = window.Astreya || {};
   const clamp = (x, a, b) => Math.max(a, Math.min(b, x));
   const ease = x => x * x * (3 - 2 * x);
-  const blend = x => ease(clamp((x - 0.22) / 0.56, 0, 1));    // чистый кадр держится дольше, смешивание — только на середине шага: этикетка при вращении не двоится
+  const blend = x => ease(clamp((x - 0.3) / 0.4, 0, 1));      // чистый кадр держится дольше, смешивание — только на середине шага: резкая этикетка при вращении не двоится
   const pad = i => String(i).padStart(3, '0');
   const portraitMQ = window.matchMedia('(max-aspect-ratio: 11/10)');
   let ctrl = null;
