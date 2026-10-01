@@ -141,5 +141,22 @@ module.exports = function homeRedesign(ctx, C, P, parts, {events, val}) {
   </div></div></section>`;
 
   /* порядок: воздух → цифры → причины → решения → бренды → подборщик → продукты → эксперт-блок → обучение → аудитория → новости → логотипы → призыв */
-  return [hero, parts.marquee, about, stats, why, solutions, parts.brands.replace('class="sec tint"', 'class="rd-sec"'), picker, featured, editorial, training, forWhom, news, wall, finalCta].join('\n\n  ');
+  /* вступление со скролл-анимацией баночки (data/redesign.json → jar). Кадры — assets/jar/*; логика — js/jar.js, стили — css/jar.css.
+     Выключается флагом jar.enabled: тогда главная открывается сразу героем, как раньше. */
+  const jar = (() => {
+    const j = rd.jar; if (!j || !j.enabled) return '';
+    const words = String(ctx.site.tagline || '').split('.').map(x => x.trim()).filter(Boolean);
+    const caps = j.captions.map((c, i) => words[i] ? `<p class="js-cap" data-from="${c.from}" data-to="${c.to}"><i></i><b>${esc(words[i])}</b></p>` : '').join('');
+    return `<section class="jar-story" id="jar-story" data-n="${j.frames}" data-ext="${j.ext}" data-v="${esc(ctx.assetVersion || '')}" data-d="${j.desktop}" data-m="${j.mobile}" data-dl="${j.lite.desktop}" data-ml="${j.lite.mobile}" data-h="${j.heightVh.desktop}" data-hm="${j.heightVh.mobile}" aria-label="Вступление: ${esc(j.alt)}">
+    <div class="js-stage">
+      <canvas class="js-cv" role="img" aria-label="${esc(j.alt)}"></canvas>
+      <div class="js-vig" aria-hidden="true"></div>
+      <div class="js-caps" aria-hidden="true">${caps}</div>
+      <div class="js-cue" aria-hidden="true"><span>${esc(j.cue)}</span><i></i></div>
+      <button class="js-skip" type="button" aria-label="${esc(j.skip)} анимацию — перейти к главной"><span>${esc(j.skip)}</span>${I.arrow}</button>
+      <div class="js-milk" aria-hidden="true"></div>
+    </div>
+  </section>`;
+  })();
+  return [jar, hero, parts.marquee, about, stats, why, solutions, parts.brands.replace('class="sec tint"', 'class="rd-sec"'), picker, featured, editorial, training, forWhom, news, wall, finalCta].join('\n\n  ');
 };

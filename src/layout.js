@@ -19,6 +19,10 @@ module.exports = function layout(ctx, C) {
   const showNote = !!site.demoNotice && !(ctx.redesign && ctx.redesign.ui && ctx.redesign.ui.showDemoNotices === false);   // пометка «демо-данные» в подвале (в режиме доработок скрывается флагом redesign.ui)
   const rd = !!site.redesign, cssList = rd ? [...CSS, 'redesign'] : CSS, jsList = rd ? [...JS, 'redesign'] : JS;   // слой доработок включается одним флагом site.redesign
   const ver = ctx.assetVersion ? '?v=' + ctx.assetVersion : '';
+  const jarCfg = rd && ctx.redesign && ctx.redesign.jar && ctx.redesign.jar.enabled ? ctx.redesign.jar : null;     // вступление с баночкой: css/jar.css + js/jar.js — только на главной и только пока jar.enabled
+  const pageCss = P => jarCfg && P.key === 'home' ? [...cssList, 'jar'] : cssList, pageJs = P => jarCfg && P.key === 'home' ? [...jsList, 'jar'] : jsList;
+  /* первый кадр вступления грузим сразу (до скриптов): иначе после заставки баночка появится с задержкой */
+  const jarPreload = P => jarCfg && P.key === 'home' ? ['(min-aspect-ratio: 11/10)', '(max-aspect-ratio: 11/10)'].map((m, i) => `<link rel="preload" as="image" href="${u(P, (i ? jarCfg.mobile : jarCfg.desktop) + '000.' + jarCfg.ext)}${ver}" media="${m}">`).join('\n') : '';
   const base = site.url.replace(/\/?$/, '/');
   const absUrl = p => p === 'index.html' ? base : base + p;
   const nav = [['Каталог', 'catalog.html', '/catalog'], ['Бренды', 'brands.html', '/brands'], ['Обучение', 'training.html', '/training'], ['Новости', 'news.html', '/news'], ['Компания', 'company.html', '/company']];
@@ -196,7 +200,8 @@ ${P.key === 'home' ? `<script>${LEGACY}</script>\n` : ''}
      Шрифты подключаются асинхронно: страница стартует сразу, даже если Google Fonts медленный (у всех гарнитур есть запасные — см. --serif / --sans). -->
 <script>(function(){var l=document.createElement('link');l.rel='stylesheet';l.href='${FONTS}';document.head.appendChild(l);})();</script>
 <noscript><link href="${FONTS}" rel="stylesheet"></noscript>
-${cssList.map(n => `<link rel="stylesheet" href="${u(P, `css/${n}.css`)}${ver}">`).join('\n')}
+${pageCss(P).map(n => `<link rel="stylesheet" href="${u(P, `css/${n}.css`)}${ver}">`).join('\n')}
+${jarPreload(P)}
 ${ld.map(o => `<script type="application/ld+json">${JSON.stringify(o)}</script>`).join('\n')}
 </head>
 <body${rd ? ' class="rd"' : ''} data-page="${P.key}" data-nav="${P.nav || ''}" data-root="${P.root}">
@@ -218,7 +223,7 @@ ${searchPanel(P)}
 <div id="modal" aria-hidden="true"></div>
 <div id="toast" role="status" aria-live="polite"></div>
 
-${jsList.map(n => `<script src="${u(P, `js/${n}.js`)}${ver}" defer></script>`).join('\n')}
+${pageJs(P).map(n => `<script src="${u(P, `js/${n}.js`)}${ver}" defer></script>`).join('\n')}
 </body>
 </html>
 `;

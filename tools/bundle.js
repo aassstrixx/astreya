@@ -18,14 +18,20 @@ module.exports = function bundle({pages, ctx, layout, root, out}) {
     return `data-asset="${f}"`;
   });
   chrome = inline(chrome);
+  /* вступление с баночкой: в одном файле кадры берутся из data:-адресов — кладём облегчённые наборы (assets/jar/*-lite) в тот же JSON */
+  const jar = rd && ctx.redesign && ctx.redesign.jar && ctx.redesign.jar.enabled ? ctx.redesign.jar : null;
+  if (jar) for (const dir of [jar.lite.desktop, jar.lite.mobile]) {
+    const abs = path.join(root, dir);
+    if (fs.existsSync(abs)) fs.readdirSync(abs).filter(f => /\.webp$/.test(f)).sort().forEach(f => { assets[dir + f] = 'data:image/webp;base64,' + fs.readFileSync(path.join(abs, f)).toString('base64'); });
+  }
   const dataPages = {};
   for (const p of pages) {
     const m = p.html.match(/<main id="main"[^>]*>\n([\s\S]*?)\n<\/main>/);
     const t = p.html.match(/<title>([^<]*)<\/title>/)[1];
     dataPages[p.path] = {key: p.P.key, nav: p.P.nav || '', title: t.replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&#39;/g, "'"), main: inline(m[1])};
   }
-  const css = ['base', 'components', 'pages', 'responsive', 'motion', ...(rd ? ['redesign'] : [])].map(n => read(`css/${n}.css`)).join('\n');
-  const js = 'window.__ASTREYA_BUNDLE = true;\n' + (rd ? "document.body.classList.add('rd');   /* тег <body> в автономной сборке не сохраняется, а правила слоя доработок привязаны к body.rd */\n" : '') + ['shared', 'data', 'core', 'motion', 'pages', 'hero-mark', ...(rd ? ['redesign'] : [])].map(n => read(`js/${n}.js`)).join('\n;\n') + '\n;\n' + read('src/bundle-router.js');
+  const css = ['base', 'components', 'pages', 'responsive', 'motion', ...(rd ? ['redesign'] : []), ...(rd && ctx.redesign.jar && ctx.redesign.jar.enabled ? ['jar'] : [])].map(n => read(`css/${n}.css`)).join('\n');
+  const js = 'window.__ASTREYA_BUNDLE = true;\n' + (rd ? "document.body.classList.add('rd');   /* тег <body> в автономной сборке не сохраняется, а правила слоя доработок привязаны к body.rd */\n" : '') + ['shared', 'data', 'core', 'motion', 'pages', 'hero-mark', ...(rd ? ['redesign'] : []), ...(rd && ctx.redesign.jar && ctx.redesign.jar.enabled ? ['jar'] : [])].map(n => read(`js/${n}.js`)).join('\n;\n') + '\n;\n' + read('src/bundle-router.js');
   const fonts = home.match(/<script>\(function\(\)\{var l=document\.createElement\('link'\);[\s\S]*?<\/script>/)[0];
   const early = home.match(/<script>\(function\(d\)\{var h=d\.documentElement;[\s\S]*?<\/script>/)[0];
   const json = JSON.stringify(dataPages).replace(/</g, '\\u003c').replace(/\u2028/g, '\\u2028').replace(/\u2029/g, '\\u2029');

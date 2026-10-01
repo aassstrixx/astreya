@@ -27,7 +27,8 @@ ctx.assetVersion = (() => {
   const h = require('crypto').createHash('md5');
   const list = d => fs.readdirSync(path.join(__dirname, '..', d)).filter(f => /\.(css|js|json)$/.test(f) && f !== 'data.js').sort().map(f => path.join(__dirname, '..', d, f));
   [...list('css'), ...list('js'), ...list('data')].forEach(f => h.update(fs.readFileSync(f)));
-  ['brands', 'photos', 'teachers'].filter(d => fs.existsSync(path.join(__dirname, '..', 'assets', d))).forEach(d => fs.readdirSync(path.join(__dirname, '..', 'assets', d)).sort().forEach(f => h.update(fs.readFileSync(path.join(__dirname, '..', 'assets', d, f)))));
+  const walk = d => fs.readdirSync(d, {withFileTypes: true}).sort((a, b) => a.name < b.name ? -1 : 1).forEach(e => e.isDirectory() ? walk(path.join(d, e.name)) : h.update(fs.readFileSync(path.join(d, e.name))));
+  ['brands', 'photos', 'teachers', 'jar'].filter(d => fs.existsSync(path.join(__dirname, '..', 'assets', d))).forEach(d => walk(path.join(__dirname, '..', 'assets', d)));
   return h.digest('hex').slice(0, 8);
 })();
 const C = components(ctx), L = layoutFactory(ctx, C);
