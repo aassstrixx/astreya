@@ -196,3 +196,17 @@ body::after{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;bac
 .cta-band::after{content:"";position:absolute;inset:0;pointer-events:none;background:var(--grain-lt);opacity:.07;z-index:0}
 .cta-band>*{position:relative;z-index:1}
 .js .reveal.in.pcard,.js .reveal.in.newscard{transition-delay:var(--rd,0ms)}
+
+/* --- переход на телефоне (≤640 px): одна цельная шторка с мягкой дугой вместо 8 полос.
+   У полос на узком экране со сдвигом по времени край рисовал «лесенку» и крупный зубец; здесь край ровный и плавный. ПК — без изменений --- */
+@media (max-width:640px){
+  #curtain .cs{display:block;background:var(--navy);transform:translateY(calc(100% + 58px));will-change:transform}
+  #curtain .cs i{display:none}
+  #curtain .cs::before,#curtain .cs::after{content:"";position:absolute;left:0;right:0;height:56px;background:var(--navy)}
+  #curtain .cs::before{bottom:100%;border-radius:50% 50% 0 0 / 100% 100% 0 0}   /* передний край при закрытии — дуга */
+  #curtain .cs::after{top:100%;border-radius:0 0 50% 50% / 0 0 100% 100%}       /* задний край при открытии — дуга */
+  #curtain.in .cs{transform:none;transition:transform .78s var(--ease-io)}
+  #curtain.out .cs{transform:translateY(calc(-100% - 58px));transition:transform .68s var(--ease-io)}
+  #curtain.instant .cs{transition:none}
+  .nav-in #curtain .cs{transform:none;transition:none}
+}
