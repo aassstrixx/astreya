@@ -3,7 +3,7 @@
    внутри секции (0…1) выбирает кадр заранее отрендеренной последовательности (WebP) — вниз кадры идут вперёд, вверх — назад,
    как обратная перемотка. Кадр между двумя соседними плавно подмешивается, движение сглаживается (затухающая «пружина»).
    Кадры: assets/jar/d (горизонтальный экран) и assets/jar/m (вертикальный); в автономной сборке — облегчённые *-lite из data:-адресов.
-   Для людей с «уменьшить движение» и без JS вступление не показывается вовсе. Подписи, шапка и кнопка «Пропустить» — тоже от прокрутки.
+   Вступление показывается при любых настройках устройства («уменьшить движение», экономия трафика) — по решению заказчика; без JS его нет. Подписи, шапка и кнопка «Пропустить» — тоже от прокрутки.
    Файл загружается только на главной и только пока jar.enabled = true (data/redesign.json). */
 (function () {
   'use strict';
@@ -16,8 +16,6 @@
   let ctrl = null;
 
   function create(root) {
-    const cn = navigator.connection;      // экономия трафика / очень медленная сеть: вступление не показываем, сайт открывается героем
-    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches || (cn && (cn.saveData || /(^|-)2g$/.test(cn.effectiveType || '')))) { root.classList.add('jar-off'); return {root, destroy() {}}; }
     const stage = root.querySelector('.js-stage'), cv = root.querySelector('.js-cv'), skip = root.querySelector('.js-skip');
     const caps = Array.prototype.slice.call(root.querySelectorAll('.js-cap')).map(el => ({el, a: +el.dataset.from, b: +el.dataset.to}));
     const N = +root.dataset.n || 1, ext = root.dataset.ext || 'webp', ver = root.dataset.v ? '?v=' + root.dataset.v : '', bundle = !!window.__ASTREYA_BUNDLE;

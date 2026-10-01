@@ -53,7 +53,6 @@ body.jar-on:not(.menu-open) .hdr .logo{--lm:var(--milk)}
   .js-cap b{font-size:clamp(38px,12.5vw,64px)}
   .js-skip{padding:10px 14px}
 }
-/* нет JS или «уменьшить движение»: вступления нет, сайт открывается героем, как обычно */
+/* нет JS (листать кадры нечем) или canvas недоступен: вступления нет, сайт открывается героем. «Уменьшить движение» и экономия трафика вступление НЕ отключают */
 html:not(.js) .jar-story,.jar-story.jar-off{display:none;margin:0}
-@media (prefers-reduced-motion:reduce){.jar-story{display:none;margin:0}}
 @media print{.jar-story{display:none;margin:0}}
