@@ -277,6 +277,6 @@
     -webkit-mask-image:radial-gradient(ellipse 60% 62% at 50% 38%,#000 28%,transparent 76%);mask-image:radial-gradient(ellipse 60% 62% at 50% 38%,#000 28%,transparent 76%)}
   .rd .hero-bgphoto img{object-position:50% 40%;opacity:.25}
   .rd .hero-mark{left:-20px;right:-20px;top:-320px;height:calc(100% + 320px);opacity:.7;
-    -webkit-mask-image:linear-gradient(to bottom,transparent 115px,#000 270px);mask-image:linear-gradient(to bottom,transparent 115px,#000 270px)}
-  .rd .hm{width:125vw;height:calc(125vw * 379 / 396);left:calc(50% - 52.5vw);top:170px}
+    -webkit-mask-image:linear-gradient(to bottom,transparent 110px,#000 205px);mask-image:linear-gradient(to bottom,transparent 110px,#000 205px)}
+  .rd .hm{width:125vw;height:calc(125vw * 379 / 396);left:calc(50% - 52.5vw);top:260px}
 }
