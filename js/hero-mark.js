@@ -138,7 +138,7 @@ function heroMarkStart(wrap, opt){
       }
       bead.style.transform = 'translate3d(' + (bx0 + (bp[0] - 49) * sx).toFixed(1) + 'px,' + (by0 + (bp[1] - 341) * sy).toFixed(1) + 'px,0) scale(' + (Rr / 32).toFixed(3) + ')';
       let bop = bo;
-      if (clean && vb) {                                  // на телефоне блик гаснет, не доходя до края экрана (дуга и ножки знака уходят за кадр), и не обрезается им
+      if (clean && vb && s >= sR0) {                      // на телефоне блик на НОЖКАХ знака гаснет, не доходя до края экрана, и не обрезается им; на дуге (первая палка) — прежнее поведение
         const ex = bx0 + (bp[0] - 49) * sx, ey = by0 + (bp[1] - 341) * sy, rr = Math.max(Rr, 6), d = Math.min(ex - vb[0], vb[2] - ex, ey - vb[1], vb[3] - ey);
         bop = bo * Math.min(1, Math.max(0, (d - rr) / (.5 * rr)));
       }
