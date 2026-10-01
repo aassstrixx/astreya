@@ -49,7 +49,7 @@ function heroMarkStart(wrap, opt){
   /* Телефоны и планшеты: рисуем в небольшом canvas (только видимая часть героя, плотность ≤ 2×) — маска SVG на таком размере и на 3× слишком тяжела */
   let lite = opt.lite !== undefined ? opt.lite : matchMedia('(max-width:900px),(pointer:coarse)').matches;
   let cv = null, cx = null, off = null, tf = null, W = 0, H = 0, dc = 1, TRp = null, RTp = null, LFp = null, WGp = null, done = false, bead = null, bx0 = 0, by0 = 0;
-  let clean = false, ARCp = null, RTt = null, LFt = null;      // телефон (≤640 px): три отдельные «палки» — дуга и две ноги знака, у каждой чистый фронт без зубцов
+  let clean = false, ARCp = null, RTt = null, LFt = null, vb = null;      // телефон (≤640 px): три отдельные «палки» — дуга и две ноги знака, у каждой чистый фронт без зубцов
   const prev = {a: -1e9, r: -1e9, l: -1e9};
   if (lite) {
     try {
@@ -74,6 +74,7 @@ function heroMarkStart(wrap, opt){
       bead = document.createElement('i');            // светящаяся точка — маленький слой, двигается только через transform
       bead.style.cssText = 'position:absolute;left:0;top:0;width:64px;height:64px;margin:-32px 0 0 -32px;border-radius:50%;pointer-events:none;opacity:0;background:radial-gradient(circle closest-side,#fff 0,rgba(228,236,255,.95) 26%,rgba(125,156,240,.42) 55%,rgba(47,91,214,0) 100%)';
       bx0 = r.left - sb.left; by0 = r.top - sb.top;
+      vb = [hr.left - sb.left, hr.top - sb.top, hr.right - sb.left, hr.bottom - sb.top];     // видимая область (hero) в координатах слоя: блик не должен выезжать за кадр
       sw.insertBefore(cv, svg); sw.appendChild(bead); svg.style.visibility = 'hidden';
     } catch (e) { lite = false; if (cv) cv.remove(); if (bead) bead.remove(); cv = off = bead = null; }
   }
@@ -129,7 +130,12 @@ function heroMarkStart(wrap, opt){
         cx.setTransform(1, 0, 0, 1, 0, 0); cx.clip(); cx.globalCompositeOperation = 'copy'; cx.drawImage(off, 0, 0); cx.restore();
       }
       bead.style.transform = 'translate3d(' + (bx0 + (bp[0] - 49) * sx).toFixed(1) + 'px,' + (by0 + (bp[1] - 341) * sy).toFixed(1) + 'px,0) scale(' + (Rr / 32).toFixed(3) + ')';
-      bead.style.opacity = bo;
+      let bop = bo;
+      if (clean && vb) {                                  // на телефоне блик гаснет, не доходя до края экрана (дуга и ножки знака уходят за кадр), и не обрезается им
+        const ex = bx0 + (bp[0] - 49) * sx, ey = by0 + (bp[1] - 341) * sy, rr = Math.max(Rr, 6), d = Math.min(ex - vb[0], vb[2] - ex, ey - vb[1], vb[3] - ey);
+        bop = bo * Math.min(1, Math.max(0, (d - rr) / (.5 * rr)));
+      }
+      bead.style.opacity = bop;
     } else {
       put(ga, fx - F, 0, fx, 0);
       const qx = O[0] + u[0] * cr, qy = O[1] + u[1] * cr; put(gr, qx - u[0] * F, qy - u[1] * F, qx, qy);
