@@ -49,7 +49,7 @@ function heroMarkStart(wrap, opt){
   /* Телефоны и планшеты: рисуем в небольшом canvas (только видимая часть героя, плотность ≤ 2×) — маска SVG на таком размере и на 3× слишком тяжела */
   let lite = opt.lite !== undefined ? opt.lite : matchMedia('(max-width:900px),(pointer:coarse)').matches;
   let cv = null, cx = null, off = null, tf = null, W = 0, H = 0, dc = 1, TRp = null, RTp = null, LFp = null, WGp = null, done = false, bead = null, bx0 = 0, by0 = 0;
-  let clean = false, ARCp = null, RTt = null, LFt = null, vb = null;      // телефон (≤640 px): три отдельные «палки» — дуга и две ноги знака, у каждой чистый фронт без зубцов
+  let clean = false, ARCp = null, RTt = null, LFt = null, LFl = null, vb = null;      // телефон (≤640 px): три отдельные «палки» — дуга и две ноги знака, у каждой чистый фронт без зубцов
   const prev = {a: -1e9, r: -1e9, l: -1e9};
   if (lite) {
     try {
@@ -70,7 +70,7 @@ function heroMarkStart(wrap, opt){
       oc.fillStyle = g; oc.fill(new Path2D(D));
       TRp = hmPos(HM.TR); RTp = hmPos(HM.RT); LFp = hmPos(HM.LF); WGp = hmPos(HM.WG);
       if (clean) { ARCp = new Path2D(D.slice(D.indexOf('Z') + 1)); /* знак режется по прямой «правая нога — внутренняя вершина — левый внешний край»: правая палка с вершиной — цельный треугольник без угла сбоку, левая — узкий клин (с запасом 1,5 ед. внахлёст, чтобы не было шва) */
-        RTt = hmPos([[184.6, 326.1], [443.1, 653.7], [154.6, 413.6]]); LFt = hmPos([[155.6, 412.4], [211.6, 459.0], [49.8, 718.9]]); }
+        RTt = hmPos([[184.6, 326.1], [443.1, 653.7], [154.6, 413.6]]); LFt = hmPos([[155.6, 412.4], [211.6, 459.0], [49.8, 718.9]]); LFl = hmPos([[184.6, 326.1], [210.6, 460.2], [49.8, 718.9]]); }
       bead = document.createElement('i');            // светящаяся точка — маленький слой, двигается только через transform
       bead.style.cssText = 'position:absolute;left:0;top:0;width:64px;height:64px;margin:-32px 0 0 -32px;border-radius:50%;pointer-events:none;opacity:0;background:radial-gradient(circle closest-side,#fff 0,rgba(228,236,255,.95) 26%,rgba(125,156,240,.42) 55%,rgba(47,91,214,0) 100%)';
       bx0 = r.left - sb.left; by0 = r.top - sb.top;
@@ -103,12 +103,19 @@ function heroMarkStart(wrap, opt){
         const RLn = 417.3, LLn = 415.3, LQ = 92.5;                                   // длины осей ног; LQ — где левый клин выходит из правой «палки»
         const pR = Math.min(1, Math.max(0, (s - sR0) / (sT - sR0))), pL = Math.min(1, Math.max(0, (s - sT) / (S - sT)));
         const cR = s < sR0 ? -1e9 : s >= sT ? 1e5 : pR * RLn, cL = s < sT ? -1e9 : s >= S + F ? 1e5 : pL * LLn;
-        if (s >= sR0) {                                                              // блик — на середине сечения в точке фронта
+        if (s >= sR0) {                                                              // блик едет по оси палки (плавно, без петель), его фронт — тот же прогресс
+          const sm3 = (f, c, lo, hi) => { const x = f(Math.max(lo, c - 10)), y = f(c), z = f(Math.min(hi, c + 10)); return [(x[0] + 2 * y[0] + z[0]) / 4, (x[1] + 2 * y[1] + z[1]) / 4]; };
           let q = null, wq = 0;
-          if (s < sT) { q = hmCut(RTt, gx, Math.min(RLn - .01, Math.max(.01, pR * RLn))); }
-          else if (pL * LLn < LQ) { const k2 = pL * LLn / LQ; q = [184.6 + (183.6 - 184.6) * k2, 326.1 + (435.7 - 326.1) * k2]; wq = 24 * k2; }
-          else q = hmCut(LFt, gy, Math.min(LLn - .01, pL * LLn));
-          if (q) { bp = [q[0], q[1], Math.min(58, q.length > 2 ? q[2] : wq)]; Rr = Math.max(1.5, .4 * bp[2]) * sk; }
+          if (s < sT) {                                                              // правая нога: середина сечения (поворот у уровня Q скруглён)
+            const fn = k => hmCut(RTt, gx, Math.min(RLn - .01, Math.max(.01, k))), c = Math.min(RLn - .01, Math.max(.01, pR * RLn)), m = fn(c);
+            if (m) { q = sm3(fn, c, .01, RLn - .01); wq = m[2]; }
+          } else {                                                                   // левая нога: вершина → точка A → по оси к острию, прямой линией
+            const fA = (A[0] - 184.6) * HMc.lx + (A[1] - 326.1) * HMc.ly, c = Math.max(.01, pL * LLn);
+            const fn = k => k <= fA ? [184.6 + (A[0] - 184.6) * (k / fA), 326.1 + (A[1] - 326.1) * (k / fA)] : [A[0] + v[0] * (k - fA) / (v[0] * HMc.lx + v[1] * HMc.ly), A[1] + v[1] * (k - fA) / (v[0] * HMc.lx + v[1] * HMc.ly)];
+            const m = hmCut(LFl, gy, Math.min(LLn - .01, c));
+            q = sm3(fn, c, 0, LLn); wq = m ? m[2] : 0;
+          }
+          if (q) { bp = [q[0], q[1], Math.min(58, wq)]; Rr = Math.max(1.5, .4 * bp[2]) * sk; }
         }
         if (fx > prev.a) {
           const x0 = prev.a > -1e8 ? prev.a - 2 : -200;
