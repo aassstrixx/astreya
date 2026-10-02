@@ -158,5 +158,23 @@ module.exports = function homeRedesign(ctx, C, P, parts, {events, val}) {
     </div>
   </section>`;
   })();
-  return [jar, hero, parts.marquee, about, stats, why, solutions, parts.brands.replace('class="sec tint"', 'class="rd-sec"'), picker, featured, editorial, training, forWhom, news, wall, finalCta].join('\n\n  ');
+  /* экран с лозунгом после баночки (jar.outro): слова проявляются по скроллу (js/jar.js), оформление — css/jar.css */
+  const outro = (() => {
+    const j = rd.jar, o = j && j.enabled && j.outro; if (!o || !o.enabled) return '';
+    let n = 0;
+    const lines = o.lines.map((t, li) => `<span class="jo-l${li === o.accent ? ' ac' : ''}">${String(t).split(/\s+/).filter(Boolean).map(w => `<span class="jo-w" data-i="${n++}">${esc(w)}</span>`).join(' ')}</span>`).join('');
+    const sub = o.sub || String(ctx.site.tagline || '');
+    return `<section class="jar-outro" id="jar-outro" style="--jo:${o.heightVh.desktop}vh;--jom:${o.heightVh.mobile}vh" data-n="${n}">
+    <div class="jo-stage">
+      <div class="jo-bg" aria-hidden="true"><i class="jo-glow g1"></i><i class="jo-glow g2"></i></div>
+      <div class="jo-in">
+        <p class="jo-eye">${esc(o.eyebrow)}</p>
+        <p class="jo-title">${lines}</p>
+        <div class="jo-rule" aria-hidden="true"><i></i><b></b></div>
+        <p class="jo-sub">${esc(sub)}</p>
+      </div>
+    </div>
+  </section>`;
+  })();
+  return [jar, outro, hero, parts.marquee, about, stats, why, solutions, parts.brands.replace('class="sec tint"', 'class="rd-sec"'), picker, featured, editorial, training, forWhom, news, wall, finalCta].join('\n\n  ');
 };

@@ -3,11 +3,7 @@
    В конце камера ныряет в крем, экран заливается молочным (как фон главной) и сцена уезжает вверх, открывая героя.
    Подключается только на главной и только пока data/redesign.json → jar.enabled = true. */
 
-.jar-story{position:relative;height:var(--jh,600vh);margin:calc(var(--hdr) * -1) 0 -40vh;background:var(--navy)}
-/* главная заезжает на последние 40vh сцены: когда экран уже молочный, заголовок и фон героя «всплывают» прямо из него, без пустого экрана */
-.jar-story ~ .hero{z-index:1}
-/* верх героя «тает» в молоко: фон, фото и знак обрезаются верхней кромкой героя — пока он въезжает на экран, кромка не должна быть видна */
-.jar-story ~ .hero::before{content:"";position:absolute;left:0;right:0;top:0;height:clamp(110px,18vh,190px);background:linear-gradient(var(--milk),rgba(245,242,236,0));z-index:1;pointer-events:none}
+.jar-story{position:relative;height:var(--jh,600vh);margin:calc(var(--hdr) * -1) 0 0;background:var(--navy)}
 .js-stage{position:sticky;top:0;height:100vh;height:100lvh;overflow:hidden;background:var(--navy);isolation:isolate}
 .js-cv{position:absolute;inset:0;width:100%;height:100%;display:block;opacity:0;transition:opacity .9s ease}
 .jar-story.ready .js-cv{opacity:1}
@@ -51,6 +47,35 @@ body.jar-on:not(.menu-open) .hdr .logo{--lm:var(--milk)}
   .js-cap b{font-size:clamp(38px,12.5vw,64px)}
   .js-skip{padding:10px 14px}
 }
+/* ---------- экран с лозунгом (после баночки, до главной): молочный фон, слова проявляются по скроллу ---------- */
+.jar-outro{position:relative;height:var(--jo,250vh);margin-bottom:-24vh;background:var(--milk)}      /* главная заезжает на последние 24vh: поднимается, пока лозунг растворяется */
+.jo-stage{position:sticky;top:0;height:100vh;height:100lvh;overflow:hidden;display:flex;align-items:center;justify-content:center;text-align:center;--q:0;--e:0;--s:0;--r:0;--x:1;--g:0}
+.jo-bg{position:absolute;inset:0;pointer-events:none}
+.jo-glow{position:absolute;border-radius:50%;will-change:transform,opacity}
+.jo-glow.g1{left:-14vmax;top:-12vmax;width:66vmax;height:66vmax;background:radial-gradient(closest-side,rgba(150,174,238,.34),rgba(150,174,238,0));opacity:var(--g,0);transform:translate3d(calc(var(--q) * 16vw),calc(var(--q) * 9vh),0)}
+.jo-glow.g2{right:-18vmax;bottom:-16vmax;width:74vmax;height:74vmax;background:radial-gradient(closest-side,rgba(198,172,238,.28),rgba(198,172,238,0));opacity:var(--g,0);transform:translate3d(calc(var(--q) * -13vw),calc(var(--q) * -11vh),0)}
+.jo-in{position:relative;max-width:1240px;padding:0 var(--gut);opacity:var(--x);transform:translate3d(0,calc((1 - var(--x)) * -8vh),0);will-change:opacity,transform}
+.jo-eye{margin:0 0 clamp(22px,4vh,40px);display:inline-flex;align-items:center;gap:14px;font:600 12px/1 var(--sans);letter-spacing:.2em;text-transform:uppercase;color:var(--slate);opacity:var(--e);transform:translate3d(0,calc((1 - var(--e)) * 12px),0)}
+.jo-eye::before,.jo-eye::after{content:"";width:calc(var(--e) * 34px);border-top:1px dashed var(--slate)}
+.jo-title{margin:0;font:500 clamp(42px,7.6vw,118px)/1.04 var(--serif);letter-spacing:-.025em;color:var(--navy)}
+.jo-l{display:block}
+.jo-l.ac{font-style:italic;font-weight:400;color:var(--blue)}
+.jo-w{display:inline-block;opacity:var(--o,0);transform:translate3d(0,calc((1 - var(--o,0)) * .55em),0);filter:blur(calc((1 - var(--o,0)) * 16px));will-change:opacity,transform,filter}
+.jo-rule{position:relative;width:min(580px,66vw);height:14px;margin:clamp(28px,5vh,52px) auto 0}
+.jo-rule i{position:absolute;left:0;right:0;top:50%;height:1px;background:linear-gradient(90deg,rgba(35,71,176,0),rgba(35,71,176,.5) 14%,rgba(35,71,176,.5) 86%,rgba(35,71,176,0));transform:scaleX(var(--r));transform-origin:left center}
+.jo-rule b{position:absolute;top:50%;left:calc(var(--r) * 100%);width:13px;height:13px;margin:-6.5px 0 0 -6.5px;border-radius:50%;background:radial-gradient(circle at 34% 30%,#fff 0 14%,#eef0ff 38%,#a9bdf0 72%,#7f95da);box-shadow:0 0 18px 5px rgba(112,142,232,.5);opacity:min(1,calc(var(--r) * 8))}
+.jo-sub{margin:clamp(22px,3.4vh,32px) 0 0;font:600 12px/1.4 var(--sans);letter-spacing:.34em;text-transform:uppercase;color:var(--slate);opacity:var(--s);transform:translate3d(0,calc((1 - var(--s)) * 14px),0)}
+/* верх главной мягко «растворяется» в молоко: фон, фото и знак обрезаются верхней кромкой героя, пока он въезжает на экран */
+.jar-outro ~ .hero{z-index:1;-webkit-mask-image:linear-gradient(180deg,transparent 0,#000 60px);mask-image:linear-gradient(180deg,transparent 0,#000 60px)}
+@media (max-width:640px){
+  .jar-outro{height:var(--jom,230vh)}
+  .jo-title{font-size:clamp(38px,11vw,64px)}
+  .jo-eye{font-size:11px;letter-spacing:.14em;gap:10px}
+  .jo-eye::after{display:none}
+  .jo-sub{letter-spacing:.24em;font-size:11px}
+}
+
 /* нет JS (листать кадры нечем) или canvas недоступен: вступления нет, сайт открывается героем. «Уменьшить движение» и экономия трафика вступление НЕ отключают */
 html:not(.js) .jar-story,.jar-story.jar-off{display:none;margin:0}
-@media print{.jar-story{display:none;margin:0}}
+html:not(.js) .jar-outro,.jar-story.jar-off ~ .jar-outro{display:none}
+@media print{.jar-story,.jar-outro{display:none;margin:0}}

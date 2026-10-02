@@ -4,6 +4,7 @@
    как обратная перемотка. Кадр между двумя соседними плавно подмешивается, движение сглаживается (затухающая «пружина»).
    Кадры: assets/jar/d (горизонтальный экран) и assets/jar/m (вертикальный); в автономной сборке — облегчённые *-lite из data:-адресов.
    Вступление показывается при любых настройках устройства («уменьшить движение», экономия трафика) — по решению заказчика; без JS его нет. Подписи, шапка и кнопка «Пропустить» — тоже от прокрутки.
+   После баночки идёт экран с лозунгом (#jar-outro): слова проявляются по той же прокрутке, линия с жемчужиной дорисовывается, затем всё уходит.
    Файл загружается только на главной и только пока jar.enabled = true (data/redesign.json). */
 (function () {
   'use strict';
@@ -25,6 +26,9 @@
     try { ctx2d = cv.getContext('2d', {alpha: false}); } catch (e) { ctx2d = null; }
     if (!ctx2d) { root.classList.add('jar-off'); return {root, destroy() {}}; }
 
+    const outro = document.getElementById('jar-outro'), jo = outro && outro.querySelector('.jo-stage');
+    const words = outro ? Array.prototype.slice.call(outro.querySelectorAll('.jo-w')) : [];
+    let oq = 0, oTarget = 0;
     let set = null, imgs = [], ok = [], W = 0, H = 0, S = 1, cur = 0, target = 0, running = false, last = 0, dead = false, firstDrawn = false, pending = [], active = 0;
     const dirOf = () => (portraitMQ.matches ? (bundle ? root.dataset.ml : root.dataset.m) : (bundle ? root.dataset.dl : root.dataset.d));
     const urlOf = (dir, i) => {
@@ -95,8 +99,26 @@
       stage.style.setProperty('--cue', (1 - clamp(p / 0.035, 0, 1)).toFixed(3));
       const sk = 1 - clamp((p - 0.84) / 0.05, 0, 1);
       stage.style.setProperty('--skip', sk.toFixed(3)); if (skip) skip.classList.toggle('gone', sk < 0.05);
-      stage.style.setProperty('--m', ease(clamp((p - 0.74) / 0.16, 0, 1)).toFixed(3));
+      stage.style.setProperty('--m', ease(clamp((p - 0.76) / 0.225, 0, 1)).toFixed(3));       // крем плавно растворяется в молоко почти до конца сцены
       document.body.classList.toggle('jar-on', inView && p < 0.56);       // светлая шапка — только пока фон тёмный; на светлом креме возвращается обычная
+    }
+
+    /* ---- экран с лозунгом: q (0…1) — прокрутка внутри закреплённой части; проявление по порядку: подпись → слова → линия с жемчужиной → девиз → уход ---- */
+    function uiOutro(q) {
+      const st = (a, b) => ease(clamp((q - a) / (b - a), 0, 1));
+      const n = words.length;
+      jo.style.setProperty('--q', q.toFixed(3));
+      jo.style.setProperty('--e', st(0.02, 0.12).toFixed(3));
+      words.forEach((w, i) => { const a = 0.07 + i * (n > 1 ? 0.36 / (n - 1) : 0); w.style.setProperty('--o', st(a, a + 0.2).toFixed(3)); });
+      jo.style.setProperty('--r', st(0.56, 0.74).toFixed(3));
+      jo.style.setProperty('--s', st(0.70, 0.82).toFixed(3));
+      jo.style.setProperty('--x', (1 - st(0.90, 1.0)).toFixed(3));
+      jo.style.setProperty('--g', (st(0.0, 0.45) * (1 - st(0.88, 1.0))).toFixed(3));       // свечение фона: из молока и обратно в молоко (без видимых краёв сцены)
+    }
+    function measureO() {
+      if (!outro) return {q: 0, inView: false};
+      const r = outro.getBoundingClientRect(), total = Math.max(1, outro.offsetHeight - jo.clientHeight);
+      return {q: clamp(-r.top / total, 0, 1), inView: r.bottom > 0 && r.top < innerHeight};
     }
 
     /* ---- прокрутка → цель; цикл догоняет цель с затуханием ---- */
@@ -107,14 +129,17 @@
     function schedule() { if (!running && !dead) { running = true; last = 0; requestAnimationFrame(tick); } }
     function tick(t) {
       if (dead) { running = false; return; }
-      const m = measure(); target = m.p * (N - 1);
+      const m = measure(), mo = measureO(); target = m.p * (N - 1); oTarget = mo.q;
       const dt = last ? Math.min(0.1, (t - last) / 1000) : 0.016; last = t;
       const k = 1 - Math.exp(-dt / 0.07);
       cur += (target - cur) * k;
       if (Math.abs(target - cur) < 0.004) cur = target;
+      oq += (oTarget - oq) * k;
+      if (Math.abs(oTarget - oq) < 0.0008) oq = oTarget;
       if (m.inView || !firstDrawn) paint();
       ui(cur / (N - 1), m.inView);
-      if (cur !== target) requestAnimationFrame(tick); else running = false;
+      if (jo && (mo.inView || oq !== oTarget)) uiOutro(oq);
+      if (cur !== target || oq !== oTarget) requestAnimationFrame(tick); else running = false;
     }
     const onScroll = () => schedule();
     const onResize = () => resize();
@@ -122,7 +147,7 @@
     addEventListener('resize', onResize);
     portraitMQ.addEventListener && portraitMQ.addEventListener('change', resize);
     if (skip) skip.addEventListener('click', () => {
-      const hero = root.nextElementSibling, hh = (document.getElementById('hdr') || {}).offsetHeight || 0;
+      const hero = document.querySelector('.hero'), hh = (document.getElementById('hdr') || {}).offsetHeight || 0;
       const to = hero ? hero.getBoundingClientRect().top + scrollY - hh : root.getBoundingClientRect().bottom + scrollY;
       scrollTo({top: Math.round(to), behavior: 'smooth'});
     });
@@ -130,7 +155,7 @@
     return {
       root,
       jump(p) { cur = target = p * (N - 1); paint(); ui(p, true); },
-      state() { return {cur, target, loaded: ok.filter(Boolean).length, N, set, firstDrawn}; },
+      state() { return {cur, target, loaded: ok.filter(Boolean).length, N, set, firstDrawn, oq, oTarget}; },
       destroy() { dead = true; removeEventListener('scroll', onScroll); removeEventListener('resize', onResize); document.body.classList.remove('jar-on'); }
     };
   }
@@ -145,7 +170,7 @@
   window.Astreya = A; A.jar = {init, get ctrl() { return ctrl; }};
   /* где в документе «покой» героя (его верх под шапкой): от этой прокрутки считается уход текста героя (js/motion.js) */
   A.heroBase = function () {
-    const r = document.getElementById('jar-story'), hero = r && r.nextElementSibling;
+    const r = document.getElementById('jar-story'), hero = r && document.querySelector('.hero');
     if (!r || !hero || !r.offsetHeight) return 0;
     return Math.max(0, Math.round(hero.getBoundingClientRect().top + scrollY - ((document.getElementById('hdr') || {}).offsetHeight || 0)));
   };
