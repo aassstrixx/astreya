@@ -3,7 +3,7 @@
    В конце камера ныряет в крем, экран заливается молочным (как фон главной) и сцена уезжает вверх, открывая героя.
    Подключается только на главной и только пока data/redesign.json → jar.enabled = true. */
 
-.jar-story{position:relative;height:600vh;margin:calc(var(--hdr) * -1) 0 -40vh;background:var(--navy)}
+.jar-story{position:relative;height:var(--jh,600vh);margin:calc(var(--hdr) * -1) 0 -40vh;background:var(--navy)}
 /* главная заезжает на последние 40vh сцены: когда экран уже молочный, заголовок и фон героя «всплывают» прямо из него, без пустого экрана */
 .jar-story ~ .hero{z-index:1}
 /* верх героя «тает» в молоко: фон, фото и знак обрезаются верхней кромкой героя — пока он въезжает на экран, кромка не должна быть видна */
@@ -46,7 +46,7 @@ body.jar-on:not(.menu-open) .hdr .logo{--lm:var(--milk)}
 .hdr{transition:transform .6s var(--ease-out),background-color .5s ease,border-color .5s ease}
 
 @media (max-width:640px){
-  .jar-story{height:520vh}
+  .jar-story{height:var(--jhm,520vh)}
   .js-cap{bottom:clamp(88px,17vh,160px)}
   .js-cap b{font-size:clamp(38px,12.5vw,64px)}
   .js-skip{padding:10px 14px}

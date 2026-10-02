@@ -10,7 +10,9 @@
   const A = window.Astreya || {};
   const clamp = (x, a, b) => Math.max(a, Math.min(b, x));
   const ease = x => x * x * (3 - 2 * x);
-  const blend = x => ease(clamp((x - 0.3) / 0.4, 0, 1));      // чистый кадр держится дольше, смешивание — только на середине шага: резкая этикетка при вращении не двоится
+  /* смешивание соседних кадров: пока на кадре чёткие детали (вращение, крышка, p < 0.6) — только на самой середине шага, чтобы этикетка не двоилась;
+     на гладком креме (нырок) — плавно по всему шагу */
+  const blend = (x, p) => p < 0.6 ? ease(clamp((x - 0.42) / 0.16, 0, 1)) : ease(x);
   const pad = i => String(i).padStart(3, '0');
   const portraitMQ = window.matchMedia('(max-aspect-ratio: 11/10)');
   let ctrl = null;
@@ -53,7 +55,7 @@
     /* ---- размеры ---- */
     function resize() {
       const w = stage.clientWidth || innerWidth, h = stage.clientHeight || innerHeight;
-      const dpr = Math.min(window.devicePixelRatio || 1, 2), s = Math.min(dpr, Math.sqrt(2.6e6 / Math.max(1, w * h)));
+      const dpr = Math.min(window.devicePixelRatio || 1, 2), s = Math.min(dpr, Math.sqrt(4.4e6 / Math.max(1, w * h)));
       W = Math.round(w * s); H = Math.round(h * s); S = s;
       if (cv.width !== W || cv.height !== H) { cv.width = W; cv.height = H; }
       startLoading();
@@ -73,7 +75,7 @@
       ctx2d.drawImage(im, (W - dw) / 2, (H - dh) / 2, dw, dh);
     }
     function paint() {
-      const i0 = Math.floor(cur), a = blend(cur - i0), im0 = nearest(clamp(i0, 0, N - 1));
+      const i0 = Math.floor(cur), a = blend(cur - i0, cur / (N - 1)), im0 = nearest(clamp(i0, 0, N - 1));
       if (!im0) return;
       ctx2d.imageSmoothingEnabled = true; ctx2d.imageSmoothingQuality = 'high';
       drawImg(im0, 1);

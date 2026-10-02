@@ -7,14 +7,17 @@
 ```bash
 pip install bpy pillow numpy fonttools            # Python 3.11
 python3 story_render.py info
-python3 story_render.py still 70 test.png --res 1280x720 --samples 8 --total 130          # один кадр
-python3 story_render.py anim 0 129 frames_d --res 1280x720 --samples 8 --total 130        # десктоп (≈20 с/кадр на 4 ядрах)
-python3 story_render.py anim 0 129 frames_m --res 576x1024 --samples 8 --total 130        # телефон (вертикальный кадр)
-python3 encode_web.py frames_d ../../assets/jar/d --size 1280x720 --q 80
-python3 encode_web.py frames_m ../../assets/jar/m --size 576x1024 --q 80
-python3 encode_web.py frames_d ../../assets/jar/d-lite --size 640x360 --q 62               # облегчённые — для автономной сборки
-python3 encode_web.py frames_m ../../assets/jar/m-lite --size 360x640 --q 62
+# один кадр (проверка): резко, без motion blur
+python3 story_render.py still 70 test.png --res 1920x1080 --samples 12 --total 180 --noblur --filter 1.0
+# десктоп 1920x1080 (≈45 с/кадр на 4 ядрах, 180 кадров ≈ 2 ч) и телефон 810x1440 (≈35 с/кадр)
+python3 story_render.py anim 0 179 frames_d --res 1920x1080 --samples 12 --samples-late 8 --late-p 0.6 --total 180 --noblur --filter 1.0
+python3 story_render.py anim 0 179 frames_m --res 810x1440 --samples 12 --samples-late 8 --late-p 0.6 --total 180 --noblur --filter 1.0
+python3 encode_web.py frames_d ../../assets/jar/d --size 1920x1080 --q 90
+python3 encode_web.py frames_m ../../assets/jar/m --size 810x1440 --q 90
+python3 encode_web.py frames_d ../../assets/jar/d-lite --size 960x540 --q 72               # облегчённые — для автономной сборки
+python3 encode_web.py frames_m ../../assets/jar/m-lite --size 540x960 --q 72
 ```
 
 `--total` должен совпадать с `data/redesign.json → jar.frames`. Готовые кадры при повторном запуске `anim` пропускаются.
+Почему кадры резкие: `--noblur` (на стоп-кадре motion blur выглядит смазанным), разрешение 1920x1080 вместо 1280x720, `--filter 1.0`, WebP q90.
 Выключить вступление на сайте: `data/redesign.json → jar.enabled = false` (затем `node tools/build.js`).
