@@ -25,7 +25,7 @@ python3 encode_web.py frames_m ../../assets/jar/m-lite --size 540x960 --q 72
 
 ```bash
 python3 motion_analysis.py                      # скорость самой быстрой точки на экране вдоль сюжета → motion_d.json (портрет: motion_analysis.py portrait → motion_m.json)
-python3 plan_frames.py motion_d.json motion_m.json plan.json 40     # куда добавить кадры (старые кадры сетки 180 остаются) — 278 кадров
+python3 plan_frames.py motion_d.json motion_m.json plan.json 40     # куда добавить кадры (старые кадры сетки 180 остаются) — 278 кадров; готовый план лежит в tools/jar-render/plan.json
 python3 story_render.py plan plan.json new_d --res 1920x1080 --samples 12 --samples-late 8 --late-p 0.6 --noblur --filter 1.0   # только новые
 python3 story_render.py plan plan.json new_m --res 810x1440  --samples 12 --samples-late 8 --late-p 0.6 --noblur --filter 1.0
 python3 encode_web.py --plan plan.json frames_d new_d ../../assets/jar/d --size 1920x1080 --q 80
