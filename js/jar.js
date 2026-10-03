@@ -13,7 +13,12 @@
    • движение по кадрам ведёт «пружина» с критическим затуханием (а не простое сглаживание): нет рывка на старте и мягкая остановка без «щелчка»;
      в покое показывается ровно ближайший кадр (без двоения), при движении соседние кадры смешиваются;
    • в цикле нет чтения вёрстки: границы сцены измеряются один раз (и при изменении размера), CSS-переменные пишутся только при изменении;
-   • колесо мыши сглаживает js/motion.js (пружина по щелчкам колеса) — везде одинаково, в том числе на этой сцене; пружина плейхеда добавляет к нему
+   • первая загрузка (холодный кэш): кадры берутся через fetch → Blob → <img> — это не задерживает событие load (его ждёт заставка), поэтому начинается сразу, и
+     тянутся параллельно по HTTP/2 (16 «полос» на компьютере, 10 на телефоне: при 3–4 полосах скорость упиралась в задержку запроса, а не в канал). Порядок:
+     первый кадр → полные кадры у положения → «каркас» среднего набора (каждый 8-й кадр) → средний набор с окном впереди по ходу движения и «от грубого к тонкому» →
+     полные кадры рядом (в покое) → остальные полные. Пока идёт движение, полные кадры не грузим (в движении показываются средние, а канал нужен им). Пока кадров
+     рядом ещё нет, смешиваются ближайшие загруженные (не дальше 8 кадров) — картинка едет по положению, а не шагает (замеры: tools/jar-bench/cold.js);
+ (пружина по щелчкам колеса) — везде одинаково, в том числе на этой сцене; пружина плейхеда добавляет к нему
      лишь небольшую задержку и ведёт сцену при касаниях, перетаскивании ползунка и якорях (подбор — tools/jar-bench/scroll-sim.js).
    Кадры: assets/jar/d, dm, dl (горизонтальный экран) и m, mm, ml (вертикальный); в автономной сборке — только низкий набор dl/ml из data:-адресов (вес).
    Положения кадров по сценарию (p от 0 до 1): data-p — полный набор (сетка неравномерная, кадров больше там, где движение быстрее),
@@ -40,6 +45,12 @@
   const HOLD = 140;
   const MOVING = 2.5;         // выше — «идёт движение»: регулятор нагрузки может ограничить уровень
   const XFADE = 160;          // мс, перекрёстная смена уровней
+  /* загрузка кадров: HTTP/2 (GitHub Pages) тянет много маленьких файлов параллельно — «полос» должно быть много, иначе на мобильной сети скорость упирается
+     в задержку запроса, а не в канал (замеры: tools/jar-bench/cold.js) */
+  const LANES = [16, 10];     // [компьютер, телефон] — при загрузке через fetch (HTTP/2)
+  const LANES_IMG = [4, 3];   // запасной путь (file://, нет fetch) — как раньше
+  const FLOOR_LVL = 3;        // «каркас» среднего набора: каждый 8-й кадр (≈70 кадров)
+  const GAP = 8;              // пока кадров рядом ещё нет, пару для смешивания берём из ближайших загруженных не дальше стольких кадров
   let ctrl = null;
 
   function create(root) {
@@ -64,9 +75,12 @@
     const isPortrait = () => portraitMQ.matches;
     const urlOf = (dir, i) => { const p = dir + pad(i) + '.' + ext; return A.assetUrl ? A.assetUrl(p) + (bundle ? '' : ver) : p + ver; };
     let T = [], hasHi = false, liteIdx = 0, xlIdx = -1, set = '', gen = 0;
+    /* порядок «от грубого к тонкому»: сначала каждый 64-й кадр, потом каждый 32-й, 16-й … — на любом этапе загрузки кадры лежат по сценарию равномерно */
+    const ctz = (i, n) => { if (!i || i === n - 1) return 99; let c = 0; while (!(i & 1)) { i >>= 1; c++; } return c; };
+    const hier = n => Array.from({length: n}, (_, i) => i).sort((a, b) => ctz(b, n) - ctz(a, n) || a - b);
     function makeTiers() {
       const por = isPortrait(), pick = (a, b) => (por ? b : a), list = [];
-      const add = (dir, P) => { if (dir && P.length) list.push({dir, P, N: P.length, im: new Array(P.length).fill(null), busy: new Uint8Array(P.length), loaded: 0}); };
+      const add = (dir, P) => { let t; if (dir && P.length) list.push({dir, P, N: P.length, im: new Array(P.length).fill(null), busy: new Uint8Array(P.length), loaded: 0, bb: hier(P.length), bbPos: 0, floor: 0}); t = list[list.length - 1]; t.floor = t.bb.filter(i => ctz(i, t.N) >= FLOOR_LVL).length; };
       hasHi = false; liteIdx = 0; xlIdx = -1;
       const mid = pick(ds.dm, ds.mm), low = pick(ds.dl, ds.ml);
       if (bundle && Pb.length && low) add(low, Pb);                        // автономная сборка: один набор — самый лёгкий по весу
@@ -90,9 +104,14 @@
     let dtEma = 16.7, minDt = 16.7, slowRun = 0, fastRun = 0, govLock = 0, lastGov = -1e9, upLocked = false, govChanges = 0;
     const perfRing = new Float32Array(240); let perfN = 0;
 
-    /* ---- загрузка: до события load — только первый кадр (остальные не должны задерживать load), затем лёгкий набор (сначала каждый 8-й,
-       чтобы сразу можно было листать), полный набор — от текущего положения; самый лёгкий — только если регулятор его попросил ---- */
-    let inflight = 0, winLoaded = document.readyState === 'complete', firstAsked = false, hiPrime = 3;
+    /* ---- загрузка. Кадры берутся через fetch → Blob → <img>: такая загрузка не задерживает событие load (его ждёт заставка), поэтому начинается сразу;
+       если fetch недоступен (страница с диска, старый браузер) — обычные <img>, и до load берётся только первый кадр ----
+       Порядок: первый кадр → полные кадры у положения (чтобы первый вид был резким) → средний набор «от грубого к тонкому» с окном впереди по ходу движения →
+       полные кадры рядом с положением (в покое) → остальные полные от положения; самый лёгкий набор — только если регулятор его попросил. Пока идёт движение,
+       полные кадры не грузим: в движении показываются средние, а канал нужен им */
+    const canFetch = !bundle && typeof fetch === 'function' && location.protocol !== 'file:';
+    let inflight = 0, winLoaded = document.readyState === 'complete', firstAsked = false, hiPrime = 3, dirSign = 1;
+    const blobUrls = [];
     function locate(P, p) {                // положение на сценарии → пара кадров и доля между ними
       const N = P.length;
       if (p <= P[0]) return {k: 0, t: 0};
@@ -110,46 +129,66 @@
       }
       return -1;
     }
-    function coarseMissing(t) {
-      for (let i = 0; i < t.N; i += 8) if (!t.busy[i]) return i;
-      return t.busy[t.N - 1] ? -1 : t.N - 1;
+    function nearDir(t, from, dir, ahead, behind) {       // ближайший ещё не запрошенный кадр в окне: впереди по ходу движения — шире, позади — уже
+      for (let d = 0, m = Math.max(ahead, behind); d <= m; d++) {
+        const a = from + dir * d, b = from - dir * d;
+        if (d <= ahead && a >= 0 && a < t.N && !t.busy[a]) return a;
+        if (d <= behind && b >= 0 && b < t.N && !t.busy[b]) return b;
+      }
+      return -1;
     }
-    /* что грузить следующим: самое нужное для текущего вида — первым (полные кадры рядом с положением — чтобы вид в покое был резким), затем всё остальное от положения */
+    function nextHier(t, limit) {
+      const lim = limit === undefined ? t.N : limit;
+      while (t.bbPos < lim && t.busy[t.bb[t.bbPos]]) t.bbPos++;
+      return t.bbPos < lim ? t.bb[t.bbPos] : -1;
+    }
     function pickNext() {
       const lt = T[liteIdx], hi = hasHi ? T[0] : null, xl = xlIdx >= 0 ? T[xlIdx] : null;
-      const near = (t, maxd) => (t ? nearestMissing(t, locate(t.P, cp).k, maxd) : -1);
+      const kOf = t => locate(t.P, cp).k;
       let i;
-      if (!winLoaded) {
+      if (!canFetch && !winLoaded) {                                  // без fetch до load — только первый кадр: остальные задержали бы событие load
         if (firstAsked || !lt) return null;
-        firstAsked = true; i = near(lt); return i >= 0 ? {ti: liteIdx, i} : null;
+        firstAsked = true; i = nearestMissing(lt, kOf(lt)); return i >= 0 ? {ti: liteIdx, i} : null;
       }
-      if (hi && hiPrime > 0 && (i = near(hi)) >= 0) { hiPrime--; return {ti: 0, i}; }
-      if (lt && (i = coarseMissing(lt)) >= 0) return {ti: liteIdx, i};
-      if (hi && (i = near(hi, 6)) >= 0) return {ti: 0, i};
-      if (lt && (i = near(lt, 20)) >= 0) return {ti: liteIdx, i};
-      if (lt && (i = near(lt)) >= 0) return {ti: liteIdx, i};
-      if (hi && (i = near(hi)) >= 0) return {ti: 0, i};
-      if (xl && xlWanted && (i = near(xl)) >= 0) return {ti: xlIdx, i};
+      const moving = Math.abs(vp) * (NH - 1) > MOVING;
+      if (lt && !firstAsked) { firstAsked = true; i = nearestMissing(lt, kOf(lt)); if (i >= 0) return {ti: liteIdx, i}; }
+      if (hi && hiPrime > 0 && (i = nearestMissing(hi, kOf(hi))) >= 0) { hiPrime--; return {ti: 0, i}; }
+      if (hi && !moving && (i = nearestMissing(hi, kOf(hi), 3)) >= 0) return {ti: 0, i};          // стоим — нужен резкий кадр
+      if (lt) {
+        if ((i = nextHier(lt, lt.floor)) >= 0) return {ti: liteIdx, i};                               // сначала «каркас» — каждый 2^FLOOR_LVL-й кадр: листать можно из любого места
+        if ((i = nearDir(lt, kOf(lt), dirSign, moving ? 28 : 16, moving ? 6 : 4)) >= 0) return {ti: liteIdx, i};
+        if ((i = nextHier(lt)) >= 0) return {ti: liteIdx, i};
+      }
+      if (hi && (i = nearestMissing(hi, kOf(hi))) >= 0) return {ti: 0, i};
+      if (xl && xlWanted && (i = nearestMissing(xl, kOf(xl))) >= 0) return {ti: xlIdx, i};
       return null;
     }
+    const lanesNow = () => (canFetch ? LANES : LANES_IMG)[isPortrait() ? 1 : 0];
     function pump() {
       if (dead) return;
-      const lanes = isPortrait() ? 3 : 4;
+      const lanes = lanesNow();
       while (inflight < lanes) { const j = pickNext(); if (!j) return; load(j.ti, j.i); }
     }
     function load(ti, i) {
-      const t = T[ti], g = gen, img = new Image();
-      img.decoding = 'async';
+      const t = T[ti], g = gen, url = urlOf(t.dir, i);
       t.busy[i] = 1; inflight++;
-      img.onload = () => {
-        img.onload = img.onerror = null;
+      const done = img => {
         if (g !== gen) return;
-        inflight--; t.busy[i] = 2; t.im[i] = img; t.loaded++;
-        if (Math.abs(i - locate(t.P, cp).k) <= 2) { dirty = true; schedule(); }        // перерисовываем, только если кадр нужен рядом с текущим положением
+        inflight--; t.busy[i] = 2;
+        if (img) { t.im[i] = img; t.loaded++; if (Math.abs(i - locate(t.P, cp).k) <= GAP + 1) { dirty = true; schedule(); } }        // перерисовываем, только если кадр нужен рядом с текущим положением
         pump();
       };
-      img.onerror = () => { img.onload = img.onerror = null; if (g !== gen) return; inflight--; t.busy[i] = 2; pump(); };
-      img.src = urlOf(t.dir, i);
+      const viaImg = (src, blob) => {
+        const img = new Image(); img.decoding = 'async';
+        img.onload = () => { img.onload = img.onerror = null; done(img); };
+        img.onerror = () => { img.onload = img.onerror = null; if (blob) { try { URL.revokeObjectURL(src); } catch (e) {} } done(null); };
+        img.src = src;
+      };
+      if (canFetch) {
+        fetch(url, {priority: 'low'}).then(r => { if (!r.ok) throw new Error('http'); return r.blob(); })
+          .then(b => { if (g !== gen) return; const u = URL.createObjectURL(b); blobUrls.push(u); viaImg(u, true); })
+          .catch(() => { if (g === gen) viaImg(url, false); });
+      } else viaImg(url, false);
     }
     function startLoading() {
       const key = isPortrait() ? 'm' : 'd'; if (set === key) return;
@@ -168,18 +207,28 @@
     }
 
     /* ---- что рисовать: для уровня want — пара кадров и доля смешивания; если кадров ещё нет, берётся другой уровень или ближайший загруженный кадр ---- */
+    function mkPair(ti, ia, ib, tt) {          // пара кадров уровня ti и доля смешивания; null — нужных картинок ещё нет
+      const t = T[ti], full = hasHi && ti === 0;
+      let a = ib === ia ? 0 : (full ? narrowBlend(tt, cp) : tt) * (1 - restW) + (tt < 0.5 ? 0 : 1) * restW;       // в покое — ровно ближайший кадр, без двоения
+      let A_ = t.im[ia], B_ = t.im[ib];
+      if (a < 0.02) a = 0; else if (a > 0.98) { a = 0; A_ = B_; ia = ib; }
+      return A_ && (a === 0 || B_) ? {ti, ia, ib, a, A_, B_: a > 0 ? B_ : null} : null;
+    }
+    function pairFor(ti, gapMax) {
+      const t = T[ti], l = locate(t.P, cp), ib = Math.min(t.N - 1, l.k + 1);
+      const r = mkPair(ti, l.k, ib, l.t); if (r || !gapMax) return r;
+      let lo = l.k, up = ib;                      // кадров рядом ещё нет (идёт загрузка) — смешиваем ближайшие загруженные с обеих сторон, если они не слишком далеко
+      while (lo >= 0 && l.k - lo < gapMax && !t.im[lo]) lo--;
+      while (up < t.N && up - ib < gapMax && !t.im[up]) up++;
+      if (lo < 0 || up >= t.N || !t.im[lo] || !t.im[up]) return null;
+      return mkPair(ti, lo, up, clamp((cp - t.P[lo]) / (t.P[up] - t.P[lo]), 0, 1));
+    }
     function resolve(want) {
-      const order = [want];
-      for (let d = 1; d < T.length; d++) { if (want + d < T.length) order.push(want + d); if (want - d >= 0) order.push(want - d); }
-      for (let n = 0; n < order.length; n++) {
-        const ti = order[n], t = T[ti], l = locate(t.P, cp), ib = Math.min(t.N - 1, l.k + 1);
-        let ia = l.k;
-        const full = hasHi && ti === 0;
-        let a = ib === ia ? 0 : (full ? narrowBlend(l.t, cp) : l.t) * (1 - restW) + (l.t < 0.5 ? 0 : 1) * restW;       // в покое — ровно ближайший кадр, без двоения
-        let A_ = t.im[ia], B_ = t.im[ib];
-        if (a < 0.02) a = 0; else if (a > 0.98) { a = 0; A_ = B_; ia = ib; }
-        if (A_ && (a === 0 || B_)) return {ti, ia, ib, a, A_, B_: a > 0 ? B_ : null};
-      }
+      const order = [want], nu = T.length;
+      for (let d = 1; d < nu; d++) { if (want + d < nu) order.push(want + d); if (want - d >= 0) order.push(want - d); }
+      let r;
+      for (let n = 0; n < order.length; n++) if ((r = pairFor(order[n], 0))) return r;              // точная пара где-нибудь
+      for (let n = 0; n < order.length; n++) if ((r = pairFor(order[n], GAP))) return r;            // пара из ближайших загруженных
       let best = null, bd = 1e9;                         // ничего подходящего не загружено (самое начало) — ближайший к положению загруженный кадр любого уровня
       T.forEach((t, ti) => {
         const k = locate(t.P, cp).k;
@@ -313,6 +362,7 @@
       if (Math.abs(cp - pT) < 2e-6 && Math.abs(vp) < 1e-4) { cp = pT; vp = 0; }
       if (Math.abs(cq - qT) < 2e-6 && Math.abs(vq) < 1e-4) { cq = qT; vq = 0; }
       cp = clamp(cp, 0, 1); cq = clamp(cq, 0, 1);
+      if (Math.abs(vp) > 1e-3) dirSign = vp > 0 ? 1 : -1;
       const inView = y + vh > sTop && y < sTop + sH;
       const inOutro = !!outro && y + vh > oTop && y < oTop + oH;
       if (inView) chooseTier(t, dtRaw);
@@ -363,7 +413,7 @@
         dead = true; gen++; clearTimeout(rzTimer); if (ro) ro.disconnect();
         removeEventListener('scroll', onScroll); removeEventListener('resize', onResize); removeEventListener('load', onLoad);
         portraitMQ.removeEventListener && portraitMQ.removeEventListener('change', onMQ);
-        T = [];
+        T = []; blobUrls.forEach(u => { try { URL.revokeObjectURL(u); } catch (e) {} }); blobUrls.length = 0;
         document.body.classList.remove('jar-on');
       }
     };
