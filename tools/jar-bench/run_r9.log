@@ -1,0 +1,280 @@
+s_w14    desk x1 wheel   fps 42.4 over33 14.3% js 18.8/82.8ms stale 0.0% jud 8.8px err 6.5px lag 108ms settle 525ms | js>8ms 43.3% dec 0 up 0/0ms lite 0% sw 0  (7s)
+s_w14    desk x1 mid     fps 27.5 over33 45.6% js 29.7/70.7ms stale 0.0% jud 8.9px err 3.8px lag 116ms settle 98ms | js>8ms 77.3% dec 0 up 0/0ms lite 0% sw 0  (5s)
+s_w14    desk x1 fling   fps 59.3 over33 12.5% js 12.3/36.5ms stale 0.0% jud 7.3px err 6.9px lag 145ms settle -ms | js>8ms 33.2% dec 0 up 0/0ms lite 0% sw 0  (6s)
+s_w14    desk x1 slow    fps 58.0 over33 9.7% js 11.4/31.0ms stale 0.0% jud 10.5px err 5.8px lag -ms settle -ms | js>8ms 34.0% dec 0 up 0/0ms lite 0% sw 0  (6s)
+s_w14    desk x1 stopgo  fps 60.0 over33 2.4% js 10.3/24.6ms stale 0.0% jud 8.6px err 5.1px lag 121ms settle 572ms | js>8ms 61.1% dec 0 up 0/0ms lite 0% sw 0  (6s)
+lite_low desk x1 wheel   fps 60.0 over33 0.0% js 9.1/20.8ms stale 0.0% jud 9.8px err 5.7px lag 94ms settle 294ms | js>8ms 37.9% dec 0 up 0/0ms lite 0% sw 0  (6s)
+lite_low desk x1 mid     fps 53.6 over33 5.4% js 11.6/29.3ms stale 0.0% jud 8.6px err 3.9px lag 91ms settle 59ms | js>8ms 51.3% dec 0 up 0/0ms lite 0% sw 0  (5s)
+lite_low desk x1 fling   fps 60.0 over33 2.5% js 8.9/26.1ms stale 0.0% jud 8.8px err 6.8px lag 104ms settle -ms | js>8ms 27.9% dec 0 up 0/0ms lite 0% sw 0  (6s)
+lite_low desk x1 slow    fps 60.0 over33 0.0% js 6.7/11.4ms stale 0.0% jud 10.8px err 5.8px lag -ms settle -ms | js>8ms 18.2% dec 0 up 0/0ms lite 0% sw 0  (6s)
+lite_low desk x1 stopgo  fps 60.0 over33 0.3% js 8.2/13.2ms stale 0.0% jud 9.2px err 5.1px lag 89ms settle 367ms | js>8ms 47.0% dec 0 up 0/0ms lite 0% sw 0  (6s)
+lod1     desk x1 wheel   ERR page.evaluate: TypeError: Cannot create property '0' on number '0'
+    at Object.frame (http://127.0.0.1:8140/tools/jar-bench/engine-lod.js:64:39)
+    at http://127.0.0.1:8140/tools/jar-bench/arena.ht  (2s)
+lod1     desk x1 mid     ERR page.evaluate: TypeError: Cannot create property '0' on number '0'
+    at Object.frame (http://127.0.0.1:8140/tools/jar-bench/engine-lod.js:64:39)
+    at http://127.0.0.1:8140/tools/jar-bench/arena.ht  (1s)
+lod1     desk x1 fling   ERR page.evaluate: TypeError: Cannot create property '0' on number '0'
+    at Object.frame (http://127.0.0.1:8140/tools/jar-bench/engine-lod.js:64:39)
+    at http://127.0.0.1:8140/tools/jar-bench/arena.ht  (1s)
+lod1     desk x1 slow    ERR page.evaluate: TypeError: Cannot create property '0' on number '0'
+    at Object.frame (http://127.0.0.1:8140/tools/jar-bench/engine-lod.js:64:39)
+    at http://127.0.0.1:8140/tools/jar-bench/arena.ht  (1s)
+lod1     desk x1 stopgo  ERR page.evaluate: TypeError: Cannot create property '0' on number '0'
+    at Object.frame (http://127.0.0.1:8140/tools/jar-bench/engine-lod.js:64:39)
+    at http://127.0.0.1:8140/tools/jar-bench/arena.ht  (1s)
+g_off    desk x1 wheel   ERR page.evaluate: TypeError: Cannot create property '0' on number '0'
+    at Object.frame (http://127.0.0.1:8140/tools/jar-bench/engine-lod.js:64:39)
+    at http://127.0.0.1:8140/tools/jar-bench/arena.ht  (3s)
+g_off    desk x1 mid     ERR page.evaluate: TypeError: Cannot create property '0' on number '0'
+    at Object.frame (http://127.0.0.1:8140/tools/jar-bench/engine-lod.js:64:39)
+    at http://127.0.0.1:8140/tools/jar-bench/arena.ht  (1s)
+g_off    desk x1 fling   ERR page.evaluate: TypeError: Cannot create property '0' on number '0'
+    at Object.frame (http://127.0.0.1:8140/tools/jar-bench/engine-lod.js:64:39)
+    at http://127.0.0.1:8140/tools/jar-bench/arena.ht  (1s)
+g_off    desk x1 slow    ERR page.evaluate: TypeError: Cannot create property '0' on number '0'
+    at Object.frame (http://127.0.0.1:8140/tools/jar-bench/engine-lod.js:64:39)
+    at http://127.0.0.1:8140/tools/jar-bench/arena.ht  (1s)
+g_off    desk x1 stopgo  ERR page.evaluate: TypeError: Cannot create property '0' on number '0'
+    at Object.frame (http://127.0.0.1:8140/tools/jar-bench/engine-lod.js:64:39)
+    at http://127.0.0.1:8140/tools/jar-bench/arena.ht  (1s)
+g_on     desk x1 wheel   ERR page.evaluate: TypeError: Cannot create property '0' on number '0'
+    at Object.frame (http://127.0.0.1:8140/tools/jar-bench/engine-lod.js:64:39)
+    at http://127.0.0.1:8140/tools/jar-bench/arena.ht  (3s)
+g_on     desk x1 mid     ERR page.evaluate: TypeError: Cannot create property '0' on number '0'
+    at Object.frame (http://127.0.0.1:8140/tools/jar-bench/engine-lod.js:64:39)
+    at http://127.0.0.1:8140/tools/jar-bench/arena.ht  (1s)
+g_on     desk x1 fling   ERR page.evaluate: TypeError: Cannot create property '0' on number '0'
+    at Object.frame (http://127.0.0.1:8140/tools/jar-bench/engine-lod.js:64:39)
+    at http://127.0.0.1:8140/tools/jar-bench/arena.ht  (1s)
+g_on     desk x1 slow    ERR page.evaluate: TypeError: Cannot create property '0' on number '0'
+    at Object.frame (http://127.0.0.1:8140/tools/jar-bench/engine-lod.js:64:39)
+    at http://127.0.0.1:8140/tools/jar-bench/arena.ht  (1s)
+g_on     desk x1 stopgo  ERR page.evaluate: TypeError: Cannot create property '0' on number '0'
+    at Object.frame (http://127.0.0.1:8140/tools/jar-bench/engine-lod.js:64:39)
+    at http://127.0.0.1:8140/tools/jar-bench/arena.ht  (1s)
+g_on2    desk x1 wheel   ERR page.evaluate: TypeError: Cannot create property '0' on number '0'
+    at Object.frame (http://127.0.0.1:8140/tools/jar-bench/engine-lod.js:64:39)
+    at http://127.0.0.1:8140/tools/jar-bench/arena.ht  (3s)
+g_on2    desk x1 mid     ERR page.evaluate: TypeError: Cannot create property '0' on number '0'
+    at Object.frame (http://127.0.0.1:8140/tools/jar-bench/engine-lod.js:64:39)
+    at http://127.0.0.1:8140/tools/jar-bench/arena.ht  (1s)
+g_on2    desk x1 fling   ERR page.evaluate: TypeError: Cannot create property '0' on number '0'
+    at Object.frame (http://127.0.0.1:8140/tools/jar-bench/engine-lod.js:64:39)
+    at http://127.0.0.1:8140/tools/jar-bench/arena.ht  (1s)
+g_on2    desk x1 slow    ERR page.evaluate: TypeError: Cannot create property '0' on number '0'
+    at Object.frame (http://127.0.0.1:8140/tools/jar-bench/engine-lod.js:64:39)
+    at http://127.0.0.1:8140/tools/jar-bench/arena.ht  (1s)
+g_on2    desk x1 stopgo  ERR page.evaluate: TypeError: Cannot create property '0' on number '0'
+    at Object.frame (http://127.0.0.1:8140/tools/jar-bench/engine-lod.js:64:39)
+    at http://127.0.0.1:8140/tools/jar-bench/arena.ht  (1s)
+s_w14    desk x4 wheel   fps 18.9 over33 64.1% js 47.1/155.6ms stale 0.0% jud 10.5px err 5.9px lag 133ms settle 541ms | js>8ms 100.0% dec 0 up 0/0ms lite 0% sw 0  (9s)
+s_w14    desk x4 mid     fps 8.6 over33 80.6% js 103.9/193.7ms stale 0.0% jud 9.3px err 2.7px lag 134ms settle 88ms | js>8ms 100.0% dec 0 up 0/0ms lite 0% sw 0  (6s)
+s_w14    desk x4 fling   fps 15.1 over33 81.7% js 59.0/159.3ms stale 0.0% jud 9.4px err 6.5px lag 145ms settle -ms | js>8ms 100.0% dec 0 up 0/0ms lite 0% sw 0  (7s)
+s_w14    desk x4 slow    fps 10.9 over33 73.2% js 83.5/183.6ms stale 0.0% jud 12.2px err 5.7px lag -ms settle -ms | js>8ms 100.0% dec 0 up 0/0ms lite 0% sw 0  (7s)
+s_w14    desk x4 stopgo  fps 20.9 over33 72.5% js 42.6/88.5ms stale 0.0% jud 7.5px err 4.3px lag 111ms settle 627ms | js>8ms 100.0% dec 0 up 0/0ms lite 0% sw 0  (6s)
+lite_low desk x4 wheel   fps 26.3 over33 41.1% js 32.5/76.6ms stale 0.0% jud 8.2px err 5.6px lag 64ms settle 223ms | js>8ms 98.5% dec 0 up 0/0ms lite 0% sw 0  (8s)
+lite_low desk x4 mid     fps 16.5 over33 73.5% js 53.2/96.5ms stale 0.0% jud 8.2px err 4.1px lag 64ms settle 0ms | js>8ms 100.0% dec 0 up 0/0ms lite 0% sw 0  (5s)
+lite_low desk x4 fling   fps 28.6 over33 33.3% js 29.6/60.3ms stale 0.0% jud 8.2px err 6.3px lag 89ms settle -ms | js>8ms 100.0% dec 0 up 0/0ms lite 0% sw 0  (6s)
+lite_low desk x4 slow    fps 27.4 over33 42.9% js 31.3/55.3ms stale 0.0% jud 10.8px err 5.5px lag -ms settle -ms | js>8ms 99.3% dec 0 up 0/0ms lite 0% sw 0  (7s)
+lite_low desk x4 stopgo  fps 29.3 over33 37.5% js 28.9/51.7ms stale 0.0% jud 10.3px err 5.2px lag 82ms settle 404ms | js>8ms 100.0% dec 0 up 0/0ms lite 0% sw 0  (6s)
+lod1     desk x4 wheel   ERR page.evaluate: TypeError: Cannot create property '0' on number '0'
+    at Object.frame (http://127.0.0.1:8140/tools/jar-bench/engine-lod.js:64:39)
+    at http://127.0.0.1:8140/tools/jar-bench/arena.ht  (5s)
+lod1     desk x4 mid     ERR page.evaluate: TypeError: Cannot create property '0' on number '0'
+    at Object.frame (http://127.0.0.1:8140/tools/jar-bench/engine-lod.js:64:39)
+    at http://127.0.0.1:8140/tools/jar-bench/arena.ht  (2s)
+lod1     desk x4 fling   ERR page.evaluate: TypeError: Cannot create property '0' on number '0'
+    at Object.frame (http://127.0.0.1:8140/tools/jar-bench/engine-lod.js:64:39)
+    at http://127.0.0.1:8140/tools/jar-bench/arena.ht  (1s)
+lod1     desk x4 slow    ERR page.evaluate: TypeError: Cannot create property '0' on number '0'
+    at Object.frame (http://127.0.0.1:8140/tools/jar-bench/engine-lod.js:64:39)
+    at http://127.0.0.1:8140/tools/jar-bench/arena.ht  (2s)
+lod1     desk x4 stopgo  ERR page.evaluate: TypeError: Cannot create property '0' on number '0'
+    at Object.frame (http://127.0.0.1:8140/tools/jar-bench/engine-lod.js:64:39)
+    at http://127.0.0.1:8140/tools/jar-bench/arena.ht  (1s)
+g_off    desk x4 wheel   ERR page.evaluate: TypeError: Cannot create property '0' on number '0'
+    at Object.frame (http://127.0.0.1:8140/tools/jar-bench/engine-lod.js:64:39)
+    at http://127.0.0.1:8140/tools/jar-bench/arena.ht  (9s)
+g_off    desk x4 mid     ERR page.evaluate: TypeError: Cannot create property '0' on number '0'
+    at Object.frame (http://127.0.0.1:8140/tools/jar-bench/engine-lod.js:64:39)
+    at http://127.0.0.1:8140/tools/jar-bench/arena.ht  (2s)
+g_off    desk x4 fling   ERR page.evaluate: TypeError: Cannot create property '0' on number '0'
+    at Object.frame (http://127.0.0.1:8140/tools/jar-bench/engine-lod.js:64:39)
+    at http://127.0.0.1:8140/tools/jar-bench/arena.ht  (1s)
+g_off    desk x4 slow    ERR page.evaluate: TypeError: Cannot create property '0' on number '0'
+    at Object.frame (http://127.0.0.1:8140/tools/jar-bench/engine-lod.js:64:39)
+    at http://127.0.0.1:8140/tools/jar-bench/arena.ht  (2s)
+g_off    desk x4 stopgo  ERR page.evaluate: TypeError: Cannot create property '0' on number '0'
+    at Object.frame (http://127.0.0.1:8140/tools/jar-bench/engine-lod.js:64:39)
+    at http://127.0.0.1:8140/tools/jar-bench/arena.ht  (2s)
+g_on     desk x4 wheel   ERR page.evaluate: TypeError: Cannot create property '0' on number '0'
+    at Object.frame (http://127.0.0.1:8140/tools/jar-bench/engine-lod.js:64:39)
+    at http://127.0.0.1:8140/tools/jar-bench/arena.ht  (9s)
+g_on     desk x4 mid     ERR page.evaluate: TypeError: Cannot create property '0' on number '0'
+    at Object.frame (http://127.0.0.1:8140/tools/jar-bench/engine-lod.js:64:39)
+    at http://127.0.0.1:8140/tools/jar-bench/arena.ht  (1s)
+g_on     desk x4 fling   ERR page.evaluate: TypeError: Cannot create property '0' on number '0'
+    at Object.frame (http://127.0.0.1:8140/tools/jar-bench/engine-lod.js:64:39)
+    at http://127.0.0.1:8140/tools/jar-bench/arena.ht  (2s)
+g_on     desk x4 slow    ERR page.evaluate: TypeError: Cannot create property '0' on number '0'
+    at Object.frame (http://127.0.0.1:8140/tools/jar-bench/engine-lod.js:64:39)
+    at http://127.0.0.1:8140/tools/jar-bench/arena.ht  (2s)
+g_on     desk x4 stopgo  ERR page.evaluate: TypeError: Cannot create property '0' on number '0'
+    at Object.frame (http://127.0.0.1:8140/tools/jar-bench/engine-lod.js:64:39)
+    at http://127.0.0.1:8140/tools/jar-bench/arena.ht  (2s)
+g_on2    desk x4 wheel   ERR page.evaluate: TypeError: Cannot create property '0' on number '0'
+    at Object.frame (http://127.0.0.1:8140/tools/jar-bench/engine-lod.js:64:39)
+    at http://127.0.0.1:8140/tools/jar-bench/arena.ht  (9s)
+g_on2    desk x4 mid     ERR page.evaluate: TypeError: Cannot create property '0' on number '0'
+    at Object.frame (http://127.0.0.1:8140/tools/jar-bench/engine-lod.js:64:39)
+    at http://127.0.0.1:8140/tools/jar-bench/arena.ht  (1s)
+g_on2    desk x4 fling   ERR page.evaluate: TypeError: Cannot create property '0' on number '0'
+    at Object.frame (http://127.0.0.1:8140/tools/jar-bench/engine-lod.js:64:39)
+    at http://127.0.0.1:8140/tools/jar-bench/arena.ht  (2s)
+g_on2    desk x4 slow    ERR page.evaluate: TypeError: Cannot create property '0' on number '0'
+    at Object.frame (http://127.0.0.1:8140/tools/jar-bench/engine-lod.js:64:39)
+    at http://127.0.0.1:8140/tools/jar-bench/arena.ht  (1s)
+g_on2    desk x4 stopgo  ERR page.evaluate: TypeError: Cannot create property '0' on number '0'
+    at Object.frame (http://127.0.0.1:8140/tools/jar-bench/engine-lod.js:64:39)
+    at http://127.0.0.1:8140/tools/jar-bench/arena.ht  (1s)
+s_w14    mob x1 wheel   fps 47.3 over33 9.4% js 16.7/35.9ms stale 0.0% jud 8.6px err 5.3px lag 125ms settle 498ms | js>8ms 96.2% dec 0 up 0/0ms lite 0% sw 0  (7s)
+s_w14    mob x1 mid     fps 43.3 over33 24.3% js 18.9/42.8ms stale 0.0% jud 8.2px err 3.8px lag 127ms settle 97ms | js>8ms 76.4% dec 0 up 0/0ms lite 0% sw 0  (5s)
+s_w14    mob x1 fling   fps 54.7 over33 8.5% js 13.8/34.1ms stale 0.0% jud 5.9px err 5.0px lag 153ms settle -ms | js>8ms 61.4% dec 0 up 0/0ms lite 0% sw 0  (6s)
+s_w14    mob x1 slow    fps 57.4 over33 3.1% js 12.1/26.5ms stale 0.0% jud 11.1px err 5.9px lag -ms settle -ms | js>8ms 60.7% dec 0 up 0/0ms lite 0% sw 0  (6s)
+s_w14    mob x1 stopgo  fps 57.5 over33 0.0% js 11.3/18.8ms stale 0.0% jud 8.7px err 5.6px lag 126ms settle 598ms | js>8ms 74.4% dec 0 up 0/0ms lite 0% sw 0  (6s)
+lite_low mob x1 wheel   fps 51.1 over33 0.0% js 15.1/24.0ms stale 0.0% jud 7.9px err 4.7px lag 94ms settle 321ms | js>8ms 98.1% dec 0 up 0/0ms lite 0% sw 0  (6s)
+lite_low mob x1 mid     fps 56.1 over33 0.9% js 12.8/22.8ms stale 0.0% jud 7.2px err 3.7px lag 90ms settle 64ms | js>8ms 73.0% dec 0 up 0/0ms lite 0% sw 0  (5s)
+lite_low mob x1 fling   fps 60.0 over33 2.5% js 10.3/18.3ms stale 0.0% jud 6.8px err 4.9px lag 104ms settle 783ms | js>8ms 57.9% dec 0 up 0/0ms lite 0% sw 0  (6s)
+lite_low mob x1 slow    fps 59.9 over33 2.3% js 10.4/20.8ms stale 0.0% jud 10.5px err 5.7px lag -ms settle -ms | js>8ms 53.0% dec 0 up 0/0ms lite 0% sw 0  (6s)
+lite_low mob x1 stopgo  fps 58.3 over33 2.1% js 11.7/18.9ms stale 0.0% jud 9.5px err 5.8px lag 88ms settle 387ms | js>8ms 79.5% dec 0 up 0/0ms lite 0% sw 0  (6s)
+lod1     mob x1 wheel   ERR page.evaluate: TypeError: Cannot create property '0' on number '0'
+    at Object.frame (http://127.0.0.1:8140/tools/jar-bench/engine-lod.js:64:39)
+    at http://127.0.0.1:8140/tools/jar-bench/arena.ht  (2s)
+lod1     mob x1 mid     ERR page.evaluate: TypeError: Cannot create property '0' on number '0'
+    at Object.frame (http://127.0.0.1:8140/tools/jar-bench/engine-lod.js:64:39)
+    at http://127.0.0.1:8140/tools/jar-bench/arena.ht  (1s)
+lod1     mob x1 fling   ERR page.evaluate: TypeError: Cannot create property '0' on number '0'
+    at Object.frame (http://127.0.0.1:8140/tools/jar-bench/engine-lod.js:64:39)
+    at http://127.0.0.1:8140/tools/jar-bench/arena.ht  (1s)
+lod1     mob x1 slow    ERR page.evaluate: TypeError: Cannot create property '0' on number '0'
+    at Object.frame (http://127.0.0.1:8140/tools/jar-bench/engine-lod.js:64:39)
+    at http://127.0.0.1:8140/tools/jar-bench/arena.ht  (1s)
+lod1     mob x1 stopgo  ERR page.evaluate: TypeError: Cannot create property '0' on number '0'
+    at Object.frame (http://127.0.0.1:8140/tools/jar-bench/engine-lod.js:64:39)
+    at http://127.0.0.1:8140/tools/jar-bench/arena.ht  (1s)
+g_off    mob x1 wheel   ERR page.evaluate: TypeError: Cannot create property '0' on number '0'
+    at Object.frame (http://127.0.0.1:8140/tools/jar-bench/engine-lod.js:64:39)
+    at http://127.0.0.1:8140/tools/jar-bench/arena.ht  (3s)
+g_off    mob x1 mid     ERR page.evaluate: TypeError: Cannot create property '0' on number '0'
+    at Object.frame (http://127.0.0.1:8140/tools/jar-bench/engine-lod.js:64:39)
+    at http://127.0.0.1:8140/tools/jar-bench/arena.ht  (1s)
+g_off    mob x1 fling   ERR page.evaluate: TypeError: Cannot create property '0' on number '0'
+    at Object.frame (http://127.0.0.1:8140/tools/jar-bench/engine-lod.js:64:39)
+    at http://127.0.0.1:8140/tools/jar-bench/arena.ht  (1s)
+g_off    mob x1 slow    ERR page.evaluate: TypeError: Cannot create property '0' on number '0'
+    at Object.frame (http://127.0.0.1:8140/tools/jar-bench/engine-lod.js:64:39)
+    at http://127.0.0.1:8140/tools/jar-bench/arena.ht  (1s)
+g_off    mob x1 stopgo  ERR page.evaluate: TypeError: Cannot create property '0' on number '0'
+    at Object.frame (http://127.0.0.1:8140/tools/jar-bench/engine-lod.js:64:39)
+    at http://127.0.0.1:8140/tools/jar-bench/arena.ht  (1s)
+g_on     mob x1 wheel   ERR page.evaluate: TypeError: Cannot create property '0' on number '0'
+    at Object.frame (http://127.0.0.1:8140/tools/jar-bench/engine-lod.js:64:39)
+    at http://127.0.0.1:8140/tools/jar-bench/arena.ht  (3s)
+g_on     mob x1 mid     ERR page.evaluate: TypeError: Cannot create property '0' on number '0'
+    at Object.frame (http://127.0.0.1:8140/tools/jar-bench/engine-lod.js:64:39)
+    at http://127.0.0.1:8140/tools/jar-bench/arena.ht  (1s)
+g_on     mob x1 fling   ERR page.evaluate: TypeError: Cannot create property '0' on number '0'
+    at Object.frame (http://127.0.0.1:8140/tools/jar-bench/engine-lod.js:64:39)
+    at http://127.0.0.1:8140/tools/jar-bench/arena.ht  (1s)
+g_on     mob x1 slow    ERR page.evaluate: TypeError: Cannot create property '0' on number '0'
+    at Object.frame (http://127.0.0.1:8140/tools/jar-bench/engine-lod.js:64:39)
+    at http://127.0.0.1:8140/tools/jar-bench/arena.ht  (1s)
+g_on     mob x1 stopgo  ERR page.evaluate: TypeError: Cannot create property '0' on number '0'
+    at Object.frame (http://127.0.0.1:8140/tools/jar-bench/engine-lod.js:64:39)
+    at http://127.0.0.1:8140/tools/jar-bench/arena.ht  (1s)
+g_on2    mob x1 wheel   ERR page.evaluate: TypeError: Cannot create property '0' on number '0'
+    at Object.frame (http://127.0.0.1:8140/tools/jar-bench/engine-lod.js:64:39)
+    at http://127.0.0.1:8140/tools/jar-bench/arena.ht  (3s)
+g_on2    mob x1 mid     ERR page.evaluate: TypeError: Cannot create property '0' on number '0'
+    at Object.frame (http://127.0.0.1:8140/tools/jar-bench/engine-lod.js:64:39)
+    at http://127.0.0.1:8140/tools/jar-bench/arena.ht  (1s)
+g_on2    mob x1 fling   ERR page.evaluate: TypeError: Cannot create property '0' on number '0'
+    at Object.frame (http://127.0.0.1:8140/tools/jar-bench/engine-lod.js:64:39)
+    at http://127.0.0.1:8140/tools/jar-bench/arena.ht  (1s)
+g_on2    mob x1 slow    ERR page.evaluate: TypeError: Cannot create property '0' on number '0'
+    at Object.frame (http://127.0.0.1:8140/tools/jar-bench/engine-lod.js:64:39)
+    at http://127.0.0.1:8140/tools/jar-bench/arena.ht  (1s)
+g_on2    mob x1 stopgo  ERR page.evaluate: TypeError: Cannot create property '0' on number '0'
+    at Object.frame (http://127.0.0.1:8140/tools/jar-bench/engine-lod.js:64:39)
+    at http://127.0.0.1:8140/tools/jar-bench/arena.ht  (1s)
+s_w14    mob x4 wheel   fps 11.1 over33 100.0% js 81.5/147.1ms stale 0.0% jud 10.9px err 5.2px lag 120ms settle 617ms | js>8ms 100.0% dec 0 up 0/0ms lite 0% sw 0  (9s)
+s_w14    mob x4 mid     fps 8.4 over33 100.0% js 105.5/169.2ms stale 0.0% jud 5.5px err 3.1px lag 117ms settle 147ms | js>8ms 100.0% dec 0 up 0/0ms lite 0% sw 0  (6s)
+s_w14    mob x4 fling   fps 14.8 over33 97.1% js 60.8/136.8ms stale 0.0% jud 7.0px err 4.6px lag 142ms settle -ms | js>8ms 100.0% dec 0 up 0/0ms lite 0% sw 0  (7s)
+s_w14    mob x4 slow    fps 12.4 over33 100.0% js 73.7/145.9ms stale 0.0% jud 10.3px err 5.1px lag -ms settle -ms | js>8ms 100.0% dec 0 up 0/0ms lite 0% sw 0  (7s)
+s_w14    mob x4 stopgo  fps 15.9 over33 100.0% js 57.0/91.7ms stale 0.0% jud 8.8px err 4.7px lag 106ms settle 546ms | js>8ms 100.0% dec 0 up 0/0ms lite 0% sw 0  (8s)
+lite_low mob x4 wheel   fps 13.7 over33 100.0% js 65.6/97.2ms stale 0.0% jud 10.1px err 4.8px lag 55ms settle 356ms | js>8ms 100.0% dec 0 up 0/0ms lite 0% sw 0  (8s)
+lite_low mob x4 mid     fps 12.9 over33 100.0% js 69.4/103.4ms stale 0.0% jud 6.4px err 3.1px lag 60ms settle 90ms | js>8ms 100.0% dec 0 up 0/0ms lite 0% sw 0  (6s)
+lite_low mob x4 fling   fps 16.7 over33 96.2% js 53.6/96.2ms stale 0.0% jud 6.2px err 4.8px lag 71ms settle 0ms | js>8ms 100.0% dec 0 up 0/0ms lite 0% sw 0  (7s)
+lite_low mob x4 slow    fps 18.7 over33 95.8% js 47.9/75.0ms stale 0.0% jud 10.2px err 5.7px lag -ms settle -ms | js>8ms 100.0% dec 0 up 0/0ms lite 0% sw 0  (7s)
+lite_low mob x4 stopgo  fps 18.3 over33 100.0% js 49.3/70.2ms stale 0.0% jud 8.1px err 5.3px lag 74ms settle 372ms | js>8ms 100.0% dec 0 up 0/0ms lite 0% sw 0  (7s)
+lod1     mob x4 wheel   ERR page.evaluate: TypeError: Cannot create property '0' on number '0'
+    at Object.frame (http://127.0.0.1:8140/tools/jar-bench/engine-lod.js:64:39)
+    at http://127.0.0.1:8140/tools/jar-bench/arena.ht  (5s)
+lod1     mob x4 mid     ERR page.evaluate: TypeError: Cannot create property '0' on number '0'
+    at Object.frame (http://127.0.0.1:8140/tools/jar-bench/engine-lod.js:64:39)
+    at http://127.0.0.1:8140/tools/jar-bench/arena.ht  (2s)
+lod1     mob x4 fling   ERR page.evaluate: TypeError: Cannot create property '0' on number '0'
+    at Object.frame (http://127.0.0.1:8140/tools/jar-bench/engine-lod.js:64:39)
+    at http://127.0.0.1:8140/tools/jar-bench/arena.ht  (2s)
+lod1     mob x4 slow    ERR page.evaluate: TypeError: Cannot create property '0' on number '0'
+    at Object.frame (http://127.0.0.1:8140/tools/jar-bench/engine-lod.js:64:39)
+    at http://127.0.0.1:8140/tools/jar-bench/arena.ht  (2s)
+lod1     mob x4 stopgo  ERR page.evaluate: TypeError: Cannot create property '0' on number '0'
+    at Object.frame (http://127.0.0.1:8140/tools/jar-bench/engine-lod.js:64:39)
+    at http://127.0.0.1:8140/tools/jar-bench/arena.ht  (2s)
+g_off    mob x4 wheel   ERR page.evaluate: TypeError: Cannot create property '0' on number '0'
+    at Object.frame (http://127.0.0.1:8140/tools/jar-bench/engine-lod.js:64:39)
+    at http://127.0.0.1:8140/tools/jar-bench/arena.ht  (10s)
+g_off    mob x4 mid     ERR page.evaluate: TypeError: Cannot create property '0' on number '0'
+    at Object.frame (http://127.0.0.1:8140/tools/jar-bench/engine-lod.js:64:39)
+    at http://127.0.0.1:8140/tools/jar-bench/arena.ht  (2s)
+g_off    mob x4 fling   ERR page.evaluate: TypeError: Cannot create property '0' on number '0'
+    at Object.frame (http://127.0.0.1:8140/tools/jar-bench/engine-lod.js:64:39)
+    at http://127.0.0.1:8140/tools/jar-bench/arena.ht  (2s)
+g_off    mob x4 slow    ERR page.evaluate: TypeError: Cannot create property '0' on number '0'
+    at Object.frame (http://127.0.0.1:8140/tools/jar-bench/engine-lod.js:64:39)
+    at http://127.0.0.1:8140/tools/jar-bench/arena.ht  (2s)
+g_off    mob x4 stopgo  ERR page.evaluate: TypeError: Cannot create property '0' on number '0'
+    at Object.frame (http://127.0.0.1:8140/tools/jar-bench/engine-lod.js:64:39)
+    at http://127.0.0.1:8140/tools/jar-bench/arena.ht  (2s)
+g_on     mob x4 wheel   ERR page.evaluate: TypeError: Cannot create property '0' on number '0'
+    at Object.frame (http://127.0.0.1:8140/tools/jar-bench/engine-lod.js:64:39)
+    at http://127.0.0.1:8140/tools/jar-bench/arena.ht  (10s)
+g_on     mob x4 mid     ERR page.evaluate: TypeError: Cannot create property '0' on number '0'
+    at Object.frame (http://127.0.0.1:8140/tools/jar-bench/engine-lod.js:64:39)
+    at http://127.0.0.1:8140/tools/jar-bench/arena.ht  (2s)
+g_on     mob x4 fling   ERR page.evaluate: TypeError: Cannot create property '0' on number '0'
+    at Object.frame (http://127.0.0.1:8140/tools/jar-bench/engine-lod.js:64:39)
+    at http://127.0.0.1:8140/tools/jar-bench/arena.ht  (2s)
+g_on     mob x4 slow    ERR page.evaluate: TypeError: Cannot create property '0' on number '0'
+    at Object.frame (http://127.0.0.1:8140/tools/jar-bench/engine-lod.js:64:39)
+    at http://127.0.0.1:8140/tools/jar-bench/arena.ht  (2s)
+g_on     mob x4 stopgo  ERR page.evaluate: TypeError: Cannot create property '0' on number '0'
+    at Object.frame (http://127.0.0.1:8140/tools/jar-bench/engine-lod.js:64:39)
+    at http://127.0.0.1:8140/tools/jar-bench/arena.ht  (2s)
+g_on2    mob x4 wheel   ERR page.evaluate: TypeError: Cannot create property '0' on number '0'
+    at Object.frame (http://127.0.0.1:8140/tools/jar-bench/engine-lod.js:64:39)
+    at http://127.0.0.1:8140/tools/jar-bench/arena.ht  (11s)
+g_on2    mob x4 mid     ERR page.evaluate: TypeError: Cannot create property '0' on number '0'
+    at Object.frame (http://127.0.0.1:8140/tools/jar-bench/engine-lod.js:64:39)
+    at http://127.0.0.1:8140/tools/jar-bench/arena.ht  (3s)
+g_on2    mob x4 fling   ERR page.evaluate: TypeError: Cannot create property '0' on number '0'
+    at Object.frame (http://127.0.0.1:8140/tools/jar-bench/engine-lod.js:64:39)
+    at http://127.0.0.1:8140/tools/jar-bench/arena.ht  (3s)
+g_on2    mob x4 slow    ERR page.evaluate: TypeError: Cannot create property '0' on number '0'
+    at Object.frame (http://127.0.0.1:8140/tools/jar-bench/engine-lod.js:64:39)
+    at http://127.0.0.1:8140/tools/jar-bench/arena.ht  (2s)
+g_on2    mob x4 stopgo  ERR page.evaluate: TypeError: Cannot create property '0' on number '0'
+    at Object.frame (http://127.0.0.1:8140/tools/jar-bench/engine-lod.js:64:39)
+    at http://127.0.0.1:8140/tools/jar-bench/arena.ht  (3s)

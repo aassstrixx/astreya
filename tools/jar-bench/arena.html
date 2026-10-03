@@ -1,0 +1,107 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Арена движков скролл-кадров</title>
+<style>html,body{margin:0;background:#06101f}canvas{display:block}</style>
+<canvas id="cv"></canvas>
+<script src="engine.js"></script>
+<script src="engine-lod.js"></script>
+<script>
+/* Сценарии скролла (y в px от начала сцены) и метрики плавности. Запускается из run.js (Playwright): window.__run(cfg, scenario, opts) */
+const SCEN = {
+  // колесо мыши: 16 щелчков по 114 px, каждый разворачивается за 160 мс (родное сглаживание браузера)
+  wheel: {dur: 3.4, y: (t, y0) => { let y = y0; for (let i = 0; i < 16; i++) { const x = (t - 0.2 - i * 0.12) / 0.16; y += 114 * (x <= 0 ? 0 : x >= 1 ? 1 : 1 - Math.pow(1 - x, 3)); } return y; }},
+  // тачпад/тач: бросок с затуханием импульса
+  fling: {dur: 3.2, y: (t, y0) => y0 + 3500 * 0.6 * (1 - Math.exp(-Math.max(0, t - 0.2) / 0.6))},
+  // медленное чтение: 160 px/с
+  slow: {dur: 3.6, y: (t, y0) => y0 + 160 * Math.max(0, t - 0.2)},
+  // средняя скорость: 1100 px/с
+  mid: {dur: 2.6, y: (t, y0) => y0 + 1100 * Math.max(0, t - 0.2)},
+  // вперёд — стоп — назад — стоп — вперёд
+  stopgo: {dur: 3.4, y: (t, y0) => { const s = Math.max(0, t - 0.2); let y = y0; y += 1100 * Math.min(s, 0.5); if (s > 0.95) y -= 1100 * Math.min(s - 0.95, 0.5); if (s > 1.85) y += 700 * Math.min(s - 1.85, 0.6); return y; }},
+  // прыжки (перетаскивание ползунка / якорь)
+  jump: {dur: 3.4, y: (t, y0, L) => (t < 0.5 ? y0 : t < 1.4 ? y0 + 0.30 * L : t < 2.3 ? y0 + 0.55 * L : y0 + 0.10 * L)}
+};
+const pct = (a, q) => { if (!a.length) return 0; const s = Array.from(a).sort((x, y) => x - y); return s[Math.min(s.length - 1, Math.floor(q * (s.length - 1)))]; };
+const mean = a => (a.length ? a.reduce((x, y) => x + y, 0) / a.length : 0);
+let MOTION = null;
+async function motion(kind) { if (!MOTION) MOTION = {}; if (!MOTION[kind]) MOTION[kind] = await (await fetch('data/motion_' + kind + '.json')).json(); return MOTION[kind]; }
+
+window.__run = async function (cfg, scenario, opts) {
+  const mo = await motion(opts.kind), pxP = p => mo.speed[Math.max(0, Math.min(mo.n, Math.round(p * mo.n)))] || 0;
+  const L = opts.total, sc = SCEN[scenario], y0 = opts.startP * L;
+  const tick60 = (fn) => new Promise(res => { const T0 = performance.now(); let n = 0; const loop = () => { const now = performance.now(); if (fn(now, n++) === false) return res(); setTimeout(loop, Math.max(0, T0 + n * 1000 / 60 - performance.now())); }; loop(); });
+  const longTasks = []; let po = null;
+  let rec, counters, mainJs = [];
+  if (cfg.worker) {
+    // движок целиком в Worker; основной поток только передаёт прокрутку
+    const cv = document.createElement('canvas'); cv.width = cfg.W; cv.height = cfg.H; document.body.appendChild(cv); cv.style.display = 'none';
+    const off = cv.transferControlToOffscreen(); const w = new Worker('engine-worker.js');
+    const ready = new Promise(r => { w.onmessage = e => { if (e.data.type === 'ready') r(); }; });
+    const cfg2 = Object.assign({}, cfg); delete cfg2.canvas;
+    w.postMessage({type: 'init', canvas: off, cfg: cfg2, startP: opts.startP, y0, total: L}, [off]);
+    await ready;
+    await tick60((ts, n) => { w.postMessage({type: 'y', y: y0, total: L}); return n < 40; });
+    w.postMessage({type: 'mark'});
+    try { po = new PerformanceObserver(l => l.getEntries().forEach(e => longTasks.push(e.duration))); po.observe({entryTypes: ['longtask']}); } catch (e) {}
+    const t0 = performance.now();
+    await tick60(ts => { const t = (performance.now() - t0) / 1000; const a = performance.now(); w.postMessage({type: 'y', y: sc.y(t, y0, L), total: L}); mainJs.push(performance.now() - a); return t < sc.dur + 1.6; });
+    const res = await new Promise(r => { w.onmessage = e => { if (e.data.type === 'result') r(e.data); }; w.postMessage({type: 'stop'}); });
+    rec = res.rec; counters = res.counters; w.terminate(); cv.remove();
+  } else {
+    const cv = document.getElementById('cv'); cv.width = cfg.W; cv.height = cfg.H; if (!cfg.flush) cv.style.display = 'none';      // растеризация холста в этой песочнице идёт в основном потоке (нет GPU) — прячем, меряем работу самого движка
+    const eng = cfg.lod ? ArenaLod(Object.assign({}, cfg, {canvas: cv})) : ArenaEngine(Object.assign({}, cfg, {canvas: cv}));
+    await eng.preload();
+    eng.reset(opts.startP);
+    await tick60((ts, n) => { eng.frame(ts, y0, L); return n < 40; });
+    Object.keys(eng.counters).forEach(k => { const v = eng.counters[k]; eng.counters[k] = Array.isArray(v) ? v.map(() => 0) : 0; });
+    rec = {t: [], dt: [], js: [], cp: [], pT: [], eff: [], stale: [], flow: [], a: [], vp: [], ia: [], ib: []};
+    try { po = new PerformanceObserver(l => l.getEntries().forEach(e => longTasks.push(e.duration))); po.observe({entryTypes: ['longtask']}); } catch (e) {}
+    const t0 = performance.now(); let prevT = null;
+    await tick60(ts => {
+      const t = (performance.now() - t0) / 1000;
+      const a = performance.now(); const info = eng.frame(ts, sc.y(t, y0, L), L); const js = performance.now() - a;
+      rec.t.push(t); rec.dt.push(prevT === null ? 16.7 : ts - prevT); prevT = ts; rec.js.push(js);
+      rec.cp.push(info.cp); rec.pT.push(info.pT); rec.eff.push(info.eff); rec.stale.push(info.stale ? 1 : 0); rec.flow.push(info.flow ? 1 : 0); rec.a.push(info.a); rec.vp.push(info.vp); rec.ia.push(info.ia); rec.ib.push(info.ib); (rec.tier = rec.tier || []).push(info.tier);
+      return t < sc.dur + 1.6;
+    });
+    counters = Object.assign({}, eng.counters); eng.destroy();
+  }
+  if (po) po.disconnect();
+  const n = rec.t.length;
+  // метрики на кадрах, где идёт движение цели или плейхед ещё не остановился
+  const mov = [], err = [], jud = [], freeze = [], vis = [];
+  for (let i = 1; i < n; i++) {
+    const dcp = rec.cp[i] - rec.cp[i - 1], de = rec.eff[i] - rec.eff[i - 1], p = rec.cp[i], k = pxP(p);
+    if (Math.abs(dcp) * k < 0.2 && Math.abs(rec.pT[i] - rec.cp[i]) * k < 0.5) continue;     // стоим — не считаем
+    mov.push(i);
+    const eOff = rec.flow[i] ? 0.4 : Math.abs(rec.eff[i] - rec.cp[i]) * k;                   // ошибка положения в px кадра 1920
+    err.push(eOff);
+    const PP = cfg.lod ? (cfg.tiers || [cfg.hi, cfg.lite])[rec.tier[i]].P : cfg.P;
+    const ghost = (!rec.flow[i] && rec.a[i] > 0.02 && rec.a[i] < 0.98) ? Math.min(rec.a[i], 1 - rec.a[i]) * 2 * Math.abs(PP[rec.ib[i]] - PP[rec.ia[i]]) * k : 0;   // двоение при смешивании кадров (px)
+    vis.push(eOff + 0.5 * ghost);
+    jud.push(rec.flow[i] && rec.flow[i - 1] ? 0.3 : Math.abs(de - dcp) * k);                 // «рывок»: разница реального шага и шага плейхеда
+    if (Math.abs(dcp) * k > 2.5 && Math.abs(de) * k < 0.3 && !rec.flow[i]) freeze.push(i);
+  }
+  // задержка: в сценариях с равномерным движением цели — отставание плейхеда от цели во времени
+  const lag = []; for (let i = 5; i < n - 1; i++) { const v = (rec.pT[i + 1] - rec.pT[i - 1]) / ((rec.t[i + 1] - rec.t[i - 1]) || 1); if (Math.abs(v) > 0.05) lag.push((rec.pT[i] - rec.cp[i]) / v * 1000); }
+  // время остановки: после последнего движения цели — когда ошибка плейхеда < 0.5 px
+  let lastMove = 0; for (let i = 1; i < n; i++) if (Math.abs(rec.pT[i] - rec.pT[i - 1]) * pxP(rec.pT[i]) > 0.3) lastMove = i;
+  let settle = null; for (let i = lastMove; i < n; i++) if (Math.abs(rec.pT[i] - rec.cp[i]) * pxP(rec.pT[i]) < 0.5) { settle = (rec.t[i] - rec.t[lastMove]) * 1000; break; }
+  // «щелчок» при остановке: максимальный скачок видимого шага в последние 0.8 с движения
+  let stopJerk = 0; for (let i = Math.max(2, lastMove - 6); i < n; i++) { const s1 = (rec.eff[i] - rec.eff[i - 1]) * pxP(rec.cp[i]), s0 = (rec.eff[i - 1] - rec.eff[i - 2]) * pxP(rec.cp[i]); stopJerk = Math.max(stopJerk, Math.abs(s1 - s0)); }
+  const dts = rec.dt.slice(5);
+  const out = {
+    frames: n, movFrames: mov.length,
+    fps: 1000 / mean(dts), dtP95: pct(dts, 0.95), dtP99: pct(dts, 0.99), over20: dts.filter(x => x > 20).length / dts.length * 100, over33: dts.filter(x => x > 33.4).length / dts.length * 100,
+    jsMean: mean(rec.js), jsP95: pct(rec.js, 0.95), jsMax: Math.max(...rec.js), jsOver8: rec.js.filter(x => x > 8).length / n * 100, jsOver16: rec.js.filter(x => x > 16).length / n * 100,
+    longTasks: longTasks.length, longMax: longTasks.length ? Math.max(...longTasks) : 0,
+    stale: mov.length ? mov.filter(i => rec.stale[i]).length / mov.length * 100 : 0,
+    errMean: mean(err), errP95: pct(err, 0.95), visMean: mean(vis), visP95: pct(vis, 0.95), judRms: Math.sqrt(mean(jud.map(x => x * x))), judP95: pct(jud, 0.95),
+    liteShare: rec.tier ? rec.tier.filter(x => x > 0).length / rec.tier.length * 100 : 0, xliteShare: rec.tier ? rec.tier.filter(x => x > 1).length / rec.tier.length * 100 : 0, freezes: freeze.length, freezePct: mov.length ? freeze.length / mov.length * 100 : 0,
+    lagMs: lag.length ? pct(lag, 0.5) : null, settleMs: settle, stopJerk,
+    counters
+  };
+  if (cfg.worker) { out.workerJsMean = mean(rec.js); out.workerJsP95 = pct(rec.js, 0.95); out.mainJsMean = mean(mainJs); out.mainJsP95 = pct(mainJs, 0.95); out.mainJsMax = Math.max(...mainJs); out.jsMean = out.mainJsMean; out.jsP95 = out.mainJsP95; out.jsMax = out.mainJsMax; out.jsOver8 = mainJs.filter(x => x > 8).length / mainJs.length * 100; out.jsOver16 = mainJs.filter(x => x > 16).length / mainJs.length * 100; }
+  return out;
+};
+</script>

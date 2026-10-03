@@ -14,8 +14,6 @@ python3 story_render.py anim 0 179 frames_d --res 1920x1080 --samples 12 --sampl
 python3 story_render.py anim 0 179 frames_m --res 810x1440 --samples 12 --samples-late 8 --late-p 0.6 --total 180 --noblur --filter 1.0
 python3 encode_web.py frames_d ../../assets/jar/d --size 1920x1080 --q 90
 python3 encode_web.py frames_m ../../assets/jar/m --size 810x1440 --q 90
-python3 encode_web.py frames_d ../../assets/jar/d-lite --size 960x540 --q 72               # облегчённые — для автономной сборки
-python3 encode_web.py frames_m ../../assets/jar/m-lite --size 540x960 --q 72
 ```
 
 ## Плавность: неравномерная сетка кадров и поток
@@ -30,17 +28,19 @@ python3 story_render.py plan plan.json new_d --res 1920x1080 --samples 12 --samp
 python3 story_render.py plan plan.json new_m --res 810x1440  --samples 12 --samples-late 8 --late-p 0.6 --noblur --filter 1.0
 python3 encode_web.py --plan plan.json frames_d new_d ../../assets/jar/d --size 1920x1080 --q 80
 python3 encode_web.py --plan plan.json frames_m new_m ../../assets/jar/m --size 810x1440 --q 80
-python3 encode_web.py --plan plan.json frames_d new_d ../../assets/jar/d-lite --size 960x540 --q 70      # для автономной сборки
-python3 encode_web.py --plan plan.json frames_m new_m ../../assets/jar/m-lite --size 540x960 --q 70
+# лёгкие уровни: между каждой парой полных кадров — запечённый промежуточный (поток DIS, сдвиг обоих кадров к середине), всего 2N-1 = 555 кадров
 pip install opencv-python-headless
-python3 make_flow.py plan.json frames_d new_d ../../assets/jar/fd --reduce 4 --range 64          # карты оптического потока между соседними кадрами
-python3 make_flow.py plan.json frames_m new_m ../../assets/jar/fm --reduce 4 --range 64
-python3 make_flow.py plan.json frames_d new_d ../../assets/jar/fd-lite --reduce 8 --range 64     # облегчённые карты для автономной сборки
-python3 make_flow.py plan.json frames_m new_m ../../assets/jar/fm-lite --reduce 8 --range 64
+python3 make_flow.py plan.json frames_d new_d /tmp/flow_d --reduce 8 --range 96 --blur 1.0 --cache /tmp/flowcache_d      # считает поток и кладёт в кэш (карты /tmp/flow_d не нужны)
+python3 make_flow.py plan.json frames_m new_m /tmp/flow_m --reduce 8 --range 96 --blur 1.0 --cache /tmp/flowcache_m
+python3 bake_mid.py plan.json frames_d new_d /tmp/flowcache_d ../../assets/jar/dl --size 960x540 --q 70 --also 480x270:62:../../assets/jar/dx
+python3 bake_mid.py plan.json frames_m new_m /tmp/flowcache_m ../../assets/jar/ml --size 540x960 --q 70 --also 270x480:62:../../assets/jar/mx
 ```
 
-В `data/redesign.json → jar` затем: `frames` = число кадров плана, `p` = список положений (`[e.p for e in plan]`, округлить до 5 знаков), `flow`/`size` — как сейчас.
-В браузере (`js/jar.js`) оба кадра сдвигаются к нужному моменту по карте потока и смешиваются (WebGL), так что движение непрерывное при любой скорости прокрутки.
+В `data/redesign.json → jar` затем: `frames` = число кадров плана, `p` = список положений полных кадров (`[e.p for e in plan]`, округлить до 5 знаков),
+`pb` = положения лёгких кадров (555 значений: для каждого k — `p[k]`, затем `p[k] + 0,5·(p[k+1] − p[k])`; bake_mid.py пишет их в `p.json` вывода).
+Уровни в браузере (`js/jar.js`): `d`/`m` — полные (278 кадров; в покое и при медленной прокрутке), `dl`/`ml` — лёгкие запечённые (быстрая прокрутка;
+в автономной сборке — единственный набор), `dx`/`mx` — совсем лёгкие (только если устройство не справляется). Почему так, а не WebGL-интерполяция —
+см. `tools/jar-bench/README.md` (арена вариантов).
 
 `--total` должен совпадать с `data/redesign.json → jar.frames`. Готовые кадры при повторном запуске `anim` пропускаются.
 Почему кадры резкие: `--noblur` (на стоп-кадре motion blur выглядит смазанным), разрешение 1920x1080 вместо 1280x720, `--filter 1.0`, WebP q90.
