@@ -13,7 +13,7 @@
 
   /* ---------- конфигурация: сюда подключаются форма и аналитика ---------- */
   A.config = {
-    formEndpoint: (D.site && D.site.formEndpoint) || '',   // URL, принимающий POST JSON (см. README, раздел «Формы»); пусто — режим письма mailto
+    formEndpoint: window.__ASTREYA_BUNDLE ? '' : ((D.site && D.site.formEndpoint) || ''),   // куда уходят заявки (POST JSON): по умолчанию /api/lead — сервер из папки server/, заявки видны в админке; пусто — режим письма mailto. В автономном файле-предпросмотре сервера нет
     ymId: '',                                              // номер счётчика Яндекс.Метрики (когда появится)
     gtagId: ''                                             // идентификатор Google Analytics (когда появится)
   };

@@ -35,7 +35,9 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
   ok(await admin.locator('.empty').first().isVisible(), 'список заявок пуст до первых заявок');
 
   /* ---------- режим «письмо» (формы без сервера работают по-старому) ---------- */
-  console.log('\n[2] Формы без endpoint — режим «письмо» не сломан');
+  console.log('\n[2] По умолчанию формы шлют заявки в админку; пустой адрес — режим «письмо» (mailto) по-прежнему работает');
+  ok(rd(S.root, 'data/site.json').formEndpoint === '/api/lead' && fs.readFileSync(path.join(S.root, 'js/data.js'), 'utf8').includes('"formEndpoint":"/api/lead"'), 'в поставке formEndpoint = /api/lead (заявки идут в админку)');
+  { const cur = (await adminApi.get('/api/collections/site')).json; cur.data.formEndpoint = ''; ok((await adminApi.put('/api/collections/site', {data: cur.data, version: cur.version})).status === 200, 'для проверки режима «письмо» адрес временно очищен'); }
   const ctx = await browser.newContext(ctxOpts), pub = await newPage(ctx, 'public');
   let leadCalls = 0; pub.on('request', r => { if (r.url().includes('/api/lead')) leadCalls++; });
   await pub.goto(base + '/contacts.html'); await pub.waitForSelector('form[data-form=contact]');
@@ -51,6 +53,9 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
   await admin.click('button:has-text("Тот же сервер (/api/lead)")'); await admin.click('button:has-text("Записать в настройки сайта")');
   await admin.waitForSelector('.alert.ok:has-text("Сайт пересобран")', {timeout: 20000});
   ok(/"formEndpoint":"\/api\/lead"/.test(fs.readFileSync(path.join(S.root, 'js/data.js'), 'utf8')), 'js/data.js пересобран с адресом /api/lead');
+  { const bp = await newPage(await browser.newContext(ctxOpts), 'bundle'); await bp.addInitScript(() => { window.__ASTREYA_BUNDLE = true; }); let bc = 0; bp.on('request', r => { if (r.url().includes('/api/lead')) bc++; });
+    await bp.goto(base + '/contacts.html'); await bp.waitForSelector('form[data-form=contact]'); const bf = await fillContact(bp, {name: 'Предпросмотр', email: 'p@example.com', msg: 'автономный файл'}); await bf.locator('button[type=submit]').click(); await bp.waitForSelector('.ok h3');
+    ok((await bp.textContent('.ok h3')).includes('Заявка подготовлена') && bc === 0, 'автономный файл-предпросмотр (без сервера) остаётся в режиме «письмо» и не ходит на /api/lead'); }
 
   /* ---------- настоящие формы сайта ---------- */
   console.log('\n[4] Отправка форм на сайте (4 типа) → «Заявка отправлена»');
@@ -93,8 +98,8 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
   ok((await admin.textContent('.dlg .notes')).includes('отправили прайс'), 'комментарий сохранён и показан'); await shot(admin, 'lead-detail');
   await admin.keyboard.press('Escape'); await admin.waitForSelector('.dlg', {state: 'detached'});
   ok((await admin.textContent('.side .badge')).trim() === '3', 'бейдж «новых» уменьшился до 3');
-  await admin.click('.tab:has-text("В работе")'); await admin.waitForSelector('tr.click:has-text("Ольга Партнёр")'); ok(await admin.locator('tr.click').count() === 1, 'вкладка «В работе» показывает 1 заявку');
-  await admin.click('.tab:has-text("Все")'); await admin.fill('input[type=search]', 'казань'); await admin.waitForTimeout(700); ok(await admin.locator('tr.click').count() === 1, 'поиск «казань» находит заявку');
+  await admin.click('.tab:has-text("В работе")'); await admin.waitForFunction(() => document.querySelectorAll('tr.click').length === 1 && document.querySelector('tr.click').textContent.includes('Ольга Партнёр'), null, {timeout: 8000}).catch(() => {}); ok(await admin.locator('tr.click').count() === 1, 'вкладка «В работе» показывает 1 заявку');
+  await admin.click('.tab:has-text("Все")'); await admin.fill('input[type=search]', 'казань'); await admin.waitForFunction(() => document.querySelectorAll('tr.click').length === 1, null, {timeout: 8000}).catch(() => {}); ok(await admin.locator('tr.click').count() === 1, 'поиск «казань» находит заявку');
   await admin.fill('input[type=search]', ''); await admin.waitForTimeout(600);
   const [dl] = await Promise.all([admin.waitForEvent('download'), admin.click('a:has-text("Скачать CSV")')]);
   const csvText = fs.readFileSync(await dl.path(), 'utf8'); ok(csvText.charCodeAt(0) === 0xFEFF && csvText.includes('Ольга Партнёр') && csvText.includes('Игорь Семинар') && /\.csv$/.test(dl.suggestedFilename()), 'CSV скачан: BOM, все заявки', dl.suggestedFilename());
@@ -196,6 +201,9 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
   console.log('\n[14] Сайт на другом адресе: CORS и разрешённые сайты');
   const site2 = http.createServer((q, r) => { let f = path.join(S.root, decodeURIComponent(q.url.split('?')[0])); if (f.endsWith('/')) f += 'index.html'; fs.readFile(f, (e, d) => { if (e) { r.writeHead(404); return r.end(); } r.writeHead(200, {'Content-Type': /\.html$/.test(f) ? 'text/html; charset=utf-8' : /\.js$/.test(f) ? 'text/javascript' : /\.css$/.test(f) ? 'text/css' : 'application/octet-stream'}); r.end(d); }); });
   await new Promise(r => site2.listen(0, '127.0.0.1', r)); const base2 = 'http://127.0.0.1:' + site2.address().port;
+  { const sp = await newPage(await browser.newContext(ctxOpts), 'static'); let calls = 0; sp.on('request', r => { if (r.url().includes('/api/lead')) calls++; }); await sp.goto(base2 + '/contacts.html'); await sp.waitForSelector('form[data-form=contact]');
+    const sf = await fillContact(sp, {name: 'Без Сервера', email: 'nos@example.com', msg: 'статический хостинг без сервера заявок'}); await sf.locator('button[type=submit]').click(); await sp.waitForSelector('.form-status.err');
+    ok(calls === 1 && (await sp.locator('.ok').count()) === 0 && (await sp.textContent('.form-status.err')).includes('Не удалось отправить'), 'статический хостинг без сервера заявок (адрес /api/lead не отвечает): честная ошибка с запасными контактами, а не ложное «отправлено» и не письмо'); }
   const siteDoc = (await adminApi.get('/api/collections/site')).json; siteDoc.data.formEndpoint = base + '/api/lead';
   ok((await adminApi.put('/api/collections/site', {data: siteDoc.data, version: siteDoc.version})).status === 200, 'endpoint переключён на абсолютный адрес сервера');
   const px = await newPage(await browser.newContext(ctxOpts), 'cross'); await px.goto(base2 + '/contacts.html'); await px.waitForSelector('form[data-form=contact]');

@@ -8,7 +8,7 @@
   "redesign": true,
   "url": "https://aassstrixx.github.io/astreya/",
   "demoNotice": "Демонстрационные данные: ассортимент, расписание, новости и пороги скидок — placeholder. Актуальную информацию уточняйте у менеджеров.",
-  "formEndpoint": "",
+  "formEndpoint": "/api/lead",
   "contacts": {
     "email": "9255162@mail.ru",
     "phone": "+7 (495) 925-51-62",
