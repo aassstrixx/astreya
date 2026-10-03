@@ -193,6 +193,10 @@ body::after{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;bac
 .nav-in #curtain{pointer-events:all}
 .nav-in #curtain .cs i{transform:scaleY(1);transition:none}
 .nav-in .ct{opacity:1}
+/* тихий переход (поиск): без заставки и шторки, содержимое просто проявляется */
+.nav-quiet #splash{display:none}
+#main.qfade{animation:qfade .3s ease both}
+@keyframes qfade{from{opacity:0}to{opacity:1}}
 .cta-band::after{content:"";position:absolute;inset:0;pointer-events:none;background:var(--grain-lt);opacity:.07;z-index:0}
 .cta-band>*{position:relative;z-index:1}
 .js .reveal.in.pcard,.js .reveal.in.newscard{transition-delay:var(--rd,0ms)}

@@ -12,7 +12,7 @@ const JS = ['shared', 'data', 'core', 'motion', 'pages', 'hero-mark'];
 /* Ранний скрипт: класс js, «уже видели заставку», «пришли с переходом» — до первой отрисовки, чтобы не было мигания */
 /* Совместимость со старыми ссылками одностраничной версии (#/catalog?brand=…, #/brand/keenwell, #/academy…) — только на главной */
 const LEGACY = `(function(l){var m=l.hash.match(/^#\\/(catalog|brands|brand\\/[\\w-]+|academy|news|company)(\\?.*)?$/);if(!m)return;var t=m[1],q=m[2]||'',u=t==='academy'?'training.html':t.indexOf('brand/')===0?'brands/'+t.slice(6)+'.html':t+'.html';l.replace(u+q);})(location);`;
-const EARLY = `(function(d){var h=d.documentElement;h.classList.add('js');try{var n=sessionStorage.getItem('astreya:nav');if(n){var o=JSON.parse(n);if(o&&Date.now()-o.t<8000)h.classList.add('nav-in');else sessionStorage.removeItem('astreya:nav')}}catch(e){}})(document);`;
+const EARLY = `(function(d){var h=d.documentElement;h.classList.add('js');try{var n=sessionStorage.getItem('astreya:nav');if(n){var o=JSON.parse(n);if(o&&Date.now()-o.t<8000)h.classList.add(o.q?'nav-quiet':'nav-in');else sessionStorage.removeItem('astreya:nav')}}catch(e){}})(document);`;
 
 module.exports = function layout(ctx, C) {
   const {site} = ctx, {u} = C;

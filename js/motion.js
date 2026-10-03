@@ -216,6 +216,7 @@
       .then(t => new DOMParser().parseFromString(t, 'text/html')).catch(e => { pages.delete(key); throw e; }));
     return pages.get(key);
   }
+  document.addEventListener('focusin', e => { if (canSwap && e.target && (e.target.id === 'srch-q' || (e.target.closest && e.target.closest('.nav-search')))) { try { fetchPage(new URL('search.html', location.href.replace(/[^/]*$/, '')).href).catch(() => {}); } catch (err) {} } });
   document.addEventListener('pointerover', e => {            // страницу можно подгрузить заранее, пока курсор над ссылкой
     if (!canSwap) return;
     const a = e.target.closest && e.target.closest('a[href]'); if (!a) return;
@@ -233,6 +234,18 @@
     $$('script[type="application/ld+json"]', document.head).forEach(x => x.remove());
     $$('script[type="application/ld+json"]', doc).forEach(x => { const sc = document.createElement('script'); sc.type = 'application/ld+json'; sc.textContent = x.textContent; document.head.appendChild(sc); });
   }
+  /* у страниц разный набор стилей и скриптов (вступление с баночкой — css/jar.css + js/jar.js — есть только у главной). Если подменяем страницу на ту, чьих файлов
+     в документе ещё нет (например, возврат на главную по логотипу из каталога), подключаем их и ждём загрузки: иначе блоки приходят без оформления и скриптов */
+  /* ключ файла — «папка/имя» без адреса и версии: относительные ссылки уже загруженных <link>/<script> после pushState читаются от адреса новой страницы и сравнивать полные URL нельзя */
+  const assetKey = h => String(h).split('#')[0].split('?')[0].split('/').slice(-2).join('/');
+  function syncAssets(doc, base) {
+    const have = sel => Array.from(document.querySelectorAll(sel)).map(n => assetKey(n.getAttribute('href') || n.getAttribute('src')));
+    const css = have('link[rel="stylesheet"][href]'), js = have('script[src]'), jobs = [];
+    const add = (mk, href) => jobs.push(new Promise(res => { const n = mk(); n.onload = n.onerror = () => res(); document.head.appendChild(n); setTimeout(res, 8000); }));
+    doc.querySelectorAll('link[rel="stylesheet"][href]').forEach(l => { let h; try { h = new URL(l.getAttribute('href'), base).href; } catch (e) { return; } if (css.indexOf(assetKey(h)) < 0) { css.push(assetKey(h)); add(() => { const n = document.createElement('link'); n.rel = 'stylesheet'; n.href = h; return n; }); } });
+    doc.querySelectorAll('script[src]').forEach(sc => { let h; try { h = new URL(sc.getAttribute('src'), base).href; } catch (e) { return; } if (js.indexOf(assetKey(h)) < 0) { js.push(assetKey(h)); add(() => { const n = document.createElement('script'); n.src = h; n.async = false; return n; }); } });
+    return Promise.all(jobs);
+  }
   function swapIn(doc, url) {
     const main = $('#main'), nm = doc.getElementById('main'); if (!main || !nm) throw new Error('no main');
     abs(nm, url);
@@ -245,42 +258,44 @@
   }
 
   let busy = false, pending = null;
-  async function go(url, push) {
-    if (busy) { pending = {url, push}; return; }
+  /* quiet — тихий переход (поиск): без шторки и заставки, страница подменяется, как только пришла, и мягко проявляется */
+  async function go(url, push, quiet) {
+    if (busy) { pending = {url, push, quiet}; return; }
     busy = true;
     const u = new URL(url, location.href);
-    curtainLabelFor(u.href);
-    curtain.classList.remove('out'); curtain.classList.add('in');
+    if (!quiet) { curtainLabelFor(u.href); curtain.classList.remove('out'); curtain.classList.add('in'); }
     let doc = null;
     const got = fetchPage(u.href).then(d => { doc = d; }).catch(() => {});
-    await wait(820);                                        // полосы закрылись, читается титр раздела
+    if (!quiet) await wait(820);                            // полосы закрылись, читается титр раздела
     await got;
-    if (!doc) { location.href = u.href; return; }            // подмена не удалась — обычный переход
+    if (!doc) { if (quiet) store.set('astreya:nav', JSON.stringify({t: Date.now(), q: 1})); location.href = u.href; return; }            // подмена не удалась — обычный переход
+    await syncAssets(doc, u.href);
     try {
       swapIn(doc, u.href);
       if (push) history.pushState({}, '', u.href);
-    } catch (e) { location.href = u.href; return; }
+    } catch (e) { if (quiet) store.set('astreya:nav', JSON.stringify({t: Date.now(), q: 1})); location.href = u.href; return; }
     A.closeMenu(); A.closeSearch(); A.closeModal();
     window.scrollTo({top: 0, left: 0, behavior: 'instant'});
     M.cancelSmooth();
     const hdr = $('#hdr'); if (hdr) hdr.classList.remove('hide');
     A.initPage(document);
-    M.scan($('#main'), 470);
+    M.scan($('#main'), quiet ? 40 : 470);
     updateProgress();
-    curtain.classList.remove('in'); curtain.classList.add('out');
-    if (u.hash) setTimeout(() => { const el = document.getElementById(decodeURIComponent(u.hash.slice(1))); if (el) el.scrollIntoView({behavior: 'smooth', block: 'start'}); }, 900);
-    await wait(700);
-    curtain.classList.remove('out');
+    if (quiet) { const m = $('#main'); m.classList.remove('qfade'); void m.offsetWidth; m.classList.add('qfade'); }
+    else { curtain.classList.remove('in'); curtain.classList.add('out'); }
+    if (u.hash) setTimeout(() => { const el = document.getElementById(decodeURIComponent(u.hash.slice(1))); if (el) el.scrollIntoView({behavior: 'smooth', block: 'start'}); }, quiet ? 200 : 900);
+    if (!quiet) { await wait(700); curtain.classList.remove('out'); } else await wait(60);
     busy = false;
-    if (pending) { const p = pending; pending = null; go(p.url, p.push); }
+    if (pending) { const p = pending; pending = null; go(p.url, p.push, p.quiet); }
   }
   M.go = go;
   addEventListener('popstate', () => { if (canSwap) go(location.href, false); });
 
   let leaving = false;
-  M.navigate = function (url) {                            // запасной путь (файл с диска): шторка закрывается, затем обычный переход
-    if (canSwap) { go(url, true); return; }
+  M.navigate = function (url, quiet) {                     // запасной путь (файл с диска): шторка закрывается, затем обычный переход
+    if (canSwap) { go(url, true, quiet); return; }
     if (leaving) return; leaving = true;
+    if (quiet) { store.set('astreya:nav', JSON.stringify({t: Date.now(), q: 1})); location.href = url; return; }
     store.set('astreya:nav', JSON.stringify({t: Date.now()}));
     if (!curtain) { location.href = url; return; }
     curtainLabelFor(url);
@@ -297,6 +312,20 @@
     await wait(700);
     curtain.classList.remove('out');
   };
+  const isSearchUrl = u => /(^|\/)search\.html$/.test(u.pathname);
+  /* форма поиска (шапка, окно поиска, страница поиска): раньше уходила обычным переходом — перезагрузка, заставка и шторка. Теперь страница результатов подменяется тихо */
+  document.addEventListener('submit', e => {
+    const f = e.target; if (!f || !f.getAttribute || e.defaultPrevented) return;
+    const act = f.getAttribute('action'); if (!act || (f.getAttribute('method') || 'get').toLowerCase() !== 'get') return;
+    let u; try { u = new URL(f.action || act, location.href); } catch (err) { return; }
+    if (u.host !== location.host || !isSearchUrl(u) || !f.elements || !f.elements.q) return;
+    e.preventDefault();
+    const q = String(f.elements.q.value || '').trim();
+    u.search = q ? '?q=' + encodeURIComponent(q) : '';
+    A.closeMenu();
+    if (u.pathname === location.pathname && u.search === location.search) { A.closeSearch(); return; }
+    M.navigate(u.href, true);
+  });
   document.addEventListener('click', e => {
     if (e.defaultPrevented || e.button || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
     const a = e.target.closest ? e.target.closest('a[href]') : null;
@@ -308,7 +337,7 @@
     if (u.pathname === location.pathname && u.hash) return;                                // якорь на этой же странице
     e.preventDefault();
     A.closeMenu(); A.closeSearch();
-    M.navigate(u.href);
+    M.navigate(u.href, isSearchUrl(u));                         // переход к результатам поиска — без шторки
   });
   addEventListener('pageshow', e => { if (e.persisted && curtain) { leaving = false; busy = false; curtain.classList.remove('in', 'out'); html.classList.remove('nav-in'); } });
 
@@ -367,6 +396,7 @@
     /* ссылки шапки, подвала и поиска остаются в документе при подмене содержимого — делаем их абсолютными, чтобы они не «ехали» вместе с адресом */
     if (!window.__ASTREYA_BUNDLE) $$('#hdr [href], .ftr [href], #srch [href], #hdr [action], #srch [action]').forEach(n => { ['href', 'action'].forEach(at => { const v = n.getAttribute(at); if (v && v.charAt(0) !== '#') { try { n.setAttribute(at, new URL(v, location.href).href); } catch (e) {} } }); });
     const fromNav = html.classList.contains('nav-in');
+    if (html.classList.contains('nav-quiet')) { store.del('astreya:nav'); html.classList.remove('nav-quiet'); const sq = $('#splash'); if (sq) sq.remove(); finish(40); return; }          // тихий переход обычной загрузкой (поиск): ни заставки, ни шторки
     if ($('#splash') && !fromNav) { requestAnimationFrame(() => setTimeout(runSplash, 0)); return; }   // заставка — при каждой загрузке/обновлении страницы
     const sp = $('#splash'); if (sp) sp.remove();
     if (fromNav) { M.liftAfterNav(); finish(340); } else finish(60);

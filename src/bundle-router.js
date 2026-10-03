@@ -15,14 +15,12 @@
   A.writeQuery = p => { vq = p.toString(); };
 
   function scrollToHash(h) { const el = h && document.getElementById(h.slice(1)); if (el) el.scrollIntoView({behavior: 'smooth', block: 'start'}); }
-  async function show(path, query, hash, push) {
+  async function show(path, query, hash, push, quiet) {
     const pg = PAGES[path]; if (!pg || busy) return;
     if (path === cur && query === (vq ? '?' + vq : '')) { if (hash) scrollToHash(hash); else window.scrollTo({top: 0, behavior: 'smooth'}); return; }
     busy = true;
     const curtain = $('#curtain'), main = $('#main');
-    M.curtainLabelFor(new URL(path, 'http://x/' + dirOf(cur)).href);
-    curtain.classList.remove('out'); curtain.classList.add('in');
-    await A.wait(820);
+    if (!quiet) { M.curtainLabelFor(new URL(path, 'http://x/' + dirOf(cur)).href); curtain.classList.remove('out'); curtain.classList.add('in'); await A.wait(820); }          // quiet — поиск: без шторки
     main.innerHTML = pg.main; fixAssets(main); cur = path; vq = (query || '').replace(/^\?/, '');
     document.title = pg.title;
     document.body.setAttribute('data-page', pg.key); document.body.setAttribute('data-nav', pg.nav || ''); main.setAttribute('data-page', pg.key);
@@ -30,10 +28,10 @@
     A.closeMenu(); A.closeSearch(); A.closeModal();
     window.scrollTo({top: 0, left: 0, behavior: 'instant'}); if (M.cancelSmooth) M.cancelSmooth();
     const hdr = $('#hdr'); if (hdr) hdr.classList.remove('hide');
-    A.initPage(document); M.scan(main, 470);
-    curtain.classList.remove('in'); curtain.classList.add('out');
+    A.initPage(document); M.scan(main, quiet ? 40 : 470);
+    if (quiet) { main.classList.remove('qfade'); void main.offsetWidth; main.classList.add('qfade'); } else { curtain.classList.remove('in'); curtain.classList.add('out'); }
     if (push) { try { history.pushState({p: path, q: query || ''}, '', '#/' + path + (query || '')); } catch (e) {} }
-    await A.wait(700); curtain.classList.remove('out'); busy = false;
+    if (!quiet) { await A.wait(700); curtain.classList.remove('out'); } busy = false;
     if (hash) scrollToHash(hash);
   }
   A.showPage = show;
@@ -45,14 +43,14 @@
     const r = resolve(href, a.closest('#main') ? cur : 'index.html');
     if (!PAGES[r.path]) return;
     e.preventDefault();
-    show(r.path, r.query, r.hash, true);
+    show(r.path, r.query, r.hash, true, r.path === 'search.html');
   }, true);
   document.addEventListener('submit', e => {                       // формы поиска (GET → search.html)
     const f = e.target, act = f.getAttribute && f.getAttribute('action');
     if (!act || !/search\.html$/.test(act)) return;
     e.preventDefault();
     const q = (new FormData(f).get('q') || '').toString().trim();
-    show('search.html', q ? '?q=' + encodeURIComponent(q) : '', '', true);
+    show('search.html', q ? '?q=' + encodeURIComponent(q) : '', '', true, true);
   }, true);
   addEventListener('popstate', e => { if (e.state && e.state.p) show(e.state.p, e.state.q, '', false); });
 })();
