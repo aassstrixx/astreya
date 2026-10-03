@@ -374,8 +374,8 @@
       "accent": 1,
       "sub": "",
       "pauseVh": {
-        "desktop": 0.4,
-        "mobile": 0.45
+        "desktop": 0.6,
+        "mobile": 0.65
       },
       "heightVh": {
         "desktop": 250,
