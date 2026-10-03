@@ -28,18 +28,18 @@ python3 story_render.py plan plan.json new_d --res 1920x1080 --samples 12 --samp
 python3 story_render.py plan plan.json new_m --res 810x1440  --samples 12 --samples-late 8 --late-p 0.6 --noblur --filter 1.0
 python3 encode_web.py --plan plan.json frames_d new_d ../../assets/jar/d --size 1920x1080 --q 80
 python3 encode_web.py --plan plan.json frames_m new_m ../../assets/jar/m --size 810x1440 --q 80
-# лёгкие уровни: между каждой парой полных кадров — запечённый промежуточный (поток DIS, сдвиг обоих кадров к середине), всего 2N-1 = 555 кадров
+# средний и низкий уровни: между каждой парой полных кадров — запечённый промежуточный (поток DIS, сдвиг обоих кадров к середине), всего 2N-1 = 555 кадров
 pip install opencv-python-headless
 python3 make_flow.py plan.json frames_d new_d /tmp/flow_d --reduce 8 --range 96 --blur 1.0 --cache /tmp/flowcache_d      # считает поток и кладёт в кэш (карты /tmp/flow_d не нужны)
 python3 make_flow.py plan.json frames_m new_m /tmp/flow_m --reduce 8 --range 96 --blur 1.0 --cache /tmp/flowcache_m
-python3 bake_mid.py plan.json frames_d new_d /tmp/flowcache_d ../../assets/jar/dl --size 960x540 --q 70 --also 480x270:62:../../assets/jar/dx
-python3 bake_mid.py plan.json frames_m new_m /tmp/flowcache_m ../../assets/jar/ml --size 540x960 --q 70 --also 270x480:62:../../assets/jar/mx
+python3 bake_mid.py plan.json frames_d new_d /tmp/flowcache_d ../../assets/jar/dm --size 1280x720 --q 74 --also 960x540:70:../../assets/jar/dl     # dm — средний, dl — низкий
+python3 bake_mid.py plan.json frames_m new_m /tmp/flowcache_m ../../assets/jar/mm --size 720x1280 --q 74 --also 540x960:70:../../assets/jar/ml
 ```
 
 В `data/redesign.json → jar` затем: `frames` = число кадров плана, `p` = список положений полных кадров (`[e.p for e in plan]`, округлить до 5 знаков),
 `pb` = положения лёгких кадров (555 значений: для каждого k — `p[k]`, затем `p[k] + 0,5·(p[k+1] − p[k])`; bake_mid.py пишет их в `p.json` вывода).
-Уровни в браузере (`js/jar.js`): `d`/`m` — полные (278 кадров; в покое и при медленной прокрутке), `dl`/`ml` — лёгкие запечённые (быстрая прокрутка;
-в автономной сборке — единственный набор), `dx`/`mx` — совсем лёгкие (только если устройство не справляется). Почему так, а не WebGL-интерполяция —
+Уровни в браузере (`js/jar.js`): `d`/`m` — полные (278 кадров; в покое), `dm`/`mm` — средние запечённые (пока картинка движется), `dl`/`ml` — низкие
+(запасной уровень, если устройство не справляется; в автономной сборке — единственный набор, из-за веса). Почему так, а не WebGL-интерполяция —
 см. `tools/jar-bench/README.md` (арена вариантов).
 
 `--total` должен совпадать с `data/redesign.json → jar.frames`. Готовые кадры при повторном запуске `anim` пропускаются.

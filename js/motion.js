@@ -29,30 +29,38 @@
     }
     lastY = y;
     parKick();
-    if (sRaf && Math.abs(scrollY - sCur) > 3) { cancelAnimationFrame(sRaf); sRaf = 0; }   // внешний скролл (клавиши, якорь) отменяет инерцию
+    if (sRaf && Math.abs(scrollY - sCur) > 3) { cancelAnimationFrame(sRaf); sRaf = 0; sLast = 0; sVel = 0; }   // внешний скролл (клавиши, якорь) отменяет инерцию
   }
   addEventListener('scroll', () => { if (!ticking) { ticking = true; requestAnimationFrame(onScroll); } }, {passive: true});
   addEventListener('resize', updateProgress);
 
-  /* ---------- инерционное колесо мыши (только точный указатель; тач остаётся нативным) ---------- */
-  let sTarget = 0, sCur = 0, sRaf = 0;
+  /* ---------- инерционное колесо мыши (только точный указатель; тач остаётся нативным) ----------
+     Щелчки колеса (по 100 px) без «плавной прокрутки» браузера дают ступеньки, а простая экспонента к цели при каждом щелчке меняет скорость скачком
+     (заметная «пульсация»). Поэтому цель двигается щелчками, а страницу к ней ведёт пружина с критическим затуханием: скорость непрерывна,
+     остановка мягкая. Подбор жёсткости — tools/jar-bench/scroll-sim.js (ω = 10: шероховатость движения в 3–4 раза ниже экспоненты при той же задержке).
+     Работает везде одинаково, в том числе на сцене с баночкой: пока сглаживание включали и выключали по зоне, на границе страница «дёргалась» назад. */
+  let sTarget = 0, sCur = 0, sVel = 0, sRaf = 0, sLast = 0;
+  const S_OMEGA = 10;
   const maxScroll = () => document.documentElement.scrollHeight - innerHeight;
   const scrollsInside = el => { for (let n = el; n && n !== body && n !== html; n = n.parentElement) { if (/(auto|scroll)/.test(getComputedStyle(n).overflowY) && n.scrollHeight > n.clientHeight + 1) return true; } return false; };
-  let sLast = 0;
   function sStep(t) {
     const dt = sLast ? Math.min(.05, Math.max(.004, (t - sLast) / 1000)) : .0167; sLast = t;
-    sCur += (sTarget - sCur) * (1 - Math.exp(-dt / .17));          // постоянная времени .17 с (прежние .095 за кадр на 60 Гц), не зависит от частоты экрана
-    if (Math.abs(sTarget - sCur) < .5) { sCur = sTarget; sRaf = 0; sLast = 0; } else sRaf = requestAnimationFrame(sStep);
+    const e = Math.exp(-S_OMEGA * dt), d = sCur - sTarget, c = sVel + S_OMEGA * d;        // точное решение критически затухающей пружины на шаг dt
+    sCur = sTarget + (d + c * dt) * e; sVel = (sVel - S_OMEGA * c * dt) * e;
+    const mx = maxScroll();
+    if (sCur < 0) { sCur = 0; sVel = 0; } else if (sCur > mx) { sCur = mx; sVel = 0; }      // у краёв страницы скорость гасим
+    if (Math.abs(sTarget - sCur) < .5 && Math.abs(sVel) < 6) { sCur = sTarget; sVel = 0; sRaf = 0; sLast = 0; } else sRaf = requestAnimationFrame(sStep);
     window.scrollTo({top: sCur, behavior: 'instant'});
   }
-  M.cancelSmooth = () => { cancelAnimationFrame(sRaf); sRaf = 0; sTarget = sCur = scrollY; };
+  M.cancelSmooth = () => { cancelAnimationFrame(sRaf); sRaf = 0; sLast = 0; sVel = 0; sTarget = sCur = scrollY; };
   if (matchMedia('(hover:hover) and (pointer:fine)').matches) {
     addEventListener('wheel', e => {
       if (e.ctrlKey || e.defaultPrevented || Math.abs(e.deltaX) > Math.abs(e.deltaY)) return;
-      if (body.classList.contains('locked') || body.classList.contains('jar-zone') || scrollsInside(e.target)) return;      // в сцене с баночкой колесо не сглаживаем второй раз: её ведёт своя пружина (js/jar.js)
+      if (body.classList.contains('locked') || scrollsInside(e.target)) return;
       e.preventDefault();
       let dy = e.deltaY; if (e.deltaMode === 1) dy *= 34; else if (e.deltaMode === 2) dy *= innerHeight;
-      if (!sRaf) sCur = sTarget = scrollY;
+      if (!sRaf) { sCur = sTarget = scrollY; sVel = 0; }
+      if (dy * sVel < 0) sVel = 0;                                  // смена направления: инерцию прежнего движения гасим, иначе страница «проскакивает» вперёд
       sTarget = Math.max(0, Math.min(maxScroll(), sTarget + dy));
       if (!sRaf) sRaf = requestAnimationFrame(sStep);
     }, {passive: false});

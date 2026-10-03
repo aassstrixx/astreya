@@ -101,3 +101,44 @@ try {
     g_on2: gov('3 уровня + регулятор + «совсем лёгкие» при очень быстром движении', {governor: true, fast2: 45})
   });
 } catch (e) { /* лёгкие запечённые наборы ещё не готовы */ }
+
+/* ---- десятый раунд: разрешение «среднего» уровня (чёткость в движении). Уровни: полные 278 → средний (555, запечённые) → низкий (555, 960×540) ---- */
+try {
+  const PB = JSON.parse(fs.readFileSync(path.join(__dirname, '.cache', 'bake_dl', 'p.json'), 'utf8')).p;
+  const mk = (label, mid, over) => Object.assign({label, lod: true, render: '2d', decode: 'img', motion: {kind: 'spring', omega: 24}, blend: 'linear', fast: 18, slow: 9, hold: 140, fast2: 0, governor: true, devices: ['desk'],
+    mkLod: (dn, d, P) => ({tiers: [{dir: '/assets/jar/d/', P: P278}, {dir: '/tools/jar-bench/.cache/' + mid + '/', P: PB}, {dir: '/tools/jar-bench/.cache/bake_dl/', P: PB}]})}, over || {});
+  Object.assign(V, {
+    q_cur: Object.assign(mk('сейчас: полные / 960 / 480', 'bake_dl'), {mkLod: (dn, d, P) => ({tiers: [{dir: '/assets/jar/d/', P: P278}, {dir: '/tools/jar-bench/.cache/bake_dl/', P: PB}, {dir: '/tools/jar-bench/.cache/bake_dxl/', P: PB}]})}),
+    q_1120: mk('средний 1120×630', 'mid1120'),
+    q_1280: mk('средний 1280×720', 'mid1280'),
+    q_1440: mk('средний 1440×810', 'mid1440'),
+    q_1280f: mk('средний 1280×720, быстрее 45 кадров/с — низкий 960', 'mid1280', {fast2: 45})
+  });
+} catch (e) {}
+
+/* ---- одиннадцатый раунд: пороги скорости. «Полные» кадры (278) шагают по ~15 px и при медленной прокрутке дают «стоп-моушен» (рывки ≈ 9 px): пробуем держать полные только в покое ---- */
+try {
+  const PB11 = JSON.parse(fs.readFileSync(path.join(__dirname, '.cache', 'bake_dl', 'p.json'), 'utf8')).p;
+  const t11 = (label, over) => Object.assign({label, lod: true, render: '2d', decode: 'img', motion: {kind: 'spring', omega: 24}, blend: 'linear', fast: 18, slow: 9, hold: 140, fast2: 0, governor: true, devices: ['desk'],
+    mkLod: (dn, d, P) => ({tiers: [{dir: '/assets/jar/d/', P: P278}, {dir: '/tools/jar-bench/.cache/mid1280/', P: PB11}, {dir: '/tools/jar-bench/.cache/bake_dl/', P: PB11}]})}, over || {});
+  Object.assign(V, {
+    t_cur: t11('пороги 18/9 (сейчас)'),
+    t_5: t11('пороги 5/2.5', {fast: 5, slow: 2.5}),
+    t_3: t11('пороги 3/1.5', {fast: 3, slow: 1.5}),
+    t_3f: t11('пороги 3/1.5, низкий уровень от 60 кадров/с', {fast: 3, slow: 1.5, fast2: 60})
+  });
+} catch (e) {}
+
+/* ---- двенадцатый раунд: телефон — разрешение среднего уровня (полные 810×1440 → средний → низкий 540×960), пороги 5/2.5 ---- */
+try {
+  const PB12 = JSON.parse(fs.readFileSync(path.join(__dirname, '.cache', 'bake_ml', 'p.json'), 'utf8')).p;
+  const m12 = (label, mid, over) => Object.assign({label, lod: true, render: '2d', decode: 'img', motion: {kind: 'spring', omega: 24}, blend: 'linear', fast: 5, slow: 2.5, hold: 140, fast2: 0, governor: true, devices: ['mob'],
+    mkLod: (dn, d, P) => ({tiers: [{dir: '/assets/jar/m/', P: P278}, {dir: '/tools/jar-bench/.cache/' + mid + '/', P: PB12}, {dir: '/tools/jar-bench/.cache/bake_ml/', P: PB12}]})}, over || {});
+  Object.assign(V, {
+    m_cur: m12('телефон сейчас: пороги 18/9, полные / 540×960 / 270×480', 'bake_ml', {fast: 18, slow: 9, mkLod: (dn, d, P) => ({tiers: [{dir: '/assets/jar/m/', P: P278}, {dir: '/tools/jar-bench/.cache/bake_ml/', P: PB12}, {dir: '/tools/jar-bench/.cache/bake_mxl/', P: PB12}]})}),
+    m_540: m12('телефон: пороги 5/2.5, средний = 540×960 (прежний лёгкий)', 'bake_ml', {mkLod: (dn, d, P) => ({tiers: [{dir: '/assets/jar/m/', P: P278}, {dir: '/tools/jar-bench/.cache/bake_ml/', P: PB12}, {dir: '/tools/jar-bench/.cache/bake_mxl/', P: PB12}]})}),
+    m_630: m12('телефон: средний 630×1120', 'mm630'),
+    m_675: m12('телефон: средний 675×1200', 'mm675'),
+    m_720: m12('телефон: средний 720×1280', 'mm720')
+  });
+} catch (e) {}

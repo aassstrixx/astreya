@@ -5,18 +5,19 @@
    Как устроена плавность (по итогам «арены» — tools/jar-bench: десятки вариантов гоняли под нагрузкой и сравнивали по метрикам):
    • картинка рисуется на 2D-canvas прямо из <img> — основной поток почти ничего не делает. WebGL/ImageBitmap/интерполяция потока были
      медленнее: загрузка текстур и декодирование выполняются в основном потоке и забивают его при быстрой прокрутке (отсюда «лаги»);
-   • три уровня качества кадров (LOD): «полные» (1920×1080 / 810×1440, 278 кадров) — в покое и при медленной прокрутке; «лёгкие»
-     запечённые (960×540, 555 кадров: между каждой парой полных — дорисованный промежуточный, tools/jar-render/bake_mid.py) — пока картинка
-     движется быстро; «совсем лёгкие» (480×270) — только если устройство не справляется. Декодировать лёгкий кадр в 4–5 раз дешевле, а кадров вдвое больше;
+   • три уровня качества кадров (LOD): «полные» (1920×1080 / 810×1440, 278 кадров) — в покое; «средние» (1280×720 / 720×1280, 555 кадров: между
+     каждой парой полных — дорисованный промежуточный, tools/jar-render/bake_mid.py) — пока картинка движется; «низкие» (960×540 / 540×960) — только
+     если устройство не справляется. Средний кадр декодировать дешевле, а кадров вдвое больше — движение ровнее;
    • регулятор нагрузки: если кадры идут дольше бюджета (по интервалам requestAnimationFrame), уровень качества на время движения снижается,
      а когда запас снова есть — возвращается. В покое всегда показываются полные кадры; смена уровня идёт короткой перекрёстной сменой;
    • движение по кадрам ведёт «пружина» с критическим затуханием (а не простое сглаживание): нет рывка на старте и мягкая остановка без «щелчка»;
      в покое показывается ровно ближайший кадр (без двоения), при движении соседние кадры смешиваются;
    • в цикле нет чтения вёрстки: границы сцены измеряются один раз (и при изменении размера), CSS-переменные пишутся только при изменении;
-   • пока сцена на экране, колесо мыши не «сглаживается» второй раз (js/motion.js смотрит на класс jar-zone) — иначе задержки складываются.
-   Кадры: assets/jar/d, dl, dx (горизонтальный экран) и m, ml, mx (вертикальный); в автономной сборке — только лёгкий набор dl/ml из data:-адресов.
+   • колесо мыши сглаживает js/motion.js (пружина по щелчкам колеса) — везде одинаково, в том числе на этой сцене; пружина плейхеда добавляет к нему
+     лишь небольшую задержку и ведёт сцену при касаниях, перетаскивании ползунка и якорях (подбор — tools/jar-bench/scroll-sim.js).
+   Кадры: assets/jar/d, dm, dl (горизонтальный экран) и m, mm, ml (вертикальный); в автономной сборке — только низкий набор dl/ml из data:-адресов (вес).
    Положения кадров по сценарию (p от 0 до 1): data-p — полный набор (сетка неравномерная, кадров больше там, где движение быстрее),
-   data-pb — лёгкие наборы.
+   data-pb — средний и низкий наборы.
    Вступление показывается при любых настройках устройства («уменьшить движение», экономия трафика) — по решению заказчика; без JS его нет.
    Подписи, шапка и кнопка «Пропустить» — тоже от прокрутки. После баночки идёт экран с лозунгом (#jar-outro): слова проявляются по той же
    прокрутке, линия с жемчужиной дорисовывается, затем всё уходит.
@@ -31,10 +32,11 @@
   const narrowBlend = (x, p) => p < 0.6 ? ease(clamp((x - 0.42) / 0.16, 0, 1)) : ease(x);
   const pad = i => String(i).padStart(3, '0');
   const portraitMQ = window.matchMedia('(max-aspect-ratio: 11/10)');
-  const OMEGA = 20;           // жёсткость пружины, 1/с: отставание при равномерной прокрутке ≈ 2/OMEGA = 0,1 с, остановка (до 2 %) ≈ 0,3 с
-  /* скорость плейхеда считаем в кадрах полного набора в секунду */
-  const FAST = 18;            // быстрее — лёгкие кадры
-  const SLOW = 9;             // медленнее (дольше HOLD мс) — снова полные
+  const OMEGA = 24;           // жёсткость пружины, 1/с: отставание при равномерной прокрутке ≈ 2/OMEGA ≈ 0,08 с, остановка (до 2 %) ≈ 0,25 с
+  /* скорость плейхеда считаем в кадрах полного набора в секунду; полные кадры шагают по ~15 px, поэтому при любом заметном движении лучше средний уровень:
+     вдвое плотнее, с запечёнными промежуточными (арена, раунд 11: рывки 2,6 → 0,5 px, кадров дольше 33 мс 2,2 → 0,5 %) */
+  const FAST = 5;             // быстрее — средний уровень (в покое и почти в покое — полные)
+  const SLOW = 2.5;           // медленнее (дольше HOLD мс) — снова полные
   const HOLD = 140;
   const MOVING = 2.5;         // выше — «идёт движение»: регулятор нагрузки может ограничить уровень
   const XFADE = 160;          // мс, перекрёстная смена уровней
@@ -66,18 +68,22 @@
       const por = isPortrait(), pick = (a, b) => (por ? b : a), list = [];
       const add = (dir, P) => { if (dir && P.length) list.push({dir, P, N: P.length, im: new Array(P.length).fill(null), busy: new Uint8Array(P.length), loaded: 0}); };
       hasHi = false; liteIdx = 0; xlIdx = -1;
-      if (!bundle || !Pb.length) { add(pick(ds.d, ds.m), Phi); hasHi = list.length > 0; }
-      if (Pb.length) { liteIdx = list.length; add(pick(ds.dl, ds.ml), Pb); }
-      if (!bundle && Pb.length && (pick(ds.dx, ds.mx))) { xlIdx = list.length; add(pick(ds.dx, ds.mx), Pb); }
-      if (xlIdx >= list.length) xlIdx = -1;
+      const mid = pick(ds.dm, ds.mm), low = pick(ds.dl, ds.ml);
+      if (bundle && Pb.length && low) add(low, Pb);                        // автономная сборка: один набор — самый лёгкий по весу
+      else {
+        add(pick(ds.d, ds.m), Phi); hasHi = list.length > 0;
+        if (Pb.length && mid) { liteIdx = list.length; add(mid, Pb); }
+        if (Pb.length && low) { xlIdx = list.length; add(low, Pb); }
+      }
       if (liteIdx >= list.length) liteIdx = 0;
+      if (xlIdx >= list.length) xlIdx = -1;
       return list;
     }
 
     /* ---- состояние ---- */
     let W = 0, H = 0, dead = false, firstDrawn = false, running = false, last = 0, dirty = true, started = false;
     let cp = 0, vp = 0, pT = 0, cq = 0, vq = 0, qT = 0, paintedP = -1, paintedWant = -1, rzTimer = 0;
-    let sTop = 0, sTot = 1, sH = 1, oTop = 0, oTot = 1, oH = 0, zone = false;
+    let sTop = 0, sTot = 1, sH = 1, oTop = 0, oTot = 1, oH = 0;
     const born = performance.now();
     /* уровень по скорости и регулятор нагрузки */
     let lastDraw = null, lastSig = -1, tier = 0, calm = 0, gov = 0, used = -1, wantIdx = 0, restW = 1, xf = null, xlWanted = false;
@@ -95,8 +101,9 @@
       while (hi - lo > 1) { const m = (lo + hi) >> 1; if (P[m] <= p) lo = m; else hi = m; }
       return {k: lo, t: (p - P[lo]) / (P[lo + 1] - P[lo])};
     }
-    function nearestMissing(t, from) {
-      for (let d = 0; d < t.N; d++) {
+    function nearestMissing(t, from, maxd) {
+      const lim = Math.min(t.N, maxd === undefined ? t.N : maxd + 1);
+      for (let d = 0; d < lim; d++) {
         const a = from - d, b = from + d;
         if (a >= 0 && !t.busy[a]) return a;
         if (b < t.N && !t.busy[b]) return b;
@@ -107,16 +114,20 @@
       for (let i = 0; i < t.N; i += 8) if (!t.busy[i]) return i;
       return t.busy[t.N - 1] ? -1 : t.N - 1;
     }
+    /* что грузить следующим: самое нужное для текущего вида — первым (полные кадры рядом с положением — чтобы вид в покое был резким), затем всё остальное от положения */
     function pickNext() {
       const lt = T[liteIdx], hi = hasHi ? T[0] : null, xl = xlIdx >= 0 ? T[xlIdx] : null;
-      const near = t => (t ? nearestMissing(t, locate(t.P, cp).k) : -1);
+      const near = (t, maxd) => (t ? nearestMissing(t, locate(t.P, cp).k, maxd) : -1);
       let i;
       if (!winLoaded) {
         if (firstAsked || !lt) return null;
         firstAsked = true; i = near(lt); return i >= 0 ? {ti: liteIdx, i} : null;
       }
-      if (hi && hiPrime > 0 && (i = near(hi)) >= 0) { hiPrime--; return {ti: 0, i}; }          // самые нужные сейчас полные кадры — чтобы первый вид был резким
-      if (lt && ((i = coarseMissing(lt)) >= 0 || (i = near(lt)) >= 0)) return {ti: liteIdx, i};
+      if (hi && hiPrime > 0 && (i = near(hi)) >= 0) { hiPrime--; return {ti: 0, i}; }
+      if (lt && (i = coarseMissing(lt)) >= 0) return {ti: liteIdx, i};
+      if (hi && (i = near(hi, 6)) >= 0) return {ti: 0, i};
+      if (lt && (i = near(lt, 20)) >= 0) return {ti: liteIdx, i};
+      if (lt && (i = near(lt)) >= 0) return {ti: liteIdx, i};
       if (hi && (i = near(hi)) >= 0) return {ti: 0, i};
       if (xl && xlWanted && (i = near(xl)) >= 0) return {ti: xlIdx, i};
       return null;
@@ -186,7 +197,7 @@
       ctx2d.globalAlpha = alpha; ctx2d.drawImage(im, (W - dw) / 2, (H - dh) / 2, dw, dh);
     }
     function compose(r, alpha, single) {
-      ctx2d.imageSmoothingEnabled = true; ctx2d.imageSmoothingQuality = hasHi && r.ti === 0 ? 'high' : 'low';
+      ctx2d.imageSmoothingEnabled = true; ctx2d.imageSmoothingQuality = 'low';      // 'high' на процессорной растеризации в 10–20 раз дороже (замеры), а выигрыш в чёткости — доли дБ
       if (single) { drawImg(r.B_ && r.a >= 0.5 ? r.B_ : r.A_, alpha); return; }
       drawImg(r.A_, 1);
       if (r.B_ && r.a > 0) drawImg(r.B_, r.a);
@@ -232,10 +243,10 @@
         else if (dtEma < base * 1.05 + 0.2) { fastRun++; slowRun = 0; }
         else slowRun = 0;
         if (slowRun >= 14 && gov < T.length - 1 && now > govLock) {
-          gov++; govChanges++; slowRun = fastRun = 0; govLock = now + 1200;
+          gov = gov === 0 && T.length > 2 ? 2 : gov + 1; govChanges++; slowRun = fastRun = 0; govLock = now + 1200;      // уровень 1 (средний) при движении и так включён — сразу на низкий
           if (now - lastGov < 4000) upLocked = true;                 // уровень снижали дважды подряд — устройство слабое, обратно не поднимаем
           lastGov = now; if (gov >= 1) xlWanted = true;
-        } else if (fastRun >= 240 && gov > 0 && !upLocked && now > govLock + 2800) { gov--; govChanges++; fastRun = 0; govLock = now + 1200; lastGov = now; }
+        } else if (fastRun >= 240 && gov > 0 && !upLocked && now > govLock + 2800) { gov = gov === 2 && T.length > 2 ? 0 : gov - 1; govChanges++; fastRun = 0; govLock = now + 1200; lastGov = now; }
       }
       wantIdx = Math.min(Math.max(tier, moving ? gov : 0), Math.max(0, T.length - 1));
     }
@@ -304,8 +315,6 @@
       cp = clamp(cp, 0, 1); cq = clamp(cq, 0, 1);
       const inView = y + vh > sTop && y < sTop + sH;
       const inOutro = !!outro && y + vh > oTop && y < oTop + oH;
-      const nz = inView || inOutro;
-      if (nz !== zone) { zone = nz; document.body.classList.toggle('jar-zone', zone); }
       if (inView) chooseTier(t, dtRaw);
       if ((inView || !firstDrawn) && (dirty || xf || wantIdx !== paintedWant || Math.abs(cp - paintedP) > 1e-7)) {
         if (paint(t)) { paintedP = cp; paintedWant = wantIdx; dirty = false; } else dirty = true;
@@ -321,6 +330,10 @@
     const onMQ = () => { measureStatic(); sizeCanvas(); startLoading(); schedule(); };
     addEventListener('scroll', onScroll, {passive: true});
     addEventListener('resize', onResize);
+    /* размер сцены может поменяться и без события resize (встроенные браузеры мессенджеров, поздно пришедший CSS, панели браузера) — тогда холст
+       остался бы старого размера и картинка растянулась; следим за самой сценой (CSS object-fit: cover страхует от растяжения до пересчёта) */
+    let ro = null;
+    if (typeof ResizeObserver === 'function') { ro = new ResizeObserver(() => { if (dead) return; measureStatic(); sizeCanvas(); schedule(); }); ro.observe(stage); }
     portraitMQ.addEventListener && portraitMQ.addEventListener('change', onMQ);
     if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => { if (!dead) { measureStatic(); schedule(); } });
     const onLoad = () => { if (dead) return; winLoaded = true; measureStatic(); pump(); schedule(); };
@@ -347,11 +360,11 @@
           perf: {n: perfN, mean: ring.length ? ring.reduce((s, v) => s + v, 0) / ring.length : 0, p95: ring.length ? ring[Math.floor(ring.length * 0.95)] : 0, max: ring.length ? ring[ring.length - 1] : 0}};
       },
       destroy() {
-        dead = true; gen++; clearTimeout(rzTimer);
+        dead = true; gen++; clearTimeout(rzTimer); if (ro) ro.disconnect();
         removeEventListener('scroll', onScroll); removeEventListener('resize', onResize); removeEventListener('load', onLoad);
         portraitMQ.removeEventListener && portraitMQ.removeEventListener('change', onMQ);
         T = [];
-        document.body.classList.remove('jar-on', 'jar-zone');
+        document.body.classList.remove('jar-on');
       }
     };
   }

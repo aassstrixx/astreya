@@ -147,7 +147,7 @@ module.exports = function homeRedesign(ctx, C, P, parts, {events, val}) {
     const j = rd.jar; if (!j || !j.enabled) return '';
     const words = String(ctx.site.tagline || '').split('.').map(x => x.trim()).filter(Boolean);
     const caps = j.captions.map((c, i) => words[i] ? `<p class="js-cap${c.tone === 'dark' ? ' dk' : ''}" data-from="${c.from}" data-to="${c.to}"><b>${esc(words[i])}</b></p>` : '').join('');
-    return `<section class="jar-story" id="jar-story" style="--jh:${j.heightVh.desktop}vh;--jhm:${j.heightVh.mobile}vh" data-n="${j.frames}" data-ext="${j.ext}" data-v="${esc(ctx.assetVersion || '')}" data-d="${j.desktop}" data-m="${j.mobile}" data-dl="${j.lite.desktop}" data-ml="${j.lite.mobile}"${j.xlite ? ` data-dx="${j.xlite.desktop}" data-mx="${j.xlite.mobile}"` : ''}${j.p ? ` data-p="${j.p.join(',')}"` : ''}${j.pb ? ` data-pb="${j.pb.join(',')}"` : ''} data-h="${j.heightVh.desktop}" data-hm="${j.heightVh.mobile}" aria-label="Вступление: ${esc(j.alt)}">
+    return `<section class="jar-story" id="jar-story" style="--jh:${j.heightVh.desktop}vh;--jhm:${j.heightVh.mobile}vh" data-n="${j.frames}" data-ext="${j.ext}" data-v="${esc(ctx.assetVersion || '')}" data-d="${j.desktop}" data-m="${j.mobile}" data-dm="${j.lite.desktop}" data-mm="${j.lite.mobile}"${j.xlite ? ` data-dl="${j.xlite.desktop}" data-ml="${j.xlite.mobile}"` : ''}${j.p ? ` data-p="${j.p.join(',')}"` : ''}${j.pb ? ` data-pb="${j.pb.join(',')}"` : ''} data-h="${j.heightVh.desktop}" data-hm="${j.heightVh.mobile}" aria-label="Вступление: ${esc(j.alt)}">
     <div class="js-stage">
       <canvas class="js-cv" role="img" aria-label="${esc(j.alt)}"></canvas>
       <div class="js-vig" aria-hidden="true"></div>
