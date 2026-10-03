@@ -165,7 +165,13 @@ module.exports = function homeRedesign(ctx, C, P, parts, {events, val}) {
     let n = 0;
     const lines = o.lines.map((t, li) => `<span class="jo-l${li === o.accent ? ' ac' : ''}">${String(t).split(/\s+/).filter(Boolean).map(w => `<span class="jo-w" data-i="${n++}">${esc(w)}</span>`).join(' ')}</span>`).join('');
     const sub = o.sub || String(ctx.site.tagline || '');
-    return `<section class="jar-outro" id="jar-outro" style="--jo:${o.heightVh.desktop}vh;--jom:${o.heightVh.mobile}vh;--jh:${j.heightVh.desktop}vh;--jhm:${j.heightVh.mobile}vh" data-n="${n}">
+    /* насколько секция лозунга заходит под конец вступления (в высотах экрана). Пауза P = пустой экран между уходом последней подписи и первой надписью лозунга:
+       P = (1 − c)·J + c − D + 0.034·(Jo − 1), где J — высота вступления, Jo — высота секции лозунга (в экранах), c — прогресс баночки, на котором уходит последняя подпись
+       (captions[-1].to; подпись считается ушедшей при непрозрачности < 0.05 — это на 0.0045 раньше её `to`), 0.034 — доля прокрутки секции до заметного проявления надписи (js/jar.js, uiOutro). Отсюда D; pauseVh задаётся в redesign.json → jar.outro */
+    const caps = j.captions || [], c = (caps.length ? caps[caps.length - 1].to : 0.78) - 0.0045, pause = o.pauseVh || {desktop: 0.1, mobile: 0.1};
+    const pull = (J, Jo, P) => Math.round(((1 - c) * J + c + 0.034 * (Jo - 1) - P) * 1000) / 10;
+    const jod = pull(j.heightVh.desktop / 100, o.heightVh.desktop / 100, pause.desktop), jodm = pull(j.heightVh.mobile / 100, o.heightVh.mobile / 100, pause.mobile);
+    return `<section class="jar-outro" id="jar-outro" style="--jo:${o.heightVh.desktop}vh;--jom:${o.heightVh.mobile}vh;--jod:${jod}vh;--jodm:${jodm}vh" data-n="${n}">
     <div class="jo-stage">
       <div class="jo-bg" aria-hidden="true"><i class="jo-glow g1"></i><i class="jo-glow g2"></i></div>
       <div class="jo-in">
