@@ -155,6 +155,7 @@
   function payloadOf(form) {
     const o = {type: form.getAttribute('data-form'), context: form.getAttribute('data-ctx') || form.getAttribute('data-ref') || '', page: location.href, sent_at: new Date().toISOString(), consent: true};
     ['name', 'phone', 'email', 'city', 'org', 'spec', 'msg'].forEach(k => { const el = form.elements[k]; if (el) o[k] = el.value.trim(); });
+    if (form._t0) o.fill_ms = Math.round(performance.now() - form._t0);       // сколько форму заполняли: бот отправляет мгновенно
     return o;
   }
   function letterOf(pl) {
@@ -202,8 +203,21 @@
     form.dataset.busy = '1'; setBusy(form, true); setStatus(form, 'busy', `<i class="spin dark" aria-hidden="true"></i><span>Отправляем заявку…</span>`);
     try {
       if (A.config.formEndpoint) {
-        const r = await fetch(A.config.formEndpoint, {method: 'POST', headers: {'Content-Type': 'application/json', 'Accept': 'application/json'}, body: JSON.stringify(pl)});
-        if (!r.ok) throw new Error('HTTP ' + r.status);
+        // credentials: 'omit' — заявка уходит без cookie; сервер принимает JSON от разрешённых сайтов (CORS)
+        const r = await fetch(A.config.formEndpoint, {method: 'POST', credentials: 'omit', headers: {'Content-Type': 'application/json', 'Accept': 'application/json'}, body: JSON.stringify(pl)});
+        let j = null; try { j = await r.json(); } catch (e) {}
+        if (r.status === 422 && j && j.errors) {                    // сервер не принял поля: подсвечиваем их, данные остаются в форме
+          setBusy(form, false); delete form.dataset.busy;
+          let first = null; Object.keys(j.errors).forEach(k => { const f = $('.fld[data-f="' + k + '"]', form); if (f) { f.classList.add('bad'); const el = $('input,textarea,select', f); if (el) { el.setAttribute('aria-invalid', 'true'); if (!first) first = el; } } });
+          setStatus(form, 'err', `${I.alert}<span>${esc(j.errors.consent || j.errors.contact || 'Проверьте поля, отмеченные красным.')}</span>`); if (first) first.focus();
+          A.track('form_error', {form_type: type, message: 'invalid'}); return;
+        }
+        if (r.status === 429) {
+          setBusy(form, false); delete form.dataset.busy; const c = D.site.contacts;
+          setStatus(form, 'err', `${I.alert}<div><b>Слишком много заявок с вашего адреса.</b> Попробуйте чуть позже или позвоните нам: <a href="tel:${c.phoneRaw}">${esc(c.phone)}</a></div>`);
+          A.track('form_error', {form_type: type, message: 'rate_limited'}); return;
+        }
+        if (!r.ok || (j && j.ok === false)) throw new Error('HTTP ' + r.status);
         A.track('form_submit', {form_type: type, mode: 'endpoint', context: pl.context});
         setBusy(form, false); delete form.dataset.busy; setStatus(form, '', ''); showDone(form, 'sent');
       } else {
@@ -223,6 +237,7 @@
     }
   };
   document.addEventListener('submit', e => { const f = e.target; if (f && f.classList && f.classList.contains('lead-form')) { e.preventDefault(); A.submitForm(f); } });
+  document.addEventListener('focusin', e => { const f = e.target && e.target.closest ? e.target.closest('.lead-form') : null; if (f && !f._t0) f._t0 = performance.now(); });
   document.addEventListener('input', e => { const f = e.target && e.target.closest ? e.target.closest('.fld.bad') : null; if (f) { f.classList.remove('bad'); const i = $('input,textarea,select', f); if (i) i.setAttribute('aria-invalid', 'false'); } });
   document.addEventListener('change', e => { const t = e.target; if (t && t.name === 'agree') { const a = t.closest('.agree'); if (a) a.classList.remove('bad'); } });
 
@@ -261,7 +276,7 @@
       case 'form': A.openForm(t.getAttribute('data-type'), t.getAttribute('data-ref')); break;
       case 'close': A.closeModal(); break;
       case 'copy': t.getAttribute('data-what') === 'address' ? copyText(D.site.contacts.email, 'Адрес скопирован') : copyText(mailDraft, 'Письмо скопировано'); break;
-      case 'form-again': { const host = t.closest('.ok').parentNode, f = $('form', host); t.closest('.ok').remove(); if (f) { f.hidden = false; f.reset(); setStatus(f, '', ''); } break; }
+      case 'form-again': { const host = t.closest('.ok').parentNode, f = $('form', host); t.closest('.ok').remove(); if (f) { f.hidden = false; f.reset(); f._t0 = 0; setStatus(f, '', ''); } break; }
       case 'faq': { const it = t.closest('.faq-item'), open = it.classList.toggle('open'); t.setAttribute('aria-expanded', String(open)); break; }
       case 'scroll': { const el = document.getElementById(t.getAttribute('data-target')); if (el) { e.preventDefault(); el.scrollIntoView({behavior: 'smooth', block: 'start'}); } break; }
       default: if (A.actions && A.actions[act]) A.actions[act](t, id, e);

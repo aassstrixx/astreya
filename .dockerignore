@@ -1,0 +1,4 @@
+.git
+node_modules
+server/data
+tools/jar-bench

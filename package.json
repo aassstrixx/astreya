@@ -7,9 +7,13 @@
     "build": "node tools/build.js",
     "check": "node tools/check.js",
     "redesign:off": "node tools/redesign.js off",
-    "redesign:on": "node tools/redesign.js on"
+    "redesign:on": "node tools/redesign.js on",
+    "admin": "node server/index.js",
+    "admin:cli": "node server/cli.js",
+    "test:server": "node --test server/test/leads.test.js server/test/content.test.js server/test/publish.test.js server/test/smtp-tls.test.js",
+    "test:e2e": "node server/test/e2e.js"
   },
   "engines": {
-    "node": ">=16"
+    "node": ">=18.17"
   }
 }

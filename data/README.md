@@ -23,7 +23,7 @@
 **news.json** — `categories[]` (news, sale, novelty, edu, event) и `items[]` с `slug, category, date, title, excerpt, body[], cta{type,ref,query}, related{brands,products,events}`.
 В тексте можно использовать `{{discounts}}` — подставятся пороги из `site.json`.
 
-**site.json** — `url` (адрес сайта для canonical и sitemap), `formEndpoint`, `demoNotice` (пустая строка убирает заметку в подвале и включает Product/Event/NewsArticle JSON-LD).
+**site.json** — `url` (адрес сайта для canonical и sitemap), `formEndpoint` (адрес приёма заявок, например `https://api.example.com/api/lead`; пусто — формы готовят письмо; см. server/README.md), `demoNotice` (пустая строка убирает заметку в подвале и включает Product/Event/NewsArticle JSON-LD).
 
 ## Слой доработок: `redesign.json` и флаг `site.redesign`
 

@@ -4,7 +4,7 @@
 const fs = require('fs');
 const path = require('path');
 const ROOT = path.join(__dirname, '..');
-const walk = d => fs.readdirSync(d, {withFileTypes: true}).flatMap(e => e.isDirectory() ? (['node_modules', '.git', 'src', 'tools', 'data', 'css', 'js', 'assets'].includes(e.name) ? [] : walk(path.join(d, e.name))) : [path.join(d, e.name)]);
+const walk = d => fs.readdirSync(d, {withFileTypes: true}).flatMap(e => e.isDirectory() ? (['node_modules', '.git', 'src', 'tools', 'data', 'css', 'js', 'assets', 'server'].includes(e.name) ? [] : walk(path.join(d, e.name))) : [path.join(d, e.name)]);
 const files = walk(ROOT).filter(f => f.endsWith('.html'));
 const errors = [], warns = [];
 const titles = new Map(), descs = new Map();
