@@ -48,9 +48,12 @@ body.jar-on:not(.menu-open) .hdr .logo{--lm:var(--milk)}
   .js-skip{padding:10px 14px}
 }
 /* ---------- экран с лозунгом (после баночки, до главной): молочный фон, слова проявляются по скроллу ---------- */
-.jar-outro{position:relative;height:var(--jo,250vh);margin-bottom:-24vh;background:var(--milk)}      /* главная заезжает на последние 24vh: поднимается, пока лозунг растворяется */
-.jo-stage{position:sticky;top:0;height:100vh;height:100lvh;overflow:hidden;display:flex;align-items:center;justify-content:center;text-align:center;--q:0;--e:0;--s:0;--r:0;--x:1;--g:0}
+.jar-outro{position:relative;height:var(--jo,250vh);margin-top:calc(var(--jh,680vh) * -.21 - 79vh);margin-bottom:-24vh}      /* главная заезжает на последние 24vh: поднимается, пока лозунг растворяется */
+/* Секция заходит под конец вступления: её закреплённая сцена начинается, когда прогресс баночки ≈ 0.79 — сразу после последней подписи (0.78), пока кадры ещё растворяются в молоко.
+   Раньше она шла после вступления, и между последней подписью и словами лозунга было больше двух экранов прокрутки пустого молочного фона. Фон секции прозрачный: под ней ещё сцена баночки; сплошное молоко проявляется слоем .jo-bg::before (--bo), когда кадры уже полностью растворились. */
+.jo-stage{position:sticky;top:0;height:100vh;height:100lvh;overflow:hidden;pointer-events:none;display:flex;align-items:center;justify-content:center;text-align:center;--q:0;--e:0;--s:0;--r:0;--x:1;--g:0}
 .jo-bg{position:absolute;inset:0;pointer-events:none}
+.jo-bg::before{content:"";position:absolute;inset:0;background:var(--milk);opacity:var(--bo,0)}
 .jo-glow{position:absolute;border-radius:50%;will-change:transform,opacity}
 .jo-glow.g1{left:-14vmax;top:-12vmax;width:66vmax;height:66vmax;background:radial-gradient(closest-side,rgba(150,174,238,.34),rgba(150,174,238,0));opacity:var(--g,0);transform:translate3d(calc(var(--q) * 16vw),calc(var(--q) * 9vh),0)}
 .jo-glow.g2{right:-18vmax;bottom:-16vmax;width:74vmax;height:74vmax;background:radial-gradient(closest-side,rgba(198,172,238,.28),rgba(198,172,238,0));opacity:var(--g,0);transform:translate3d(calc(var(--q) * -13vw),calc(var(--q) * -11vh),0)}
@@ -70,7 +73,7 @@ body.jar-on:not(.menu-open) .hdr .logo{--lm:var(--milk)}
 .jar-outro ~ .hero{z-index:1}
 .jar-outro ~ .hero::before{content:"";position:absolute;left:0;right:0;top:0;height:60px;z-index:20;pointer-events:none;background:linear-gradient(180deg,var(--milk),rgba(245,242,236,0))}      /* вместо mask-image на всём герое (дорого: отдельная поверхность с маской, пока внутри всё анимируется) */
 @media (max-width:640px){
-  .jar-outro{height:var(--jom,230vh)}
+  .jar-outro{height:var(--jom,230vh);margin-top:calc(var(--jhm,560vh) * -.21 - 79vh)}
   .jo-title{font-size:clamp(38px,11vw,64px)}
   .jo-eye{font-size:11px;letter-spacing:.14em;gap:10px}
   .jo-eye::after{display:none}

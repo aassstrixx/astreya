@@ -158,13 +158,14 @@ module.exports = function homeRedesign(ctx, C, P, parts, {events, val}) {
     </div>
   </section>`;
   })();
-  /* экран с лозунгом после баночки (jar.outro): слова проявляются по скроллу (js/jar.js), оформление — css/jar.css */
+  /* экран с лозунгом после баночки (jar.outro): слова проявляются по скроллу (js/jar.js), оформление — css/jar.css.
+     Секция заходит под конец вступления (отрицательный margin-top считается из --jh/--jhm), поэтому лозунг начинает проявляться сразу, как уходит последняя подпись, а не после пустого молочного экрана */
   const outro = (() => {
     const j = rd.jar, o = j && j.enabled && j.outro; if (!o || !o.enabled) return '';
     let n = 0;
     const lines = o.lines.map((t, li) => `<span class="jo-l${li === o.accent ? ' ac' : ''}">${String(t).split(/\s+/).filter(Boolean).map(w => `<span class="jo-w" data-i="${n++}">${esc(w)}</span>`).join(' ')}</span>`).join('');
     const sub = o.sub || String(ctx.site.tagline || '');
-    return `<section class="jar-outro" id="jar-outro" style="--jo:${o.heightVh.desktop}vh;--jom:${o.heightVh.mobile}vh" data-n="${n}">
+    return `<section class="jar-outro" id="jar-outro" style="--jo:${o.heightVh.desktop}vh;--jom:${o.heightVh.mobile}vh;--jh:${j.heightVh.desktop}vh;--jhm:${j.heightVh.mobile}vh" data-n="${n}">
     <div class="jo-stage">
       <div class="jo-bg" aria-hidden="true"><i class="jo-glow g1"></i><i class="jo-glow g2"></i></div>
       <div class="jo-in">
