@@ -38,16 +38,18 @@
   let sTarget = 0, sCur = 0, sRaf = 0;
   const maxScroll = () => document.documentElement.scrollHeight - innerHeight;
   const scrollsInside = el => { for (let n = el; n && n !== body && n !== html; n = n.parentElement) { if (/(auto|scroll)/.test(getComputedStyle(n).overflowY) && n.scrollHeight > n.clientHeight + 1) return true; } return false; };
-  function sStep() {
-    sCur += (sTarget - sCur) * .095;
-    if (Math.abs(sTarget - sCur) < .5) { sCur = sTarget; sRaf = 0; } else sRaf = requestAnimationFrame(sStep);
+  let sLast = 0;
+  function sStep(t) {
+    const dt = sLast ? Math.min(.05, Math.max(.004, (t - sLast) / 1000)) : .0167; sLast = t;
+    sCur += (sTarget - sCur) * (1 - Math.exp(-dt / .17));          // постоянная времени .17 с (прежние .095 за кадр на 60 Гц), не зависит от частоты экрана
+    if (Math.abs(sTarget - sCur) < .5) { sCur = sTarget; sRaf = 0; sLast = 0; } else sRaf = requestAnimationFrame(sStep);
     window.scrollTo({top: sCur, behavior: 'instant'});
   }
   M.cancelSmooth = () => { cancelAnimationFrame(sRaf); sRaf = 0; sTarget = sCur = scrollY; };
   if (matchMedia('(hover:hover) and (pointer:fine)').matches) {
     addEventListener('wheel', e => {
       if (e.ctrlKey || e.defaultPrevented || Math.abs(e.deltaX) > Math.abs(e.deltaY)) return;
-      if (body.classList.contains('locked') || scrollsInside(e.target)) return;
+      if (body.classList.contains('locked') || body.classList.contains('jar-zone') || scrollsInside(e.target)) return;      // в сцене с баночкой колесо не сглаживаем второй раз: её ведёт своя пружина (js/jar.js)
       e.preventDefault();
       let dy = e.deltaY; if (e.deltaMode === 1) dy *= 34; else if (e.deltaMode === 2) dy *= innerHeight;
       if (!sRaf) sCur = sTarget = scrollY;

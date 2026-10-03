@@ -61,6 +61,7 @@ body.jar-on:not(.menu-open) .hdr .logo{--lm:var(--milk)}
 .jo-l{display:block}
 .jo-l.ac{font-style:italic;font-weight:400;color:var(--blue)}
 .jo-w{display:inline-block;opacity:var(--o,0);transform:translate3d(0,calc((1 - var(--o,0)) * .55em),0);filter:blur(calc((1 - var(--o,0)) * 16px));will-change:opacity,transform,filter}
+@media (pointer:coarse){.jo-w{filter:none;will-change:opacity,transform}}      /* на сенсорных экранах размытие слов не рисуем: на слабых GPU оно главная нагрузка */
 .jo-rule{position:relative;width:min(580px,66vw);height:14px;margin:clamp(28px,5vh,52px) auto 0}
 .jo-rule i{position:absolute;left:0;right:0;top:50%;height:1px;background:linear-gradient(90deg,rgba(35,71,176,0),rgba(35,71,176,.5) 14%,rgba(35,71,176,.5) 86%,rgba(35,71,176,0));transform:scaleX(var(--r));transform-origin:left center}
 .jo-rule b{position:absolute;top:50%;left:calc(var(--r) * 100%);width:13px;height:13px;margin:-6.5px 0 0 -6.5px;border-radius:50%;background:radial-gradient(circle at 34% 30%,#fff 0 14%,#eef0ff 38%,#a9bdf0 72%,#7f95da);box-shadow:0 0 18px 5px rgba(112,142,232,.5);opacity:min(1,calc(var(--r) * 8))}

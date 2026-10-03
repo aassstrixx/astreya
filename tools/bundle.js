@@ -20,7 +20,7 @@ module.exports = function bundle({pages, ctx, layout, root, out}) {
   chrome = inline(chrome);
   /* вступление с баночкой: в одном файле кадры берутся из data:-адресов — кладём облегчённые наборы (assets/jar/*-lite) в тот же JSON */
   const jar = rd && ctx.redesign && ctx.redesign.jar && ctx.redesign.jar.enabled ? ctx.redesign.jar : null;
-  if (jar) for (const dir of [jar.lite.desktop, jar.lite.mobile]) {
+  if (jar) for (const dir of [jar.lite.desktop, jar.lite.mobile, ...(jar.flow ? [jar.flow.lite.desktop, jar.flow.lite.mobile] : [])]) {      // + облегчённые карты потока
     const abs = path.join(root, dir);
     if (fs.existsSync(abs)) fs.readdirSync(abs).filter(f => /\.webp$/.test(f)).sort().forEach(f => { assets[dir + f] = 'data:image/webp;base64,' + fs.readFileSync(path.join(abs, f)).toString('base64'); });
   }

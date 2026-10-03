@@ -103,7 +103,11 @@ def recolor():
 
 def apply_story(frame, total, lean):
     """frame = номер кадра сюжета; подменяем время сцены и экспозицию, остальное считает lumiere_scene.apply_state."""
-    p = frame / max(1, total - 1)
+    apply_story_p(frame / max(1, total - 1), lean)
+
+
+def apply_story_p(p, lean):
+    """то же по прогрессу сюжета p (0…1) — для неравномерной сетки кадров (plan_frames.py)"""
     L.apply_state(story_time(p) * L.FPS, lean)
     e0, e1, p0 = EXPOSURE
     s = L.sm((p - p0) / (1.0 - p0)) if p > p0 else 0.0
@@ -160,11 +164,36 @@ def main():
     if cmd == "info":
         print("story time at p=0,.3,.46,.6,1:", [round(story_time(p), 2) for p in (0, .3, .46, .6, 1)], "lean:", tuple(round(x, 2) for x in lean))
         return
+    if cmd == "pstill":          # один кадр по прогрессу сюжета p (0…1): python3 story_render.py pstill 0.47 out.png --res …
+        apply_story_p(float(args[1]), lean)
+        sc.render.filepath = args[2]
+        bpy.ops.render.render(write_still=True)
+        return
     if cmd == "still":
         f = int(float(args[1]))
         bake(f, total, lean)
         sc.render.filepath = args[2]
         bpy.ops.render.render(write_still=True)
+    elif cmd == "plan":
+        # рендер только новых кадров плана (plan_frames.py): python3 story_render.py plan plan.json outdir [--res …] [--samples …] --noblur
+        import json
+        import time
+        plan = json.load(open(args[1]))["frames"]
+        outdir = args[2]
+        os.makedirs(outdir, exist_ok=True)
+        for e in plan:
+            if e["old"] is not None:
+                continue
+            path = os.path.join(outdir, f"n{e['k']:05d}.png")
+            if os.path.exists(path):
+                continue
+            t0 = time.time()
+            if OPT["late"]:
+                sc.cycles.samples = OPT["late"] if e["p"] >= OPT["late_p"] else samples
+            apply_story_p(e["p"], lean)
+            sc.render.filepath = path
+            bpy.ops.render.render(write_still=True)
+            print(f"frame k={e['k']} p={e['p']:.4f} done in {time.time() - t0:.1f}s", flush=True)
     elif cmd == "anim":
         import time
         a, b, outdir = int(args[1]), int(args[2]), args[3]
