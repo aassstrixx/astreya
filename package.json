@@ -6,6 +6,7 @@
   "scripts": {
     "build": "node tools/build.js",
     "check": "node tools/check.js",
+    "check:reveal": "node tools/check-reveal.js",
     "redesign:off": "node tools/redesign.js off",
     "redesign:on": "node tools/redesign.js on",
     "admin": "node server/index.js",
