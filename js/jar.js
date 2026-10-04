@@ -56,7 +56,7 @@
   let ctrl = null;
 
   function create(root) {
-    const stage = root.querySelector('.js-stage'), skip = root.querySelector('.js-skip');
+    const stage = root.querySelector('.js-stage');
     const cv = root.querySelector('.js-cv');
     const caps = Array.prototype.slice.call(root.querySelectorAll('.js-cap')).map(el => ({el, a: +el.dataset.from, b: +el.dataset.to}));
     const ds = root.dataset, NH = +ds.n || 1, ext = ds.ext || 'webp', ver = ds.v ? '?v=' + ds.v : '', bundle = !!window.__ASTREYA_BUNDLE;
@@ -318,8 +318,6 @@
         setv(c.el, '--y', ((1 - o) * 26 * (p < (c.a + c.b) / 2 ? 1 : -1)).toFixed(1) + 'px');
       });
       setv(stage, '--cue', (1 - clamp(p / 0.035, 0, 1)).toFixed(3));
-      const sk = 1 - clamp((p - 0.84) / 0.05, 0, 1);
-      setv(stage, '--skip', sk.toFixed(3)); if (skip) skip.classList.toggle('gone', sk < 0.05);
       setv(stage, '--m', ease(clamp((p - 0.76) / 0.225, 0, 1)).toFixed(3));       // крем плавно растворяется в молоко почти до конца сцены
       document.body.classList.toggle('jar-on', inView && p < 0.56);       // светлая шапка — только пока фон тёмный; на светлом креме возвращается обычная
     }
@@ -391,11 +389,6 @@
     if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => { if (!dead) { measureStatic(); schedule(); } });
     const onLoad = () => { if (dead) return; winLoaded = true; measureStatic(); pump(); schedule(); };
     addEventListener('load', onLoad);
-    if (skip) skip.addEventListener('click', () => {
-      const hero = document.querySelector('.hero'), hh = (document.getElementById('hdr') || {}).offsetHeight || 0;
-      const to = hero ? hero.getBoundingClientRect().top + scrollY - hh : root.getBoundingClientRect().bottom + scrollY;
-      scrollTo({top: Math.round(to), behavior: 'smooth'});
-    });
 
     measureStatic();
     sizeCanvas();

@@ -1,4 +1,4 @@
-"""Косметическая упаковка для сцен «продукция»: баночка с крышкой, флакон-капельница, флакон с помпой, туба — тела вращения (lathe) в тонах сайта.
+"""Косметическая упаковка для сцен «продукция»: баночка с крышкой, белый флакон «как для шампуня» с откидной крышкой — тела вращения (lathe) в тонах сайта.
 Без этикеток и названий: образ «профессиональная косметика», а не конкретный товар."""
 from common import *
 
@@ -8,17 +8,23 @@ def mats():
     clear = glass('clear', (0.99, 0.99, 0.98), 1.45, 0.0, shadow=0.8)
     metal = principled('champagne', (0.86, 0.76, 0.60), 0.28, **{'Metallic': 1.0})
     rubber = principled('rubber', (0.92, 0.90, 0.87), 0.55, **{'Specular IOR Level': 0.3})
-    serum = principled('serum', (0.93, 0.87, 0.74), 0.25, **{'Coat Weight': 0.3})          # сыворотка за матовым стеклом: гладкая, без бликов-каустик
-    return dict(ceramic=ceramic, frost=frost, clear=clear, metal=metal, rubber=rubber, serum=serum)
+    cl = lambda n, c, r: principled(n, c, r, **{'Coat Weight': 0.45, 'Coat Roughness': 0.08, 'Specular IOR Level': 0.5})
+    white = cl('white', (0.97, 0.97, 0.96), 0.26); pearlw = cl('pearlw', (0.90, 0.92, 0.95), 0.30); warmw = cl('warmw', (0.96, 0.93, 0.88), 0.32)
+    satin = principled('satin', (0.95, 0.95, 0.94), 0.52, **{'Specular IOR Level': 0.4})
+    return dict(ceramic=ceramic, frost=frost, clear=clear, metal=metal, rubber=rubber, white=white, pearlw=pearlw, warmw=warmw, satin=satin)
 
-def rounded_profile(R, H, r=0.03, n=6):
+def rounded_profile(R, H, r=0.03, n=6, bottom_dome=False):
     """Контур цилиндра со скруглёнными кромками (r, z) — замкнутый на оси, для lathe(closed=True).
-    Верх — очень пологий купол (а не плоская плоскость): иначе при сглаженных нормалях на широкой крышке появляется «кратер» с ямкой по центру."""
-    pts = [(0.003, 0.0), (R - r, 0.0)]
+    Верх — очень пологий купол (а не плоская плоскость): иначе при сглаженных нормалях на широкой крышке появляется «кратер» с ямкой по центру.
+    bottom_dome=True — такой же купол снизу (для колпачков, которые видно с торца)."""
+    top = max(R - r, 0.01); dome = 0.05 * top
+    pts = []
+    if bottom_dome: pts += [(0.003, -dome)] + [(max(top * k, 0.003), -dome * (1 - k * k)) for k in np.linspace(0, 1, 9)[1:-1][::-1][::-1]]
+    else: pts += [(0.003, 0.0)]
+    pts += [(R - r, 0.0)]
     for a in np.linspace(0, math.pi / 2, n): pts.append((R - r + r * math.sin(a), r - r * math.cos(a)))
     pts += [(R, H - r)]
     for a in np.linspace(0, math.pi / 2, n)[1:]: pts.append((R - r + r * math.cos(a), H - r + r * math.sin(a)))
-    top = max(R - r, 0.01); dome = 0.05 * top
     for k in np.linspace(1, 0, 9)[1:]: pts.append((max(top * k, 0.003), H + dome * (1 - k * k)))
     return pts
 
@@ -36,53 +42,30 @@ def jar(M, loc, R=0.5, H=0.42, lid=0.16, rot=(0, 0, 0), body='ceramic', ring=Tru
     for p in parts: p.parent = root
     return put(root, loc, rot)
 
-def chaikin(pts, it=3):
-    """Срезание углов ломаной (концы остаются на месте): плечо флакона и купол груши получаются гладкими, а не гранёными."""
-    for _ in range(it):
-        out = [pts[0]]
-        for a, b in zip(pts, pts[1:]):
-            out += [(0.75 * a[0] + 0.25 * b[0], 0.75 * a[1] + 0.25 * b[1]), (0.25 * a[0] + 0.75 * b[0], 0.25 * a[1] + 0.75 * b[1])]
-        pts = out + [pts[-1]]
-    return pts
-
-def dropper(M, loc, R=0.26, H=0.85, rot=(0, 0, 0), liquid=0.55):
-    """Флакон-капельница: матовое стекло, шея, кольцо, резиновая груша; сыворотка внутри."""
-    body = [(0.003, 0.0), (R - 0.03, 0.0), (R, 0.03), (R, H * 0.70)] + chaikin([(R, H * 0.70), (R, H * 0.76), (R * 0.80, H * 0.86), (R * 0.40, H * 0.93), (R * 0.40, H * 0.97)], 3)[1:] + [(R * 0.40, H), (0.003, H)]
-    parts = [lathe(body, M['frost'], seg=96, closed=True, name='bottle')]
-    parts.append(lathe([(0.003, 0.02), (R - 0.05, 0.02), (R - 0.045, H * liquid), (0.003, H * liquid)], M['serum'], seg=64, closed=True, name='serum'))
-    parts.append(lathe(rounded_profile(R * 0.46, 0.09, 0.012, 3), M['metal'], loc=(0, 0, H), seg=64, closed=True, name='collar'))
-    bulb = [(0.003, 0.0), (R * 0.40, 0.0), (R * 0.44, 0.06), (R * 0.44, 0.30)] + [(R * 0.44 * math.cos(t), 0.30 + 0.26 * math.sin(t)) for t in [i * math.pi / 2 / 14 for i in range(1, 14)]] + [(0.003, 0.56)]
-    parts.append(lathe(bulb, M['rubber'], loc=(0, 0, H + 0.09), seg=64, closed=True, name='bulb'))
-    root = bpy.data.objects.new('dropper_root', None); bpy.context.collection.objects.link(root)
-    for p in parts: p.parent = root
-    return put(root, loc, rot)
-
-def pump(M, loc, R=0.28, H=1.0, rot=(0, 0, 0)):
-    """Флакон с помпой: гладкий цилиндр, кольцо, стойка помпы, головка и носик."""
-    parts = [lathe(rounded_profile(R, H, 0.05), M['ceramic'], seg=96, closed=True, name='body')]
-    parts.append(lathe(rounded_profile(R * 0.62, 0.07, 0.015, 3), M['metal'], loc=(0, 0, H), seg=64, closed=True, name='collar'))
-    parts.append(lathe([(0.003, 0.0), (0.04, 0.0), (0.04, 0.14), (0.003, 0.14)], M['metal'], loc=(0, 0, H + 0.07), seg=32, closed=True, name='stem'))
-    head = lathe(rounded_profile(0.11, 0.07, 0.02, 3), M['ceramic'], loc=(0, 0, H + 0.21), seg=48, closed=True, name='head')
-    parts.append(head)
-    bpy.ops.mesh.primitive_cylinder_add(radius=0.04, depth=0.30, location=(0.15, 0, H + 0.27), rotation=(0, math.pi / 2, 0), vertices=32)
-    nz = bpy.context.active_object; bpy.ops.object.shade_smooth(); nz.data.materials.append(M['ceramic']); parts.append(nz)
-    root = bpy.data.objects.new('pump_root', None); bpy.context.collection.objects.link(root)
-    for p in parts: p.parent = root
-    nz.parent = root
-    return put(root, loc, rot)
-
-def tube(M, loc, R=0.22, L=1.1, rot=(0, 0, 0), flat=0.42):
-    """Туба: сплюснутое тело с плавным плечом, крышка-колпачок (шампань) и запаянный плоский край."""
-    body = [(0.003, 0.0), (R * 0.78, 0.0), (R, 0.05), (R, L * 0.84), (R * 0.97, L), (0.003, L)]
-    parts = [lathe(body, M['ceramic'], seg=96, closed=True, name='tube')]
-    parts[0].scale = (1, flat, 1)
-    cap = lathe(rounded_profile(R * 0.62, 0.24, 0.025), M['metal'], loc=(0, 0, -0.24), seg=64, closed=True, name='cap')
-    parts.append(cap)
-    bpy.ops.mesh.primitive_cube_add(size=1.0, location=(0, 0, L + 0.05)); cr = bpy.context.active_object; cr.scale = (R * 1.0, 0.014, 0.10); cr.data.materials.append(M['ceramic'])      # запаянный плоский край
-    for k in range(5):
-        bpy.ops.mesh.primitive_cube_add(size=1.0, location=(0, 0.0, L + 0.03 + 0.02 * k)); rb = bpy.context.active_object; rb.scale = (R * 1.02, 0.018, 0.006); rb.data.materials.append(M['ceramic']); parts.append(rb)
-    parts.append(cr)
-    root = bpy.data.objects.new('tube_root', None); bpy.context.collection.objects.link(root)
+def shampoo(M, loc, R=0.34, H=1.45, rot=(0, 0, 0), flat=0.52, body='white', cap='white'):
+    """Белый флакон «как для шампуня» без надписей: овальное сечение (в плане сплюснут), тело чуть сужается книзу, закруглённые нижние кромки.
+    Широкая крышка с откидным клапаном вровень с телом: тонкая канавка на стыке и выемка-«лунка» под большой палец спереди сверху. Дозаторов нет."""
+    dome = 0.04 * R
+    def base_profile(top_r, zt):
+        pts = [(0.003, dome)] + [((R * 0.88 - 0.06) * k, dome * (1 - k * k)) for k in np.linspace(0, 1, 7)[1:-1]] + [(R * 0.88 - 0.06, 0.0)]
+        pts += [(R * 0.88 - 0.06 + 0.06 * math.sin(a), 0.06 - 0.06 * math.cos(a)) for a in np.linspace(0, math.pi / 2, 6)[1:]]
+        pts += [(R * 0.88 + (top_r - R * 0.88) * t, 0.06 + (zt - 0.06) * t) for t in np.linspace(0, 1, 8)[1:]]            # лёгкое сужение книзу
+        return pts
+    hb = H * 0.86
+    prof = base_profile(R, hb) + [(R * 0.975, hb), (R * 0.975, hb + 0.012), (0.003, hb + 0.012)]                 # канавка на стыке с крышкой
+    bd = lathe(prof, M[body], seg=128, closed=True, name='shbody'); bd.scale = (1, flat, 1)
+    ch = H - hb - 0.012; top = 0.045
+    cprof = [(0.003, 0.0), (R * 0.985, 0.0), (R * 1.0, 0.02)] + [(R * 0.995 - top + top * math.cos(a), ch - top + top * math.sin(a)) for a in np.linspace(0, math.pi / 2, 7)]
+    cprof += [((R * 0.995 - top) * k, ch + 0.008 * (1 - k * k)) for k in np.linspace(1, 0, 16)[1:]]
+    cp = lathe(cprof, M[cap], loc=(0, 0, hb + 0.012), seg=128, closed=True, name='shcap')
+    for v in cp.data.vertices:                                                                                  # выемка под палец: на передней кромке верха крышки
+        x, y, z = v.co.x, v.co.y, v.co.z
+        if z > ch - 0.02 and y < 0:
+            w = math.exp(-(x / (0.34 * R)) ** 2); f = np.clip((-y - 0.10 * R) / (0.75 * R), 0, 1); f = f * f * (3 - 2 * f)
+            v.co.z -= 0.062 * w * f
+    cp.scale = (1, flat, 1)
+    parts = [bd, cp]
+    root = bpy.data.objects.new('shampoo_root', None); bpy.context.collection.objects.link(root)
     for p in parts: p.parent = root
     return put(root, loc, rot)
 

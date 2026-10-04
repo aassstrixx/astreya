@@ -153,7 +153,6 @@ module.exports = function homeRedesign(ctx, C, P, parts, {events, val}) {
       <div class="js-vig" aria-hidden="true"></div>
       <div class="js-caps" aria-hidden="true">${caps}</div>
       <div class="js-cue" aria-hidden="true"><span>${esc(j.cue)}</span><i></i></div>
-      <button class="js-skip" type="button" aria-label="${esc(j.skip)} анимацию — перейти к главной"><span>${esc(j.skip)}</span>${I.arrow}</button>
       <div class="js-milk" aria-hidden="true"></div>
     </div>
   </section>`;

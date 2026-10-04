@@ -26,12 +26,6 @@
   color:var(--silver);font:600 11px/1 var(--sans);letter-spacing:.3em;text-transform:uppercase;opacity:var(--cue,1);pointer-events:none}
 .js-cue i{display:block;width:1px;height:40px;background:linear-gradient(var(--silver),transparent);transform-origin:top;animation:jarCue 1.9s ease-in-out infinite}
 @keyframes jarCue{0%{transform:scaleY(0);opacity:0}40%{opacity:1}100%{transform:scaleY(1);opacity:0}}
-.js-skip{position:absolute;right:var(--gut);bottom:clamp(18px,4vh,36px);display:inline-flex;align-items:center;gap:10px;padding:11px 18px;border-radius:var(--pill);
-  border:1px solid rgba(245,242,236,.34);background:rgba(11,26,51,.28);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);color:var(--milk);
-  font:600 11px/1 var(--sans);letter-spacing:.18em;text-transform:uppercase;cursor:pointer;opacity:var(--skip,1);transition:background .25s ease,border-color .25s ease}
-.js-skip:hover{background:rgba(245,242,236,.14);border-color:rgba(245,242,236,.6)}
-.js-skip svg{width:15px;height:15px;transform:rotate(90deg)}
-.js-skip.gone{pointer-events:none;visibility:hidden}
 
 /* финал: экран заливается молочным цветом главной (--m — прогресс) */
 .js-milk{position:absolute;inset:0;background:var(--milk);opacity:var(--m,0);pointer-events:none}
@@ -45,7 +39,6 @@ body.jar-on:not(.menu-open) .hdr .logo{--lm:var(--milk)}
   .jar-story{height:var(--jhm,520vh)}
   .js-cap{bottom:clamp(88px,17vh,160px)}
   .js-cap b{font-size:clamp(38px,12.5vw,64px)}
-  .js-skip{padding:10px 14px}
 }
 /* ---------- экран с лозунгом (после баночки, до главной): молочный фон, слова проявляются по скроллу ---------- */
 .jar-outro{position:relative;height:var(--jo,250vh);margin-top:calc(var(--jod,220vh) * -1);margin-bottom:-24vh}      /* главная заезжает на последние 24vh: поднимается, пока лозунг растворяется */

@@ -27,9 +27,9 @@ for (const [k, pl] of Object.entries(plans)) {
   const used = usedBy(pl);
   ok(used.every(t => cfg.textures[t]), `план «${k}»: все текстуры описаны`, used.filter(t => !cfg.textures[t]));
 }
-const BUBBLY = ['pearls', 'drops', 'molecules'];                  // жемчуг, капли, молекулы: пузырьков и шариков на страницах брендов быть не должно (просьба заказчика)
+const BUBBLY = ['pearls', 'drops', 'molecules', 'swirl', 'serum', 'ctubes', 'tubes', 'pumps'];                  // жемчуг, капли, молекулы: пузырьков и шариков на страницах брендов быть не должно (просьба заказчика)
 ok(!usedBy(plans.brand || {}).some(t => BUBBLY.includes(t)) && !usedBy(plans.product || {}).some(t => ['pearls', 'drops'].includes(t)), 'на страницах брендов нет молекул и пузырьков, на товарах — жемчуга и капель');
-ok(!Object.keys(cfg.textures).some(t => ['pearls', 'drops'].includes(t)), 'текстур «жемчуг» и «капли» в наборе нет (заменены завитком крема)');
+ok(!Object.keys(cfg.textures).some(t => ['pearls', 'drops', 'swirl', 'serum', 'ctubes', 'tubes', 'pumps'].includes(t)), 'убранных текстур («жемчуг», «капли», «завиток», «флаконы-колбочки», «тубы», «дозаторы») в наборе нет');
 ok(!Object.values(plans).some(pl => pl.variants && pl.variants.length < 2), 'у каждого плана с вариантами их не меньше двух');
 ok(!(cfg.skipPages || []).some(k => plans[k]), 'для страниц из skipPages планов нет');
 const walk = d => fs.readdirSync(d, {withFileTypes: true}).flatMap(e => e.isDirectory() ? (['.git', 'src', 'tools', 'data', 'css', 'js', 'assets', 'server', 'node_modules'].includes(e.name) ? [] : walk(pth.join(d, e.name))) : [pth.join(d, e.name)]);
