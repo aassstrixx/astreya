@@ -22,6 +22,12 @@ body:not([data-page="home"]) #main{position:relative}                 /* нуж�
 [data-bd]:not(.bd-fill)::before{left:50%;right:auto;top:50%;bottom:auto;width:100vw;height:min(100%,var(--bd-max,900px));translate:-50% -50%}
 [data-bd]:not(.bd-fill)[data-bd-pos="tr"],[data-bd]:not(.bd-fill)[data-bd-pos="br"],[data-bd]:not(.bd-fill)[data-bd-pos="tl"],[data-bd]:not(.bd-fill)[data-bd-pos="bl"]{--bd-bp:100% 50%;--bd-mask:radial-gradient(ellipse 60% 50% at 88% 50%,#000 28%,rgba(0,0,0,.62) 60%,transparent 100%)}
 
+/* крупный логотип «Астрея» на заднем плане страницы (plan.logo): над полосой top, под содержимым; цвет знака — фирменный тёмно-синий, прозрачность .06 (data-lo — сотые доли) */
+.bd-logo{position:absolute;left:0;right:0;top:0;height:var(--bd-lh,780px);z-index:-1;display:flex;align-items:center;justify-content:center;pointer-events:none;user-select:none;--lm:var(--navy);opacity:.06}
+.bd-logo[data-pos="l"]{justify-content:flex-start;padding-left:2%}.bd-logo[data-pos="r"]{justify-content:flex-end;padding-right:2%}
+.bd-logo svg{display:block;width:min(1500px,94%);height:88%;max-width:none}
+.bd-logo[data-lo="4"]{opacity:.04}.bd-logo[data-lo="5"]{opacity:.05}.bd-logo[data-lo="6"]{opacity:.06}.bd-logo[data-lo="7"]{opacity:.07}.bd-logo[data-lo="8"]{opacity:.08}.bd-logo[data-lo="9"]{opacity:.09}.bd-logo[data-lo="10"]{opacity:.1}.bd-logo[data-lo="12"]{opacity:.12}
+
 /* сила по умолчанию у каждой текстуры; data-bd-o="3…10" переопределяет */
 [data-bd="cream"]{--bd-o:.95}
 [data-bd="lines"]{--bd-o:.9}
@@ -48,6 +54,7 @@ body:not([data-page="home"]) #main,[data-bd]:not(.bd-fill){--muted:#404e69;--sla
 
 @media (max-width:700px){
   .bd-top{height:var(--bd-h,520px)}
+  .bd-logo{height:var(--bd-lh,520px)}.bd-logo svg{width:98%;height:84%}
   .bd-end{height:var(--bd-h,420px)}
   [data-bd]{--bd-oo:.75}
   [data-bd].bd-on::before{opacity:calc(var(--bd-o,.9) * var(--bd-oo))}

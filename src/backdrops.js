@@ -43,7 +43,7 @@ module.exports = function backdrops(ctx) {
   }
   const attrs = (it, tx) => ` data-bd="${it.tex}" data-bd-pos="${it.pos || tx.pos || 'r'}"` + (it.o != null ? ` data-bd-o="${it.o}"` : '') + (it.ext ? ` data-bd-ext="${it.ext}"` : '');
 
-  /* plan страницы: {top: {tex, pos?, o?}, end: {…}, mid: [{sel, n?, tex, pos?, o?, ext?}]}; n — какой по счёту блок, подходящий под sel (по умолчанию 0; -1 — последний) */
+  /* plan страницы: {top: {tex, pos?, o?}, end: {…}, logo: {pos?, o?}, mid: [{sel, n?, tex, pos?, o?, ext?}]}; n — какой по счёту блок, подходящий под sel (по умолчанию 0; -1 — последний) */
   function apply(P, html) {
     if (!on || !html) return html;
     if ((cfg.skipPages || []).includes(P.key)) return html;
@@ -63,7 +63,12 @@ module.exports = function backdrops(ctx) {
       html = html.slice(0, at) + edits.get(end) + html.slice(at);
     }
     const fill = (kind, it) => { const tx = check(it, `страница ${P.key}, ${kind}`); return `<div class="bd-fill bd-${kind}"${attrs(it, tx)} aria-hidden="true"></div>`; };
-    return (plan.top ? fill('top', plan.top) + '\n' : '') + html + (plan.end ? '\n' + fill('end', plan.end) : '');
+    /* крупный логотип «Астрея» на заднем плане (как в блоках главной): plan.logo = {pos?: c|l|r, o?: 3…12 — сотые доли непрозрачности}; лежит над полосой top, под содержимым */
+    const logo = it => {
+      if (P.key === 'home') throw new Error('backdrops: на главной крупный логотип задаётся блоками (rd-bgword), plan.logo там не используется');
+      return `<div class="bd-logo" data-pos="${it.pos || 'c'}"${it.o != null ? ` data-lo="${it.o}"` : ''} aria-hidden="true"><svg viewBox="49.8 341.6 829.5 428.9" preserveAspectRatio="xMidYMid meet"><use href="#logo-art"/></svg></div>`;
+    };
+    return (plan.top ? fill('top', plan.top) + '\n' : '') + (plan.logo ? logo(plan.logo) + '\n' : '') + html + (plan.end ? '\n' + fill('end', plan.end) : '');
   }
   return {apply, on, cfg, blocks};
 };

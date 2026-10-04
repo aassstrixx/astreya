@@ -419,7 +419,6 @@
     "pages": {
       "home": {"mid": [
         {"sel": "section.rd-about", "tex": "lines", "pos": "r", "o": 6},
-        {"sel": "section.rd-stats", "tex": "glints", "pos": "tr", "o": 7},
         {"sel": "section.rd-why", "tex": "cream", "pos": "l", "o": 8},
         {"sel": "section.rd-solutions", "tex": "drops", "pos": "r", "o": 7},
         {"sel": "section.rd-brands", "tex": "molecules", "pos": "c", "o": 6},
@@ -439,7 +438,7 @@
       "event": {"top": {"tex": "lines", "pos": "tr"}, "end": {"tex": "pipette", "pos": "br"}},
       "news": {"top": {"tex": "glints", "pos": "tr"}, "end": {"tex": "cream", "pos": "b"}},
       "article": {"top": {"tex": "cream", "pos": "tr"}, "end": {"tex": "drops", "pos": "br"}},
-      "company": {"top": {"tex": "lines", "pos": "tr"}, "mid": [{"sel": "section.sec", "n": 3, "tex": "pearls", "pos": "bl", "o": 7}], "end": {"tex": "molecules", "pos": "c"}},
+      "company": {"top": {"tex": "lines", "pos": "tr"}, "logo": {"pos": "c", "o": 7}, "mid": [{"sel": "section.sec", "n": 3, "tex": "pearls", "pos": "bl", "o": 7}], "end": {"tex": "molecules", "pos": "c"}},
       "contacts": {"top": {"tex": "glints", "pos": "tr"}, "end": {"tex": "pearls", "pos": "br"}},
       "partners": {"top": {"tex": "molecules", "pos": "c"}, "mid": [{"sel": "section.sec#calc", "tex": "pearls", "pos": "r", "o": 6}], "end": {"tex": "cream", "pos": "b"}},
       "search": {"top": {"tex": "cream", "pos": "tr", "o": 7}},
