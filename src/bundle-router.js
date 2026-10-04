@@ -17,10 +17,11 @@
   function scrollToHash(h) { const el = h && document.getElementById(h.slice(1)); if (el) el.scrollIntoView({behavior: 'smooth', block: 'start'}); }
   async function show(path, query, hash, push, quiet) {
     const pg = PAGES[path]; if (!pg || busy) return;
-    if (path === cur && query === (vq ? '?' + vq : '')) { if (hash) scrollToHash(hash); else window.scrollTo({top: 0, behavior: 'smooth'}); return; }
+    if (path === cur && query === (vq ? '?' + vq : '')) { if (hash) scrollToHash(hash); else { A.closeMenu(); M.scrollHome(); } return; }
     busy = true;
     const curtain = $('#curtain'), main = $('#main');
     if (!quiet) { M.curtainLabelFor(new URL(path, 'http://x/' + dirOf(cur)).href); curtain.classList.remove('out'); curtain.classList.add('in'); await A.wait(820); }          // quiet — поиск: без шторки
+    M.spendIntro(/[?&]intro(=|&|$)/.test(query || ''));
     main.innerHTML = pg.main; fixAssets(main); cur = path; vq = (query || '').replace(/^\?/, '');
     document.title = pg.title;
     document.body.setAttribute('data-page', pg.key); document.body.setAttribute('data-nav', pg.nav || ''); main.setAttribute('data-page', pg.key);

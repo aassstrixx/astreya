@@ -257,6 +257,11 @@
     $$('#nav .nl').forEach(a => { const on = a.getAttribute('data-nav') === nav; a.classList.toggle('on', on); on ? a.setAttribute('aria-current', 'page') : a.removeAttribute('aria-current'); });
   }
 
+  /* Вступление (баночка + лозунг) показывается один раз за сессию — при первом заходе на сайт (ранний скрипт в <head> ставит html.jar-skip для всех следующих загрузок).
+     Любой переход внутри сайта уже «потратил» его: главная, открытая по лого/ссылке, начинается сразу с героя (?intro в адресе вступление возвращает). */
+  M.spendIntro = keep => html.classList.toggle('jar-skip', !keep);
+  /* лого/«Главная» на самой главной: к основной странице (герою), а не к началу вступления; без вступления герой и есть верх страницы */
+  M.scrollHome = () => { const jar = document.getElementById('jar-story'); window.scrollTo({top: jar && jar.offsetHeight && A.heroBase ? A.heroBase() : 0, behavior: 'smooth'}); };
   let busy = false, pending = null;
   /* quiet — тихий переход (поиск): без шторки и заставки, страница подменяется, как только пришла, и мягко проявляется */
   async function go(url, push, quiet) {
@@ -270,6 +275,7 @@
     await got;
     if (!doc) { if (quiet) store.set('astreya:nav', JSON.stringify({t: Date.now(), q: 1})); location.href = u.href; return; }            // подмена не удалась — обычный переход
     await syncAssets(doc, u.href);
+    M.spendIntro(u.searchParams.has('intro'));
     try {
       swapIn(doc, u.href);
       if (push) history.pushState({}, '', u.href);
@@ -333,7 +339,7 @@
     let u; try { u = new URL(a.href, location.href); } catch (err) { return; }
     if (u.protocol !== location.protocol || u.host !== location.host) return;             // внешние ссылки — как обычно
     if (!/\.html$|\/$/.test(u.pathname)) return;
-    if (u.pathname === location.pathname && u.search === location.search) { if (u.hash) return; e.preventDefault(); window.scrollTo({top: 0, behavior: 'smooth'}); return; }
+    if (u.pathname === location.pathname && u.search === location.search) { if (u.hash) return; e.preventDefault(); A.closeMenu(); M.scrollHome(); return; }
     if (u.pathname === location.pathname && u.hash) return;                                // якорь на этой же странице
     e.preventDefault();
     A.closeMenu(); A.closeSearch();
