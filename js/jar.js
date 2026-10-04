@@ -427,7 +427,6 @@
     if (ctrl && ctrl.root === root) return;
     if (ctrl) { ctrl.destroy(); ctrl = null; }
     if (!root) return;
-    if (document.documentElement.classList.contains('jar-skip')) { root.classList.add('jar-off'); return; }      // вступление уже показано в этой сессии: кадры не грузим, сцену не создаём
     try { ctrl = create(root); } catch (e) { root.classList.add('jar-off'); ctrl = null; }
   }
   window.Astreya = A; A.jar = {init, get ctrl() { return ctrl; }};

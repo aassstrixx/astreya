@@ -17,11 +17,10 @@
   function scrollToHash(h) { const el = h && document.getElementById(h.slice(1)); if (el) el.scrollIntoView({behavior: 'smooth', block: 'start'}); }
   async function show(path, query, hash, push, quiet) {
     const pg = PAGES[path]; if (!pg || busy) return;
-    if (path === cur && query === (vq ? '?' + vq : '')) { if (hash) scrollToHash(hash); else { A.closeMenu(); M.scrollHome(); } return; }
+    if (path === cur && query === (vq ? '?' + vq : '')) { if (hash) scrollToHash(hash); else { A.closeMenu(); if (path === 'index.html') M.scrollHome(); else window.scrollTo({top: 0, behavior: 'smooth'}); } return; }
     busy = true;
     const curtain = $('#curtain'), main = $('#main');
     if (!quiet) { M.curtainLabelFor(new URL(path, 'http://x/' + dirOf(cur)).href); curtain.classList.remove('out'); curtain.classList.add('in'); await A.wait(820); }          // quiet — поиск: без шторки
-    M.spendIntro(/[?&]intro(=|&|$)/.test(query || ''));
     main.innerHTML = pg.main; fixAssets(main); cur = path; vq = (query || '').replace(/^\?/, '');
     document.title = pg.title;
     document.body.setAttribute('data-page', pg.key); document.body.setAttribute('data-nav', pg.nav || ''); main.setAttribute('data-page', pg.key);
@@ -29,6 +28,7 @@
     A.closeMenu(); A.closeSearch(); A.closeModal();
     window.scrollTo({top: 0, left: 0, behavior: 'instant'}); if (M.cancelSmooth) M.cancelSmooth();
     const hdr = $('#hdr'); if (hdr) hdr.classList.remove('hide');
+    if (path === 'index.html' && !hash && M.heroTop() > 0) window.scrollTo({top: M.heroTop(), left: 0, behavior: 'instant'});          // главная по лого/ссылке — героем; вступление выше, до него можно долистать
     A.initPage(document); M.scan(main, quiet ? 40 : 470);
     if (quiet) { main.classList.remove('qfade'); void main.offsetWidth; main.classList.add('qfade'); } else { curtain.classList.remove('in'); curtain.classList.add('out'); }
     if (push) { try { history.pushState({p: path, q: query || ''}, '', '#/' + path + (query || '')); } catch (e) {} }

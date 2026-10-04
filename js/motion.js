@@ -257,11 +257,11 @@
     $$('#nav .nl').forEach(a => { const on = a.getAttribute('data-nav') === nav; a.classList.toggle('on', on); on ? a.setAttribute('aria-current', 'page') : a.removeAttribute('aria-current'); });
   }
 
-  /* Вступление (баночка + лозунг) показывается один раз за сессию — при первом заходе на сайт (ранний скрипт в <head> ставит html.jar-skip для всех следующих загрузок).
-     Любой переход внутри сайта уже «потратил» его: главная, открытая по лого/ссылке, начинается сразу с героя (?intro в адресе вступление возвращает). */
-  M.spendIntro = keep => html.classList.toggle('jar-skip', !keep);
-  /* лого/«Главная» на самой главной: к основной странице (герою), а не к началу вступления; без вступления герой и есть верх страницы */
-  M.scrollHome = () => { const jar = document.getElementById('jar-story'); window.scrollTo({top: jar && jar.offsetHeight && A.heroBase ? A.heroBase() : 0, behavior: 'smooth'}); };
+  /* Лого и ссылки на главную ведут к основной странице (герою), а не в начало вступления с баночкой: вступление остаётся выше героя — до него можно долистать вверх (его кадры при этом перематываются назад).
+     При первой загрузке сайта главная по-прежнему открывается с вступления. Без вступления (выключено или нет canvas) герой и есть верх страницы. */
+  const isHome = u => /(^|\/)(index\.html)?$/.test(u.pathname);
+  M.heroTop = () => { const jar = document.getElementById('jar-story'); return jar && jar.offsetHeight && A.heroBase ? A.heroBase() : 0; };
+  M.scrollHome = () => window.scrollTo({top: M.heroTop(), behavior: 'smooth'});
   let busy = false, pending = null;
   /* quiet — тихий переход (поиск): без шторки и заставки, страница подменяется, как только пришла, и мягко проявляется */
   async function go(url, push, quiet) {
@@ -275,7 +275,6 @@
     await got;
     if (!doc) { if (quiet) store.set('astreya:nav', JSON.stringify({t: Date.now(), q: 1})); location.href = u.href; return; }            // подмена не удалась — обычный переход
     await syncAssets(doc, u.href);
-    M.spendIntro(u.searchParams.has('intro'));
     try {
       swapIn(doc, u.href);
       if (push) history.pushState({}, '', u.href);
@@ -285,6 +284,8 @@
     M.cancelSmooth();
     const hdr = $('#hdr'); if (hdr) hdr.classList.remove('hide');
     A.initPage(document);
+    const toHero = isHome(u) && !u.hash && M.heroTop() > 0;           // переход на главную: открываем героя, а не вступление (оно выше)
+    if (toHero) window.scrollTo({top: M.heroTop(), left: 0, behavior: 'instant'});
     M.scan($('#main'), quiet ? 40 : 470);
     updateProgress();
     if (quiet) { const m = $('#main'); m.classList.remove('qfade'); void m.offsetWidth; m.classList.add('qfade'); }
@@ -301,6 +302,7 @@
   M.navigate = function (url, quiet) {                     // запасной путь (файл с диска): шторка закрывается, затем обычный переход
     if (canSwap) { go(url, true, quiet); return; }
     if (leaving) return; leaving = true;
+    try { const tu = new URL(url, location.href); if (isHome(tu) && !tu.hash) store.set('astreya:hero', '1'); } catch (e) {}          // обычный переход (файл с диска): главная откроется на герое — см. M.boot
     if (quiet) { store.set('astreya:nav', JSON.stringify({t: Date.now(), q: 1})); location.href = url; return; }
     store.set('astreya:nav', JSON.stringify({t: Date.now()}));
     if (!curtain) { location.href = url; return; }
@@ -401,6 +403,7 @@
     try { history.scrollRestoration = 'manual'; } catch (e) {}
     /* ссылки шапки, подвала и поиска остаются в документе при подмене содержимого — делаем их абсолютными, чтобы они не «ехали» вместе с адресом */
     if (!window.__ASTREYA_BUNDLE) $$('#hdr [href], .ftr [href], #srch [href], #hdr [action], #srch [action]').forEach(n => { ['href', 'action'].forEach(at => { const v = n.getAttribute(at); if (v && v.charAt(0) !== '#') { try { n.setAttribute(at, new URL(v, location.href).href); } catch (e) {} } }); });
+    if (store.get('astreya:hero')) { store.del('astreya:hero'); const ht = M.heroTop(); if (ht > 0) window.scrollTo({top: ht, left: 0, behavior: 'instant'}); }
     const fromNav = html.classList.contains('nav-in');
     if (html.classList.contains('nav-quiet')) { store.del('astreya:nav'); html.classList.remove('nav-quiet'); const sq = $('#splash'); if (sq) sq.remove(); finish(40); return; }          // тихий переход обычной загрузкой (поиск): ни заставки, ни шторки
     if ($('#splash') && !fromNav) { requestAnimationFrame(() => setTimeout(runSplash, 0)); return; }   // заставка — при каждой загрузке/обновлении страницы

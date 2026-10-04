@@ -8,7 +8,7 @@
     "check": "node tools/check.js",
     "check:reveal": "node tools/check-reveal.js",
     "check:outro": "node tools/check-outro.js",
-    "check:intro": "node tools/check-intro.js",
+    "check:logo": "node tools/check-logo.js",
     "redesign:off": "node tools/redesign.js off",
     "redesign:on": "node tools/redesign.js on",
     "admin": "node server/index.js",

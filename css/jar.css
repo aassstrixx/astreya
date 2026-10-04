@@ -71,7 +71,7 @@ body.jar-on:not(.menu-open) .hdr .logo{--lm:var(--milk)}
 .jo-sub{margin:clamp(22px,3.4vh,32px) 0 0;font:600 12px/1.4 var(--sans);letter-spacing:.34em;text-transform:uppercase;color:var(--slate);opacity:var(--s);transform:translate3d(0,calc((1 - var(--s)) * 14px),0)}
 /* верх главной мягко «растворяется» в молоко: пока герой въезжает на экран, его верхняя кромка закрыта градиентом цвета фона */
 .jar-outro ~ .hero{z-index:1}
-html:not(.jar-skip) .jar-outro ~ .hero::before{content:"";position:absolute;left:0;right:0;top:0;height:60px;z-index:20;pointer-events:none;background:linear-gradient(180deg,var(--milk),rgba(245,242,236,0))}      /* вместо mask-image на всём герое (дорого: отдельная поверхность с маской, пока внутри всё анимируется) */
+.jar-outro ~ .hero::before{content:"";position:absolute;left:0;right:0;top:0;height:60px;z-index:20;pointer-events:none;background:linear-gradient(180deg,var(--milk),rgba(245,242,236,0))}      /* вместо mask-image на всём герое (дорого: отдельная поверхность с маской, пока внутри всё анимируется) */
 @media (max-width:640px){
   .jar-outro{height:var(--jom,230vh);margin-top:calc(var(--jodm,200vh) * -1)}
   .jo-title{font-size:clamp(38px,11vw,64px)}
@@ -82,7 +82,5 @@ html:not(.jar-skip) .jar-outro ~ .hero::before{content:"";position:absolute;left
 
 /* нет JS (листать кадры нечем) или canvas недоступен: вступления нет, сайт открывается героем. «Уменьшить движение» и экономия трафика вступление НЕ отключают */
 html:not(.js) .jar-story,.jar-story.jar-off{display:none;margin:0}
-/* вступление (баночка + лозунг) — только при первом заходе на сайт в этой сессии: потом главная открывается сразу героем (html.jar-skip ставят ранний скрипт в <head> и js/motion.js; ?intro в адресе показывает вступление снова) */
-html.jar-skip .jar-story,html.jar-skip .jar-outro{display:none;margin:0}
 html:not(.js) .jar-outro,.jar-story.jar-off ~ .jar-outro{display:none}
 @media print{.jar-story,.jar-outro{display:none;margin:0}}
