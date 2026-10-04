@@ -30,12 +30,13 @@ body:not([data-page="home"]) #main{position:relative}                 /* нуж�
 
 /* сила по умолчанию у каждой текстуры; data-bd-o="3…10" переопределяет */
 [data-bd="cream"]{--bd-o:.95}
-[data-bd="lines"]{--bd-o:.9}
-[data-bd="drops"]{--bd-o:.9}
-[data-bd="pearls"]{--bd-o:.9}
-[data-bd="pipette"]{--bd-o:.9}
-[data-bd="glints"]{--bd-o:.85}
 [data-bd="molecules"]{--bd-o:.9}
+[data-bd="drops"]{--bd-o:.9}
+[data-bd="ribbon"]{--bd-o:1}
+[data-bd="threads"]{--bd-o:.9}
+[data-bd="film"]{--bd-o:.95}
+[data-bd="shadow"]{--bd-o:.8}
+[data-bd="particles"]{--bd-o:.9}
 [data-bd][data-bd-o="3"]{--bd-o:.3}[data-bd][data-bd-o="4"]{--bd-o:.4}[data-bd][data-bd-o="5"]{--bd-o:.5}[data-bd][data-bd-o="6"]{--bd-o:.6}
 [data-bd][data-bd-o="7"]{--bd-o:.7}[data-bd][data-bd-o="8"]{--bd-o:.8}[data-bd][data-bd-o="9"]{--bd-o:.9}[data-bd][data-bd-o="10"]{--bd-o:1}
 

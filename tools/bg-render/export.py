@@ -1,5 +1,5 @@
 """Финальная обработка: подгонка тона под палитру сайта, мелкий шум от бандинга, WebP для десктопа и телефона → assets/bg/.
-Запуск: python3.11 export.py <папка-с-сырыми-PNG> [имя ...]   (сырые: cream, lines, drops, pearls, pipette, glints, molecules)"""
+Запуск: python3.11 export.py <папка-с-сырыми-PNG> [имя ...]   (сырые: cream, molecules, drops, ribbon, threads, film, shadow, particles)"""
 import sys, os, numpy as np
 from PIL import Image
 sys.path.insert(0, os.path.dirname(__file__))
@@ -12,13 +12,15 @@ WEB = [(0.0, (203, 195, 183)), (0.42, (229, 222, 211)), (0.80, (247, 243, 236)),
 
 # для каждой текстуры: перцентили яркости, гамма, размер, точка интереса для мобильного кадра (доли), мобильный размер
 SPEC = {
-    'cream':     dict(gain=1.5, size=(1600, 1100), lo=0.5, hi=99.5, gamma=1.0, focus=(0.55, 0.5), m=(720, 1000)),
-    'lines':     dict(gain=2.2, size=(1600, 1100), lo=0.5, hi=99.8, gamma=1.0, focus=(0.35, 0.5), m=(720, 1000)),
-    'drops':     dict(gain=2.6, size=(1600, 1100), lo=0.5, hi=99.8, gamma=1.0, focus=(0.7, 0.55), m=(720, 1000)),
-    'pipette':   dict(gain=2.4, size=(1600, 1100), lo=0.5, hi=99.8, gamma=1.0, focus=(0.6, 0.45), m=(720, 1000)),
-    'glints':    dict(gain=1.2, size=(1600, 1100), lo=0.5, hi=99.9, gamma=0.95, focus=(0.7, 0.35), m=(720, 1000)),
-    'pearls':    dict(gain=1.6, size=(1600, 1100), lo=0.5, hi=99.8, gamma=1.0, focus=(0.65, 0.5), m=(720, 1000)),
-    'molecules': dict(gain=2.0, size=(2400, 800), lo=0.5, hi=99.8, gamma=1.0, focus=(0.7, 0.5), m=(1080, 360)),
+    # gain — усиление отклонений от фона кадра, base — на какую отметку шкалы (0…1) ставится фон кадра: у «воздушных» картинок с белым полем он высокий, чтобы пустое место не затемняло страницу
+    'cream':     dict(gain=1.3, base=0.62, size=(1600, 1100), lo=0.5, hi=99.6, gamma=1.0, focus=(0.5, 0.5), m=(720, 1000)),
+    'molecules': dict(gain=1.7, base=0.66, size=(1600, 1100), lo=0.5, hi=99.8, gamma=1.0, focus=(0.6, 0.5), m=(720, 1000)),
+    'drops':     dict(gain=1.9, base=0.70, size=(1600, 1100), lo=0.5, hi=99.8, gamma=1.0, focus=(0.7, 0.45), m=(720, 1000)),
+    'ribbon':    dict(gain=1.0, base=0.90, size=(1600, 1100), lo=0.3, hi=99.8, gamma=1.0, focus=(0.6, 0.7), m=(720, 1000)),
+    'threads':   dict(gain=1.5, base=0.62, size=(1600, 1100), lo=0.5, hi=99.8, gamma=1.0, focus=(0.55, 0.5), m=(720, 1000)),
+    'film':      dict(gain=1.1, base=0.80, size=(1600, 1100), lo=0.5, hi=99.7, gamma=1.0, focus=(0.65, 0.55), m=(720, 1000)),
+    'shadow':    dict(gain=1.35, base=0.88, size=(1600, 1100), lo=0.5, hi=99.8, gamma=1.0, focus=(0.6, 0.5), m=(720, 1000)),
+    'particles': dict(gain=1.0, base=0.62, size=(1600, 1100), lo=0.5, hi=99.7, gamma=1.0, focus=(0.7, 0.45), m=(720, 1000)),
 }
 
 def grade(img, sp, ramp=WEB):
