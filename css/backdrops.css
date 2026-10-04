@@ -1,0 +1,57 @@
+/* backdrops.css — фоновые вставки: макро-текстуры крема, нитей, капель, рельефа кожи, пипетки, бликов и молекул за содержимым страниц.
+   Разметку ставит сборка (src/backdrops.js): полосы <div class="bd-fill bd-top|bd-end" data-bd="…"> в начале и конце <main> и атрибуты data-bd на отдельных блоках.
+   Картинку подставляет js/backdrops.js (свойство --bd-img), когда блок подходит к экрану; пока её нет, фон просто чистый.
+   Текстура лежит ПОД содержимым (z-index:-1 в контексте наложения #main), не ловит клики и растворяется по краям маской-пятном.
+   Настройки и список страниц — data/redesign.json → backdrops. На главной странице вставок нет (skipPages), и цвета текста там не меняются. */
+
+body:not([data-page="home"]) #main{position:relative}                 /* главная не затрагивается */
+[data-bd]:not(.bd-fill){position:relative}                              /* блок целиком содержит свою текстуру (она не вылезает за его рамку) */
+.sec.tint[data-bd],.rd-clinical[data-bd]{isolation:isolate}                  /* у блоков с собственным фоном текстура ложится на этот фон, а не уходит под него */
+.bd-fill{position:absolute;left:0;right:0;z-index:-1;pointer-events:none}
+.bd-top{top:0;height:var(--bd-h,800px)}
+.bd-end{bottom:0;height:var(--bd-h,560px)}
+[data-bd]::before{content:"";position:absolute;inset:0;z-index:-1;pointer-events:none;
+  background-image:var(--bd-img,none);background-repeat:no-repeat;background-size:cover;background-position:var(--bd-bp,50% 50%);
+  mix-blend-mode:multiply;                                         /* текстура «впитывается» в фон страницы: белое не меняет цвет, тени и блики только затеняют */
+  opacity:0;transition:opacity 1.5s var(--ease);
+  -webkit-mask-image:var(--bd-mask);mask-image:var(--bd-mask)}
+[data-bd].bd-on::before{opacity:var(--bd-o,.9)}
+
+/* текстура блока (а не полосы страницы): на всю ширину экрана (даже если блок уже страницы — body режет горизонтальный overflow), не выше 900px и посередине блока;
+   маска затухает к верху и низу блока, чтобы на стыке с соседним блоком не было ровного края; угловые положения (tr/br/tl/bl) здесь равны боковым (r/l) */
+[data-bd]:not(.bd-fill)::before{left:50%;right:auto;top:50%;bottom:auto;width:100vw;height:min(100%,var(--bd-max,900px));translate:-50% -50%}
+[data-bd]:not(.bd-fill)[data-bd-pos="tr"],[data-bd]:not(.bd-fill)[data-bd-pos="br"],[data-bd]:not(.bd-fill)[data-bd-pos="tl"],[data-bd]:not(.bd-fill)[data-bd-pos="bl"]{--bd-bp:100% 50%;--bd-mask:radial-gradient(ellipse 60% 50% at 88% 50%,#000 28%,rgba(0,0,0,.62) 60%,transparent 100%)}
+
+/* сила по умолчанию у каждой текстуры; data-bd-o="3…10" переопределяет */
+[data-bd="cream"]{--bd-o:.95}
+[data-bd="lines"]{--bd-o:.9}
+[data-bd="drops"]{--bd-o:.9}
+[data-bd="relief"]{--bd-o:.9}
+[data-bd="pipette"]{--bd-o:.9}
+[data-bd="glints"]{--bd-o:.85}
+[data-bd="molecules"]{--bd-o:.9}
+[data-bd][data-bd-o="3"]{--bd-o:.3}[data-bd][data-bd-o="4"]{--bd-o:.4}[data-bd][data-bd-o="5"]{--bd-o:.5}[data-bd][data-bd-o="6"]{--bd-o:.6}
+[data-bd][data-bd-o="7"]{--bd-o:.7}[data-bd][data-bd-o="8"]{--bd-o:.8}[data-bd][data-bd-o="9"]{--bd-o:.9}[data-bd][data-bd-o="10"]{--bd-o:1}
+
+/* где лежит: маска-пятно (радиальный градиент) с мягким краем — прямоугольных границ у картинки не видно */
+[data-bd-pos="r"],[data-bd-pos="l"]{--bd-bp:100% 50%;--bd-mask:radial-gradient(ellipse 60% 50% at 88% 50%,#000 28%,rgba(0,0,0,.62) 60%,transparent 100%)}
+[data-bd-pos="tr"],[data-bd-pos="tl"]{--bd-bp:100% 0%;--bd-mask:radial-gradient(ellipse 58% 88% at 90% 12%,#000 28%,rgba(0,0,0,.62) 60%,transparent 100%)}
+[data-bd-pos="br"],[data-bd-pos="bl"]{--bd-bp:100% 100%;--bd-mask:radial-gradient(ellipse 58% 88% at 90% 88%,#000 28%,rgba(0,0,0,.62) 60%,transparent 100%)}
+[data-bd-pos="l"]::before,[data-bd-pos="tl"]::before,[data-bd-pos="bl"]::before{transform:scaleX(-1)}      /* слева — та же картинка, зеркально: содержимое у левого края */
+[data-bd-pos="c"]{--bd-mask:radial-gradient(ellipse 64% 50% at 50% 50%,#000 28%,rgba(0,0,0,.62) 60%,transparent 100%)}
+[data-bd-pos="t"]{--bd-bp:50% 0%;--bd-mask:linear-gradient(180deg,#000 0,#000 34%,transparent 100%)}
+[data-bd-pos="b"]{--bd-bp:50% 100%;--bd-mask:linear-gradient(0deg,#000 0,#000 34%,transparent 100%)}
+[data-bd-pos="full"]{--bd-mask:linear-gradient(180deg,transparent 0,#000 18%,#000 82%,transparent 100%)}
+
+/* на страницах с текстурой серый текст чуть темнее: контраст ≥ 4.5:1 на самом тёмном месте текстуры (проверка: node tools/check-bg.js) */
+body:not([data-page="home"]) #main{--muted:#404e69;--slate:#4b5975}
+
+@media (max-width:700px){
+  .bd-top{height:var(--bd-h,520px)}
+  .bd-end{height:var(--bd-h,420px)}
+  [data-bd]{--bd-oo:.75}
+  [data-bd].bd-on::before{opacity:calc(var(--bd-o,.9) * var(--bd-oo))}
+  [data-bd-pos="r"],[data-bd-pos="l"]{--bd-mask:radial-gradient(ellipse 100% 50% at 50% 50%,#000 28%,rgba(0,0,0,.62) 60%,transparent 100%)}
+}
+@media (prefers-reduced-motion:reduce){[data-bd]::before{transition:none}}
+@media print{[data-bd]::before{display:none}}

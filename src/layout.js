@@ -2,6 +2,7 @@
 const fs = require('fs');
 const path = require('path');
 const S = require('../js/shared.js');
+const backdropsFactory = require('./backdrops.js');
 const {esc, I} = S;
 
 const logoDefs = fs.readFileSync(path.join(__dirname, 'partials', 'logo-defs.html'), 'utf8');
@@ -17,7 +18,8 @@ const EARLY = `(function(d){var h=d.documentElement;h.classList.add('js');try{va
 module.exports = function layout(ctx, C) {
   const {site} = ctx, {u} = C;
   const showNote = !!site.demoNotice && !(ctx.redesign && ctx.redesign.ui && ctx.redesign.ui.showDemoNotices === false);   // пометка «демо-данные» в подвале (в режиме доработок скрывается флагом redesign.ui)
-  const rd = !!site.redesign, cssList = rd ? [...CSS, 'redesign'] : CSS, jsList = rd ? [...JS, 'redesign'] : JS;   // слой доработок включается одним флагом site.redesign
+  const rd = !!site.redesign, BD = rd ? backdropsFactory(ctx) : {on: false, apply: (P, h) => h};
+  const cssList = rd ? [...CSS, 'redesign', ...(BD.on ? ['backdrops'] : [])] : CSS, jsList = rd ? [...JS, 'redesign', ...(BD.on ? ['backdrops'] : [])] : JS;   // слой доработок включается одним флагом site.redesign; фоновые вставки — backdrops.enabled в data/redesign.json
   const ver = ctx.assetVersion ? '?v=' + ctx.assetVersion : '';
   const jarCfg = rd && ctx.redesign && ctx.redesign.jar && ctx.redesign.jar.enabled ? ctx.redesign.jar : null;     // вступление с баночкой: css/jar.css + js/jar.js — только на главной и только пока jar.enabled
   const pageCss = P => jarCfg && P.key === 'home' ? [...cssList, 'jar'] : cssList, pageJs = P => jarCfg && P.key === 'home' ? [...jsList, 'jar'] : jsList;
@@ -161,6 +163,7 @@ module.exports = function layout(ctx, C) {
   /* картинки из assets/ получают ?v=<хэш> (как css/js): после замены файла браузер/CDN не показывают старый кэш */
   const verAssets = html => ver ? html.replace(/(\ssrc=")((?:\.\.\/)*assets\/[^"?#]+)(")/g, '$1$2' + ver + '$3') : html;
   function shell(P, body) {
+    body = BD.apply(P, body);
     const url = absUrl(P.path), img = base + (P.image || 'assets/og-image.png');
     const ld = [...(P.key === 'home' ? [orgLd, siteLd] : []), ...(P.jsonld || [])];
     const bread = P.breadcrumbs && P.breadcrumbs.length ? {'@context': 'https://schema.org', '@type': 'BreadcrumbList',

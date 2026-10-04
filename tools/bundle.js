@@ -6,6 +6,7 @@ const path = require('path');
 module.exports = function bundle({pages, ctx, layout, root, out}) {
   const rd = !!(ctx && ctx.site && ctx.site.redesign);
   const read = f => fs.readFileSync(path.join(root, f), 'utf8');
+  const bd = rd && ctx.redesign && ctx.redesign.backdrops, bdOn = !!(bd && bd.enabled);
   const home = pages.find(p => p.path === 'index.html').html;
   const body = home.slice(home.indexOf('<body'), home.lastIndexOf('</body>'));
   let chrome = body.replace(/^<body[^>]*>\n?/, '')
@@ -24,14 +25,16 @@ module.exports = function bundle({pages, ctx, layout, root, out}) {
     const abs = path.join(root, dir);
     if (fs.existsSync(abs)) fs.readdirSync(abs).filter(f => /\.webp$/.test(f)).sort().forEach(f => { assets[dir + f] = 'data:image/webp;base64,' + fs.readFileSync(path.join(abs, f)).toString('base64'); });
   }
+  /* фоновые вставки: текстуры (десктоп и телефон) кладём в тот же JSON с data:-адресами; js/backdrops.js берёт их из Astreya.assets */
+  if (bdOn) for (const n of Object.keys(bd.textures)) for (const sfx of ['', '-m']) { const f = `assets/bg/${n}${sfx}.webp`; if (fs.existsSync(path.join(root, f))) assets[f] = 'data:image/webp;base64,' + fs.readFileSync(path.join(root, f)).toString('base64'); }
   const dataPages = {};
   for (const p of pages) {
     const m = p.html.match(/<main id="main"[^>]*>\n([\s\S]*?)\n<\/main>/);
     const t = p.html.match(/<title>([^<]*)<\/title>/)[1];
     dataPages[p.path] = {key: p.P.key, nav: p.P.nav || '', title: t.replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&#39;/g, "'"), main: inline(m[1])};
   }
-  const css = ['base', 'components', 'pages', 'responsive', 'motion', ...(rd ? ['redesign'] : []), ...(rd && ctx.redesign.jar && ctx.redesign.jar.enabled ? ['jar'] : [])].map(n => read(`css/${n}.css`)).join('\n');
-  const js = 'window.__ASTREYA_BUNDLE = true;\n' + (rd ? "document.body.classList.add('rd');   /* тег <body> в автономной сборке не сохраняется, а правила слоя доработок привязаны к body.rd */\n" : '') + ['shared', 'data', 'core', 'motion', 'pages', 'hero-mark', ...(rd ? ['redesign'] : []), ...(rd && ctx.redesign.jar && ctx.redesign.jar.enabled ? ['jar'] : [])].map(n => read(`js/${n}.js`)).join('\n;\n') + '\n;\n' + read('src/bundle-router.js');
+  const css = ['base', 'components', 'pages', 'responsive', 'motion', ...(rd ? ['redesign'] : []), ...(bdOn ? ['backdrops'] : []), ...(rd && ctx.redesign.jar && ctx.redesign.jar.enabled ? ['jar'] : [])].map(n => read(`css/${n}.css`)).join('\n');
+  const js = 'window.__ASTREYA_BUNDLE = true;\n' + (rd ? "document.body.classList.add('rd');   /* тег <body> в автономной сборке не сохраняется, а правила слоя доработок привязаны к body.rd */\n" : '') + ['shared', 'data', 'core', 'motion', 'pages', 'hero-mark', ...(rd ? ['redesign'] : []), ...(bdOn ? ['backdrops'] : []), ...(rd && ctx.redesign.jar && ctx.redesign.jar.enabled ? ['jar'] : [])].map(n => read(`js/${n}.js`)).join('\n;\n') + '\n;\n' + read('src/bundle-router.js');
   const fonts = home.match(/<script>\(function\(\)\{var l=document\.createElement\('link'\);[\s\S]*?<\/script>/)[0];
   const early = home.match(/<script>\(function\(d\)\{var h=d\.documentElement;[\s\S]*?<\/script>/)[0];
   const json = JSON.stringify(dataPages).replace(/</g, '\\u003c').replace(/\u2028/g, '\\u2028').replace(/\u2029/g, '\\u2029');
