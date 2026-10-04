@@ -74,10 +74,10 @@ module.exports = function homeRedesign(ctx, C, P, parts, {events, val}) {
       </div>
       <p class="rd-pick-empty" id="pick-empty" hidden>${esc(rd.picker.emptyText)}</p>
       `;
-  const picker = parts.picker.replace('<div id="pick-out"', audience + '<div id="pick-out"').replace('С чем вы работаете сегодня?', 'Какая задача вас интересует?').replace('class="sec"', 'class="rd-sec rd-clinical"');
+  const picker = parts.picker.replace('<div id="pick-out"', audience + '<div id="pick-out"').replace('С чем вы работаете сегодня?', 'Какая задача вас интересует?').replace('class="sec"', 'class="rd-sec rd-clinical rd-picker"');
 
   /* ---------- 5. Продукты ---------- */
-  const featured = parts.featured.replace('Рекомендуемые продукты', 'Профессиональные решения').replace('class="sec tint"', 'class="rd-sec"');
+  const featured = parts.featured.replace('Рекомендуемые продукты', 'Профессиональные решения').replace('class="sec tint"', 'class="rd-sec rd-featured"');
 
   /* ---------- 6. Editorial-блок (графит): крупная мысль + реальная продукция брендов либо фото специалиста ---------- */
   const ed = rd.editorial;
@@ -123,7 +123,7 @@ module.exports = function homeRedesign(ctx, C, P, parts, {events, val}) {
   </div></section>`;
 
   /* ---------- 9. Новости ---------- */
-  const news = parts.news.replace('Новости и акции', 'События Астреи').replace('Что нового', 'Новости и события Астреи').replace('class="sec tint"', 'class="rd-sec"');
+  const news = parts.news.replace('Новости и акции', 'События Астреи').replace('Что нового', 'Новости и события Астреи').replace('class="sec tint"', 'class="rd-sec rd-news"');
 
   /* ---------- 10. Большой блок «Наши бренды» (логотипы в исходных цветах, много воздуха) ---------- */
   const w = rd.wall;
@@ -183,5 +183,5 @@ module.exports = function homeRedesign(ctx, C, P, parts, {events, val}) {
     </div>
   </section>`;
   })();
-  return [jar, outro, hero, parts.marquee, about, stats, why, solutions, parts.brands.replace('class="sec tint"', 'class="rd-sec"'), picker, featured, editorial, training, forWhom, news, wall, finalCta].join('\n\n  ');
+  return [jar, outro, hero, parts.marquee, about, stats, why, solutions, parts.brands.replace('class="sec tint"', 'class="rd-sec rd-brands"'), picker, featured, editorial, training, forWhom, news, wall, finalCta].join('\n\n  ');
 };

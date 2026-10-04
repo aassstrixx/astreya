@@ -2,9 +2,9 @@
    Разметку ставит сборка (src/backdrops.js): полосы <div class="bd-fill bd-top|bd-end" data-bd="…"> в начале и конце <main> и атрибуты data-bd на отдельных блоках.
    Картинку подставляет js/backdrops.js (свойство --bd-img), когда блок подходит к экрану; пока её нет, фон просто чистый.
    Текстура лежит ПОД содержимым (z-index:-1 в контексте наложения #main), не ловит клики и растворяется по краям маской-пятном.
-   Настройки и список страниц — data/redesign.json → backdrops. На главной странице вставок нет (skipPages), и цвета текста там не меняются. */
+   Настройки и список страниц — data/redesign.json → backdrops. На главной вставки только на блоках ниже героя (героя, вступления с баночкой и бегущей строки они не касаются). */
 
-body:not([data-page="home"]) #main{position:relative}                 /* главная не затрагивается */
+body:not([data-page="home"]) #main{position:relative}                 /* нужен для полос top/end; на главной полос нет, и main остаётся как был */
 [data-bd]:not(.bd-fill){position:relative}                              /* блок целиком содержит свою текстуру (она не вылезает за его рамку) */
 .sec.tint[data-bd],.rd-clinical[data-bd]{isolation:isolate}                  /* у блоков с собственным фоном текстура ложится на этот фон, а не уходит под него */
 .bd-fill{position:absolute;left:0;right:0;z-index:-1;pointer-events:none}
@@ -26,7 +26,7 @@ body:not([data-page="home"]) #main{position:relative}                 /* гла�
 [data-bd="cream"]{--bd-o:.95}
 [data-bd="lines"]{--bd-o:.9}
 [data-bd="drops"]{--bd-o:.9}
-[data-bd="relief"]{--bd-o:.9}
+[data-bd="pearls"]{--bd-o:.9}
 [data-bd="pipette"]{--bd-o:.9}
 [data-bd="glints"]{--bd-o:.85}
 [data-bd="molecules"]{--bd-o:.9}
@@ -44,7 +44,7 @@ body:not([data-page="home"]) #main{position:relative}                 /* гла�
 [data-bd-pos="full"]{--bd-mask:linear-gradient(180deg,transparent 0,#000 18%,#000 82%,transparent 100%)}
 
 /* на страницах с текстурой серый текст чуть темнее: контраст ≥ 4.5:1 на самом тёмном месте текстуры (проверка: node tools/check-bg.js) */
-body:not([data-page="home"]) #main{--muted:#404e69;--slate:#4b5975}
+body:not([data-page="home"]) #main,[data-bd]:not(.bd-fill){--muted:#404e69;--slate:#4b5975}      /* на главной — только внутри блоков с текстурой */
 
 @media (max-width:700px){
   .bd-top{height:var(--bd-h,520px)}

@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /* Проверка фоновых вставок (макро-текстуры за содержимым страниц; настройки — data/redesign.json → backdrops).
-   1) Без браузера: файлы текстур на месте и не тяжёлые, в планах страниц только известные текстуры, на главной (skipPages) и в блоках вступления разметки вставок нет.
+   1) Без браузера: файлы текстур на месте и не тяжёлые, в планах страниц только известные текстуры, на самом герое главной, во вступлении с баночкой и в бегущей строке разметки вставок нет (и вообще в skipPages, если они заданы).
    2) В браузере (нужны Playwright и Chromium; без них эта часть пропускается): на каждом типе страницы и на компьютере, и на телефоне — текстуры подгружаются и проявляются,
       нет ошибок и горизонтальной прокрутки, текстура не перехватывает клики, переход между страницами без перезагрузки (SPA) тоже даёт вставки,
       а контраст текста, лежащего прямо на текстуре, не ниже WCAG AA (4.5:1; для крупного текста 3:1) — по реальному снимку страницы без текста.
@@ -54,7 +54,7 @@ const wait = ms => new Promise(r => setTimeout(r, ms));
 const OUT = process.env.CHECK_OUT || '';
 
 /* по одной странице каждого вида (ключ) + главная как отрицательный пример */
-const pick = ['home', ...Object.keys(plans).filter(k => !(cfg.skipPages || []).includes(k))].filter(k => byKey[k] && (!ONLY.length || k === 'home' && ONLY.includes('home') || ONLY.includes(k))).map(k => ({k, rel: byKey[k][0]}));
+const pick = [...new Set(['home', ...Object.keys(plans).filter(k => !(cfg.skipPages || []).includes(k))])].filter(k => byKey[k] && (!ONLY.length || k === 'home' && ONLY.includes('home') || ONLY.includes(k))).map(k => ({k, rel: byKey[k][0]}));
 
 /* контраст: в браузере прячем текст, снимаем страницу целиком и для каждого текстового элемента берём самое тёмное место его рамки на фоне */
 const TEXTS = () => {
@@ -65,7 +65,7 @@ const TEXTS = () => {
   const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT); const seen = new Set();
   while (walker.nextNode()) {
     const t = walker.currentNode; if (!/\S{2,}/.test(t.nodeValue)) continue; const el = t.parentElement; if (!el || seen.has(el)) continue; seen.add(el);
-    if (el.closest('input,textarea,select,button,.btn,.chip,.tag,.badge,.srch,.sr,svg,script,style,noscript,[hidden],[aria-hidden="true"]')) continue;
+    if (el.closest('.hero,.jar-story,.jar-outro,.marquee,input,textarea,select,button,.btn,.chip,.tag,.badge,.srch,.sr,svg,script,style,noscript,[hidden],[aria-hidden="true"]')) continue;
     const cs = getComputedStyle(el); if (cs.visibility === 'hidden' || cs.display === 'none') continue;
     const col = parse(cs.color); if (!col || col[3] < .5) continue;
     let skip = false, op = 1;
@@ -107,13 +107,16 @@ const MEASURE = async ({b64, rects}) => {
       await p.goto(base + rel); await wait(k === 'home' ? 3800 : 900);
       const home = k === 'home';
       const Hh = await p.evaluate(() => document.documentElement.scrollHeight);
-      for (let y = 0; y < Hh; y += 600) { await p.evaluate(y => window.scrollTo(0, y), y); await wait(90); }
-      await p.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
-      if (!home) await p.waitForFunction(() => document.querySelectorAll('[data-bd]:not(.bd-on)').length === 0, null, {timeout: 15000}).catch(() => {});
-      await p.evaluate(() => window.scrollTo(0, 0));
+      for (let y = 0; y < Hh; y += 600) { await p.evaluate(y => window.scrollTo({top: y, behavior: 'instant'}), y); await wait(90); }
+      await p.evaluate(() => window.scrollTo({top: document.documentElement.scrollHeight, behavior: 'instant'}));
+      await p.waitForFunction(() => document.querySelectorAll('[data-bd]:not(.bd-on)').length === 0, null, {timeout: 15000}).catch(() => {});
+      await p.evaluate(() => window.scrollTo({top: 0, behavior: 'instant'}));
       const st = await p.evaluate(() => ({fills: document.querySelectorAll('.bd-fill').length, hosts: document.querySelectorAll('[data-bd]').length, on: document.querySelectorAll('[data-bd].bd-on').length,
         imgs: Array.from(document.querySelectorAll('[data-bd]')).filter(e => /url\(/.test(e.style.getPropertyValue('--bd-img'))).length, ovf: document.documentElement.scrollWidth - innerWidth, muted: getComputedStyle(document.getElementById('main')).getPropertyValue('--muted').trim()}));
-      if (home) { ok(st.hosts === 0 && st.fills === 0, `${rel}: на главной вставок нет`, st); ok(st.muted === '' || st.muted === '#56647d', `${rel}: цвета текста на главной не менялись`, st.muted); await p.close(); continue; }
+      if (home) {
+        const free = await p.evaluate(() => ['.hero', '.jar-story', '.jar-outro', '.marquee'].map(q => { const e = document.querySelector(q); return e ? (!e.closest('[data-bd]') && !e.querySelector('[data-bd]')) : true; }));
+        ok(free.every(Boolean), `${rel}: герой, вступление с баночкой и бегущая строка без вставок`, free);
+      }
       ok(st.hosts > 0 && st.on === st.hosts && st.imgs === st.hosts, `${rel}: вставки подгрузились и проявились (${st.on}/${st.hosts})`, st);
       ok(st.ovf <= 1, `${rel}: нет горизонтальной прокрутки`, st.ovf);
       ok(!errs.length, `${rel}: без ошибок в консоли и запросов`, errs.slice(0, 3));
@@ -123,8 +126,8 @@ const MEASURE = async ({b64, rects}) => {
       await p.addStyleTag({content: '*,*::before,*::after{transition:none!important}#splash,#curtain{display:none!important}'});      // без переходов: все блоки сразу в конечном положении, замеры не «плывут»
       for (let i = 0; i < 3; i++) { await p.evaluate(() => document.querySelectorAll('.reveal,.split,.eyebrow,.b-title,[data-count]').forEach(e => e.classList.add('in'))); await wait(450); }      // слова заголовков разбиваются с задержкой — открываем несколько раз
       let rects = await p.evaluate(TEXTS);
-      for (let i = 0; i < 8; i++) {                                                  // ждём, пока тексты перестанут двигаться (появление слов, подгрузка картинок и шрифтов)
-        await wait(350); const r2 = await p.evaluate(TEXTS), key = a => JSON.stringify(a.map(r => [r.x, r.y, r.w, r.h]));
+      for (let i = 0; i < 12; i++) {                                                 // ждём, пока тексты перестанут двигаться (появление слов, подгрузка картинок и шрифтов)
+        await wait(350); await p.evaluate(() => document.querySelectorAll('.reveal,.split,.eyebrow,.b-title,[data-count]').forEach(e => e.classList.add('in'))); const r2 = await p.evaluate(TEXTS), key = a => JSON.stringify(a.map(r => [r.x, r.y, r.w, r.h]));
         const same = key(r2) === key(rects); rects = r2; if (same) break;
       }
       await p.addStyleTag({content: '#main *{color:transparent!important;text-shadow:none!important;-webkit-text-fill-color:transparent!important;caret-color:transparent!important}#main *::placeholder{color:transparent!important}#main svg *{visibility:hidden!important}'});
@@ -147,6 +150,15 @@ const MEASURE = async ({b64, rects}) => {
       const s = await p.evaluate(() => ({url: location.pathname, page: document.body.getAttribute('data-page'), hosts: document.querySelectorAll('[data-bd]').length, on: document.querySelectorAll('[data-bd].bd-on').length}));
       ok(/company/.test(s.url) && s.page === 'company' && s.hosts > 0 && s.on === s.hosts, 'переход «каталог → компания» по ссылке: вставки новой страницы подгрузились', s);
       ok(!errs.length, 'при переходе нет ошибок', errs.slice(0, 2));
+      await p.close();
+    }
+    {
+      const p = await ctx.newPage(); const errs = []; p.on('pageerror', e => errs.push(e.message));
+      await p.goto(base + 'company.html'); await wait(900);
+      await p.evaluate(() => document.querySelector('#hdr a.logo').click()); await wait(3800);
+      const s = await p.evaluate(() => ({page: document.body.getAttribute('data-page'), hosts: document.querySelectorAll('[data-bd]').length, fills: document.querySelectorAll('.bd-fill').length}));
+      ok(s.page === 'home' && s.hosts > 0 && s.fills === 0, 'переход «компания → главная» по лого: на главной вставки блоков есть, полос страницы нет', s);
+      ok(!errs.length, 'при возврате на главную нет ошибок', errs.slice(0, 2));
       await p.close();
     }
     await ctx.close();

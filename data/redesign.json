@@ -403,31 +403,45 @@
     ]
   },
   "backdrops": {
-    "_note": "Фоновые вставки (макро-текстуры крема, нитей, капель, рельефа кожи, пипетки, бликов, молекул) за блоками страниц. enabled=false выключает всё (CSS/JS не подключаются). skipPages — страницы без вставок (главная — по просьбе заказчика). skipClasses — блоки, которые не трогаем. textures — файлы assets/bg/<имя>.webp и <имя>-m.webp (телефон) + место по умолчанию. pages[<ключ страницы>] — список {at, tex, pos, o}: at — номер блока верхнего уровня в <main> сверху (0 — первый, -1 — последний), pos — где лежит текстура (tl t tr l c r bl b br full), o — сила 3…10. Картинки рисуются в tools/bg-render/ (Blender + numpy), см. tools/bg-render/README.md.",
+    "_note": "Фоновые вставки (макро-текстуры крема, нитей, капель, рельефа кожи, пипетки, бликов, молекул) за блоками страниц. enabled=false выключает всё (CSS/JS не подключаются). skipPages — страницы без вставок (сейчас пусто: вставки есть и на главной — на всех блоках ниже героя, кроме вступления с баночкой, героя, бегущей строки и тёмных блоков). skipClasses — блоки, которые не трогаем. textures — файлы assets/bg/<имя>.webp и <имя>-m.webp (телефон) + место по умолчанию. pages[<ключ страницы>] — список {at, tex, pos, o}: at — номер блока верхнего уровня в <main> сверху (0 — первый, -1 — последний), pos — где лежит текстура (tl t tr l c r bl b br full), o — сила 3…10. Картинки рисуются в tools/bg-render/ (Blender + numpy), см. tools/bg-render/README.md.",
     "enabled": true,
-    "skipPages": ["home"],
+    "skipPages": [],
     "skipClasses": ["jar-story", "jar-outro", "hero", "marquee"],
     "textures": {
       "cream": {"pos": "t", "title": "Текстура крема"},
       "lines": {"pos": "r", "title": "Линии науки"},
       "drops": {"pos": "r", "title": "Капли жидкости"},
-      "relief": {"pos": "br", "title": "Микро-рельеф кожи"},
       "pipette": {"pos": "r", "title": "Капля / пипетка"},
       "glints": {"pos": "tr", "title": "Блеск и свет"},
-      "molecules": {"pos": "c", "title": "Молекулярная структура"}
+      "molecules": {"pos": "c", "title": "Молекулярная структура"},
+      "pearls": {"pos": "r", "title": "Жемчуг и пузырьки"}
     },
     "pages": {
+      "home": {"mid": [
+        {"sel": "section.rd-about", "tex": "lines", "pos": "r", "o": 6},
+        {"sel": "section.rd-stats", "tex": "glints", "pos": "tr", "o": 7},
+        {"sel": "section.rd-why", "tex": "cream", "pos": "l", "o": 8},
+        {"sel": "section.rd-solutions", "tex": "drops", "pos": "r", "o": 7},
+        {"sel": "section.rd-brands", "tex": "molecules", "pos": "c", "o": 6},
+        {"sel": "section.rd-picker", "tex": "pearls", "pos": "l", "o": 7},
+        {"sel": "section.rd-featured", "tex": "pipette", "pos": "r", "o": 7},
+        {"sel": "section.rd-training", "tex": "cream", "pos": "r", "o": 7},
+        {"sel": "section.rd-aud", "tex": "lines", "pos": "l", "o": 7},
+        {"sel": "section.rd-news", "tex": "drops", "pos": "l", "o": 7},
+        {"sel": "section.rd-wall", "tex": "pearls", "pos": "r", "o": 7},
+        {"sel": "section.rd-final", "tex": "molecules", "pos": "c", "o": 8}
+      ]},
       "catalog": {"top": {"tex": "drops", "pos": "tr"}, "end": {"tex": "cream", "pos": "b"}},
       "brands": {"top": {"tex": "cream", "pos": "tr"}, "end": {"tex": "glints", "pos": "br"}},
       "brand": {"top": {"tex": "pipette", "pos": "tr"}, "mid": [{"sel": "section.sec", "n": 2, "tex": "lines", "pos": "l", "o": 7}], "end": {"tex": "molecules", "pos": "c"}},
       "product": {"top": {"tex": "glints", "pos": "tr"}, "mid": [{"sel": "section.sec.p-detail", "tex": "lines", "pos": "r", "o": 6}], "end": {"tex": "drops", "pos": "br"}},
-      "training": {"top": {"tex": "molecules", "pos": "c"}, "mid": [{"sel": "section.sec", "n": 3, "tex": "lines", "pos": "r", "o": 8}, {"sel": "section.sec#materials", "tex": "relief", "pos": "l", "o": 7}], "end": {"tex": "cream", "pos": "b"}},
+      "training": {"top": {"tex": "molecules", "pos": "c"}, "mid": [{"sel": "section.sec", "n": 3, "tex": "lines", "pos": "r", "o": 8}, {"sel": "section.sec#materials", "tex": "pearls", "pos": "l", "o": 7}], "end": {"tex": "cream", "pos": "b"}},
       "event": {"top": {"tex": "lines", "pos": "tr"}, "end": {"tex": "pipette", "pos": "br"}},
       "news": {"top": {"tex": "glints", "pos": "tr"}, "end": {"tex": "cream", "pos": "b"}},
       "article": {"top": {"tex": "cream", "pos": "tr"}, "end": {"tex": "drops", "pos": "br"}},
-      "company": {"top": {"tex": "lines", "pos": "tr"}, "mid": [{"sel": "section.sec", "n": 3, "tex": "relief", "pos": "bl", "o": 7}], "end": {"tex": "molecules", "pos": "c"}},
-      "contacts": {"top": {"tex": "glints", "pos": "tr"}, "end": {"tex": "relief", "pos": "br"}},
-      "partners": {"top": {"tex": "molecules", "pos": "c"}, "mid": [{"sel": "section.sec#calc", "tex": "relief", "pos": "r", "o": 6}], "end": {"tex": "cream", "pos": "b"}},
+      "company": {"top": {"tex": "lines", "pos": "tr"}, "mid": [{"sel": "section.sec", "n": 3, "tex": "pearls", "pos": "bl", "o": 7}], "end": {"tex": "molecules", "pos": "c"}},
+      "contacts": {"top": {"tex": "glints", "pos": "tr"}, "end": {"tex": "pearls", "pos": "br"}},
+      "partners": {"top": {"tex": "molecules", "pos": "c"}, "mid": [{"sel": "section.sec#calc", "tex": "pearls", "pos": "r", "o": 6}], "end": {"tex": "cream", "pos": "b"}},
       "search": {"top": {"tex": "cream", "pos": "tr", "o": 7}},
       "privacy": {"top": {"tex": "cream", "pos": "tr", "o": 5}},
       "terms": {"top": {"tex": "cream", "pos": "tr", "o": 5}}

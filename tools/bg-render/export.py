@@ -1,5 +1,5 @@
 """Финальная обработка: подгонка тона под палитру сайта, мелкий шум от бандинга, WebP для десктопа и телефона → assets/bg/.
-Запуск: python3.11 export.py <папка-с-сырыми-PNG> [имя ...]   (сырые: cream, lines, drops, relief, pipette, glints, molecules)"""
+Запуск: python3.11 export.py <папка-с-сырыми-PNG> [имя ...]   (сырые: cream, lines, drops, pearls, pipette, glints, molecules)"""
 import sys, os, numpy as np
 from PIL import Image
 sys.path.insert(0, os.path.dirname(__file__))
@@ -15,9 +15,9 @@ SPEC = {
     'cream':     dict(gain=1.5, size=(1600, 1100), lo=0.5, hi=99.5, gamma=1.0, focus=(0.55, 0.5), m=(720, 1000)),
     'lines':     dict(gain=2.2, size=(1600, 1100), lo=0.5, hi=99.8, gamma=1.0, focus=(0.35, 0.5), m=(720, 1000)),
     'drops':     dict(gain=2.6, size=(1600, 1100), lo=0.5, hi=99.8, gamma=1.0, focus=(0.7, 0.55), m=(720, 1000)),
-    'relief':    dict(gain=1.4, size=(1600, 1100), lo=0.5, hi=99.7, gamma=1.0, focus=(0.7, 0.6), m=(720, 1000)),
     'pipette':   dict(gain=2.4, size=(1600, 1100), lo=0.5, hi=99.8, gamma=1.0, focus=(0.6, 0.45), m=(720, 1000)),
     'glints':    dict(gain=1.2, size=(1600, 1100), lo=0.5, hi=99.9, gamma=0.95, focus=(0.7, 0.35), m=(720, 1000)),
+    'pearls':    dict(gain=1.6, size=(1600, 1100), lo=0.5, hi=99.8, gamma=1.0, focus=(0.65, 0.5), m=(720, 1000)),
     'molecules': dict(gain=2.0, size=(2400, 800), lo=0.5, hi=99.8, gamma=1.0, focus=(0.7, 0.5), m=(1080, 360)),
 }
 
