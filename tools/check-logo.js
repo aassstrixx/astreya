@@ -39,7 +39,12 @@ const wait = ms => new Promise(r => setTimeout(r, ms));
     if (OUT) await p.screenshot({path: pth.join(OUT, `logo-intro-${mobile ? 'phone' : 'desktop'}.png`)});
     if (!mobile) { await p.evaluate(() => window.scrollTo({top: 0, behavior: 'instant'})); await wait(1200); s = await st(); ok(s.y === 0 && s.p < 0.02, 'до самого верха — начало вступления', s); }
 
-    await p.goto(base + 'index.html'); await skipSplash(); s = await st(); ok(s.y === 0 && s.p < 0.02, 'обновление страницы (F5/новый заход) снова открывает вступление', s);
+    await p.goto(base + 'index.html'); await skipSplash(); s = await st(); ok(s.y === 0 && s.p < 0.02, 'новый заход на сайт (не обновление) снова открывает вступление', s);
+    await p.reload(); await skipSplash(); s = await st();
+    ok(s.heroTop >= 0 && s.heroTop <= 170 && s.y > jp.tot * 0.9, 'обновление страницы (F5) на главной открывает героя, а не вступление', s);
+    ok(s.jarH > H * 3 && s.ctrl, 'вступление при этом на месте выше героя, движок запущен', s);
+    await p.reload(); await skipSplash(); s = await st(); ok(s.heroTop >= 0 && s.heroTop <= 170, 'повторное обновление — снова герой', s);
+    await p.goto(base + 'index.html'); await skipSplash(); s = await st(); ok(s.y === 0 && s.p < 0.02, 'после обновлений новый заход по ссылке — снова вступление', s);
     await p.goto(base + 'brands.html'); await wait(1500); await p.click('#hdr a.logo'); await wait(3200); s = await st();
     ok(s.heroTop >= 0 && s.heroTop <= 170 && s.y > jp.tot * 0.9, 'заход сразу на внутреннюю страницу, затем лого → герой', s);
     await p.evaluate(() => document.querySelector('#nav .nl[href$="news.html"]').click()); await wait(2600); await p.goBack(); await wait(3000); s = await st(); ok(s.heroTop >= 0 && s.heroTop <= 170, 'кнопка «назад» на главную → герой', s);

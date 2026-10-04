@@ -403,7 +403,9 @@
     try { history.scrollRestoration = 'manual'; } catch (e) {}
     /* ссылки шапки, подвала и поиска остаются в документе при подмене содержимого — делаем их абсолютными, чтобы они не «ехали» вместе с адресом */
     if (!window.__ASTREYA_BUNDLE) $$('#hdr [href], .ftr [href], #srch [href], #hdr [action], #srch [action]').forEach(n => { ['href', 'action'].forEach(at => { const v = n.getAttribute(at); if (v && v.charAt(0) !== '#') { try { n.setAttribute(at, new URL(v, location.href).href); } catch (e) {} } }); });
-    if (store.get('astreya:hero')) { store.del('astreya:hero'); const ht = M.heroTop(); if (ht > 0) window.scrollTo({top: ht, left: 0, behavior: 'instant'}); }
+    /* обновление страницы (F5, «перезагрузить») на главной открывает героя, а не вступление с баночкой: вступление — для захода на сайт, а не для обновления */
+    const reloaded = document.body.getAttribute('data-page') === 'home' && !location.hash && (() => { try { const n = performance.getEntriesByType('navigation')[0]; return n ? n.type === 'reload' : !!(performance.navigation && performance.navigation.type === 1); } catch (e) { return false; } })();
+    if (store.get('astreya:hero') || reloaded) { store.del('astreya:hero'); const ht = M.heroTop(); if (ht > 0) window.scrollTo({top: ht, left: 0, behavior: 'instant'}); }
     const fromNav = html.classList.contains('nav-in');
     if (html.classList.contains('nav-quiet')) { store.del('astreya:nav'); html.classList.remove('nav-quiet'); const sq = $('#splash'); if (sq) sq.remove(); finish(40); return; }          // тихий переход обычной загрузкой (поиск): ни заставки, ни шторки
     if ($('#splash') && !fromNav) { requestAnimationFrame(() => setTimeout(runSplash, 0)); return; }   // заставка — при каждой загрузке/обновлении страницы

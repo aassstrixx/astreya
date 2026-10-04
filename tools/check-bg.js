@@ -22,10 +22,15 @@ for (const n of Object.keys(cfg.textures)) for (const sfx of ['', '-m']) {
 }
 ok(total < 2 * 1024 * 1024, `все текстуры вместе легче 2 МБ (${(total / 1024).toFixed(0)} КБ)`);
 const plans = cfg.pages || {};
+const usedBy = pl => [pl, ...(pl.variants || [])].flatMap(v => [v.top, v.end, ...(v.mid || [])]).filter(Boolean).map(i => i.tex);
 for (const [k, pl] of Object.entries(plans)) {
-  const used = [pl.top, pl.end, ...(pl.mid || [])].filter(Boolean).map(i => i.tex);
+  const used = usedBy(pl);
   ok(used.every(t => cfg.textures[t]), `план «${k}»: все текстуры описаны`, used.filter(t => !cfg.textures[t]));
 }
+const BUBBLY = ['pearls', 'drops', 'molecules'];                  // жемчуг, капли, молекулы: пузырьков и шариков на страницах брендов быть не должно (просьба заказчика)
+ok(!usedBy(plans.brand || {}).some(t => BUBBLY.includes(t)) && !usedBy(plans.product || {}).some(t => ['pearls', 'drops'].includes(t)), 'на страницах брендов нет молекул и пузырьков, на товарах — жемчуга и капель');
+ok(!Object.keys(cfg.textures).some(t => ['pearls', 'drops'].includes(t)), 'текстур «жемчуг» и «капли» в наборе нет (заменены завитком крема)');
+ok(!Object.values(plans).some(pl => pl.variants && pl.variants.length < 2), 'у каждого плана с вариантами их не меньше двух');
 ok(!(cfg.skipPages || []).some(k => plans[k]), 'для страниц из skipPages планов нет');
 const walk = d => fs.readdirSync(d, {withFileTypes: true}).flatMap(e => e.isDirectory() ? (['.git', 'src', 'tools', 'data', 'css', 'js', 'assets', 'server', 'node_modules'].includes(e.name) ? [] : walk(pth.join(d, e.name))) : [pth.join(d, e.name)]);
 const pages = walk(ROOT).filter(f => f.endsWith('.html')).map(f => pth.relative(ROOT, f)).sort();

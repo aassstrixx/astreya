@@ -1,4 +1,4 @@
-/* Фоновые вставки: макро-текстуры крема, нитей, капель, рельефа кожи, пипетки, бликов и молекул за содержимым страниц.
+/* Фоновые вставки: макро-текстуры крема, молочного шёлка, линий, плёнок, пипетки, молекул и рендеры упаковки (флаконы, баночки, тубы) за содержимым страниц.
    Здесь — только разметка. apply() добавляет в начало и конец содержимого <main> декоративные полосы (top / end) и ставит атрибуты data-bd на выбранные
    блоки (mid, поиск по простому селектору). Рисует их css/backdrops.css, подгружает js/backdrops.js (лениво, по мере прокрутки).
    Настройки — data/redesign.json → backdrops. */
@@ -35,6 +35,7 @@ module.exports = function backdrops(ctx) {
   const cfg = ctx.redesign && ctx.redesign.backdrops;
   const on = !!(cfg && cfg.enabled);
   const skipCls = new Set((cfg && cfg.skipClasses) || []);
+  const served = {};                                              // сколько страниц с этим ключом уже получили план — по нему выбирается вариант
 
   function check(it, where) {
     const tx = cfg.textures && cfg.textures[it.tex];
@@ -43,11 +44,19 @@ module.exports = function backdrops(ctx) {
   }
   const attrs = (it, tx) => ` data-bd="${it.tex}" data-bd-pos="${it.pos || tx.pos || 'r'}"` + (it.o != null ? ` data-bd-o="${it.o}"` : '') + (it.ext ? ` data-bd-ext="${it.ext}"` : '');
 
-  /* plan страницы: {top: {tex, pos?, o?}, end: {…}, logo: {pos?, o?}, mid: [{sel, n?, tex, pos?, o?, ext?}]}; n — какой по счёту блок, подходящий под sel (по умолчанию 0; -1 — последний) */
+  /* plan страницы: {top: {tex, pos?, o?}, end: {…}, logo: {pos?, o?}, mid: [{sel, n?, tex, pos?, o?, ext?}]}; n — какой по счёту блок, подходящий под sel (по умолчанию 0; -1 — последний).
+     variants: [plan, plan, …] — варианты плана; страницы с одним ключом (бренды, товары) получают их по очереди, поэтому у соседних страниц фон разный */
+  function planFor(key) {
+    const plan = cfg.pages && (cfg.pages[key] || cfg.pages._default);
+    if (!plan || !Array.isArray(plan.variants) || !plan.variants.length) return plan || null;
+    const i = served[key] = (served[key] || 0) + 1, v = plan.variants[(i - 1) % plan.variants.length];
+    const {variants, ...base} = plan;
+    return {...base, ...v};
+  }
   function apply(P, html) {
     if (!on || !html) return html;
     if ((cfg.skipPages || []).includes(P.key)) return html;
-    const plan = (cfg.pages && (cfg.pages[P.key] || cfg.pages._default)) || null;
+    const plan = planFor(P.key);
     if (!plan) return html;
     const edits = new Map();                                    // позиция «>» открывающего тега → строка атрибутов
     const list = blocks(html).filter(b => !b.cls.some(c => skipCls.has(c)));

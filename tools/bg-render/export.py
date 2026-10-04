@@ -1,5 +1,5 @@
 """Финальная обработка: подгонка тона под палитру сайта, мелкий шум от бандинга, WebP для десктопа и телефона → assets/bg/.
-Запуск: python3.11 export.py <папка-с-сырыми-PNG> [имя ...]   (сырые: cream, molecules, drops, ribbon, film, pipette, pearls, silk)"""
+Запуск: python3.11 export.py <папка-с-сырыми-PNG> [имя ...]   (сырые: cream, swirl, molecules, ribbon, film, pipette, silk, serum, jars, tubes)"""
 import sys, os, numpy as np
 from PIL import Image
 sys.path.insert(0, os.path.dirname(__file__))
@@ -15,12 +15,15 @@ SPEC = {
     # gain — усиление отклонений от фона кадра, base — на какую отметку шкалы (0…1) ставится фон кадра: у «воздушных» картинок с белым полем он высокий, чтобы пустое место не затемняло страницу
     'cream':     dict(gain=1.3, base=0.62, size=(1600, 1100), lo=0.5, hi=99.6, gamma=1.0, focus=(0.5, 0.5), m=(720, 1000)),
     'molecules': dict(gain=1.7, base=0.66, size=(1600, 1100), lo=0.5, hi=99.8, gamma=1.0, focus=(0.6, 0.5), m=(720, 1000)),
-    'drops':     dict(gain=1.9, base=0.70, size=(1600, 1100), lo=0.5, hi=99.8, gamma=1.0, focus=(0.7, 0.45), m=(720, 1000)),
     'ribbon':    dict(gain=1.0, base=0.90, size=(1600, 1100), lo=0.3, hi=99.8, gamma=1.0, focus=(0.6, 0.7), m=(720, 1000)),
     'pipette':   dict(gain=2.2, base=0.66, size=(1600, 1100), lo=0.5, hi=99.8, gamma=1.0, focus=(0.6, 0.45), m=(720, 1000)),
-    'pearls':    dict(gain=1.6, base=0.66, size=(1600, 1100), lo=0.5, hi=99.8, gamma=1.0, focus=(0.65, 0.5), m=(720, 1000)),
+    'swirl':     dict(gain=1.3, base=0.62, size=(1600, 1100), lo=0.5, hi=99.6, gamma=1.0, focus=(0.7, 0.45), m=(720, 1000)),
     'silk':      dict(gain=1.2, base=0.62, size=(1600, 1100), lo=0.5, hi=99.6, gamma=1.0, focus=(0.5, 0.5), m=(720, 1000)),
     'film':      dict(gain=1.1, base=0.80, size=(1600, 1100), lo=0.5, hi=99.7, gamma=1.0, focus=(0.65, 0.55), m=(720, 1000)),
+    # продукция (рендеры упаковки): белое поле студии → светлый фон, предметы проявляются тенями и бликами
+    'serum':     dict(gain=2.4, base=0.76, size=(1600, 1100), lo=0.5, hi=99.8, gamma=1.0, focus=(0.7, 0.5), m=(720, 1000)),
+    'jars':      dict(gain=2.4, base=0.76, size=(1600, 1100), lo=0.5, hi=99.8, gamma=1.0, focus=(0.65, 0.5), m=(720, 1000)),
+    'tubes':     dict(gain=2.4, base=0.76, size=(1600, 1100), lo=0.5, hi=99.8, gamma=1.0, focus=(0.65, 0.5), m=(720, 1000)),
 }
 
 def grade(img, sp, ramp=WEB):
