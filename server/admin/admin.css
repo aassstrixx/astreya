@@ -164,7 +164,9 @@ details.ed-card>.in{padding:14px 14px 16px;border-top:1px solid var(--line-s)}
 .files{display:grid;grid-template-columns:repeat(auto-fill,minmax(132px,1fr));gap:12px}
 .file{border:1px solid var(--line-s);border-radius:12px;background:#fff;padding:8px;display:flex;flex-direction:column;gap:6px;font-size:12.5px;cursor:default;position:relative}
 .file .th{aspect-ratio:1/1;border-radius:8px;background:#f2f4f9 center/contain no-repeat;border:1px solid var(--line-s)}
-.file .nm{overflow-wrap:anywhere;font-weight:600;line-height:1.3} .file.pick{cursor:pointer} .file.pick:hover{border-color:var(--blue);box-shadow:0 0 0 3px rgba(15,111,181,.14)}
+.file .nm{overflow-wrap:anywhere;font-weight:600;line-height:1.3}
+.file .pick-btn{display:flex;flex-direction:column;gap:6px;width:100%;padding:0;border:0;background:transparent;text-align:left;cursor:pointer;font:inherit}
+.file:has(.pick-btn:hover){border-color:var(--blue);box-shadow:0 0 0 3px rgba(15,111,181,.14)}
 .drop{border:2px dashed var(--line);border-radius:14px;padding:22px;text-align:center;color:var(--muted);cursor:pointer;background:#fafbfd} .drop.over,.drop:hover{border-color:var(--blue);background:var(--blue-l);color:var(--blue-d)}
 pre.out{background:#0f1c36;color:#d7e2fb;border-radius:10px;padding:12px 14px;overflow:auto;font:12.5px/1.55 var(--mono);max-height:320px;white-space:pre-wrap}
 .toasts{position:fixed;right:16px;bottom:16px;z-index:100;display:flex;flex-direction:column;gap:8px;max-width:min(380px,calc(100vw - 32px))}

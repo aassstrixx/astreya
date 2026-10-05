@@ -36,7 +36,9 @@
         }
       }
       const withoutImage = p => { const c = clone(p); delete c.image; return c; };
-      const setImage = (p, path) => run(() => commit(prods.map(x => x.id === p.id ? (path ? Object.assign({}, x, {image: path}) : withoutImage(x)) : x), path ? 'Фото товара «' + p.name + '» установлено' : 'Фото убрано'));
+      /* старый снимок из папки «Фото товаров» удаляем, если он больше нигде не стоит: лишние файлы в галерее не копятся */
+      const tidy = async old => { if (old && await AD.dropIfUnused(old)) AD.toast('Старый снимок удалён из папки'); };
+      const setImage = async (p, path) => { const old = p.image, r = await run(() => commit(prods.map(x => x.id === p.id ? (path ? Object.assign({}, x, {image: path}) : withoutImage(x)) : x), path ? 'Фото товара «' + p.name + '» установлено' : 'Фото убрано')); if (r && old !== path) await tidy(old); return r; };
 
       /* ----- фото: из галереи / загрузкой / перетаскиванием на карточку ----- */
       async function pickPhoto(p) { const path = await AD.pickImage({dir: PHOTO_DIR, only: true, pickUploaded: true}); if (path) await setImage(p, path); }
@@ -52,7 +54,7 @@
           if (small.size > (AD.config.maxUpload || 6291456)) throw new Error('Файл больше 6 МБ даже после уменьшения.');
           const ext = (small.name.match(/\.(\w+)$/) || [, 'jpg'])[1].toLowerCase().replace('jpeg', 'jpg'), up = await AD.post('/api/files', {dir: PHOTO_DIR, name: await freeName(p.slug, ext), data: await AD.readB64(small)});
           await commit(prods.map(x => x.id === p.id ? Object.assign({}, x, {image: up.path}) : x), 'Фото товара «' + p.name + '» установлено');
-        });
+        }).then(r => r ? tidy(p.image) : r);
       }
 
       /* ----- перечень ----- */
@@ -131,7 +133,7 @@
           if (isNew) { const pre = (prods.find(x => x.brand === out.brand && /^[a-z]+-/.test(x.id)) || {id: ''}).id.split('-')[0] || out.brand.slice(0, 3); out.id = uniq(pre + '-' + (AD.slugify(out.name) || 'tovar'), 'id'); out.docs = out.docs || []; out.details = out.details || null; }
           let next; if (isNew) { next = prods.slice(); const last = prods.reduce((m, x, k) => x.brand === out.brand ? k : m, -1); next.splice(last < 0 ? next.length : last + 1, 0, out); } else next = prods.map(x => x.id === orig.id ? out : x);
           const r = await run(() => commit(next, isNew ? 'Товар «' + out.name + '» добавлен' : 'Товар «' + out.name + '» сохранён'), saveBtn, err);
-          if (r) { if (out.brand !== brandId) { brandId = out.brand; AD.go('#/brandprods/' + encodeURIComponent(brandId)); } openM && openM.close(true); }
+          if (r) { if (orig && orig.image && orig.image !== out.image) tidy(orig.image); if (out.brand !== brandId) { brandId = out.brand; AD.go('#/brandprods/' + encodeURIComponent(brandId)); } openM && openM.close(true); }
         }
         (nameF.input).focus();
       }

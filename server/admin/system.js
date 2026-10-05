@@ -31,6 +31,26 @@
     }
     if (ok) AD.toast('Загружено файлов: ' + ok, 'ok'); if (onDone) onDone(last); return last;
   }
+  /* убрать загруженный файл: сервер не даст удалить картинку, на которую ссылается сайт, и подскажет, где она используется */
+  async function deleteFile(f, after) {
+    if (!await AD.confirm('Удалить файл ' + f.name + '? Восстановить его будет нельзя.', {ok: 'Удалить'})) return false;
+    try { await AD.del('/api/files?path=' + encodeURIComponent(f.path)); AD.toast('Файл удалён', 'ok'); if (after) await after(); return true; }
+    catch (e) { AD.toast(e.status === 409 ? 'Файл «' + f.name + '» сейчас используется — сначала уберите его там, где он стоит (' + ((e.data && e.data.usedIn) || []).join(', ') + ').' : e.message, 'err', 9000); return false; }
+  }
+  /* в этих папках лежат только загруженные из админки файлы — неиспользуемые можно убрать разом */
+  const CLEANABLE = ['assets/products', 'assets/uploads'];
+  async function cleanUnused(d, after) {
+    const list = d.files.filter(f => IMG_EXT.test(f.name)); if (!list.length) return;
+    if (!await AD.confirm('Удалить из папки «' + d.title + '» все файлы, которые нигде не используются? Файлы, которые стоят у товаров или на сайте, останутся.', {ok: 'Убрать неиспользуемые'})) return;
+    let gone = 0, kept = 0;
+    for (const f of list) { try { const u = (await AD.get('/api/files/usage?path=' + encodeURIComponent(f.path))).used; if (u.length) { kept++; continue; } await AD.del('/api/files?path=' + encodeURIComponent(f.path)); gone++; } catch (e) { kept++; } }
+    AD.toast(gone ? 'Удалено файлов: ' + gone + (kept ? ', осталось (используются): ' + kept : '') : 'Неиспользуемых файлов нет', gone ? 'ok' : undefined); if (after) await after();
+  }
+  /* убрать файл, если он больше нигде не стоит (после замены или снятия фото у товара) */
+  AD.dropIfUnused = async path => {
+    if (!/^assets\/(products|uploads)\/[^/]+$/.test(String(path || ''))) return false;
+    try { if ((await AD.get('/api/files/usage?path=' + encodeURIComponent(path))).used.length) return false; await AD.del('/api/files?path=' + encodeURIComponent(path)); return true; } catch (e) { return false; }
+  };
   function dropZone(dir, onDone) {
     const input = h('input', {type: 'file', accept: 'image/png,image/jpeg,image/webp,image/gif', multiple: true, class: 'sr', 'aria-label': 'Выбрать файлы для загрузки', onchange: () => { uploadFiles(dir, Array.from(input.files), onDone); input.value = ''; }});
     const z = h('div', {class: 'drop', tabindex: '0', role: 'button', onclick: () => input.click(), onkeydown: e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); input.click(); } },
@@ -43,7 +63,7 @@
       const box = h('div', {}); root.append(AD.pageHead('Картинки', 'Фото, логотипы брендов, фото преподавателей. Загруженный файл потом выбирается в нужной записи (кнопка «Выбрать / загрузить…»).'), box);
       async function load() {
         const {dirs} = await AD.get('/api/files');
-        box.replaceChildren(...dirs.map(d => h('div', {class: 'card'}, h('h2', {}, d.title, h('span', {class: 'muted small mono', style: {marginLeft: '10px'}}, d.dir)), dropZone(d.dir, load), h('div', {class: 'files', style: {marginTop: '14px'}}, d.files.map(f => h('div', {class: 'file'},
+        box.replaceChildren(...dirs.map(d => h('div', {class: 'card'}, h('h2', {}, d.title, h('span', {class: 'muted small mono', style: {marginLeft: '10px'}}, d.dir)), dropZone(d.dir, load), CLEANABLE.includes(d.dir) && d.files.length ? h('div', {style: {marginTop: '10px'}}, h('button', {class: 'btn sm', type: 'button', onclick: () => cleanUnused(d, load)}, 'Убрать неиспользуемые')) : null, h('div', {class: 'files', style: {marginTop: '14px'}}, d.files.map(f => h('div', {class: 'file'},
           IMG_EXT.test(f.name) ? h('div', {class: 'th', style: {backgroundImage: 'url("/' + encodeURI(f.path) + '")'}, role: 'img', 'aria-label': f.name}) : h('div', {class: 'th'}), h('div', {class: 'nm'}, f.name), h('div', {class: 'muted'}, AD.size(f.size)),
           h('div', {class: 'row gap-s'}, h('button', {class: 'btn sm', type: 'button', onclick: () => AD.copy(f.path, 'Путь скопирован')}, 'Путь'), h('button', {class: 'btn sm', type: 'button', onclick: () => usage(f)}, 'Где?'), h('button', {class: 'btn sm danger', type: 'button', onclick: () => delFile(f)}, 'Удалить'))))))));
       }
@@ -53,10 +73,7 @@
         AD.modal({title: 'Где используется ' + f.name, body: used.length ? h('div', {}, h('p', {}, 'Файл упомянут в ' + used.length + ' ' + AD.plural(used.length, 'месте', 'местах', 'местах') + ':'), h('ul', {class: 'hl'}, used.map(u => h('li', {}, h('span', {class: 'lvl info'}), h('span', {class: 'mono'}, u)))), h('p', {class: 'muted small', style: {marginTop: '10px'}}, 'Пока файл используется, удалить его нельзя: сначала замените картинку в соответствующей записи.'))
           : AD.alertBox('ok', 'Нигде не используется — файл можно удалить.')});
       }
-      async function delFile(f) {
-        if (!await AD.confirm('Удалить файл ' + f.path + '?', {ok: 'Удалить'})) return;
-        try { await AD.del('/api/files?path=' + encodeURIComponent(f.path)); AD.toast('Файл удалён'); load(); } catch (e) { AD.toast(e.message, 'err', 9000); }
-      }
+      const delFile = f => deleteFile(f, load);
       await load(); return {};
     }
   };
@@ -66,7 +83,9 @@
     let done = false; const fin = v => { if (!done) { done = true; res(v); } };
     let dirs; try { dirs = (await AD.get('/api/files')).dirs; } catch (e) { AD.toast(e.message, 'err'); return fin(null); }
     const body = h('div', {}); let m;
-    const paint = d => body.replaceChildren(...d.filter(x => !opts.only || x.dir === opts.dir).sort((a, b) => (b.dir === opts.dir) - (a.dir === opts.dir)).map(x => h('div', {class: 'sect'}, h('h3', {}, x.title), dropZone(x.dir, async last => { if (opts.pickUploaded && last) { fin(last); m.close(true); return; } const nd = (await AD.get('/api/files')).dirs; paint(nd); }), h('div', {class: 'files', style: {marginTop: '12px'}}, x.files.filter(f => IMG_EXT.test(f.name)).map(f => h('div', {class: 'file pick', tabindex: '0', role: 'button', 'aria-label': 'Выбрать ' + f.name, onclick: () => { fin(f.path); m.close(true); }, onkeydown: e => { if (e.key === 'Enter') { fin(f.path); m.close(true); } }}, h('div', {class: 'th', style: {backgroundImage: 'url("/' + encodeURI(f.path) + '")'}}), h('div', {class: 'nm'}, f.name)))))));
+    const paint = d => body.replaceChildren(...d.filter(x => !opts.only || x.dir === opts.dir).sort((a, b) => (b.dir === opts.dir) - (a.dir === opts.dir)).map(x => h('div', {class: 'sect'}, h('h3', {}, x.title), dropZone(x.dir, async last => { if (opts.pickUploaded && last) { fin(last); m.close(true); return; } const nd = (await AD.get('/api/files')).dirs; paint(nd); }), CLEANABLE.includes(x.dir) && x.files.length ? h('div', {style: {marginTop: '10px'}}, h('button', {class: 'btn sm', type: 'button', onclick: () => cleanUnused(x, async () => paint((await AD.get('/api/files')).dirs))}, 'Убрать неиспользуемые')) : null, h('div', {class: 'files', style: {marginTop: '12px'}}, x.files.filter(f => IMG_EXT.test(f.name)).map(f => h('div', {class: 'file'},
+      h('button', {class: 'pick-btn', type: 'button', 'aria-label': 'Выбрать ' + f.name, onclick: () => { fin(f.path); m.close(true); }}, h('div', {class: 'th', style: {backgroundImage: 'url("/' + encodeURI(f.path) + '")'}}), h('div', {class: 'nm'}, f.name)),
+      h('div', {class: 'row gap-s'}, h('button', {class: 'btn sm danger', type: 'button', 'aria-label': 'Удалить файл ' + f.name, onclick: () => deleteFile(f, async () => paint((await AD.get('/api/files')).dirs))}, 'Удалить'))))))));
     paint(dirs); m = AD.modal({title: 'Выберите картинку', body, cls: 'xl', onClose: () => fin(null)});
   });
 
