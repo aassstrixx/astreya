@@ -36,7 +36,6 @@ body:not([data-page="home"]) #main{position:relative}                 /* нуж�
 [data-bd="film"]{--bd-o:.95}
 [data-bd="pipette"]{--bd-o:.9}
 [data-bd="bottles"]{--bd-o:.9}
-[data-bd="flips"]{--bd-o:.9}
 [data-bd="jars"]{--bd-o:.9}
 [data-bd="silk"]{--bd-o:.9}
 [data-bd][data-bd-o="3"]{--bd-o:.3}[data-bd][data-bd-o="4"]{--bd-o:.4}[data-bd][data-bd-o="5"]{--bd-o:.5}[data-bd][data-bd-o="6"]{--bd-o:.6}

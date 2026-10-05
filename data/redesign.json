@@ -402,7 +402,7 @@
     ]
   },
   "backdrops": {
-    "_note": "Фоновые вставки (макро-текстуры крема, молочного шёлка, линий, плёнок, пипетки, молекул и рендеры упаковки — баночки и белые флаконы для шампуня без надписей) за блоками страниц. enabled=false выключает всё (CSS/JS не подключаются). skipPages — страницы без вставок (сейчас пусто: вставки есть и на главной — на всех блоках ниже героя, кроме вступления с баночкой, героя, бегущей строки и блока «Астрея в цифрах»). skipClasses — блоки, которые не трогаем. textures — файлы assets/bg/<имя>.webp и <имя>-m.webp (телефон) + место по умолчанию. pages[<ключ страницы>] — план страницы: top / end — полосы в начале и конце, mid — блоки по селектору [{sel, n, tex, pos, o}], logo — крупный логотип; variants — несколько вариантов плана, которые по очереди достаются страницам с этим ключом (так у разных брендов и товаров разный фон); pos — где лежит текстура (tl t tr l c r bl b br full), o — сила 3…10. Картинки рисуются в tools/bg-render/ (Blender + numpy), см. tools/bg-render/README.md.",
+    "_note": "Фоновые вставки (макро-текстуры крема, молочного шёлка, линий, плёнок, пипетки, молекул и рендеры упаковки — баночки и белые флаконы для шампуня без надписей — только на главной; на страницах каталога, брендов и товаров рендеров упаковки нет) за блоками страниц. enabled=false выключает всё (CSS/JS не подключаются). skipPages — страницы без вставок (сейчас пусто: вставки есть и на главной — на всех блоках ниже героя, кроме вступления с баночкой, героя, бегущей строки и блока «Астрея в цифрах»). skipClasses — блоки, которые не трогаем. textures — файлы assets/bg/<имя>.webp и <имя>-m.webp (телефон) + место по умолчанию. pages[<ключ страницы>] — план страницы: top / end — полосы в начале и конце, mid — блоки по селектору [{sel, n, tex, pos, o}], logo — крупный логотип; variants — несколько вариантов плана, которые по очереди достаются страницам с этим ключом (так у разных брендов и товаров разный фон); pos — где лежит текстура (tl t tr l c r bl b br full), o — сила 3…10. Картинки рисуются в tools/bg-render/ (Blender + numpy), см. tools/bg-render/README.md.",
     "enabled": true,
     "skipPages": [],
     "skipClasses": ["jar-story", "jar-outro", "hero", "marquee"],
@@ -415,7 +415,6 @@
       "pipette": {"pos": "r", "title": "Капля и пипетка"},
       "bottles": {"pos": "r", "title": "Флаконы для шампуня"},
       "jars": {"pos": "r", "title": "Баночки с кремом"},
-      "flips": {"pos": "r", "title": "Флаконы с откидной крышкой (низкие)"},
       "molecules": {"pos": "c", "title": "Молекулярная структура"}
     },
     "pages": {
@@ -432,17 +431,17 @@
         {"sel": "section.rd-wall", "tex": "cream", "pos": "c", "o": 8},
         {"sel": "section.rd-final", "tex": "smear", "pos": "c", "o": 8}
       ]},
-      "catalog": {"top": {"tex": "cream", "pos": "tr"}, "end": {"tex": "flips", "pos": "br"}},
+      "catalog": {"top": {"tex": "cream", "pos": "tr"}, "end": {"tex": "silk", "pos": "br"}},
       "brands": {"top": {"tex": "smear", "pos": "tr"}, "end": {"tex": "film", "pos": "br"}},
       "brand": {"variants": [
-        {"top": {"tex": "jars", "pos": "tr"}, "mid": [{"sel": "section.sec", "n": 2, "tex": "bottles", "pos": "l", "o": 6}], "end": {"tex": "smear", "pos": "br"}},
-        {"top": {"tex": "bottles", "pos": "tr"}, "mid": [{"sel": "section.sec", "n": 2, "tex": "flips", "pos": "l", "o": 6}], "end": {"tex": "cream", "pos": "b"}},
-        {"top": {"tex": "flips", "pos": "tr"}, "mid": [{"sel": "section.sec", "n": 2, "tex": "jars", "pos": "l", "o": 6}], "end": {"tex": "silk", "pos": "c"}}
+        {"top": {"tex": "smear", "pos": "tr"}, "mid": [{"sel": "section.sec", "n": 2, "tex": "silk", "pos": "l", "o": 6}], "end": {"tex": "cream", "pos": "b"}},
+        {"top": {"tex": "silk", "pos": "tr"}, "mid": [{"sel": "section.sec", "n": 2, "tex": "film", "pos": "l", "o": 6}], "end": {"tex": "smear", "pos": "br"}},
+        {"top": {"tex": "cream", "pos": "tr"}, "mid": [{"sel": "section.sec", "n": 2, "tex": "smear", "pos": "l", "o": 6}], "end": {"tex": "film", "pos": "br"}}
       ]},
       "product": {"variants": [
-        {"top": {"tex": "silk", "pos": "tr"}, "end": {"tex": "jars", "pos": "br"}},
-        {"top": {"tex": "smear", "pos": "tr"}, "end": {"tex": "flips", "pos": "br"}},
-        {"top": {"tex": "cream", "pos": "tr"}, "end": {"tex": "bottles", "pos": "br"}}
+        {"top": {"tex": "silk", "pos": "tr"}, "end": {"tex": "cream", "pos": "br"}},
+        {"top": {"tex": "smear", "pos": "tr"}, "end": {"tex": "silk", "pos": "br"}},
+        {"top": {"tex": "cream", "pos": "tr"}, "end": {"tex": "smear", "pos": "br"}}
       ]},
       "training": {"top": {"tex": "pipette", "pos": "tr"}, "mid": [{"sel": "section.sec", "n": 3, "tex": "molecules", "pos": "r", "o": 7}, {"sel": "section.sec#materials", "tex": "silk", "pos": "l", "o": 6}], "end": {"tex": "cream", "pos": "b"}},
       "event": {"top": {"tex": "film", "pos": "tr"}, "end": {"tex": "ribbon", "pos": "br"}},

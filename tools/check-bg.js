@@ -28,8 +28,9 @@ for (const [k, pl] of Object.entries(plans)) {
   ok(used.every(t => cfg.textures[t]), `план «${k}»: все текстуры описаны`, used.filter(t => !cfg.textures[t]));
 }
 const BUBBLY = ['pearls', 'drops', 'molecules', 'swirl', 'serum', 'ctubes', 'tubes', 'pumps'];                  // жемчуг, капли, молекулы: пузырьков и шариков на страницах брендов быть не должно (просьба заказчика)
-ok(!usedBy(plans.brand || {}).some(t => BUBBLY.includes(t)) && !usedBy(plans.product || {}).some(t => ['pearls', 'drops'].includes(t)), 'на страницах брендов нет молекул и пузырьков, на товарах — жемчуга и капель');
-ok(!Object.keys(cfg.textures).some(t => ['pearls', 'drops', 'swirl', 'serum', 'ctubes', 'tubes', 'pumps'].includes(t)), 'убранных текстур («жемчуг», «капли», «завиток», «флаконы-колбочки», «тубы», «дозаторы») в наборе нет');
+const PACK = ['jars', 'bottles', 'flips'];                                                            // рендеры упаковки: на главной можно, в каталоге, на брендах и товарах — нет (просьба заказчика)
+ok(['catalog', 'brands', 'brand', 'product'].every(k => !usedBy(plans[k] || {}).some(t => BUBBLY.includes(t) || PACK.includes(t))), 'в каталоге, на брендах и товарах нет молекул, пузырьков и рендеров упаковки');
+ok(!Object.keys(cfg.textures).some(t => ['pearls', 'drops', 'swirl', 'serum', 'ctubes', 'tubes', 'pumps', 'flips'].includes(t)), 'убранных текстур («жемчуг», «капли», «завиток», «флаконы-колбочки», «тубы», «дозаторы», «низкие флаконы») в наборе нет');
 ok(!Object.values(plans).some(pl => pl.variants && pl.variants.length < 2), 'у каждого плана с вариантами их не меньше двух');
 ok(!(cfg.skipPages || []).some(k => plans[k]), 'для страниц из skipPages планов нет');
 const walk = d => fs.readdirSync(d, {withFileTypes: true}).flatMap(e => e.isDirectory() ? (['.git', 'src', 'tools', 'data', 'css', 'js', 'assets', 'server', 'node_modules'].includes(e.name) ? [] : walk(pth.join(d, e.name))) : [pth.join(d, e.name)]);

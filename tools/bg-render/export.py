@@ -1,5 +1,5 @@
 """Финальная обработка: подгонка тона под палитру сайта, мелкий шум от бандинга, WebP для десктопа и телефона → assets/bg/.
-Запуск: python3.11 export.py <папка-с-сырыми-PNG> [имя ...]   (сырые: cream, smear, molecules, ribbon, film, pipette, silk, bottles, flips, jars)"""
+Запуск: python3.11 export.py <папка-с-сырыми-PNG> [имя ...]   (сырые: cream, smear, molecules, ribbon, film, pipette, silk, bottles, jars)"""
 import sys, os, numpy as np
 from PIL import Image
 sys.path.insert(0, os.path.dirname(__file__))
@@ -22,7 +22,6 @@ SPEC = {
     'film':      dict(gain=1.1, base=0.80, size=(1600, 1100), lo=0.5, hi=99.7, gamma=1.0, focus=(0.65, 0.55), m=(720, 1000)),
     # продукция (рендеры упаковки): белое поле студии → светлый фон, предметы проявляются тенями и бликами
     'bottles':   dict(gain=1.9, base=0.62, size=(1600, 1100), lo=0.5, hi=99.8, gamma=1.0, focus=(0.62, 0.55), m=(720, 1000)),
-    'flips':     dict(gain=1.9, base=0.62, size=(1600, 1100), lo=0.5, hi=99.8, gamma=1.0, focus=(0.62, 0.55), m=(720, 1000)),
     'jars':      dict(gain=2.4, base=0.76, size=(1600, 1100), lo=0.5, hi=99.8, gamma=1.0, focus=(0.65, 0.5), m=(720, 1000)),
 }
 
