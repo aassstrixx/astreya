@@ -201,7 +201,7 @@
 
 /* ---------- Обучение: преподаватели (после «Четырёх шагов») ---------- */
 .rd-tgrid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:clamp(26px,3.4vw,44px) clamp(16px,2vw,28px)}
-.rd-tc{min-width:0;display:flex;flex-direction:column}
+.rd-tc{min-width:0;display:flex;flex-direction:column;overflow-wrap:anywhere}      /* длинные должности не вылезают за карточку на узких экранах */
 .rd-tc-photo{position:relative;aspect-ratio:4/5;border-radius:var(--r-lg);overflow:hidden;background:linear-gradient(160deg,#fff 0%,color-mix(in srgb,var(--mist) 80%,#fff) 55%,color-mix(in srgb,var(--navy) 12%,var(--mist)) 100%);box-shadow:var(--sh)}
 .rd-tc-photo img{width:100%;height:100%;object-fit:cover;object-position:50% 20%;display:block;transition:transform 1.1s var(--ease)}
 .rd-tc:hover .rd-tc-photo img{transform:scale(1.04)}

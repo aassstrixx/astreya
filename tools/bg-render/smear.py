@@ -57,14 +57,16 @@ def stroke(xs, ys, path, wfun, tail_from, seed, shape):
     T = (body * head + berm + rid * amp) * inside
     return T, s
 
-def make(W, H, seed=21, out='smear.png'):
+def make(W, H, seed=21, out='smear.png', dx=0.0, dy=0.0, wid=1.0, bend=0.0, flip=False):
     rng = np.random.default_rng(seed)
     pad = int(0.10 * H); ny, nx = H + 2 * pad, W + 2 * pad; asp = nx / ny
     f = 3; my, mx = ny // f, nx // f
     ys, xs = np.mgrid[0:my, 0:mx].astype(float); xs = (xs + 0.5) * f / ny; ys = (ys + 0.5) * f / ny      # единицы — высота кадра
     # главный мазок: широкий, идёт по правой стороне кадра снизу вверх; густая округлая «головка» внизу, к хвосту — бороздки; так тело крема есть и у верхнего, и у нижнего правого угла
-    p1 = spline([(0.64 * asp, 0.93), (0.70 * asp, 0.78), (0.74 * asp, 0.58), (0.82 * asp, 0.36), (0.93 * asp, 0.14), (1.06 * asp, -0.06), (1.16 * asp, -0.22)])
-    T1, s1 = stroke(xs, ys, p1, lambda s: 0.235 - 0.050 * smooth01(s, 0.0, 0.9), 0.5, 11, (ny, nx))
+    pts = [(0.64, 0.93), (0.70, 0.78), (0.74, 0.58), (0.82, 0.36), (0.93, 0.14), (1.06, -0.06), (1.16, -0.22)]
+    pts = [((x + dx + bend * (0.55 - y) ** 2 * 1.3) * asp, y + dy) for x, y in pts]                  # dx/dy — сдвиг, bend — изгиб дуги
+    p1 = spline(pts)
+    T1, s1 = stroke(xs, ys, p1, lambda s: wid * (0.235 - 0.050 * smooth01(s, 0.0, 0.9)), 0.5, 11, (ny, nx))
     T = T1
     T += 0.012 * noise(ny, nx, ny * 0.6, rng, 2) * (T > 0.02)
     h = blur(T, ny * 0.0020) * 0.17
@@ -77,8 +79,9 @@ def make(W, H, seed=21, out='smear.png'):
     g = 0.97 + 0.03 * blur(rng.standard_normal((ny, nx)), ny * 0.35) / 0.5
     img *= np.clip(g, 0.95, 1.03)[..., None]
     img = img[pad:-pad, pad:-pad]
+    if flip: img = img[::-1]
     save8(tone(img, CREAM, 0.5, 99.6, 1.0), out)
 
 if __name__ == '__main__':
     a = dict(x.split('=') for x in sys.argv[1:]); w, h = [int(v) for v in a.get('res', '960x660').split('x')]
-    make(w, h, int(a.get('seed', 21)), a.get('out', 'smear.png'))
+    make(w, h, int(a.get('seed', 21)), a.get('out', 'smear.png'), float(a.get('dx', 0)), float(a.get('dy', 0)), float(a.get('wid', 1)), float(a.get('bend', 0)), a.get('flip', '0') == '1')

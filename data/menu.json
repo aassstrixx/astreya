@@ -1,0 +1,30 @@
+{
+  "_note": "Меню в шапке сайта. title — подпись, href — страница сайта (например catalog.html или pages/about.html), key — служебный ключ подсветки текущей страницы. Свои страницы из раздела «Страницы» попадают в меню сами, если у них включён пункт меню.",
+  "nav": [
+    {
+      "title": "Каталог",
+      "href": "catalog.html",
+      "key": "/catalog"
+    },
+    {
+      "title": "Бренды",
+      "href": "brands.html",
+      "key": "/brands"
+    },
+    {
+      "title": "Обучение",
+      "href": "training.html",
+      "key": "/training"
+    },
+    {
+      "title": "Новости",
+      "href": "news.html",
+      "key": "/news"
+    },
+    {
+      "title": "Компания",
+      "href": "company.html",
+      "key": "/company"
+    }
+  ]
+}

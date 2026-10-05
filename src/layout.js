@@ -13,7 +13,7 @@ const JS = ['shared', 'data', 'core', 'motion', 'pages', 'hero-mark'];
 /* Ранний скрипт: класс js, «уже видели заставку», «пришли с переходом» — до первой отрисовки, чтобы не было мигания */
 /* Совместимость со старыми ссылками одностраничной версии (#/catalog?brand=…, #/brand/keenwell, #/academy…) — только на главной */
 const LEGACY = `(function(l){var m=l.hash.match(/^#\\/(catalog|brands|brand\\/[\\w-]+|academy|news|company)(\\?.*)?$/);if(!m)return;var t=m[1],q=m[2]||'',u=t==='academy'?'training.html':t.indexOf('brand/')===0?'brands/'+t.slice(6)+'.html':t+'.html';l.replace(u+q);})(location);`;
-const EARLY = `(function(d){var h=d.documentElement;h.classList.add('js');try{var n=sessionStorage.getItem('astreya:nav');if(n){var o=JSON.parse(n);if(o&&Date.now()-o.t<8000)h.classList.add(o.q?'nav-quiet':'nav-in');else sessionStorage.removeItem('astreya:nav')}}catch(e){}})(document);`;
+const EARLY = `(function(d){var h=d.documentElement;h.classList.add('js');if(/[?&]pv=/.test(location.search))h.classList.add('nav-quiet');try{var n=sessionStorage.getItem('astreya:nav');if(n){var o=JSON.parse(n);if(o&&Date.now()-o.t<8000)h.classList.add(o.q?'nav-quiet':'nav-in');else sessionStorage.removeItem('astreya:nav')}}catch(e){}})(document);`;
 
 module.exports = function layout(ctx, C) {
   const {site} = ctx, {u} = C;
@@ -27,7 +27,11 @@ module.exports = function layout(ctx, C) {
   const jarPreload = P => jarCfg && P.key === 'home' ? ['(min-aspect-ratio: 11/10)', '(max-aspect-ratio: 11/10)'].map((m, i) => `<link rel="preload" as="image" href="${u(P, (i ? jarCfg.mobile : jarCfg.desktop) + '000.' + jarCfg.ext)}${ver}" media="${m}">`).join('\n') : '';
   const base = site.url.replace(/\/?$/, '/');
   const absUrl = p => p === 'index.html' ? base : base + p;
-  const nav = [['Каталог', 'catalog.html', '/catalog'], ['Бренды', 'brands.html', '/brands'], ['Обучение', 'training.html', '/training'], ['Новости', 'news.html', '/news'], ['Компания', 'company.html', '/company']];
+  const nav = [...ctx.nav, ...ctx.customNav].map(i => [i.title, i.href, i.key]);                    // меню — data/menu.json + свои страницы с включённым пунктом меню
+  /* оформление (data/theme.json): переопределяет цвета и скругления, только если включено; остальное делает CSS сайта */
+  const themeCss = (() => { const t = ctx.theme; if (!t || !t.enabled) return ''; const c = t.colors || {}, m = {'--navy': c.navy, '--blue': c.blue, '--blue-d': c.blueDark, '--milk': c.milk, '--mist': c.mist}, ok = v => /^#[0-9a-f]{6}$/i.test(v || '');
+    const decl = Object.entries(m).filter(([, v]) => ok(v)).map(([k, v]) => `${k}:${v}`); if (+t.radius >= 0 && +t.radius <= 28) decl.push(`--r:${+t.radius}px`, `--r-lg:${Math.round(+t.radius * 1.57)}px`, `--r-xl:${Math.round(+t.radius * 2.14)}px`);
+    return decl.length ? `:root{${decl.join(';')}}` : ''; })();
   const c = site.contacts;
 
   const header = P => `<header class="hdr" id="hdr">
@@ -39,7 +43,8 @@ module.exports = function layout(ctx, C) {
       ${nav.map(([t, href, key]) => `<a class="nl${P.nav === key ? ' on' : ''}" href="${u(P, href)}" data-nav="${key}"${P.nav === key ? ' aria-current="page"' : ''}>${t}</a>`).join('\n      ')}
       <div class="nav-extra">
         <form class="nav-search" role="search" action="${u(P, 'search.html')}" method="get">
-          <label class="search"><span class="sr">Поиск по сайту</span>${I.search}<input type="search" name="q" placeholder="Поиск по сайту" autocomplete="off"></label>
+          <label class="search"><span class="sr">Поиск по сайту</span>${I.search}<input type="search" name="q" placeholder="Поиск по сайту" autocomplete="off" enterkeyhint="search"></label>
+          <button class="sr" type="submit" tabindex="-1">Найти</button>
         </form>
         <a class="btn btn-fill" href="${u(P, 'partners.html')}" data-track="partner_cta" data-place="menu">Стать партнёром ${I.arrow}</a>
         <div class="nav-contacts">
@@ -136,7 +141,8 @@ module.exports = function layout(ctx, C) {
   const searchPanel = P => `<div id="srch" class="srch" role="dialog" aria-modal="true" aria-label="Поиск по сайту" hidden>
   <div class="srch-box wrap">
     <form class="srch-form" role="search" action="${u(P, 'search.html')}" method="get">
-      <label class="search"><span class="sr">Поиск по товарам, брендам, новостям и обучению</span>${I.search}<input id="srch-q" type="search" name="q" placeholder="Товары, бренды, новости, обучение…" autocomplete="off"></label>
+      <label class="search"><span class="sr">Поиск по товарам, брендам, новостям и обучению</span>${I.search}<input id="srch-q" type="search" name="q" placeholder="Товары, бренды, новости, обучение…" autocomplete="off" enterkeyhint="search"></label>
+      <button class="sr" type="submit" tabindex="-1">Найти</button>
       <button class="x" type="button" data-act="search-close" aria-label="Закрыть поиск">${I.close}</button>
     </form>
     <div class="srch-hints" id="srch-hints"><span>Популярное:</span>${ctx.content.searchHints.map(h => `<a class="chip" href="${u(P, 'search.html')}?q=${encodeURIComponent(h)}">${esc(h)}</a>`).join('')}</div>
@@ -203,7 +209,7 @@ ${P.key === 'home' ? `<script>${LEGACY}</script>\n` : ''}
      Шрифты подключаются асинхронно: страница стартует сразу, даже если Google Fonts медленный (у всех гарнитур есть запасные — см. --serif / --sans). -->
 <script>(function(){var l=document.createElement('link');l.rel='stylesheet';l.href='${FONTS}';document.head.appendChild(l);})();</script>
 <noscript><link href="${FONTS}" rel="stylesheet"></noscript>
-${pageCss(P).map(n => `<link rel="stylesheet" href="${u(P, `css/${n}.css`)}${ver}">`).join('\n')}
+${pageCss(P).map(n => `<link rel="stylesheet" href="${u(P, `css/${n}.css`)}${ver}">`).join('\n')}${themeCss ? `\n<style id="theme">${themeCss}</style>` : ''}
 ${jarPreload(P)}
 ${ld.map(o => `<script type="application/ld+json">${JSON.stringify(o)}</script>`).join('\n')}
 </head>
@@ -231,5 +237,5 @@ ${pageJs(P).map(n => `<script src="${u(P, `js/${n}.js`)}${ver}" defer></script>`
 </html>
 `;
   }
-  return {shell: (P, body) => verAssets(shell(P, body)), absUrl, base, nav};
+  return {shell: (P, body) => verAssets(shell(P, body)), absUrl, base, nav, themeCss};
 };

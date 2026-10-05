@@ -19,8 +19,8 @@
   function dropZone(dir, onDone) {
     const input = h('input', {type: 'file', accept: 'image/png,image/jpeg,image/webp,image/gif', multiple: true, class: 'sr', 'aria-label': 'Выбрать файлы для загрузки', onchange: () => { uploadFiles(dir, Array.from(input.files), onDone); input.value = ''; }});
     const z = h('div', {class: 'drop', tabindex: '0', role: 'button', onclick: () => input.click(), onkeydown: e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); input.click(); } },
-      ondragover: e => { e.preventDefault(); z.classList.add('over'); }, ondragleave: () => z.classList.remove('over'), ondrop: e => { e.preventDefault(); z.classList.remove('over'); uploadFiles(dir, Array.from(e.dataTransfer.files), onDone); }}, 'Перетащите картинки сюда или нажмите, чтобы выбрать (PNG, JPG, WebP, GIF, до 6 МБ)', input);
-    return z;
+      ondragover: e => { e.preventDefault(); z.classList.add('over'); }, ondragleave: () => z.classList.remove('over'), ondrop: e => { e.preventDefault(); z.classList.remove('over'); uploadFiles(dir, Array.from(e.dataTransfer.files), onDone); }}, 'Перетащите картинки сюда или нажмите, чтобы выбрать (PNG, JPG, WebP, GIF, до 6 МБ)');
+    return h('div', {}, z, input);                       // поле выбора файла — рядом, а не внутри кнопки (вложенные интерактивные элементы читаются экранными дикторами плохо)
   }
   AD.views.files = {
     async mount(root) {
@@ -29,7 +29,13 @@
         const {dirs} = await AD.get('/api/files');
         box.replaceChildren(...dirs.map(d => h('div', {class: 'card'}, h('h2', {}, d.title, h('span', {class: 'muted small mono', style: {marginLeft: '10px'}}, d.dir)), dropZone(d.dir, load), h('div', {class: 'files', style: {marginTop: '14px'}}, d.files.map(f => h('div', {class: 'file'},
           IMG_EXT.test(f.name) ? h('div', {class: 'th', style: {backgroundImage: 'url("/' + encodeURI(f.path) + '")'}, role: 'img', 'aria-label': f.name}) : h('div', {class: 'th'}), h('div', {class: 'nm'}, f.name), h('div', {class: 'muted'}, AD.size(f.size)),
-          h('div', {class: 'row gap-s'}, h('button', {class: 'btn sm', type: 'button', onclick: () => AD.copy(f.path, 'Путь скопирован')}, 'Путь'), h('button', {class: 'btn sm danger', type: 'button', onclick: () => delFile(f)}, 'Удалить'))))))));
+          h('div', {class: 'row gap-s'}, h('button', {class: 'btn sm', type: 'button', onclick: () => AD.copy(f.path, 'Путь скопирован')}, 'Путь'), h('button', {class: 'btn sm', type: 'button', onclick: () => usage(f)}, 'Где?'), h('button', {class: 'btn sm danger', type: 'button', onclick: () => delFile(f)}, 'Удалить'))))))));
+      }
+      /* где файл упомянут (данные, шаблоны, стили): понятно, можно ли его удалить */
+      async function usage(f) {
+        let used; try { used = (await AD.get('/api/files/usage?path=' + encodeURIComponent(f.path))).used; } catch (e) { AD.toast(e.message, 'err'); return; }
+        AD.modal({title: 'Где используется ' + f.name, body: used.length ? h('div', {}, h('p', {}, 'Файл упомянут в ' + used.length + ' ' + AD.plural(used.length, 'месте', 'местах', 'местах') + ':'), h('ul', {class: 'hl'}, used.map(u => h('li', {}, h('span', {class: 'lvl info'}), h('span', {class: 'mono'}, u)))), h('p', {class: 'muted small', style: {marginTop: '10px'}}, 'Пока файл используется, удалить его нельзя: сначала замените картинку в соответствующей записи.'))
+          : AD.alertBox('ok', 'Нигде не используется — файл можно удалить.')});
       }
       async function delFile(f) {
         if (!await AD.confirm('Удалить файл ' + f.path + '?', {ok: 'Удалить'})) return;
@@ -76,7 +82,8 @@
   };
 
   /* ---------- настройки и заявки ---------- */
-  function fld(label, input, help) { return h('div', {class: 'field'}, h('label', {}, label), input, help ? h('div', {class: 'help'}, help) : null); }
+  let fldN = 0;                                                       // подпись связана с полем (для экранных дикторов и клика по подписи)
+  function fld(label, input, help) { if (input && /^(INPUT|SELECT|TEXTAREA)$/.test(input.tagName) && !input.id) input.id = 'sf' + (++fldN); return h('div', {class: 'field'}, h('label', {for: input && input.id ? input.id : null}, label), input, help ? h('div', {class: 'help'}, help) : null); }
   AD.views.settings = {
     async mount(root) {
       const [settings, site] = await Promise.all([AD.get('/api/settings'), AD.get('/api/collections/site')]);

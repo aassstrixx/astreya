@@ -45,8 +45,8 @@
   addEventListener('resize', () => { if (innerWidth > 900) A.closeMenu(); });
 
   /* ---------- поиск ---------- */
-  const TYPE_LABEL = {product: 'Товар', brand: 'Бренд', news: 'Новость', event: 'Обучение'};
-  const TYPE_ORDER = ['product', 'brand', 'event', 'news'];
+  const TYPE_LABEL = {product: 'Товар', brand: 'Бренд', news: 'Новость', event: 'Обучение', page: 'Страница'};
+  const TYPE_ORDER = ['product', 'brand', 'event', 'news', 'page'];
   A.search = function (q) {
     const toks = A.tokens(q); if (!toks.length) return [];
     const nq = A.norm(q).trim();

@@ -169,6 +169,7 @@
       : h('div', {class: 'empty'}, h('b', {}, 'История пуста'), 'Копии появляются при каждом сохранении раздела.');
     const m = AD.modal({title: 'История изменений', body, cls: 'wide'});
   }
+  AD.historyDialog = historyDialog;                                        // общее окно истории — для разделов «Страницы» и «Оформление»
   const saveInfo = r => r.build ? 'Сохранено, сайт пересобран (' + (r.build.ms / 1000).toFixed(1) + ' с)' : r.unchanged ? 'Изменений нет' : 'Сохранено';
 
   /* ---------- вход в раздел: свой маленький маршрутизатор (#/content, #/content/products, #/content/products/<id>) ---------- */
@@ -295,7 +296,7 @@
     });
     paint();
     return {
-      onRoute(id) { if (id === undefined) { if (openM) { const m = openM; openM = null; m.close(true); } return; } const it = getItems().find(x => x.id === id); if (it) openEditor(it, id); else { AD.toast('Запись «' + id + '» не найдена', 'err'); AD.go('#/content/' + name); } },
+      onRoute(id) { if (id === '__new') { if (!openM) openEditor({}, null); return; } if (id === undefined) { if (openM) { const m = openM; openM = null; m.close(true); } return; } const it = getItems().find(x => x.id === id); if (it) openEditor(it, id); else { AD.toast('Запись «' + id + '» не найдена', 'err'); AD.go('#/content/' + name); } },
       destroy() { if (openM) { const m = openM; openM = null; m.close(true); } AD.dirty = false; }
     };
   }

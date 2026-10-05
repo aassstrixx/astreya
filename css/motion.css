@@ -4,7 +4,7 @@
 #progress{position:fixed;left:0;top:0;height:3px;width:100%;background:var(--blue);transform:scaleX(0);transform-origin:left;z-index:120;pointer-events:none}
 
 
-#splash{position:fixed;inset:0;z-index:200;background:var(--navy);color:var(--milk);display:grid;place-items:center;transition:opacity .45s ease,visibility .45s}
+#splash{position:fixed;inset:0;overflow:hidden;z-index:200;background:var(--navy);color:var(--milk);display:grid;place-items:center;transition:opacity .45s ease,visibility .45s}
 #splash.hide{opacity:0;visibility:hidden}
 .sp-in{text-align:center;padding:0 24px;cursor:pointer}
 .sp-logo{position:relative;width:min(78vw,440px);aspect-ratio:836/436;margin:0 auto 26px}
@@ -43,7 +43,7 @@
   --grain-lt:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .96 0 0 0 0 .94 0 0 0 0 .9 0 0 0 .9 -.32'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23g)'/%3E%3C/svg%3E")}
 
 /* --- curtain: полосы + титр раздела --- */
-#curtain{position:fixed;inset:0;z-index:150;pointer-events:none}
+#curtain{position:fixed;inset:0;overflow:hidden;z-index:150;pointer-events:none}      /* полосы шторки выходят за край на 2 px — без overflow страница на узких экранах получала горизонтальную прокрутку */
 #curtain .cs{position:absolute;inset:-2px;display:flex}
 #curtain .cs i{flex:1;background:var(--navy);box-shadow:1px 0 0 var(--navy),-1px 0 0 var(--navy);transform:scaleY(0);transform-origin:top;will-change:transform;transition:transform .52s var(--ease-io);transition-delay:calc(var(--i)*38ms)}   /* исходное состояние — origin top: снятие .out посреди подъёма не перебрасывает полосы вниз */
 #curtain.in .cs i{transform:scaleY(1);transform-origin:bottom}

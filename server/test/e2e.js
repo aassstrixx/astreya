@@ -32,6 +32,8 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
   await admin.waitForSelector('.alert.err'); ok((await admin.textContent('.alert.err')).includes('Неверный логин или пароль'), 'неверный пароль: понятная ошибка');
   await admin.fill('#f-pass', 'Strong-pass-2026'); await admin.click('button[type=submit]');
   await admin.waitForSelector('.side a.nav'); ok(await admin.isVisible('.side a.nav[data-id=leads]'), 'после входа виден каркас админки');
+  await admin.waitForSelector('.kpis'); ok(await admin.isVisible('.side a.nav.on[data-id=overview]') && await admin.isVisible('.kpi'), 'после входа администратор попадает в «Обзор»');
+  await admin.click('.side a.nav[data-id=leads]'); await admin.waitForSelector('.empty');
   ok(await admin.locator('.empty').first().isVisible(), 'список заявок пуст до первых заявок');
 
   /* ---------- режим «письмо» (формы без сервера работают по-старому) ---------- */
@@ -191,7 +193,7 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
   /* ---------- телефон ---------- */
   console.log('\n[13] Админка на телефоне');
   const phone = await browser.newContext({viewport: {width: 390, height: 800}, isMobile: true, hasTouch: true, locale: 'ru-RU'}), pp = await newPage(phone, 'phone');
-  await pp.goto(base + '/admin/'); await pp.waitForSelector('#f-login'); await pp.fill('#f-login', 'admin'); await pp.fill('#f-pass', 'Strong-pass-2026'); await pp.click('button[type=submit]'); await pp.waitForSelector('tr.click');
+  await pp.goto(base + '/admin/'); await pp.waitForSelector('#f-login'); await pp.fill('#f-login', 'admin'); await pp.fill('#f-pass', 'Strong-pass-2026'); await pp.click('button[type=submit]'); await pp.waitForSelector('.kpis'); await pp.evaluate(() => { location.hash = '#/leads'; }); await pp.waitForSelector('tr.click');
   const over = await pp.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth); ok(over <= 1, 'список заявок без горизонтальной прокрутки на 390 px', over); await shot(pp, 'phone-leads');
   await pp.click('.topbar button'); await pp.waitForSelector('body.nav-open'); ok(await pp.isVisible('.side a.nav[data-id=content]'), 'меню открывается кнопкой ☰'); await pp.click('.side a.nav[data-id=content]'); await pp.waitForSelector('.tile');
   await pp.click('.tile:has-text("Товары")'); await pp.waitForSelector('.tbl tr.click'); const over2 = await pp.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth); ok(over2 <= 1, 'список товаров без горизонтальной прокрутки', over2);

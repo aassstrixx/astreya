@@ -31,6 +31,7 @@ body:not([data-page="home"]) #main{position:relative}                 /* нуж�
 /* сила по умолчанию у каждой текстуры; data-bd-o="3…10" переопределяет */
 [data-bd="cream"]{--bd-o:.95}
 [data-bd="smear"]{--bd-o:.95}
+[data-bd="swatch"]{--bd-o:.95}
 [data-bd="molecules"]{--bd-o:.9}
 [data-bd="ribbon"]{--bd-o:1}
 [data-bd="film"]{--bd-o:.95}

@@ -24,7 +24,8 @@
   const $ = (s, r) => (r || document).querySelector(s), $$ = (s, r) => Array.from((r || document).querySelectorAll(s));
   const ICONS = {
     inbox: 'M3 13l2-8h14l2 8M3 13v6h18v-6M3 13h5l1 3h6l1-3h5', edit: 'M4 20h4L19 9l-4-4L4 16zM14 6l4 4', image: 'M4 5h16v14H4zM4 16l5-5 4 4 3-3 4 4M9 9.5h.01', upload: 'M12 16V4m0 0l-4 4m4-4l4 4M4 16v4h16v-4', gear: 'M12 15a3 3 0 100-6 3 3 0 000 6zM19 12a7 7 0 00-.1-1.2l2-1.5-2-3.4-2.3.9a7 7 0 00-2-1.2L14.2 3h-4l-.4 2.6a7 7 0 00-2 1.2l-2.3-.9-2 3.4 2 1.5A7 7 0 005 12a7 7 0 00.1 1.2l-2 1.5 2 3.4 2.3-.9a7 7 0 002 1.2l.4 2.6h4l.4-2.6a7 7 0 002-1.2l2.3.9 2-3.4-2-1.5c.1-.4.1-.8.1-1.2z',
-    users: 'M9 11a3.5 3.5 0 100-7 3.5 3.5 0 000 7zM2.5 20c.5-3.5 3-5.5 6.5-5.5s6 2 6.5 5.5M16 4.3a3.5 3.5 0 010 6.4M17.5 14.7c2.3.5 3.7 2.4 4 5.3', list: 'M8 6h13M8 12h13M8 18h13M3.5 6h.01M3.5 12h.01M3.5 18h.01', globe: 'M12 21a9 9 0 100-18 9 9 0 000 18zM3 12h18M12 3c2.5 2.5 3.8 5.5 3.8 9S14.5 18.5 12 21c-2.5-2.5-3.8-5.5-3.8-9S9.5 5.5 12 3z'
+    users: 'M9 11a3.5 3.5 0 100-7 3.5 3.5 0 000 7zM2.5 20c.5-3.5 3-5.5 6.5-5.5s6 2 6.5 5.5M16 4.3a3.5 3.5 0 010 6.4M17.5 14.7c2.3.5 3.7 2.4 4 5.3', list: 'M8 6h13M8 12h13M8 18h13M3.5 6h.01M3.5 12h.01M3.5 18h.01', globe: 'M12 21a9 9 0 100-18 9 9 0 000 18zM3 12h18M12 3c2.5 2.5 3.8 5.5 3.8 9S14.5 18.5 12 21c-2.5-2.5-3.8-5.5-3.8-9S9.5 5.5 12 3z',
+    dash: 'M4 4h7v9H4zM13 4h7v5h-7zM13 11h7v9h-7zM4 15h7v5H4z', pages: 'M7 3h8l4 4v14H7zM15 3v4h4M10 12h6M10 16h6', palette: 'M12 3a9 9 0 100 18c1.2 0 2-.8 2-1.8 0-.5-.2-.9-.5-1.2-.3-.3-.5-.7-.5-1.2 0-1 .8-1.8 1.8-1.8H17a4 4 0 004-4c0-4-4-8-9-8zM7.5 11h.01M10 7.5h.01M14.5 7.5h.01', eye: 'M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12zM12 15a3 3 0 100-6 3 3 0 000 6z', search: 'M11 18a7 7 0 100-14 7 7 0 000 14zM21 21l-5-5'
   };
   const ico = n => { const s = document.createElementNS(SVG_NS, 'svg'); s.setAttribute('viewBox', '0 0 24 24'); s.setAttribute('fill', 'none'); s.setAttribute('stroke', 'currentColor'); s.setAttribute('stroke-width', '1.8'); s.setAttribute('stroke-linecap', 'round'); s.setAttribute('stroke-linejoin', 'round'); s.setAttribute('aria-hidden', 'true'); const p = document.createElementNS(SVG_NS, 'path'); p.setAttribute('d', ICONS[n] || ''); s.append(p); return s; };
   /* замена содержимого элемента: принимает узлы, строки, вложенные массивы; null/false пропускаются */
@@ -139,7 +140,8 @@
 
   /* ---------- каркас и разделы ---------- */
   const NAV = [
-    {id: 'leads', title: 'Заявки', icon: 'inbox', roles: ['admin', 'manager']}, {id: 'content', title: 'Содержимое сайта', icon: 'edit', roles: ['admin']}, {id: 'files', title: 'Картинки', icon: 'image', roles: ['admin']},
+    {id: 'overview', title: 'Обзор', icon: 'dash', roles: ['admin']}, {id: 'leads', title: 'Заявки', icon: 'inbox', roles: ['admin', 'manager']}, {id: 'content', title: 'Содержимое сайта', icon: 'edit', roles: ['admin']}, {id: 'pages', title: 'Страницы', icon: 'pages', roles: ['admin']},
+    {id: 'design', title: 'Оформление', icon: 'palette', roles: ['admin']}, {id: 'preview', title: 'Предпросмотр', icon: 'eye', roles: ['admin']}, {id: 'files', title: 'Картинки', icon: 'image', roles: ['admin']},
     {id: 'publish', title: 'Публикация', icon: 'upload', roles: ['admin']}, {id: 'settings', title: 'Настройки и заявки', icon: 'gear', roles: ['admin']}, {id: 'users', title: 'Пользователи', icon: 'users', roles: ['admin']}, {id: 'audit', title: 'Журнал', icon: 'list', roles: ['admin']}
   ];
   AD.setBadge = n => { $$('.nav .badge').forEach(b => { b.textContent = n; b.hidden = !n; }); document.title = (n ? '(' + n + ') ' : '') + 'Админка — Астрея'; };
@@ -153,6 +155,7 @@
   function mountShell() {
     const items = NAV.filter(n => n.roles.includes(AD.user.role));
     const side = h('nav', {class: 'side', 'aria-label': 'Разделы'}, h('div', {class: 'brand'}, h('span', {class: 'brand-mark'}, 'А'), 'Астрея'),
+      h('button', {class: 'nav pal-btn', type: 'button', id: 'pal-open', onclick: () => { document.body.classList.remove('nav-open'); AD.openPalette(); }}, ico('search'), 'Поиск', h('span', {class: 'kbd', 'aria-hidden': 'true'}, 'Ctrl K')),
       items.map(n => h('a', {class: 'nav', href: '#/' + n.id, dataset: {id: n.id}}, ico(n.icon), n.title, n.id === 'leads' ? h('span', {class: 'badge', hidden: true}) : null)),
       h('a', {class: 'nav', href: AD.config.siteUrl || '/', target: '_blank', rel: 'noopener'}, ico('globe'), 'Открыть сайт'), h('div', {class: 'sep'}),
       h('div', {class: 'who'}, h('div', {}, h('b', {}, AD.user.name && AD.user.name !== ((AD.config.roles || {})[AD.user.role]) ? AD.user.name : AD.user.login), h('br'), (AD.config.roles || {})[AD.user.role] || AD.user.role), h('button', {class: 'btn sm', type: 'button', onclick: () => AD.changePasswordDialog()}, 'Сменить пароль'), h('button', {class: 'btn sm', type: 'button', id: 'logout', onclick: () => AD.logout()}, 'Выйти')));
@@ -163,11 +166,12 @@
     AD.cur = null; AD.pollNew(); AD.timers = [setInterval(() => { if (!document.hidden) AD.pollNew(); }, 60000)];
     route();
   }
-  function parseHash() { const p = decodeURIComponent(location.hash.replace(/^#\/?/, '')).split('/').filter(Boolean); return {id: p[0] || 'leads', parts: p.slice(1)}; }
+  const home = () => (AD.user && AD.user.role === 'admin' ? 'overview' : 'leads');
+  function parseHash() { const p = location.hash.replace(/^#\/?/, '').split('/').filter(Boolean).map(x => { try { return decodeURIComponent(x); } catch (e) { return x; } }); return {id: p[0] || home(), parts: p.slice(1)}; }
   let lastHash = location.hash, reverting = false;
   function route() {
     if (!AD.user || AD.user.mustChange) return;
-    const {id: want, parts} = parseHash(), allowed = NAV.filter(n => n.roles.includes(AD.user.role)).map(n => n.id), id = allowed.includes(want) ? want : 'leads';
+    const {id: want, parts} = parseHash(), allowed = NAV.filter(n => n.roles.includes(AD.user.role)).map(n => n.id), id = allowed.includes(want) ? want : home();
     if (id !== want) { history.replaceState(null, '', '#/' + id); }
     $$('.side a.nav').forEach(a => a.classList.toggle('on', a.dataset.id === id));
     const root = $('#view'); if (!root) return;

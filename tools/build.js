@@ -19,6 +19,8 @@ const company = require('../src/pages/company.js');
 const contacts = require('../src/pages/contacts.js');
 const partners = require('../src/pages/partners.js');
 const {searchPage, legalPage} = require('../src/pages/misc.js');
+const customPage = require('../src/pages/custom.js');
+const blocks = require('../src/blocks-schema.js');
 
 const ROOT = path.join(__dirname, '..');
 const ctx = load();
@@ -34,6 +36,8 @@ ctx.assetVersion = (() => {
 const C = components(ctx), L = layoutFactory(ctx, C);
 const {site, content} = ctx;
 const BUILD_DATE = new Date().toISOString().slice(0, 10);
+/* meta description: 70–160 символов; слишком короткий анонс дополняется хвостом, слишком длинный обрезается */
+const descr = (s, tail) => { s = trunc(s); return s.length < 70 && tail ? trunc(`${s.replace(/[.\s]+$/, '')}. ${tail}`) : s; };
 const trunc = (s, n = 158) => { s = String(s).replace(/\s+/g, ' ').trim(); return s.length <= n ? s : s.slice(0, n - 1).replace(/[\s,;:.—-]+\S*$/, '') + '…'; };
 const structured = !site.demoNotice;      // JSON-LD Product/Event/Article — только когда данные перестали быть демонстрационными
 
@@ -68,7 +72,7 @@ ctx.brands.forEach(b => page({key: 'brand', path: `brands/${b.id}.html`, nav: '/
 ctx.products.forEach(p => {
   const b = ctx.brandById[p.brand];
   page({key: 'product', path: `products/${p.slug}.html`, nav: '/catalog', ogType: 'website', priority: 0.6,
-    title: `${p.name} — ${b.name} | Астрея`, description: trunc(`${p.desc} Бренд ${b.name}. Запросите информацию у менеджеров «Астреи».`),
+    title: (S.norm(p.name).includes(S.norm(b.name)) ? `${p.name} — профессиональное решение | Астрея` : `${p.name} — ${b.name} | Астрея`), description: trunc(`${p.desc} Бренд ${b.name}. Запросите информацию у менеджеров «Астреи».`),
     breadcrumbs: [['Главная', 'index.html'], ['Каталог', 'catalog.html'], [b.name, `brands/${b.id}.html`], [p.name, `products/${p.slug}.html`]],
     jsonld: structured ? [{'@context': 'https://schema.org', '@type': 'Product', name: p.name, description: p.desc, brand: {'@type': 'Brand', name: b.name}, ...(p.sku ? {sku: p.sku} : {})}] : []}, P => product(ctx, C, P, p));
 });
@@ -84,12 +88,18 @@ ctx.events.forEach(e => {
 
 /* ---- новости ---- */
 ctx.news.forEach(n => page({key: 'article', path: `news/${n.slug}.html`, nav: '/news', ogType: 'article', priority: 0.5,
-  title: `${n.title} | Астрея`, description: trunc(n.excerpt),
+  title: `${n.title} | Астрея`, description: descr(n.excerpt, 'Новости и акции компании «Астрея».'),
   breadcrumbs: [['Главная', 'index.html'], ['Новости', 'news.html'], [n.title, `news/${n.slug}.html`]],
   jsonld: structured ? [{'@context': 'https://schema.org', '@type': 'NewsArticle', headline: n.title, datePublished: n.date, description: n.excerpt, publisher: {'@type': 'Organization', name: site.name}}] : []}, P => articlePage(ctx, C, P, n)));
 
+/* ---- страницы из админки (data/pages.json): pages/<slug>.html ---- */
+{ const bad = blocks.pageProblems(ctx.pagesRaw); if (bad.length) { console.error('data/pages.json: ' + bad.slice(0, 6).join(' ')); process.exit(1); } }
+ctx.customPages.forEach(pg => page({key: 'custom', path: `pages/${pg.slug}.html`, nav: pg.nav ? '/p/' + pg.slug : '', priority: 0.5, noindex: !!pg.noindex,
+  title: `${pg.title} | Астрея`, description: descr(pg.description || pg.lead || pg.title, 'Астрея — дистрибьютор профессиональной косметики.'),
+  breadcrumbs: [['Главная', 'index.html'], [pg.title, `pages/${pg.slug}.html`]]}, P => customPage(ctx, C, P, pg)));
+
 /* ---- запись файлов ---- */
-for (const d of ['brands', 'products', 'training', 'news']) fs.rmSync(path.join(ROOT, d), {recursive: true, force: true});
+for (const d of ['brands', 'products', 'training', 'news', 'pages']) fs.rmSync(path.join(ROOT, d), {recursive: true, force: true});
 for (const pg of pages) {
   const f = path.join(ROOT, pg.path);
   fs.mkdirSync(path.dirname(f), {recursive: true});
@@ -103,6 +113,7 @@ const index = [
     q: S.norm([p.name, p.desc, brandName(p.brand), ctx.catById[p.cat].name, (ctx.kindById[p.kind] || {}).name, p.tasks.map(t => ctx.taskById[t].label).join(' ')].join(' '))})),
   ...ctx.brands.map(b => ({t: 'brand', title: b.name, url: `brands/${b.id}.html`, sub: b.tag,
     q: S.norm([b.name, b.tag, b.desc, b.group, b.country, b.tasks.map(t => ctx.taskById[t].label).join(' ')].join(' '))})),
+  ...ctx.customPages.filter(pg => !pg.noindex).map(pg => ({t: 'page', title: pg.title, url: `pages/${pg.slug}.html`, sub: pg.description || pg.lead || '', q: S.norm([pg.title, pg.description, pg.lead, ...pg.blocks.flatMap(b => [b.title, b.text, ...(b.paragraphs || []), ...(b.left || []), ...(b.right || []), ...(b.items || []).map(i => typeof i === 'string' ? i : [i.title, i.text, i.q, i.a, i.label].join(' '))])].filter(Boolean).join(' '))})),
   ...ctx.news.map(n => ({t: 'news', title: n.title, url: `news/${n.slug}.html`, sub: `${ctx.newsCatById[n.category].name} · ${S.dparts(n.date).full}`, q: S.norm([n.title, n.excerpt, n.body.join(' '), ctx.newsCatById[n.category].name].join(' '))})),
   ...ctx.sortedEvents.map(e => ({t: 'event', title: e.title, url: `training/${e.slug}.html`, sub: `${e.fmt} · ${e.city} · ${S.dparts(e.date).full}`, date: e.date, q: S.norm([e.title, e.description, e.city, e.fmt, e.speaker, brandName(e.brand), 'семинар мероприятие обучение запись'].join(' '))}))
 ];

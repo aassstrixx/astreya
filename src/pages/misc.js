@@ -6,7 +6,7 @@ function searchPage(ctx, C, P) {
   return `<div class="wrap" data-search>
     ${C.pageHead('Поиск', 'Поиск по сайту', 'Товары, бренды, новости и обучение.')}
     <form class="search-page reveal" role="search" action="${C.u(P, 'search.html')}" method="get">
-      <label class="search"><span class="sr">Запрос</span>${I.search}<input id="sp-q" type="search" name="q" placeholder="Например: Heliocare, пилинг, семинар" autocomplete="off"></label>
+      <label class="search"><span class="sr">Запрос</span>${I.search}<input id="sp-q" type="search" name="q" placeholder="Например: Heliocare, пилинг, семинар" autocomplete="off" enterkeyhint="search"></label>
       <button class="btn btn-fill" type="submit">Найти</button>
     </form>
     <div class="s-tabs" id="s-tabs" role="group" aria-label="Тип результатов" hidden></div>

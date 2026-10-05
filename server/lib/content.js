@@ -5,6 +5,7 @@ const C = require('./config');
 const {readJSON, writeFileAtomic, Mutex, nowISO} = require('./util');
 const {httpErr} = require('./auth');
 const B = require('./build');
+const blocks = require(path.join(C.ROOT, 'src', 'blocks-schema.js'));
 
 const mu = new Mutex();
 const COLLECTIONS = {
@@ -16,7 +17,10 @@ const COLLECTIONS = {
   catalog:  {title: 'Категории, задачи, типы', group: 'Каталог', file: 'data/catalog.json',  kind: 'object'},
   events:   {title: 'Мероприятия',            group: 'Обучение', file: 'data/events.json',   kind: 'array', label: 'title'},
   training: {title: 'Преподаватели, FAQ, шаги, видео', group: 'Обучение', file: 'data/training.json', kind: 'object'},
-  news:     {title: 'Новости и акции',        group: 'Новости',  file: 'data/news.json',     kind: 'object', list: 'items', label: 'title'}
+  news:     {title: 'Новости и акции',        group: 'Новости',  file: 'data/news.json',     kind: 'object', list: 'items', label: 'title'},
+  pages:    {title: 'Свои страницы',          group: 'Сайт',     file: 'data/pages.json',    kind: 'object', list: 'items', label: 'title'},
+  menu:     {title: 'Меню сайта',             group: 'Сайт',     file: 'data/menu.json',     kind: 'object'},
+  theme:    {title: 'Оформление: цвета',      group: 'Сайт',     file: 'data/theme.json',    kind: 'object'}
 };
 const BACKUPS = path.join(C.DATA, 'backups');
 const abs = name => path.join(C.ROOT, COLLECTIONS[name].file);
@@ -65,6 +69,40 @@ function problems(name, data) {
     const e = data.contacts && data.contacts.email; if (!isStr(e) || !/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(e)) P.push('Контакты: нужен корректный e-mail.');
     if (data.formEndpoint && !/^(https?:\/\/[^\s]+|\/[^\s]*)$/.test(data.formEndpoint)) P.push('Адрес приёма заявок: полный адрес вида https://… или путь /api/lead.');
     if (data.url && !/^https?:\/\/[^\s]+\/$/.test(data.url)) P.push('Адрес сайта (url) — полный, с http(s):// и слэшем на конце.');
+  } else if (name === 'pages') {
+    if (!Array.isArray(data.items)) return ['Нужен список «items».'];
+    blocks.pageProblems(data.items).forEach(x => P.push(x));
+    const pageFiles = new Set(data.items.filter(p => p && p.published !== false).map(p => 'pages/' + p.slug + '.html'));
+    const exists = h => { const f = String(h).split('#')[0]; return !f || pageFiles.has(f) || fs.existsSync(path.join(C.ROOT, f)); };
+    const checkLink = (h, w) => { if (h && !/^(https?:|tel:|mailto:|#)/.test(h) && !exists(h)) P.push(`${w}: ссылка «${h}» ведёт на несуществующую страницу.`); };
+    const checkImg = (src, w) => { if (src && !fs.existsSync(path.join(C.ROOT, src))) P.push(`${w}: картинки «${src}» нет в папке сайта.`); };
+    data.items.forEach(p => (p.blocks || []).forEach((b, j) => { const w = `Страница «${p.title || p.slug}», блок ${j + 1}`; checkLink(b.href, w); checkImg(b.src, w); (b.items || []).forEach(it => { if (it && typeof it === 'object') { checkLink(it.href, w); checkImg(it.image, w); } }); }));
+  } else if (name === 'menu') {
+    if (!Array.isArray(data.nav)) return ['Нужен список «nav».'];
+    if (data.nav.length < 2 || data.nav.length > 9) P.push('В меню от 2 до 9 пунктов.');
+    const pagesData = readJSON(abs('pages'), {items: []}), pageFiles = new Set((pagesData.items || []).filter(p => p.published !== false).map(p => 'pages/' + p.slug + '.html')), seen = new Set();
+    data.nav.forEach((i, n) => { const w = `Пункт меню №${n + 1}`; if (!i || !isStr(i.title) || i.title.length > 24) P.push(`${w}: подпись — до 24 символов.`);
+      if (!i || !isStr(i.href) || !/^(?:[\w-]+\/)*[\w-]+\.html$/.test(i.href)) P.push(`${w}: ссылка — страница сайта вида catalog.html.`); else { if (!pageFiles.has(i.href) && !fs.existsSync(path.join(C.ROOT, i.href))) P.push(`${w}: страницы «${i.href}» нет на сайте.`); if (seen.has(i.href)) P.push(`${w}: страница «${i.href}» уже есть в меню.`); seen.add(i.href); } });
+  } else if (name === 'theme') {
+    const hex = v => /^#[0-9a-f]{6}$/i.test(v || ''), c = data.colors || {};
+    if (typeof data.enabled !== 'boolean') P.push('Нужно «enabled» (да/нет).');
+    ['navy', 'blue', 'blueDark', 'milk', 'mist'].forEach(k => { if (!hex(c[k])) P.push(`Цвет «${k}» — формат #rrggbb.`); });
+    if (!(+data.radius >= 0 && +data.radius <= 28)) P.push('Скругление — число от 0 до 28.');
+    if (!P.length && data.enabled) { const lum = h => { const a = [1, 3, 5].map(i => parseInt(h.slice(i, i + 2), 16) / 255).map(v => v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4); return 0.2126 * a[0] + 0.7152 * a[1] + 0.0722 * a[2]; }, ratio = (a, b) => { const x = lum(a), y = lum(b); return (Math.max(x, y) + 0.05) / (Math.min(x, y) + 0.05); };
+      [['navy', 'milk', 7, 'основной текст на молочном фоне'], ['navy', 'mist', 7, 'основной текст на голубом фоне'], ['blue', 'milk', 4.5, 'синие ссылки и подписи на молочном фоне'], ['blueDark', 'milk', 4.5, 'тёмно-синий акцент на молочном фоне']].forEach(([f, g, min, what]) => { const r = ratio(c[f], c[g]); if (r < min) P.push(`Контраст «${what}» ${r.toFixed(1)}:1 — нужно не меньше ${min}:1. Выберите цвет темнее или фон светлее.`); });
+      const rw = ratio('#ffffff', c.blue); if (rw < 4.5) P.push(`Контраст белого текста на синей кнопке ${rw.toFixed(1)}:1 — нужно не меньше 4.5:1. Выберите более тёмный синий.`); }
+  } else if (name === 'redesign') {
+    const bd = data.backdrops;                                          // план фоновых вставок: текстуры должны существовать, места и сила — допустимые
+    if (bd && typeof bd === 'object') {
+      const POS = ['tl', 't', 'tr', 'l', 'c', 'r', 'bl', 'b', 'br', 'full'], tex = bd.textures || {};
+      const ck = (it, w, needTex) => { if (!it || typeof it !== 'object' || Array.isArray(it)) { P.push(`${w}: ожидается объект.`); return; }
+        if (needTex) { if (!tex[it.tex]) P.push(`${w}: нет текстуры «${it.tex}».`); else if (!fs.existsSync(path.join(C.ROOT, 'assets', 'bg', it.tex + '.webp'))) P.push(`${w}: файла assets/bg/${it.tex}.webp нет.`); }
+        if (it.pos && !POS.includes(it.pos)) P.push(`${w}: неизвестное место «${it.pos}».`); if (it.o !== undefined && it.o !== null && !(+it.o >= 3 && +it.o <= 12)) P.push(`${w}: сила — число от 3 до 12.`); };
+      Object.entries(bd.pages || {}).forEach(([k, plan]) => { if (!plan || typeof plan !== 'object') return; const w = `Фоны, страница «${k}»`;
+        (Array.isArray(plan.variants) ? plan.variants : [plan]).forEach((v, i) => { const x = plan.variants ? `${w}, вариант ${i + 1}` : w;
+          ['top', 'end'].forEach(sl => { if (v[sl]) ck(v[sl], `${x}, ${sl === 'top' ? 'начало' : 'конец'}`, true); }); if (v.logo) ck(v.logo, `${x}, логотип`, false);
+          (v.mid || []).forEach((m, j) => { ck(m, `${x}, блок ${j + 1}`, true); if (!m || !/^[a-z][\w-]*(?:\.[\w-]+)*(?:#[\w-]+)?$/i.test(String(m.sel || ''))) P.push(`${x}, блок ${j + 1}: селектор вида section.sec или section.sec#id.`); }); }); });
+    }
   } else if (name === 'training') {
     ['teachers', 'steps', 'faq'].forEach(k => { if (!Array.isArray(data[k])) P.push(`Нужен список «${k}».`); }); if (Array.isArray(data.teachers)) uniq(data.teachers, 'id', 'Преподаватель');
     if (!P.length) readJSON(abs('events'), []).forEach(e => { if (e.teacher && !data.teachers.some(t => t.id === e.teacher)) P.push(`Мероприятие «${e.title}»: преподаватель «${e.teacher}» удалён.`); });

@@ -13,10 +13,11 @@ const B = require('./lib/build');
 const F = require('./lib/files');
 const P = require('./lib/publish');
 const AUD = require('./lib/audit');
+const INS = require('./lib/insight');
 const {httpErr} = A;
 
 const ADMIN_DIR = path.join(__dirname, 'admin');
-const SITE_ALLOW = rel => /^[^/]+\.(html|xml|txt|ico)$/.test(rel) || /^(assets|css|js|brands|products|training|news)\//.test(rel);
+const SITE_ALLOW = rel => /^[^/]+\.(html|xml|txt|ico)$/.test(rel) || /^(assets|css|js|brands|products|training|news|pages)\//.test(rel);
 const ADMIN_CSP = "default-src 'self'; img-src 'self' data: blob:; style-src 'self' 'unsafe-inline'; script-src 'self'; connect-src 'self'; frame-ancestors 'none'; base-uri 'none'; form-action 'self'";
 const SECRET_MASK = '••••••••';
 
@@ -121,6 +122,11 @@ async function handleApi(req, res, url) {
   mm = p.match(/^\/api\/collections\/([a-z]+)\/restore$/);
   if (mm && m === 'POST') { const b = await H.readJSONBody(req, 4096); const r = await CT.restore(mm[1], b.id, ctx.who); AUD.add(ctx.who, 'restore', mm[1] + ' ← ' + b.id); return H.json(res, 200, r); }
 
+  if (p === '/api/overview' && m === 'GET') return H.json(res, 200, Object.assign(INS.overview(), {siteAudit: B.lastAudit()}));
+  if (p === '/api/site-pages' && m === 'GET') return H.json(res, 200, {pages: INS.sitePages()});
+  if (p === '/api/search' && m === 'GET') return H.json(res, 200, {items: INS.search(url.searchParams.get('q'))});
+  if (p === '/api/site-audit' && m === 'POST') { const r = await B.audit(); AUD.add(ctx.who, 'site_audit', `${r.errors} ошибок, ${r.warns} замечаний`); return H.json(res, 200, r); }
+  if (p === '/api/files/usage' && m === 'GET') return H.json(res, 200, {used: F.usedIn(String(url.searchParams.get('path') || ''))});
   if (p === '/api/files' && m === 'GET') return H.json(res, 200, {dirs: F.list()});
   if (p === '/api/files' && m === 'POST') { const b = await H.readJSONBody(req, 9 * 1024 * 1024); const buf = Buffer.from(String(b.data || ''), 'base64'); const r = F.upload(b.dir, b.name, buf); AUD.add(ctx.who, 'upload', r.path); return H.json(res, 200, r); }
   if (p === '/api/files' && m === 'DELETE') { const r = F.remove(url.searchParams.get('path'), url.searchParams.get('force') === '1'); AUD.add(ctx.who, 'file_delete', r.path); return H.json(res, 200, r); }

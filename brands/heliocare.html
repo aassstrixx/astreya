@@ -24,7 +24,7 @@
 <link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
 <link rel="icon" href="../assets/favicon-32.png" type="image/png" sizes="32x32">
 <link rel="apple-touch-icon" href="../assets/apple-touch-icon.png">
-<script>(function(d){var h=d.documentElement;h.classList.add('js');try{var n=sessionStorage.getItem('astreya:nav');if(n){var o=JSON.parse(n);if(o&&Date.now()-o.t<8000)h.classList.add(o.q?'nav-quiet':'nav-in');else sessionStorage.removeItem('astreya:nav')}}catch(e){}})(document);</script>
+<script>(function(d){var h=d.documentElement;h.classList.add('js');if(/[?&]pv=/.test(location.search))h.classList.add('nav-quiet');try{var n=sessionStorage.getItem('astreya:nav');if(n){var o=JSON.parse(n);if(o&&Date.now()-o.t<8000)h.classList.add(o.q?'nav-quiet':'nav-in');else sessionStorage.removeItem('astreya:nav')}}catch(e){}})(document);</script>
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -32,13 +32,13 @@
      Шрифты подключаются асинхронно: страница стартует сразу, даже если Google Fonts медленный (у всех гарнитур есть запасные — см. --serif / --sans). -->
 <script>(function(){var l=document.createElement('link');l.rel='stylesheet';l.href='https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Playfair+Display:ital,wght@0,500;0,600;1,400;1,500&family=Manrope:wght@400;500;600;700&display=swap';document.head.appendChild(l);})();</script>
 <noscript><link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Playfair+Display:ital,wght@0,500;0,600;1,400;1,500&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet"></noscript>
-<link rel="stylesheet" href="../css/base.css?v=00ddaebe">
-<link rel="stylesheet" href="../css/components.css?v=00ddaebe">
-<link rel="stylesheet" href="../css/pages.css?v=00ddaebe">
-<link rel="stylesheet" href="../css/responsive.css?v=00ddaebe">
-<link rel="stylesheet" href="../css/motion.css?v=00ddaebe">
-<link rel="stylesheet" href="../css/redesign.css?v=00ddaebe">
-<link rel="stylesheet" href="../css/backdrops.css?v=00ddaebe">
+<link rel="stylesheet" href="../css/base.css?v=08c9215c">
+<link rel="stylesheet" href="../css/components.css?v=08c9215c">
+<link rel="stylesheet" href="../css/pages.css?v=08c9215c">
+<link rel="stylesheet" href="../css/responsive.css?v=08c9215c">
+<link rel="stylesheet" href="../css/motion.css?v=08c9215c">
+<link rel="stylesheet" href="../css/redesign.css?v=08c9215c">
+<link rel="stylesheet" href="../css/backdrops.css?v=08c9215c">
 
 <script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Главная","item":"https://aassstrixx.github.io/astreya/"},{"@type":"ListItem","position":2,"name":"Бренды","item":"https://aassstrixx.github.io/astreya/brands.html"},{"@type":"ListItem","position":3,"name":"Heliocare","item":"https://aassstrixx.github.io/astreya/brands/heliocare.html"}]}</script>
 </head>
@@ -96,7 +96,8 @@
       <a class="nl" href="../company.html" data-nav="/company">Компания</a>
       <div class="nav-extra">
         <form class="nav-search" role="search" action="../search.html" method="get">
-          <label class="search"><span class="sr">Поиск по сайту</span><svg class="ic" viewBox="0 0 20 20" aria-hidden="true" focusable="false"><circle cx="9" cy="9" r="5.5"/><path d="m13.2 13.2 3.8 3.8"/></svg><input type="search" name="q" placeholder="Поиск по сайту" autocomplete="off"></label>
+          <label class="search"><span class="sr">Поиск по сайту</span><svg class="ic" viewBox="0 0 20 20" aria-hidden="true" focusable="false"><circle cx="9" cy="9" r="5.5"/><path d="m13.2 13.2 3.8 3.8"/></svg><input type="search" name="q" placeholder="Поиск по сайту" autocomplete="off" enterkeyhint="search"></label>
+          <button class="sr" type="submit" tabindex="-1">Найти</button>
         </form>
         <a class="btn btn-fill" href="../partners.html" data-track="partner_cta" data-place="menu">Стать партнёром <svg class="ic" viewBox="0 0 20 20" aria-hidden="true" focusable="false"><path d="M3.5 10h13M11.5 5l5 5-5 5"/></svg></a>
         <div class="nav-contacts">
@@ -120,7 +121,7 @@
     <section class="b-hero">
       <nav class="crumbs" aria-label="Хлебные крошки"><a href="../index.html">Главная</a><span aria-hidden="true">/</span><a href="../brands.html">Бренды</a><span aria-hidden="true">/</span><span aria-current="page">Heliocare</span></nav>
       <div class="b-line reveal"><span class="eyebrow">Cantabria Labs · Испания</span></div>
-      <h1 class="b-title b-title-logo reveal"><img class="b-logo" src="../assets/brands/heliocare.svg?v=00ddaebe" alt="Heliocare" width="612" height="264" style="--lw:493.4" decoding="async"></h1>
+      <h1 class="b-title b-title-logo reveal"><img class="b-logo" src="../assets/brands/heliocare.svg?v=08c9215c" alt="Heliocare" width="612" height="264" style="--lw:493.4" decoding="async"></h1>
       <p class="b-sub reveal">Фотоиммунозащита с технологией Fernblock®</p>
       <div class="row reveal" style="margin-top:34px">
         <a class="btn btn-fill" href="../catalog.html?brand=heliocare" data-track="catalog_click" data-place="brand-hero">Смотреть ассортимент <svg class="ic" viewBox="0 0 20 20" aria-hidden="true" focusable="false"><path d="M3.5 10h13M11.5 5l5 5-5 5"/></svg></a>
@@ -227,8 +228,8 @@
         <div class="cb-art" aria-hidden="true"><span class="logo inv"><svg class="lgo" viewBox="46 338 836 436"><use href="#logo-art"/></svg></span></div>
       </div>
       <nav class="sib" aria-label="Соседние бренды">
-        <a class="reveal" href="../brands/neoretin.html" style="--c1:#6a5a8c;--c2:#cbbfe0;--ink:#fff;--cc:#6a5a8c;--cs:color-mix(in srgb,#6a5a8c 58%,transparent)"><small><svg class="ic" viewBox="0 0 20 20" aria-hidden="true" focusable="false"><path d="M16.5 10h-13M8.5 5l-5 5 5 5"/></svg> Предыдущий</small><span class="sib-logo"><img src="../assets/brands/neoretin.svg?v=00ddaebe" alt="Neoretin" width="541" height="261" style="--lw:136.6" loading="lazy" decoding="async"></span></a>
-        <a class="nx reveal" href="../brands/biretix.html" style="--c1:#2f7f7a;--c2:#a7d3cd;--ink:#fff;--cc:#2f7f7a;--cs:color-mix(in srgb,#2f7f7a 58%,transparent)"><small>Следующий <svg class="ic" viewBox="0 0 20 20" aria-hidden="true" focusable="false"><path d="M3.5 10h13M11.5 5l5 5-5 5"/></svg></small><span class="sib-logo"><img src="../assets/brands/biretix.svg?v=00ddaebe" alt="Biretix" width="458" height="262" style="--lw:125.4" loading="lazy" decoding="async"></span></a>
+        <a class="reveal" href="../brands/neoretin.html" style="--c1:#6a5a8c;--c2:#cbbfe0;--ink:#fff;--cc:#6a5a8c;--cs:color-mix(in srgb,#6a5a8c 58%,transparent)"><small><svg class="ic" viewBox="0 0 20 20" aria-hidden="true" focusable="false"><path d="M16.5 10h-13M8.5 5l-5 5 5 5"/></svg> Предыдущий</small><span class="sib-logo"><img src="../assets/brands/neoretin.svg?v=08c9215c" alt="Neoretin" width="541" height="261" style="--lw:136.6" loading="lazy" decoding="async"></span></a>
+        <a class="nx reveal" href="../brands/biretix.html" style="--c1:#2f7f7a;--c2:#a7d3cd;--ink:#fff;--cc:#2f7f7a;--cs:color-mix(in srgb,#2f7f7a 58%,transparent)"><small>Следующий <svg class="ic" viewBox="0 0 20 20" aria-hidden="true" focusable="false"><path d="M3.5 10h13M11.5 5l5 5-5 5"/></svg></small><span class="sib-logo"><img src="../assets/brands/biretix.svg?v=08c9215c" alt="Biretix" width="458" height="262" style="--lw:125.4" loading="lazy" decoding="async"></span></a>
       </nav>
     </section>
   </div>
@@ -261,7 +262,8 @@
 <div id="srch" class="srch" role="dialog" aria-modal="true" aria-label="Поиск по сайту" hidden>
   <div class="srch-box wrap">
     <form class="srch-form" role="search" action="../search.html" method="get">
-      <label class="search"><span class="sr">Поиск по товарам, брендам, новостям и обучению</span><svg class="ic" viewBox="0 0 20 20" aria-hidden="true" focusable="false"><circle cx="9" cy="9" r="5.5"/><path d="m13.2 13.2 3.8 3.8"/></svg><input id="srch-q" type="search" name="q" placeholder="Товары, бренды, новости, обучение…" autocomplete="off"></label>
+      <label class="search"><span class="sr">Поиск по товарам, брендам, новостям и обучению</span><svg class="ic" viewBox="0 0 20 20" aria-hidden="true" focusable="false"><circle cx="9" cy="9" r="5.5"/><path d="m13.2 13.2 3.8 3.8"/></svg><input id="srch-q" type="search" name="q" placeholder="Товары, бренды, новости, обучение…" autocomplete="off" enterkeyhint="search"></label>
+      <button class="sr" type="submit" tabindex="-1">Найти</button>
       <button class="x" type="button" data-act="search-close" aria-label="Закрыть поиск"><svg class="ic" viewBox="0 0 20 20" aria-hidden="true" focusable="false"><path d="m5 5 10 10M15 5 5 15"/></svg></button>
     </form>
     <div class="srch-hints" id="srch-hints"><span>Популярное:</span><a class="chip" href="../search.html?q=Heliocare">Heliocare</a><a class="chip" href="../search.html?q=%D0%9F%D0%B8%D0%BB%D0%B8%D0%BD%D0%B3%D0%B8">Пилинги</a><a class="chip" href="../search.html?q=%D0%9F%D0%B8%D0%B3%D0%BC%D0%B5%D0%BD%D1%82%D0%B0%D1%86%D0%B8%D1%8F">Пигментация</a><a class="chip" href="../search.html?q=%D0%A1%D0%B5%D0%BC%D0%B8%D0%BD%D0%B0%D1%80">Семинар</a><a class="chip" href="../search.html?q=%D0%90%D0%BA%D1%86%D0%B8%D0%B8">Акции</a><a class="chip" href="../search.html?q=Dermatime">Dermatime</a></div>
@@ -271,13 +273,13 @@
 <div id="modal" aria-hidden="true"></div>
 <div id="toast" role="status" aria-live="polite"></div>
 
-<script src="../js/shared.js?v=00ddaebe" defer></script>
-<script src="../js/data.js?v=00ddaebe" defer></script>
-<script src="../js/core.js?v=00ddaebe" defer></script>
-<script src="../js/motion.js?v=00ddaebe" defer></script>
-<script src="../js/pages.js?v=00ddaebe" defer></script>
-<script src="../js/hero-mark.js?v=00ddaebe" defer></script>
-<script src="../js/redesign.js?v=00ddaebe" defer></script>
-<script src="../js/backdrops.js?v=00ddaebe" defer></script>
+<script src="../js/shared.js?v=08c9215c" defer></script>
+<script src="../js/data.js?v=08c9215c" defer></script>
+<script src="../js/core.js?v=08c9215c" defer></script>
+<script src="../js/motion.js?v=08c9215c" defer></script>
+<script src="../js/pages.js?v=08c9215c" defer></script>
+<script src="../js/hero-mark.js?v=08c9215c" defer></script>
+<script src="../js/redesign.js?v=08c9215c" defer></script>
+<script src="../js/backdrops.js?v=08c9215c" defer></script>
 </body>
 </html>

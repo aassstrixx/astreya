@@ -47,7 +47,7 @@
 .sem-meta{display:grid;gap:6px;font-size:13.5px;color:var(--muted)}
 .sem-meta div{display:flex;gap:9px;align-items:flex-start}
 .sem-meta .ic{width:16px;height:16px;margin-top:3px;color:var(--slate)}
-.sem-foot{margin-top:auto;display:flex;justify-content:space-between;align-items:center;gap:10px;padding-top:16px;border-top:1px dashed var(--line)}
+.sem-foot{margin-top:auto;display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:10px;padding-top:16px;border-top:1px dashed var(--line)}
 /* ---- Product card & art ---- */
 .pcard{display:flex;flex-direction:column}
 .art{position:relative;height:200px;display:grid;place-items:end center;padding-bottom:26px;overflow:hidden;background:radial-gradient(ellipse at 50% 30%,#fff 0,color-mix(in srgb,var(--c1) 13%,#f5f2ec) 100%)}
@@ -161,7 +161,7 @@
 .fld .err{display:none;font-size:12px;color:#b03024;font-weight:600}
 .fld.bad .err{display:block}
 .agree{display:flex;gap:12px;align-items:flex-start;font-size:13px;line-height:1.5;color:var(--muted);cursor:pointer}
-.agree input{width:20px;height:20px;margin:1px 0 0;accent-color:var(--blue);flex:none}
+.agree input{width:24px;height:24px;margin:1px 0 0;accent-color:var(--blue);flex:none}
 .agree.bad{color:#b03024}
 .ok{text-align:center;padding:20px 0 6px}
 .ok .tick{width:64px;height:64px;border-radius:50%;background:rgba(47,91,214,.1);color:var(--blue);display:grid;place-items:center;margin:0 auto 18px}
@@ -201,7 +201,11 @@
 .nav-search form,.srch-form,.search-page{margin-top:0}
 
 /* ============ Подвал ============ */
-.ftr-legal{display:flex;gap:8px 24px;flex-wrap:wrap}
+.ftr-legal{display:flex;gap:4px 24px;flex-wrap:wrap}
+.ftr-legal a{display:inline-block;padding-block:4px}
+.lnk{min-height:24px}
+.city .li a,.sem-item h3 a,.sem h3 a{display:inline-block;padding-block:3px}
+a.tag{min-height:24px}
 .ftr-note{margin-top:16px;font-size:12px;line-height:1.5;color:var(--slate);max-width:90ch}
 .muted-l{color:var(--silver)}
 .ftr-brand .about{max-width:30ch}

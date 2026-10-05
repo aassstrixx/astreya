@@ -1,5 +1,5 @@
 """Финальная обработка: подгонка тона под палитру сайта, мелкий шум от бандинга, WebP для десктопа и телефона → assets/bg/.
-Запуск: python3.11 export.py <папка-с-сырыми-PNG> [имя ...]   (сырые: cream, smear, molecules, ribbon, film, pipette, silk)"""
+Запуск: python3.11 export.py <папка-с-сырыми-PNG> [имя ...]   (сырые: cream, smear, swatch, molecules, ribbon, film, pipette, silk)"""
 import sys, os, numpy as np
 from PIL import Image
 sys.path.insert(0, os.path.dirname(__file__))
@@ -18,6 +18,7 @@ SPEC = {
     'ribbon':    dict(gain=1.0, base=0.90, size=(1600, 1100), lo=0.3, hi=99.8, gamma=1.0, focus=(0.6, 0.7), m=(720, 1000)),
     'pipette':   dict(gain=2.2, base=0.66, size=(1600, 1100), lo=0.5, hi=99.8, gamma=1.0, focus=(0.6, 0.45), m=(720, 1000)),
     'smear':     dict(gain=2.5, base=0.76, size=(1600, 1100), lo=0.5, hi=99.7, gamma=1.0, focus=(0.72, 0.62), m=(720, 1000)),
+    'swatch':    dict(gain=2.5, base=0.76, size=(1600, 1100), lo=0.5, hi=99.7, gamma=1.0, focus=(0.72, 0.62), m=(720, 1000)),     # победитель арены фона (v020): узкий мазок, как s06
     'silk':      dict(gain=1.2, base=0.62, size=(1600, 1100), lo=0.5, hi=99.6, gamma=1.0, focus=(0.5, 0.5), m=(720, 1000)),
     'film':      dict(gain=1.1, base=0.80, size=(1600, 1100), lo=0.5, hi=99.7, gamma=1.0, focus=(0.65, 0.55), m=(720, 1000)),
 }

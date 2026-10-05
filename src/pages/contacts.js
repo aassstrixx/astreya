@@ -18,7 +18,7 @@ module.exports = function contacts(ctx, C, P) {
 
     <section class="sec">
       <div class="map-row">
-        <div class="map-card card reveal" role="img" aria-label="Место под карту: ${esc(c.address)}">
+        <div class="map-card card reveal" role="group" aria-label="Расположение офиса: ${esc(c.address)}">
           <div class="map-grid" aria-hidden="true"><i class="map-pin"></i></div>
           <div class="map-cap"><b>${esc(c.address)}</b><span>${esc(c.addressNote)}</span>
             <div class="row"><a class="btn btn-fill btn-sm" href="https://yandex.ru/maps/?text=${q}" target="_blank" rel="noopener">Яндекс Карты ${I.external}</a>

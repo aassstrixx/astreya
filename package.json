@@ -14,8 +14,13 @@
     "redesign:on": "node tools/redesign.js on",
     "admin": "node server/index.js",
     "admin:cli": "node server/cli.js",
-    "test:server": "node --test server/test/leads.test.js server/test/content.test.js server/test/publish.test.js server/test/smtp-tls.test.js",
-    "test:e2e": "node server/test/e2e.js"
+    "test:server": "node --test server/test/leads.test.js server/test/content.test.js server/test/publish.test.js server/test/smtp-tls.test.js server/test/builder.test.js",
+    "test:e2e": "node server/test/e2e.js",
+    "test:e2e-builder": "node server/test/e2e-builder.js",
+    "arena:admin": "node tools/arena-admin.js --n=100",
+    "audit": "node tools/audit.js",
+    "audit:static": "node tools/audit.js --static",
+    "audit:matrix": "node tools/audit.js --matrix"
   },
   "engines": {
     "node": ">=18.17"

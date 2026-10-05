@@ -33,7 +33,7 @@ module.exports = function bundle({pages, ctx, layout, root, out}) {
     const t = p.html.match(/<title>([^<]*)<\/title>/)[1];
     dataPages[p.path] = {key: p.P.key, nav: p.P.nav || '', title: t.replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&#39;/g, "'"), main: inline(m[1])};
   }
-  const css = ['base', 'components', 'pages', 'responsive', 'motion', ...(rd ? ['redesign'] : []), ...(bdOn ? ['backdrops'] : []), ...(rd && ctx.redesign.jar && ctx.redesign.jar.enabled ? ['jar'] : [])].map(n => read(`css/${n}.css`)).join('\n');
+  const css = ['base', 'components', 'pages', 'responsive', 'motion', ...(rd ? ['redesign'] : []), ...(bdOn ? ['backdrops'] : []), ...(rd && ctx.redesign.jar && ctx.redesign.jar.enabled ? ['jar'] : [])].map(n => read(`css/${n}.css`)).join('\n') + (layout.themeCss ? '\n' + layout.themeCss : '');
   const js = 'window.__ASTREYA_BUNDLE = true;\n' + (rd ? "document.body.classList.add('rd');   /* тег <body> в автономной сборке не сохраняется, а правила слоя доработок привязаны к body.rd */\n" : '') + ['shared', 'data', 'core', 'motion', 'pages', 'hero-mark', ...(rd ? ['redesign'] : []), ...(bdOn ? ['backdrops'] : []), ...(rd && ctx.redesign.jar && ctx.redesign.jar.enabled ? ['jar'] : [])].map(n => read(`js/${n}.js`)).join('\n;\n') + '\n;\n' + read('src/bundle-router.js');
   const fonts = home.match(/<script>\(function\(\)\{var l=document\.createElement\('link'\);[\s\S]*?<\/script>/)[0];
   const early = home.match(/<script>\(function\(d\)\{var h=d\.documentElement;[\s\S]*?<\/script>/)[0];
