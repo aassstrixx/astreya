@@ -88,7 +88,7 @@ async function seed(S, api) {
   const names = ['Мария Иванова', 'Алексей Петров', 'Ольга Смирнова', 'Дмитрий Кузнецов', 'Елена Соколова', 'Иван Попов', 'Наталья Лебедева', 'Сергей Козлов', 'Анна Новикова', 'Павел Морозов'];
   for (let i = 0; i < names.length; i++) await request(S.port, 'POST', '/api/lead', {headers: {Origin: 'http://127.0.0.1:' + S.port, 'X-Forwarded-For': '10.1.' + i + '.1'}, body: {type: ['partner', 'question', 'seminar', 'product'][i % 4], name: names[i], phone: '+7 916 555-44-3' + i, email: 'user' + i + '@example.com', city: ['Самара', 'Казань', 'Москва'][i % 3], org: 'Клиника «Роза»', msg: 'Интересует сотрудничество и обучение специалистов, просим связаться.', consent: true, fill_ms: 9000}});
 }
-const SCREENS = [['overview', '#/overview', '.kpis'], ['leads', '#/leads', 'tr.click'], ['editor', '#/pages/usloviya', '#pg-save'], ['design', '#/design/colors', '.preset']];
+const SCREENS = [['overview', '#/overview', '.kpis'], ['leads', '#/leads', 'tr.click'], ['editor', '#/pages/usloviya', '#pg-save'], ['design', '#/design/backdrops', '.tex']];
 const VIEWPORTS = [['wide', {width: 1440, height: 900}, {}], ['laptop', {width: 1024, height: 768}, {}], ['phone', {width: 390, height: 844}, {isMobile: true, hasTouch: true}]];
 
 async function collect(S) {

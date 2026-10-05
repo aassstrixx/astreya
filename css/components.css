@@ -52,6 +52,10 @@
 .pcard{display:flex;flex-direction:column}
 .art{position:relative;height:200px;display:grid;place-items:end center;padding-bottom:26px;overflow:hidden;background:radial-gradient(ellipse at 50% 30%,#fff 0,color-mix(in srgb,var(--c1) 13%,#f5f2ec) 100%)}
 .art::before{content:"";position:absolute;inset:auto -20% -46% -20%;height:70%;border-radius:50%;background:color-mix(in srgb,var(--c1) 16%,transparent)}
+/* фото товара вместо иллюстрации: вписывается целиком; белый фон снимка сливается с мягким фоном карточки */
+.art-photo{display:block;padding:0}
+.art-photo::before{display:none}
+.art-photo img{display:block;width:100%;height:100%;object-fit:contain;padding:14px;mix-blend-mode:multiply}
 .pk{position:relative;width:64px;height:128px;transition:transform .5s var(--ease);transform-origin:50% 100%}
 .pcard:hover .pk{transform:translateY(-6px)}
 .pk i{position:absolute;display:block}

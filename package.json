@@ -18,6 +18,7 @@
     "test:e2e": "node server/test/e2e.js",
     "test:e2e-builder": "node server/test/e2e-builder.js",
     "arena:admin": "node tools/arena-admin.js --n=100",
+    "admin:demo": "node tools/admin-demo.js astreya-admin-demo.html",
     "audit": "node tools/audit.js",
     "audit:static": "node tools/audit.js --static",
     "audit:matrix": "node tools/audit.js --matrix"

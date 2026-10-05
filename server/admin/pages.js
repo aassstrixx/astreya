@@ -127,7 +127,7 @@
         const dirtyNow = () => JSON.stringify(work) !== origStr;
         touch = () => { const fresh = !savedSlug, d = dirtyNow() || fresh; AD.dirty = d; saveBtn.disabled = !d; AD.fill(state, d ? [h('span', {class: 'dot'}), fresh ? 'Страница ещё не сохранена' : 'Есть несохранённые изменения'] : ''); };
         const showPrev = () => { if (!savedSlug || work.published === false) { AD.fill(frame, h('div', {class: 'hint'}, savedSlug ? 'Страница — черновик: на сайт она не попадает. Включите «Опубликована» и сохраните, чтобы увидеть её здесь.' : 'Предпросмотр появится после первого сохранения.')); return; }
-          const f = h('iframe', {title: 'Предпросмотр страницы', src: '/pages/' + savedSlug + '.html?pv=' + Date.now(), loading: 'lazy'}); AD.fill(frame, f); };
+          const f = h('iframe', {title: 'Предпросмотр страницы', src: AD.previewUrl('pages/' + savedSlug + '.html?pv=' + Date.now()), loading: 'lazy'}); AD.fill(frame, f); };
         /* настройки */
         const titleF = fText('Заголовок страницы (H1)', work, 'title', {max: 120}), slugF = fText('Адрес страницы', work, 'slug', {max: 60, help: 'Только латинские буквы, цифры и дефисы. Страница будет доступна по адресу pages/…html. Если сменить адрес, старый перестанет работать.'});
         const settings = h('div', {class: 'card'}, h('h2', {}, 'Страница'), h('div', {class: 'ed-obj', style: {display: 'flex', flexDirection: 'column', gap: '12px', marginTop: '10px'}},

@@ -28,11 +28,8 @@ module.exports = function layout(ctx, C) {
   const base = site.url.replace(/\/?$/, '/');
   const absUrl = p => p === 'index.html' ? base : base + p;
   const nav = [...ctx.nav, ...ctx.customNav].map(i => [i.title, i.href, i.key]);                    // меню — data/menu.json + свои страницы с включённым пунктом меню
-  /* оформление (data/theme.json): переопределяет цвета и скругления, только если включено; остальное делает CSS сайта */
-  const themeCss = (() => { const t = ctx.theme; if (!t || !t.enabled) return ''; const c = t.colors || {}, m = {'--navy': c.navy, '--blue': c.blue, '--blue-d': c.blueDark, '--milk': c.milk, '--mist': c.mist}, ok = v => /^#[0-9a-f]{6}$/i.test(v || '');
-    const decl = Object.entries(m).filter(([, v]) => ok(v)).map(([k, v]) => `${k}:${v}`); if (+t.radius >= 0 && +t.radius <= 28) decl.push(`--r:${+t.radius}px`, `--r-lg:${Math.round(+t.radius * 1.57)}px`, `--r-xl:${Math.round(+t.radius * 2.14)}px`);
-    return decl.length ? `:root{${decl.join(';')}}` : ''; })();
   const c = site.contacts;
+
 
   const header = P => `<header class="hdr" id="hdr">
   <div class="wrap hdr-in">
@@ -209,7 +206,7 @@ ${P.key === 'home' ? `<script>${LEGACY}</script>\n` : ''}
      Шрифты подключаются асинхронно: страница стартует сразу, даже если Google Fonts медленный (у всех гарнитур есть запасные — см. --serif / --sans). -->
 <script>(function(){var l=document.createElement('link');l.rel='stylesheet';l.href='${FONTS}';document.head.appendChild(l);})();</script>
 <noscript><link href="${FONTS}" rel="stylesheet"></noscript>
-${pageCss(P).map(n => `<link rel="stylesheet" href="${u(P, `css/${n}.css`)}${ver}">`).join('\n')}${themeCss ? `\n<style id="theme">${themeCss}</style>` : ''}
+${pageCss(P).map(n => `<link rel="stylesheet" href="${u(P, `css/${n}.css`)}${ver}">`).join('\n')}
 ${jarPreload(P)}
 ${ld.map(o => `<script type="application/ld+json">${JSON.stringify(o)}</script>`).join('\n')}
 </head>
@@ -237,5 +234,5 @@ ${pageJs(P).map(n => `<script src="${u(P, `js/${n}.js`)}${ver}" defer></script>`
 </html>
 `;
   }
-  return {shell: (P, body) => verAssets(shell(P, body)), absUrl, base, nav, themeCss};
+  return {shell: (P, body) => verAssets(shell(P, body)), absUrl, base, nav};
 };

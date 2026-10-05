@@ -12,9 +12,10 @@ module.exports = function components(ctx) {
   const phoneHref = site.contacts.phoneRaw;
   const FMT_KEY = {'Очно': 'offline', 'Вебинар': 'online'};
 
-  /* CSS-иллюстрация упаковки — пока нет фотографий; подмена на фото: поле image в products.json (см. README) */
+  /* Картинка товара: фото (поле image в products.json — путь вида assets/products/….webp; ставится в админке «Товары по брендам») или, пока фото нет, CSS-иллюстрация упаковки */
   const art = (P, p) => {
     const b = brandById[p.brand];
+    if (p.image) return `<div class="art art-photo" style="${bstyle(b)}"><img src="${esc(u(P, p.image))}" alt="${esc(`${b.name} — ${p.name}`)}" loading="lazy" decoding="async"></div>`;
     return `<div class="art" role="img" aria-label="${esc(`${b.name} — ${p.name}: иллюстрация упаковки`)}" style="${bstyle(b)}"><div class="pk pk-${p.type}"><i class="sh"></i><i class="hd"></i><i class="cap"></i><i class="body"><b class="lbl"></b></i></div></div>`;
   };
 

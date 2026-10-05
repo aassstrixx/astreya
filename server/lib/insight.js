@@ -19,8 +19,10 @@ function health() {
   const shortDesc = products.filter(p => !p.desc || String(p.desc).trim().length < 40);
   if (shortDesc.length) add('warn', `${shortDesc.length} ${plural(shortDesc.length, 'товар', 'товара', 'товаров')} без нормального описания (короче 40 символов): ${shortDesc.slice(0, 3).map(p => '«' + p.name + '»').join(', ')}${shortDesc.length > 3 ? '…' : ''}`, '#/content/products');
   const noLogo = brands.filter(b => !b.logo); if (noLogo.length) add('info', `У ${noLogo.length} ${plural(noLogo.length, 'бренда', 'брендов', 'брендов')} нет логотипа — на сайте показана буква: ${noLogo.map(b => b.name).join(', ')}`, '#/content/brands');
-  const missing = []; brands.forEach(b => { if (b.logo && !fs.existsSync(path.join(C.ROOT, b.logo))) missing.push(b.name); }); products.forEach(p => { (p.docs || []).forEach(d => { if (d && d.url && /^assets\//.test(d.url) && !fs.existsSync(path.join(C.ROOT, d.url))) missing.push(p.name + ' (документ)'); }); });
+  const missing = []; brands.forEach(b => { if (b.logo && !fs.existsSync(path.join(C.ROOT, b.logo))) missing.push(b.name); }); products.forEach(p => { if (p.image && !fs.existsSync(path.join(C.ROOT, p.image))) missing.push(p.name + ' (фото)'); }); products.forEach(p => { (p.docs || []).forEach(d => { if (d && d.url && /^assets\//.test(d.url) && !fs.existsSync(path.join(C.ROOT, d.url))) missing.push(p.name + ' (документ)'); }); });
   if (missing.length) add('warn', `Файлы не найдены на диске: ${missing.slice(0, 4).join(', ')}`, '#/files');
+  const heavy = products.filter(p => { try { return p.image && fs.statSync(path.join(C.ROOT, p.image)).size > 1.2 * 1048576; } catch (e) { return false; } }); if (heavy.length) add('warn', `Тяжёлые фото товаров (больше 1,2 МБ): ${heavy.slice(0, 3).map(p => '«' + p.name + '»').join(', ')}${heavy.length > 3 ? '…' : ''} — страницы грузятся медленно, загрузите фото заново (оно уменьшится само)`, '#/brandprods');
+  const noPhoto = products.filter(p => !p.image).length; if (products.length && noPhoto) add('info', `${noPhoto} из ${products.length} ${plural(products.length, 'товара', 'товаров', 'товаров')} без фото — на сайте показана иллюстрация упаковки. Фото ставятся в разделе «Товары по брендам»`, '#/brandprods');
   const old = events.filter(e => e.date < daysAgo(60)); if (old.length) add('info', `${old.length} ${plural(old.length, 'прошедшее мероприятие', 'прошедших мероприятия', 'прошедших мероприятий')} старше двух месяцев — их можно убрать из расписания`, '#/content/events');
   const upcoming = events.filter(e => e.date >= today()); if (!upcoming.length) add('warn', 'В расписании нет ближайших мероприятий — раздел «Обучение» выглядит пустым', '#/content/events');
   const staleNews = news.length ? news.slice().sort((a, b) => String(b.date).localeCompare(String(a.date)))[0].date : null; if (staleNews && staleNews < daysAgo(90)) add('info', `Последняя новость от ${staleNews} — прошло больше трёх месяцев`, '#/content/news');
@@ -50,7 +52,7 @@ const norm = s => String(s || '').toLowerCase().replace(/ё/g, 'е');
 function search(q) {
   q = norm(q).trim(); if (q.length < 2) return [];
   const out = [], add = (type, title, sub, link, hay) => { if (norm([title, sub, hay].join(' ')).includes(q)) out.push({type, title, sub, link}); };
-  (data('products') || []).forEach(p => add('Товар', p.name, p.brand, '#/content/products/' + encodeURIComponent(p.id), p.desc));
+  (data('products') || []).forEach(p => add('Товар', p.name, p.brand, '#/brandprods/' + encodeURIComponent(p.brand) + '/' + encodeURIComponent(p.id), p.desc));
   (data('brands') || []).forEach(b => add('Бренд', b.name, b.group || '', '#/content/brands/' + encodeURIComponent(b.id), b.tag + ' ' + b.desc));
   ((data('news') || {}).items || []).forEach(n => add('Новость', n.title, n.date, '#/content/news/' + encodeURIComponent(n.slug || n.id), n.excerpt));
   (data('events') || []).forEach(e => add('Мероприятие', e.title, e.date + ' · ' + (e.city || ''), '#/content/events/' + encodeURIComponent(e.id), e.description));

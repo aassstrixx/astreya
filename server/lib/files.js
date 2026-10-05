@@ -4,7 +4,7 @@ const path = require('path'), fs = require('fs');
 const C = require('./config');
 const {httpErr} = require('./auth');
 
-const DIRS = {'assets/photos': 'Фото (главная, о компании, обучение)', 'assets/brands': 'Логотипы брендов', 'assets/teachers': 'Фото преподавателей', 'assets/uploads': 'Прочие картинки'};
+const DIRS = {'assets/photos': 'Фото (главная, о компании, обучение)', 'assets/products': 'Фото товаров', 'assets/brands': 'Логотипы брендов', 'assets/teachers': 'Фото преподавателей', 'assets/uploads': 'Прочие картинки'};
 const MAX = 6 * 1024 * 1024;
 const SIG = {
   png: b => b.length > 8 && b.slice(0, 8).equals(Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a])),

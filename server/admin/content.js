@@ -159,7 +159,7 @@
     });
     return box;
   }
-  Object.assign(AD, {blankLike});
+  Object.assign(AD, {blankLike, slugify});
 
   /* ---------- общие части страниц ---------- */
   const uidN = (() => { let n = 0; return () => 'e' + (++n); })();

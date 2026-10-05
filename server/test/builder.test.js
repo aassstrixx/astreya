@@ -19,7 +19,8 @@ test.after(() => S.close());
 
 test('все разделы конструктора есть в списке', async () => {
   const names = (await admin.get('/api/collections')).json.collections.map(c => c.name);
-  for (const n of ['pages', 'menu', 'theme']) assert.ok(names.includes(n), n);
+  for (const n of ['pages', 'menu']) assert.ok(names.includes(n), n);
+  for (const n of ['theme', 'announce']) { assert.ok(!names.includes(n), n + ': раздела больше нет'); assert.equal((await admin.get('/api/collections/' + n)).status, 404); }
 });
 
 test('страница: создаётся, собирается, попадает в карту сайта и поиск, черновик скрыт, удаление убирает файл', async () => {
@@ -67,19 +68,6 @@ test('меню сайта: порядок и подписи; неверные д
   }
 });
 
-test('цвета: включаются, попадают в <style id="theme">; нечитаемые сочетания отклоняются; выключение убирает стиль', async () => {
-  assert.ok(!read('index.html').includes('id="theme"'), 'по умолчанию тема выключена');
-  const cur = (await admin.get('/api/collections/theme')).json, good = clone(cur.data); Object.assign(good, {enabled: true, radius: 6}); Object.assign(good.colors, {navy: '#0d2a22', blue: '#0f7655', blueDark: '#0b6048', milk: '#f3f6f1', mist: '#e1ece4'});
-  const r = await admin.put('/api/collections/theme', {data: good, version: cur.version}); assert.equal(r.status, 200, r.text);
-  const css = read('index.html').match(/<style id="theme">([^<]*)<\/style>/); assert.ok(css, 'стиль темы вставлен'); assert.match(css[1], /--blue:#0f7655/); assert.match(css[1], /--r:6px/);
-  assert.ok(read('pages/../catalog.html').includes('id="theme"'), 'тема на всех страницах');
-  const cur2 = (await admin.get('/api/collections/theme')).json;
-  const low = clone(cur2.data); low.colors.blue = '#9bb5ff'; const x = await admin.put('/api/collections/theme', {data: low, version: cur2.version}); assert.equal(x.status, 422); assert.match(x.text, /Контраст/);
-  const badHex = clone(cur2.data); badHex.colors.navy = 'red'; assert.equal((await admin.put('/api/collections/theme', {data: badHex, version: cur2.version})).status, 422);
-  const rad = clone(cur2.data); rad.radius = 99; assert.equal((await admin.put('/api/collections/theme', {data: rad, version: cur2.version})).status, 422);
-  const off = clone(cur2.data); off.enabled = false; assert.equal((await admin.put('/api/collections/theme', {data: off, version: cur2.version})).status, 200); assert.ok(!read('index.html').includes('id="theme"'), 'выключили — стиль убран');
-});
-
 test('фоны: допустимая правка применяется, неизвестная текстура / место / селектор отклоняются', async () => {
   const cur = (await admin.get('/api/collections/redesign')).json, mk = f => { const d = clone(cur.data); f(d.backdrops.pages); return d; };
   const put = d => admin.put('/api/collections/redesign', {data: d, version: cur.version});
@@ -90,16 +78,50 @@ test('фоны: допустимая правка применяется, неи
   assert.ok(!JSON.stringify(rd(S.root, 'data/redesign.json')).includes('net-takogo'), 'данные откатились');
 });
 
+test('товары: фото, добавление, правка, удаление, защита от битых данных', async () => {
+  const PNG = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==', 'base64');
+  const dirs = (await admin.get('/api/files')).json.dirs; assert.ok(dirs.some(d => d.dir === 'assets/products' && d.title === 'Фото товаров'), 'папка «Фото товаров» есть');
+  const up = await admin.post('/api/files', {dir: 'assets/products', name: 'Тестовое фото.PNG', data: PNG.toString('base64')}); assert.equal(up.status, 200, up.text); assert.equal(up.json.path, 'assets/products/testovoe-foto.png');
+  const getP = async () => (await admin.get('/api/collections/products')).json, putP = async (data, version, expect) => { const r = await admin.put('/api/collections/products', {data, version}); assert.equal(r.status, expect || 200, r.text); return r; };
+  let cur = await getP(), prods = clone(cur.data), p0 = prods[0];
+  assert.match((await admin.get('/api/overview')).json.health.map(x => x.text).join('\n'), /без фото/, 'в обзоре подсказка про товары без фото');
+  // фото
+  p0.image = up.json.path; await putP(prods, cur.version);
+  for (const f of ['products/' + p0.slug + '.html', 'catalog.html', 'brands/' + p0.brand + '.html']) assert.ok(read(f).includes('art art-photo'), f + ': фото вместо иллюстрации');
+  const pg = read('products/' + p0.slug + '.html'); assert.match(pg, /<img src="\.\.\/assets\/products\/testovoe-foto\.png(\?v=[\w]+)?" alt="[^"]+"/); assert.match(pg, /<meta property="og:image" content="[^"]*assets\/products\/testovoe-foto\.png/, 'фото — картинка для соцсетей');
+  assert.ok(read('products/' + prods[1].slug + '.html').includes('class="pk pk-'), 'у товара без фото остаётся иллюстрация');
+  // неверные фото
+  cur = await getP(); for (const bad of ['assets/products/net.png', 'assets/products/x.svg', 'https://example.com/x.png', '../data/site.json', 'assets/products/testovoe-foto.txt']) { const d = clone(cur.data); d[0].image = bad; const r = await putP(d, cur.version, 422); assert.match(r.text, /фото/, bad); }
+  // тип и описание
+  for (const [mod, re] of [[d => { d[0].desc = ''; }, /описания/], [d => { d[0].type = 'barrel'; }, /вид упаковки/]]) { const d = clone(cur.data); mod(d); assert.match((await putP(d, cur.version, 422)).text, re); }
+  // добавление товара бренду (как делает раздел «Товары по брендам»)
+  const mk = {id: 'dt-test-novinka', slug: 'dermatime-test-novinka', brand: 'dermatime', cat: 'face', kind: 'serum', type: 'dropper', name: 'Тест Новинка', desc: 'Сыворотка для проверки: добавлена из админки вместе с фото.', tasks: ['antiage'], isNew: true, volume: '30 мл', sku: null, usage: null, indications: null, docs: [], details: null, actives: ['Пептиды'], image: up.json.path};
+  cur = await getP(); const withNew = clone(cur.data), last = withNew.reduce((m, x, k) => x.brand === 'dermatime' ? k : m, -1); withNew.splice(last + 1, 0, mk); await putP(withNew, cur.version);
+  assert.ok(exists('products/dermatime-test-novinka.html') && read('products/dermatime-test-novinka.html').includes('Тест Новинка') && read('brands/dermatime.html').includes('Тест Новинка') && read('catalog.html').includes('data-id="dt-test-novinka"'), 'новый товар на странице, в бренде и каталоге');
+  assert.ok(read('js/data.js').includes('dermatime-test-novinka'), 'и в поиске по сайту');
+  // правка
+  cur = await getP(); const ed = clone(cur.data); ed.find(x => x.id === mk.id).name = 'Тест Новинка 2'; ed.find(x => x.id === mk.id).volume = '50 мл'; await putP(ed, cur.version); assert.ok(read('products/dermatime-test-novinka.html').includes('Тест Новинка 2') && read('products/dermatime-test-novinka.html').includes('50 мл'), 'правка применилась');
+  // нельзя удалить товар, на который ссылаются новости
+  const news = JSON.stringify(rd(S.root, 'data/news.json')), used = cur.data.find(x => news.includes('"' + x.id + '"'));
+  if (used) { const d = clone(cur.data).filter(x => x.id !== used.id); const r = await putP(d, cur.version, 422); assert.match(r.text, /нельзя удалить.*Новости/); assert.ok(exists('products/' + used.slug + '.html'), 'ничего не удалилось'); }
+  // удаление своего товара
+  cur = await getP(); await putP(clone(cur.data).filter(x => x.id !== mk.id), cur.version); assert.ok(!exists('products/dermatime-test-novinka.html') && !read('catalog.html').includes('dt-test-novinka'), 'удалённый товар исчез с сайта');
+  // фото нельзя удалить, пока оно используется; после снятия — можно
+  assert.equal((await admin.del('/api/files?path=' + encodeURIComponent(up.json.path))).status, 409, 'файл используется — удалить нельзя');
+  cur = await getP(); const un = clone(cur.data); delete un[0].image; await putP(un, cur.version); assert.ok(read('products/' + p0.slug + '.html').includes('class="pk pk-'), 'без фото снова иллюстрация');
+  assert.equal((await admin.del('/api/files?path=' + encodeURIComponent(up.json.path))).status, 200, 'не используется — удаляется');
+});
+
 test('обзор, поиск, список страниц, использование файла: только администратору', async () => {
   const ov = await admin.get('/api/overview'); assert.equal(ov.status, 200); assert.ok(ov.json.leads && ov.json.counts && Array.isArray(ov.json.health) && ov.json.health.length, 'обзор: заявки, счётчики, здоровье'); assert.ok(ov.json.counts.products > 0);
-  const prod = rd(S.root, 'data/products.json')[0], q = (await admin.get('/api/search?q=' + encodeURIComponent(prod.name.slice(0, 6)))).json.items; assert.ok(q.some(i => i.type === 'Товар' && i.link === '#/content/products/' + encodeURIComponent(prod.id)), 'поиск находит товар');
+  const prod = rd(S.root, 'data/products.json')[0], q = (await admin.get('/api/search?q=' + encodeURIComponent(prod.name.slice(0, 6)))).json.items; assert.ok(q.some(i => i.type === 'Товар' && i.link === '#/brandprods/' + encodeURIComponent(prod.brand) + '/' + encodeURIComponent(prod.id)), 'поиск находит товар');
   assert.deepEqual((await admin.get('/api/search?q=a')).json.items, [], 'короткий запрос — пусто');
   const sp = (await admin.get('/api/site-pages')).json.pages; assert.ok(sp.some(p => p.path === 'index.html') && sp.some(p => /^products\//.test(p.path)));
   const logo = rd(S.root, 'data/brands.json').find(b => b.logo).logo, u = (await admin.get('/api/files/usage?path=' + encodeURIComponent(logo))).json.used; assert.ok(u.some(f => /brands/.test(f)), 'логотип бренда найден в данных');
   // менеджер ничего из этого не видит
   const cr = await admin.post('/api/users', {login: 'mgr', password: 'Manager-pass-2026', role: 'manager', name: 'Менеджер'}); assert.equal(cr.status, 200, cr.text);
   const m = client(S.port, '10.9.9.8'); assert.equal((await m.login('mgr', 'Manager-pass-2026')).status, 200); await m.post('/api/password', {old: 'Manager-pass-2026', new: 'Manager-pass-2027-x'}).catch(() => {});
-  for (const u of ['/api/overview', '/api/search?q=elastense', '/api/site-pages', '/api/collections/pages', '/api/collections/theme']) assert.equal((await m.get(u)).status, 403, u);
+  for (const u of ['/api/overview', '/api/search?q=elastense', '/api/site-pages', '/api/collections/pages', '/api/collections/menu']) assert.equal((await m.get(u)).status, 403, u);
   assert.equal((await m.post('/api/site-audit')).status, 403);
 });
 

@@ -10,7 +10,6 @@ const byId = (arr, key = 'id') => Object.fromEntries(arr.map(x => [x[key], x]));
 /* необязательные файлы (меню, свои страницы, оформление): нет файла — берутся значения по умолчанию */
 const readOpt = (n, dflt) => { try { return read(n); } catch (e) { if (e.code === 'ENOENT') return dflt; throw e; } };
 const DEFAULT_NAV = [{title: 'Каталог', href: 'catalog.html', key: '/catalog'}, {title: 'Бренды', href: 'brands.html', key: '/brands'}, {title: 'Обучение', href: 'training.html', key: '/training'}, {title: 'Новости', href: 'news.html', key: '/news'}, {title: 'Компания', href: 'company.html', key: '/company'}];
-const DEFAULT_THEME = {navy: '#0b1a33', blue: '#2f5bd6', blueDark: '#2347b0', milk: '#f5f2ec', mist: '#e5ebf5'};
 
 function load() {
   const site = read('site'), content = read('content'), catalog = read('catalog'), training = read('training');
@@ -21,7 +20,6 @@ function load() {
   ctx.pagesRaw = readOpt('pages', {items: []}).items || [];
   ctx.customPages = ctx.pagesRaw.filter(p => p.published !== false);
   ctx.customNav = ctx.customPages.filter(p => p.nav).map(p => ({title: p.navTitle || p.title, href: `pages/${p.slug}.html`, key: '/p/' + p.slug}));
-  ctx.theme = readOpt('theme', {enabled: false, colors: DEFAULT_THEME, radius: 14});
   ctx.redesign = site.redesign ? read('redesign') : null;      // слой доработок (см. README → «Доработки и откат»)
 
   ctx.cats = catalog.cats; ctx.tasks = catalog.tasks; ctx.kinds = catalog.kinds;

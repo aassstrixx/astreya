@@ -15,7 +15,7 @@ test.after(() => S.close());
 
 test('разделы: список, чтение, версия', async () => {
   const r = await admin.get('/api/collections'); assert.equal(r.status, 200);
-  assert.deepEqual(r.json.collections.map(c => c.name).sort(), ['brands', 'catalog', 'content', 'events', 'menu', 'news', 'pages', 'products', 'redesign', 'site', 'theme', 'training']);
+  assert.deepEqual(r.json.collections.map(c => c.name).sort(), ['brands', 'catalog', 'content', 'events', 'menu', 'news', 'pages', 'products', 'redesign', 'site', 'training']);
   assert.equal(r.json.collections.find(c => c.name === 'products').count, rd(S.root, 'data/products.json').length);
   const p = await admin.get('/api/collections/products'); assert.equal(p.status, 200); assert.ok(Array.isArray(p.json.data)); assert.match(p.json.version, /^[0-9a-f]{12}$/);
   assert.equal((await admin.get('/api/collections/nope')).status, 404);

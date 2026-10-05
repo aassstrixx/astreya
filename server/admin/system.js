@@ -8,9 +8,24 @@
 
   /* ---------- картинки ---------- */
   const readB64 = file => new Promise((res, rej) => { const r = new FileReader(); r.onload = () => res(String(r.result).split(',')[1] || ''); r.onerror = () => rej(new Error('Не удалось прочитать файл')); r.readAsDataURL(file); });
+  /* уменьшение снимка в браузере до отправки: длинная сторона до 1400 px, WebP (или JPEG там, где браузер не умеет WebP). Лёгкие файлы, GIF и всё прочее остаются как есть */
+  async function shrinkImage(file, max) {
+    max = max || 1400;
+    if (!/^image\/(png|jpeg|webp)$/.test(file.type) || typeof createImageBitmap !== 'function') return file;
+    let bmp; try { bmp = await createImageBitmap(file, {imageOrientation: 'from-image'}); } catch (e) { return file; }
+    const k = Math.min(1, max / Math.max(bmp.width, bmp.height)), w = Math.max(1, Math.round(bmp.width * k)), hh = Math.max(1, Math.round(bmp.height * k));
+    if (k === 1 && file.size < 350 * 1024) { bmp.close && bmp.close(); return file; }
+    const cv = document.createElement('canvas'); cv.width = w; cv.height = hh; const g = cv.getContext('2d'); g.drawImage(bmp, 0, 0, w, hh); bmp.close && bmp.close();
+    const enc = (type, q) => new Promise(r => cv.toBlob(r, type, q));
+    let blob = await enc('image/webp', 0.86), ext = 'webp';
+    if (!blob || blob.type !== 'image/webp') { g.globalCompositeOperation = 'destination-over'; g.fillStyle = '#fff'; g.fillRect(0, 0, w, hh); blob = await enc('image/jpeg', 0.88); ext = 'jpg'; }
+    if (!blob || blob.size >= file.size) return file;
+    return new File([blob], file.name.replace(/\.[^.]+$/, '') + '.' + ext, {type: blob.type});
+  }
   async function uploadFiles(dir, files, onDone) {
     let ok = 0, last = null;
-    for (const f of files) {
+    for (let f of files) {
+      if (dir === 'assets/products' && f.size <= 40 * 1048576) { const orig = f; f = await shrinkImage(f); if (f !== orig) AD.toast('Фото уменьшено: ' + AD.size(orig.size) + ' → ' + AD.size(f.size)); }
       if (f.size > (AD.config.maxUpload || 6291456)) { AD.toast(f.name + ': больше 6 МБ', 'err'); continue; }
       try { const r = await AD.post('/api/files', {dir, name: f.name, data: await readB64(f)}); ok++; last = r.path; } catch (e) { AD.toast(f.name + ': ' + e.message, 'err'); }
     }
@@ -22,6 +37,7 @@
       ondragover: e => { e.preventDefault(); z.classList.add('over'); }, ondragleave: () => z.classList.remove('over'), ondrop: e => { e.preventDefault(); z.classList.remove('over'); uploadFiles(dir, Array.from(e.dataTransfer.files), onDone); }}, 'Перетащите картинки сюда или нажмите, чтобы выбрать (PNG, JPG, WebP, GIF, до 6 МБ)');
     return h('div', {}, z, input);                       // поле выбора файла — рядом, а не внутри кнопки (вложенные интерактивные элементы читаются экранными дикторами плохо)
   }
+  Object.assign(AD, {shrinkImage, readB64, uploadFiles});
   AD.views.files = {
     async mount(root) {
       const box = h('div', {}); root.append(AD.pageHead('Картинки', 'Фото, логотипы брендов, фото преподавателей. Загруженный файл потом выбирается в нужной записи (кнопка «Выбрать / загрузить…»).'), box);
@@ -45,11 +61,12 @@
     }
   };
   /* выбор картинки для поля в редакторе: окно с галереей и загрузкой; возвращает путь или null */
-  AD.pickImage = () => new Promise(async res => {
+  AD.pickImage = (opts) => new Promise(async res => {
+    opts = opts || {};
     let done = false; const fin = v => { if (!done) { done = true; res(v); } };
     let dirs; try { dirs = (await AD.get('/api/files')).dirs; } catch (e) { AD.toast(e.message, 'err'); return fin(null); }
     const body = h('div', {}); let m;
-    const paint = d => body.replaceChildren(...d.map(x => h('div', {class: 'sect'}, h('h3', {}, x.title), dropZone(x.dir, async () => { const nd = (await AD.get('/api/files')).dirs; paint(nd); }), h('div', {class: 'files', style: {marginTop: '12px'}}, x.files.filter(f => IMG_EXT.test(f.name)).map(f => h('div', {class: 'file pick', tabindex: '0', role: 'button', 'aria-label': 'Выбрать ' + f.name, onclick: () => { fin(f.path); m.close(true); }, onkeydown: e => { if (e.key === 'Enter') { fin(f.path); m.close(true); } }}, h('div', {class: 'th', style: {backgroundImage: 'url("/' + encodeURI(f.path) + '")'}}), h('div', {class: 'nm'}, f.name)))))));
+    const paint = d => body.replaceChildren(...d.filter(x => !opts.only || x.dir === opts.dir).sort((a, b) => (b.dir === opts.dir) - (a.dir === opts.dir)).map(x => h('div', {class: 'sect'}, h('h3', {}, x.title), dropZone(x.dir, async last => { if (opts.pickUploaded && last) { fin(last); m.close(true); return; } const nd = (await AD.get('/api/files')).dirs; paint(nd); }), h('div', {class: 'files', style: {marginTop: '12px'}}, x.files.filter(f => IMG_EXT.test(f.name)).map(f => h('div', {class: 'file pick', tabindex: '0', role: 'button', 'aria-label': 'Выбрать ' + f.name, onclick: () => { fin(f.path); m.close(true); }, onkeydown: e => { if (e.key === 'Enter') { fin(f.path); m.close(true); } }}, h('div', {class: 'th', style: {backgroundImage: 'url("/' + encodeURI(f.path) + '")'}}), h('div', {class: 'nm'}, f.name)))))));
     paint(dirs); m = AD.modal({title: 'Выберите картинку', body, cls: 'xl', onClose: () => fin(null)});
   });
 

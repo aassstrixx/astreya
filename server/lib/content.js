@@ -19,8 +19,7 @@ const COLLECTIONS = {
   training: {title: 'Преподаватели, FAQ, шаги, видео', group: 'Обучение', file: 'data/training.json', kind: 'object'},
   news:     {title: 'Новости и акции',        group: 'Новости',  file: 'data/news.json',     kind: 'object', list: 'items', label: 'title'},
   pages:    {title: 'Свои страницы',          group: 'Сайт',     file: 'data/pages.json',    kind: 'object', list: 'items', label: 'title'},
-  menu:     {title: 'Меню сайта',             group: 'Сайт',     file: 'data/menu.json',     kind: 'object'},
-  theme:    {title: 'Оформление: цвета',      group: 'Сайт',     file: 'data/theme.json',    kind: 'object'}
+  menu:     {title: 'Меню сайта',             group: 'Сайт',     file: 'data/menu.json',     kind: 'object'}
 };
 const BACKUPS = path.join(C.DATA, 'backups');
 const abs = name => path.join(C.ROOT, COLLECTIONS[name].file);
@@ -51,7 +50,12 @@ function problems(name, data) {
     data.forEach(p => { const w = `Товар «${p.name || p.id}»`;
       if (!isStr(p.name)) P.push(`${w}: нет названия.`); if (isStr(p.slug) && !slugOk(p.slug)) P.push(`${w}: адрес (slug) — только строчные латинские буквы, цифры и дефисы.`);
       if (!brands.has(p.brand)) P.push(`${w}: неизвестный бренд «${p.brand}».`); if (!cats.has(p.cat)) P.push(`${w}: неизвестная категория «${p.cat}».`); if (!kinds.has(p.kind)) P.push(`${w}: неизвестный тип «${p.kind}».`);
-      (p.tasks || []).forEach(t => { if (!tasks.has(t)) P.push(`${w}: неизвестная задача «${t}».`); }); });
+      (p.tasks || []).forEach(t => { if (!tasks.has(t)) P.push(`${w}: неизвестная задача «${t}».`); });
+      if (!isStr(p.desc)) P.push(`${w}: нет краткого описания.`); if (!['tube', 'jar', 'dropper', 'bottle', 'pump', 'box', 'device'].includes(p.type)) P.push(`${w}: неизвестный вид упаковки «${p.type}».`);
+      if (p.image !== undefined && p.image !== null && p.image !== '') { if (typeof p.image !== 'string' || !/^assets\/[\w\-./]+\.(png|jpe?g|webp|gif)$/i.test(p.image)) P.push(`${w}: фото — файл PNG, JPG, WebP или GIF из папки assets/.`); else if (!fs.existsSync(path.join(C.ROOT, p.image))) P.push(`${w}: файла фото «${p.image}» нет в папке сайта.`); } });
+    /* товар можно удалить, только если на него ничто не ссылается (новости, главная, обучение) */
+    const gone = (readJSON(abs('products'), []) || []).filter(o => !data.some(p => p.id === o.id));
+    gone.forEach(o => { for (const [n, what] of [['news', 'Новости и акции'], ['redesign', 'Главная и оформление'], ['content', 'Тексты страниц'], ['training', 'Обучение'], ['events', 'Мероприятия']]) { let text = ''; try { text = fs.readFileSync(abs(n), 'utf8'); } catch (e) {} if (text.includes('"' + o.id + '"')) { P.push(`Товар «${o.name}» нельзя удалить: на него ссылается раздел «${what}». Сначала уберите ссылку.`); break; } } });
   } else if (name === 'brands') {
     uniq(data, 'id', 'Бренд'); data.forEach(b => { if (!isStr(b.name)) P.push(`Бренд «${b.id}»: нет названия.`); if (isStr(b.id) && !slugOk(b.id)) P.push(`Бренд «${b.id}»: id — латиница, цифры, дефис.`); ['c1', 'c2'].forEach(k => { if (b[k] && !/^#[0-9a-f]{3,8}$/i.test(b[k])) P.push(`Бренд «${b.name}»: цвет ${k} — вида #1a2b3c.`); }); });
     if (readJSON(abs('products'), []).some(p => !data.some(b => b.id === p.brand))) P.push('Есть товары, у которых бренд удалён из списка: сначала смените бренд у товаров.');
@@ -83,14 +87,6 @@ function problems(name, data) {
     const pagesData = readJSON(abs('pages'), {items: []}), pageFiles = new Set((pagesData.items || []).filter(p => p.published !== false).map(p => 'pages/' + p.slug + '.html')), seen = new Set();
     data.nav.forEach((i, n) => { const w = `Пункт меню №${n + 1}`; if (!i || !isStr(i.title) || i.title.length > 24) P.push(`${w}: подпись — до 24 символов.`);
       if (!i || !isStr(i.href) || !/^(?:[\w-]+\/)*[\w-]+\.html$/.test(i.href)) P.push(`${w}: ссылка — страница сайта вида catalog.html.`); else { if (!pageFiles.has(i.href) && !fs.existsSync(path.join(C.ROOT, i.href))) P.push(`${w}: страницы «${i.href}» нет на сайте.`); if (seen.has(i.href)) P.push(`${w}: страница «${i.href}» уже есть в меню.`); seen.add(i.href); } });
-  } else if (name === 'theme') {
-    const hex = v => /^#[0-9a-f]{6}$/i.test(v || ''), c = data.colors || {};
-    if (typeof data.enabled !== 'boolean') P.push('Нужно «enabled» (да/нет).');
-    ['navy', 'blue', 'blueDark', 'milk', 'mist'].forEach(k => { if (!hex(c[k])) P.push(`Цвет «${k}» — формат #rrggbb.`); });
-    if (!(+data.radius >= 0 && +data.radius <= 28)) P.push('Скругление — число от 0 до 28.');
-    if (!P.length && data.enabled) { const lum = h => { const a = [1, 3, 5].map(i => parseInt(h.slice(i, i + 2), 16) / 255).map(v => v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4); return 0.2126 * a[0] + 0.7152 * a[1] + 0.0722 * a[2]; }, ratio = (a, b) => { const x = lum(a), y = lum(b); return (Math.max(x, y) + 0.05) / (Math.min(x, y) + 0.05); };
-      [['navy', 'milk', 7, 'основной текст на молочном фоне'], ['navy', 'mist', 7, 'основной текст на голубом фоне'], ['blue', 'milk', 4.5, 'синие ссылки и подписи на молочном фоне'], ['blueDark', 'milk', 4.5, 'тёмно-синий акцент на молочном фоне']].forEach(([f, g, min, what]) => { const r = ratio(c[f], c[g]); if (r < min) P.push(`Контраст «${what}» ${r.toFixed(1)}:1 — нужно не меньше ${min}:1. Выберите цвет темнее или фон светлее.`); });
-      const rw = ratio('#ffffff', c.blue); if (rw < 4.5) P.push(`Контраст белого текста на синей кнопке ${rw.toFixed(1)}:1 — нужно не меньше 4.5:1. Выберите более тёмный синий.`); }
   } else if (name === 'redesign') {
     const bd = data.backdrops;                                          // план фоновых вставок: текстуры должны существовать, места и сила — допустимые
     if (bd && typeof bd === 'object') {

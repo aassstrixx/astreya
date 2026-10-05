@@ -1,4 +1,4 @@
-/* Раздел «Оформление»: меню сайта (data/menu.json), цвета и скругления (data/theme.json) и фоновые вставки страниц (data/redesign.json → backdrops).
+/* Раздел «Оформление»: меню сайта (data/menu.json) и фоновые вставки страниц (data/redesign.json → backdrops).
    Каждая вкладка — отдельный набор данных со своей кнопкой «Сохранить»: сервер проверяет данные, пересобирает сайт и откатывает правку, если сайт не собирается. */
 (function () {
   'use strict';
@@ -7,21 +7,6 @@
   const uid = (() => { let n = 0; return () => 'ds' + (++n); })();
   const same = (a, b) => JSON.stringify(a) === JSON.stringify(b);
   const field = (label, control, help, id) => h('div', {class: 'field'}, h('label', {for: id}, label), control, help ? h('div', {class: 'help'}, help) : null);
-
-  /* ---------- контраст (те же формулы и пороги, что проверяет сервер) ---------- */
-  const lum = hx => { const a = [1, 3, 5].map(i => parseInt(hx.slice(i, i + 2), 16) / 255).map(v => v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4); return 0.2126 * a[0] + 0.7152 * a[1] + 0.0722 * a[2]; };
-  const ratio = (a, b) => { const x = lum(a), y = lum(b); return (Math.max(x, y) + 0.05) / (Math.min(x, y) + 0.05); };
-  const hexOk = v => /^#[0-9a-f]{6}$/i.test(v || '');
-  const CHECKS = [['navy', 'milk', 7, 'Основной текст на молочном фоне'], ['navy', 'mist', 7, 'Основной текст на голубом фоне'], ['blue', 'milk', 4.5, 'Синие ссылки и подписи на молочном фоне'], ['blueDark', 'milk', 4.5, 'Тёмный акцент на молочном фоне'], ['#ffffff', 'blue', 4.5, 'Белый текст на синей кнопке']];
-  const COLOR_NAMES = [['navy', 'Основной тёмный', 'Текст и тёмные плашки'], ['blue', 'Акцентный', 'Кнопки, ссылки, выделения'], ['blueDark', 'Акцентный тёмный', 'Нажатая кнопка, акценты на светлом'], ['milk', 'Фон страницы', 'Основной светлый фон'], ['mist', 'Фон блоков', 'Вторичный светлый фон']];
-  const PRESETS = [
-    ['Как задумано', {navy: '#0b1a33', blue: '#2f5bd6', blueDark: '#2347b0', milk: '#f5f2ec', mist: '#e5ebf5'}, 14],
-    ['Графит и бронза', {navy: '#1d1a17', blue: '#8a5a2b', blueDark: '#6e4620', milk: '#f6f1ea', mist: '#ece4d8'}, 10],
-    ['Океан', {navy: '#06223a', blue: '#0b6e9c', blueDark: '#08587d', milk: '#f2f6f7', mist: '#dfeaf0'}, 14],
-    ['Изумруд', {navy: '#0d2a22', blue: '#0f7655', blueDark: '#0b6048', milk: '#f3f6f1', mist: '#e1ece4'}, 14],
-    ['Бордо', {navy: '#2a0f1a', blue: '#a02a4c', blueDark: '#7f1f3b', milk: '#f8f3f1', mist: '#efe3e2'}, 12],
-    ['Лаванда', {navy: '#1c1638', blue: '#5b46c4', blueDark: '#4634a2', milk: '#f6f4f8', mist: '#e7e3f1'}, 18]
-  ];
 
   /* ---------- общая обвязка вкладки: загрузка, учёт изменений, сохранение, история ---------- */
   function tabShell(name, o) {
@@ -67,43 +52,6 @@
     box.replaceChildren(h('div', {class: 'card'}, h('h2', {}, 'Меню в шапке сайта'), h('p', {class: 'muted small', style: {margin: '4px 0 12px'}}, 'Порядок, подписи и страницы. До 24 символов в подписи, от 2 до 9 пунктов. Кнопка «Стать партнёром» и поиск есть всегда.'), prev, h('div', {style: {margin: '14px 0 4px'}}, list), h('div', {class: 'row', style: {marginTop: '10px'}}, addBtn),
       customNav.length ? h('div', {class: 'alert info', style: {marginTop: '14px'}}, 'Из раздела «Страницы» в меню добавляются: ', customNav.map((p, i) => [i ? ', ' : '', h('a', {href: '#/pages/' + encodeURIComponent(p.slug)}, p.navTitle || p.title)]), '. Включается и выключается в настройках самой страницы.') : null), t.msg);
     box.prepend(t.bar(h('button', {class: 'btn', type: 'button', onclick: () => { t.work = clone(t.orig); paint(); t.touch(); }}, 'Отменить правки')));
-    paint(); t.touch();
-    return t;
-  }
-
-  /* =============================== ЦВЕТА =============================== */
-  async function colorsTab(box) {
-    const DEF = PRESETS[0][1];
-    const t = tabShell('theme', {pick: d => ({enabled: !!d.enabled, colors: Object.assign({}, DEF, d.colors), radius: d.radius === undefined ? 14 : +d.radius}), merge: (d, w) => Object.assign(d, w),
-      invalid: w => w.enabled && (Object.values(w.colors).some(c => !hexOk(c)) || CHECKS.some(([f, g, min]) => ratio(f[0] === '#' ? f : w.colors[f], w.colors[g]) < min)), repaint: () => paint(), onTouch: () => upd()});
-    await t.load();
-    const ratios = h('div', {}), miniNote = h('p', {class: 'muted small mini-off', hidden: true}, 'Цвета выключены: на сайте остаётся оформление «как задумано». Включите переключатель вверху — и выбранные цвета применятся.'), mini = h('div', {class: 'mini', 'aria-label': 'Пример оформления'}, h('h3', {}, 'Профессиональная косметика'), h('div', {class: 'c'}, h('div', {}, 'Карточка товара с описанием'), h('div', {class: 'l', style: {marginTop: '6px'}}, 'Подробнее →')), h('div', {class: 'm'}, 'Блок на голубом фоне'), h('span', {class: 'b'}, 'Стать партнёром'));
-    const pals = h('div', {class: 'row', style: {gap: '8px'}}), sw = h('div', {class: 'swatches'}), radius = h('input', {type: 'range', min: '0', max: '28', step: '1', id: 'th-r', 'aria-label': 'Скругление углов'}), rv = h('output', {class: 'mono', for: 'th-r'}), on = h('input', {type: 'checkbox', id: 'th-on'});
-    on.addEventListener('change', () => { t.work.enabled = on.checked; t.touch(); }); radius.addEventListener('input', () => { t.work.radius = +radius.value; t.touch(); });
-    function upd() {
-      const w = t.work, c = w.colors; on.checked = w.enabled; radius.value = String(w.radius); rv.textContent = w.radius + ' px';
-      for (const [k, dflt] of [['navy', '#000000'], ['blue', '#888888'], ['milk', '#ffffff'], ['mist', '#eeeeee']]) mini.style.setProperty('--m-' + k, hexOk(c[k]) ? c[k] : dflt);
-      mini.style.setProperty('--rr', Math.round(w.radius * 1.2) + 'px');
-      miniNote.hidden = w.enabled;
-      AD.fill(ratios, CHECKS.map(([f, g, min, what]) => { const a = f[0] === '#' ? f : c[f], r = hexOk(a) && hexOk(c[g]) ? ratio(a, c[g]) : 0; return h('div', {class: 'ratio'}, h('span', {}, what), h('b', {class: r >= min ? 'ok' : 'bad'}, r ? r.toFixed(1) + ' : 1 ' : '—', r >= min ? '✓' : '✗ нужно ≥ ' + min)); }));
-      pals.querySelectorAll('button').forEach((b, i) => b.setAttribute('aria-pressed', String(PRESETS[i][2] === w.radius && Object.keys(PRESETS[i][1]).every(k => PRESETS[i][1][k].toLowerCase() === String(c[k]).toLowerCase()))));
-    }
-    pals.append(...PRESETS.map(([n, c, r]) => h('button', {class: 'preset', type: 'button', 'aria-pressed': 'false', onclick: () => { t.work.colors = Object.assign({}, c); t.work.radius = r; if (n !== 'Как задумано') t.work.enabled = true; paint(); t.touch(); }}, h('b', {}, n), h('span', {class: 'dots'}, Object.values(c).map(x => h('i', {style: {background: x}}))))));
-    function paint() {
-      sw.replaceChildren(...COLOR_NAMES.map(([k, title, help]) => {
-        const id = uid(), col = h('input', {type: 'color', 'aria-label': title, value: hexOk(t.work.colors[k]) ? t.work.colors[k] : '#000000'}), tx = h('input', {type: 'text', id, class: 'mono', value: t.work.colors[k], maxlength: '7', spellcheck: 'false', autocomplete: 'off'});
-        col.addEventListener('input', () => { t.work.colors[k] = col.value; tx.value = col.value; tx.classList.remove('bad'); t.touch(); });
-        tx.addEventListener('input', () => { let v = tx.value.trim(); if (v && v[0] !== '#') v = '#' + v; t.work.colors[k] = v; tx.classList.toggle('bad', !hexOk(v)); if (hexOk(v)) col.value = v; t.touch(); });
-        return h('div', {class: 'swc'}, h('label', {class: 'lbl', for: id}, title), h('div', {class: 'row'}, col, tx), h('div', {class: 'help muted small'}, help));
-      }));
-      upd();
-    }
-    box.replaceChildren(h('div', {class: 'card'}, h('div', {class: 'field'}, h('label', {class: 'switch'}, on, 'Использовать свои цвета и скругления'), h('div', {class: 'help'}, 'Выключено — сайт выглядит как задумано дизайнером. Включите, чтобы применить выбранные ниже цвета ко всему сайту.')),
-        h('div', {class: 'lbl', style: {margin: '14px 0 8px'}}, 'Готовые наборы'), pals),
-      h('div', {class: 'grid2', style: {marginTop: 'var(--gap,14px)', alignItems: 'start'}},
-        h('div', {class: 'card'}, h('h2', {}, 'Цвета'), h('div', {style: {margin: '12px 0'}}, sw), h('div', {class: 'field'}, h('label', {for: 'th-r'}, 'Скругление углов'), h('div', {class: 'row'}, radius, rv), h('div', {class: 'help'}, '0 — строгие прямые углы, 28 — мягкие округлые карточки.'))),
-        h('div', {style: {display: 'flex', flexDirection: 'column', gap: 'var(--gap,14px)'}}, h('div', {class: 'card'}, h('h2', {}, 'Читаемость'), h('p', {class: 'muted small', style: {margin: '4px 0 8px'}}, 'Сохранить можно только читаемые сочетания (стандарт доступности WCAG).'), ratios), h('div', {class: 'card'}, h('h2', {style: {marginBottom: '10px'}}, 'Так будет выглядеть'), mini, miniNote))), t.msg);
-    box.prepend(t.bar(h('button', {class: 'btn', type: 'button', onclick: () => { t.work = clone(t.orig); paint(); t.touch(); }}, 'Отменить правки'), h('a', {class: 'btn', href: '#/preview'}, 'Открыть предпросмотр')));
     paint(); t.touch();
     return t;
   }
@@ -210,12 +158,12 @@
   }
 
   /* ---------- раздел ---------- */
-  const TABS = [['menu', 'Меню сайта', menuTab], ['colors', 'Цвета и скругления', colorsTab], ['backdrops', 'Фоны страниц', backdropsTab]];
+  const TABS = [['menu', 'Меню сайта', menuTab], ['backdrops', 'Фоны страниц', backdropsTab]];
   AD.views.design = {
     async mount(root, parts) {
       const inst = {initial: true}, body = h('div', {}); let tab = null, tabId = null;
       const tabs = h('div', {class: 'dtabs', role: 'tablist', 'aria-label': 'Разделы оформления'}, TABS.map(([id, title]) => h('button', {type: 'button', role: 'tab', id: 'tab-' + id, 'aria-selected': 'false', dataset: {id}, onclick: () => AD.go('#/design/' + id)}, title)));
-      root.append(AD.pageHead('Оформление', 'Меню, цвета и фоны сайта. Каждая вкладка сохраняется отдельно; перед записью сервер проверяет данные и пересобирает сайт.'), tabs, body);
+      root.append(AD.pageHead('Оформление', 'Меню и фоны сайта. Каждая вкладка сохраняется отдельно; перед записью сервер проверяет данные и пересобирает сайт.'), tabs, body);
       async function open(id, rest) {
         id = TABS.some(t => t[0] === id) ? id : 'menu';
         if (id === tabId) { if (tab && tab.goPage && rest[0]) await tab.goPage(decodeURIComponent(rest[0])); return; }

@@ -290,6 +290,7 @@ input[type=range]::-moz-range-thumb{width:16px;height:16px;border-radius:50%;bac
 .p-hero{display:grid;grid-template-columns:minmax(0,.9fr) minmax(0,1.1fr);gap:clamp(24px,5vw,72px);align-items:center;margin-top:clamp(10px,2vw,24px)}
 .p-visual{position:relative;border-radius:var(--r-xl);overflow:hidden;box-shadow:var(--sh);background:#fff}
 .p-visual .art{height:clamp(300px,40vw,500px);padding-bottom:clamp(40px,6vw,70px)}
+.p-visual .art-photo{padding:0}.p-visual .art-photo img{padding:clamp(14px,3vw,36px)}
 .p-visual .pk{transform:scale(1.9);transform-origin:50% 100%}
 .p-info h1{font-size:var(--fs-h1-detail);margin:18px 0 16px;line-height:1.06}
 .p-info .lead{margin-bottom:22px}

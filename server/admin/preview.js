@@ -20,7 +20,7 @@
         dev$.style.width = w + 'px'; dev$.style.height = Math.round(vh / k) + 'px'; dev$.style.transformOrigin = 'top left'; dev$.style.transform = k < 1 ? 'scale(' + k.toFixed(4) + ')' : '';
         holder.style.width = Math.round(w * k) + 'px'; holder.style.height = vh + 'px'; note.textContent = 'Ширина ' + w + ' px' + (k < 1 ? ', показано в масштабе ' + Math.round(k * 100) + '%' : '');
       }
-      const load = () => { sel.value = path; open.href = '/' + path; frame.src = '/' + path + (path.includes('?') ? '&' : '?') + 'pv=' + Date.now(); };
+      const load = () => { sel.value = path; open.href = '/' + path; frame.src = AD.previewUrl(path + (path.includes('?') ? '&' : '?') + 'pv=' + Date.now()); };
       root.append(AD.pageHead('Предпросмотр', 'Как выглядит сайт на разных экранах — с последними сохранёнными правками.'),
         h('div', {class: 'pv-bar'}, h('label', {class: 'sr', for: 'pv-page'}, 'Страница'), sel, h('span', {class: 'pv-dev row gap-s', role: 'group', 'aria-label': 'Ширина экрана'}, btns), h('button', {class: 'btn', type: 'button', onclick: load}, 'Обновить'), open, h('span', {class: 'right'}, note)), stage);
       const ro = typeof ResizeObserver === 'function' ? new ResizeObserver(fit) : null; if (ro) ro.observe(stage); window.addEventListener('resize', fit);

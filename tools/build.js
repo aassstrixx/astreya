@@ -71,10 +71,10 @@ ctx.brands.forEach(b => page({key: 'brand', path: `brands/${b.id}.html`, nav: '/
 /* ---- товары ---- */
 ctx.products.forEach(p => {
   const b = ctx.brandById[p.brand];
-  page({key: 'product', path: `products/${p.slug}.html`, nav: '/catalog', ogType: 'website', priority: 0.6,
+  page({key: 'product', path: `products/${p.slug}.html`, nav: '/catalog', ogType: 'website', priority: 0.6, ...(p.image ? {image: p.image} : {}),
     title: (S.norm(p.name).includes(S.norm(b.name)) ? `${p.name} — профессиональное решение | Астрея` : `${p.name} — ${b.name} | Астрея`), description: trunc(`${p.desc} Бренд ${b.name}. Запросите информацию у менеджеров «Астреи».`),
     breadcrumbs: [['Главная', 'index.html'], ['Каталог', 'catalog.html'], [b.name, `brands/${b.id}.html`], [p.name, `products/${p.slug}.html`]],
-    jsonld: structured ? [{'@context': 'https://schema.org', '@type': 'Product', name: p.name, description: p.desc, brand: {'@type': 'Brand', name: b.name}, ...(p.sku ? {sku: p.sku} : {})}] : []}, P => product(ctx, C, P, p));
+    jsonld: structured ? [{'@context': 'https://schema.org', '@type': 'Product', name: p.name, description: p.desc, brand: {'@type': 'Brand', name: b.name}, ...(p.image ? {image: L.absUrl(p.image)} : {}), ...(p.sku ? {sku: p.sku} : {})}] : []}, P => product(ctx, C, P, p));
 });
 
 /* ---- мероприятия ---- */

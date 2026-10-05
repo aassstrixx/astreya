@@ -21,7 +21,7 @@
           kpi('', '#/pages', c.pages || 0, 'своих страниц'),
           kpi(b ? (b.ok ? 'ok' : 'err') : '', '#/publish', b ? (b.ok ? 'OK' : 'Ошибка') : '—', b ? 'сборка сайта · ' + AD.ago(b.at) : 'сайт ещё не собирали из админки'));
         const quick = h('div', {class: 'card tight'}, h('h2', {}, 'Быстрые действия'), h('div', {class: 'quick', style: {marginTop: '10px'}},
-          [['＋ Новость', '#/content/news/__new'], ['＋ Товар', '#/content/products/__new'], ['＋ Мероприятие', '#/content/events/__new'], ['＋ Страница', '#/pages/__new'], ['Меню и цвета', '#/design'], ['Фоны страниц', '#/design/backdrops'], ['Картинки', '#/files'], ['Опубликовать', '#/publish']]
+          [['＋ Новость', '#/content/news/__new'], ['＋ Товар', '#/brandprods'], ['＋ Мероприятие', '#/content/events/__new'], ['＋ Страница', '#/pages/__new'], ['Меню сайта', '#/design'], ['Фоны страниц', '#/design/backdrops'], ['Картинки', '#/files'], ['Опубликовать', '#/publish']]
             .map(([t, href]) => h('a', {class: 'btn' + (t[0] === '＋' ? ' primary' : ''), href}, t))));
         const hl = h('ul', {class: 'hl'}, d.health.map(x => h('li', {}, h('span', {class: 'lvl ' + x.level}), h('span', {}, x.text), x.link ? h('a', {class: 'go', href: x.link}, 'Исправить →') : null)));
         const auditOut = h('div', {});
@@ -37,7 +37,7 @@
         AD.fill(box, kpis, h('div', {class: 'cols2'}, h('div', {style: {display: 'flex', flexDirection: 'column', gap: 'var(--gap,14px)'}}, health, act), h('div', {style: {display: 'flex', flexDirection: 'column', gap: 'var(--gap,14px)'}}, quick,
           h('div', {class: 'card tight'}, h('h2', {}, 'Как это устроено'), h('ul', {class: 'hl'}, [
             ['Любая правка сохраняется, сайт пересобирается сам; если данные ошибочны — изменения отменяются.', ''],
-            ['Страницы, меню, цвета и фоны — в разделах «Страницы» и «Оформление»; результат виден в «Предпросмотре».', ''],
+            ['Страницы, меню и фоны — в разделах «Страницы» и «Оформление»; результат виден в «Предпросмотре».', ''],
             ['Кнопка «Опубликовать» отправляет готовый сайт на GitHub Pages (если подключено).', ''],
             ['Каждое изменение можно откатить: «История» в любом разделе содержимого.', '']].map(([t]) => h('li', {}, h('span', {class: 'lvl info'}), h('span', {}, t))))))));
       }
