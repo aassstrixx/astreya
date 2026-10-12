@@ -1,0 +1,112 @@
+/* guide.css — Стелла-навигатор (js/guide.js, extras.navigator): подсветка и экскурсии, блоки «Спросите Стеллу», проактивная подсказка,
+   плашка сравнения «Попросить Стеллу рассказать», плашка «не медицинская рекомендация», оформление ответа-сравнения. Анимации работают всегда. */
+
+/* ---------- подсветка и подсказка ---------- */
+.g-spot{position:fixed;inset:0;z-index:96;pointer-events:none}
+.g-hole{position:fixed;left:0;top:0;width:0;height:0;border-radius:18px;box-shadow:0 0 0 9999px rgba(8,18,40,.6),0 0 0 2px rgba(143,168,255,.95),0 0 34px 6px rgba(103,140,255,.45);transition:width .5s var(--ease),height .5s var(--ease),transform .5s var(--ease),opacity .3s}
+.g-hole.g-nt{transition:none}
+.g-hole::after{content:"";position:absolute;inset:-6px;border-radius:22px;border:2px solid rgba(143,168,255,.7);animation:gRing 1.9s ease-out infinite}
+@keyframes gRing{0%{opacity:.9;transform:scale(.97)}100%{opacity:0;transform:scale(1.07)}}
+.g-pop{position:fixed;z-index:97;width:min(340px,calc(100vw - 24px));display:flex;gap:10px;align-items:flex-start;padding:14px 12px 14px 14px;border-radius:20px;background:#fff;color:var(--navy);pointer-events:auto;
+  box-shadow:0 26px 60px -20px rgba(8,18,40,.7),0 0 0 1px rgba(11,26,51,.08);opacity:0;transform:translateY(8px) scale(.96)}
+.g-pop.in{animation:gPop .55s cubic-bezier(.34,1.56,.64,1) both}
+@keyframes gPop{0%{opacity:0;transform:translateY(10px) scale(.94)}100%{opacity:1;transform:none}}
+.g-pe{flex:none;width:38px;height:38px;margin-top:2px}.g-pe .pe{width:100%;height:100%}
+.g-body{flex:1;min-width:0}
+.g-tx p{margin:0;font:500 14.5px/1.5 var(--sans)}
+.g-tx b{font-weight:700}
+.g-st{display:block;margin-top:6px;font:600 11.5px/1 var(--sans);letter-spacing:.08em;text-transform:uppercase;color:var(--slate)}
+.g-ctl{display:flex;flex-wrap:wrap;gap:8px;margin-top:11px}
+.g-x{flex:none;width:30px;height:30px;border-radius:50%;display:grid;place-items:center;color:var(--slate);transition:background-color .2s,color .2s}
+.g-x:hover{background:var(--mist);color:var(--navy)}.g-x .ic{width:13px;height:13px}
+.g-pop.sheet{left:12px!important;right:12px;top:auto!important;bottom:calc(12px + env(safe-area-inset-bottom,0px));width:auto}
+body.dock-on .g-pop.sheet{bottom:calc(var(--dock-h,66px) + 12px + env(safe-area-inset-bottom,0px))}
+.g-pulse{animation:gPulse 1.1s ease-out 2}
+@keyframes gPulse{0%{box-shadow:0 0 0 0 rgba(103,140,255,.55)}100%{box-shadow:0 0 0 18px rgba(103,140,255,0)}}
+body.g-on .asst-tip,body.g-on .g-nudge{display:none!important}
+
+/* ---------- точка входа на странице ---------- */
+.g-entry{max-width:var(--maxw);margin:clamp(20px,3vw,34px) auto;padding:16px 20px;display:grid;grid-template-columns:auto minmax(0,1fr) auto;grid-template-areas:"pe t b" "pe ch ch";gap:8px 16px;align-items:center;border-radius:var(--r-lg);
+  background:linear-gradient(135deg,#fff 0,var(--mist-2) 100%);border:1px solid var(--line-soft);box-shadow:var(--sh);opacity:0;transform:translateY(14px);transition:opacity .6s var(--ease),transform .7s var(--ease)}
+.g-entry.on{opacity:1;transform:none}
+.g-e-pe{grid-area:pe;width:52px;height:52px}.g-e-pe .pe{width:100%;height:100%}
+.g-e-t{grid-area:t;min-width:0}.g-e-t b{display:block;font:600 clamp(17px,1.6vw,20px)/1.25 var(--serif)}
+.g-e-t p{margin:4px 0 0;color:var(--muted);font-size:14.5px;line-height:1.5}
+.g-e-ch{grid-area:ch;display:flex;flex-wrap:wrap;gap:8px}
+.g-e-b{grid-area:b;white-space:nowrap}
+.wrap>.g-entry,main>.g-entry,section>.g-entry{margin-left:auto;margin-right:auto;width:calc(100% - 2 * var(--gut))}
+@media (max-width:760px){.g-entry{grid-template-columns:auto minmax(0,1fr);grid-template-areas:"pe t" "ch ch" "b b"}.g-e-b{width:100%;justify-content:center}}
+
+/* ---------- проактивная подсказка у кнопки Стеллы ---------- */
+.g-nudge{position:fixed;z-index:92;right:max(20px,env(safe-area-inset-right,0px));bottom:calc(22px + 54px + 14px + env(safe-area-inset-bottom,0px));display:flex;align-items:flex-start;gap:8px;width:min(340px,calc(100vw - 40px));padding:12px 8px 12px 12px;border-radius:20px 20px 6px 20px;
+  background:#fff;color:var(--navy);box-shadow:0 22px 50px -18px rgba(11,26,51,.55),0 0 0 1px rgba(11,26,51,.08);opacity:0;transform:translateY(12px) scale(.92);transform-origin:100% 100%;transition:opacity .35s,transform .6s cubic-bezier(.34,1.56,.64,1)}
+.g-nudge.on{opacity:1;transform:none}
+.g-n-pe{flex:none;width:38px;height:38px}.g-n-pe .pe{width:100%;height:100%}
+.g-n-b{flex:1;min-width:0}
+.g-n-t{display:block;text-align:left;font:600 14.5px/1.4 var(--sans);padding:2px 0}.g-n-t:hover{color:var(--blue-d)}
+.g-n-ch{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}.g-n-ch .chip{font-size:12.5px;padding:7px 12px}
+.g-n-x{flex:none;width:30px;height:30px;border-radius:50%;display:grid;place-items:center;color:var(--slate);transition:background-color .2s,color .2s}
+.g-n-x:hover{background:var(--mist);color:var(--navy)}.g-n-x .ic{width:13px;height:13px}
+body.dock-on .g-nudge{bottom:calc(var(--dock-h,66px) + 22px + 14px + env(safe-area-inset-bottom,0px))}          /* внизу по центру стоит плашка («В списке», «Сравнение») — подсказка поднимается над ней (так решила арена: при ширине 1024–1440 они пересекались) */
+@media (max-width:900px){body.dock-on .g-nudge{bottom:calc(var(--dock-h,66px) + 22px + 54px + 14px + env(safe-area-inset-bottom,0px))}body.asst-open .g-nudge{display:none!important}}
+@media (max-width:640px){.g-nudge{right:16px;width:min(340px,calc(100vw - 32px));bottom:calc(22px + 56px + 12px + env(safe-area-inset-bottom,0px))}body.dock-on .g-nudge{bottom:calc(var(--dock-h,66px) + 22px + 56px + 12px + env(safe-area-inset-bottom,0px))}}
+
+/* ---------- плашка сравнения: рассказывает Стелла ---------- */
+.cmp-bar.cmp-stella{display:flex;align-items:center;gap:12px;padding:8px 8px 8px 12px;border-radius:24px;background:#fff;border:1px solid var(--line-soft);box-shadow:0 22px 44px -18px rgba(11,26,51,.5),0 0 0 1px rgba(11,26,51,.04);max-width:min(720px,calc(100vw - 32px))}
+.cmp-stella .cmp-pe{flex:none;width:40px;height:40px}.cmp-stella .cmp-pe .pe{width:100%;height:100%}
+.cmp-stella .cmp-main{min-width:0;flex:1}
+.cmp-stella .cmp-info{display:flex;align-items:center;gap:8px;font:600 13.5px/1.3 var(--sans);color:var(--navy)}
+.cmp-stella .cmp-count{min-width:24px;height:24px;font-size:12.5px}
+.cmp-stella .cmp-txt{white-space:normal;color:var(--muted);font-weight:600}
+.cmp-stella .cmp-names{list-style:none;margin:6px 0 0;padding:0;display:flex;flex-wrap:wrap;gap:6px}
+.cmp-stella .cmp-names li{display:inline-flex;align-items:center;gap:4px;max-width:200px;padding:3px 4px 3px 10px;border-radius:var(--pill);background:var(--mist);font:600 12.5px/1.2 var(--sans);color:var(--navy)}
+.cmp-stella .cmp-names li span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.cmp-stella .cmp-names li button{flex:none;width:20px;height:20px;border-radius:50%;display:grid;place-items:center;color:var(--slate)}
+.cmp-stella .cmp-names li button:hover{background:#fff;color:var(--navy)}.cmp-stella .cmp-names li .ic{width:10px;height:10px}
+.cmp-ask{flex:none;display:inline-flex;align-items:center;gap:10px;padding:12px 18px;border-radius:var(--pill);background:linear-gradient(135deg,var(--blue),var(--blue-d));color:#fff;font:700 14px/1 var(--sans);white-space:nowrap;box-shadow:0 10px 22px -10px rgba(35,71,176,.8);transition:transform .25s var(--ease),box-shadow .25s}
+.cmp-ask:hover{transform:translateY(-2px);box-shadow:0 14px 26px -10px rgba(35,71,176,.9)}.cmp-ask .ic{width:16px;height:16px}
+.cmp-clr{flex:none;width:34px;height:34px;border-radius:50%;display:grid;place-items:center;color:var(--slate);transition:background-color .2s,color .2s}
+.cmp-clr:hover{background:var(--mist);color:var(--navy)}.cmp-clr .ic{width:14px;height:14px}
+.cmp-bar.g-ping .cmp-ask{animation:gAsk 1.1s ease-out 3}
+@keyframes gAsk{0%{box-shadow:0 0 0 0 rgba(47,91,214,.6)}100%{box-shadow:0 0 0 16px rgba(47,91,214,0)}}
+@media (max-width:640px){
+  .cmp-bar.cmp-stella{width:100%;max-width:none;padding:8px 8px 8px 10px;gap:8px}
+  .cmp-stella .cmp-pe{width:34px;height:34px}.cmp-ask{padding:11px 14px;font-size:13px}.cmp-ask .ic{display:none}.cmp-stella .cmp-names li{max-width:140px}
+}
+
+/* ---------- ответ-сравнение и плашка «не медицинская рекомендация» в чате ---------- */
+.asst-k-cmp .asst-tx p{padding:8px 0 8px 12px;margin:6px 0 0;border-left:3px solid var(--mist)}
+.asst-k-cmp .asst-tx p:first-child{padding:0;border:0;margin:0}
+.asst-k-cmp .asst-tx p:nth-child(2){border-left-color:#7fa0f0}.asst-k-cmp .asst-tx p:nth-child(3){border-left-color:#4f78e0}.asst-k-cmp .asst-tx p:nth-child(4){border-left-color:#2347b0}.asst-k-cmp .asst-tx p:nth-child(5){border-left-color:var(--silver)}
+.asst-k-cmp .asst-tx p>b:first-child{color:var(--blue-d)}
+.asst-pl{color:var(--blue-d);font-weight:700;text-decoration:underline;text-decoration-color:rgba(35,71,176,.35);text-underline-offset:2px;transition:text-decoration-color .2s}
+.asst-pl:hover{text-decoration-color:currentColor}
+.asst-disc{display:flex;gap:9px;align-items:flex-start;margin-top:10px;padding:9px 11px;border-radius:12px;background:var(--mist-2);border:1px solid var(--line-soft);color:var(--muted);font-size:12px;line-height:1.4}
+.asst-disc .ic{flex:none;width:16px;height:16px;margin-top:1px;stroke:var(--blue-d);fill:none;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
+.asst-disc b{display:block;color:var(--navy);font-size:12px}.asst-disc span{display:block;margin-top:1px}
+@media (max-width:1400px){body.asst-open .xdock{opacity:0;pointer-events:none}}          /* плашка сравнения не прячется под окном чата */
+
+/* ---------- варианты оформления (выбор — «арена» tools/arena-stella.js; настройка в data/stella/guide.json) ---------- */
+/* подсказка у кнопки: bubble (по умолчанию) · pill · card */
+.g-nudge .g-n-go{display:none;margin-top:10px}
+.g-nudge[data-layout="pill"]{align-items:center;width:auto;max-width:min(520px,calc(100vw - 40px));padding:8px 8px 8px 10px;border-radius:999px 999px 6px 999px}
+.g-nudge[data-layout="pill"] .g-n-b{display:flex;align-items:center;gap:10px}
+.g-nudge[data-layout="pill"] .g-n-ch{display:none}
+.g-nudge[data-layout="pill"] .g-n-t{font-size:13.5px;line-height:1.3}
+.g-nudge[data-layout="pill"] .g-n-go{display:inline-flex;margin:0;flex:none;padding:9px 14px}
+.g-nudge[data-layout="card"]{width:min(380px,calc(100vw - 40px));padding:16px 14px 16px 16px;border-radius:24px 24px 6px 24px}
+.g-nudge[data-layout="card"] .g-n-pe{width:46px;height:46px}
+.g-nudge[data-layout="card"] .g-n-t{font-size:15.5px}
+.g-nudge[data-layout="card"] .g-n-go{display:inline-flex;width:100%;justify-content:center}
+@media (max-width:640px){.g-nudge[data-layout="pill"]{border-radius:22px 22px 6px 22px}.g-nudge[data-layout="pill"] .g-n-b{flex-wrap:wrap}}
+/* блок на странице: strip (по умолчанию) · slim · card */
+.g-entry[data-style="slim"]{grid-template-columns:auto minmax(0,1fr) auto;grid-template-areas:"pe t b";padding:10px 16px;gap:12px}
+.g-entry[data-style="slim"] .g-e-pe{width:38px;height:38px}.g-entry[data-style="slim"] .g-e-t p,.g-entry[data-style="slim"] .g-e-ch{display:none}
+.g-entry[data-style="slim"] .g-e-t b{font-size:16px}
+.g-entry[data-style="card"]{grid-template-columns:minmax(0,1fr) auto;grid-template-areas:"t pe" "ch pe" "b pe";padding:24px 28px;border-radius:var(--r-xl)}
+.g-entry[data-style="card"] .g-e-pe{width:96px;height:96px;align-self:center}.g-entry[data-style="card"] .g-e-b{justify-self:start}
+@media (max-width:760px){.g-entry[data-style="slim"]{grid-template-columns:auto minmax(0,1fr);grid-template-areas:"pe t" "b b"}.g-entry[data-style="card"]{grid-template-columns:minmax(0,1fr);grid-template-areas:"t" "ch" "b"}.g-entry[data-style="card"] .g-e-pe{display:none}}
+/* плашка сравнения: full (по умолчанию) · compact · stacked */
+.cmp-stella[data-style="compact"] .cmp-names{display:none}
+.cmp-stella[data-style="stacked"]{flex-wrap:wrap;max-width:min(460px,calc(100vw - 32px))}
+.cmp-stella[data-style="stacked"] .cmp-main{flex:1 1 calc(100% - 100px)}.cmp-stella[data-style="stacked"] .cmp-ask{flex:1 1 100%;justify-content:center;order:3}

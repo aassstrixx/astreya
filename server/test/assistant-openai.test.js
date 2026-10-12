@@ -59,7 +59,7 @@ test('любой OpenAI-совместимый сервис: статус «го
   assert.equal(p.text, 'Здравствуйте! Я Стелла.'); assert.equal(p.done, true); assert.equal(p.error, null);
   const q = reqs[0]; assert.equal(q.url, '/v1/chat/completions'); assert.equal(q.headers.authorization, 'Bearer sk-any-key-123'); assert.equal(q.body.model, MODEL); assert.equal(q.body.stream, true); assert.equal(q.body.max_tokens, 1200, 'для не-OpenAI адреса — max_tokens');
   assert.equal(q.body.messages[0].role, 'system'); assert.match(q.body.messages[0].content, /Ты — Стелла/); assert.match(q.body.messages[0].content, /СПРАВОЧНИК О САЙТЕ/); assert.deepEqual(q.body.messages.slice(1), [{role: 'user', content: 'Привет!'}]);
-  assert.deepEqual(q.body.tools.map(t => t.function.name), ['search_products', 'get_product', 'get_brand', 'list_events', 'discount_for_amount', 'get_contacts', 'search_info']);
+  assert.deepEqual(q.body.tools.map(t => t.function.name), ['search_products', 'get_product', 'get_brand', 'compare_products', 'list_events', 'discount_for_amount', 'get_contacts', 'search_info']);
   assert.ok(q.body.tools.every(t => t.type === 'function' && t.function.parameters.type === 'object' && t.function.description), 'инструменты в формате function'); assert.ok(!JSON.stringify(q.body).includes('cache_control'), 'служебные поля Anthropic не уходят');
 });
 

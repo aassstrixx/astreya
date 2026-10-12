@@ -131,7 +131,8 @@ const data = {
     return {id: p.id, slug: p.slug, name: p.name, brand: p.brand, t: p.type, im: p.image || undefined, d: p.desc, c: p.cat, k: p.kind, ts: p.tasks, n: p.isNew ? 1 : undefined, x: Object.keys(x).length ? x : undefined}; }),
   events: ctx.sortedEvents.map(e => ({id: e.id, slug: e.slug, title: e.title, date: e.date, city: e.city, tm: e.time, fm: e.fmt, pl: e.place, b: e.brand, sp: e.speaker})),
   index,
-  extras: site.redesign && ctx.redesign && ctx.redesign.extras && ctx.redesign.extras.enabled ? {requestList: C.xon('requestList'), quickContact: C.xon('quickContact'), recent: C.xon('recent'), callback: C.xon('callback'), quickView: C.xon('quickView'), compare: C.xon('compare'), countdown: C.xon('countdown'), subscribe: C.xon('subscribe'), assistant: C.xon('assistant'), agentReady: C.xon('agentReady'), kb: C.xon('assistant') ? 'js/kb.js' + (ctx.assetVersion ? '?v=' + ctx.assetVersion : '') : undefined} : null
+  guide: C.xon('assistant') && C.xon('navigator') && ctx.stella && ctx.stella.guide ? ctx.stella.guide : undefined,       // «навигатор» Стеллы: цели подсветки, экскурсии, подсказки (data/stella/guide.json)
+  extras: site.redesign && ctx.redesign && ctx.redesign.extras && ctx.redesign.extras.enabled ? {requestList: C.xon('requestList'), quickContact: C.xon('quickContact'), recent: C.xon('recent'), callback: C.xon('callback'), quickView: C.xon('quickView'), compare: C.xon('compare'), countdown: C.xon('countdown'), subscribe: C.xon('subscribe'), assistant: C.xon('assistant'), navigator: C.xon('assistant') && C.xon('navigator'), agentReady: C.xon('agentReady'), kb: C.xon('assistant') ? 'js/kb.js' + (ctx.assetVersion ? '?v=' + ctx.assetVersion : '') : undefined} : null
 };
 /* «агент-ready» (extras.agentReady): llms.txt и manifest.webmanifest; флаг выключен — файлов нет */
 for (const f of ['llms.txt', 'manifest.webmanifest']) if (!C.xon('agentReady')) fs.rmSync(path.join(ROOT, f), {force: true});

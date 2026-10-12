@@ -71,7 +71,7 @@ test('SDK: статус «ИИ готов», обычный ответ прих�
   assert.equal(q.body.model, MODEL); assert.equal(q.body.stream, true); assert.equal(q.body.max_tokens, 1200);
   assert.ok(Array.isArray(q.body.system) && q.body.system[0].type === 'text' && q.body.system[0].cache_control.type === 'ephemeral' && /Ты — Стелла/.test(q.body.system[0].text), 'системная инструкция — блок с кэшем');
   assert.match(q.body.system[1].text, /^Сегодня \d{4}-\d{2}-\d{2}/); assert.equal(q.body.system[1].cache_control, undefined);
-  assert.deepEqual(q.body.tools.map(t => t.name), ['search_products', 'get_product', 'get_brand', 'list_events', 'discount_for_amount', 'get_contacts', 'search_info']);
+  assert.deepEqual(q.body.tools.map(t => t.name), ['search_products', 'get_product', 'get_brand', 'compare_products', 'list_events', 'discount_for_amount', 'get_contacts', 'search_info']);
   assert.ok(q.body.tools.every(t => t.input_schema.type === 'object' && t.description), 'инструменты со схемами'); assert.equal(q.body.tools[q.body.tools.length - 1].cache_control.type, 'ephemeral');
   assert.deepEqual(q.body.messages, [{role: 'user', content: 'Привет!'}]);
 });

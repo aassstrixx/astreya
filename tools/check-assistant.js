@@ -39,7 +39,7 @@ console.log('3. Подбор по задаче и уточнения по ход
   r = say('Для домашнего ухода'); ok(r.intent === 'task' && r.cards.every(id => D.products.find(p => p.id === id).c === 'home') || /ничего нет/.test(r.text), 'фильтр «для дома»', short(r));
   r = say('Сравни первые два'); ok(['compare', 'similar', 'task'].includes(r.intent), 'сравнение «первых двух» при одной карточке предлагает с чем сравнить', r.intent); }
 { const st = b.newState(), say = talk(b, st); say('Посоветуйте от пигментации');
-  const r = say('сравни их'); ok(r.intent === 'compare' && r.cards.length === 2 && /Сравниваю/.test(r.text) && /(Общие задачи|не пересекаются)/.test(r.text) && r.actions[0].act === 'asst-cmp', 'сравнение показанных товаров словами + таблица', short(r)); }
+  const r = say('сравни их'); ok(r.intent === 'compare' && r.cards.length === 2 && /Сравниваю/.test(r.text) && /(Общие задачи|не пересекаются)/.test(r.text) && /Чем отличаются/.test(r.text) && !r.actions.some(x => x.act === 'asst-cmp'), 'сравнение показанных товаров словами (без таблицы): общее, различия, кому ближе, чего нет', short(r)); }
 { const st = b.newState(), say = talk(b, st), r = say('Сравни Acidcure и Elastense');
   ok(r.intent === 'compare' && r.cards.length === 2 && /Бренды|Оба продукта/.test(r.text), 'сравнение по названиям', short(r)); }
 
@@ -119,5 +119,40 @@ console.log('9. Стелла: личность, маршрутизация ме�
   r = b.reply('который час?', b.newState(), {}); ok(r.intent === 'datetime' && /10:00/.test(r.text), 'время: по часам устройства', short(r));
   r = b.reply('какой сегодня день недели', b.newState(), {}); ok(r.intent === 'datetime' && /понедельник/.test(r.text), 'день недели', short(r));
   const bad = []; for (const q of ['почему именно эти?', 'Центр обучения', 'где центральный офис']) { r = b.reply(q, b.newState(), {}); if (r.intent === 'price') bad.push(q); } ok(!bad.length, 'слова «почему», «центр» не принимаются за вопрос о цене', bad); }
+
+/* ---------- навигатор: команды словами → действия на странице (исполняет js/guide.js) ---------- */
+if (D.guide) {
+  console.log('10. Навигатор: команды, «где…», экскурсии, фильтры, сравнение выбранного');
+  const nav = (q, page, ctx) => { const st = b.newState(), r = b.reply(q, st, Object.assign({page: page || 'home'}, ctx || {})); return r; };
+  const act0 = r => (r.actions && r.actions[0]) || {};
+  let r = nav('Открой каталог'); ok(r.intent === 'nav' && act0(r).act === 'asst-go' && act0(r).d.href === 'catalog.html' && r.autorun && r.autorun[0] === 0 && r.sure === true, '«Открой каталог» → переход на каталог, выполняется сразу', [r.intent, r.actions, r.autorun]);
+  for (const [q, href] of [['покажи бренды', 'brands.html'], ['открой страницу для партнёров', 'partners.html'], ['перейди к обучению', 'training.html'], ['покажи страницу контактов', 'contacts.html'], ['хочу на страницу о компании', 'company.html'], ['открой новости', 'news.html']]) { r = nav(q, 'catalog'); ok(r.intent === 'nav' && act0(r).d && act0(r).d.href === href, '«' + q + '» → ' + href, [r.intent, act0(r)]); }
+  r = nav('Где фильтры?', 'catalog'); ok(act0(r).act === 'asst-show' && act0(r).d.target === 'filters', 'на каталоге «где фильтры?» → подсветить фильтры', act0(r));
+  r = nav('Где фильтры?', 'home'); ok(act0(r).act === 'asst-go' && act0(r).d.href === 'catalog.html' && act0(r).d.show === 'filters', 'на другой странице «где фильтры?» → перейти в каталог и показать', act0(r));
+  r = nav('где калькулятор скидок', 'catalog'); ok(act0(r).act === 'asst-go' && act0(r).d.href === 'partners.html' && act0(r).d.show === 'calc', '«где калькулятор скидок» → страница партнёров + подсветка', act0(r));
+  r = nav('где поиск?', 'home'); ok(act0(r).act === 'asst-show' && act0(r).d.target === 'search', '«где поиск?» → подсветить поиск', act0(r));
+  r = nav('где ближайший семинар', 'home'); ok(r.intent === 'events', '«где ближайший семинар» — это вопрос о расписании, а не о месте на странице', r.intent);
+  r = nav('где купить Acidcure', 'home'); ok(r.intent !== 'nav', '«где купить …» — не навигация', r.intent);
+  r = nav('Проведи по сайту'); ok(act0(r).act === 'asst-tour' && act0(r).d.tour === 'site', '«Проведи по сайту» → экскурсия «Что есть на сайте»', act0(r));
+  r = nav('покажи как сравнить товары', 'catalog'); ok(act0(r).act === 'asst-tour' && act0(r).d.tour === 'compare', '«покажи как сравнить товары» → экскурсия по сравнению', act0(r));
+  r = nav('как сделать заказ? проведи по шагам'); ok(act0(r).act === 'asst-tour' && act0(r).d.tour === 'request', '«как сделать заказ? проведи по шагам» → экскурсия «Как запросить информацию»', act0(r));
+  r = nav('Как стать партнёром?'); ok(r.intent === 'partner', 'обычный вопрос «Как стать партнёром?» отвечает по существу (экскурсия — только по просьбе «покажи/проведи»)', r.intent);
+  r = nav('Как записаться на семинар?'); ok(r.intent !== 'nav', 'вопрос «Как записаться…» не перехватывается навигатором', r.intent);
+  r = nav('отфильтруй по пигментации', 'catalog'); ok(act0(r).act === 'asst-filter' && act0(r).d.f === 'task=pigment', 'фильтр по задаче', act0(r));
+  r = nav('покажи только Dermatime', 'catalog'); ok(act0(r).act === 'asst-filter' && /brand=dermatime/.test(act0(r).d.f), 'фильтр по бренду', act0(r));
+  r = nav('сбрось фильтры', 'catalog'); ok(act0(r).act === 'asst-filter' && act0(r).d.f === 'reset', 'сброс фильтров', act0(r));
+  r = nav('наверх'); ok(act0(r).act === 'asst-scroll' && act0(r).d.to === 'top', '«наверх» → прокрутка', act0(r));
+  const ids = ['dt-acidcure', 'dt-milk'];
+  r = nav('Расскажи и сравни выбранные товары: Acidcure, Молочные пилинги', 'catalog', {cmp: ids}); ok(r.intent === 'compare' && r.sure === true && r.cards.join() === ids.join() && /Что общего/.test(r.text) && /Чего на сайте нет/.test(r.text) && r.disclaimer === true, 'выбранные товары: сравнение по данным сайта, карточки, пометка «справочная информация»', [r.intent, r.cards, short(r)]);
+  ok(!/\n{3,}/.test(r.text) && !/undefined|null|NaN/.test(r.text) && !/₽|руб|%/.test(r.text), 'в тексте сравнения нет мусора, цен и процентов');
+  r = nav('Расскажи о выбранном товаре: Acidcure', 'catalog', {cmp: [ids[0]]}); ok(r.intent === 'compare' && /Рассказываю о/.test(r.text) && r.cards.length === 1 && /Описание на сайте/.test(r.text), 'один выбранный товар: рассказ с цитатой описания «на сайте»', short(r));
+  r = nav('Сравни выбранные', 'catalog', {cmp: ids}); ok(r.intent === 'compare', '«Сравни выбранные» при двух отмеченных товарах', r.intent);
+  r = nav('Очисти сравнение', 'catalog', {cmp: ids}); ok(act0(r).act === 'asst-cmp-clear', '«Очисти сравнение» → очистка плашки', act0(r));
+  r = nav('С чем работает этот бренд?', 'brand', {brand: 'dermatime'}); ok(r.intent === 'brand' && /Dermatime/.test(r.text), 'на странице бренда «этот бренд» = бренд страницы', short(r));
+  ok(b.starters({brand: 'dermatime'}, b.newState()).some(c => /этого бренда/.test(c)), 'на странице бренда кнопки-подсказки про бренд');
+  for (const t of b.compareTemplates) { const x = b.compareText(ids, t); ok(x.length > 100 && !/undefined|null|NaN/.test(x), 'формат сравнения «' + t + '» работает'); }
+  r = nav('хочу покушать'); ok(r.intent === 'talk' && r.topic === 'hungry' && /Приятного аппетита/.test(r.text) && (r.text2 || '').length > 20, '«хочу покушать» — человеческий ответ и мостик к каталогу', [r.topic, short(r), r.text2]);
+  r = nav('сколько воды пить'); ok(r.topic === 'water_skin' && /не заменяет уход|индивидуаль/.test(r.text), 'вопрос про воду — без медицинских обещаний, с отсылкой к специалисту', short(r));
+}
 
 console.log(`\nИтого: ✓ ${pass}  ✗ ${fail}`); process.exit(fail ? 1 : 0);

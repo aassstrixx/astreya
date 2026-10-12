@@ -229,6 +229,7 @@
     copy('meta[name="description"]', 'content'); copy('link[rel="canonical"]', 'href');
     ['og:title', 'og:description', 'og:url', 'og:type', 'og:image'].forEach(k => copy(`meta[property="${k}"]`, 'content'));
     ['twitter:title', 'twitter:description', 'twitter:image'].forEach(k => copy(`meta[name="${k}"]`, 'content'));
+    $$('link[rel~="icon"][href]', document.head).forEach(l => { try { l.setAttribute('href', new URL(l.getAttribute('href'), document.baseURI).href); } catch (e) {} });          // значки сайта — абсолютными: после смены адреса относительная ссылка искала бы их в другой папке (404)
     const rb = doc.querySelector('meta[name="robots"]'), rc = document.querySelector('meta[name="robots"]');
     if (rb && !rc) document.head.appendChild(rb.cloneNode()); else if (!rb && rc) rc.remove();
     $$('script[type="application/ld+json"]', document.head).forEach(x => x.remove());
@@ -250,7 +251,7 @@
     const main = $('#main'), nm = doc.getElementById('main'); if (!main || !nm) throw new Error('no main');
     abs(nm, url);
     main.innerHTML = nm.innerHTML;
-    ['data-page', 'data-nav'].forEach(at => { body.setAttribute(at, doc.body.getAttribute(at) || ''); });
+    ['data-page', 'data-nav', 'data-root'].forEach(at => { body.setAttribute(at, doc.body.getAttribute(at) || ''); });          // data-root тоже: ссылки чата, фоны и навигатор строят адреса от корня сайта, а он зависит от глубины страницы
     main.setAttribute('data-page', doc.body.getAttribute('data-page') || '');
     syncHead(doc);
     const nav = doc.body.getAttribute('data-nav') || '';

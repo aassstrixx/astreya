@@ -38,7 +38,7 @@ function brandPage(ctx, C, P, b) {
   const adv = [{icon: 'shield', title: 'Оригинальная продукция', text: `${b.name} поставляется официальным дистрибьютором «Астрея».`},
     ...b.facts.filter(f => !['Страна', 'Концерн', 'Поставка'].includes(f[0])).slice(0, 2).map((f, k) => ({icon: icons[k % icons.length], title: f[0], text: f[1]})),
     {icon: 'users', title: 'Поддержка специалистов', text: 'Консультации менеджеров и материалы учебного центра «Астреи».'}];
-  return `<div class="wrap" style="${S.bstyle(b)}">
+  return `<div class="wrap" style="${S.bstyle(b)}" data-brand-page="${b.id}">
     <section class="b-hero">
       ${C.crumbs(P, [['Главная', 'index.html'], ['Бренды', 'brands.html'], [b.name, `brands/${b.id}.html`]])}
       <div class="b-line reveal"><span class="eyebrow">${esc(b.group)}${b.country && b.country !== b.group ? ' · ' + esc(b.country) : ''}</span></div>

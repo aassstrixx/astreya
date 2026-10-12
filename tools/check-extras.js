@@ -136,32 +136,53 @@ const cfg = JSON.parse(fs.readFileSync(pth.join(ROOT, 'data/redesign.json'), 'ut
 
     /* ---- сравнение ---- */
     await p.goto(base + 'catalog.html'); await skipSplash();
-    const cmpN = () => p.evaluate(() => JSON.parse(localStorage.getItem('astreya:cmp') || '[]').length), cmpBarOn = () => p.evaluate(() => { const b = document.getElementById('cmp-bar'); return b && !b.hidden ? {n: +b.querySelector('.cmp-count').textContent, dis: b.querySelector('.cmp-open').disabled} : null; });
-    ok(await p.$$eval('.pcard[data-id] > .cmp-add', e => e.length) === cardsN && await cmpBarOn() === null, 'на карточках есть кнопка сравнения, плашки пока нет');
-    /* таблица открывается уже с одним товаром; остальные добавляются прямо в окне */
-    await p.locator('.pcard[data-id] .cmp-add').nth(0).scrollIntoViewIfNeeded(); await p.locator('.pcard[data-id] .cmp-add').nth(0).click(); await wait(300);
-    let one = await cmpBarOn(); ok(one && one.n === 1 && !one.dis && /Открыть/.test(await p.$eval('#cmp-bar .cmp-go', e => e.textContent)), 'уже с одним товаром плашка «Сравнение» видна и открывается', one);
-    await click('#cmp-bar .cmp-open'); await wait(300);
-    const c1 = await p.$eval('#modal', e => ({cols: e.querySelectorAll('.cmp-t thead th[scope="col"]').length, pick: !!e.querySelector('select[data-act="cmp-pick"]'), only: !!e.querySelector('[data-act="cmp-only"]'), opts: e.querySelectorAll('select[data-act="cmp-pick"] option').length, hint: /одного товара/i.test(e.textContent)}));
-    ok(c1.cols === 1 && c1.pick && !c1.only && c1.opts > 20 && c1.hint, 'окно с одним товаром: его данные, подсказка и список для добавления ещё одного', c1);
-    await p.selectOption('#modal select[data-act="cmp-pick"]', {index: 1}); await wait(400);
-    ok(await p.$$eval('#modal .cmp-t thead th[scope="col"]', e => e.length) === 2 && await cmpN() === 2 && await p.$eval('#modal', e => !!e.querySelector('[data-act="cmp-only"]')), 'выбор товара в окне добавляет колонку; появляется «Только различия»');
-    await p.keyboard.press('Escape'); await wait(400); await p.evaluate(() => localStorage.removeItem('astreya:cmp')); await p.reload(); await skipSplash();
-    for (const i of [0, 1]) { await p.locator('.pcard[data-id] .cmp-add').nth(i).scrollIntoViewIfNeeded(); await p.locator('.pcard[data-id] .cmp-add').nth(i).click(); await wait(300); }
-    let cb = await cmpBarOn(); ok(cb && cb.n === 2 && !cb.dis && await p.$eval('.pcard[data-id] .cmp-add', e => e.getAttribute('aria-pressed') === 'true'), 'после двух товаров плашка «Сравнение» активна');
-    await p.locator('.pcard[data-id] .cmp-add').nth(2).scrollIntoViewIfNeeded(); await p.locator('.pcard[data-id] .cmp-add').nth(2).click(); await wait(300);
-    await p.locator('.pcard[data-id] .cmp-add').nth(3).scrollIntoViewIfNeeded(); await p.locator('.pcard[data-id] .cmp-add').nth(3).click(); await wait(400);
-    ok(await cmpN() === 3 && /до 3 товаров/.test(await p.$eval('#toast', e => e.textContent)), 'больше трёх товаров не добавляется — подсказка', await cmpN());
-    ok(await p.evaluate(() => { const d = document.getElementById('xdock'), r = document.querySelectorAll('#xdock > *:not([hidden])').length; return !!d && getComputedStyle(d).position === 'fixed' && r >= 1; }), 'плашки лежат в общем доке');
-    await click('#cmp-bar .cmp-open'); await wait(300);
-    const ct = await p.$eval('#modal', e => ({cols: e.querySelectorAll('.cmp-t thead th[scope="col"]').length, rows: e.querySelectorAll('.cmp-t tbody tr').length, hdr: [...e.querySelectorAll('.cmp-t tbody th')].map(x => x.textContent), over: e.querySelector('.cmp-wrap').scrollWidth > e.querySelector('.cmp-wrap').clientWidth + 1}));
-    ok(ct.cols === 3 && ct.hdr.includes('Бренд') && ct.hdr.includes('Назначение') && ct.rows >= 5, 'таблица: три товара, строки «Бренд … Назначение»', ct);
-    if (mobile) ok(ct.over || await p.$eval('#modal .cmp-wrap', e => e.scrollWidth <= e.clientWidth + 1), 'на телефоне таблица листается внутри окна, а не расширяет страницу'); ok(await p.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1), 'страница не получила горизонтальной прокрутки');
-    await p.check('#modal [data-act="cmp-only"]'); await wait(300); const rowsOnly = await p.$$eval('#modal .cmp-t tbody tr', e => e.length); ok(rowsOnly > 0 && rowsOnly <= ct.rows, '«Только различия» не добавляет строк', [rowsOnly, ct.rows]);
-    await click('#modal .cmp-x'); ok(await p.$$eval('#modal .cmp-t thead th[scope="col"]', e => e.length) === 2 && await cmpN() === 2, 'крестик убирает товар из сравнения');
-    await p.reload(); await skipSplash(); cb = await cmpBarOn(); ok(cb && cb.n === 2, 'выбор сохраняется после перезагрузки');
-    await click('#cmp-bar .cmp-open'); await click('#modal [data-act="cmp-clear"]'); await wait(300); ok(await cmpN() === 0 && await cmpBarOn() === null, '«Очистить сравнение» убирает выбор и плашку');
-    await p.keyboard.press('Escape'); await wait(400);
+    const cmpN = () => p.evaluate(() => JSON.parse(localStorage.getItem('astreya:cmp') || '[]').length), cmpBarOn = () => p.evaluate(() => { const b = document.getElementById('cmp-bar'); return b && !b.hidden ? {n: +b.querySelector('.cmp-count').textContent, dis: b.querySelector('.cmp-open') ? b.querySelector('.cmp-open').disabled : false} : null; });
+    const navOn = await p.evaluate(() => !!(ASTREYA_DATA.extras.navigator && ASTREYA_DATA.guide));
+    if (navOn) {
+      /* с навигатором таблицы нет: выбранные товары собираются на плашке, а рассказывает о них Стелла (подробные проверки — tools/check-navigator.js) */
+      ok(await p.$$eval('.pcard[data-id] > .cmp-add', e => e.length) === cardsN && await cmpBarOn() === null, 'на карточках есть кнопка сравнения, плашки пока нет');
+      await p.locator('.pcard[data-id] .cmp-add').nth(0).scrollIntoViewIfNeeded(); await p.locator('.pcard[data-id] .cmp-add').nth(0).click(); await wait(300);
+      let one = await cmpBarOn(); ok(one && one.n === 1 && /Стелл/.test(await p.$eval('#cmp-bar .cmp-ask', e => e.textContent)) && !(await p.$('#cmp-bar .cmp-open')), 'уже с одним товаром плашка видна и предлагает попросить Стеллу рассказать (старой кнопки таблицы нет)', one);
+      await p.locator('.pcard[data-id] .cmp-add').nth(1).scrollIntoViewIfNeeded(); await p.locator('.pcard[data-id] .cmp-add').nth(1).click(); await wait(300);
+      let cb = await cmpBarOn(); ok(cb && cb.n === 2 && await p.$eval('.pcard[data-id] .cmp-add', e => e.getAttribute('aria-pressed') === 'true') && await p.$$eval('#cmp-bar .cmp-names li', e => e.length) === 2, 'после двух товаров плашка показывает оба названия');
+      await p.locator('.pcard[data-id] .cmp-add').nth(2).scrollIntoViewIfNeeded(); await p.locator('.pcard[data-id] .cmp-add').nth(2).click(); await wait(300);
+      await p.locator('.pcard[data-id] .cmp-add').nth(3).scrollIntoViewIfNeeded(); await p.locator('.pcard[data-id] .cmp-add').nth(3).click(); await wait(400);
+      ok(await cmpN() === 3 && /до 3 товаров/.test(await p.$eval('#toast', e => e.textContent)), 'больше трёх товаров не добавляется — подсказка', await cmpN());
+      ok(await p.evaluate(() => { const d = document.getElementById('xdock'), r = document.querySelectorAll('#xdock > *:not([hidden])').length; return !!d && getComputedStyle(d).position === 'fixed' && r >= 1; }), 'плашки лежат в общем доке');
+      ok(await p.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1), 'страница не получила горизонтальной прокрутки');
+      await p.reload(); await skipSplash(); cb = await cmpBarOn(); ok(cb && cb.n === 3, 'выбор сохраняется после перезагрузки');
+      await click('#cmp-bar .cmp-ask'); await p.waitForSelector('#asst-log .asst-disc', {timeout: 25000}).catch(() => {}); await wait(400);
+      const said = await p.evaluate(() => ({open: document.body.classList.contains('asst-open'), table: !!document.querySelector('.cmp-t, #modal.open'), txt: (() => { const rows = Array.from(document.querySelectorAll('#asst-log .asst-m.asst-b')), r = rows[rows.length - 1]; return r && r.querySelector('.asst-tx') ? r.querySelector('.asst-tx').textContent : ''; })(), plate: !!document.querySelector('#asst-log .asst-disc')}));
+      ok(said.open && !said.table && /Сравниваю/.test(said.txt) && said.plate, 'плашка открывает чат: Стелла сравнивает выбранные товары по данным сайта, с пометкой «не медицинская рекомендация», без таблицы', said);
+      await p.keyboard.press('Escape'); await wait(500);
+      await click('#cmp-bar .cmp-clr'); await wait(300); ok(await cmpN() === 0 && await cmpBarOn() === null, '«Очистить» на плашке убирает выбор и саму плашку');
+    } else {
+      ok(await p.$$eval('.pcard[data-id] > .cmp-add', e => e.length) === cardsN && await cmpBarOn() === null, 'на карточках есть кнопка сравнения, плашки пока нет');
+      /* таблица открывается уже с одним товаром; остальные добавляются прямо в окне */
+      await p.locator('.pcard[data-id] .cmp-add').nth(0).scrollIntoViewIfNeeded(); await p.locator('.pcard[data-id] .cmp-add').nth(0).click(); await wait(300);
+      let one = await cmpBarOn(); ok(one && one.n === 1 && !one.dis && /Открыть/.test(await p.$eval('#cmp-bar .cmp-go', e => e.textContent)), 'уже с одним товаром плашка «Сравнение» видна и открывается', one);
+      await click('#cmp-bar .cmp-open'); await wait(300);
+      const c1 = await p.$eval('#modal', e => ({cols: e.querySelectorAll('.cmp-t thead th[scope="col"]').length, pick: !!e.querySelector('select[data-act="cmp-pick"]'), only: !!e.querySelector('[data-act="cmp-only"]'), opts: e.querySelectorAll('select[data-act="cmp-pick"] option').length, hint: /одного товара/i.test(e.textContent)}));
+      ok(c1.cols === 1 && c1.pick && !c1.only && c1.opts > 20 && c1.hint, 'окно с одним товаром: его данные, подсказка и список для добавления ещё одного', c1);
+      await p.selectOption('#modal select[data-act="cmp-pick"]', {index: 1}); await wait(400);
+      ok(await p.$$eval('#modal .cmp-t thead th[scope="col"]', e => e.length) === 2 && await cmpN() === 2 && await p.$eval('#modal', e => !!e.querySelector('[data-act="cmp-only"]')), 'выбор товара в окне добавляет колонку; появляется «Только различия»');
+      await p.keyboard.press('Escape'); await wait(400); await p.evaluate(() => localStorage.removeItem('astreya:cmp')); await p.reload(); await skipSplash();
+      for (const i of [0, 1]) { await p.locator('.pcard[data-id] .cmp-add').nth(i).scrollIntoViewIfNeeded(); await p.locator('.pcard[data-id] .cmp-add').nth(i).click(); await wait(300); }
+      let cb = await cmpBarOn(); ok(cb && cb.n === 2 && !cb.dis && await p.$eval('.pcard[data-id] .cmp-add', e => e.getAttribute('aria-pressed') === 'true'), 'после двух товаров плашка «Сравнение» активна');
+      await p.locator('.pcard[data-id] .cmp-add').nth(2).scrollIntoViewIfNeeded(); await p.locator('.pcard[data-id] .cmp-add').nth(2).click(); await wait(300);
+      await p.locator('.pcard[data-id] .cmp-add').nth(3).scrollIntoViewIfNeeded(); await p.locator('.pcard[data-id] .cmp-add').nth(3).click(); await wait(400);
+      ok(await cmpN() === 3 && /до 3 товаров/.test(await p.$eval('#toast', e => e.textContent)), 'больше трёх товаров не добавляется — подсказка', await cmpN());
+      ok(await p.evaluate(() => { const d = document.getElementById('xdock'), r = document.querySelectorAll('#xdock > *:not([hidden])').length; return !!d && getComputedStyle(d).position === 'fixed' && r >= 1; }), 'плашки лежат в общем доке');
+      await click('#cmp-bar .cmp-open'); await wait(300);
+      const ct = await p.$eval('#modal', e => ({cols: e.querySelectorAll('.cmp-t thead th[scope="col"]').length, rows: e.querySelectorAll('.cmp-t tbody tr').length, hdr: [...e.querySelectorAll('.cmp-t tbody th')].map(x => x.textContent), over: e.querySelector('.cmp-wrap').scrollWidth > e.querySelector('.cmp-wrap').clientWidth + 1}));
+      ok(ct.cols === 3 && ct.hdr.includes('Бренд') && ct.hdr.includes('Назначение') && ct.rows >= 5, 'таблица: три товара, строки «Бренд … Назначение»', ct);
+      if (mobile) ok(ct.over || await p.$eval('#modal .cmp-wrap', e => e.scrollWidth <= e.clientWidth + 1), 'на телефоне таблица листается внутри окна, а не расширяет страницу'); ok(await p.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1), 'страница не получила горизонтальной прокрутки');
+      await p.check('#modal [data-act="cmp-only"]'); await wait(300); const rowsOnly = await p.$$eval('#modal .cmp-t tbody tr', e => e.length); ok(rowsOnly > 0 && rowsOnly <= ct.rows, '«Только различия» не добавляет строк', [rowsOnly, ct.rows]);
+      await click('#modal .cmp-x'); ok(await p.$$eval('#modal .cmp-t thead th[scope="col"]', e => e.length) === 2 && await cmpN() === 2, 'крестик убирает товар из сравнения');
+      await p.reload(); await skipSplash(); cb = await cmpBarOn(); ok(cb && cb.n === 2, 'выбор сохраняется после перезагрузки');
+      await click('#cmp-bar .cmp-open'); await click('#modal [data-act="cmp-clear"]'); await wait(300); ok(await cmpN() === 0 && await cmpBarOn() === null, '«Очистить сравнение» убирает выбор и плашку');
+      await p.keyboard.press('Escape'); await wait(400);
+    }
 
     /* ---- обратный отсчёт ---- */
     await p.goto(base + 'training.html'); await skipSplash();

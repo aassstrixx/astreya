@@ -48,7 +48,7 @@ test('без ключа и модели ИИ-режим выключен: ста
   assert.equal(calls.length, 0, 'модель не вызывалась');
 });
 
-test('с моделью: ответ приходит потоком; в запросе — правила, справочник, дата и 7 инструментов с кэшем', async () => {
+test('с моделью: ответ приходит потоком; в запросе — правила, справочник, дата и 8 инструментов с кэшем', async () => {
   process.env.ASSISTANT_MODEL = MODEL; A.setClientFactory(fake); DEFAULT();
   const c = anon();
   assert.deepEqual((await c.get('/api/assistant/status')).json, {ai: true});
@@ -60,7 +60,7 @@ test('с моделью: ответ приходит потоком; в запр
   assert.equal(q.system[0].cache_control.type, 'ephemeral'); assert.match(q.system[0].text, /СПРАВОЧНИК/); assert.match(q.system[0].text, /Ты — Стелла/); assert.match(q.system[0].text, /ЛЮБУЮ тему/); assert.match(q.system[0].text, /диагнозов, схем лечения и доз не давай/); assert.match(q.system[0].text, /\[\[form:callback\]\]/); assert.match(q.system[0].text, /\[\[event:ID_мероприятия\]\]/);
   assert.ok(!/только по сайту|помогаешь только/i.test(q.system[0].text), 'тема разговора не ограничена сайтом');
   assert.match(q.system[1].text, /^Сегодня \d{4}-\d{2}-\d{2}/); assert.equal(q.system[1].cache_control, undefined, 'дата не кэшируется');
-  assert.deepEqual(q.tools.map(t => t.name), ['search_products', 'get_product', 'get_brand', 'list_events', 'discount_for_amount', 'get_contacts', 'search_info']);
+  assert.deepEqual(q.tools.map(t => t.name), ['search_products', 'get_product', 'get_brand', 'compare_products', 'list_events', 'discount_for_amount', 'get_contacts', 'search_info']);
   assert.ok(q.tools.every(t => t.input_schema && t.input_schema.type === 'object' && t.description.length > 20), 'у каждого инструмента описание и схема');
   assert.ok(q.tools[0].input_schema.properties.task.enum.includes('pigment'), 'перечень задач подставлен из данных сайта');
   assert.deepEqual(q.messages, [{role: 'user', content: 'Расскажите про Acidcure'}]);
@@ -68,7 +68,7 @@ test('с моделью: ответ приходит потоком; в запр
 
 test('справочник без мусора; инструменты отвечают по данным сайта и не доверяют входу', () => {
   const D = readJs('js/data.js'), KB = readJs('js/kb.js'), t = A.buildSystem(D, KB), K = A.knowledge().K;
-  assert.ok(!/undefined|\[object/.test(t), 'нет мусора в тексте'); assert.match(t, /ЧЕГО|Чего на сайте нет.*цены/); assert.ok(t.length < 12000, 'справочник компактный: ' + t.length);
+  assert.ok(!/undefined|\[object/.test(t), 'нет мусора в тексте'); assert.match(t, /ЧЕГО|Чего на сайте нет.*цены/); assert.ok(t.length < 16000, 'инструкция и справочник компактные: ' + t.length);
   for (const b of D.brands) assert.ok(t.includes(b.id), 'бренд ' + b.id);
   const run = (n, i) => JSON.parse(A.runTool(K, n, i));
   let r = run('search_products', {task: 'pigment', limit: 50}); assert.ok(r.total >= 4 && r.shown <= 12 && r.products[0].tasks.includes('Пигментация'), 'подбор по задаче');
@@ -216,4 +216,32 @@ test('.env: переменные читаются из файла, но не п�
   const target = {KEEP: 'env'}; const n = C.loadDotEnv(f, target);
   assert.deepEqual(target, {KEEP: 'env', ANTHROPIC_API_KEY: 'sk-from-file', ASSISTANT_MODEL: 'model x', ASSISTANT_RATE: '7', ASSISTANT_DAILY: '500'}); assert.equal(n, 4);
   assert.equal(C.loadDotEnv(path.join(os.tmpdir(), 'нет-такого-файла.env'), {}), 0, 'нет файла — не ошибка');
+});
+
+test('рамки Стеллы в инструкции: ответ → мост → шаг, обоснованность, медицинская плашка, ссылки только на наш сайт, навигация', () => {
+  const D = readJs('js/data.js'), KB = readJs('js/kb.js'), t = A.buildSystem(D, KB);
+  assert.match(t, /ОТВЕТ, МОСТ, ШАГ/); assert.match(t, /хочу покушать/); assert.match(t, /Мост НЕ нужен/);
+  assert.match(t, /ОБОСНОВАННОСТЬ/); assert.match(t, /на чём основан/); assert.match(t, /Не пиши «я нашла в интернете»/);
+  assert.match(t, /не медицинская рекомендация/); assert.match(t, /\[\[med\]\]/); assert.match(t, /Не ставь диагнозов/);
+  assert.match(t, /ТОЛЬКО НА ЭТОТ САЙТ/); assert.match(t, /внешний адрес сайт вырежет/); assert.match(t, /\[\[product:ID\]\]/);
+  assert.match(t, /НАВИГАЦИЯ ПО САЙТУ/); assert.match(t, /\[\[show:ID_цели\]\]/); assert.match(t, /\[\[filter:/); assert.match(t, /\[\[compare:/); assert.match(t, /compare_products/);
+  assert.match(t, /catalog\.html — Каталог/); assert.match(t, /task-filter/); assert.match(t, /seminar — Как записаться на семинар/);
+  assert.ok(!/только по сайту|помогаешь только/i.test(t), 'тема разговора не ограничена сайтом');
+  const nt = A.buildSystem(D, KB, {noTools: true, K: A.knowledge().K}); assert.match(nt, /Инструментов у тебя нет/); assert.match(nt, /ОТВЕТ, МОСТ, ШАГ/); assert.match(nt, /Чего нет в результатах|Чего на сайте нет/);
+});
+
+test('compare_products: факты по данным сайта, вход проверяется', () => {
+  const K = A.knowledge().K, run = (i) => JSON.parse(A.runTool(K, 'compare_products', i));
+  let r = run({ids: ['dt-acidcure', 'dt-milk']}); assert.equal(r.products.length, 2); assert.ok(Array.isArray(r.shared_tasks) && r.missing_on_site.length >= 1, 'есть факты и список того, чего на сайте нет'); assert.match(r.note, /Чего здесь нет/);
+  r = run({ids: ['dt-acidcure']}); assert.equal(r.products.length, 1);
+  assert.match(run({ids: ['нет-такого']}).error, /Нет товаров/); assert.match(run({}).error, /Нужен список/); assert.match(run({ids: 'x'}).error, /Нужен список/);
+  assert.equal(run({ids: ['dt-acidcure', 'dt-milk', 'kw-corr', 'x1', 'x2', 'x3']}).products.length, 3, 'не больше четырёх, неизвестные пропускаются');
+});
+
+test('внешние адреса из ответа модели вырезаются на сервере (в потоке, с разбивкой по порциям)', async () => {
+  process.env.ASSISTANT_MODEL = MODEL; A.setClientFactory(fake);
+  setScript([{chunks: ['Смотрите на https://exa', 'mple.com/shop или на сайте wb.ru, и в ', '[магазине](http://shop.example/x), но лучше у нас: [[product:dt-acidcure]]']}]);
+  const r = await ask(anon(), [{role: 'user', content: 'Где купить?'}]); const p = parse(r.text);
+  assert.ok(!/https?:|example|wb\.ru|shop/i.test(p.text), 'внешних адресов нет: ' + p.text); assert.match(p.text, /магазине/); assert.match(p.text, /\[\[product:dt-acidcure\]\]/, 'маркеры нашего сайта сохраняются'); assert.equal(p.done, true);
+  DEFAULT();
 });

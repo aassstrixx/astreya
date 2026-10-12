@@ -467,6 +467,7 @@
     "countdown": true,
     "subscribe": true,
     "assistant": true,
+    "navigator": true,
     "agentReady": true
   }
 }

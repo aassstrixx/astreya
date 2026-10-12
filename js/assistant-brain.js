@@ -125,7 +125,17 @@
       const sc = ss.map((s, i) => { const w = new Set(words(s).map(stem)); return {s, i, n: qtokens.filter(t => w.has(t)).length}; }).sort((a, b) => b.n - a.n || a.i - b.i);
       return sc[0].n ? sc[0].s : ss[0];
     }
-    return {P, B, CAT, TASK, KIND, EV, KB, today, daysTo, brandName, kbTask, kbBrand, brief, searchProducts, getProduct, getBrand, listEvents, discount, contacts, searchInfo, bestSentence, vocab, passages, iso, now};
+    /* факты для сравнения нескольких товаров — только то, что есть в данных сайта (их же получает ИИ инструментом compare_products) */
+    function compareFacts(ids) {
+      const list = (ids || []).map(id => P[id]).filter(Boolean).slice(0, 4); if (!list.length) return null;
+      const items = list.map(p => { const b = B[p.brand] || {}, kb = kbBrand(p.brand), x = p.x || {}; return {id: p.id, name: p.name, brand: b.name || '', brand_origin: kb.group || '', brand_country: kb.country || '', brand_summary: kb.tag || '', category: CAT[p.c] || '', kind: KIND[p.k] || '', tasks: (p.ts || []).map(t => TASK[t] || t), task_ids: (p.ts || []).slice(), description: p.d || '', new: !!p.n, for_home: p.c === 'home', url: 'products/' + p.slug + '.html', details: Object.keys(x).length ? x : null}; });
+      const shared = items.length > 1 ? items[0].task_ids.filter(t => items.every(i => i.task_ids.indexOf(t) >= 0)) : [], uniq = {};
+      items.forEach(i => { uniq[i.id] = items.length > 1 ? i.task_ids.filter(t => !items.some(o => o !== i && o.task_ids.indexOf(t) >= 0)).map(t => TASK[t] || t) : []; });
+      const same = f => items.every(i => f(i) === f(items[0]));
+      return {products: items, shared_tasks: shared.map(t => TASK[t] || t), shared_task_ids: shared, shared_task_notes: shared.map(t => ({task: TASK[t] || t, note: kbTask(t).note || ''})).filter(x => x.note), unique_tasks: uniq, same_brand: same(i => i.brand), same_category: same(i => i.category), same_kind: same(i => i.kind),
+        missing_on_site: ['состав и активные компоненты', 'объём и артикул', 'способ применения', 'цена и наличие', 'документы и сертификаты'].filter((t, i) => i > 3 || !items.every(it => it.details && (i === 0 ? it.details.actives : i === 1 ? (it.details.volume && it.details.sku) : it.details.usage))), note: 'Это все данные сайта по этим товарам. Чего здесь нет, того на сайте нет: уточняет менеджер.'};
+    }
+    return {P, B, CAT, TASK, KIND, EV, KB, today, daysTo, brandName, kbTask, kbBrand, brief, searchProducts, getProduct, getBrand, listEvents, discount, contacts, searchInfo, bestSentence, compareFacts, vocab, passages, iso, now};
   }
 
   /* ---------- диалоговый движок ---------- */
@@ -233,6 +243,7 @@
 
     function starters(ctx, st) {
       ctx = ctx || {};
+      if (ctx.brand && B[ctx.brand]) return ['С чем работает этот бренд?', 'Что выбрать у этого бренда?', 'Ближайшие семинары', 'Как запросить условия?'];
       if (ctx.product && P[ctx.product]) return ['Расскажите об этом товаре', 'С чем сравнить?', 'Как запросить условия?', 'Ближайшие семинары'];
       if (ctx.event && EV[ctx.event]) return ['Как записаться?', 'Сколько стоит участие?', 'Другие семинары', 'Контакты менеджера'];
       if (st && st.role) return ['Подобрать средство по задаче', 'Ближайшие семинары', 'Условия и скидки', 'Контакты'];
@@ -279,20 +290,129 @@
       const chips = ['Почему именно эти?', 'С чем сочетать?']; if (first.length > 1 && hasCompare) chips.push('Сравни первые два'); if (!filt.brand && brands.length > 1) chips.push('А у ' + K.brandName(brands[0]) + '?');
       return R(lines.join('\n\n'), {cards: first, links: [link('catalog.html?task=' + ids[0], 'Все продукты по задаче')], chips: chips.slice(0, 4), intent: 'task', steps: ['Смотрю каталог по задаче…', 'Подбираю бренды…']});
     }
-    function comparison(list, st) {
-      const names = list.map(p => '**' + p.name + '**'), L = [];
-      const same = (f, g) => list.every(p => f(p) === f(list[0]));
-      if (same(p => p.brand)) L.push((list.length === 2 ? 'Оба продукта' : 'Все продукты') + ' от ' + K.brandName(list[0].brand) + '.'); else L.push('Бренды: ' + list.map(p => p.name + ' — ' + K.brandName(p.brand)).join('; ') + '.');
-      const shared = (list[0].ts || []).filter(t => list.every(p => (p.ts || []).indexOf(t) >= 0));
-      if (shared.length) L.push('Общие задачи: ' + shared.map(t => lower(TASK[t])).join(', ') + '.'); else L.push('По задачам они не пересекаются: ' + list.map(p => p.name + ' — ' + ((p.ts || []).map(t => lower(TASK[t])).join(', ') || 'не указано')).join('; ') + '.');
-      if (!same(p => p.c)) L.push('Категории: ' + list.map(p => p.name + ' — ' + lower(CAT[p.c])).join('; ') + '.'); else L.push('Категория одна: ' + lower(CAT[list[0].c]) + '.');
-      if (!same(p => p.k)) L.push('Вид: ' + list.map(p => p.name + ' — ' + lower(KIND[p.k] || '—')).join('; ') + '.');
-      const uniq = list.map(p => ({p, only: (p.ts || []).filter(t => !list.some(q => q !== p && (q.ts || []).indexOf(t) >= 0))})).filter(x => x.only.length);
-      if (uniq.length && shared.length) L.push('Только у ' + uniq.map(x => x.p.name + ': ' + x.only.map(t => lower(TASK[t])).join(', ')).join('; ') + '.');
-      L.push('Состав, цену и точные характеристики на сайте не указываем — их даст менеджер.');
-      st.last = {intent: 'compare', cards: list.map(p => p.id), all: list.map(p => p.id), offset: list.length, tasks: shared, brand: ''};
-      return R('Сравниваю ' + names.join(' и ') + ' по данным каталога:\n\n' + L.join('\n'), {cards: list.map(p => p.id), actions: hasCompare ? [{l: 'Открыть таблицу сравнения', act: 'asst-cmp', ids: list.map(p => p.id).join(',')}] : [], chips: ['Запросить условия', 'Ближайшие семинары'], intent: 'compare', steps: ['Сравниваю по данным каталога…']});
+    /* ---------- сравнение: текст по данным сайта; шаблон выбрала «арена» (tools/arena-stella.js), остальные оставлены для проверок ---------- */
+    const nm = i => '**' + i.name + '**', lowT = t => lower(t), join = (a, w) => a.length > 1 ? a.slice(0, -1).join(', ') + ' ' + (w || 'и') + ' ' + a[a.length - 1] : a[0] || '';
+    const brandLine = i => { const o = [i.brand_origin, i.brand_country].filter((x, k, a) => x && a.indexOf(x) === k).join(', '); return i.brand + (o ? ' (' + o + ')' : ''); };
+    const capF = t => String(t || '').charAt(0).toUpperCase() + String(t || '').slice(1), uniqBy = (a, f) => a.filter((x, k) => a.findIndex(y => f(y) === f(x)) === k);
+    const firstSent = t => { const m = /^[\s\S]*?[.!?](?=\s|$)/.exec(String(t || '')); return (m ? m[0] : String(t || '')).trim(); };
+    const CMPT = {
+      /* A — «строки»: бренд / категория / вид / назначение / описание (как прежняя таблица, но словами) */
+      lines(f) {
+        const it = f.products, L = ['Сравниваю ' + join(it.map(nm)) + ' по данным сайта:', ''];
+        L.push('- Бренд: ' + it.map(i => i.name + ' — ' + i.brand).join('; ') + '.'); L.push('- Категория: ' + it.map(i => i.name + ' — ' + lowT(i.category)).join('; ') + '.'); L.push('- Вид: ' + it.map(i => i.name + ' — ' + lowT(i.kind || '—')).join('; ') + '.');
+        L.push('- Назначение: ' + it.map(i => i.name + ' — ' + (i.tasks.map(lowT).join(', ') || 'не указано')).join('; ') + '.'); L.push('- Описание на сайте: ' + it.map(i => i.name + ' — «' + firstSent(i.description).replace(/[.!\s]+$/, '') + '».').join(' '));
+        return L.join('\n');
+      },
+      /* B — «разделы»: общее → различия → кому что ближе → чего на сайте нет */
+      sections(f) {
+        const it = f.products, one = it.length === 1, L = [];
+        if (one) {
+          const i = it[0]; L.push('Рассказываю о ' + nm(i) + ' по данным сайта.'); L.push('**Что это.** ' + i.category + ', ' + lowT(i.kind || 'продукт') + ' бренда ' + brandLine(i) + (i.brand_summary ? ' — «' + i.brand_summary + '»' : '') + '.');
+          L.push('**Для каких задач указан.** ' + (i.tasks.length ? i.tasks.map(lowT).join(', ') : 'на сайте не указано') + (i.new ? '. Новинка каталога' : '') + '.'); L.push('**Описание на сайте.** «' + String(i.description || '').replace(/[.!\s]+$/, '') + '».'); L.push('**Чего на сайте нет.** ' + capF(f.missing_on_site.join(', ')) + ' — это уточняет менеджер.');
+          return L.join('\n\n');
+        }
+        L.push('Сравниваю ' + join(it.map(nm)) + ' по данным сайта.');
+        const common = []; common.push(f.same_brand ? (it.length === 2 ? 'Оба продукта' : 'Все продукты') + ' — ' + brandLine(it[0]) + '.' : 'Бренды разные: ' + uniqBy(it, i => i.brand).map(b => brandLine(b) + ' — ' + join(it.filter(i => i.brand === b.brand).map(i => i.name))).join('; ') + '.');
+        if (f.shared_tasks.length) common.push('Общие задачи: ' + f.shared_tasks.map(lowT).join(', ') + (f.shared_task_notes[0] ? ' («' + f.shared_task_notes[0].note.replace(/[.!\s]+$/, '') + '»)' : '') + '.'); else common.push('По указанным на сайте задачам они не пересекаются.');
+        if (f.same_category && f.same_kind) common.push('Категория и вид совпадают: ' + lowT(it[0].category) + ', ' + lowT(it[0].kind) + '.');
+        L.push('**Что общего.** ' + common.join(' '));
+        const diff = [];
+        if (!f.same_brand) { const bs = uniqBy(it.filter(i => i.brand_summary), i => i.brand); if (bs.length) diff.push('На сайте бренды описаны так: ' + bs.map(i => i.brand + ' — «' + i.brand_summary + '»').join('; ') + '.'); }
+        if (!f.same_category) diff.push('Категории: ' + it.map(i => i.name + ' — ' + lowT(i.category)).join('; ') + '.'); if (!f.same_kind) diff.push('Вид: ' + it.map(i => i.name + ' — ' + lowT(i.kind || '—')).join('; ') + '.');
+        const homeSet = it.filter(i => i.for_home), cab = it.filter(i => !i.for_home); if (homeSet.length && cab.length) diff.push('Домашний уход: ' + join(homeSet.map(i => i.name)) + '; для кабинета: ' + join(cab.map(i => i.name)) + '.');
+        const un = it.filter(i => f.unique_tasks[i.id].length); if (un.length) diff.push('Только у ' + un.map(i => i.name + ': ' + f.unique_tasks[i.id].map(lowT).join(', ')).join('; ') + '.');
+        const nw = it.filter(i => i.new); if (nw.length && nw.length < it.length) diff.push('Новинка: ' + join(nw.map(i => i.name)) + '.');
+        L.push('**Чем отличаются.** ' + (diff.filter(Boolean).join(' ') || 'По данным сайта заметных различий нет — подробности у менеджера.'));
+        const near = it.filter(i => f.unique_tasks[i.id].length).map(i => 'если важна задача «' + lowT(f.unique_tasks[i.id][0]) + '» — ближе ' + i.name).concat(f.shared_tasks.length ? ['по общей задаче «' + lowT(f.shared_tasks[0]) + '» подойдут оба'] : []);
+        L.push('**Кому что ближе.** ' + (near.length ? capF(near.join('; ')) + '. Окончательный выбор делает специалист по результатам консультации.' : 'Выбор зависит от задачи и протокола — его определяет специалист.'));
+        L.push('**Чего на сайте нет.** ' + capF(f.missing_on_site.join(', ')) + ' — это уточняет менеджер.');
+        return L.join('\n\n');
+      },
+      /* C — «визитки»: короткий профиль каждого и общий вывод */
+      cards(f) {
+        const it = f.products, L = ['Вот что известно по данным сайта:', '']; it.forEach(i => { L.push('**' + i.name + '** — ' + brandLine(i) + '; ' + lowT(i.category) + ', ' + lowT(i.kind || 'продукт') + '. Задачи: ' + (i.tasks.map(lowT).join(', ') || 'не указаны') + '. На сайте: «' + firstSent(i.description).replace(/[.!\s]+$/, '') + '».'); L.push(''); });
+        L.push(it.length > 1 ? '**Итог.** ' + (f.shared_tasks.length ? 'Общее — ' + f.shared_tasks.map(lowT).join(', ') + '; различия — в бренде, категории и дополнительных задачах.' : 'Пересечений по задачам нет: это продукты для разных целей.') + ' Состав и цену уточнит менеджер.' : '**Итог.** Состав, цену и применение уточнит менеджер.');
+        return L.join('\n');
+      },
+      /* E — «вердикт»: сначала короткий вывод, затем по строке на товар и честная оговорка */
+      verdict(f) {
+        const it = f.products; if (it.length === 1) return CMPT.sections(f);
+        const un = it.filter(i => f.unique_tasks[i.id].length).map(i => 'для «' + lowT(f.unique_tasks[i.id][0]) + '» — ' + nm(i));
+        const head = f.shared_tasks.length ? 'общая задача — «' + lowT(f.shared_tasks[0]) + '»' + (un.length ? '; а ' + join(un) : '') + '.' : 'продукты решают разные задачи — ' + it.map(i => nm(i) + ': ' + (i.tasks.map(lowT).join(', ') || 'не указано')).join('; ') + '.';
+        const L = ['**Коротко.** ' + capF(head), ''];
+        it.forEach(i => L.push('- ' + nm(i) + ' — ' + brandLine(i) + '; ' + lowT(i.category) + (i.kind ? ', ' + lowT(i.kind) : '') + (i.new ? '; новинка' : '') + '.'));
+        L.push('', '**Чего на сайте нет.** ' + capF(f.missing_on_site.join(', ')) + ' — это уточняет менеджер. Окончательный выбор делает специалист по результатам консультации.');
+        return L.join('\n');
+      },
+      /* D — «коротко + вопрос»: пара предложений и встречный вопрос */
+      brief(f) {
+        const it = f.products; if (it.length === 1) return nm(it[0]) + ' — ' + brandLine(it[0]) + '; задачи: ' + (it[0].tasks.map(lowT).join(', ') || 'не указаны') + '. Чтобы подсказать точнее: для кабинета или для дома, и какая задача главная?';
+        return 'Коротко: ' + join(it.map(nm)) + (f.shared_tasks.length ? ' объединяет задача «' + lowT(f.shared_tasks[0]) + '»' : ' решают разные задачи') + (f.same_brand ? ', бренд один — ' + it[0].brand : ', бренды разные: ' + join(it.map(i => i.brand))) + '. Чтобы подсказать точнее: для кабинета или для дома, и какая задача главная?';
+      }
+    };
+    const CMP_TPL = (D.guide && D.guide.compare && D.guide.compare.template) || 'sections';
+    function comparison(list, st, tpl) {
+      const ids = list.map(p => p.id), f = K.compareFacts(ids), body = (CMPT[tpl || CMP_TPL] || CMPT.sections)(f);
+      st.last = {intent: 'compare', cards: ids, all: ids, offset: ids.length, tasks: f.shared_task_ids, brand: ''};
+      const chips = list.length > 1 ? ['Для кабинета или для дома?', 'С чем сочетать?', 'Запросить условия', 'Добавить ещё товар'] : ['С чем сравнить?', 'С чем сочетать?', 'Запросить условия'];
+      return R(body, {cards: ids, actions: compact([{l: 'Запросить информацию', act: 'form', type: 'product', ref: ids[0]}]), chips, intent: 'compare', disclaimer: true, steps: ['Сравниваю по данным сайта…', 'Собираю общее и различия…']});
     }
+
+    /* ---------- «навигатор»: команды по сайту (открыть страницу, показать место, провести по шагам, отфильтровать каталог, сравнить выбранное) ----------
+       Всё считается по data/stella/guide.json (D.guide): страницы, цели подсветки, экскурсии. Действия выполняет интерфейс (js/guide.js); здесь — только решение, что сделать. */
+    const G = D.guide || null, GPAGES = G ? G.pages || [] : [], GTARG = G ? G.targets || {} : {}, GTOURS = G ? G.tours || [] : [];
+    const reEsc = x => String(x).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const synHit = (n, list) => { let best = 0; (list || []).forEach(sy => { const q = norm(sy); if (q && new RegExp('(^|[^a-zа-я0-9])' + reEsc(q)).test(n) && q.length > best) best = q.length; }); return best; };
+    const pageOf = n => { let best = null, bl = 0; GPAGES.forEach(p => { const l = synHit(n, (p.syn || []).concat([p.label])); if (l > bl) { bl = l; best = p; } }); return best; };
+    const targetOf = (n, pageKey) => {
+      let best = null, bl = 0; const scan = (key, bonus) => (GTARG[key] || []).forEach(t => { const l = synHit(n, (t.syn || []).concat([t.label])); if (l && l + bonus > bl) { bl = l + bonus; best = {page: key, t}; } });
+      scan(pageKey, 2); scan('*', 1); if (!best) Object.keys(GTARG).forEach(k => { if (k !== '*' && k !== pageKey) scan(k, 0); }); return best;
+    };
+    const tourOf = n => { let best = null, bl = 0; GTOURS.forEach(t => { const l = synHit(n, (t.syn || []).concat([t.title])); if (l > bl) { bl = l; best = t; } }); return best; };
+    const urlOfBrand = id => 'brands/' + id + '.html';
+    function navIntent(text, n, tk, st, ctx, ents) {
+      if (!G) return null; const page = ctx.page || '', cmpIds = (ctx.cmp || []).filter(id => P[id]), words0 = tk.length;
+      const act = (l, a, d, o) => Object.assign({l, act: a, d: d || {}}, o || {});
+      const NAV = (txt, actions, o) => R(txt, Object.assign({actions, autorun: actions.length ? [0] : [], intent: 'nav', local: true, steps: ['Понимаю, куда вести…']}, o || {}));
+      /* прокрутка */
+      if (words0 <= 5 && W('наверх|вверх|в начало страницы|в самый верх|к началу').test(n)) return NAV('Поднимаюсь в начало страницы.', [act('Наверх', 'asst-scroll', {to: 'top'})]);
+      if (words0 <= 5 && W('вниз|в конец страницы|в самый низ|к подвалу|в подвал|вниз страницы').test(n) && !W('как|где|что').test(n)) return NAV('Опускаюсь в конец страницы.', [act('Вниз', 'asst-scroll', {to: 'bottom'})]);
+      /* сравнение того, что выбрано на сайте */
+      if (cmpIds.length && W('сравни|сравнить|расскажи|рассказать|объясни|разбери').test(n) && W('выбранн|то,? что выбрал|избранн|выбрал[аи]? для сравнения|в сравнении|мо[иё] товар|эти товар|эти продукт|сравнение').test(n)) return done_(comparison(cmpIds.map(id => P[id]), st));
+      if (W('очисти|очистить|сбрось|сбросить|убери|удали').test(n) && W('сравнени').test(n) && words0 <= 6) return NAV('Очищаю сравнение.', [act('Очистить сравнение', 'asst-cmp-clear')]);
+      /* фильтры каталога */
+      const filt = W('отфильтруй|отфильтровать|фильтр|оставь только|покажи только|только для|только от|сбрось фильтр|сбросить фильтр|убери фильтр|очисти фильтр|покажи все товары|покажи весь каталог').test(n);
+      if (filt) {
+        if (W('сброс|убери фильтр|очисти фильтр|покажи все товары|покажи весь каталог|без фильтр').test(n)) return NAV('Сбрасываю фильтры каталога.', [act('Сбросить фильтры', 'asst-filter', {f: 'reset'})]);
+        const f = {}; if (ents.tasks.length) f.task = ents.tasks[0]; if (ents.brands.length) f.brand = ents.brands[0].id;
+        const cat = (D.cats || []).find(c => words(c.name).map(stem).filter(t => t.length > 3 && !STOP.has(t)).some(t => tk.indexOf(t) >= 0)); if (cat) f.cat = cat.id; else if (W('для дом|домашн').test(n)) f.cat = 'home';
+        const keys = Object.keys(f);
+        if (keys.length) { const q = keys.map(k => k + '=' + f[k]).join('&'), label = keys.map(k => k === 'task' ? lower(TASK[f[k]]) : k === 'brand' ? K.brandName(f[k]) : lower(CAT[f[k]] || f[k])).join(' · ');
+          return NAV('Применяю фильтр в каталоге: **' + label + '**.', [act('Показать в каталоге: ' + label, 'asst-filter', {f: q})], {chips: ['Сравни их', 'Подобрать по задаче', 'Сбросить фильтры']}); }
+      }
+      /* экскурсия / «покажи, как…» */
+      const tour = tourOf(n), howShow = W('покажи как|покажи,? как|объясни как|научи|проведи|экскурс|покажи сайт|что есть на сайте|пошагово|шаг за шагом|покажи шаги|покажи на сайте|как сделать|как можно|подскажи как|помоги').test(n);
+      if (tour && howShow && words0 <= 9) return NAV('Хорошо, покажу по шагам: **' + tour.title + '**. Подсвечу нужные места прямо на странице.', [act('Начать: ' + tour.title, 'asst-tour', {tour: tour.id})], {chips: GTOURS.filter(t => t.id !== tour.id).slice(0, 3).map(t => t.title)});
+      /* где находится / покажи место на странице */
+      const where = W('где (?:находится|найти|найду|тут|здесь|у вас|можно найти|расположен|искать)|как найти|покажи где|покажи мне где|подсвети|покажи кнопку|на что нажать|куда нажать|где кнопка|где поле|где строка').test(n) || (/^где\s/.test(n) && words0 <= 5 && !cityOf(n) && !ents.products.length && !W('ближайш|когда|сколько|дата|во сколько|стоит|цена|купить|заказать|офис|адрес|находится ли').test(n));
+      if (where) {
+        const tg = targetOf(n, page);
+        if (tg) {
+          const here = tg.page === page || tg.page === '*', pg = pageById(tg.page);
+          if (here) return NAV('Показываю: **' + tg.t.label + '**. ' + tg.t.say, [act('Показать: ' + tg.t.label, 'asst-show', {target: tg.t.id})]);
+          if (pg) return NAV('«' + tg.t.label + '» — на странице **' + pg.label + '**. Перейду и покажу.', [act('Перейти и показать', 'asst-go', {href: pg.href, show: tg.t.id})]);
+        }
+      }
+      /* открыть страницу */
+      const goVerb = W('открой|откройте|открыть|перейд|зайди|зайти|веди|отведи|на страницу|страницу|верни(?:сь)? на|вернись|перенеси меня|переключи на|давай на|хочу на|мне на').test(n), showVerb = W('покажи|показать|покажите|ведите').test(n);
+      const pg = pageOf(n), clean = !ents.tasks.length && !ents.brands.length && !ents.products.length;
+      if (pg && ((goVerb && words0 <= 8) || (showVerb && words0 <= 4 && clean)) && !(where && targetOf(n, page))) return NAV('Открываю: **' + pg.label + '**.', [act('Открыть: ' + pg.label, 'asst-go', {href: pg.href})]);
+      if (goVerb && words0 <= 8 && ents.products.length === 1 && !ents.brands.length) { const p = ents.products[0]; return NAV('Открываю страницу продукта **' + p.name + '**.', [act('Открыть: ' + p.name, 'asst-go', {href: 'products/' + p.slug + '.html'})]); }
+      if (goVerb && words0 <= 8 && ents.brands.length === 1 && !ents.products.length && !ents.tasks.length) { const b = ents.brands[0]; return NAV('Открываю страницу бренда **' + b.name + '**.', [act('Открыть: ' + b.name, 'asst-go', {href: urlOfBrand(b.id)})]); }
+      return null;
+    }
+    const pageById = id => GPAGES.find(p => p.id === id);
+    const done_ = r => r;
     function eventsAnswer(n, st, ctx) {
       const per = periodOf(n), city = cityOf(n) || '', online = W('онлайн|вебинар|дистанц').test(n) ? true : W('очно|вживую|офлайн').test(n) ? false : undefined;
       const brands = brandsIn(n), q = {from: per ? (per.from > K.today() ? per.from : K.today()) : undefined, to: per && per.to, city: city || undefined, brand: brands[0] && brands[0].id, online};
@@ -581,7 +701,8 @@
     /* ---------- главный разбор ---------- */
     function reply(raw, st, ctx) {
       ctx = ctx || {}; st = st || newState(); st.turns = (st.turns || 0) + 1; st.last = st.last || {};
-      const text = String(raw == null ? '' : raw).trim(); if (!text) return fin(R('Напишите вопрос — отвечу по каталогу, обучению и условиям сотрудничества.', {chips: starters(ctx, st), intent: 'empty'}), st);
+      let text = String(raw == null ? '' : raw).trim(); if (ctx.brand && B[ctx.brand]) text = text.replace(/(?:э(?:тот|того|тому|тим|том)|данн\S+|текущ\S+)\s+бренд\S*/gi, B[ctx.brand].name);          // «у этого бренда» на странице бренда
+      if (!text) return fin(R('Напишите вопрос — отвечу по каталогу, обучению и условиям сотрудничества.', {chips: starters(ctx, st), intent: 'empty'}), st);
       const fixed = correct(text), n = clean(fixed.text), tk = words(n).map(stem), ntok = tk.length;
       const brandsInText = brandsIn(n), tasksInText = taskOf(n), productsInText = productsIn(n, tk), city = cityOf(n), role = roleOf(n), amount = amountOf(text);
       const refd = W('эт(?:от|а|о|ом|ого|ому|им|у)' + END + '|(?:он|она|оно)' + END + '|его|ее|её|данн|текущ').test(n) && !!(ctx.product || (st.last && st.last.product));
@@ -662,6 +783,9 @@
         if (tasksInText.length && l.brand && ntok <= 6 && !brandsInText.length && W('а |ещ[её]|тоже|также|и для').test(n)) return done(taskAnswer(tasksInText, st, {brand: l.brand}));
       }
 
+      /* ---- «навигатор»: открыть страницу, показать место, провести по шагам, отфильтровать каталог ---- */
+      { const nv = navIntent(text, n, tk, st, ctx, {tasks: tasksInText, brands: brandsInText, products: productsInText}); if (nv) return done(nv); }
+
       /* ---- библиотека реплик: о Стелле, светская беседа, не по теме, чего сайт не знает (стадия «mid») — раньше общих «прямых намерений», чтобы «договорились» не принималось за «договор» ---- */
       if (SL) { const rm = slReply('mid', X, st, ctx); if (rm) return done(rm); }
 
@@ -724,7 +848,7 @@
     }
 
     /* точные и служебные намерения отвечаются здесь же (мгновенно, бесплатно, без «выдумок»): приветствия, контакты, скидка, расписание, формы, расчёт, дата; всё остальное — светская беседа, «о компании», партнёрство, новости, каталог, медицинские и свободные вопросы — при включённом ИИ уходит к нему, а без ИИ его закрывает этот же движок */
-    const LOCAL = new Set(['greet', 'thanks', 'bye', 'who', 'role', 'no', 'yes', 'callback', 'price', 'avail', 'buy', 'contacts', 'human', 'forms', 'register', 'events', 'discount', 'empty', 'frustrated', 'more', 'pick', 'request', 'calc', 'datetime']);
+    const LOCAL = new Set(['nav', 'compare', 'greet', 'thanks', 'bye', 'who', 'role', 'no', 'yes', 'callback', 'price', 'avail', 'buy', 'contacts', 'human', 'forms', 'register', 'events', 'discount', 'empty', 'frustrated', 'more', 'pick', 'request', 'calc', 'datetime']);
     function fin(res, st) {
       if (res.sure !== false) res.sure = res.local || LOCAL.has(res.intent);          // res.local — продолжение диалога, которое зависит от состояния движка
       res.state = st; if (!res.chips.length) res.chips = starters({}, st).slice(0, 3);
@@ -736,7 +860,7 @@
     const newState = () => ({turns: 0, role: '', city: '', pending: null, last: {}});
     /* когда на вопрос ответил ИИ, движок запоминает показанные им карточки: «ещё», «подробнее про первый», «сравни их» продолжают работать */
     function noteExternal(st, ids, tasks) { ids = (ids || []).filter(id => P[id]); st.last = {intent: ids.length ? 'task' : (st.last || {}).intent, cards: ids.slice(0, 4), all: ids, offset: ids.length, tasks: tasks || (st.last || {}).tasks || [], brand: ''}; }
-    return {reply, newState, starters, knowledge: K, correct, noteExternal, library: SL ? {topics: SLT, byId: SLID, raw: SL, find: (stage, text) => slFind(stage, [words(squash(clean(text)))]).map(t => t.id)} : null};
+    return {reply, newState, starters, knowledge: K, correct, noteExternal, compareTemplates: Object.keys(CMPT), compareText: (ids, tpl) => { const f = K.compareFacts(ids); return f ? (CMPT[tpl || CMP_TPL] || CMPT.sections)(f) : ''; }, library: SL ? {topics: SLT, byId: SLID, raw: SL, find: (stage, text) => slFind(stage, [words(squash(clean(text)))]).map(t => t.id)} : null};
   }
 
   return {createBrain, createKnowledge};

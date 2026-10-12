@@ -14,12 +14,16 @@
    «я программа», уважение prefers-reduced-motion, скринридер получает готовый ответ целиком (не побуквенно), фокус и Esc работают как в диалоге.
    Дополнительно (экспериментально, если браузер поддерживает WebMCP): страница отдаёт ИИ-агентам браузера те же безопасные инструменты только для чтения.
    Ответ ИИ может заканчиваться маркерами [[product:ID]], [[event:ID]], [[form:ТИП]], [[link:путь]] — они становятся карточками и кнопками только если ID/путь есть в данных сайта.
-   Диалог хранится в sessionStorage вкладки (не на сервере); страницы подменяются без перезагрузки — чат остаётся на месте. */
+   Диалог хранится в sessionStorage вкладки (не на сервере); страницы подменяются без перезагрузки — чат остаётся на месте.
+
+   Навигатор (extras.navigator, js/guide.js): ответ может содержать кнопки-действия «открыть страницу», «показать на странице», «провести по шагам», «выставить фильтры» — их исполняет A.guide;
+   сравнение товаров идёт через Стеллу (плашка «Попросить Стеллу рассказать» → A.stella.compare). Рамки Стеллы (js/stella-policy.js): ссылки только на этот сайт, названия товаров — ссылками на наши страницы,
+   под объяснениями о коже и уходе — плашка «не медицинская рекомендация». */
 (function () {
   'use strict';
   const A = window.Astreya, D = window.ASTREYA_DATA;
   if (!A || !D || !D.extras || !D.extras.assistant || !A.brain) return;
-  const X = D.extras, I = A.I, esc = A.esc;
+  const X = D.extras, I = A.I, esc = A.esc, POL = A.policy || null, NAVI = !!(X.navigator && D.guide);
   const $ = (s, r) => (r || document).querySelector(s), $$ = (s, r) => Array.prototype.slice.call((r || document).querySelectorAll(s));
   const P = {}, B = {}, TASK = {}, EV = {};
   (D.products || []).forEach(p => { P[p.id] = p; }); (D.brands || []).forEach(b => { B[b.id] = b; }); (D.tasks || []).forEach(t => { TASK[t.id] = t.label; }); (D.events || []).forEach(e => { EV[e.id] = e; });
@@ -67,10 +71,14 @@
     if (ai !== null) return Promise.resolve(ai); const ep = endpoint(); if (!ep || !/^https?:$/.test(location.protocol)) { ai = false; return Promise.resolve(false); }          // с локального файла (автономная сборка) сервера нет
     return fetch(ep + '/status', {credentials: 'omit', headers: {Accept: 'application/json'}}).then(r => r.ok ? r.json() : {ai: false}).then(j => { ai = !!(j && j.ai); return ai; }).catch(() => { ai = false; return false; });
   }
+  /* товары, которые посетитель отметил для сравнения (хранит explore.js) */
+  function cmpIds() { try { const v = JSON.parse(localStorage.getItem('astreya:cmp') || '[]'); return Array.isArray(v) ? v.filter(id => P[id]).slice(0, 4) : []; } catch (e) { return []; } }
   function ctxOf() {
     const page = document.body.getAttribute('data-page') || '', c = {page};
     const pr = $('.p-page[data-product]'); if (pr) c.product = pr.getAttribute('data-product');
     const ev = $('[data-event]'); if (ev && page === 'event') c.event = ev.getAttribute('data-event');
+    const br = $('[data-brand-page]'); if (br && page === 'brand') c.brand = br.getAttribute('data-brand-page');
+    const cm = cmpIds(); if (cm.length) c.cmp = cm;
     return c;
   }
 
@@ -82,10 +90,29 @@
     const pg = ((KB && KB.pages) || []).find(i => i.u === p); if (pg) return {h: path, l: pg.t};
     return p === 'index.html' ? {h: path, l: 'Главная'} : null;
   }
+  /* маркеры навигатора: цель подсветки / экскурсия / фильтр — только если они есть в настройках сайта (D.guide) и значения существуют */
+  const GT = (D.guide && D.guide.targets) || {}, GTOUR = (D.guide && D.guide.tours) || [], GPG = (D.guide && D.guide.pages) || [];
+  /* цель по id: сначала на текущей странице и «везде», затем на остальных (id вроде «form» есть на нескольких страницах) */
+  const tgFind = id => { const cur = document.body.getAttribute('data-page') || ''; for (const k of [cur, '*'].concat(Object.keys(GT))) { const t = (GT[k] || []).find(x => x.id === id); if (t) return {page: k, t}; } return null; };
+  function navMark(kind, a) {
+    if (!NAVI) return null;
+    if (kind === 'go') { const u = knownUrl(a); return u ? {l: 'Открыть: ' + u.l, act: 'asst-go', d: {href: String(a).replace(/^\.?\//, '')}} : null; }
+    if (kind === 'show') { const f = tgFind(a); if (!f) return null; const here = f.page === '*' || f.page === (document.body.getAttribute('data-page') || ''); const pg = GPG.find(p => p.id === f.page); return here ? {l: 'Показать: ' + f.t.label, act: 'asst-show', d: {target: a}} : pg ? {l: 'Показать: ' + f.t.label, act: 'asst-go', d: {href: pg.href, show: a}} : null; }
+    if (kind === 'tour') { const t = GTOUR.find(x => x.id === a); return t ? {l: 'Показать по шагам: ' + t.title, act: 'asst-tour', d: {tour: a}} : null; }
+    if (kind === 'filter') {
+      const q = new URLSearchParams(a), ok = {task: id => (D.tasks || []).some(t => t.id === id), brand: id => !!B[id], cat: id => (D.cats || []).some(c => c.id === id), kind: id => (D.kinds || []).some(k => k.id === id)}, f = [];
+      q.forEach((v, k) => { if (ok[k] && ok[k](v)) f.push(k + '=' + encodeURIComponent(v)); });
+      return f.length ? {l: 'Показать в каталоге', act: 'asst-filter', d: {f: f.join('&')}} : null;
+    }
+    if (kind === 'compare') { const ids = String(a).split(',').filter(id => P[id]).slice(0, 3); return ids.length ? {l: ids.length > 1 ? 'Сравнить: ' + ids.map(id => P[id].name).join(' и ') : 'Рассказать о: ' + P[ids[0]].name, act: 'asst-cmp', ids: ids.join(',')} : null; }
+    return null;
+  }
   function parseMarks(text) {
-    const out = {cards: [], events: [], actions: [], links: []};
-    const clean = String(text).replace(/\[\[(product|event|form|link):([^\]\s:]+)(?::([^\]\s]+))?\]\]/g, (m, kind, a, b) => {
-      if (kind === 'product') { if (P[a] && out.cards.length < 3 && out.cards.indexOf(a) < 0) out.cards.push(a); }
+    const out = {cards: [], events: [], actions: [], links: [], med: false};
+    const clean = String(text).replace(/\[\[(product|event|form|link|go|show|tour|filter|compare|med)(?::([^\]\s:]+))?(?::([^\]\s]+))?\]\]/g, (m, kind, a, b) => {
+      if (kind === 'med') out.med = true;
+      else if (/^(go|show|tour|filter|compare)$/.test(kind)) { const x = navMark(kind, a); if (x && out.actions.length < 3 && !out.actions.some(y => y.act === x.act && JSON.stringify(y.d || y.ids) === JSON.stringify(x.d || x.ids))) out.actions.push(x); }
+      else if (kind === 'product') { if (P[a] && out.cards.length < 3 && out.cards.indexOf(a) < 0) out.cards.push(a); }
       else if (kind === 'event') { if (EV[a] && out.events.length < 2 && out.events.indexOf(a) < 0) out.events.push(a); }
       else if (kind === 'form') {
         const okType = FORM_LBL[a] && A.FORM_TYPES[a] && (a !== 'callback' || X.callback);
@@ -95,7 +122,7 @@
     }).replace(/\n{3,}/g, '\n\n').trim();
     return Object.assign(out, {text: clean});
   }
-  const hideMarks = t => String(t).replace(/\[\[(?:product|event|form|link):[^\]]*\]\]/g, '').replace(/\[\[[^\]]*$/, '').replace(/\[$/, '');
+  const hideMarks = t => String(t).replace(/\[\[(?:product|event|form|link|go|show|tour|filter|compare|med)(?::[^\]]*)?\]\]/g, '').replace(/\[\[[^\]]*$/, '').replace(/\[$/, '');
 
   /* ---------- вывод ---------- */
   const unbold = t => { const n = (t.match(/\*\*/g) || []).length; if (n % 2) { const i = t.lastIndexOf('**'); return t.slice(0, i) + t.slice(i + 2); } return t; };          // недопечатанное «**…» не показываем звёздочками
@@ -107,6 +134,10 @@
     while ((m = re.exec(t))) { out += blocks(t.slice(last, m.index)) + '<pre class="asst-code"><code>' + esc(m[1].replace(/\n$/, '')) + '</code></pre>'; last = m.index + m[0].length; if (!m[0].length) re.lastIndex++; }
     return out + blocks(t.slice(last));
   };
+  /* названия товаров и брендов из каталога становятся ссылками на страницы этого сайта (js/stella-policy.js) */
+  const urlOfName = x => x.kind === 'p' ? (P[x.id] ? pUrl(P[x.id]) : '') : (B[x.id] ? root() + 'brands/' + B[x.id].id + '.html' : '');
+  const fmtL = t => { const h = fmt(t); return POL ? POL.linkify(h, D, urlOfName) : h; };
+  const discHTML = () => { const d = POL ? POL.DISCLAIMER : {title: 'Справочная информация', text: 'Это не медицинская рекомендация.'}; return '<div class="asst-disc" role="note"><svg class="ic" viewBox="0 0 20 20" aria-hidden="true" focusable="false"><circle cx="10" cy="10" r="7.5"/><path d="M10 9v5M10 6.2v.1"/></svg><div><b>' + esc(d.title) + ' · не медицинская рекомендация</b><span>' + esc(d.text) + '</span></div></div>'; };
   function cardHTML(id, i) {
     const p = P[id]; if (!p) return ''; const b = B[p.brand] || {}, st = A.bstyle ? A.bstyle(b) : '';
     const img = p.im ? '<img src="' + esc(root() + p.im) + '" alt="" loading="lazy" decoding="async">' : '<i></i>';
@@ -126,9 +157,10 @@
     if (m.c && m.c.length) h += '<div class="asst-cards">' + m.c.map(cardHTML).join('') + '</div>';
     const acts = (m.a || []).map(a => a.act === 'form' && !a.spec && !a.city ? '<button class="btn btn-fill btn-sm" type="button" data-act="form" data-type="' + esc(a.type) + '"' + (a.ref ? ' data-ref="' + esc(a.ref) + '"' : '') + ' data-track="assistant_action">' + esc(a.l) + '</button>'
       : a.act === 'form' ? '<button class="btn btn-fill btn-sm" type="button" data-act="asst-form" data-type="' + esc(a.type) + '" data-ref="' + esc(a.ref || '') + '" data-spec="' + esc(a.spec || '') + '" data-city="' + esc(a.city || '') + '" data-track="assistant_action">' + esc(a.l) + '</button>'
-      : '<button class="btn btn-ghost btn-sm" type="button" data-act="' + esc(a.act) + '"' + (a.q ? ' data-q="' + esc(String(a.q).slice(0, MAXIN)) + '"' : '') + (a.ids ? ' data-ids="' + esc(a.ids) + '"' : '') + ' data-track="assistant_action">' + esc(a.l) + '</button>');
+      : '<button class="btn ' + (/^asst-(go|tour|show|filter)$/.test(a.act) ? 'btn-fill' : 'btn-ghost') + ' btn-sm" type="button" data-act="' + esc(a.act) + '"' + (a.q ? ' data-q="' + esc(String(a.q).slice(0, MAXIN)) + '"' : '') + (a.ids ? ' data-ids="' + esc(a.ids) + '"' : '') + (a.d ? ' data-d="' + esc(JSON.stringify(a.d)) + '"' : '') + ' data-track="assistant_action">' + esc(a.l) + '</button>');
     const links = (m.l || []).map(l => '<a class="asst-ln" href="' + esc(/^(tel:|mailto:|https?:)/.test(l.h) ? l.h : root() + l.h) + '"' + (l.ext ? ' target="_blank" rel="noopener"' : '') + ' data-track="assistant_link">' + esc(l.l) + ' ' + I.arrow + '</a>');
     if (acts.length || links.length) h += '<div class="asst-acts">' + acts.join('') + links.join('') + '</div>';
+    if (m.d) h += discHTML();
     return h;
   }
   const fbHTML = m => m.fb === undefined ? '' : '<div class="asst-fb" role="group" aria-label="Оцените ответ"><button type="button" data-act="asst-fb" data-v="1" aria-pressed="' + (m.fb === 1) + '" aria-label="Ответ помог">' + UP + '</button><button type="button" data-act="asst-fb" data-v="-1" aria-pressed="' + (m.fb === -1) + '" aria-label="Ответ не помог">' + DOWN + '</button></div>';
@@ -161,7 +193,7 @@
       }
       if (shown < buf.length || !ended) raf = requestAnimationFrame(tick); else finish();
     };
-    const finish = () => { if (stopped) return; stopped = true; cancelAnimationFrame(raf); tx.innerHTML = fmt(buf); follow(row); if (cb) cb(); };
+    const finish = () => { if (stopped) return; stopped = true; cancelAnimationFrame(raf); tx.innerHTML = fmtL(buf); follow(row); if (cb) cb(); };
     const go = () => { if (!raf && !stopped) { last = 0; raf = requestAnimationFrame(tick); } };
     return {push(s) { buf += s; go(); }, end(f) { ended = true; cb = f; go(); }, skip() { shown = buf.length; ended = true; finish(); }, text: () => buf, active: () => !stopped};
   }
@@ -169,7 +201,7 @@
   let skipping = false; const sleepers = new Set();
   const sleep = ms => new Promise(res => { ms = ms / speed(); if (skipping || ms <= 0) { res(); return; } const done = () => { clearTimeout(t); sleepers.delete(done); res(); }, t = setTimeout(done, ms); sleepers.add(done); });
   const wake = () => { Array.from(sleepers).forEach(f => f()); };
-  const STEP = {search_products: 'Ищу в каталоге…', get_product: 'Открываю карточку товара…', get_brand: 'Смотрю информацию о бренде…', list_events: 'Сверяю с расписанием…', discount_for_amount: 'Считаю скидку…', get_contacts: 'Нахожу контакты…', search_info: 'Ищу в материалах сайта…', tool: 'Проверяю данные…'};
+  const STEP = {search_products: 'Ищу в каталоге…', get_product: 'Открываю карточку товара…', get_brand: 'Смотрю информацию о бренде…', compare_products: 'Сравниваю товары по данным сайта…', list_events: 'Сверяю с расписанием…', discount_for_amount: 'Считаю скидку…', get_contacts: 'Нахожу контакты…', search_info: 'Ищу в материалах сайта…', tool: 'Проверяю данные…'};
 
   /* настроение Стеллы: в шапке и в строке сообщения */
   function headMood(m) { const pe = $('.asst-av .pe'); if (pe) pe.setAttribute('data-m', m); }
@@ -188,7 +220,7 @@
 
   /* показ готового ответа: сообщение «отправляется» (всплывает) → печатается → затем карточки/кнопки с плавным появлением → быстрые ответы */
   async function reveal(m, row, o) {
-    o = o || {}; row = row || botRow(); row.setAttribute('data-i', String(msgs.indexOf(m))); const bub = $('.asst-bub', row); row.classList.remove('asst-typing'); row.removeAttribute('aria-hidden'); bub.innerHTML = '<div class="asst-tx"></div>'; const tx = $('.asst-tx', bub);
+    o = o || {}; row = row || botRow(); row.setAttribute('data-i', String(msgs.indexOf(m))); const bub = $('.asst-bub', row); if (m.k) bub.classList.add('asst-k-' + m.k); row.classList.remove('asst-typing'); row.removeAttribute('aria-hidden'); bub.innerHTML = '<div class="asst-tx"></div>'; const tx = $('.asst-tx', bub);
     sentPop(bub); rowMood(row, 'talk'); current = null;
     if (m.t) {
       const len = m.t.length, ty = typer(tx, row, {cps: o.fast ? Math.max(80, len * 1000 / 3200) : Math.min(300, Math.max(58, len * 1000 / 3500))}); current = ty; ty.push(m.t);
@@ -199,6 +231,7 @@
     if (m.fb !== undefined) bub.insertAdjacentHTML('beforeend', fbHTML(m));
     if (o.cheer || ['greet', 'thanks'].indexOf(o.intent) >= 0) cheer(row); else rowMood(row, o.sleepy ? 'sleep' : 'idle');
     announce(m.t); afterRender(); qrPaint(msgs.chips); follow(row);
+    if (o.autorun && o.autorun.length && A.guide) setTimeout(() => o.autorun.forEach(a => A.guide.run(a.act, a.d)), T(950));          // команда посетителя («открой каталог») выполняется сама, после того как Стелла ответила
   }
   function announce(text) { const s = $('#asst-sr'); if (s) { s.textContent = ''; setTimeout(() => { s.textContent = String(text || '').replace(/\*\*/g, ''); }, 30); } }
   function afterRender() { if (A.rlSync) A.rlSync(); if (A.cmpSync) A.cmpSync(); }
@@ -242,20 +275,25 @@
   function stopGen() { skipping = true; wake(); if (ctrl) { try { ctrl.abort(); } catch (e) {} } if (current && current.skip) current.skip(); }
 
   /* ---------- диалог ---------- */
-  function persist() { store.set({msgs: msgs.map(m => ({r: m.r, t: m.t, t2: m.t2, c: m.c, ev: m.ev, a: m.a, l: m.l, fb: m.fb})), st: bst, chips: msgs.chips}); }
+  function persist() { store.set({msgs: msgs.map(m => ({r: m.r, t: m.t, t2: m.t2, c: m.c, ev: m.ev, a: m.a, l: m.l, fb: m.fb, d: m.d, k: m.k})), st: bst, chips: msgs.chips}); }
   function renderAll() {
     const l = $('#asst-log'); $$('.asst-m', l).forEach(e => e.remove());
-    msgs.forEach((m, i) => { if (m.r === 'u') addRow('u', userHTML(m.t, 2)); else { const row = botRow(); row.setAttribute('data-i', i); $('.asst-bub', row).innerHTML = '<div class="asst-tx">' + fmt(m.t || '') + '</div>' + (extraHTML(m) ? '<div class="asst-extra">' + extraHTML(m) + '</div>' : '') + fbHTML(m); row.classList.add('still'); } });
+    msgs.forEach((m, i) => { if (m.r === 'u') addRow('u', userHTML(m.t, 2)); else { const row = botRow(); row.setAttribute('data-i', i); const bb = $('.asst-bub', row); if (m.k) bb.classList.add('asst-k-' + m.k); bb.innerHTML = '<div class="asst-tx">' + fmtL(m.t || '') + '</div>' + (extraHTML(m) ? '<div class="asst-extra">' + extraHTML(m) + '</div>' : '') + fbHTML(m); row.classList.add('still'); } });
     qrPaint(msgs.chips || []); afterRender(); stick = true; scrollLog();
   }
-  function pushBot(res) { const m = {r: 'b', t: res.text, t2: res.text2, c: res.cards, ev: res.events, a: res.actions, l: res.links}; if (['greet', 'thanks', 'bye', 'smalltalk', 'who', 'empty', 'no', 'role', 'pick', 'talk'].indexOf(res.intent) < 0) m.fb = 0; msgs.push(m); msgs.chips = res.chips; return m; }
+  const DISC_INT = /^(compare|task|combo|product|why|talk)$/;
+  function pushBot(res) { const m = {r: 'b', t: res.text, t2: res.text2, c: res.cards, ev: res.events, a: res.actions, l: res.links}; if (res.intent === 'compare') m.k = 'cmp'; if (res.disclaimer || (POL && DISC_INT.test(res.intent) && POL.needsDisclaimer(res.text))) m.d = true; if (['greet', 'thanks', 'bye', 'smalltalk', 'who', 'empty', 'no', 'role', 'pick', 'talk'].indexOf(res.intent) < 0) m.fb = 0; msgs.push(m); msgs.chips = res.chips; return m; }
   const followUps = mk => mk.cards.length ? ['Сравни первые два', 'Как запросить условия?', 'Ближайшие семинары'] : mk.events.length ? ['Как записаться?', 'Сколько стоит участие?', 'Контакты менеджера'] : mk.actions.length ? ['Ближайшие семинары', 'Контакты менеджера'] : ['Расскажи подробнее', 'Подобрать средство по задаче', 'Ближайшие семинары'];
   function plainHistory() { return msgs.filter(m => m.t).map(m => ({role: m.r === 'u' ? 'user' : 'assistant', content: m.t})).slice(-10); }
   function ctxLine(c) {
-    if (c.product && P[c.product]) return '[Посетитель сейчас на странице товара: ' + P[c.product].name + ' (' + c.product + ')]\n';
-    if (c.event && EV[c.event]) return '[Посетитель сейчас на странице мероприятия: ' + EV[c.event].title + ' (' + c.event + ')]\n';
-    if (bst && (bst.city || bst.role)) return '[Из диалога: ' + [bst.role ? 'роль — ' + bst.role : '', bst.city ? 'город — ' + bst.city : ''].filter(Boolean).join(', ') + ']\n';
-    return '';
+    const parts = [], pg = GPG.find(p => p.id === c.page);
+    if (c.product && P[c.product]) parts.push('сейчас на странице товара: ' + P[c.product].name + ' (' + c.product + ')');
+    else if (c.event && EV[c.event]) parts.push('сейчас на странице мероприятия: ' + EV[c.event].title + ' (' + c.event + ')');
+    else if (c.brand && B[c.brand]) parts.push('сейчас на странице бренда: ' + B[c.brand].name + ' (' + c.brand + ')');
+    else if (pg) parts.push('сейчас на странице «' + pg.label + '»');
+    if (c.cmp && c.cmp.length) parts.push('отметил для сравнения: ' + c.cmp.map(id => P[id].name + ' (' + id + ')').join(', '));
+    if (bst && (bst.city || bst.role)) parts.push('из диалога: ' + [bst.role ? 'роль — ' + bst.role : '', bst.city ? 'город — ' + bst.city : ''].filter(Boolean).join(', '));
+    return parts.length ? '[Посетитель ' + parts.join('; ') + ']\n' : '';
   }
 
   /* поток ИИ: события {t} текст · {s} шаг · {reset} сбросить недописанное · {done} · {error}.
@@ -266,9 +304,12 @@
     const hist = plainHistory(), lastU = hist[hist.length - 1]; if (lastU) lastU.content = ctxLine(ctx) + lastU.content;
     const r = await fetch(ep, {method: 'POST', credentials: 'omit', signal: ctrl.signal, headers: {'Content-Type': 'application/json', Accept: 'text/event-stream'}, body: JSON.stringify({messages: hist})});
     if (!r.ok) { const e = new Error('HTTP ' + r.status); e.status = r.status; try { e.body = await r.json(); } catch (x) {} throw e; }
-    const rd = r.body.getReader(), dec = new TextDecoder(); let buf = '', got = '', shown = '', err = null, ty = null, tx = null, timer = 0;
+    const rd = r.body.getReader(), dec = new TextDecoder(); let buf = '', got = '', shown = '', err = null, ty = null, tx = null, timer = 0, fin = false;
     const open = () => { if (ty) return; const bub = $('.asst-bub', row); row.classList.remove('asst-typing'); row.removeAttribute('aria-hidden'); bub.innerHTML = '<div class="asst-tx"></div>'; tx = $('.asst-tx', bub); sentPop(bub); rowMood(row, 'talk'); ty = typer(tx, row, {cps: 56, win: 2200}); current = ty; };
-    const flush = () => { timer = 0; const now = hideMarks(got); if (now.length > shown.length) { open(); ty.push(now.slice(shown.length)); shown = now; } };
+    const flush = () => {          // внешние адреса вырезаются ещё в потоке; последнее недописанное слово придерживаем, чтобы половинка адреса не мигнула на экране
+      timer = 0; let now = hideMarks(got); if (POL) { now = POL.stripExternal(now).text; if (!fin) now = now.replace(/\S+$/, ''); }
+      if (now.length > shown.length && now.indexOf(shown) === 0) { open(); ty.push(now.slice(shown.length)); shown = now; }
+    };
     const feed = () => { const left = MIN - (Date.now() - t0); if (left <= 0 || skipping) { if (timer) { clearTimeout(timer); timer = 0; } flush(); } else if (!timer) timer = setTimeout(flush, left); };
     for (;;) {
       const {done, value} = await rd.read(); if (done) break; buf += dec.decode(value, {stream: true});
@@ -280,7 +321,7 @@
         if (o.error) err = o.error;
       }
     }
-    if (err && !got) throw new Error(err);
+    fin = true; if (err && !got) throw new Error(err);
     if (timer) { const left = MIN - (Date.now() - t0); if (left > 0) await sleep(left); clearTimeout(timer); timer = 0; flush(); }
     if (ty) await new Promise(res => (skipping ? (ty.skip(), res()) : ty.end(res)));
     current = null; return {text: got, row, tx};
@@ -294,12 +335,13 @@
     bub.style.transform = 'translate(' + Math.round(dx) + 'px,' + Math.round(dy) + 'px) scale(.55)'; bub.style.opacity = '.15'; void bub.offsetWidth; bub.style.transition = ''; bub.style.transform = ''; bub.style.opacity = '';
     setTimeout(() => row.classList.remove('fly'), 950);
   }
+  let forceCtx = null;          // разовые дополнения к контексту (например, выбранные для сравнения товары, пока они не записались в хранилище)
   async function send(text, from) {
     if (busy) return; text = String(text).trim().slice(0, MAXIN); if (!text) return;
     ensureBrain(); interacted = true; hideTip(); skipping = false;
     setBusy(true); qrPaint([]); stick = true; const down = $('#asst-down'); if (down) down.hidden = true;
     msgs.push({r: 'u', t: text}); const urow = userRow(text); scrollLog(); flyIn(urow, from);
-    await loadKb(); ensureBrain(); bst.ai = !!ai; const ctx = ctxOf(), res = brain.reply(text, bst, ctx), useAI = !!(ai && !res.sure);
+    await loadKb(); if (ai === null) await probe(); ensureBrain(); bst.ai = !!ai; const ctx = Object.assign(ctxOf(), forceCtx || {}); forceCtx = null; const res = brain.reply(text, bst, ctx), useAI = !!(ai && !res.sure);
     A.track && A.track('assistant_msg', {mode: useAI ? 'ai' : 'local', intent: res.intent});
     await sleep(650); tickRead(urow); await sleep(450);          // ✓ → ✓✓: вопрос прочитан, и только потом Стелла начинает «думать»
     const row = typingRow('Читаю вопрос…');
@@ -307,14 +349,15 @@
       if (useAI) {
         try {
           let stepped = false; const t1 = setTimeout(() => { if (!stepped) setStatus(row, 'Думаю над ответом…'); }, T(1500)), t2 = setTimeout(() => { if (!stepped) setStatus(row, 'Подбираю слова…'); }, T(3300));
-          const out = await askAI(ctx, row, label => { stepped = true; setStatus(row, label); }).finally(() => { clearTimeout(t1); clearTimeout(t2); }), mk = parseMarks(out.text);
-          const m = {r: 'b', t: mk.text || 'Не получилось сформулировать ответ — переформулируйте вопрос или свяжитесь с менеджером.', c: mk.cards, ev: mk.events, a: mk.actions, l: mk.links, fb: 0}; msgs.push(m); msgs.chips = followUps(mk);
+          const out = await askAI(ctx, row, label => { stepped = true; setStatus(row, label); }).finally(() => { clearTimeout(t1); clearTimeout(t2); }), mk = parseMarks(out.text), pol = POL ? POL.clean(mk.text, D) : null;
+          if (pol) { mk.text = pol.text; pol.products.forEach(id => { if (mk.cards.length < 3 && mk.cards.indexOf(id) < 0) mk.cards.push(id); }); }          // упомянутые товары — карточками с нашей ссылкой
+          const m = {r: 'b', t: mk.text || 'Не получилось сформулировать ответ — переформулируйте вопрос или свяжитесь с менеджером.', c: mk.cards, ev: mk.events, a: mk.actions, l: mk.links, fb: 0, d: !!(mk.med || (pol && pol.disclaimer))}; msgs.push(m); msgs.chips = followUps(mk);
           if (mk.cards.length) brain.noteExternal(bst, mk.cards);
           const bub = $('.asst-bub', row); row.classList.remove('asst-typing'); row.removeAttribute('aria-hidden'); row.setAttribute('data-i', String(msgs.length - 1));
-          if (!$('.asst-tx', bub)) { bub.innerHTML = '<div class="asst-tx"></div>'; sentPop(bub); } $('.asst-tx', bub).innerHTML = fmt(m.t);
+          if (!$('.asst-tx', bub)) { bub.innerHTML = '<div class="asst-tx"></div>'; sentPop(bub); } $('.asst-tx', bub).innerHTML = fmtL(m.t);
           const extra = extraHTML(m); if (extra) { const d = document.createElement('div'); d.className = 'asst-extra'; d.innerHTML = extra; bub.appendChild(d); } bub.insertAdjacentHTML('beforeend', fbHTML(m)); rowMood(row, 'idle'); announce(m.t); afterRender(); qrPaint(msgs.chips); follow(row);
         } catch (e) {
-          if (e && e.name === 'AbortError') { const partial = current && current.text ? current.text() : ''; if (!partial) { row.remove(); headMood('idle'); throw e; } const m = {r: 'b', t: hideMarks(partial), fb: 0}; msgs.push(m); row.setAttribute('data-i', String(msgs.length - 1)); const bub = $('.asst-bub', row); row.classList.remove('asst-typing'); row.removeAttribute('aria-hidden'); bub.innerHTML = '<div class="asst-tx">' + fmt(m.t) + '</div>' + fbHTML(m); rowMood(row, 'idle'); msgs.chips = ['Подобрать средство по задаче', 'Ближайшие семинары']; qrPaint(msgs.chips); throw e; }
+          if (e && e.name === 'AbortError') { const partial = current && current.text ? current.text() : ''; if (!partial) { row.remove(); headMood('idle'); throw e; } const m = {r: 'b', t: POL ? POL.stripExternal(hideMarks(partial)).text : hideMarks(partial), fb: 0}; msgs.push(m); row.setAttribute('data-i', String(msgs.length - 1)); const bub = $('.asst-bub', row); row.classList.remove('asst-typing'); row.removeAttribute('aria-hidden'); bub.innerHTML = '<div class="asst-tx">' + fmtL(m.t) + '</div>' + fbHTML(m); rowMood(row, 'idle'); msgs.chips = ['Подобрать средство по задаче', 'Ближайшие семинары']; qrPaint(msgs.chips); throw e; }
           const lim = e && e.status === 429, off = e && e.status === 503; if (off) { ai = false; setMode(); }
           rowMood(row, 'think'); skipping = false;
           res.text = (lim ? 'Сообщений слишком много — подождите немного. Пока отвечу по данным сайта.\n\n' : off ? '' : 'ИИ-режим сейчас недоступен — отвечаю по данным сайта.\n\n') + res.text;
@@ -323,14 +366,14 @@
       } else {
         const labels = ['Читаю вопрос…'].concat(res.steps.length ? res.steps : ['Думаю над ответом…']); if (thinkMs(res) > 1900) labels.push('Подбираю слова…');
         await thinkOver(row, labels, thinkMs(res));
-        await reveal(pushBot(res), row, {intent: res.intent, cheer: /^(compliment|love_you|user_birthday|mood_good|holiday_greet|sorry_user|motivation|joke|riddle_ok)$/.test(res.topic || ''), sleepy: res.topic === 'good_night'});
+        await reveal(pushBot(res), row, {intent: res.intent, autorun: (res.autorun || []).map(i => (res.actions || [])[i]).filter(Boolean), cheer: /^(compliment|love_you|user_birthday|mood_good|holiday_greet|sorry_user|motivation|joke|riddle_ok)$/.test(res.topic || ''), sleepy: res.topic === 'good_night'});
       }
       persist();
     } catch (e) { if (!(e && e.name === 'AbortError')) { const t = $('.asst-typing'); if (t) t.remove(); headMood('idle'); } persist(); }
     finally { setBusy(false); ctrl = null; current = null; skipping = false; const f = $('#asst-in'); if (f && isOpen && !mobile()) f.focus(); }
   }
 
-  function welcome() { ensureBrain(); const hr = new Date().getHours(), hi = hr < 5 ? 'Доброй ночи' : hr < 12 ? 'Доброе утро' : hr < 18 ? 'Добрый день' : 'Добрый вечер'; return {r: 'b', t: hi + '! Я Стелла, мини-консультант «Астреи». Подскажу по каталогу и брендам, обучению, условиям сотрудничества и контактам: подберу продукты по задаче и объясню выбор, сравню товары, посчитаю скидку, найду ближайший семинар.' + (ai ? ' А ещё с удовольствием отвечу на любые вопросы — не только про сайт.' : '') + ' С чего начнём?'}; }
+  function welcome() { ensureBrain(); const hr = new Date().getHours(), hi = hr < 5 ? 'Доброй ночи' : hr < 12 ? 'Доброе утро' : hr < 18 ? 'Добрый день' : 'Добрый вечер'; return {r: 'b', t: hi + '! Я Стелла, мини-консультант «Астреи». Подскажу по каталогу и брендам, обучению, условиям сотрудничества и контактам: подберу продукты по задаче и объясню выбор, сравню товары, посчитаю скидку, найду ближайший семинар.' + (NAVI ? ' Могу и провести по сайту: открою нужный раздел, покажу, где что находится, выставлю фильтры в каталоге и расскажу о товарах, которые вы отметите для сравнения.' : '') + (ai ? ' А ещё с удовольствием отвечу на любые вопросы — не только про сайт.' : '') + ' С чего начнём?'}; }
   /* первое сообщение приходит как живое: Стелла «печатает», затем сообщение отправляется и печатается */
   async function introWelcome() {
     const l = $('#asst-log'); $$('.asst-m', l).forEach(e => e.remove()); qrPaint([]); skipping = false; introOn = true; setBusy(true);
@@ -341,22 +384,22 @@
       if (row.isConnected) await reveal(m, row, {fast: true, cheer: true});
     } finally { introOn = false; setBusy(false); skipping = false; persist(); if (introQ) { const q = introQ; introQ = ''; send(q); } }
   }
-  function openChat(opener) {
+  function openChat(opener, quick) {
     build(); if (isOpen) return; isOpen = true; interacted = true; hideTip(); const el = $('#asst'); el.hidden = false; void el.offsetWidth; el.classList.add('open');
     document.body.classList.add('asst-open'); const fab = $('#asst-fab'); fab.setAttribute('aria-expanded', 'true'); openChat.opener = opener || fab; fab.classList.remove('nudge', 'long');
     loadKb().then(() => { ensureBrain(); }); const pr = probe().then(setMode);
     const saved = store.get(); ensureBrain();
     if (saved && !msgs.length) { msgs = saved.msgs; bst = Object.assign(brain.newState(), saved.st || {}); msgs.chips = saved.chips; }
     const l = $('#asst-log'), fresh = !msgs.length;
-    if (fresh) { msgs = [welcome()]; msgs.chips = brain.starters(ctxOf(), bst); introWelcome(); }
+    if (fresh) { msgs = [welcome()]; msgs.chips = brain.starters(ctxOf(), bst); if (quick) { renderAll(); persist(); } else introWelcome(); }          // quick — чат открыт по просьбе («расскажи о выбранном»): без длинного приветствия
     else { if (!$$('.asst-m', l).length) renderAll(); headMood('happy'); setTimeout(() => { if (!busy) headMood('idle'); }, 1600); }
     setTimeout(() => { const t = $('#asst-in'); if (t && !mobile()) t.focus(); }, 380);
     A.track && A.track('assistant_open'); return pr;
   }
-  function closeChat() {
+  function closeChat(quiet) {
     if (!isOpen) return; isOpen = false; stopGen(); stopVoice(); const el = $('#asst'); el.classList.remove('open'); document.body.classList.remove('asst-open');
-    setTimeout(() => { if (!isOpen) el.hidden = true; }, 420); const fab = $('#asst-fab'); fab.setAttribute('aria-expanded', 'false'); const o = openChat.opener; if (o && o.focus && o.offsetParent !== null) o.focus(); else fab.focus();
-    heyFab(1600);
+    setTimeout(() => { if (!isOpen) el.hidden = true; }, 420); const fab = $('#asst-fab'); fab.setAttribute('aria-expanded', 'false');
+    if (!quiet) { const o = openChat.opener; if (o && o.focus && o.offsetParent !== null) o.focus(); else fab.focus(); heyFab(1600); }
   }
   function reset() { stopGen(); setBusy(false); ensureBrain(); bst = brain.newState(); msgs = [welcome()]; msgs.chips = brain.starters(ctxOf(), bst); persist(); A.toast && A.toast('Диалог очищен'); introWelcome(); }
 
@@ -366,6 +409,7 @@
     return c.product && P[c.product] ? 'Привет, я Стелла! Подскажу по этому товару?' : pg === 'catalog' ? 'Я Стелла. Помочь подобрать средство?' : pg === 'training' || pg === 'event' ? 'Я Стелла. Найти ближайший семинар?' : pg === 'partners' ? 'Я Стелла. Посчитать скидку по закупке?' : 'Привет, я Стелла! Есть вопрос — подскажу.';
   }
   function maybeTip() {
+    if (NAVI) return;          // с навигатором приветственную подсказку показывает js/guide.js (по странице и поведению посетителя)
     const fb = $('#asst-fab'); if (fb && fb.classList.contains('long') && !isOpen) { clearTimeout(tipT); tipT = setTimeout(maybeTip, 2500); return; }          // пока раскрыта подпись «Спросить Стеллу», подсказку не показываем: не дублировать
     if (isOpen || interacted || document.body.classList.contains('x-intro') || document.body.classList.contains('locked') || document.body.classList.contains('menu-open')) return;
     let seen = false; try { seen = !!sessionStorage.getItem(TIPKEY); } catch (e) {} if (seen) return;
@@ -411,7 +455,8 @@
   A.actions['asst-down'] = () => { stick = true; scrollLog(); const d = $('#asst-down'); if (d) d.hidden = true; };
   A.actions['asst-ask'] = t => { const q = t.getAttribute('data-q') || ''; A.openForm('question', 'Вопрос из чата помощника'); const f = $('#modal form'); if (f && f.elements.msg && q) f.elements.msg.value = q; };
   A.actions['asst-form'] = t => { const type = t.getAttribute('data-type'); A.openForm(type, t.getAttribute('data-ref') || ''); const f = $('#modal form'); if (!f) return; const spec = t.getAttribute('data-spec'), city = t.getAttribute('data-city'); if (spec && f.elements.spec) f.elements.spec.value = spec; if (city && f.elements.city) f.elements.city.value = city; };
-  A.actions['asst-cmp'] = t => { const ids = String(t.getAttribute('data-ids') || '').split(',').filter(id => P[id]); let l = []; try { l = JSON.parse(localStorage.getItem('astreya:cmp') || '[]'); } catch (e) {} ids.forEach(id => { if (l.indexOf(id) < 0 && A.actions['cmp-toggle']) A.actions['cmp-toggle'](t, id); }); setTimeout(() => A.actions['cmp-open'] && A.actions['cmp-open'](t), 60); };
+  A.actions['asst-cmp'] = t => { const ids = String(t.getAttribute('data-ids') || '').split(',').filter(id => P[id]); if (NAVI) { try { localStorage.setItem('astreya:cmp', JSON.stringify(ids.slice(0, 3))); } catch (e) {} afterRender(); A.stella.compare(ids); return; }          // с навигатором таблицы нет: сравнение рассказывает Стелла
+    let l = []; try { l = JSON.parse(localStorage.getItem('astreya:cmp') || '[]'); } catch (e) {} ids.forEach(id => { if (l.indexOf(id) < 0 && A.actions['cmp-toggle']) A.actions['cmp-toggle'](t, id); }); setTimeout(() => A.actions['cmp-open'] && A.actions['cmp-open'](t), 60); };
   A.actions['asst-fb'] = t => {
     const row = t.closest('.asst-m'), idx = parseInt(row.getAttribute('data-i'), 10), v = +t.getAttribute('data-v'), m = msgs[idx]; if (!m) return;
     const was = m.fb; m.fb = was === v ? 0 : v; $$('[data-act="asst-fb"]', row).forEach(b => b.setAttribute('aria-pressed', String(+b.getAttribute('data-v') === m.fb))); A.track && A.track('assistant_feedback', {value: m.fb, intent: bst && bst.lastIntent});
@@ -456,6 +501,22 @@
     clearTimeout(tipT); tipT = setTimeout(maybeTip, Math.round(15500 / speed())); if (!nudgeT) nudgeT = setTimeout(nudge, Math.round(26000 / speed()));
     registerWebMCP();
   }
+  /* то, чем пользуются другие части сайта: плашка сравнения (explore.js), навигатор (guide.js), точки входа */
+  A.pearl = PEARL;
+  A.stella = {
+    open: quick => openChat(null, quick), close: quiet => closeChat(quiet), isOpen: () => isOpen, state: () => ({open: isOpen, interacted, busy}), hey: () => heyFab(1500), cmpIds,
+    ask(text, extra) {
+      text = String(text || '').trim().slice(0, MAXIN); if (!text) return; forceCtx = extra || null; const wasClosed = !isOpen; if (wasClosed) openChat(null, true);
+      const fire = n => { if (introOn) { introQ = text; return; } if (busy) { if (n < 60) setTimeout(() => fire(n + 1), 300); return; } send(text); };
+      setTimeout(() => fire(0), wasClosed ? 450 : 0);
+    },
+    compare(ids) {
+      const cfg = (D.guide && D.guide.compare) || {}; ids = (ids && ids.length ? ids : cmpIds()).filter(id => P[id]).slice(0, cfg.max || 3);
+      if (!ids.length) { A.toast && A.toast('Сначала отметьте товары значком ⇄ на карточках'); return; }
+      const names = ids.map(id => P[id].name).join(', '), tpl = ids.length > 1 ? (cfg.request || 'Расскажи и сравни выбранные товары: {names}') : (cfg.requestOne || 'Расскажи о выбранном товаре: {names}');
+      A.track && A.track('stella_compare', {count: ids.length}); this.ask(tpl.replace('{names}', names), {cmp: ids});
+    }
+  };
   A.assistant = {answer: t => { ensureBrain(); return brain.reply(t, brain.newState(), ctxOf()); }};          // для проверок (tools/check-extras.js)
   const prev = A.initPage; A.initPage = function () { if (prev) prev.apply(this, arguments); init(); };
 })();
