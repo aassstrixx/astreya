@@ -88,7 +88,7 @@ test('SDK: цикл с инструментом — модель просит se
 test('SDK: проверка подключения (selfTest) — успех и разбор ошибок настоящего SDK (401 / 404 / 429)', T, async () => {
   set([{text: ['готово']}]); let r = await A.selfTest(); assert.equal(r.ok, true, JSON.stringify(r)); assert.equal(r.sample, 'готово'); assert.equal(r.model, MODEL); assert.equal(reqs[0].body.max_tokens, 40);
   set([], 'auth'); r = await A.selfTest(); assert.equal(r.ok, false); assert.equal(r.code, 'auth'); assert.match(r.message, /Ключ API не принят/); assert.ok(!JSON.stringify(r).includes('sk-ant-mock-key'), 'ключ не утекает');
-  set([], 'model'); r = await A.selfTest(); assert.equal(r.code, 'model'); assert.match(r.message, /Модель не найдена/);
+  set([], 'model'); r = await A.selfTest(); assert.equal(r.code, 'model'); assert.match(r.message, /Модель или адрес сервиса не найдены/);
   set([], 'rate'); r = await A.selfTest(); assert.equal(r.code, 'rate'); assert.match(r.message, /Лимит/);
 });
 
@@ -112,8 +112,8 @@ test('ключ и модель можно задать в админке: сер
   const saved = {k: process.env.ANTHROPIC_API_KEY, m: process.env.ASSISTANT_MODEL}; delete process.env.ANTHROPIC_API_KEY; delete process.env.ASSISTANT_MODEL;
   const adm = await S.admin();
   try {
-    let st = (await adm.get('/api/settings')).json; assert.deepEqual(st.assistant, {apiKey: '', model: ''}); assert.equal(A.info().ai, false); assert.equal(A.info().reason, 'no_key');
-    st.assistant = {apiKey: 'sk-ant-from-admin-123', model: 'admin-model-id'}; let r = await adm.put('/api/settings', st); assert.equal(r.status, 200);
+    let st = (await adm.get('/api/settings')).json; assert.deepEqual(st.assistant, {provider: 'anthropic', baseUrl: '', apiKey: '', model: '', tools: true}); assert.equal(A.info().ai, false); assert.equal(A.info().reason, 'no_key');
+    st.assistant = {provider: 'anthropic', baseUrl: '', apiKey: 'sk-ant-from-admin-123', model: 'admin-model-id', tools: true}; let r = await adm.put('/api/settings', st); assert.equal(r.status, 200);
     assert.equal(r.json.assistant.apiKey, '••••••••', 'в ответе ключ скрыт'); assert.equal(r.json.assistant.model, 'admin-model-id'); assert.ok(!JSON.stringify((await adm.get('/api/settings')).json).includes('sk-ant-from-admin-123'), 'ключ не отдаётся браузеру');
     let i = A.info(); assert.equal(i.ai, true); assert.equal(i.keyFrom, 'settings'); assert.equal(i.modelFrom, 'settings'); assert.ok(!JSON.stringify(i).includes('sk-ant-from-admin-123'));
     set([{text: ['Ответ из настроек админки.']}]); const out = parse((await ask(anon(), [{role: 'user', content: 'привет'}])).text);
@@ -128,7 +128,7 @@ test('ключ и модель можно задать в админке: сер
     /* проверка значений */
     const bad = (await adm.get('/api/settings')).json; bad.assistant.apiKey = 'ключ с пробелом'; assert.equal((await adm.put('/api/settings', bad)).status, 422); bad.assistant.apiKey = '••••••••'; bad.assistant.model = 'модель!'; assert.equal((await adm.put('/api/settings', bad)).status, 422);
   } finally {
-    const clean = (await adm.get('/api/settings')).json; clean.assistant = {apiKey: '', model: ''}; await adm.put('/api/settings', clean);
+    const clean = (await adm.get('/api/settings')).json; clean.assistant = {provider: 'anthropic', baseUrl: '', apiKey: '', model: '', tools: true}; await adm.put('/api/settings', clean);
     if (saved.k !== undefined) process.env.ANTHROPIC_API_KEY = saved.k; if (saved.m !== undefined) process.env.ASSISTANT_MODEL = saved.m; A.setClientFactory(null);
   }
 });

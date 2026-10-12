@@ -182,7 +182,7 @@ test('info(): что настроено и чего не хватает (без 
   const saved = {k: process.env.ANTHROPIC_API_KEY, m: process.env.ASSISTANT_MODEL}; A.setClientFactory(null);
   try {
     delete process.env.ANTHROPIC_API_KEY; delete process.env.ASSISTANT_MODEL;
-    let i = A.info(); assert.equal(i.ai, false); assert.equal(i.reason, 'no_key'); assert.equal(i.key, false); assert.match(i.message, /ANTHROPIC_API_KEY/);
+    let i = A.info(); assert.equal(i.ai, false); assert.equal(i.reason, 'no_key'); assert.equal(i.key, false); assert.match(i.message, /ASSISTANT_API_KEY/);
     process.env.ANTHROPIC_API_KEY = 'sk-secret-test'; i = A.info(); assert.equal(i.key, true); assert.equal(i.reason, 'no_model'); assert.match(i.message, /ASSISTANT_MODEL/);
     process.env.ASSISTANT_MODEL = MODEL; i = A.info(); assert.equal(i.model, MODEL); assert.deepEqual(i.limits, {maxTokens: 1200, rate: 4, daily: 400}); assert.ok(i.data);
     assert.ok(!JSON.stringify(i).includes('sk-secret-test'), 'ключ не показывается');
@@ -193,7 +193,7 @@ test('selfTest(): успех и понятные сообщения для ра�
   process.env.ASSISTANT_MODEL = MODEL; const okc = text => () => ({messages: {stream() { return {on() { return this; }, abort() {}, async finalMessage() { return {content: [{type: 'text', text}], stop_reason: 'end_turn'}; }}; }}});
   const bad = status => () => ({messages: {stream() { return {on() { return this; }, abort() {}, async finalMessage() { const e = new Error('x'); e.status = status; throw e; }}; }}});
   A.setClientFactory(okc('Готово.')); let r = await A.selfTest(); assert.equal(r.ok, true); assert.equal(r.sample, 'Готово.'); assert.equal(r.model, MODEL); assert.ok(r.ms >= 0);
-  for (const [st, code, re] of [[401, 'auth', /Ключ API не принят/], [404, 'model', /Модель не найдена/], [429, 'rate', /Лимит/], [500, 'upstream', /временно недоступен/], [undefined, 'network', /Нет связи/]]) {
+  for (const [st, code, re] of [[401, 'auth', /Ключ API не принят/], [404, 'model', /Модель или адрес сервиса не найдены/], [429, 'rate', /Лимит/], [500, 'upstream', /временно недоступен/], [undefined, 'network', /Нет связи/]]) {
     A.setClientFactory(bad(st)); r = await A.selfTest(); assert.equal(r.ok, false); assert.equal(r.code, code, 'код ' + st); assert.match(r.message, re);
   }
   const saved = process.env.ASSISTANT_MODEL; process.env.ASSISTANT_MODEL = ''; r = await A.selfTest(); assert.equal(r.ok, false); assert.equal(r.code, 'no_model'); process.env.ASSISTANT_MODEL = saved;

@@ -30,7 +30,7 @@ const DEFAULT_SETTINGS = {
     telegram: {token: '', chatId: ''},
     smtp: {host: '', port: 587, secure: false, user: '', pass: '', from: '', to: ''}
   },
-  assistant: {apiKey: '', model: ''}                   // ИИ-помощник: ключ API и модель можно задать здесь (из админки); переменные окружения ANTHROPIC_API_KEY / ASSISTANT_MODEL главнее
+  assistant: {provider: 'anthropic', baseUrl: '', apiKey: '', model: '', tools: true}                   // ИИ-помощник: сервис (anthropic | openai-совместимый), адрес, ключ и модель задаются здесь (из админки); переменные окружения ASSISTANT_* главнее
 };
 const SETTINGS_FILE = path.join(DATA, 'settings.json');
 const deep = (a, b) => { const o = Array.isArray(a) ? a.slice() : Object.assign({}, a); for (const k of Object.keys(b || {})) o[k] = b[k] && typeof b[k] === 'object' && !Array.isArray(b[k]) && a && typeof a[k] === 'object' ? deep(a[k], b[k]) : b[k]; return o; };

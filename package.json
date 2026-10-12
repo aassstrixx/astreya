@@ -14,7 +14,7 @@
     "redesign:on": "node tools/redesign.js on",
     "admin": "node server/index.js",
     "admin:cli": "node server/cli.js",
-    "test:server": "node --test server/test/leads.test.js server/test/content.test.js server/test/publish.test.js server/test/smtp-tls.test.js server/test/builder.test.js server/test/assistant.test.js server/test/assistant-sdk.test.js",
+    "test:server": "node --test server/test/leads.test.js server/test/content.test.js server/test/publish.test.js server/test/smtp-tls.test.js server/test/builder.test.js server/test/assistant.test.js server/test/assistant-sdk.test.js server/test/assistant-openai.test.js",
     "test:e2e": "node server/test/e2e.js",
     "test:e2e-builder": "node server/test/e2e-builder.js",
     "check:extras": "node tools/check-extras.js",

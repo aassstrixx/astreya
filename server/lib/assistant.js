@@ -5,14 +5,17 @@
    Она сама решает, что проверить, вызывает инструменты (сервер выполняет их по данным сайта: js/data.js + js/kb.js), и отвечает по найденному — без «выдумок по памяти».
    Ответ приходит браузеру потоком: текст по мере появления, а также короткие «статусы шагов» («Ищу в каталоге…») — чтобы было видно, что помощник делает.
 
-   Включается ключом и моделью — любым из способов (без них ИИ-режим выключен, остальной сайт и админка не затронуты):
-     1) в админке: «Настройки и заявки» → «ИИ-помощник сайта» (вписать ключ и модель; хранятся в server/data/settings.json, наружу не отдаются);
-     2) переменные окружения / файл server/.env (см. server/.env.example) — они главнее настроек админки:
-        ANTHROPIC_API_KEY — ключ API (SDK читает его сам);
-        ASSISTANT_MODEL   — идентификатор модели (обязательно; в репозитории намеренно не прописан — берите из документации Anthropic);
-     Ограничения (только окружение):
-     ASSISTANT_MAX_TOKENS (по умолчанию 1200) · ASSISTANT_RATE (сообщений с одного адреса за 10 минут, по умолчанию 20) · ASSISTANT_DAILY (всего за сутки, по умолчанию 400).
-   Пакет @anthropic-ai/sdk — необязательная зависимость (npm install в корне): подключается при первом запросе; нет пакета — ИИ-режим выключен.
+   Работает с ЛЮБЫМ сервисом ИИ — достаточно ключа API:
+     • «anthropic» — Claude через официальный SDK (пакет @anthropic-ai/sdk, необязательная зависимость);
+     • «openai» — любой OpenAI-совместимый сервис: OpenAI, OpenRouter, Google Gemini, Groq, DeepSeek, Mistral, xAI, Together, а также Ollama / LM Studio / vLLM на своём сервере
+       (server/lib/llm-openai.js, без зависимостей). Нужен адрес сервиса (baseUrl); у локальных моделей ключ не нужен.
+   Если модель не умеет вызывать инструменты, сервер сам переходит в режим «без инструментов»: каталог и расписание передаются в инструкции, а не по запросу.
+
+   Включается в админке («Настройки и заявки» → «ИИ-помощник сайта»: сервис, адрес, ключ, модель; хранятся в server/data/settings.json, наружу не отдаются)
+   либо переменными окружения / файлом server/.env (они главнее; шаблон — server/.env.example):
+     ASSISTANT_PROVIDER (anthropic | openai) · ASSISTANT_BASE_URL (для openai) · ASSISTANT_API_KEY (или ANTHROPIC_API_KEY / OPENAI_API_KEY) ·
+     ASSISTANT_MODEL (обязательно; в репозитории намеренно не прописан — берите из документации сервиса) · ASSISTANT_TOOLS=0 (принудительно «без инструментов»).
+   Ограничения (только окружение): ASSISTANT_MAX_TOKENS (по умолчанию 1200) · ASSISTANT_RATE (сообщений с одного адреса за 10 минут, по умолчанию 20) · ASSISTANT_DAILY (всего за сутки, по умолчанию 400).
    Текст диалогов на сервере не сохраняется и не пишется в журнал; в логе — только служебные ошибки. */
 'use strict';
 const fs = require('fs'), path = require('path');
@@ -24,14 +27,23 @@ const MAX_MSGS = 14, MAX_CHARS = 1200, BODY_LIMIT = 24 * 1024, MAX_ROUNDS = 5, M
 const num = (v, d) => { const n = +v; return Number.isFinite(n) && n > 0 ? Math.floor(n) : d; };
 /* ключ и модель: переменные окружения главнее, иначе — то, что админ ввёл в «Настройках» (хранится в server/data/settings.json, наружу не отдаётся); файл читается заново только при изменении */
 let setCache = {m: -1, v: {}};
+const PROVIDERS = ['anthropic', 'openai'];
 function saved() {
   let m = 0; try { m = fs.statSync(path.join(C.DATA, 'settings.json')).mtimeMs; } catch (e) { return {}; }
-  if (m !== setCache.m) { let a = {}; try { a = C.loadSettings().assistant || {}; } catch (e) {} setCache = {m, v: {apiKey: String(a.apiKey || '').trim(), model: String(a.model || '').trim()}}; }
+  if (m !== setCache.m) { let a = {}; try { a = C.loadSettings().assistant || {}; } catch (e) {} setCache = {m, v: {apiKey: String(a.apiKey || '').trim(), model: String(a.model || '').trim(), provider: PROVIDERS.indexOf(a.provider) >= 0 ? a.provider : 'anthropic', baseUrl: String(a.baseUrl || '').trim(), tools: a.tools !== false}}; }
   return setCache.v;
 }
-const cfg = () => { const sv = saved(), envKey = C.env.ANTHROPIC_API_KEY || '', envTok = C.env.ANTHROPIC_AUTH_TOKEN || '', envModel = String(C.env.ASSISTANT_MODEL || '').trim();
-  return {model: envModel || sv.model, modelFrom: envModel ? 'env' : sv.model ? 'settings' : null, maxTokens: Math.min(num(C.env.ASSISTANT_MAX_TOKENS, 1200), 3000), rate: num(C.env.ASSISTANT_RATE, 20), daily: num(C.env.ASSISTANT_DAILY, 400),
-    key: !!(envKey || envTok || sv.apiKey), keyFrom: envKey || envTok ? 'env' : sv.apiKey ? 'settings' : null, apiKey: envKey || envTok ? '' : sv.apiKey}; };
+/* у локальных моделей (Ollama, LM Studio…) ключ не нужен */
+const isLocalUrl = u => { try { const h = new URL(u).hostname; return /^(localhost|127\.|\[?::1\]?$|10\.|192\.168\.|172\.(1[6-9]|2\d|3[01])\.|host\.docker\.internal$)/i.test(h) || /\.(local|lan|internal)$/i.test(h); } catch (e) { return false; } };
+const cfg = () => {
+  const sv = saved(), E = C.env, envProv = String(E.ASSISTANT_PROVIDER || '').trim().toLowerCase();
+  const provider = PROVIDERS.indexOf(envProv) >= 0 ? envProv : (sv.provider || 'anthropic'), baseUrl = String(E.ASSISTANT_BASE_URL || sv.baseUrl || '').trim().replace(/\/+$/, '');
+  const envKey = E.ASSISTANT_API_KEY || (provider === 'openai' ? E.OPENAI_API_KEY : E.ANTHROPIC_API_KEY) || '', envTok = provider === 'anthropic' ? (E.ANTHROPIC_AUTH_TOKEN || '') : '';
+  const envModel = String(E.ASSISTANT_MODEL || '').trim(), local = provider === 'openai' && !!baseUrl && isLocalUrl(baseUrl);
+  return {provider, providerFrom: PROVIDERS.indexOf(envProv) >= 0 ? 'env' : 'settings', baseUrl, baseUrlFrom: E.ASSISTANT_BASE_URL ? 'env' : baseUrl ? 'settings' : null, local,
+    model: envModel || sv.model, modelFrom: envModel ? 'env' : sv.model ? 'settings' : null, maxTokens: Math.min(num(E.ASSISTANT_MAX_TOKENS, 1200), 3000), rate: num(E.ASSISTANT_RATE, 20), daily: num(E.ASSISTANT_DAILY, 400),
+    noTools: E.ASSISTANT_TOOLS === '0' || sv.tools === false,
+    key: !!(envKey || envTok || sv.apiKey) || local, keyFrom: envKey || envTok ? 'env' : sv.apiKey ? 'settings' : local ? 'not_needed' : null, apiKey: envTok && !envKey ? '' : (envKey || sv.apiKey || '')}; };
 
 /* ---------- данные сайта: js/data.js и js/kb.js (их пишет tools/build.js) ---------- */
 const cache = new Map();
@@ -52,7 +64,7 @@ function knowledge() {
 }
 
 /* системная инструкция: личность Стеллы + правила + краткий «справочник» (бренды, задачи, категории); подробности модель берёт инструментами. Текст стабильный — подходит для кэша запросов */
-function buildSystem(D, KB) {
+function buildSystem(D, KB, o) {
   const B = {}; D.brands.forEach(b => { B[b.id] = b; });
   const L = [];
   L.push(`Ты — Стелла, дружелюбный ИИ-помощник (мини-консультант) на сайте «${KB.company.name}» (${KB.company.legal}) — дистрибьютора профессиональной косметики. Твой талисман — жемчужинка со звёздочкой. О себе говори в женском роде. Ты программа (ИИ), а не человек и не сотрудник компании; если спросят — скажи об этом прямо.`);
@@ -82,6 +94,14 @@ function buildSystem(D, KB) {
   L.push('Задачи подбора (id | название | основные бренды): ' + KB.tasks.map(t => `${t.id} | ${t.label} | ${t.brands.map(x => (B[x] || {}).name || x).join(', ')}`).join(' || '));
   L.push('Категории (id | название): ' + D.cats.map(c => `${c.id} | ${c.name}`).join('; ') + '. Города обучения: ' + KB.training.cities.join(', ') + '.');
   L.push('Чего на сайте нет (не придумывай, направляй к менеджеру): ' + KB.gaps.join('; ') + '.');
+  if (o && o.noTools && o.K) {          // модель не умеет вызывать инструменты: те же данные кладём в инструкцию
+    const K = o.K, i = L.findIndex(x => x.indexOf('ФАКТЫ О КОМПАНИИ И САЙТЕ') === 0);
+    if (i >= 0) { L[i] = 'ФАКТЫ О КОМПАНИИ И САЙТЕ — ТОЛЬКО ИЗ СПРАВОЧНИКА НИЖЕ'; L.splice(i + 1, 2, '• Инструментов у тебя нет. Всё о товарах, брендах, расписании обучения, скидках и контактах бери только из справочника ниже; не называй товары и мероприятия, которых там нет. Если нужных сведений нет — скажи это прямо и предложи менеджера.'); }
+    L.push('', 'КАТАЛОГ (id | название | бренд | категория | задачи | описание): ' + K.searchProducts({}).map(K.brief).map(p => [p.id, p.name, p.brand, p.category, (p.tasks || []).join(', '), String(p.description || '').slice(0, 120)].join(' | ')).join(' || '));
+    L.push('РАСПИСАНИЕ (id | дата | название | город | формат | время): ' + K.listEvents({}).map(e => [e.id, e.date, e.title, e.city, e.format, e.time].join(' | ')).join(' || '));
+    const ct = K.contacts(), d = K.discount(0); L.push('КОНТАКТЫ: ' + [ct.main.phone, ct.main.email, ct.main.hours, ct.main.address].filter(Boolean).join('; ') + '. Представительства: ' + ct.offices.map(x => x.city + (x.addr ? ' — ' + x.addr : '')).join('; ') + '.');
+    L.push('СКИДКИ ПО ОБЪЁМУ ЗАКУПКИ (ориентир, точные условия подтверждает менеджер): ' + d.tiers.map(t => 'от ' + t.from + ' ₽ — ' + t.pct + '%').join('; ') + '. Сегодня ' + K.today() + '.');
+  }
   return L.join('\n');
 }
 
@@ -137,30 +157,34 @@ function limited(ip, lim) {
   return 0;
 }
 
-/* ---------- клиент Anthropic (подключается лениво; в тестах подменяется) ---------- */
+/* ---------- клиент ИИ (подключается лениво; в тестах подменяется) ---------- */
+const toolsOff = new Set();          // сочетания «сервис + модель», где инструменты не поддерживаются (запоминается до перезапуска)
 let factory = null, clientCache = null, clientTag = '';
 function getClient() {
   if (factory) return factory();
-  if (clientCache && clientTag === cfg().apiKey) return clientCache;          // сменили ключ в админке — клиент создаётся заново
+  const c = cfg(), tag = [c.provider, c.baseUrl, c.apiKey].join('|');
+  if (clientCache && clientTag === tag) return clientCache;          // сменили сервис, адрес или ключ в админке — клиент создаётся заново
+  if (c.provider === 'openai') { clientCache = require('./llm-openai').create({apiKey: c.apiKey, baseUrl: c.baseUrl}); clientTag = tag; return clientCache; }
   let mod; try { mod = require('@anthropic-ai/sdk'); } catch (e) { return null; }
-  const Anthropic = mod.default || mod, c = cfg(), o = {timeout: 45000, maxRetries: 1}; if (c.apiKey) o.apiKey = c.apiKey;          // ключ из настроек админки; иначе SDK берёт его из окружения сам
-  clientCache = new Anthropic(o); clientTag = c.apiKey; return clientCache;
+  const Anthropic = mod.default || mod, o = {timeout: 45000, maxRetries: 1}; if (c.apiKey) o.apiKey = c.apiKey;          // ключ из настроек админки; иначе SDK берёт его из окружения сам
+  clientCache = new Anthropic(o); clientTag = tag; return clientCache;
 }
 
 function status() {
   const c = cfg();
   if (!c.key && !factory) return {ai: false, reason: 'no_key'};
   if (!c.model) return {ai: false, reason: 'no_model'};
+  if (c.provider === 'openai' && !c.baseUrl && !factory) return {ai: false, reason: 'no_url'};
   if (!loadJs('js/data.js') || !loadJs('js/kb.js')) return {ai: false, reason: 'no_kb'};
   if (!factory && !getClient()) return {ai: false, reason: 'no_sdk'};
   return {ai: true};
 }
 
 /* сведения для администратора: что настроено и чего не хватает (без значений секретов) */
-const REASONS = {no_key: 'Не задан ключ API: вставьте его в поле ниже (Настройки и заявки → ИИ-помощник сайта) или задайте ANTHROPIC_API_KEY в окружении сервера.', no_model: 'Не указана модель: впишите идентификатор из документации Anthropic в поле ниже или задайте ASSISTANT_MODEL.', no_kb: 'Нет данных сайта: выполните «Пересобрать сайт» (нужны js/data.js и js/kb.js).', no_sdk: 'Не установлен пакет @anthropic-ai/sdk: выполните npm install в корне проекта.'};
+const REASONS = {no_key: 'Не задан ключ API: вставьте его в поле ниже (Настройки и заявки → ИИ-помощник сайта) или задайте ASSISTANT_API_KEY в окружении сервера.', no_model: 'Не указана модель: впишите идентификатор из документации сервиса в поле ниже или задайте ASSISTANT_MODEL.', no_url: 'Не указан адрес сервиса: для OpenAI-совместимого сервиса нужен адрес API (например, из списка «Сервис» в настройках).', no_kb: 'Нет данных сайта: выполните «Пересобрать сайт» (нужны js/data.js и js/kb.js).', no_sdk: 'Не установлен пакет @anthropic-ai/sdk: выполните npm install в корне проекта (для OpenAI-совместимых сервисов он не нужен).'};
 function info() {
-  const c = cfg(), st = status(); let sdk = false; if (!factory) { try { require.resolve('@anthropic-ai/sdk'); sdk = true; } catch (e) {} } else sdk = true;
-  return {ai: st.ai, reason: st.reason || null, message: st.ai ? 'ИИ-режим готов к работе.' : REASONS[st.reason] || 'ИИ-режим выключен.', key: c.key, keyFrom: c.keyFrom, model: c.model, modelFrom: c.modelFrom, sdk, data: !!(loadJs('js/data.js') && loadJs('js/kb.js')), limits: {maxTokens: c.maxTokens, rate: c.rate, daily: c.daily}};
+  const c = cfg(), st = status(); let sdk = false; if (!factory && c.provider === 'anthropic') { try { require.resolve('@anthropic-ai/sdk'); sdk = true; } catch (e) {} } else sdk = true;
+  return {ai: st.ai, reason: st.reason || null, message: st.ai ? 'ИИ-режим готов к работе.' : REASONS[st.reason] || 'ИИ-режим выключен.', provider: c.provider, baseUrl: c.baseUrl, key: c.key, keyFrom: c.keyFrom, model: c.model, modelFrom: c.modelFrom, tools: !c.noTools, sdk, data: !!(loadJs('js/data.js') && loadJs('js/kb.js')), limits: {maxTokens: c.maxTokens, rate: c.rate, daily: c.daily}};
 }
 
 /* пробный вопрос к модели (кнопка «Проверить подключение» и команда assistant-check): тратит несколько токенов, диалоги не сохраняет */
@@ -174,7 +198,7 @@ async function selfTest() {
     return {ok: true, ms: Date.now() - t0, model: c.model, sample: text, message: 'Модель ответила. ИИ-режим работает.'};
   } catch (e) {
     const s = e && e.status, code = s === 401 || s === 403 ? 'auth' : s === 404 ? 'model' : s === 400 ? 'bad_request' : s === 429 ? 'rate' : s >= 500 ? 'upstream' : 'network';
-    const msg = {auth: 'Ключ API не принят (401/403): проверьте ANTHROPIC_API_KEY и права ключа.', model: 'Модель не найдена (404): проверьте ASSISTANT_MODEL — идентификатор должен совпадать с документацией Anthropic.', bad_request: 'Запрос отклонён (400): проверьте ASSISTANT_MODEL и баланс аккаунта.', rate: 'Лимит запросов или баланс аккаунта исчерпан (429): подождите или проверьте тариф.', upstream: 'Сервис ИИ временно недоступен (' + s + ') — повторите позже.', network: 'Нет связи с сервисом ИИ: проверьте исходящий доступ сервера в интернет.'}[code];
+    const msg = {auth: 'Ключ API не принят (401/403): проверьте ключ и его права.', model: 'Модель или адрес сервиса не найдены (404): проверьте идентификатор модели (он должен совпадать с документацией сервиса) и адрес.', bad_request: 'Запрос отклонён (400): проверьте идентификатор модели и баланс аккаунта.', rate: 'Лимит запросов или баланс аккаунта исчерпан (429): подождите или проверьте тариф.', upstream: 'Сервис ИИ временно недоступен (' + s + ') — повторите позже.', network: 'Нет связи с сервисом ИИ: проверьте адрес и исходящий доступ сервера в интернет.'}[code];
     return {ok: false, code, status: s || null, ms: Date.now() - t0, message: msg};
   }
 }
@@ -206,16 +230,18 @@ async function handle(req, res, opts) {
     const st = status(); if (!st.ai) throw httpErr(503, 'ИИ-режим помощника сейчас выключен.', {reason: st.reason});
     const body = await H.readJSONBody(req, BODY_LIMIT), messages = cleanMessages(body), lim = cfg();
     const wait = limited(opts.ip || '', lim); if (wait) throw httpErr(429, 'Слишком много сообщений. Попробуйте чуть позже.', {retry_after: wait});
-    const D = loadJs('js/data.js'), KB = loadJs('js/kb.js'), client = getClient(), kn = knowledge();
+    const D = loadJs('js/data.js'), KB = loadJs('js/kb.js'), client = getClient(), kn = knowledge(), toolKey = [lim.provider, lim.baseUrl, lim.model].join('|');
     res.writeHead(200, Object.assign({'Content-Type': 'text/event-stream; charset=utf-8', 'Cache-Control': 'no-store', 'X-Accel-Buffering': 'no', 'X-Content-Type-Options': 'nosniff'}, cors));
     res.flushHeaders();
     let current = null, closed = false; res.on('close', () => { closed = true; if (!res.writableEnded && current) { try { current.abort(); } catch (e) {} } });
     /* цикл: модель → (вызов инструментов → результаты) → ответ. Текст каждой порции уходит браузеру сразу; если порция закончилась вызовом инструментов, браузер сбрасывает недописанный текст ({reset}) и показывает статус шага */
-    const system = [{type: 'text', text: buildSystem(D, KB), cache_control: {type: 'ephemeral'}}, {type: 'text', text: 'Сегодня ' + kn.K.today() + ' (по Москве).'}], tools = buildTools(D, KB);
-    const convo = messages.slice(); let calls = 0, finished = false;
-    try {
+    const convo0 = messages.slice(), today = 'Сегодня ' + kn.K.today() + ' (по Москве).';
+    const attempt = async noTools => {
+      const system = noTools ? [{type: 'text', text: buildSystem(D, KB, {noTools: true, K: kn.K}) + '\n' + today}] : [{type: 'text', text: buildSystem(D, KB), cache_control: {type: 'ephemeral'}}, {type: 'text', text: today}], tools = noTools ? undefined : buildTools(D, KB);
+      const convo = convo0.slice(); let calls = 0, finished = false;
       for (let round = 0; round < MAX_ROUNDS && !finished && !closed; round++) {
-        const stream = current = client.messages.stream({model: lim.model, max_tokens: lim.maxTokens, system, tools, messages: convo});
+        const params = {model: lim.model, max_tokens: lim.maxTokens, system, messages: convo}; if (tools) params.tools = tools;
+        const stream = current = client.messages.stream(params);
         stream.on('text', t => sse(res, {t}));
         const msg = await stream.finalMessage(); current = null; if (closed) break;
         const uses = (msg.content || []).filter(b => b && b.type === 'tool_use');
@@ -231,6 +257,12 @@ async function handle(req, res, opts) {
         if (msg.stop_reason === 'pause_turn') { convo.push({role: 'assistant', content: msg.content}); continue; }
         finished = true;
       }
+      return finished;
+    };
+    try {
+      let finished;
+      try { finished = await attempt(lim.noTools || toolsOff.has(toolKey)); }
+      catch (e) { if (e && e.code === 'tools_unsupported' && !lim.noTools && !toolsOff.has(toolKey)) { toolsOff.add(toolKey); finished = await attempt(true); } else throw e; }          // модель не умеет инструменты → повторяем без них (и запоминаем)
       if (!closed) sse(res, finished ? {done: true} : {error: 'ai_unavailable'});
     } catch (e) { if (!res.writableEnded && !res.destroyed) { console.error('assistant:', e && e.status || '', e && e.message || e); sse(res, {error: 'ai_unavailable'}); } }
     res.end();
@@ -242,4 +274,4 @@ async function handle(req, res, opts) {
   }
 }
 
-module.exports = {handle, status, info, selfTest, buildSystem, buildTools, runTool, knowledge, cleanMessages, setClientFactory: f => { factory = f; clientCache = null; }, resetLimits: () => { hits.clear(); day = {d: '', n: 0}; }};
+module.exports = {handle, status, info, selfTest, buildSystem, buildTools, runTool, knowledge, cleanMessages, setClientFactory: f => { factory = f; clientCache = null; }, resetLimits: () => { hits.clear(); day = {d: '', n: 0}; toolsOff.clear(); }, isLocalUrl};
