@@ -347,7 +347,7 @@
         const t = K.kbTask(l.tasks[0]); const brands = (t.brands || []).map(K.brandName).filter(Boolean);
         return R('Подбор простой и прозрачный. Сначала беру из каталога продукты, у которых в карточке указана задача «' + K.TASK[l.tasks[0]] + '». Порядок такой: сначала бренды, которые сайт называет основными для этой задачи (' + brands.join(', ') + '), затем новинки. Описание задачи — со страницы каталога: «' + (t.note || '') + '» Я не оцениваю эффективность и не даю назначений — это решает специалист.', {chips: ['С чем сочетать?', 'Ещё'], intent: 'why', steps: ['Вспоминаю, как подбирал…']});
       }
-      return R('Я отвечаю только по данным сайта: каталогу, расписанию, материалам для партнёров. Спросите, что именно вас интересует, — объясню, откуда взял ответ.', {chips: starters({}, st), intent: 'why'});
+      return R('По сайту я отвечаю только по его данным: каталогу, расписанию, материалам для партнёров. Спросите, что именно вас интересует, — объясню, откуда взял ответ.', {chips: starters({}, st), intent: 'why'});
     }
     function comboAnswer(st) {
       const l = st.last || {}, ids = l.tasks && l.tasks.length ? l.tasks : [], L = [];
@@ -371,13 +371,46 @@
       return null;
     }
 
+    /* ---------- мелкие умения без ИИ: арифметика и дата/время (работают всегда и мгновенно) ---------- */
+    function calcOf(raw) {
+      let t = String(raw).toLowerCase().replace(/ё/g, 'е').replace(/[  ]/g, ' ').replace(/(\d),(\d)/g, '$1.$2').replace(/(\d)\s*[×хx*]\s*(?=[\d(])/g, '$1*').replace(/(\d)\s*[÷:]\s*(?=[\d(])/g, '$1/').replace(/(\d)\s*(?:умножить на|помножить на)\s*(?=[\d(])/g, '$1*').replace(/(\d)\s*(?:разделить на|поделить на)\s*(?=[\d(])/g, '$1/').replace(/(\d)\s*плюс\s*(?=[\d(])/g, '$1+').replace(/(\d)\s*минус\s*(?=[\d(])/g, '$1-');
+      const trig = /(?:^|[^а-яa-z])(?:посчитай|подсчитай|вычисли|сколько будет|сколько получится|реши|найди значение|калькулятор)(?:$|[^а-яa-z])|=\s*\??\s*$/.test(t);
+      if (t.length > 90 || /\d{3}-\d{2}-\d{2}/.test(t)) return null;
+      let m = t.match(/(\d+(?:\.\d+)?)\s*(?:%|процент\S*)\s*от\s*([\d ]+(?:\.\d+)?)/);
+      if (m && (trig || ntokOf(t) <= 6)) { const a = +m[1], b = +m[2].replace(/ /g, ''); if (isFinite(a) && isFinite(b)) return {expr: m[1] + '% от ' + fmtNum(b), val: a / 100 * b}; }
+      let ex = t.replace(/^[^\d(\-]*/, '').replace(/\s*(?:=|\?)+\s*$/, '').replace(/\s*(?:рубл\S*|руб\.?|₽|р\.?)\s*$/, '').trim();
+      if (!/^[\d\s.+\-*/^()]+$/.test(ex) || !/\d\s*[+\-*/^]\s*[\d(]|\)\s*[+\-*/^]/.test(ex)) return null;
+      if (!trig && !/^[\d\s.+\-*/^()=?]+$/.test(t.replace(/\s*(?:рубл\S*|руб\.?|₽)\s*/g, ''))) return null;
+      const toks = ex.replace(/(\d)\s+(?=\d{3}(?!\d))/g, '$1').match(/\d+(?:\.\d+)?|[+\-*/^()]/g) || [], j = toks.join('');
+      if (j.replace(/\s/g, '') !== ex.replace(/(\d)\s+(?=\d{3}(?!\d))/g, '$1').replace(/\s/g, '')) return null;
+      let i = 0, steps = 0; const bad = () => { throw new Error('x'); };
+      const prim = () => { if (++steps > 200) bad(); const k = toks[i++]; if (k === undefined) bad(); if (k === '(') { const v = add(); if (toks[i++] !== ')') bad(); return v; } if (k === '-') return -un(); if (k === '+') return un(); if (!/^\d/.test(k)) bad(); return +k; };
+      const un = () => prim();
+      const pow = () => { const b = prim(); if (toks[i] === '^') { i++; const e = pow(); return Math.pow(b, e); } return b; };
+      const mul = () => { let v = pow(); while (toks[i] === '*' || toks[i] === '/') { const o = toks[i++], r = pow(); if (o === '/' && r === 0) { const e = new Error('div0'); throw e; } v = o === '*' ? v * r : v / r; } return v; };
+      const add = () => { let v = mul(); while (toks[i] === '+' || toks[i] === '-') { const o = toks[i++], r = mul(); v = o === '+' ? v + r : v - r; } return v; };
+      try { const v = add(); if (i !== toks.length) return null; return {expr: toks.map(k => /^\d/.test(k) ? fmtNum(+k) : k).join(' ').replace(/\*/g, '×').replace(/\//g, '÷').replace(/\^/g, '^').replace(/\( /g, '(').replace(/ \)/g, ')'), val: v}; }
+      catch (e) { return e.message === 'div0' ? {expr: ex, err: 'Делить на ноль нельзя — результат не определён.'} : null; }
+    }
+    const ntokOf = t => (t.match(/[a-zа-я]+/g) || []).length;
+    const fmtNum = v => { if (!isFinite(v)) return '∞'; const r = Math.abs(v) >= 1e15 || (Math.abs(v) > 0 && Math.abs(v) < 1e-6) ? v.toExponential(6) : Number(v.toFixed(8)).toLocaleString('ru-RU', {maximumFractionDigits: 8}); return r; };
+    const WEEK = ['воскресенье', 'понедельник', 'вторник', 'среда', 'четверг', 'пятница', 'суббота'];
+    function dateAnswer(n) {
+      const d = K.now(), hh = String(d.getHours()).padStart(2, '0'), mm = String(d.getMinutes()).padStart(2, '0'), full = d.getDate() + ' ' + MON_G[d.getMonth()] + ' ' + d.getFullYear() + ' года', wd = WEEK[d.getDay()];
+      const wantTime = W('час|времени|время').test(n) && !W('число|дата|день|год').test(n);
+      if (wantTime) return 'Сейчас **' + hh + ':' + mm + '** (по часам вашего устройства).';
+      if (W('год').test(n) && !W('число|дата|день').test(n)) return 'Сейчас **' + d.getFullYear() + '** год.';
+      if (W('день недели|какой день|что за день').test(n) && !W('число|дата').test(n)) return 'Сегодня **' + wd + '**, ' + full + '.';
+      return 'Сегодня **' + full + '**, ' + wd + '. Время — ' + hh + ':' + mm + ' (по часам вашего устройства).';
+    }
+
     function unknown(text, st, tk) {
       const sug = [];
       const cand = []; (D.products || []).forEach(p => cand.push([p.name, 'Расскажите про ' + p.name])); (D.brands || []).forEach(b => cand.push([b.name, 'Расскажите про ' + b.name])); (D.tasks || []).forEach(t => cand.push([t.label, t.label]));
-      const ws = words(text).filter(w => w.length > 3); const scored = cand.map(([nm, q]) => { const nw = words(nm); let best = 9; ws.forEach(w => nw.forEach(x => { const d = lev(stem(w), stem(x), 3); if (d < best) best = d; })); return {nm, q, d: best}; }).filter(x => x.d <= 2).sort((a, b) => a.d - b.d).slice(0, 3);
+      const ws = words(text).filter(w => w.length > 3); const scored = cand.map(([nm, q]) => { const nw = words(nm); let best = 9, len = 0; ws.forEach(w => nw.forEach(x => { const sw = stem(w), d = lev(sw, stem(x), 3); if (d < best) { best = d; len = sw.length; } })); return {nm, q, d: best, len}; }).filter(x => x.d <= 1 || (x.d <= 2 && x.len >= 8)).sort((a, b) => a.d - b.d).slice(0, 3);
       scored.forEach(x => sug.push(x.q));
-      const hits = K.searchInfo(text, 3).filter(h => h.kind === 'faq' || h.kind === 'task' || h.kind === 'news').slice(0, 2); hits.forEach(h => sug.push(h.title.length < 60 ? h.title : h.title.slice(0, 57) + '…'));
-      const text1 = sug.length ? 'Не уверен, что правильно понял вопрос. Возможно, вы имели в виду что-то из этого?' : 'Не уверен, что правильно понял вопрос. Могу подсказать по каталогу, брендам, обучению, партнёрству и контактам — или передайте вопрос менеджеру.';
+      const hits = K.searchInfo(text, 3).filter(h => (h.kind === 'faq' || h.kind === 'task' || h.kind === 'news') && h.hit >= Math.min(2, h.of) && h.score > 0.02).slice(0, 2); hits.forEach(h => sug.push(h.title.length < 60 ? h.title : h.title.slice(0, 57) + '…'));
+      const text1 = sug.length ? 'Не уверена, что правильно поняла вопрос. Возможно, вы имели в виду что-то из этого?' : 'На такой вопрос я сейчас не отвечу: работаю без ИИ и знаю только данные сайта — каталог, бренды, обучение, партнёрство и контакты. С ними помогу сразу, а остальное можно передать менеджеру.';
       return R(text1, {actions: compact([act.ask(text), act.callback()]), chips: (sug.length ? sug : starters({}, st)).slice(0, 4), intent: 'unknown', sure: false, steps: ['Думаю…']});
     }
 
@@ -393,15 +426,18 @@
       const done = res => fin(res, st);
 
       /* ---- светские реплики ---- */
-      const greetRe = W('привет|здравствуй|добрый день|доброе утро|добрый вечер|доброй ночи|(?:хай|hello|hi|салют)' + END);
-      if (greetRe.test(n) && ntok <= 4) { st.last = {}; return done(R(hello() + '! Я помощник «Астреи» — подскажу по каталогу и брендам, обучению, условиям сотрудничества и контактам. ' + pick(st, ['Что вас интересует?', 'С чего начнём?', 'Чем помочь?']), {chips: starters(ctx, st), intent: 'greet'})); }
-      if (W('спасиб|благодар|выручил|супер|отлично|класс($|\\s)|здорово|молодец|круто').test(n) && ntok <= 6) return done(R(pick(st, ['Пожалуйста! Если появятся вопросы — пишите.', 'Рада помочь — то есть помогу ещё, если нужно.', 'Всегда пожалуйста. Что ещё подсказать?']).replace('Рада помочь — то есть помогу ещё, если нужно.', 'Обращайтесь, если понадобится ещё что-то.'), {chips: ['Ближайшие семинары', 'Контакты менеджера'], intent: 'thanks'}));
-      if (W('до свидани|пока($|\\s)|всего доброго|удачи|до встречи|bye').test(n) && ntok <= 5) return done(R('Всего доброго! Если понадоблюсь — я здесь.', {intent: 'bye'}));
-      if (W('как дела|как ты|как поживаешь|как жизнь').test(n)) return done(R('Спасибо, всё хорошо — я программа и не устаю. Расскажите, что вам нужно: каталог, обучение или условия сотрудничества?', {chips: starters(ctx, st), intent: 'smalltalk'}));
-      if (W('анекдот|шутк|расскажи что-нибудь смешное|спой|стих').test(n)) return done(R('С шутками у меня скромно: в моей базе только каталог, расписание и условия сотрудничества. Зато в них я разбираюсь хорошо.', {chips: starters(ctx, st), intent: 'smalltalk'}));
+      const greetRe = new RegExp('^(?:ну |а )?(?:привет|здравствуй|добрый день|доброе утро|добрый вечер|доброй ночи|(?:хай|hello|hi|салют)' + END + ')', 'i');
+      if (greetRe.test(n) && ntok <= 4) { st.last = {}; return done(R(hello() + '! Я Стелла, мини-консультант «Астреи». Подскажу по каталогу и брендам, обучению, условиям сотрудничества и контактам. ' + pick(st, ['Что вас интересует?', 'С чего начнём?', 'Чем помочь?']), {chips: starters(ctx, st), intent: 'greet'})); }
+      if (W('спасиб|благодар|выручил|супер|отлично|класс($|\\s)|здорово|молодец|круто').test(n) && ntok <= 6) return done(R(pick(st, ['Пожалуйста! Если появятся вопросы — пишите.', 'Рада помочь! Обращайтесь, если понадобится ещё что-то.', 'Всегда пожалуйста. Что ещё подсказать?']), {chips: ['Ближайшие семинары', 'Контакты менеджера'], intent: 'thanks'}));
+      if (W('до свидани|пока($|\\s)|всего доброго|удачи|до встречи|bye').test(n) && ntok <= 5) return done(R('Всего доброго! Если понадоблюсь — Стелла всегда на связи.', {intent: 'bye'}));
+      if (W('как дела|как ты|как поживаешь|как жизнь').test(n)) return done(R('Спасибо, всё хорошо — я программа и не устаю, зато жемчужинки всегда в настроении. Расскажите, что вам нужно: каталог, обучение или условия сотрудничества?', {chips: starters(ctx, st), intent: 'smalltalk'}));
+      if (W('анекдот|шутк|расскажи что-нибудь смешное|спой|стих').test(n)) return done(R('Шутки и стихи — не моя сильная сторона: в моей базе только каталог, расписание и условия сотрудничества. Зато в них я разбираюсь хорошо.', {chips: starters(ctx, st), intent: 'smalltalk'}));
       if (W('тупой|глупый|бесполезн|ерунда|не понимаешь|не то|плохо отвечаешь|ничего не понимаешь|дурак|идиот').test(n)) return done(R('Сожалею, что не получилось помочь. Давайте передадим вопрос человеку — менеджер ответит в рабочее время (' + contactsMain.hours + ').', {actions: compact([act.callback(), act.ask(st.last.q || text)]), links: [link('contacts.html', 'Контакты')], chips: ['Подобрать средство по задаче', 'Ближайшие семинары'], intent: 'frustrated'}));
       if (W('кто ты|что ты умеешь|что умеешь|ты бот|ты человек|ты робот|ты живой|ты ии|нейросет|чем ты можешь|чем можешь помочь|что можно спросить|как тебя зовут|ты настоящ').test(n))
-        return done(R('Я программа-помощник сайта «Астреи», не сотрудник. Умею: подобрать продукты по задаче и объяснить выбор, рассказать о товарах и брендах, сравнить товары, показать расписание обучения и записать, посчитать скидку по сумме закупки, дать контакты. Помню, о чём мы говорили: можно спрашивать «а у Dermatime?», «ещё», «почему именно эти?». Цены, наличие и персональные рекомендации — к менеджеру.', {chips: starters(ctx, st), intent: 'who'}));
+        return done(R('Меня зовут Стелла — я мини-консультант сайта «Астреи»: программа, а не сотрудник. Умею: подобрать продукты по задаче и объяснить выбор, рассказать о товарах и брендах, сравнить товары, показать расписание обучения и записать, посчитать скидку по сумме закупки, дать контакты. Помню, о чём мы говорили: можно спрашивать «а у Dermatime?», «ещё», «почему именно эти?». Цены, наличие и персональные рекомендации — к менеджеру.' + (st.ai ? ' А ещё могу поговорить на любую тему и ответить на общие вопросы.' : ''), {chips: starters(ctx, st), intent: 'who'}));
+
+      const cx = calcOf(text); if (cx) { if (cx.err) return done(R(cx.err, {chips: starters(ctx, st), intent: 'calc'})); return done(R('**' + cx.expr + ' = ' + fmtNum(cx.val) + '**', {chips: starters(ctx, st), intent: 'calc'})); }
+      if (ntok <= 6 && W('какое сегодня число|какое число|какая сегодня дата|какая дата|сегодня какое|какой сегодня день|какой день недели|который час|сколько времени|сколько сейчас времени|какой сейчас год|какой год|текущая дата|текущее время').test(n)) return done(R(dateAnswer(n), {chips: starters(ctx, st), intent: 'datetime'}));
 
       /* ---- роль и город ---- */
       if (role && ntok <= 9 && !tasksInText.length && !brandsInText.length) {
@@ -452,7 +488,7 @@
         return done(R('Я не даю медицинских рекомендаций и не ставлю диагнозов: подбор ухода и протокол определяет специалист по результатам консультации. Могу рассказать, какие продукты на сайте относятся к нужной задаче, а с вопросами по применению поможет менеджер или ваш косметолог.', {actions: [act.ask(text)], links: [link('catalog.html', 'Каталог')], chips: ['Подобрать средство по задаче'], intent: 'medical'}));
       if (amount && (W('скидк|порог|закуп|объем|объём|заказ|при сумме|на сумму|от суммы|купить на|взять на').test(n) || ['discount', 'price', 'partner'].indexOf((st.last || {}).intent) >= 0 || st.lastIntent === 'price')) return done(discountAnswer(amount, st));
       if (W('скидк|порог|программа скидок').test(n) && !W('стать партн|сотруднич').test(n)) { st.last = {intent: 'discount'}; return done(discountAnswer(0, st)); }
-      if (W('цен|стоит|стоимост|прайс|почем|сколько стоит|дорог|дешев|недорог|бюджет').test(n) && !W('обучен|семинар|мастер|вебинар|участи|регистрац').test(n)) {
+      if (W('цен(?:а|ы|у|е|ой|ам|ах|ами)?(?![а-яa-z0-9])|стоит|стоимост|прайс|почем(?![а-яa-z])|сколько стоит|дорог(?:о|ой|ая|ие|ое|ий)?(?![а-яa-z])|дешев|недорог|бюджет').test(n) && !W('обучен|семинар|мастер|вебинар|участи|регистрац').test(n)) {
         const pp = productsInText[0] || (refd && P[ctx.product || l.product]) || null; st.pending = {type: 'request', ref: pp ? pp.id : ''};
         const d = K.discount(0);
         return done(R('Цен на сайте нет: стоимость зависит от объёма закупки и условий партнёрства, её называет менеджер (' + contactsMain.phone + ', ' + contactsMain.hours + '). Для ориентира: ' + lower('Скидки по объёму закупки (ориентировочно): ') + d.tiers.map(t => 'от ' + fmtRub(t.from) + ' — ' + t.pct + '%').join('; ') + '. Назовите сумму закупки — посчитаю скидку. Отправить запрос менеджеру?', {cards: pp ? [pp.id] : [], actions: compact([act.form('product', 'Запросить условия', pp ? pp.id : ''), act.callback()]), links: [link('partners.html', 'Калькулятор скидок')], chips: ['Да, отправить запрос', 'А при 200 тысячах?'], intent: 'price'}));
@@ -498,8 +534,8 @@
       return done(unknown(text, st, tk));
     }
 
-    /* «уверенные» намерения отвечаются здесь же и не уходят в ИИ-режим (мгновенно и без затрат); остальное — на усмотрение ИИ */
-    const LOCAL = new Set(['greet', 'thanks', 'bye', 'smalltalk', 'who', 'role', 'no', 'yes', 'callback', 'medical', 'price', 'avail', 'buy', 'contacts', 'human', 'forms', 'register', 'events', 'discount', 'empty', 'frustrated', 'faq', 'news', 'new', 'more', 'partner', 'about', 'catalog', 'category', 'pick', 'request']);
+    /* точные и служебные намерения отвечаются здесь же (мгновенно, бесплатно, без «выдумок»): приветствия, контакты, скидка, расписание, формы, расчёт, дата; всё остальное — светская беседа, «о компании», партнёрство, новости, каталог, медицинские и свободные вопросы — при включённом ИИ уходит к нему, а без ИИ его закрывает этот же движок */
+    const LOCAL = new Set(['greet', 'thanks', 'bye', 'who', 'role', 'no', 'yes', 'callback', 'price', 'avail', 'buy', 'contacts', 'human', 'forms', 'register', 'events', 'discount', 'empty', 'frustrated', 'more', 'pick', 'request', 'calc', 'datetime']);
     function fin(res, st) {
       if (res.sure !== false) res.sure = res.local || LOCAL.has(res.intent);          // res.local — продолжение диалога, которое зависит от состояния движка
       res.state = st; if (!res.chips.length) res.chips = starters({}, st).slice(0, 3);

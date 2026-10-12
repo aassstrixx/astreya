@@ -2,7 +2,7 @@
 (function () {
   'use strict';
   const {h} = AD;
-  const ACT = {login: 'вход', logout: 'выход', content: 'правка содержимого', restore: 'откат правки', upload: 'загрузка картинки', file_delete: 'удаление картинки', build: 'сборка сайта', publish: 'публикация', settings: 'настройки', lead: 'работа с заявкой', lead_delete: 'удаление заявки', export: 'выгрузка заявок', user_create: 'новый пользователь', user_update: 'правка пользователя', user_delete: 'удаление пользователя', password: 'смена пароля', site_audit: 'проверка сайта', notify_test: 'тест уведомлений'};
+  const ACT = {login: 'вход', logout: 'выход', content: 'правка содержимого', restore: 'откат правки', upload: 'загрузка картинки', file_delete: 'удаление картинки', build: 'сборка сайта', publish: 'публикация', settings: 'настройки', lead: 'работа с заявкой', lead_delete: 'удаление заявки', export: 'выгрузка заявок', user_create: 'новый пользователь', user_update: 'правка пользователя', user_delete: 'удаление пользователя', password: 'смена пароля', site_audit: 'проверка сайта', notify_test: 'тест уведомлений', assistant_test: 'проверка ИИ-помощника'};
   const plural = AD.plural;
 
   AD.views.overview = {

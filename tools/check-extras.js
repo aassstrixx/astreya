@@ -190,13 +190,28 @@ const cfg = JSON.parse(fs.readFileSync(pth.join(ROOT, 'data/redesign.json'), 'ut
     /* ---- помощник ---- */
     await p.goto(base + 'catalog.html'); await skipSplash(); await p.evaluate(() => { sessionStorage.removeItem('astreya:chat2'); sessionStorage.removeItem('astreya:asst-tip'); }); await p.reload(); await skipSplash();
     const fabOn = () => p.evaluate(() => { const f = document.getElementById('asst-fab'); if (!f) return null; const cs = getComputedStyle(f); return {vis: cs.opacity > 0.5 && cs.pointerEvents !== 'none', exp: f.getAttribute('aria-expanded')}; });
+    const idle = () => p.waitForFunction(() => !document.getElementById('asst-form').classList.contains('busy') && !document.querySelector('.asst-typing'), null, {timeout: 14000});
     await wait(900); let fo = await fabOn(); ok(fo && fo.vis && fo.exp === 'false' && await p.$eval('#asst', e => e.hidden), 'кнопка «Помощник» на месте, чат закрыт');
+    /* кнопка Стеллы: маскот, подпись, искры при появлении, «магнит» и ховер (только компьютер) */
+    const fabI = await p.evaluate(() => { const f = document.getElementById('asst-fab'), t = f.querySelector('.asst-fab-t'); return {pe: f.querySelectorAll('svg.pe').length, mood: (f.querySelector('.pe') || {getAttribute: () => ''}).getAttribute('data-m'), label: t ? t.textContent.trim() : '', aria: f.getAttribute('aria-label'), sparks: f.querySelectorAll('.asst-fab-fx i').length, burst: !!f.querySelector('.asst-fab-fx.go'), defs: !!document.getElementById('pe-g')}; });
+    ok(fabI.pe === 1 && fabI.label === 'Спросить Стеллу' && /Стелла/.test(fabI.aria) && fabI.sparks >= 6 && fabI.defs, 'кнопка: жемчужинка Стелла, подпись «Спросить Стеллу», доступное имя, искры и градиент на месте', fabI);
+    if (!mobile) {
+      ok(fabI.burst, 'при появлении кнопки запускается россыпь искр');
+      await wait(1500); const w1 = await p.$eval('#asst-fab', e => ({long: e.classList.contains('long'), w: Math.round(e.getBoundingClientRect().width)})); ok(w1.long && w1.w > 150, 'в первые секунды подпись раскрыта (кнопка-«таблетка»), ширина ' + w1.w, w1);
+      await p.mouse.move(700, 300); await wait(150); const far = await p.$eval('#asst-fab', e => e.style.getPropertyValue('--ex'));
+      const bx = await p.$eval('#asst-fab', e => { const r = e.getBoundingClientRect(); return {x: r.left + r.width / 2, y: r.top + r.height / 2}; });
+      await p.mouse.move(bx.x - 90, bx.y - 20); await wait(200); const near = await p.$eval('#asst-fab', e => ({ex: e.style.getPropertyValue('--ex'), mx: e.style.getPropertyValue('--mx')}));
+      ok(near.ex !== '' && parseFloat(near.ex) < -0.3 && parseFloat(near.mx) < 0, 'глаза Стеллы следят за курсором, а кнопка слегка тянется к нему', {far, near});
+      await p.mouse.move(10, 10); await wait(100);
+    } else ok(await p.$eval('#asst-fab .asst-fab-t', e => getComputedStyle(e).display === 'none') && await p.$eval('#asst-fab', e => e.offsetWidth === 56 && e.offsetHeight === 56), 'на телефоне кнопка — круглая, без подписи');
     await click('#asst-fab'); await wait(500);
     ok(await p.$eval('#asst', e => !e.hidden && e.classList.contains('open') && e.getAttribute('role') === 'dialog') && await p.evaluate(m => m ? true : (document.activeElement && document.activeElement.id === 'asst-in'), mobile), 'чат открывается; на компьютере фокус в поле ввода (на телефоне клавиатуру сами не открываем)');
-    ok(/Помощник/.test(await p.$eval('.asst-h', e => e.textContent)) && await p.$$eval('#asst-log .asst-b', e => e.length) === 1 && await p.$$eval('#asst-log #asst-qr .chip', e => e.length) >= 3, 'приветствие и быстрые ответы внутри ленты (ничего не перекрывают)');
+    ok(await p.$eval('#asst-form', e => e.classList.contains('busy')) && await p.$('#asst-log .asst-m') !== null, 'первое сообщение приходит «живым»: чат занят, пока Стелла «печатает», а не показывает всё мгновенно');
+    await idle(); await wait(200);
+    ok(/Стелла/.test(await p.$eval('.asst-h', e => e.textContent)) && await p.$$eval('.asst-h svg.pe', e => e.length) === 1 && await p.$$eval('#asst-log .asst-b', e => e.length) === 1 && /Я Стелла/.test(await p.$eval('#asst-log .asst-b', e => e.textContent)) && await p.$$eval('#asst-log #asst-qr .chip', e => e.length) >= 3, 'Стелла представляется, маскот в шапке и у сообщения; приветствие и быстрые ответы внутри ленты (ничего не перекрывают)');
     ok(await p.$eval('#asst-note', e => /программа/.test(e.textContent)), 'подпись: помощник — программа, не сотрудник');
     if (mobile) ok(await p.$eval('#asst', e => Math.round(e.getBoundingClientRect().width) === innerWidth), 'на телефоне чат — во весь экран');
-    const ask = async q => { await p.fill('#asst-in', q); await p.keyboard.press('Enter'); await p.waitForFunction(() => !document.querySelector('.asst-typing') && !document.getElementById('asst-form').classList.contains('busy'), null, {timeout: 6000}); await wait(150); };
+    const ask = async q => { await p.fill('#asst-in', q); await p.keyboard.press('Enter'); await p.waitForFunction(() => !document.querySelector('.asst-typing') && !document.getElementById('asst-form').classList.contains('busy'), null, {timeout: 14000}); await wait(150); };
     const last = sel => p.$eval('#asst-log .asst-m:nth-last-child(2)', (e, s) => s ? [...e.querySelectorAll(s)].map(x => x.textContent.trim()) : e.textContent, sel);
     await ask('Какие у вас контакты и часы работы?'); const ans1 = await last(); ok(/925-51-62/.test(ans1) && /10:00/.test(ans1) && await p.$$eval('#asst-log .asst-m:nth-last-child(2) a[href^="tel:"]', e => e.length) === 1, 'контакты берутся из данных сайта');
     await ask('Сколько стоит Acidcure?'); const ans2 = await last(); ok(/Цен на сайте нет/.test(ans2) && !/\d\s?(₽|руб)/.test(ans2.replace(/от \d[\d\s]* ₽ — \d+%/g, '')) && await p.$$eval('#asst-log .asst-m:nth-last-child(2) .asst-card', e => e.length) === 1, 'о цене — честно «цен на сайте нет», без выдуманных сумм, с карточкой товара');
@@ -212,9 +227,9 @@ const cfg = JSON.parse(fs.readFileSync(pth.join(ROOT, 'data/redesign.json'), 'ut
     if (mobile) { await p.keyboard.press('Escape'); } else await p.keyboard.press('Escape'); await wait(500); ok(await p.$eval('#asst', e => e.hidden || !e.classList.contains('open')), 'Esc закрывает чат');
     ok(await p.evaluate(() => document.activeElement && document.activeElement.id === 'asst-fab'), 'фокус возвращается на кнопку «Помощник»');
     await p.reload(); await skipSplash(); await click('#asst-fab'); await wait(500); ok(await p.$$eval('#asst-log .asst-m', e => e.length) >= 12, 'после перезагрузки диалог на месте');
-    await click('[data-act="asst-reset"]'); await wait(300); ok(await p.$$eval('#asst-log .asst-m', e => e.length) === 1, '«Начать заново» очищает диалог'); await p.keyboard.press('Escape'); await wait(400);
+    await click('[data-act="asst-reset"]'); await wait(300); ok(await p.$$eval('#asst-log .asst-m', e => e.length) === 1, '«Начать заново» очищает диалог'); await idle(); await p.keyboard.press('Escape'); await wait(400);
     /* ---- живость интерфейса: печать, стоп, оценка, память диалога, расчёт, менеджер ---- */
-    await click('#asst-fab'); await wait(700); await click('[data-act="asst-reset"]'); await wait(300);
+    await click('#asst-fab'); await wait(700); await click('[data-act="asst-reset"]'); await wait(300); await idle();
     const geom = await p.evaluate(() => { const l = document.getElementById('asst-log').getBoundingClientRect(), f = document.getElementById('asst-form').getBoundingClientRect(), q = document.getElementById('asst-qr').getBoundingClientRect(), h = document.querySelector('.asst-h').getBoundingClientRect(); return {qrInside: q.top >= l.top - 1 && q.bottom <= l.bottom + 400, formBelow: f.top >= l.bottom - 1, headAbove: h.bottom <= l.top + 1}; });
     ok(geom.formBelow && geom.headAbove, 'шапка, лента и поле ввода идут друг за другом без наложений', geom);
     await p.fill('#asst-in', 'Расскажите о компании'); await p.keyboard.press('Enter'); let caret = false, grow = [];
@@ -226,14 +241,14 @@ const cfg = JSON.parse(fs.readFileSync(pth.join(ROOT, 'data/redesign.json'), 'ut
     ok(await p.$$eval('#asst-log .asst-m:nth-last-child(2) .asst-fb button', e => e.length) === 2, 'под ответом — оценка 👍/👎');
     await click('#asst-log .asst-m:nth-last-child(2) .asst-fb button[data-v="1"]'); ok(await p.$eval('#asst-log .asst-m:nth-last-child(2) .asst-fb button[data-v="1"]', e => e.getAttribute('aria-pressed') === 'true'), '«Помог» отмечается');
     await click('#asst-log .asst-m:nth-last-child(2) .asst-fb button[data-v="-1"]'); await wait(400); ok(await p.$$eval('#asst-log .asst-m:nth-last-child(2) [data-act="asst-ask"]', e => e.length) === 1 && /не помог/.test(await last()), '«Не помог» → предлагает передать вопрос менеджеру');
-    await click('[data-act="asst-reset"]'); await wait(300);
+    await click('[data-act="asst-reset"]'); await wait(300); await idle();
     await ask('Посоветуйте от пигментации'); await ask('а у Dermatime?'); ok(await p.$$eval('#asst-log .asst-m:nth-last-child(2) .asst-card-t small', e => e.length > 0 && e.every(x => /dermatime/i.test(x.textContent))), 'помнит предыдущую задачу: «а у Dermatime?» → тот же подбор у бренда');
     await ask('почему именно эти?'); ok(/Порядок такой/.test(await last()), '«почему именно эти?» — объясняет, как подобрано');
     await ask('Какие скидки?'); await ask('а при 200 тысячах?'); ok(/10%/.test(await last()) && /20\s000/.test(await last()), 'считает скидку по названной сумме (200 000 → 10%, экономия 20 000)');
     await ask('Я косметолог из Ростова'); await ask('какие семинары?'); ok(/Ростов/.test(await last()) && await p.$$eval('#asst-log .asst-m:nth-last-child(2) .asst-ev', e => e.length) === 1, 'запомнил роль и город: семинары — сразу по городу');
     await click('[data-act="asst-human"]'); await p.waitForFunction(() => !document.getElementById('asst-form').classList.contains('busy'), null, {timeout: 6000}); ok(await p.$$eval('#asst-log .asst-m:nth-last-child(2) [data-type="callback"]', e => e.length) === 1, 'кнопка «Связаться с менеджером» в шапке всегда под рукой');
     await ask('пигментацыя'); ok(await p.$$eval('#asst-log .asst-m:nth-last-child(2) .asst-card', e => e.length) >= 2, 'опечатка в слове не мешает понять вопрос');
-    await click('[data-act="asst-reset"]'); await wait(300);
+    await click('[data-act="asst-reset"]'); await wait(300); await idle();
     /* ---- WebMCP: инструменты только для чтения отдаются ИИ-агентам браузера ---- */
     const mcp = await p.evaluate(() => (window.__mcp || []).map(t => ({name: t.name, ro: !!(t.annotations && t.annotations.readOnlyHint), schema: !!(t.inputSchema && t.inputSchema.type === 'object'), desc: (t.description || '').length > 20})));
     ok(mcp.map(x => x.name).join() === 'search_products,list_events,discount_for_amount,get_contacts' && mcp.every(x => x.ro && x.schema && x.desc), 'WebMCP: четыре инструмента «только чтение» с описаниями и схемами', mcp);

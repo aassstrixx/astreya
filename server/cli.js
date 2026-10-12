@@ -8,6 +8,7 @@
      node server/cli.js export-leads [файл.csv]      — выгрузка всех заявок в CSV
      node server/cli.js build                        — пересобрать и проверить сайт
      node server/cli.js check                        — проверить конфигурацию и доступы
+     node server/cli.js assistant-check              — проверить подключение ИИ-помощника «Стелла» (пробный запрос к модели, тратит несколько токенов)
    Папка данных — DATA_DIR (по умолчанию server/data), сайт — SITE_ROOT (по умолчанию корень репозитория). */
 'use strict';
 const fs = require('fs'), crypto = require('crypto'), readline = require('readline');
@@ -43,6 +44,17 @@ const cmds = {
   'list-users'() { A.listUsers().forEach(u => console.log(`${u.login.padEnd(20)} ${A.ROLES[u.role].padEnd(28)} ${u.disabled ? 'отключён' : 'активен'}  вход: ${u.lastLogin || '—'}`)); },
   'export-leads'(file) { const csv = L.csv({status: 'all'}); if (file) { fs.writeFileSync(file, csv); console.log('Записано: ' + file); } else process.stdout.write(csv); },
   async build() { const r = await B.build('командная строка'); console.log(r.build.out); if (r.check) console.log(r.check.out); process.exit(r.ok ? 0 : 1); },
+  async 'assistant-check'() {
+    const AS = require('./lib/assistant'), i = AS.info(); console.log('ИИ-помощник «Стелла»');
+    console.log((i.key ? '  ✓ ' : '  ✗ ') + 'ключ API (ANTHROPIC_API_KEY): ' + (i.key ? 'задан' : 'не задан'));
+    console.log((i.model ? '  ✓ ' : '  ✗ ') + 'модель (ASSISTANT_MODEL): ' + (i.model || 'не указана'));
+    console.log((i.sdk ? '  ✓ ' : '  ✗ ') + 'пакет @anthropic-ai/sdk: ' + (i.sdk ? 'установлен' : 'не установлен (npm install в корне проекта)'));
+    console.log((i.data ? '  ✓ ' : '  ✗ ') + 'данные сайта js/data.js и js/kb.js: ' + (i.data ? 'есть' : 'нет — выполните node tools/build.js'));
+    if (!i.ai) { console.log('\nИИ-режим выключен: ' + i.message); process.exit(1); }
+    console.log('\nПробный запрос к модели…'); const r = await AS.selfTest();
+    console.log((r.ok ? '  ✓ ' : '  ✗ ') + r.message + (r.ok ? ' Ответ: «' + (r.sample || '—') + '» (' + r.ms + ' мс)' : ''));
+    process.exit(r.ok ? 0 : 1);
+  },
   check() {
     const fail = []; const note = (ok, m) => { console.log((ok ? '  ✓ ' : '  ✗ ') + m); if (!ok) fail.push(m); };
     console.log('Сайт: ' + C.ROOT + '\nДанные: ' + C.DATA);

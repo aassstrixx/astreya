@@ -100,4 +100,24 @@ console.log('8. Полный проход по каталогу');
   ok(corrupt.length === 0, 'нормальные слова не «исправляются» (нет ложных замен)', corrupt.map(q => [q, b.correct(q).text])); }
 { const empty = b.reply('   ', b.newState(), {}); ok(empty.intent === 'empty', 'пустое сообщение безопасно'); const long = b.reply('слово '.repeat(400), b.newState(), {}); ok(!!long.text, 'очень длинное сообщение не ломает движок'); const xss = b.reply('<script>alert(1)</script> пигментация', b.newState(), {}); ok(xss.intent === 'task', 'разметка в тексте игнорируется (в ответ не попадает)', xss.text); }
 
+console.log('9. Стелла: личность, маршрутизация между встроенным движком и ИИ, арифметика и дата');
+{ const st = b.newState(), say = talk(b, st);
+  let r = say('Привет'); ok(/Я Стелла/.test(r.text) && r.sure === true, 'приветствие: Стелла представляется, ответ мгновенный', short(r));
+  r = say('Кто ты?'); ok(/зовут Стелла/.test(r.text) && /программа, а не сотрудник/.test(r.text) && r.sure === true, 'на вопрос «кто ты» — имя и честное «я программа»', short(r));
+  const s2 = b.newState(); s2.ai = true; r = b.reply('Кто ты?', s2, {}); ok(/любую тему/.test(r.text), 'если ИИ включён, Стелла говорит, что может поговорить на любую тему', short(r));
+  r = say('Как дела?'); ok(r.intent === 'smalltalk' && r.sure === false, 'светская беседа — на усмотрение ИИ (встроенный ответ остаётся запасным)', [r.intent, r.sure]);
+  r = say('Расскажи анекдот'); ok(r.sure === false && !!r.text, 'шутка — к ИИ; без ИИ скромный честный ответ', short(r));
+  r = say('Объясни, почему небо голубое'); ok(r.intent === 'unknown' && r.sure === false && /без ИИ|не отвечу/.test(r.text) && !/Цен на сайте/.test(r.text), 'вопрос не про сайт: к ИИ; встроенный режим честно говорит, что отвечать не умеет (и не путает «почему» с «почём»)', short(r));
+  r = say('Мне можно при беременности?'); ok(r.intent === 'medical' && r.sure === false && /не даю медицинских рекомендаций/.test(r.text), 'медицинский вопрос: ИИ отвечает осторожно, встроенный режим — с отказом', short(r));
+  for (const [q, intent] of [['Какие у вас контакты?', 'contacts'], ['А при 200 тысячах скидка?', 'discount'], ['Ближайшие семинары', 'events'], ['Сколько стоит Acidcure?', 'price'], ['Перезвоните мне', 'callback']]) { r = b.reply(q, b.newState(), {}); ok(r.intent === intent && r.sure === true, '«' + q + '» — точный ответ сразу, без ИИ (' + intent + ')', [r.intent, r.sure]); }
+  for (const q of ['Расскажите о компании', 'Как стать партнёром?', 'Новинки', 'Что у вас есть?']) { r = b.reply(q, b.newState(), {}); ok(r.sure === false, '«' + q + '» при включённом ИИ уходит к нему (встроенный ответ — запасной)', [r.intent, r.sure]); }
+  const calc = (q, re) => { const x = b.reply(q, b.newState(), {}); ok(x.intent === 'calc' && re.test(x.text) && x.sure === true, 'арифметика: «' + q + '»', short(x)); };
+  calc('сколько будет 15*12', /= 180\*\*/); calc('посчитай (200000+50000)*0.9', /225\s000/); calc('15% от 2000', /= 300\*\*/); calc('2 + 2', /= 4\*\*/); calc('12 x 5', /= 60\*\*/); calc('2 ^ 10', /1\s024/); calc('100 000 + 50 000 =', /150\s000/); calc('посчитай 3,5*2', /= 7\*\*/);
+  r = b.reply('сколько будет 10/0', b.newState(), {}); ok(r.intent === 'calc' && /Делить на ноль нельзя/.test(r.text), 'деление на ноль — вежливое объяснение, без ошибки', short(r));
+  for (const q of ['925-51-62', '12-14 октября', 'посчитай скидку на 200000', 'позвоните по 495-123-45-67']) { r = b.reply(q, b.newState(), {}); ok(r.intent !== 'calc', '«' + q + '» не принимается за арифметику', r.intent); }
+  r = b.reply('какое сегодня число?', b.newState(), {}); ok(r.intent === 'datetime' && /12 октября 2026/.test(r.text) && /понедельник/.test(r.text), 'дата: «12 октября 2026, понедельник»', short(r));
+  r = b.reply('который час?', b.newState(), {}); ok(r.intent === 'datetime' && /10:00/.test(r.text), 'время: по часам устройства', short(r));
+  r = b.reply('какой сегодня день недели', b.newState(), {}); ok(r.intent === 'datetime' && /понедельник/.test(r.text), 'день недели', short(r));
+  const bad = []; for (const q of ['почему именно эти?', 'Центр обучения', 'где центральный офис']) { r = b.reply(q, b.newState(), {}); if (r.intent === 'price') bad.push(q); } ok(!bad.length, 'слова «почему», «центр» не принимаются за вопрос о цене', bad); }
+
 console.log(`\nИтого: ✓ ${pass}  ✗ ${fail}`); process.exit(fail ? 1 : 0);

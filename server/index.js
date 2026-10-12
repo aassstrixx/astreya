@@ -131,6 +131,11 @@ async function handleApi(req, res, url) {
   mm = p.match(/^\/api\/collections\/([a-z]+)\/restore$/);
   if (mm && m === 'POST') { const b = await H.readJSONBody(req, 4096); const r = await CT.restore(mm[1], b.id, ctx.who); AUD.add(ctx.who, 'restore', mm[1] + ' ← ' + b.id); return H.json(res, 200, r); }
 
+  if (p === '/api/assistant/info' && m === 'GET') return H.json(res, 200, ASSIST.info());
+  if (p === '/api/assistant/test' && m === 'POST') {
+    const now = Date.now(); if (now - (handleApi.lastAiTest || 0) < 4000) throw httpErr(429, 'Подождите несколько секунд между проверками.'); handleApi.lastAiTest = now;
+    const r = await ASSIST.selfTest(); AUD.add(ctx.who, 'assistant_test', r.ok ? 'проверка ИИ: успешно' : 'проверка ИИ: ' + (r.code || 'ошибка')); return H.json(res, 200, r);
+  }
   if (p === '/api/overview' && m === 'GET') return H.json(res, 200, Object.assign(INS.overview(), {siteAudit: B.lastAudit()}));
   if (p === '/api/site-pages' && m === 'GET') return H.json(res, 200, {pages: INS.sitePages()});
   if (p === '/api/search' && m === 'GET') return H.json(res, 200, {items: INS.search(url.searchParams.get('q'))});
