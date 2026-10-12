@@ -65,6 +65,41 @@ for (const [q, want] of CASES) {
 }
 console.log('   проверено формулировок: ' + nCase);
 
+/* ---------- 2б. всё, что есть на сайте, библиотека перехватывать не должна ---------- */
+console.log('2б. Вопросы по данным сайта не перехватываются библиотекой');
+{
+  const bad = [], tried = []; const chk = q => { tried.push(q); const b = brain(), r = b.reply(q, b.newState(), {}); if (r.intent === 'talk') bad.push(q + ' → ' + r.topic); };
+  (D.products || []).forEach(p => { chk(p.name); chk('Расскажите про ' + p.name); chk('Сколько стоит ' + p.name + '?'); });
+  (D.brands || []).forEach(x => { chk(x.name); chk('Расскажи о бренде ' + x.name); chk('Что есть у ' + x.name + '?'); chk('что такое ' + x.name); });
+  (D.tasks || []).forEach(t => { chk(t.label); chk('Что есть для задачи «' + t.label + '»?'); chk('посоветуй от ' + t.label.toLowerCase()); });
+  (D.cats || []).forEach(c => { chk(c.name); chk('покажи ' + c.name.toLowerCase()); });
+  (D.events || []).forEach(e => { chk(e.title); chk('Расскажи про семинар ' + e.title); chk('как записаться на ' + e.title); });
+  ((KB.training && KB.training.faq) || []).forEach(f => chk(f.q));
+  (KB.news || []).forEach(n => { chk(n.t); });
+  (KB.partner && KB.partner.benefits || []).forEach(x => chk(x.t)); (KB.company && KB.company.advantages || []).forEach(x => chk(x.t));
+  (KB.pages || []).forEach(p => { chk(p.t); chk('Покажи страницу ' + p.t); });
+  ok(!bad.length, 'ни один из ' + tried.length + ' запросов по товарам, брендам, задачам, категориям, семинарам, FAQ, новостям и разделам сайта не ушёл в «живые реплики»', bad.slice(0, 40));
+}
+
+
+/* ---------- 2в. каждая быстрая кнопка из реплик понимается ---------- */
+console.log('2в. Быстрые кнопки из реплик ведут к осмысленному ответу');
+{
+  const chips = new Set(); S.topics.forEach(t => (t.chips || []).forEach(c => chips.add(c))); Object.values(S.chips || {}).forEach(a => a.forEach(c => chips.add(c))); ['Подсказку', 'Сдаюсь', 'Ещё', 'Ещё раз', 'Ещё шутку', 'Ещё факт'].forEach(c => chips.delete(c));
+  const bad = []; chips.forEach(c => { const b = brain(), st = b.newState(); st.lastTopic = ''; const r = b.reply(c, st, {}); if (r.intent === 'unknown' || (r.intent === 'talk' && /^(?:symbols)$/.test(r.topic || ''))) bad.push(c + ' → ' + r.intent); });
+  ok(!bad.length, 'все ' + chips.size + ' быстрых кнопок приводят к ответу, а не к «не поняла»', bad);
+}
+
+/* ---------- 2г. без библиотеки помощник работает как прежде ---------- */
+console.log('2г. Без библиотеки реплик');
+{
+  const KB2 = Object.assign({}, KB); delete KB2.stella; const b = createBrain(D, KB2, {now: () => new Date(NOW)}), st = b.newState(); let r = b.reply('Привет', st, {});
+  ok(r.intent === 'greet' && b.library === null, 'приветствие и остальное работают, библиотека выключена (b.library = null)', [r.intent]);
+  r = b.reply('метафизика бытия и сознания', st, {}); ok(r.intent === 'unknown' && /без ИИ/.test(r.text) && r.sure === false, 'непонятное — прежний честный отказ', short(r));
+  r = b.reply('ghbdtn', st, {}); ok(r.intent === 'unknown', 'раскладка и английский без библиотеки не включаются', r.intent);
+  r = b.reply('Какие у вас контакты?', st, {}); ok(r.intent === 'contacts', 'вопросы по сайту — как раньше', r.intent);
+}
+
 /* ---------- 3. поведение ---------- */
 require('./stella-flows.js')({brain, ok, short, D, KB, NOW, setRand: v => { rnd = v; }, LIB});
 

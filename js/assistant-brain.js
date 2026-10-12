@@ -422,20 +422,20 @@
        «как_дела» — фраза; «*…» в начале — ключевое правило (слово может стоять где угодно во фразе). Обычное правило должно «покрывать» ≥ 55 % значимых слов запроса — иначе это длинный вопрос о другом, и тема не берётся. */
     const SL = KB && KB.stella && Array.isArray(KB.stella.topics) ? KB.stella : null, SLT = [], SLID = {};
     const YOU = 'ты|тебя|тебе|тобой|твой|твоя|твое|твои|твоим|твоих|твоей|вы|вас|вам|вами|ваш|ваша|ваше|ваши|вашей|вашу', ME = 'я|меня|мне|мной|мой|моя|мое|мои|моим|моих|мы|нас|нам|нами|наш|наша|наше|наши';
-    const ULTRA = new Set(('и а но же бы ли или вот ну то так просто вообще пожалуйста плиз слушай слушайте скажи скажите подскажи подскажите кстати блин значит еще уже ведь типа ой в во на с со к ко у о об от по за из для про при над под без до что чем как какой какая какое какие каких какую какого такой такое такая такие это этот эта эти есть бывает можно можешь можете очень совсем тоже также ' + YOU.replace(/\|/g, ' ') + ' ' + ME.replace(/\|/g, ' ')).split(' '));
+    const ULTRA = new Set(('сегодня сейчас вообще там тут здесь стелла стеллы стелле стеллу стеллой стеллочка и а но же бы ли или вот ну то так просто вообще пожалуйста плиз слушай слушайте скажи скажите подскажи подскажите кстати блин значит еще уже ведь типа ой в во на с со к ко у о об от по за из для про при над под без до что чем как какой какая какое какие каких какую какого такой такое такая такие это этот эта эти есть бывает можно можешь можете очень совсем тоже также ' + YOU.replace(/\|/g, ' ') + ' ' + ME.replace(/\|/g, ' ')).split(' '));
     const DEFLEAD = 'что_такое|что_за|что_значит|что_означает|для_чего|зачем|объясни|поясни|определение|что_это|кто_такой|кто_такая|кто_это|что_известно_про|что_знаешь_про|знаешь_про', TELLLEAD = 'расскажи_про|расскажи_о|расскажите_про|расскажите_о|расскажи_мне_про|расскажи_мне_о';
     const ruleOf = src => {
-      let s = String(src).trim().replace(/(^|\s)@def(?=\s|$)/g, '$1' + DEFLEAD).replace(/(^|\s)@tell(?=\s|$)/g, '$1' + TELLLEAD), kw = false; if (s[0] === '*') { kw = true; s = s.slice(1).trim(); } const pos = [], neg = [];
+      let s0 = String(src).trim(), weak = s0[0] === '~'; if (weak) s0 = s0.slice(1); let s = s0.replace(/(^|\s)@def(?=\s|$)/g, '$1' + DEFLEAD).replace(/(^|\s)@tell(?=\s|$)/g, '$1' + TELLLEAD), kw = false; if (s[0] === '*') { kw = true; s = s.slice(1).trim(); } const pos = [], neg = [];
       s.split(/\s+/).forEach(t => { if (!t) return; const ng = t[0] === '!'; if (ng) t = t.slice(1);
         if (t === 'ты' || t === 'вы' || t === 'ты|вы' || t === 'вы|ты' || t === '@you') t = YOU; else if (t === 'я' || t === 'мы' || t === 'я|мы' || t === 'мы|я' || t === '@me') t = ME;
         const alts = t.split('|').filter(Boolean).map(a => { a = a.replace(/_/g, ' '); const ex = a[0] === '='; if (ex) a = a.slice(1); a = norm(a); return {a, s: a.length >= 6 ? a.split(' ').map(w => { if (w.length < 6) return w; const x = stem(w); return x.length >= 5 ? x : w; }).join(' ') : a, ex: ex || (a.length < 5 && a.indexOf(' ') < 0), k: a.split(' ').length}; });
         if (alts.length) (ng ? neg : pos).push(alts); });
-      return {pos, neg, kw, tell: /(^|\s)@tell(\s|$)/.test(String(src))};
+      return {pos, neg, kw, weak, tell: /(^|\s)@tell(\s|$)/.test(String(src))};
     };
     if (SL) SL.topics.forEach(t => { t.rules = (t.q || []).map(ruleOf); t.stage = t.stage || 'mid'; SLT.push(t); SLID[t.id] = t; });
     function ruleHit(r, ws, wst) {
       let score = 0; const hit = new Set();
-      const at = (al, i) => al.k > 1 ? (ws.slice(i, i + al.k).join(' ').startsWith(al.a) || wst.slice(i, i + al.k).join(' ').startsWith(al.s)) : al.ex ? ws[i] === al.a : (ws[i].startsWith(al.a) || wst[i].startsWith(al.s));
+      const at = (al, i) => al.k > 1 ? (ws.slice(i, i + al.k).join(' ').startsWith(al.a) || wst.slice(i, i + al.k).join(' ').startsWith(al.s)) : al.ex ? ws[i] === al.a : (ws[i].startsWith(al.a) || wst[i].startsWith(al.s) || (al.a.length >= 9 && ws[i].length >= al.a.length - 1 && lev(ws[i].slice(0, al.a.length), al.a, 1) <= 1));
       for (const alts of r.pos) {
         let ok = false;
         for (const al of alts) for (let i = 0; i + al.k <= ws.length; i++) if (at(al, i)) { for (let j = 0; j < al.k; j++) hit.add(i + j); if (!ok) score += 3 + (al.k > 1 ? al.k : al.a.length >= 5 ? 1 : 0); ok = true; }
@@ -450,8 +450,8 @@
       if (raw) SLT.forEach(t => { if (t.stage === stage && t.rx && t.rx.some(r => new RegExp(r, 'i').test(raw))) out[t.id] = {t, sc: 99}; });
       variants.forEach(ws => {
         if (!ws.length) return; const total = ws.filter(w => !ULTRA.has(w)).length, wst = ws.map(stem);
-        SLT.forEach(t => { if (t.stage !== stage) return;
-          t.rules.forEach(r => { if (r.tell && ent && (ent.products.length || ent.brands.length)) return; const m = ruleHit(r, ws, wst); if (!m) return; const cov = total ? [...m.hit].filter(i => !ULTRA.has(ws[i])).length / total : (m.hit.size === ws.length ? 1 : 0);
+        SLT.forEach(t => { if (stage !== 'weak' && t.stage !== stage) return;
+          t.rules.forEach(r => { if ((stage === 'weak') !== !!r.weak) return; if (r.tell && ent && (ent.products.length || ent.brands.length)) return; const m = ruleHit(r, ws, wst); if (!m) return; const cov = total ? [...m.hit].filter(i => !ULTRA.has(ws[i])).length / total : (m.hit.size === ws.length ? 1 : 0);
             if (!(r.kw ? ws.length <= 16 : cov >= 0.55 || (cov >= 0.5 && r.pos.length >= 2) || (cov >= 0.3 && r.pos.length >= 3))) return;
             const sc = m.score * (r.kw ? 0.6 : 1) + cov * 4 + (t.prio || 0); if (!out[t.id] || sc > out[t.id].sc) out[t.id] = {t, sc}; }); });
       });
@@ -468,7 +468,7 @@
     const midnight = d => new Date(d.getFullYear(), d.getMonth(), d.getDate());
     const dword = d => d + ' ' + plural(d, 'день', 'дня', 'дней');
     const RU2EN = {q: 'й', w: 'ц', e: 'у', r: 'к', t: 'е', y: 'н', u: 'г', i: 'ш', o: 'щ', p: 'з', '[': 'х', ']': 'ъ', a: 'ф', s: 'ы', d: 'в', f: 'а', g: 'п', h: 'р', j: 'о', k: 'л', l: 'д', ';': 'ж', "'": 'э', z: 'я', x: 'ч', c: 'с', v: 'м', b: 'и', n: 'т', m: 'ь', ',': 'б', '.': 'ю', '`': 'ё', '&': '?', '?': ',', '/': '.', '$': ';', '^': ':', '@': '"', '#': '№'};
-    const EN_COMMON = new Set('hello hi hey thanks thank you bye goodbye ok okay yes no help please price prices catalog catalogue contact contacts how are what who where when why is the and a to of for i me my your do does can could will would want need about this that it with from have has hi there good morning evening night nice name speak english russian manager call phone email'.split(' '));
+    const EN_COMMON = new Set('hello hi hey thanks thank you bye goodbye ok okay yes no help please price prices catalog catalogue contact contacts how are what who where when why is the and a to of for i me my your do does can could will would want need about this that it with from have has hi there good morning evening night nice name speak english russian manager call phone email training seminar seminars webinar webinars partner partners partnership schedule education course courses brands brand products product'.split(' '));
     const ROWS = ['йцукенгшщзхъ', 'фывапролджэ', 'ячсмитьбю', 'qwertyuiop', 'asdfghjkl', 'zxcvbnm'];
     const isMash = w => { if (w.length < 5) return false; for (let i = 0; i + 5 <= w.length; i++) { const g = w.slice(i, i + 5), r = g.split('').reverse().join(''); if (ROWS.some(row => row.indexOf(g) >= 0 || row.indexOf(r) >= 0)) return true; } return false; };
     function gibberish(n) { const ws = words(n).filter(w => w.length >= 4); if (!ws.length) return false; const bad = ws.filter(w => isMash(w) || /[бвгджзйклмнпрстфхцчшщbcdfghjklmnpqrstvwxz]{5,}/.test(w) || !/[аеёиоуыэюяaeiouy]/.test(w)); return bad.length >= Math.ceil(ws.length / 2); }
@@ -604,6 +604,9 @@
         const re = slReply('early', X, st, ctx); if (re) return done(re);
       }
 
+      /* ---- «Привет, как дела?» / «Здравствуйте, подскажите про пилинги» — приветствие + вопрос: отвечаем на вопрос, приветствие учитываем ---- */
+      if (SL && !ctx.noLead && ntok >= 4) { const ld = /^(?:ну\s+|а\s+)?(?:привет(?:ствую)?|здравствуй(?:те)?|добрый\s+(?:день|вечер)|доброе\s+утро|хай|hello|hi|салют)[\s,!.:;—-]+(?:стелла[\s,!.:;—-]+)?(.{6,})$/i.exec(text); if (ld) { const snap = JSON.stringify(st), r2 = reply(ld[1], st, Object.assign({}, ctx, {noLead: true})); if (r2 && r2.intent !== 'unknown') { st.turns--; r2.text = hello() + '! ' + r2.text; return r2; } Object.keys(st).forEach(k => { delete st[k]; }); Object.assign(st, JSON.parse(snap)); } }
+
       /* ---- светские реплики ---- */
       const greetRe = new RegExp('^(?:ну |а )?(?:привет|здравствуй|добрый день|доброе утро|добрый вечер|доброй ночи|(?:хай|hello|hi|салют)' + END + ')', 'i');
       if (greetRe.test(n) && ntok <= 4) { st.last = {}; return done(R(hello() + '! Я Стелла, мини-консультант «Астреи». Подскажу по каталогу и брендам, обучению, условиям сотрудничества и контактам. ' + pick(st, ['Что вас интересует?', 'С чего начнём?', 'Чем помочь?']), {chips: starters(ctx, st), intent: 'greet'})); }
@@ -678,7 +681,7 @@
         return done(R('Этих сведений на сайте нет — чтобы не ошибиться, их подтверждает менеджер: наличие, сроки и условия доставки, документы и сертификаты, состав. ' + MGR() + ' Отправить запрос?', {actions: compact([act.form('product', 'Запросить информацию', ''), act.callback()]), chips: ['Да, отправить запрос'], intent: 'avail'}));
       }
       if (W('где купить|как купить|как заказать|как приобрести|как оформить заказ|физлиц|частн\\S* лиц|для себя|интернет-магазин').test(n)) return done(R('Продукция «Астреи» рассчитана на специалистов — косметологов, салоны и клиники — и поставляется партнёрам. Чтобы начать, оставьте заявку на партнёрство или запрос по товару: менеджер уточнит условия и подскажет, как оформить поставку. Для частных покупателей условия уточняйте у менеджера.', {actions: compact([act.partner(st), act.form('product', 'Запросить информацию', ''), act.callback()]), links: [link('partners.html', 'Условия сотрудничества')], intent: 'buy'}));
-      if (W('контакт|телефон|позвонить|номер|почт|e-?mail|адрес|где наход|как добрат|как найти|офис|график|часы работ|режим работ|когда работа|whatsapp|ватсап|представительств').test(n) && !W('семинар|мероприят|вебинар').test(n)) return done(contactsAnswer(n, st));
+      if ((W('контакт|телефон|позвонить|номер|почт|e-?mail|адрес|как добрат|как найти|офис|график|часы работ|режим работ|когда работа|whatsapp|ватсап|представительств').test(n) && !W('семинар|мероприят|вебинар').test(n)) || (W('где наход').test(n) && W('вы|ваш|офис|компани|склад|представительств|магазин|учебн|центр').test(n) && !W('семинар|мероприят|вебинар').test(n))) return done(contactsAnswer(n, st));
       if (W('менеджер|оператор|живой человек|связаться|свяжитесь|консультант|человек').test(n)) return done(R('Менеджер ответит в рабочее время: ' + contactsMain.phone + ' (' + contactsMain.hours + '). Можно заказать звонок или задать вопрос письменно.', {actions: compact([act.callback(), act.ask(text)]), links: [link('contacts.html', 'Контакты')], intent: 'human'}));
       if (W('партн[её]р|сотрудничеств|дилер|дистрибьют|оптом|опт($|\\s)|закупк|условия поставк|договор|стать клиент').test(n)) return done(partnerAnswer(n, st));
       if (W('заявк|оставить запрос|отправить запрос').test(n)) return done(R('Выберите, что оформить:', {actions: compact([act.form('product', 'Запросить информацию', ''), act.partner(st), act.callback()]), intent: 'forms'}));
@@ -695,7 +698,7 @@
       if (periodOf(n) && !tasksInText.length && !productsInText.length && K.listEvents({from: periodOf(n).from, to: periodOf(n).to}).length) return done(eventsAnswer(n, st, ctx));
       if (W('новост|акци[июя]|что нового|анонс').test(n)) { const nw = ((KB && KB.news) || []).slice().sort((a, b) => b.date.localeCompare(a.date)).slice(0, 3); return done(R(nw.length ? 'Свежее на сайте: ' + nw.map(x => x.t).join('; ') + '.' : 'Новости — на странице «Новости».', {links: nw.map(x => link(x.u, x.t)).concat(nw.length ? [] : [link('news.html', 'Новости')]), intent: 'news', steps: ['Смотрю новости…']})); }
       if (W('новинк').test(n)) { const ps = (D.products || []).filter(p => p.n); const first = showList(st, ps.map(p => p.id), {intent: 'new'}); return done(R(ps.length ? 'Новинки каталога:' : 'Сейчас новинок в каталоге нет.', {cards: first, links: [link('catalog.html', 'Весь каталог')], intent: 'new'})); }
-      if (W('о компании|о вашей компании|кто вы|чем занимаетесь|занима(?:ет|ете)ся|расскажите о себе|расскажите о компании|оригинальн|контрафакт|подлинн|кто такие|что за компания|что вы делаете').test(n)) { const c = KB && KB.company; return done(R(c && c.about && c.about.length ? c.about[0] + (c.advantages && c.advantages.length ? '\n\nПреимущества: ' + c.advantages.slice(0, 4).map(a => lower(a.t)).join(', ') + '.' : '') : 'Подробно о компании — на странице «Компания».', {links: [link('company.html', 'О компании')], chips: ['Какие бренды?', 'Как стать партнёром'], intent: 'about'})); }
+      if (W('о компании|про компани|про вашу компани|о вас($|\\s)|про вас($|\\s)|об астре|про астре|о вашей компании|кто вы|чем занимаетесь|занима(?:ет|ете)ся|расскажите о себе|расскажите о компании|оригинальн|контрафакт|подлинн|кто такие|что за компания|что вы делаете').test(n)) { const c = KB && KB.company; return done(R(c && c.about && c.about.length ? c.about[0] + (c.advantages && c.advantages.length ? '\n\nПреимущества: ' + c.advantages.slice(0, 4).map(a => lower(a.t)).join(', ') + '.' : '') : 'Подробно о компании — на странице «Компания».', {links: [link('company.html', 'О компании')], chips: ['Какие бренды?', 'Как стать партнёром'], intent: 'about'})); }
 
       /* ---- сущности каталога ---- */
       if (productsInText.length === 1) return done(productAnswer(productsInText[0], st));
@@ -716,7 +719,7 @@
       const ia = infoAnswer(text, st); if (ia) return done(ia);
 
       /* ---- чего на сайте нет (возврат, рассрочка, вакансии…) и последний шанс библиотеки (стадия «post») ---- */
-      if (SL) { const rp = slReply('post', X, st, ctx); if (rp) return done(rp); }
+      if (SL) { const rp = slReply('post', X, st, ctx) || slReply('weak', X, st, ctx); if (rp) return done(rp); }
       return done(unknown(text, st, tk));
     }
 

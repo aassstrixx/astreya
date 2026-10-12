@@ -19,12 +19,13 @@
     "test:e2e-builder": "node server/test/e2e-builder.js",
     "check:extras": "node tools/check-extras.js",
     "check:motion": "node tools/check-fab-motion.js",
-    "check:assistant": "node tools/check-assistant.js && node tools/check-assistant-ai.js",
+    "check:assistant": "node tools/check-assistant.js && node tools/check-stella.js && node tools/check-assistant-ai.js",
     "arena:admin": "node tools/arena-admin.js --n=100",
     "admin:demo": "node tools/admin-demo.js astreya-admin-demo.html",
     "audit": "node tools/audit.js",
     "audit:static": "node tools/audit.js --static",
-    "audit:matrix": "node tools/audit.js --matrix"
+    "audit:matrix": "node tools/audit.js --matrix",
+    "check:stella": "node tools/check-stella.js"
   },
   "optionalDependencies": {
     "@anthropic-ai/sdk": "^0.133.0"

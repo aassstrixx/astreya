@@ -77,6 +77,10 @@ const wait = ms => new Promise(r => setTimeout(r, ms));
   ok(thinkMs >= 2200, 'Стелла не отвечает мгновенно: «прочитала» → «думает» → печатает; первые слова не раньше ~2,5 с после вопроса (' + thinkMs + ' мс)', thinkMs);
   ok(ro.mood === 'idle', 'после ответа Стелла спокойна (настроение idle)', ro.mood);
   const nsm = calls.length; set([{chunks: ['Спасибо, всё хорошо!']}]); await ask('Как дела?'); ok(calls.length === nsm + 1 && /всё хорошо/.test(await lastRow()), 'светская беседа («как дела?») при включённом ИИ отвечает модель');
+  { const n1 = calls.length; await ask('ок'); ok(calls.length === n1 && /Хорошо|Отлично|Принято|Поняла/.test(await lastRow()), 'служебное «ок» при включённом ИИ отвечается сразу, без обращения к модели');
+    await ask('я не хочу жить'); ok(calls.length === n1 && /112/.test(await lastRow()), 'тяжёлая тема при включённом ИИ — всегда мгновенный безопасный ответ (112), без обращения к модели');
+    await ask('брось кубик'); ok(calls.length === n1 && /Кубик|Бросаю|Ну что ж|Тук/.test(await lastRow()), 'игра («брось кубик») — на месте, без затрат на ИИ');
+    set([{chunks: ['Я Стелла, рада знакомству.']}]); await ask('расскажи о себе'); ok(calls.length === n1 + 1 && /рада знакомству/.test(await lastRow()), 'вопрос о самой Стелле при включённом ИИ уходит модели (библиотека реплик остаётся запасным ответом)'); }
   /* «Стоп» во время раздумья: ничего не отвечено, чат свободен, вопрос остаётся */
   set([{delay: 4000, chunks: ['Ответ, который не должен появиться']}]); const nU = await p.$$eval('#asst-log .asst-u', e => e.length);
   await p.fill('#asst-in', 'Расскажи длинную историю про космос'); await p.keyboard.press('Enter'); await p.waitForSelector('#asst-log .asst-typing'); await wait(700); await p.click('#asst-send'); await idle(); await wait(200);

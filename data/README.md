@@ -25,6 +25,8 @@
 
 **site.json** — `url` (адрес сайта для canonical и sitemap), `formEndpoint` (адрес приёма заявок: `/api/lead` — сервер из `server/` на том же адресе, заявки идут в админку; для сайта на Pages — полный `https://<сервер>/api/lead`; пусто — формы готовят письмо; см. server/README.md), `demoNotice` (пустая строка убирает заметку в подвале и включает Product/Event/NewsArticle JSON-LD).
 
+**stella/** — библиотека «живых» реплик помощника Стеллы (ответы на неожиданные вопросы без ИИ): `config.json` и темы по файлам; формат и правила записи — в `data/stella/README.md`. Нет папки — библиотека выключена. Не входит в редактор админки: правится в репозитории, после правок — `node tools/build.js` и `node tools/check-stella.js`.
+
 ## Слой доработок: `redesign.json` и флаг `site.redesign`
 
 * `site.json → redesign` (`true`/`false`) включает/выключает весь слой (см. README → «Доработки и откат»).
