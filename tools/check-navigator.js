@@ -68,9 +68,30 @@ const wait = ms => new Promise(r => setTimeout(r, ms));
   await p.ask('где фильтры?'); let sp = await p.spot();
   ok(sp && /Фильтры/.test(sp.txt) && sp.hole.w > 300 && sp.btns.includes('Понятно') && await p.evaluate(() => !document.body.classList.contains('asst-open')), '«где фильтры?» — чат убирается, фильтры подсвечены с пояснением', sp);
   await p.keyboard.press('Escape'); await wait(200); ok(!(await p.spot()), 'Esc закрывает подсветку');
-  await p.ask('проведи по сайту'); await wait(1500); sp = await p.spot(); ok(sp && /Шаг 1 из 4/i.test(sp.step) && /меню/i.test(sp.txt), 'команда «проведи по сайту» запускает экскурсию (шаг 1 из 4: меню)', sp);
-  for (let i = 2; i <= 4; i++) { await p.click('.g-ctl [data-act="g-tour-next"]'); await wait(1300); sp = await p.spot(); ok(sp && new RegExp('Шаг ' + i + ' из 4', 'i').test(sp.step), 'экскурсия: шаг ' + i + ' из 4 — «' + (sp ? sp.txt.slice(0, 40) : '') + '…»'); }
-  await p.click('.g-ctl [data-act="g-tour-next"]'); await wait(500); ok(!(await p.spot()) && !(await p.evaluate(() => sessionStorage.getItem('astreya:g-tour'))), 'после «Готово» экскурсия закрыта и состояние очищено');
+  /* «Знакомство с сайтом»: по меню, без прокрутки, шапка и выбранная вкладка видны; на странице каталога (не главной) */
+  await p.evaluate(() => window.scrollTo({top: 700, behavior: 'instant'})); await wait(500);
+  const NAVN = await p.evaluate(() => [...document.querySelectorAll('#nav > a.nl')].map(a => a.textContent.trim()));
+  const y0 = await p.evaluate(() => scrollY);
+  await p.ask('проведи по сайту'); await wait(1500); sp = await p.spot();
+  const total = NAVN.length + 4;
+  ok(sp && new RegExp('Шаг 1 из ' + total, 'i').test(sp.step) && /Сейчас вы на странице/.test(sp.txt) && /Меню сверху/.test(sp.txt), 'команда «проведи по сайту»: шаг 1 — «Сейчас вы на странице…», дальше покажу меню (шагов: ' + total + ')', sp);
+  const seen = [], wantSel = NAVN.concat(['', 'Стать партнёром']); let hdrOk = true, selOk = true, still = true;
+  for (let i = 2; i <= total - 1; i++) {
+    await p.click('.g-ctl [data-act="g-tour-next"]'); await wait(1100); sp = await p.spot();
+    const st = await p.evaluate(() => { const h = document.getElementById('hdr'), hr = h.getBoundingClientRect(), sel = document.querySelector('.g-sel'), s = document.getElementById('g-spot').querySelector('.g-hole').getBoundingClientRect(); return {hdrTop: Math.round(hr.top), hdrVis: hr.bottom > 20 && getComputedStyle(h).transform === 'none', sel: sel ? sel.textContent.trim() : null, selBox: sel ? (() => { const r = sel.getBoundingClientRect(); return Math.abs(r.left - s.left) < 30 && Math.abs(r.top - s.top) < 30; })() : false, y: scrollY}; });
+    seen.push(sp ? sp.txt.slice(0, 22) : '—'); if (!st.hdrVis) hdrOk = false; if (st.y !== y0) still = false;
+    const k = i - 2; if (k < NAVN.length && st.sel !== wantSel[k]) selOk = false; if (k >= NAVN.length && st.sel === null) selOk = false; if (!st.selBox) selOk = false;
+  }
+  ok(still, 'экскурсия не прокручивает страницу ни на шаг (scrollY не изменился: ' + y0 + ')');
+  ok(hdrOk, 'шапка с меню на виду на каждом шаге, хотя страница прокручена вниз');
+  ok(selOk, 'на каждом шаге нужная вкладка выбрана и подсвечена: ' + NAVN.join(', ') + ', поиск, «Стать партнёром»', seen);
+  ok(NAVN.length >= 5 && NAVN.every((t, i) => (seen[i] || '').toLowerCase().indexOf(t.toLowerCase()) === 0) && /Поиск/.test(seen[NAVN.length]) && /Стать партнёром/.test(seen[NAVN.length + 1]), 'шаги идут в порядке меню: ' + seen.join(' | '), seen);
+  await p.click('.g-ctl [data-act="g-tour-next"]'); await wait(1100); sp = await p.spot();
+  ok(sp && new RegExp('Шаг ' + total + ' из ' + total).test(sp.step) && /главной страницей/i.test(sp.txt) && /всегда готова помочь/i.test(sp.txt) && sp.btns.includes('На главную') && sp.btns.includes('Закрыть'), 'финал: «сначала советую ознакомиться с главной страницей, а если понадобится помощь — я всегда готова помочь» + кнопка «На главную»', sp);
+  await p.click('.g-ctl [data-act="g-spot-x"]'); await wait(500); ok(!(await p.spot()) && !(await p.evaluate(() => sessionStorage.getItem('astreya:g-tour'))) && await p.evaluate(() => !document.body.classList.contains('g-hdr') && !document.querySelector('.g-sel')), '«Закрыть» убирает подсветку, выделение вкладки и состояние экскурсии');
+  await p.ask('покажи сайт'); await wait(1500); sp = await p.spot(); ok(sp && /Шаг 1 из/.test(sp.step), '«покажи сайт» тоже запускает знакомство'); await p.keyboard.press('Escape'); await wait(300);
+  const oldTxt = await p.evaluate(() => /Поиск по сайту — по названию|телефон менеджера здесь/i.test(JSON.stringify((window.ASTREYA_DATA.guide.tours.find(t => t.id === 'site') || {}))));
+  ok(!oldTxt, 'прежних шагов ознакомления (меню → поиск → кнопка → телефон) в данных больше нет');
   await p.ask('отфильтруй по пигментации'); await wait(1500);
   const fl = await p.evaluate(() => ({task: document.querySelector('#f-task').value, count: document.querySelector('#res-count').textContent, shown: [...document.querySelectorAll('.pcard')].filter(c => !c.hidden).length}));
   sp = await p.spot(); ok(fl.task === 'pigment' && fl.shown > 0 && fl.shown < 30 && sp && /Найдено/.test(sp.txt), '«отфильтруй по пигментации» — фильтр выставлен, показано ' + fl.shown + ' из 30, Стелла указывает на результат', {fl, sp});
@@ -96,6 +117,21 @@ const wait = ms => new Promise(r => setTimeout(r, ms));
   await p.context().close();
 
   /* ---------- точки входа на всех типах страниц ---------- */
+  console.log('\n[Знакомство с сайтом: главная страница]');
+  p = await mk({speed: 14}); await p.open('index.html');
+  await p.evaluate(() => { const o = document.querySelector('#jar-outro') || document.querySelector('#jar-story'); if (o) window.scrollTo({top: o.getBoundingClientRect().bottom + scrollY + 1500, behavior: 'instant'}); });
+  await p.waitForFunction(() => !document.body.classList.contains('x-intro') && !document.getElementById('asst-fab').classList.contains('away'), null, {timeout: 15000}); await wait(1200);
+  const hy = await p.evaluate(() => scrollY); ok(await p.evaluate(() => document.getElementById('hdr').classList.contains('hide')) || hy > 0, 'проверка на главной: страница прокручена вниз' + (await p.evaluate(() => document.getElementById('hdr').classList.contains('hide')) ? ', шапка спрятана' : ''), hy);
+  await p.ask('проведи по сайту'); await wait(1500); sp = await p.spot();
+  ok(sp && /Сейчас вы на главной странице/.test(sp.txt) && /Шаг 1 из/.test(sp.step), 'на главной Стелла первым делом говорит: «Сейчас вы на главной странице»', sp);
+  ok(await p.evaluate(() => { const h = document.getElementById('hdr'), r = h.getBoundingClientRect(); return r.top >= -1 && r.bottom > 40 && getComputedStyle(h).transform === 'none'; }), 'шапка сама показалась (хотя была спрятана прокруткой)');
+  let steps = 1;
+  while (sp && !sp.btns.includes('Готово') && steps < 14) { await p.click('.g-ctl [data-act="g-tour-next"]'); await wait(1000); sp = await p.spot(); if (sp) steps++; }
+  ok(sp && sp.btns.includes('Готово') && !sp.btns.includes('На главную') && /ознакомиться с главной страницей — вы как раз на ней/.test(sp.txt) && /всегда готова помочь/.test(sp.txt), 'финал на главной: «сначала советую ознакомиться с главной страницей — вы как раз на ней», кнопка «Готово» (без «На главную»)', sp);
+  ok(await p.evaluate(sy => scrollY === sy, hy), 'на главной экскурсия тоже не прокрутила страницу');
+  await p.click('.g-ctl [data-act="g-tour-next"]'); await wait(500); ok(!(await p.spot()), '«Готово» завершает знакомство');
+  ok(!p.errs.length, 'на главной нет ошибок JS', p.errs); await p.context().close();
+
   console.log('\n[Точки входа Стеллы на каждой странице]');
   const pages = ['index.html', 'catalog.html', 'brands.html', 'brands/' + D.brands[0].id + '.html', 'products/' + D.products[0].slug + '.html', 'training.html', 'training/' + D.events[0].slug + '.html', 'partners.html', 'contacts.html', 'company.html', 'news.html', 'search.html', '404.html'];
   p = await mk({speed: 14}); const miss = [], anchors = [];
@@ -132,6 +168,17 @@ const wait = ms => new Promise(r => setTimeout(r, ms));
   await p.click('.cmp-ask'); await wait(900); await p.idle(); await wait(300); r = await p.lastBot(); ok(r && /Сравниваю/.test(r.text) && r.disc, 'на телефоне сравнение через Стеллу работает, плашка есть');
   await p.ask('где фильтры?'); await wait(800); sp = await p.spot();
   ok(sp && await p.evaluate(() => { const pop = document.querySelector('.g-pop'); const r = pop.getBoundingClientRect(); return pop.classList.contains('sheet') && r.bottom <= innerHeight && r.left >= 0 && r.right <= innerWidth; }) && await p.evaluate(() => !document.body.classList.contains('asst-open')), 'на телефоне подсказка — нижняя «шторка» внутри экрана, чат свёрнут', sp);
+  await p.keyboard.press('Escape'); await wait(1200);
+  const my = await p.evaluate(() => scrollY);
+  await p.ask('проведи по сайту'); await wait(1400); sp = await p.spot(); ok(sp && /Шаг 1 из/.test(sp.step) && await p.evaluate(() => !document.body.classList.contains('menu-open')), 'на телефоне: шаг 1, ящик меню пока закрыт');
+  await p.click('.g-ctl [data-act="g-tour-next"]'); await wait(1300); sp = await p.spot();
+  const dr = await p.evaluate(() => { const sel = document.querySelector('.g-sel'), pop = document.querySelector('.g-pop').getBoundingClientRect(), h = document.querySelector('.g-hole').getBoundingClientRect(); return {open: document.body.classList.contains('menu-open'), sel: sel ? sel.textContent.trim() : null, popIn: pop.bottom <= innerHeight && pop.left >= 0 && pop.right <= innerWidth, holeVis: h.top >= 0 && (h.bottom <= pop.top || h.top >= pop.bottom), y: scrollY}; });
+  ok(dr.open && /Каталог/i.test(dr.sel || '') && dr.popIn && dr.holeVis && /Каталог/.test(sp.txt), 'на телефоне ящик меню открывается сам, «Каталог» выбран и виден над подсказкой', dr);
+  let okAll = true; const bad = []; for (let i = 3; i <= 8; i++) { await p.click('.g-ctl [data-act="g-tour-next"]'); await wait(900); const d2 = await p.evaluate(() => { const sel = document.querySelector('.g-sel'), pop = document.querySelector('.g-pop').getBoundingClientRect(), h = document.querySelector('.g-hole').getBoundingClientRect(); return {open: document.body.classList.contains('menu-open'), sel: !!sel, vis: (h.bottom <= pop.top || h.top >= pop.bottom) && h.top >= 0 && h.bottom <= innerHeight, y: scrollY}; }); if (!d2.open || !d2.sel || !d2.vis || d2.y !== my) { okAll = false; bad.push([i, d2, my]); } }
+  ok(okAll, 'на телефоне все шаги меню, поиска и «Стать партнёром»: ящик открыт, элемент выбран, виден и не закрыт подсказкой (в том числе при плашке сравнения в доке), страница не сдвинулась', bad);
+  await p.click('.g-ctl [data-act="g-tour-next"]'); await wait(1000); sp = await p.spot();
+  ok(sp && /главной страницей/.test(sp.txt) && await p.evaluate(() => !document.body.classList.contains('menu-open') && !document.body.classList.contains('locked')), 'финал на телефоне: ящик сам закрылся, совет про главную показан');
+  await p.keyboard.press('Escape'); await wait(300);
   ok(await p.evaluate(() => document.documentElement.scrollWidth <= innerWidth), 'горизонтальной прокрутки нет');
   ok(!p.errs.length, 'нет ошибок JS на телефоне', p.errs); await p.context().close();
 

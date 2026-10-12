@@ -3,6 +3,7 @@
    Что здесь: «руки» Стеллы. Чат (assistant.js) и «мозг» (assistant-brain.js) решают, ЧТО показать, — этот файл делает это на странице:
    · spot()    — подсветка элемента с пояснением (затемнение вокруг, подсказка рядом, следит за прокруткой);
    · tour()    — экскурсия по шагам, переживает переходы между страницами (состояние в sessionStorage, живёт ≈ 3 минуты);
+     «Знакомство с сайтом» (tour «site») — по меню сайта: «вы на главной» → каждый пункт меню → поиск → «Стать партнёром» → «начните с главной». Страница не прокручивается, шапка сама показывается, на узких экранах сам открывается ящик меню;
    · go()      — открыть страницу этого сайта (только известные адреса), filter() — выставить фильтры каталога, scroll() — прокрутка;
    · точки входа — на каждой странице блок «Не знаете, что выбрать? Спросите Стеллу» с готовыми вопросами;
    · проактивная подсказка — аккуратный пузырь у кнопки Стеллы: при долгом чтении, прокрутке, паузе, «мышь ушла вверх», пустых результатах и выбранных для сравнения товарах.
@@ -18,6 +19,7 @@
   const pageKey = () => document.body.getAttribute('data-page') || '';
   const speed = () => { const v = +window.ASTREYA_MOTION_SPEED; return v > 0 ? v : 1; };
   const mobile = () => matchMedia('(max-width:640px)').matches;
+  const narrow = () => matchMedia('(max-width:900px)').matches;          // с этой ширины меню — выезжающий ящик (бургер)
   const store = {
     get: k => { try { return JSON.parse(sessionStorage.getItem(k) || 'null'); } catch (e) { return null; } },
     set: (k, v) => { try { sessionStorage.setItem(k, JSON.stringify(v)); } catch (e) {} },
@@ -65,7 +67,11 @@
     const r = spotEl.getBoundingClientRect(), vw = innerWidth, vh = innerHeight, hole = $('.g-hole', s), pop = $('.g-pop', s);
     const x = Math.max(4, r.left - PAD), y = Math.max(4, r.top - PAD), w = Math.min(vw - 8, r.width + PAD * 2), h = Math.min(Math.round(vh * .6), r.height + PAD * 2);          // очень большой блок подсвечиваем только в пределах экрана
     hole.style.transform = 'translate(' + Math.round(x) + 'px,' + Math.round(y) + 'px)'; hole.style.width = Math.round(w) + 'px'; hole.style.height = Math.round(h) + 'px';
-    if (mobile()) { pop.style.left = ''; pop.style.top = ''; pop.classList.add('sheet'); }
+    if (mobile()) {
+      pop.style.left = ''; pop.style.top = ''; pop.classList.add('sheet');
+      const dock = document.body.classList.contains('dock-on') ? (parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--dock-h')) || 66) : 0, ph = pop.offsetHeight || 200;
+      pop.classList.toggle('sheet-top', vh - (y + h) - dock < ph + 16 && y > ph + 16);          // внизу не хватает места (цель ниже или плашки в доке) — подсказка уходит наверх, цель остаётся видна
+    }
     else {
       pop.classList.remove('sheet'); const pw = pop.offsetWidth || 320, ph = pop.offsetHeight || 120; let top, below = y + h + 14, above = y - ph - 14;
       top = below + ph <= vh - 12 ? below : above >= 12 ? above : Math.max(12, vh - ph - 16);
@@ -76,6 +82,7 @@
     spotRaf = requestAnimationFrame(place);
   }
   function scrollTo(el) {
+    if (el.closest && el.closest('#hdr')) return;          // шапка и меню закреплены сверху — страницу не прокручиваем
     const r = el.getBoundingClientRect(), vh = innerHeight, want = mobile() ? vh * .3 : vh * .38, hdr = 76;
     if (r.top >= hdr + 10 && r.bottom <= vh - (mobile() ? 190 : 24) && r.height < vh * .8) return;          // и так на виду
     const top = Math.max(0, Math.round(scrollY + r.top - Math.max(hdr + 16, Math.min(want, (vh - r.height) / 2))));
@@ -85,7 +92,8 @@
   function spot(el, cfg) {
     const s = spotDom(); spotEl = el; cur = cfg; onClose = cfg.onClose || null;
     const pop = $('.g-pop', s), fresh = s.hidden, hole = $('.g-hole', s); if (fresh) hole.classList.add('g-nt'); $('.g-pe', s).innerHTML = A.pearl ? A.pearl('talk', true) : '';          // первое появление — сразу на месте, без «вылета» из угла
-    $('.g-tx', s).innerHTML = '<p>' + bold(cfg.text || '') + '</p>' + (cfg.step && cfg.step.n > 1 ? '<small class="g-st">Шаг ' + (cfg.step.i + 1) + ' из ' + cfg.step.n + '</small>' : '');
+    $$('.g-sel, .g-pulse').forEach(e => { if (e !== el) e.classList.remove('g-sel', 'g-pulse'); }); if (cfg.mark && el.classList) el.classList.add('g-sel');          // выбранная «вкладка» меню
+    $('.g-tx', s).innerHTML = '<p>' + bold(cfg.text || '') + '</p>' + (cfg.step && cfg.step.n > 1 ? '<small class="g-st">Шаг ' + (cfg.step.i + 1) + ' из ' + cfg.step.n + '</small><span class="g-bar" aria-hidden="true"><i style="width:' + Math.round((cfg.step.i + 1) / cfg.step.n * 100) + '%"></i></span>' : '');
     const bt = (cfg.buttons || []).map(b => '<button class="btn ' + (b.primary ? 'btn-fill' : b.act === 'asst-open' ? 'btn-lnk' : 'btn-ghost') + ' btn-sm" type="button" data-act="' + esc(b.act) + '"' + (b.d ? ' data-d="' + esc(JSON.stringify(b.d)) + '"' : '') + '>' + esc(b.l) + '</button>').join('');
     $('.g-ctl', s).innerHTML = bt; s.hidden = false; document.body.classList.add('g-on');
     pop.classList.remove('in'); void pop.offsetWidth; pop.classList.add('in');
@@ -93,9 +101,21 @@
     const f = $('.g-ctl .btn-fill', s); if (f) { try { f.focus({preventScroll: true}); } catch (e) {} }
     A.track && A.track('guide_spot', {target: cfg.t ? cfg.t.id : '', tour: cfg.tour || ''});
   }
-  function hideSpot(silent) {
+  function hideSpot(silent, keep) {
+    if (!keep) menuRelease();
     const s = $('#g-spot'); if (!s || s.hidden) { spotEl = null; return; }
     s.hidden = true; document.body.classList.remove('g-on'); cancelAnimationFrame(spotRaf); spotRaf = 0; spotEl = null; const cb = onClose; onClose = null; cur = null; if (cb && !silent) cb();
+  }
+  /* экскурсия по меню: шапка всегда на виду (она уходит при прокрутке вниз), на узких экранах ящик меню открывается сам; всё возвращается, когда подсветка закрыта */
+  let mUI = {drawer: false, hdr: false};
+  function menuHold(open) {
+    const b = document.body, h = $('#hdr'); if (h) h.classList.remove('hide'); b.classList.add('g-hdr'); mUI.hdr = true;
+    if (!narrow() || open === b.classList.contains('menu-open')) return 0;
+    if (A.toggleMenu) A.toggleMenu(open); mUI.drawer = open; return Math.round(480 / speed());
+  }
+  function menuRelease() {
+    $$('.g-sel').forEach(e => e.classList.remove('g-sel')); if (!mUI.hdr) return;
+    document.body.classList.remove('g-hdr'); if (mUI.drawer && A.closeMenu) A.closeMenu(); mUI = {drawer: false, hdr: false};
   }
 
   /* ---------- «покажи» ---------- */
@@ -114,7 +134,21 @@
   function pulse(el) { el.classList.remove('g-pulse'); void el.offsetWidth; el.classList.add('g-pulse'); setTimeout(() => el.classList.remove('g-pulse'), 2600); }
 
   /* ---------- экскурсии ---------- */
-  const tourById = id => TOURS.find(t => t.id === id);
+  const tourById = id => { const T = TOURS.find(t => t.id === id); if (T && T.menu) T.steps = menuSteps(T); return T || null; };
+  /* «Знакомство с сайтом»: шаги берутся из настоящего меню страницы (порядок и подписи — как в шапке), тексты — из guide.json → tours[site].menu */
+  const pageName = () => { const n = (document.title || '').split(/\s[—–|·]\s/)[0].trim(); return n ? (n.length > 46 ? n.slice(0, 44).replace(/\s+\S*$/, '') + '…' : n) : 'эта страница'; };
+  function menuSteps(T) {
+    const M = T.menu || {}, home = pageKey() === 'home', fill = (t, o) => String(t || '').replace(/\{(\w+)\}/g, (m, k) => o && o[k] != null ? o[k] : m);
+    const st = [{id: 'menu-intro', label: 'Главная', sel: '.logo', say: fill((M.intro || {})[home ? 'home' : 'other'], {page: pageName()}), kind: 'intro'}];
+    $$('#nav > a.nl').forEach(a => {
+      const k = a.getAttribute('data-nav') || '', title = a.textContent.trim(); if (!title) return;
+      st.push({id: 'menu-' + k, label: title, sel: '#nav > a.nl[data-nav="' + k.replace(/"/g, '') + '"]', drawer: true, mark: true, say: (M.nav || {})[k] || fill(M.navOther, {title}), kind: 'nav'});
+    });
+    if (M.search) st.push({id: 'menu-search', label: 'Поиск', sel: '.hdr-cta [data-act="search"]', selM: '.nav-search .search', drawer: true, mark: true, say: M.search, kind: 'search'});
+    if (M.partner) st.push({id: 'menu-partner', label: 'Стать партнёром', sel: '.hdr-partner', selM: '.nav-extra .btn-fill', drawer: true, mark: true, say: M.partner, kind: 'partner'});
+    if (M.outro) st.push({id: 'menu-outro', label: 'Главная', sel: '.logo', say: (M.outro || {})[home ? 'home' : 'other'], kind: 'outro', home});
+    return st.map(x => Object.assign({page: 'any', menu: true}, x));
+  }
   const stepMatches = (st, key) => st.page === 'any' || st.page === key || (st.page === 'brand' && key === 'brand');
   const isStatic = page => PAGES.some(p => p.id === page);
   function saveTour(id, i, nav) { store.set(KT, {id, i, t: Date.now(), nav: nav ? 1 : 0}); }
@@ -133,19 +167,19 @@
       if (pg) { saveTour(T.id, i, true); go(pg.href, {keepTour: true}); return true; }
       saveTour(T.id, i, true); hintWaitPage(T, i, st); return true;                    // страница-«лист» (товар, мероприятие): ждём, пока посетитель её откроет
     }
-    const t = (TARGETS[st.page === 'any' ? '*' : st.page] || []).concat(TARGETS['*'] || []).find(x => x.id === st.target) || findTarget(st.target);
+    const t = st.menu ? {id: st.id, label: st.label, say: st.say, sel: narrow() && st.selM ? st.selM : st.sel} : (TARGETS[st.page === 'any' ? '*' : st.page] || []).concat(TARGETS['*'] || []).find(x => x.id === st.target) || findTarget(st.target);
     if (!t) { return tourStep(T, i + 1, user); }
-    const wait = prepFilters(t); const run = () => {
-      const el = resolveEl(t); if (!el) return tourStep(T, i + 1, user);          // нет на экране (например, кнопка спрятана в мобильном меню) — идём дальше
+    const wait = st.menu ? menuHold(!!st.drawer) : prepFilters(t); const run = () => {
+      const el = resolveEl(t); if (!el) return tourStep(T, i + 1, user);          // нет на экране — идём дальше
       if (S().close) S().close(true);
       const last = i >= n - 1, nextSt = T.steps[i + 1], need = nextSt && !stepMatches(nextSt, key) && !isStatic(nextSt.page); saveTour(T.id, i, need);
-      const buttons = [].concat(i > 0 ? [{l: 'Назад', act: 'g-tour-prev'}] : [], need ? [{l: nextSt.page === 'product' ? 'Открыть первый товар' : 'Дальше', act: 'g-tour-next', primary: true}] : [{l: last ? 'Готово' : 'Далее', act: 'g-tour-next', primary: true}]);
-      spot(el, {t, tour: T.id, text: st.say || t.say || t.label, step: {i, n}, buttons: buttons.concat([{l: 'Спросить Стеллу', act: 'asst-open'}]), onClose: () => { store.del(KT); }});
+      const buttons = [].concat(i > 0 ? [{l: 'Назад', act: 'g-tour-prev'}] : [], need ? [{l: nextSt.page === 'product' ? 'Открыть первый товар' : 'Дальше', act: 'g-tour-next', primary: true}] : st.kind === 'outro' && !st.home ? [{l: 'На главную', act: 'asst-go', d: {href: 'index.html'}, primary: true}, {l: 'Закрыть', act: 'g-spot-x'}] : [{l: last ? 'Готово' : 'Далее', act: 'g-tour-next', primary: true}]);
+      spot(el, {t, tour: T.id, mark: !!st.mark, text: st.say || t.say || t.label, step: {i, n}, buttons: buttons.concat([{l: 'Спросить Стеллу', act: 'asst-open'}]), onClose: () => { store.del(KT); }});
       pulse(el);
     };
     if (wait) setTimeout(run, wait); else run(); return true;
   }
-  function resolveStepEl(st, key) { const t = (TARGETS[st.page === 'any' ? '*' : st.page] || []).concat(TARGETS['*'] || []).find(x => x.id === st.target); return t ? resolveEl(t) : null; }
+  function resolveStepEl(st, key) { if (st.menu) return resolveEl({sel: narrow() && st.selM ? st.selM : st.sel}); const t = (TARGETS[st.page === 'any' ? '*' : st.page] || []).concat(TARGETS['*'] || []).find(x => x.id === st.target); return t ? resolveEl(t) : null; }
   function hintWaitPage(T, i, st) {
     const s = spotDom(), pg = st.page === 'product' ? 'товар' : st.page === 'event' ? 'мероприятие' : 'страницу';
     spot(document.body, {t: {id: 'wait'}, tour: T.id, text: 'Откройте ' + pg + ' — и я продолжу показ.', step: {i, n: T.steps.length}, buttons: [{l: 'Прервать', act: 'g-spot-x', primary: true}], onClose: () => { store.del(KT); }});
@@ -162,7 +196,7 @@
       const nextSt = T.steps[st.i + 1];
       if (nextSt.page === 'product') { const a = $$('.pcard:not([hidden]) a.stretch').find(shown); if (a) { saveTour(T.id, st.i + 1, true); hideSpot(true); a.click(); return; } }
     }
-    hideSpot(true); tourStep(T, i, true);
+    if (!T.menu) hideSpot(true); tourStep(T, i, true);          // шаги меню плавно «перетекают» один в другой, без мигания
   }
 
   /* ---------- переходы ---------- */
