@@ -136,7 +136,7 @@
   /* ---------- экскурсии ---------- */
   const tourById = id => { const T = TOURS.find(t => t.id === id); if (T && T.menu) T.steps = menuSteps(T); return T || null; };
   /* «Знакомство с сайтом»: шаги берутся из настоящего меню страницы (порядок и подписи — как в шапке), тексты — из guide.json → tours[site].menu */
-  const pageName = () => { const n = (document.title || '').split(/\s[—–|·]\s/)[0].trim(); return n ? (n.length > 46 ? n.slice(0, 44).replace(/\s+\S*$/, '') + '…' : n) : 'эта страница'; };
+  const pageName = () => { const on = $('#nav > a.nl.on'), n = on ? on.textContent.trim() : (document.title || '').split(/\s[—–|·]\s|:\s/)[0].trim(); return n ? (n.length > 40 ? n.slice(0, 38).replace(/\s+\S*$/, '') + '…' : n) : 'сайта'; };          // название раздела: пункт меню, к которому относится страница, иначе начало заголовка
   function menuSteps(T) {
     const M = T.menu || {}, home = pageKey() === 'home', fill = (t, o) => String(t || '').replace(/\{(\w+)\}/g, (m, k) => o && o[k] != null ? o[k] : m);
     const st = [{id: 'menu-intro', label: 'Главная', sel: '.logo', say: fill((M.intro || {})[home ? 'home' : 'other'], {page: pageName()}), kind: 'intro'}];

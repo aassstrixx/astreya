@@ -231,7 +231,7 @@
     if (m.fb !== undefined) bub.insertAdjacentHTML('beforeend', fbHTML(m));
     if (o.cheer || ['greet', 'thanks'].indexOf(o.intent) >= 0) cheer(row); else rowMood(row, o.sleepy ? 'sleep' : 'idle');
     announce(m.t); afterRender(); qrPaint(msgs.chips); follow(row);
-    if (o.autorun && o.autorun.length && A.guide) setTimeout(() => o.autorun.forEach(a => A.guide.run(a.act, a.d)), T(950));          // команда посетителя («открой каталог») выполняется сама, после того как Стелла ответила
+    if (o.autorun && o.autorun.length && A.guide) setTimeout(() => o.autorun.forEach(a => A.guide.run(a.act, a.d)), T(o.quiet ? 600 : 950));          // команда посетителя («открой каталог») выполняется сама, после того как Стелла ответила
   }
   function announce(text) { const s = $('#asst-sr'); if (s) { s.textContent = ''; setTimeout(() => { s.textContent = String(text || '').replace(/\*\*/g, ''); }, 30); } }
   function afterRender() { if (A.rlSync) A.rlSync(); if (A.cmpSync) A.cmpSync(); }
@@ -282,7 +282,8 @@
     qrPaint(msgs.chips || []); afterRender(); stick = true; scrollLog();
   }
   const DISC_INT = /^(compare|task|combo|product|why|talk)$/;
-  function pushBot(res) { const m = {r: 'b', t: res.text, t2: res.text2, c: res.cards, ev: res.events, a: res.actions, l: res.links}; if (res.intent === 'compare') m.k = 'cmp'; if (res.disclaimer || (POL && DISC_INT.test(res.intent) && POL.needsDisclaimer(res.text))) m.d = true; if (['greet', 'thanks', 'bye', 'smalltalk', 'who', 'empty', 'no', 'role', 'pick', 'talk'].indexOf(res.intent) < 0) m.fb = 0; msgs.push(m); msgs.chips = res.chips; return m; }
+  /* quiet — действия, которые Стелла выполняет сама и кнопкой не показывает (например, экскурсия) */
+  function pushBot(res) { const m = {r: 'b', t: res.text, t2: res.text2, c: res.cards, ev: res.events, a: (res.actions || []).filter((x, i) => (res.quiet || []).indexOf(i) < 0), l: res.links}; if (res.intent === 'compare') m.k = 'cmp'; if (res.disclaimer || (POL && DISC_INT.test(res.intent) && POL.needsDisclaimer(res.text))) m.d = true; if (['greet', 'thanks', 'bye', 'smalltalk', 'who', 'empty', 'no', 'role', 'pick', 'talk'].indexOf(res.intent) < 0) m.fb = 0; msgs.push(m); msgs.chips = res.chips; return m; }
   const followUps = mk => mk.cards.length ? ['Сравни первые два', 'Как запросить условия?', 'Ближайшие семинары'] : mk.events.length ? ['Как записаться?', 'Сколько стоит участие?', 'Контакты менеджера'] : mk.actions.length ? ['Ближайшие семинары', 'Контакты менеджера'] : ['Расскажи подробнее', 'Подобрать средство по задаче', 'Ближайшие семинары'];
   function plainHistory() { return msgs.filter(m => m.t).map(m => ({role: m.r === 'u' ? 'user' : 'assistant', content: m.t})).slice(-10); }
   function ctxLine(c) {
@@ -366,7 +367,7 @@
       } else {
         const labels = ['Читаю вопрос…'].concat(res.steps.length ? res.steps : ['Думаю над ответом…']); if (thinkMs(res) > 1900) labels.push('Подбираю слова…');
         await thinkOver(row, labels, thinkMs(res));
-        await reveal(pushBot(res), row, {intent: res.intent, autorun: (res.autorun || []).map(i => (res.actions || [])[i]).filter(Boolean), cheer: /^(compliment|love_you|user_birthday|mood_good|holiday_greet|sorry_user|motivation|joke|riddle_ok)$/.test(res.topic || ''), sleepy: res.topic === 'good_night'});
+        await reveal(pushBot(res), row, {intent: res.intent, quiet: !!(res.quiet && res.quiet.length), autorun: (res.autorun || []).map(i => (res.actions || [])[i]).filter(Boolean), cheer: /^(compliment|love_you|user_birthday|mood_good|holiday_greet|sorry_user|motivation|joke|riddle_ok)$/.test(res.topic || ''), sleepy: res.topic === 'good_night'});
       }
       persist();
     } catch (e) { if (!(e && e.name === 'AbortError')) { const t = $('.asst-typing'); if (t) t.remove(); headMood('idle'); } persist(); }

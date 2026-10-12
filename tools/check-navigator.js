@@ -74,7 +74,8 @@ const wait = ms => new Promise(r => setTimeout(r, ms));
   const y0 = await p.evaluate(() => scrollY);
   await p.ask('проведи по сайту'); await wait(1500); sp = await p.spot();
   const total = NAVN.length + 4;
-  ok(sp && new RegExp('Шаг 1 из ' + total, 'i').test(sp.step) && /Сейчас вы на странице/.test(sp.txt) && /Меню сверху/.test(sp.txt), 'команда «проведи по сайту»: шаг 1 — «Сейчас вы на странице…», дальше покажу меню (шагов: ' + total + ')', sp);
+  const tb = await p.lastBot(); ok(tb && /познакомлю с сайтом/.test(tb.text) && !tb.btns.length, 'в ответе Стеллы про экскурсию нет кнопки «Начать…»: экскурсия начинается сама', tb && tb.btns);
+  ok(sp && new RegExp('Шаг 1 из ' + total, 'i').test(sp.step) && /Сейчас вы в разделе «Каталог»/.test(sp.txt) && /Меню сверху/.test(sp.txt), 'команда «проведи по сайту»: шаг 1 — «Сейчас вы в разделе «Каталог»…», дальше покажу меню (шагов: ' + total + ')', sp);
   const seen = [], wantSel = NAVN.concat(['', 'Стать партнёром']); let hdrOk = true, selOk = true, still = true;
   for (let i = 2; i <= total - 1; i++) {
     await p.click('.g-ctl [data-act="g-tour-next"]'); await wait(1100); sp = await p.spot();
