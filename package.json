@@ -2,7 +2,7 @@
   "name": "astreya-site",
   "version": "1.0.0",
   "private": true,
-  "description": "Сайт Астреи: статические страницы, генерируются из data/*.json (без зависимостей)",
+  "description": "Сайт Астреи: статические страницы, генерируются из data/*.json (сайт и сервер — без зависимостей; пакет @anthropic-ai/sdk нужен только для необязательного ИИ-режима помощника)",
   "scripts": {
     "build": "node tools/build.js",
     "check": "node tools/check.js",
@@ -14,7 +14,7 @@
     "redesign:on": "node tools/redesign.js on",
     "admin": "node server/index.js",
     "admin:cli": "node server/cli.js",
-    "test:server": "node --test server/test/leads.test.js server/test/content.test.js server/test/publish.test.js server/test/smtp-tls.test.js server/test/builder.test.js",
+    "test:server": "node --test server/test/leads.test.js server/test/content.test.js server/test/publish.test.js server/test/smtp-tls.test.js server/test/builder.test.js server/test/assistant.test.js",
     "test:e2e": "node server/test/e2e.js",
     "test:e2e-builder": "node server/test/e2e-builder.js",
     "check:extras": "node tools/check-extras.js",
@@ -23,6 +23,9 @@
     "audit": "node tools/audit.js",
     "audit:static": "node tools/audit.js --static",
     "audit:matrix": "node tools/audit.js --matrix"
+  },
+  "optionalDependencies": {
+    "@anthropic-ai/sdk": "^0.133.0"
   },
   "engines": {
     "node": ">=18.17"

@@ -152,10 +152,13 @@
   let cdTimer = 0;
   function countdown() {
     if (!X.countdown) return; $$('.cd').forEach(e => e.remove()); clearInterval(cdTimer);
-    const page = document.body.getAttribute('data-page'), ev = nextEvent(); if (!ev) return;
-    if (page === 'training') { const row = $('[data-training] .page-head'); if (row) row.insertAdjacentElement('afterend', cdBox(ev, 'Ближайшее мероприятие')); }
-    else if (page === 'home') { const n = $('.rd-train-copy .rd-next'); if (n) n.insertAdjacentElement('afterend', cdBox(ev, 'До начала')); }
-    else if (page === 'event') { const w = $('[data-event]'), me = w && (D.events || []).find(e => e.id === w.getAttribute('data-event')); if (me && cdParts(me)) { const top = $('.e-top > div:last-child .lead'); if (top) top.insertAdjacentElement('afterend', cdBox(me, 'До начала')); } }
+    const page = document.body.getAttribute('data-page'), slot = $('.cd-slot'), ev = nextEvent();
+    const put = (box, fallback) => { if (slot) { slot.appendChild(box); slot.classList.add('on'); } else if (fallback) fallback.insertAdjacentElement('afterend', box); };
+    if (!ev) { if (slot) slot.hidden = true; return; }
+    if (page === 'training') put(cdBox(ev, 'Ближайшее мероприятие'), $('[data-training] .page-head'));
+    else if (page === 'home') put(cdBox(ev, 'До начала'), $('.rd-train-copy .rd-next'));
+    else if (page === 'event') { const w = $('[data-event]'), me = w && (D.events || []).find(e => e.id === w.getAttribute('data-event')); if (me && cdParts(me)) put(cdBox(me, 'До начала'), $('.e-top > div:last-child .lead')); else if (slot) slot.hidden = true; }
+    if (slot && !slot.classList.contains('on')) slot.hidden = true;
     cdTimer = setInterval(() => $$('.cd').forEach(cdFill), 30000);
   }
 

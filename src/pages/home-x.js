@@ -109,6 +109,7 @@ module.exports = function homeRedesign(ctx, C, P, parts, {events, val}) {
         <p class="rd-sub reveal">${esc(tr.sub)}</p>
         <p class="muted reveal">${esc(tr.text)}</p>
         ${nextBlock}
+        ${next ? C.cdSlot() : ''}
         <div class="row reveal" style="margin-top:26px"><a class="btn btn-fill" href="${C.u(P, 'training.html')}">Все мероприятия ${I.arrow}</a>${next ? `<a class="btn btn-ghost" href="${C.eurl(P, next)}">Подробнее</a>` : ''}</div>
       </div>
     </div>

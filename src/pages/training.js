@@ -23,6 +23,7 @@ function trainingPage(ctx, C, P) {
   const fmtChips = [['all', 'Любой формат'], ['offline', 'Очно'], ['online', 'Онлайн']].map(([id, l], i) => C.chip(l, 'fmt', id, i === 0)).join('');
   return `<div class="wrap" data-training>
     ${C.pageHead('Обучение', 'Учебный центр «Астреи»', 'Бесплатные семинары и мастер-классы: теория чередуется с практикой. Базовые семинары проходят с 10:30 до 18:00.')}
+    ${C.cdSlot()}
     <div class="row reveal"><a class="btn btn-fill" href="#sched" data-act="scroll" data-target="sched">Смотреть расписание ${I.arrow}</a><a class="btn btn-ghost" href="tel:${site.contacts.phoneRaw}" data-track="phone_click">${esc(site.contacts.phone)}</a></div>
   </div>
 
@@ -81,6 +82,7 @@ function eventPage(ctx, C, P, e) {
           <span class="tag blue reveal">${esc(e.fmt)} · ${esc(e.city)}</span>
           <h1 class="reveal">${esc(e.title)}</h1>
           <p class="lead reveal">${esc(e.description)}</p>
+          ${e.date >= new Date().toISOString().slice(0, 10) ? C.cdSlot() : ''}
           <div class="notice past reveal" id="past-note" hidden>${I.info}<span>Мероприятие уже прошло. Актуальные даты — в <a href="${C.u(P, 'training.html')}">расписании</a>.</span></div>
           <div class="row reveal" id="e-cta"><button class="btn btn-fill" type="button" data-act="form" data-type="seminar" data-ref="${e.id}" data-track="event_register" data-place="event-hero">Записаться ${I.arrow}</button>
             <a class="btn btn-ghost" href="${C.u(P, 'training.html')}">Все мероприятия</a></div>

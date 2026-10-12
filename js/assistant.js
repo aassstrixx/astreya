@@ -40,7 +40,7 @@
   }
   const endpoint = () => { const e = (D.site && D.site.formEndpoint) || ''; return /\/api\/lead\/?$/.test(e) ? e.replace(/\/api\/lead\/?$/, '/api/assistant') : ''; };
   function probe() {
-    if (ai !== null) return Promise.resolve(ai); const ep = endpoint(); if (!ep) { ai = false; return Promise.resolve(false); }
+    if (ai !== null) return Promise.resolve(ai); const ep = endpoint(); if (!ep || !/^https?:$/.test(location.protocol)) { ai = false; return Promise.resolve(false); }          // с локального файла (автономная сборка) сервера нет
     return fetch(ep + '/status', {credentials: 'omit', headers: {Accept: 'application/json'}}).then(r => r.ok ? r.json() : {ai: false}).then(j => { ai = !!(j && j.ai); return ai; }).catch(() => { ai = false; return false; });
   }
 
@@ -248,7 +248,7 @@
   /* ---------- интерфейс ---------- */
   function build() {
     if (built) return; built = true; document.body.classList.add('has-asst');
-    const fab = document.createElement('button'); fab.type = 'button'; fab.id = 'asst-fab'; fab.className = 'asst-fab'; fab.setAttribute('data-act', 'asst-open'); fab.setAttribute('aria-haspopup', 'dialog'); fab.setAttribute('aria-expanded', 'false'); fab.setAttribute('aria-controls', 'asst');
+    const fab = document.createElement('button'); fab.type = 'button'; fab.id = 'asst-fab'; fab.className = 'asst-fab'; fab.setAttribute('data-act', 'asst-open'); fab.setAttribute('aria-haspopup', 'dialog'); fab.setAttribute('aria-expanded', 'false'); fab.setAttribute('aria-controls', 'asst'); fab.setAttribute('aria-label', 'Помощник «Астреи»: задать вопрос');
     fab.innerHTML = SPARK + '<span class="asst-fab-t">Помощник</span>'; document.body.appendChild(fab);
     const el = document.createElement('section'); el.id = 'asst'; el.className = 'asst'; el.hidden = true; el.setAttribute('role', 'dialog'); el.setAttribute('aria-label', 'Помощник «Астреи»');
     el.innerHTML = '<header class="asst-h"><span class="asst-av" aria-hidden="true">' + SPARK + '</span><div class="asst-ht"><b>Помощник «Астреи»</b><small id="asst-mode">Подсказываю по каталогу, обучению и условиям</small></div>' +

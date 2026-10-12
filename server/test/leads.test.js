@@ -63,6 +63,16 @@ test('«Заказать звонок»: достаточно имени и те
   const list = (await admin.get('/api/leads?status=all&type=callback')).json.items; assert.ok(list.some(x => x.name === 'Ирина' && x.type === 'callback'), 'заявка попала в админку');
 });
 
+test('подписка на новости: нужен только e-mail и согласие; в админке — тип «Подписка на новости», повтор считается дублем', async () => {
+  const mail = 'podpiska' + Date.now() + '@example.com';
+  const ok = await send({type: 'subscribe', email: mail, consent: true, page: 'https://astreya.example/index.html'}); assert.equal(ok.status, 200, ok.text);
+  const noMail = await send({type: 'subscribe', consent: true}); assert.equal(noMail.status, 422); assert.ok(noMail.json.errors.email, 'адрес обязателен');
+  const badMail = await send({type: 'subscribe', email: 'без-собаки', consent: true}); assert.equal(badMail.status, 422); assert.ok(badMail.json.errors.email);
+  const noConsent = await send({type: 'subscribe', email: mail}); assert.equal(noConsent.status, 422); assert.ok(noConsent.json.errors.consent, 'без согласия — нельзя');
+  const cfg = (await admin.get('/api/config')).json; assert.equal(cfg.types.subscribe, 'Подписка на новости');
+  const list = (await admin.get('/api/leads?status=all&type=subscribe')).json.items; assert.ok(list.some(x => x.email === mail && x.type === 'subscribe' && !x.name), 'заявка попала в админку без имени');
+});
+
 test('мусорный и слишком большой запрос', async () => {
   const c = anon();
   let r = await c.raw('POST', '/api/lead', '{нет', {Origin: ORIGIN, 'Content-Type': 'application/json'}); assert.equal(r.status, 400);
