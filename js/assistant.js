@@ -184,7 +184,7 @@
   function setStatus(row, label) { const s = $('.asst-status', row); if (!s || s.textContent === label) return; s.classList.add('swap'); setTimeout(() => { s.textContent = label; s.classList.remove('swap'); }, 140); }
   /* «раздумье»: статусы меняются равномерно за T мс (первый уже показан) */
   async function thinkOver(row, labels, T) { const per = T / labels.length; for (let i = 0; i < labels.length; i++) { if (i) setStatus(row, labels[i]); await sleep(per); } }
-  const thinkMs = res => ['greet', 'thanks', 'bye', 'empty', 'calc', 'datetime', 'no', 'yes'].indexOf(res.intent) >= 0 ? 1000 : Math.max(1300, Math.min(2800, 900 + (res.text || '').length * 6));
+  const thinkMs = res => ['greet', 'thanks', 'bye', 'empty', 'calc', 'datetime', 'no', 'yes'].indexOf(res.intent) >= 0 || (res.intent === 'talk' && res.local && (res.text || '').length < 140) ? 1000 : Math.max(1300, Math.min(2800, 900 + (res.text || '').length * 6));
 
   /* показ готового ответа: сообщение «отправляется» (всплывает) → печатается → затем карточки/кнопки с плавным появлением → быстрые ответы */
   async function reveal(m, row, o) {
@@ -197,7 +197,7 @@
     }
     const extra = extraHTML(m); if (extra) { const d = document.createElement('div'); d.className = 'asst-extra'; d.innerHTML = extra; bub.appendChild(d); }
     if (m.fb !== undefined) bub.insertAdjacentHTML('beforeend', fbHTML(m));
-    if (o.cheer || ['greet', 'thanks'].indexOf(o.intent) >= 0) cheer(row); else rowMood(row, 'idle');
+    if (o.cheer || ['greet', 'thanks'].indexOf(o.intent) >= 0) cheer(row); else rowMood(row, o.sleepy ? 'sleep' : 'idle');
     announce(m.t); afterRender(); qrPaint(msgs.chips); follow(row);
   }
   function announce(text) { const s = $('#asst-sr'); if (s) { s.textContent = ''; setTimeout(() => { s.textContent = String(text || '').replace(/\*\*/g, ''); }, 30); } }
@@ -248,7 +248,7 @@
     msgs.forEach((m, i) => { if (m.r === 'u') addRow('u', userHTML(m.t, 2)); else { const row = botRow(); row.setAttribute('data-i', i); $('.asst-bub', row).innerHTML = '<div class="asst-tx">' + fmt(m.t || '') + '</div>' + (extraHTML(m) ? '<div class="asst-extra">' + extraHTML(m) + '</div>' : '') + fbHTML(m); row.classList.add('still'); } });
     qrPaint(msgs.chips || []); afterRender(); stick = true; scrollLog();
   }
-  function pushBot(res) { const m = {r: 'b', t: res.text, t2: res.text2, c: res.cards, ev: res.events, a: res.actions, l: res.links}; if (['greet', 'thanks', 'bye', 'smalltalk', 'who', 'empty', 'no', 'role', 'pick'].indexOf(res.intent) < 0) m.fb = 0; msgs.push(m); msgs.chips = res.chips; return m; }
+  function pushBot(res) { const m = {r: 'b', t: res.text, t2: res.text2, c: res.cards, ev: res.events, a: res.actions, l: res.links}; if (['greet', 'thanks', 'bye', 'smalltalk', 'who', 'empty', 'no', 'role', 'pick', 'talk'].indexOf(res.intent) < 0) m.fb = 0; msgs.push(m); msgs.chips = res.chips; return m; }
   const followUps = mk => mk.cards.length ? ['Сравни первые два', 'Как запросить условия?', 'Ближайшие семинары'] : mk.events.length ? ['Как записаться?', 'Сколько стоит участие?', 'Контакты менеджера'] : mk.actions.length ? ['Ближайшие семинары', 'Контакты менеджера'] : ['Расскажи подробнее', 'Подобрать средство по задаче', 'Ближайшие семинары'];
   function plainHistory() { return msgs.filter(m => m.t).map(m => ({role: m.r === 'u' ? 'user' : 'assistant', content: m.t})).slice(-10); }
   function ctxLine(c) {
@@ -323,7 +323,7 @@
       } else {
         const labels = ['Читаю вопрос…'].concat(res.steps.length ? res.steps : ['Думаю над ответом…']); if (thinkMs(res) > 1900) labels.push('Подбираю слова…');
         await thinkOver(row, labels, thinkMs(res));
-        await reveal(pushBot(res), row, {intent: res.intent});
+        await reveal(pushBot(res), row, {intent: res.intent, cheer: /^(compliment|love_you|user_birthday|mood_good|holiday_greet|sorry_user|motivation|joke|riddle_ok)$/.test(res.topic || ''), sleepy: res.topic === 'good_night'});
       }
       persist();
     } catch (e) { if (!(e && e.name === 'AbortError')) { const t = $('.asst-typing'); if (t) t.remove(); headMood('idle'); } persist(); }

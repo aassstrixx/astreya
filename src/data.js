@@ -11,10 +11,23 @@ const byId = (arr, key = 'id') => Object.fromEntries(arr.map(x => [x[key], x]));
 const readOpt = (n, dflt) => { try { return read(n); } catch (e) { if (e.code === 'ENOENT') return dflt; throw e; } };
 const DEFAULT_NAV = [{title: 'Каталог', href: 'catalog.html', key: '/catalog'}, {title: 'Бренды', href: 'brands.html', key: '/brands'}, {title: 'Обучение', href: 'training.html', key: '/training'}, {title: 'Новости', href: 'news.html', key: '/news'}, {title: 'Компания', href: 'company.html', key: '/company'}];
 
+/* библиотека «живых» реплик помощника: data/stella/*.json (config.json — общие настройки, остальные файлы — темы); нет папки — библиотека выключена */
+function loadStella() {
+  const d = path.join(dir, 'stella'); if (!fs.existsSync(d)) return null;
+  const out = {topics: []};
+  for (const f of fs.readdirSync(d).filter(x => /\.json$/.test(x)).sort()) {
+    let j; try { j = JSON.parse(fs.readFileSync(path.join(d, f), 'utf8')); } catch (e) { throw new Error('data/stella/' + f + ': ' + e.message); }
+    if (Array.isArray(j.topics)) out.topics.push(...j.topics.map(t => Object.assign({}, t, {file: undefined})));
+    for (const k of Object.keys(j)) if (k !== 'topics') out[k] = j[k];
+  }
+  return out;
+}
+
 function load() {
   const site = read('site'), content = read('content'), catalog = read('catalog'), training = read('training');
   const brands = read('brands'), products = read('products'), events = read('events'), newsRaw = read('news');
   const ctx = {site, content, brands, products, events, training};
+  ctx.stella = loadStella();
   ctx.menu = readOpt('menu', {nav: DEFAULT_NAV});
   ctx.nav = (ctx.menu.nav && ctx.menu.nav.length ? ctx.menu.nav : DEFAULT_NAV).map(i => ({title: i.title, href: i.href, key: i.key || '/' + String(i.href).replace(/\.html$/, '').replace(/^pages\//, 'p/')}));
   ctx.pagesRaw = readOpt('pages', {items: []}).items || [];

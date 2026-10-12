@@ -410,8 +410,172 @@
       const ws = words(text).filter(w => w.length > 3); const scored = cand.map(([nm, q]) => { const nw = words(nm); let best = 9, len = 0; ws.forEach(w => nw.forEach(x => { const sw = stem(w), d = lev(sw, stem(x), 3); if (d < best) { best = d; len = sw.length; } })); return {nm, q, d: best, len}; }).filter(x => x.d <= 1 || (x.d <= 2 && x.len >= 8)).sort((a, b) => a.d - b.d).slice(0, 3);
       scored.forEach(x => sug.push(x.q));
       const hits = K.searchInfo(text, 3).filter(h => (h.kind === 'faq' || h.kind === 'task' || h.kind === 'news') && h.hit >= Math.min(2, h.of) && h.score > 0.02).slice(0, 2); hits.forEach(h => sug.push(h.title.length < 60 ? h.title : h.title.slice(0, 57) + '…'));
-      const text1 = sug.length ? 'Не уверена, что правильно поняла вопрос. Возможно, вы имели в виду что-то из этого?' : 'На такой вопрос я сейчас не отвечу: работаю без ИИ и знаю только данные сайта — каталог, бренды, обучение, партнёрство и контакты. С ними помогу сразу, а остальное можно передать менеджеру.';
+      const text1 = ladder(text, clean(text), st, sug) || (sug.length ? 'Не уверена, что правильно поняла вопрос. Возможно, вы имели в виду что-то из этого?' : 'На такой вопрос я сейчас не отвечу: работаю без ИИ и знаю только данные сайта — каталог, бренды, обучение, партнёрство и контакты. С ними помогу сразу, а остальное можно передать менеджеру.');
       return R(text1, {actions: compact([act.ask(text), act.callback()]), chips: (sug.length ? sug : starters({}, st)).slice(0, 4), intent: 'unknown', sure: false, steps: ['Думаю…']});
+    }
+
+
+    /* ---------- библиотека живых реплик (data/stella/*.json → KB.stella) ----------
+       Для вопросов, на которые у сайта нет ответа: о самой Стелле, светская беседа, «странные» просьбы, чего сайт не знает, безопасность, мини-справочник терминов, игры и расчёты (монетка, кубик, дни до праздника).
+       Тема = правила (q) + варианты ответа (a) + необязательно: второе сообщение-«мостик» (b), кнопки (chips), действия (act), ссылки (links), расчётная функция (fn), стадия (stage), local.
+       Правило — слова через пробел, ВСЕ должны найтись; слово «а|б|в» — любое из вариантов, совпадает с началом слова («сколько|скока тебе лет»); «=да» — слово целиком; «!слово» — не должно быть;
+       «как_дела» — фраза; «*…» в начале — ключевое правило (слово может стоять где угодно во фразе). Обычное правило должно «покрывать» ≥ 55 % значимых слов запроса — иначе это длинный вопрос о другом, и тема не берётся. */
+    const SL = KB && KB.stella && Array.isArray(KB.stella.topics) ? KB.stella : null, SLT = [], SLID = {};
+    const YOU = 'ты|тебя|тебе|тобой|твой|твоя|твое|твои|твоим|твоих|твоей|вы|вас|вам|вами|ваш|ваша|ваше|ваши|вашей|вашу', ME = 'я|меня|мне|мной|мой|моя|мое|мои|моим|моих|мы|нас|нам|нами|наш|наша|наше|наши';
+    const ULTRA = new Set(('и а но же бы ли или вот ну то так просто вообще пожалуйста плиз слушай слушайте скажи скажите подскажи подскажите кстати блин значит еще уже ведь типа ой в во на с со к ко у о об от по за из для про при над под без до что чем как какой какая какое какие каких какую какого такой такое такая такие это этот эта эти есть бывает можно можешь можете очень совсем тоже также ' + YOU.replace(/\|/g, ' ') + ' ' + ME.replace(/\|/g, ' ')).split(' '));
+    const DEFLEAD = 'что_такое|что_за|что_значит|что_означает|для_чего|зачем|объясни|поясни|определение|что_это|кто_такой|кто_такая|кто_это|что_известно_про|что_знаешь_про|знаешь_про', TELLLEAD = 'расскажи_про|расскажи_о|расскажите_про|расскажите_о|расскажи_мне_про|расскажи_мне_о';
+    const ruleOf = src => {
+      let s = String(src).trim().replace(/(^|\s)@def(?=\s|$)/g, '$1' + DEFLEAD).replace(/(^|\s)@tell(?=\s|$)/g, '$1' + TELLLEAD), kw = false; if (s[0] === '*') { kw = true; s = s.slice(1).trim(); } const pos = [], neg = [];
+      s.split(/\s+/).forEach(t => { if (!t) return; const ng = t[0] === '!'; if (ng) t = t.slice(1);
+        if (t === 'ты' || t === 'вы' || t === 'ты|вы' || t === 'вы|ты' || t === '@you') t = YOU; else if (t === 'я' || t === 'мы' || t === 'я|мы' || t === 'мы|я' || t === '@me') t = ME;
+        const alts = t.split('|').filter(Boolean).map(a => { a = a.replace(/_/g, ' '); const ex = a[0] === '='; if (ex) a = a.slice(1); a = norm(a); return {a, s: a.length >= 6 ? a.split(' ').map(w => { if (w.length < 6) return w; const x = stem(w); return x.length >= 5 ? x : w; }).join(' ') : a, ex: ex || (a.length < 5 && a.indexOf(' ') < 0), k: a.split(' ').length}; });
+        if (alts.length) (ng ? neg : pos).push(alts); });
+      return {pos, neg, kw, tell: /(^|\s)@tell(\s|$)/.test(String(src))};
+    };
+    if (SL) SL.topics.forEach(t => { t.rules = (t.q || []).map(ruleOf); t.stage = t.stage || 'mid'; SLT.push(t); SLID[t.id] = t; });
+    function ruleHit(r, ws, wst) {
+      let score = 0; const hit = new Set();
+      const at = (al, i) => al.k > 1 ? (ws.slice(i, i + al.k).join(' ').startsWith(al.a) || wst.slice(i, i + al.k).join(' ').startsWith(al.s)) : al.ex ? ws[i] === al.a : (ws[i].startsWith(al.a) || wst[i].startsWith(al.s));
+      for (const alts of r.pos) {
+        let ok = false;
+        for (const al of alts) for (let i = 0; i + al.k <= ws.length; i++) if (at(al, i)) { for (let j = 0; j < al.k; j++) hit.add(i + j); if (!ok) score += 3 + (al.k > 1 ? al.k : al.a.length >= 5 ? 1 : 0); ok = true; }
+        if (!ok) return null;
+      }
+      for (const alts of r.neg) for (const al of alts) for (let i = 0; i + al.k <= ws.length; i++) if (at(al, i)) return null;
+      return {score, hit};
+    }
+    /* подходящие темы стадии, лучшая первой */
+    function slFind(stage, variants, raw, ent) {
+      if (!SL) return []; const out = {};
+      if (raw) SLT.forEach(t => { if (t.stage === stage && t.rx && t.rx.some(r => new RegExp(r, 'i').test(raw))) out[t.id] = {t, sc: 99}; });
+      variants.forEach(ws => {
+        if (!ws.length) return; const total = ws.filter(w => !ULTRA.has(w)).length, wst = ws.map(stem);
+        SLT.forEach(t => { if (t.stage !== stage) return;
+          t.rules.forEach(r => { if (r.tell && ent && (ent.products.length || ent.brands.length)) return; const m = ruleHit(r, ws, wst); if (!m) return; const cov = total ? [...m.hit].filter(i => !ULTRA.has(ws[i])).length / total : (m.hit.size === ws.length ? 1 : 0);
+            if (!(r.kw ? ws.length <= 16 : cov >= 0.55 || (cov >= 0.5 && r.pos.length >= 2) || (cov >= 0.3 && r.pos.length >= 3))) return;
+            const sc = m.score * (r.kw ? 0.6 : 1) + cov * 4 + (t.prio || 0); if (!out[t.id] || sc > out[t.id].sc) out[t.id] = {t, sc}; }); });
+      });
+      return Object.keys(out).map(k => out[k]).sort((a, b) => b.sc - a.sc).map(x => x.t);
+    }
+    const squash = s => s.replace(/(.)\1{2,}/g, '$1');
+    const hashOf = s => { let h = 7; for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) >>> 0; return h; };
+    const safeEcho = s => String(s || '').replace(/[*_`<>\[\]{}\\|~#]/g, '').replace(/\s+/g, ' ').trim().slice(0, 40);
+    const cap = s => s ? s.charAt(0).toUpperCase() + s.slice(1) : s;
+    const rand = () => (opts.rand || Math.random)();
+    const NUMW = {один: 1, одну: 1, одна: 1, два: 2, две: 2, три: 3, четыре: 4, пять: 5, шесть: 6, семь: 7, восемь: 8, девять: 9, десять: 10, пару: 2, полторы: 1};
+    const HOLID = [['нов\\S* год|новог|новогодн', 0, 1, 'Нового года'], ['рождеств', 0, 7, 'Рождества (7 января)'], ['14 февраля|валентин', 1, 14, 'Дня святого Валентина'], ['23 февраля|защитник', 1, 23, '23 февраля'], ['8 марта|женск\\S* день|женск\\S* дня', 2, 8, '8 Марта'], ['1 мая|первомай', 4, 1, '1 Мая'], ['9 мая|дня победы|день победы', 4, 9, 'Дня Победы'], ['12 июня|дня россии|день россии', 5, 12, 'Дня России'], ['1 сентября|дня знаний|день знаний', 8, 1, '1 сентября'], ['4 ноября|народного единства', 10, 4, 'Дня народного единства'], ['лета|лето', 5, 1, 'лета (по календарю — с 1 июня)'], ['осени|осень', 8, 1, 'осени (по календарю — с 1 сентября)'], ['зимы|зима', 11, 1, 'зимы (по календарю — с 1 декабря)'], ['весны|весна', 2, 1, 'весны (по календарю — с 1 марта)']];
+    const WDAY = [['воскресень', 0, 'воскресенья'], ['понедельник', 1, 'понедельника'], ['вторник', 2, 'вторника'], ['сред[ыу]', 3, 'среды'], ['четверг', 4, 'четверга'], ['пятниц', 5, 'пятницы'], ['суббот', 6, 'субботы'], ['выходн', 6, 'выходных (ближайшая суббота)']];
+    const midnight = d => new Date(d.getFullYear(), d.getMonth(), d.getDate());
+    const dword = d => d + ' ' + plural(d, 'день', 'дня', 'дней');
+    const RU2EN = {q: 'й', w: 'ц', e: 'у', r: 'к', t: 'е', y: 'н', u: 'г', i: 'ш', o: 'щ', p: 'з', '[': 'х', ']': 'ъ', a: 'ф', s: 'ы', d: 'в', f: 'а', g: 'п', h: 'р', j: 'о', k: 'л', l: 'д', ';': 'ж', "'": 'э', z: 'я', x: 'ч', c: 'с', v: 'м', b: 'и', n: 'т', m: 'ь', ',': 'б', '.': 'ю', '`': 'ё', '&': '?', '?': ',', '/': '.', '$': ';', '^': ':', '@': '"', '#': '№'};
+    const EN_COMMON = new Set('hello hi hey thanks thank you bye goodbye ok okay yes no help please price prices catalog catalogue contact contacts how are what who where when why is the and a to of for i me my your do does can could will would want need about this that it with from have has hi there good morning evening night nice name speak english russian manager call phone email'.split(' '));
+    const ROWS = ['йцукенгшщзхъ', 'фывапролджэ', 'ячсмитьбю', 'qwertyuiop', 'asdfghjkl', 'zxcvbnm'];
+    const isMash = w => { if (w.length < 5) return false; for (let i = 0; i + 5 <= w.length; i++) { const g = w.slice(i, i + 5), r = g.split('').reverse().join(''); if (ROWS.some(row => row.indexOf(g) >= 0 || row.indexOf(r) >= 0)) return true; } return false; };
+    function gibberish(n) { const ws = words(n).filter(w => w.length >= 4); if (!ws.length) return false; const bad = ws.filter(w => isMash(w) || /[бвгджзйклмнпрстфхцчшщbcdfghjklmnpqrstvwxz]{5,}/.test(w) || !/[аеёиоуыэюяaeiouy]/.test(w)); return bad.length >= Math.ceil(ws.length / 2); }
+    function layoutFix(raw) {
+      if (!SL || /[а-яё]/i.test(raw) || !/[a-z]/i.test(raw)) return '';
+      const ws = words(raw); if (!ws.length || ws.filter(w => EN_COMMON.has(w)).length / ws.length >= 0.4) return '';
+      const conv = raw.replace(/[A-Za-z\[\];',.`&?\/$^@#]/g, c => { const lo = c.toLowerCase(), r = RU2EN[lo]; if (!r) return c; return c !== lo ? r.toUpperCase() : r; }).trim();
+      const cw = words(conv).filter(w => w.length >= 3); if (!cw.length) return '';
+      const known = w => VOC.has(w) || KNOWN.has(w); if (cw.filter(known).length / cw.length < 0.5) return '';
+      return conv;
+    }
+    const KNOWN = new Set(); if (SL) { SLT.forEach(t => t.rules.forEach(r => r.pos.concat(r.neg).forEach(alts => alts.forEach(al => { if (al.k === 1 && al.a.length >= 4) KNOWN.add(al.a); })))); (SL.words || []).forEach(w => KNOWN.add(w)); }
+    const startsKnown = w => { if (VOC.has(w) || KNOWN.has(w)) return true; for (const k of KNOWN) if (k.length >= 4 && w.startsWith(k)) return true; return false; };
+
+    const FN = {
+      pickval(t, st, x) { const v = t.vals[Math.floor(rand() * t.vals.length)]; return {vars: {v}}; },
+      randnum(t, st, x) {
+        let a = 1, b = 10, m = /от\s*(-?\d+)\s*до\s*(-?\d+)/.exec(x.n) || /(-?\d+)\s*-\s*(-?\d+)/.exec(x.n); if (m) { a = +m[1]; b = +m[2]; } else if ((m = /до\s*(\d+)/.exec(x.n))) b = +m[1]; else if ((m = /(\d+)\s*(?:знач|вариант|числ)/.exec(x.n))) b = +m[1];
+        if (a > b) { const c = a; a = b; b = c; } if (b - a > 1e9) b = a + 1e9; return {vars: {v: a + Math.floor(rand() * (b - a + 1)), a, b}};
+      },
+      either(t, st, x) {
+        if (x.p.products.length || x.p.brands.length || x.p.tasks.length) return null;
+        const m = /([^:?!.,;]{1,60}?)\s+или\s+([^?!.,;]{1,40})/i.exec(x.raw.replace(/^[^:]*:/, '')); if (!m) return null;
+        const FILL = /^(?:выбери|выбирай|реши|решай|что|лучше|какой|какая|какое|какие|как|мне|нам|ты|давай|скажи|посоветуй|выбрать|выбор|вот|а|ну|тогда|кем|быть|стоит|надо|нужно|лучше)$/i;
+        const lw = m[1].trim().split(/\s+/).filter(w => !FILL.test(w)).slice(-2).join(' '), rw = m[2].trim().split(/\s+/).slice(0, 2).join(' '); if (!lw || !rw) return null;
+        return {vars: {v: safeEcho(rand() < 0.5 ? lw : rw)}};
+      },
+      countdown(t, st, x) {
+        const now = midnight(K.now()); let tgt = null, label = '';
+        const h = HOLID.find(c => new RegExp('(^|[^а-я0-9])(?:' + c[0] + ')').test(x.n));
+        if (h) { let d = new Date(now.getFullYear(), h[1], h[2]); if (d < now) d = new Date(now.getFullYear() + 1, h[1], h[2]); tgt = d; label = h[3]; }
+        else { const w = WDAY.find(c => new RegExp('(^|[^а-я0-9])(?:' + c[0] + ')').test(x.n)); if (w) { const k = (w[1] - now.getDay() + 7) % 7; tgt = new Date(now.getFullYear(), now.getMonth(), now.getDate() + k); label = w[2]; } }
+        if (!tgt) return null; const days = Math.round((tgt - now) / 864e5);
+        return days === 0 ? {pool: t.a0, vars: {what: label}} : {vars: {what: label, days, dword: dword(days)}};
+      },
+      dayplus(t, st, x) {
+        const m = /через\s+(\d+|[а-я]+)\s*(дн\S*|нед\S*|мес\S*)?/.exec(x.n); if (!m) return null; let k = /^\d+$/.test(m[1]) ? +m[1] : NUMW[m[1]]; let u = m[2] || '';
+        if (!u && /^(?:неделю|месяц|день)$/.test(m[1])) { u = m[1]; k = 1; } if (!k && /^(?:неделю|недели)$/.test(m[1])) k = 1; if (!k || k > 3650) return null; if (!u) u = 'дн';
+        const d = new Date(K.now()); const isW = /^нед/.test(u), isM = /^мес/.test(u); if (isM) d.setMonth(d.getMonth() + k); else d.setDate(d.getDate() + k * (isW ? 7 : 1));
+        return {vars: {date: d.getDate() + ' ' + MON_G[d.getMonth()] + ' ' + d.getFullYear() + ' года', weekday: WEEK[d.getDay()], n: k + ' ' + (isM ? plural(k, 'месяц', 'месяца', 'месяцев') : isW ? plural(k, 'неделю', 'недели', 'недель') : plural(k, 'день', 'дня', 'дней'))}};
+      },
+      nameSet(t, st, x) {
+        const m = /(?:меня зовут|мо[её] имя|зови меня|называй меня|можешь звать меня|можно звать меня|меня все зовут)\s+([A-Za-zА-Яа-яЁё-]{2,20})/i.exec(x.raw); if (!m) return null;
+        const nm = cap(m[1].toLowerCase()); if (/^(?:как|так|вот|просто|тебе|ты|вы|не|да|нет|что|кто|его|её|ее)$/i.test(nm)) return null; st.name = nm; return {vars: {nm}};
+      },
+      nameGet(t, st) { return st.name ? {vars: {nm: st.name}} : {pool: t.a0}; },
+      repeat(t, st) { return st.lastText ? {vars: {t: st.lastText}, keepLast: true} : {pool: t.a0}; },
+      clarify(t, st) { if (!st.lastText) return {pool: t.a0}; const s = st.lastText.replace(/\s+/g, ' '); const m = /^[\s\S]{40,230}?[.!?](?=\s|$)/.exec(s); return {vars: {t: m ? m[0] : s.slice(0, 200)}, keepLast: true}; },
+      riddle(t, st) { const rs = SL.riddles || []; if (!rs.length) return null; const i = (st.riddleN || 0) % rs.length; st.riddleN = (st.riddleN || 0) + 1; st.riddle = {i, tries: 0}; return {vars: {q: rs[i].q}}; },
+      fact(t, st) { const fs = SL.facts || []; if (!fs.length) return null; const i = ((st.factN || 0) + hashOf(String(st.turns || 0)) % 3) % fs.length; st.factN = (st.factN || 0) + 1; return {vars: {v: fs[i]}}; },
+      social(t) { return contactsMain.whatsapp ? {} : {pool: t.a0}; },
+      joke(t, st) { const js = SL.jokes || []; if (!js.length) return null; const i = (st.jokeN || 0) % js.length; st.jokeN = (st.jokeN || 0) + 1; return {vars: {v: js[i]}}; }
+    };
+    const FNMAP = {pickval: FN.pickval, randnum: FN.randnum, either: FN.either, countdown: FN.countdown, dayplus: FN.dayplus, nameSet: FN.nameSet, nameGet: FN.nameGet, repeat: FN.repeat, clarify: FN.clarify, riddle: FN.riddle, fact: FN.fact, joke: FN.joke, social: FN.social};
+
+    function slFill(s, st, vars) {
+      const d = K.now(), hh = String(d.getHours()).padStart(2, '0'), mm = String(d.getMinutes()).padStart(2, '0');
+      const m = Object.assign({hello: hello(), phone: contactsMain.phone || '', hours: contactsMain.hours || '', email: contactsMain.email || '', company: (KB && KB.company && KB.company.name) || 'Астрея', time: hh + ':' + mm, date: d.getDate() + ' ' + MON_G[d.getMonth()], weekday: WEEK[d.getDay()], nm: (st && st.name) || '', ',nm': (st && st.name) ? ', ' + st.name : '', city: (st && st.city) || '', adv: (((KB && KB.company && KB.company.advantages) || []).slice(0, 4).map(a => lower(a.t)).join(', ')) || 'о них на странице «Компания»'}, vars || {});
+      return String(s).replace(/\{([^{}]+)\}/g, (a, k) => m[k] != null ? String(m[k]) : '');
+    }
+    const ACT = {callback: () => act.callback(), partner: st => act.partner(st), request: () => act.form('product', 'Запросить информацию', '')};
+    /* ответ по теме: вариант по кругу (повторный вопрос — другая формулировка), второе сообщение-«мостик» к делу, кнопки */
+    function slAnswer(t, st, ctx, x) {
+      let o = {}; const fnName = t.fn, f = fnName && FNMAP[fnName]; if (f) { o = f(t, st, x); if (!o) return null; }
+      const pool = (o.pool && o.pool.length ? o.pool : t.a) || []; if (!pool.length) return null;
+      st.said = st.said || {}; const c = st.said[t.id] || 0; st.said[t.id] = c + 1;
+      let text = slFill(pool[(hashOf(t.id) + c) % pool.length], st, o.vars);
+      if (c >= pool.length && SL.again && SL.again.length && !t.fn) text = SL.again[c % SL.again.length] + ' ' + text;
+      if (t.reset) { st.last = {}; st.pending = null; st.riddle = null; }
+      let text2 = ''; const bp = t.b === false ? null : (t.b && t.b.length ? t.b : (SL.bridges && SL.bridges[t.g]) || null);
+      if (bp && bp.length && (t.bridge === 'always' || (c + hashOf(t.id)) % 2 === 0)) text2 = slFill(bp[(hashOf(t.id) + c) % bp.length], st, o.vars);
+      const acts = (t.act || []).map(k => ACT[k] && ACT[k](st)).filter(Boolean); if (t.act && t.act.indexOf('ask') >= 0) acts.push(act.ask(x.raw));
+      const links = (t.links || []).map(l => link(l[0], l[1]));
+      const chips = (t.chips && t.chips.length ? t.chips : (SL.chips && SL.chips[t.g]) || []).slice(0, 4);
+      return R(text, {text2, actions: acts, links, chips, intent: 'talk', topic: t.id, local: !!t.local, keepLast: !!o.keepLast, steps: t.steps || []});
+    }
+    /* ответ из темы нужной стадии: пробует найденные темы по порядку (расчётная функция может «отказаться») */
+    function slReply(stage, x, st, ctx) {
+      const list = slFind(stage, x.vs, x.raw, x.p); for (const t of list) { const r = slAnswer(t, st, ctx, x); if (r) return r; } return null;
+    }
+
+    /* ---------- «лестница» запасных ответов: непонятное не получает один и тот же отказ ---------- */
+    const QW = /^(?:а\s+)?(?:почему|зачем|отчего|как|что|кто|где|куда|откуда|когда|сколько|какой|какая|какие|какое|чей|чем|можно ли|правда ли|а если|неужели|разве|объясни|расскажи|подскажи|скажи|покажи|найди|дай|посоветуй|порекомендуй)(?![а-я])/, IMP = /^(?:а\s+)?(?:напиши|составь|придумай|переведи|нарисуй|реши|сделай|помоги|сочини|сгенерируй|подготовь|распиши|создай|исправь|проверь|запомни|включи|открой|отправь|позвони|спой)(?![а-я])/;
+    function ladder(raw, n, st, sug) {
+      const L = SL && SL.ladder; if (!L) return null; const ws = words(n);
+      st.missN = (st.missN || 0) + 1; st.said = st.said || {};
+      let kind = sug.length ? 'suggest' : gibberish(n) ? 'gibberish' : ws.length === 1 ? 'oneword' : (/\?\s*$/.test(raw) || QW.test(n)) ? 'question' : IMP.test(n) ? 'task' : 'statement';
+      if (!sug.length && st.missN >= 3 && L.escalate && kind !== 'gibberish') kind = 'escalate';
+      const pool = L[kind] || L.statement; if (!pool || !pool.length) return null; const key = 'ladder:' + kind, c = st.said[key] || 0; st.said[key] = c + 1;
+      return slFill(pool[(hashOf(key) + c) % pool.length], st, {echo: safeEcho(raw)});
+    }
+    function ladderOnly(kind, st, raw) { const L = SL && SL.ladder, pool = L && L[kind]; if (!pool || !pool.length) return null; st.said = st.said || {}; const key = 'ladder:' + kind, c = st.said[key] || 0; st.said[key] = c + 1; return slFill(pool[(hashOf(key) + c) % pool.length], st, {echo: safeEcho(raw)}); }
+    function riddleCheck(st, X, n) {
+      const rd = SL && SL.riddle, rs = SL && SL.riddles && SL.riddles[st.riddle.i]; if (!rd || !rs) { st.riddle = null; return null; }
+      const ws = X.vs[0], solved = ws.some(w => rs.a.some(a => w.startsWith(a))), say = (arr, vars) => slFill(arr[(st.turns || 0) % arr.length], st, Object.assign({a: rs.reveal}, vars || {})), R2 = (arr, topic, chips, vars) => R(say(arr, vars), {chips, intent: 'talk', topic, local: true});
+      if (solved) { st.riddle = null; return R2(rd.ok, 'riddle_ok', ['Ещё загадку', 'Расскажи факт', 'Вернуться к делу']); }
+      if (W('загадк|ещ[её]($|\\s)|другую|следующую|новую').test(n)) { st.riddle = null; return null; }            // «ещё загадку» — не отгадка, а просьба
+      if (W('подсказк|подскажи|намёк|намек').test(n)) { st.riddle.tries++; return R2(rd.hint, 'riddle_hint', ['Сдаюсь'], {h: rs.hint}); }
+      if (W('сдаюсь|сдалась|не знаю|ответ|отгадк|понятия не имею|без понятия').test(n)) { st.riddle = null; return R2(rd.giveup, 'riddle_giveup', ['Ещё загадку', 'Расскажи факт', 'Вернуться к делу']); }
+      if (ws.length <= 3 && st.riddle.tries < 3) { st.riddle.tries++; return R2(rd.no, 'riddle_no', ['Подсказку', 'Сдаюсь']); }
+      if (st.riddle.tries >= 3 && ws.length <= 3) { st.riddle = null; return R2(rd.giveup, 'riddle_giveup', ['Ещё загадку', 'Вернуться к делу']); }
+      st.riddle = null; return null;
+    }
+    function symbolsAnswer(raw, st) {
+      const S2 = SL && SL.symbols; if (!S2) return null; const row = S2.find(r => r.re && new RegExp(r.re, 'u').test(raw)) || S2.find(r => r.dflt); if (!row) return null;
+      const c = (st.said && st.said['sym:' + row.id]) || 0; st.said = st.said || {}; st.said['sym:' + row.id] = c + 1;
+      return R(slFill(row.a[(hashOf(row.id) + c) % row.a.length], st), {chips: starters({}, st).slice(0, 3), intent: 'talk', topic: 'symbols', local: true});
     }
 
     /* ---------- главный разбор ---------- */
@@ -424,14 +588,27 @@
       if (city && (W('из\\s|я в\\s|мы в\\s|находимся|живу|работаю|у нас в|в городе|мой город').test(n) || ntok <= 2)) st.city = city;
       if (role) st.role = role;
       const done = res => fin(res, st);
+      const X = {raw: text, n: squash(clean(text)), vs: [], p: {products: productsInText, brands: brandsInText, tasks: tasksInText}};
+      if (SL) { const a1 = words(squash(n)), a2 = words(squash(clean(text))); X.vs = a1.join(' ') === a2.join(' ') ? [a1] : [a1, a2]; }
+
+      /* ---- раскладка, язык, служебное, безопасность, игры и расчёты (библиотека реплик, стадия «early») ---- */
+      if (SL) {
+        if (!ctx.noLayout) { const lf = layoutFix(text); if (lf) { const r2 = reply(lf, st, Object.assign({}, ctx, {noLayout: true})); st.turns--; r2.text = 'Похоже, раскладка клавиатуры была не та — читаю как «' + safeEcho(lf) + '».\n\n' + r2.text; return r2; } }
+        const w0 = words(text);
+        if (w0.length && !/[а-яё]/i.test(text) && w0.filter(w => EN_COMMON.has(w)).length / w0.length >= 0.5 && !brandsInText.length && !productsInText.length) { const re = slReply('en', X, st, ctx); return done(re || R(ladderOnly('english', st, text) || 'I understand Russian best — please write in Russian.', {actions: compact([act.ask(text), act.callback()]), intent: 'unknown', sure: false, steps: ['Думаю…']})); }
+        if (/[іїєґ]/i.test(text) && !/[ыэъё]/i.test(text)) return done(R(ladderOnly('ukrainian', st, text) || 'Я краще розумію російську.', {actions: compact([act.ask(text)]), intent: 'unknown', sure: false}));
+        if (/[\u0590-\u06FF\u0900-\u0DFF\u3040-\u30FF\u4E00-\u9FFF\uAC00-\uD7AF]/.test(text)) return done(R(ladderOnly('foreign', st, text) || 'Я лучше всего понимаю русский.', {actions: compact([act.ask(text)]), intent: 'unknown', sure: false}));
+        if (st.riddle) { const rr = riddleCheck(st, X, n); if (rr) return done(rr); }
+        if (!X.vs.length || !X.vs[0].length) { const sy = symbolsAnswer(text, st); if (sy) return done(sy); }
+        if (st.lastTopic && SLID[st.lastTopic] && SLID[st.lastTopic].repeat && ntok <= 4 && W('ещ[её]($|\\s)|давай ещ[её]|следующ|другую|другой|ещ[её] одн|продолжай').test(n)) { const rp = slAnswer(SLID[st.lastTopic], st, ctx, X); if (rp) return done(rp); }
+        const re = slReply('early', X, st, ctx); if (re) return done(re);
+      }
 
       /* ---- светские реплики ---- */
       const greetRe = new RegExp('^(?:ну |а )?(?:привет|здравствуй|добрый день|доброе утро|добрый вечер|доброй ночи|(?:хай|hello|hi|салют)' + END + ')', 'i');
       if (greetRe.test(n) && ntok <= 4) { st.last = {}; return done(R(hello() + '! Я Стелла, мини-консультант «Астреи». Подскажу по каталогу и брендам, обучению, условиям сотрудничества и контактам. ' + pick(st, ['Что вас интересует?', 'С чего начнём?', 'Чем помочь?']), {chips: starters(ctx, st), intent: 'greet'})); }
-      if (W('спасиб|благодар|выручил|супер|отлично|класс($|\\s)|здорово|молодец|круто').test(n) && ntok <= 6) return done(R(pick(st, ['Пожалуйста! Если появятся вопросы — пишите.', 'Рада помочь! Обращайтесь, если понадобится ещё что-то.', 'Всегда пожалуйста. Что ещё подсказать?']), {chips: ['Ближайшие семинары', 'Контакты менеджера'], intent: 'thanks'}));
-      if (W('до свидани|пока($|\\s)|всего доброго|удачи|до встречи|bye').test(n) && ntok <= 5) return done(R('Всего доброго! Если понадоблюсь — Стелла всегда на связи.', {intent: 'bye'}));
-      if (W('как дела|как ты|как поживаешь|как жизнь').test(n)) return done(R('Спасибо, всё хорошо — я программа и не устаю, зато жемчужинки всегда в настроении. Расскажите, что вам нужно: каталог, обучение или условия сотрудничества?', {chips: starters(ctx, st), intent: 'smalltalk'}));
-      if (W('анекдот|шутк|расскажи что-нибудь смешное|спой|стих').test(n)) return done(R('Шутки и стихи — не моя сильная сторона: в моей базе только каталог, расписание и условия сотрудничества. Зато в них я разбираюсь хорошо.', {chips: starters(ctx, st), intent: 'smalltalk'}));
+      if ((W('спасиб|благодар|выручил').test(n) && ntok <= 6 && !W('нет|не надо|не нужно').test(n)) || (W('супер|отлично|класс($|\\s)|здорово|молодец|круто').test(n) && ntok <= 1)) return done(R(pick(st, ['Пожалуйста! Если появятся вопросы — пишите.', 'Рада помочь! Обращайтесь, если понадобится ещё что-то.', 'Всегда пожалуйста. Что ещё подсказать?']), {chips: ['Ближайшие семинары', 'Контакты менеджера'], intent: 'thanks'}));
+      if ((W('до свидани|всего доброго|удачи|до встречи|bye').test(n) && ntok <= 5) || (/^пока(?![а-я])/.test(n) && ntok <= 2)) return done(R('Всего доброго! Если понадоблюсь — Стелла всегда на связи.', {intent: 'bye'}));
       if (W('тупой|глупый|бесполезн|ерунда|не понимаешь|не то|плохо отвечаешь|ничего не понимаешь|дурак|идиот').test(n)) return done(R('Сожалею, что не получилось помочь. Давайте передадим вопрос человеку — менеджер ответит в рабочее время (' + contactsMain.hours + ').', {actions: compact([act.callback(), act.ask(st.last.q || text)]), links: [link('contacts.html', 'Контакты')], chips: ['Подобрать средство по задаче', 'Ближайшие семинары'], intent: 'frustrated'}));
       if (W('кто ты|что ты умеешь|что умеешь|ты бот|ты человек|ты робот|ты живой|ты ии|нейросет|чем ты можешь|чем можешь помочь|что можно спросить|как тебя зовут|ты настоящ').test(n))
         return done(R('Меня зовут Стелла — я мини-консультант сайта «Астреи»: программа, а не сотрудник. Умею: подобрать продукты по задаче и объяснить выбор, рассказать о товарах и брендах, сравнить товары, показать расписание обучения и записать, посчитать скидку по сумме закупки, дать контакты. Помню, о чём мы говорили: можно спрашивать «а у Dermatime?», «ещё», «почему именно эти?». Цены, наличие и персональные рекомендации — к менеджеру.' + (st.ai ? ' А ещё могу поговорить на любую тему и ответить на общие вопросы.' : ''), {chips: starters(ctx, st), intent: 'who'}));
@@ -482,6 +659,9 @@
         if (tasksInText.length && l.brand && ntok <= 6 && !brandsInText.length && W('а |ещ[её]|тоже|также|и для').test(n)) return done(taskAnswer(tasksInText, st, {brand: l.brand}));
       }
 
+      /* ---- библиотека реплик: о Стелле, светская беседа, не по теме, чего сайт не знает (стадия «mid») — раньше общих «прямых намерений», чтобы «договорились» не принималось за «договор» ---- */
+      if (SL) { const rm = slReply('mid', X, st, ctx); if (rm) return done(rm); }
+
       /* ---- прямые намерения ---- */
       if (W('перезвон|заказать звонок|закажу звонок|позвоните мне|обратный звонок').test(n)) return done(R(hasCallback ? 'Оставьте имя и телефон — менеджер перезвонит в рабочее время (' + contactsMain.hours + ').' : 'Позвоните нам: ' + contactsMain.phone + ' (' + contactsMain.hours + ').', {actions: compact([act.callback()]), intent: 'callback'}));
       if (W('медицинск|беремен|лактац|аллерги|противопоказ|диагноз|лечени|болезн|дерматит|экзем|псориаз|онколог|можно ли мне|подойд[её]т ли мне|назначь|что мне делать|какой препарат принимать').test(n))
@@ -529,8 +709,14 @@
       if (W('подобрать|подбор|посоветуй|порекоменд|что выбрать|что взять|помогите выбрать|что подойд[её]т|помоги выбрать|что бы вы').test(n)) return done(R('По какой задаче подбираем? Выберите или напишите своими словами — например, «пигментация» или «чувствительная кожа».', {chips: (D.tasks || []).slice(0, 8).map(t => t.label), intent: 'pick'}));
       if (W('каталог|ассортимент|что у вас есть|что продаёте|что продаете|что есть|продукци|бренд').test(n)) { const cnt = {}; (D.products || []).forEach(p => { cnt[p.c] = (cnt[p.c] || 0) + 1; }); return done(R('В каталоге ' + D.products.length + ' ' + plural(D.products.length, 'позиция', 'позиции', 'позиций') + ' ' + (D.brands || []).length + ' ' + plural((D.brands || []).length, 'бренда', 'брендов', 'брендов') + ': ' + (D.brands || []).map(b => b.name).join(', ') + '. Категории: ' + (D.cats || []).filter(c => cnt[c.id]).map(c => lower(c.name)).join(', ') + '.', {links: [link('catalog.html', 'Каталог'), link('brands.html', 'Бренды')], chips: ['Подобрать средство по задаче'], intent: 'catalog'})); }
 
+      /* ---- библиотека реплик: о Стелле, светская беседа, просьбы не по теме (стадия «pre») ---- */
+      if (SL) { const rp = slReply('pre', X, st, ctx); if (rp) return done(rp); }
+
       /* ---- свободный вопрос: поиск по материалам сайта ---- */
       const ia = infoAnswer(text, st); if (ia) return done(ia);
+
+      /* ---- чего на сайте нет (возврат, рассрочка, вакансии…) и последний шанс библиотеки (стадия «post») ---- */
+      if (SL) { const rp = slReply('post', X, st, ctx); if (rp) return done(rp); }
       return done(unknown(text, st, tk));
     }
 
@@ -539,13 +725,15 @@
     function fin(res, st) {
       if (res.sure !== false) res.sure = res.local || LOCAL.has(res.intent);          // res.local — продолжение диалога, которое зависит от состояния движка
       res.state = st; if (!res.chips.length) res.chips = starters({}, st).slice(0, 3);
+      if (!res.keepLast) st.lastText = String(res.text || '').replace(/\*\*/g, '').replace(/\s+/g, ' ').trim().slice(0, 500);
+      if (res.intent !== 'unknown') st.missN = 0; st.lastTopic = res.topic || '';
       res.chips = res.chips.filter((c, i, a) => c && a.indexOf(c) === i).slice(0, 4);
       st.lastIntent = res.intent; return res;
     }
     const newState = () => ({turns: 0, role: '', city: '', pending: null, last: {}});
     /* когда на вопрос ответил ИИ, движок запоминает показанные им карточки: «ещё», «подробнее про первый», «сравни их» продолжают работать */
     function noteExternal(st, ids, tasks) { ids = (ids || []).filter(id => P[id]); st.last = {intent: ids.length ? 'task' : (st.last || {}).intent, cards: ids.slice(0, 4), all: ids, offset: ids.length, tasks: tasks || (st.last || {}).tasks || [], brand: ''}; }
-    return {reply, newState, starters, knowledge: K, correct, noteExternal};
+    return {reply, newState, starters, knowledge: K, correct, noteExternal, library: SL ? {topics: SLT, byId: SLID, raw: SL, find: (stage, text) => slFind(stage, [words(squash(clean(text)))]).map(t => t.id)} : null};
   }
 
   return {createBrain, createKnowledge};

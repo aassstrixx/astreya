@@ -8,7 +8,7 @@ const clip = (s, n) => { s = String(s || '').replace(/\s+/g, ' ').trim(); return
 module.exports = function buildKb(ctx) {
   const {site, content, training} = ctx, c = site.contacts, co = content.company || {}, pt = content.partners || {};
   return {
-    v: 1,
+    v: 2,
     company: {
       name: site.name, legal: site.legalName || site.name, tagline: site.tagline || '',
       about: (co.who || []).map(s => clip(s, 600)),
@@ -40,6 +40,7 @@ module.exports = function buildKb(ctx) {
       {t: 'Компания', u: 'company.html', d: 'О компании и представительства'},
       {t: 'Контакты', u: 'contacts.html', d: 'Телефон, почта, адреса, форма вопроса'}
     ],
+    stella: ctx.stella || undefined,               // библиотека живых реплик (data/stella/*.json): о помощнике, светская беседа, чего сайт не знает
     /* что помощник НЕ знает и не должен выдумывать */
     gaps: ['цены на продукцию', 'наличие на складе', 'сроки и стоимость доставки', 'состав и дозировки (если не указаны у товара)', 'сертификаты и регистрационные документы', 'персональные рекомендации по уходу и лечению']
   };

@@ -1,0 +1,124 @@
+{
+  "topics": [
+    {
+      "id": "en_hello", "g": "chat", "stage": "en", "local": true, "b": false, "chips": ["Catalog", "Contacts", "Training", "Partnership"],
+      "q": [
+        "=hello|=hi|=hey|=hiya|=howdy|=greetings|=yo|good_morning|good_afternoon|good_evening|good_day"
+      ],
+      "a": [
+        "Hello! I'm Stella, the assistant of the Astreya website. I understand Russian best, but I'll try to help: catalog, brands, training, partnership, contacts. Please write in Russian if you can.",
+        "Hi there! I'm Stella. My English is limited — I work best in Russian. Tell me what you need: products, training seminars, partnership or contacts."
+      ]
+    },
+    {
+      "id": "en_how_are_you", "g": "chat", "stage": "en", "local": true, "b": false,
+      "q": [
+        "how_are_you|how_do_you_do|how_are_things|hows_it_going|how_is_it_going|whats_up|sup|how_you_doing|how_have_you_been"
+      ],
+      "a": [
+        "I'm doing well, thank you! How can I help?",
+        "All good here, thanks for asking. What would you like to know?"
+      ]
+    },
+    {
+      "id": "en_who", "g": "persona", "stage": "en", "local": true, "b": false, "chips": ["Catalog", "Contacts"],
+      "q": [
+        "*your_name|who_are_you|what_are_you|are_you_a_bot|are_you_a_robot|are_you_human|are_you_real|are_you_ai|who_is_this|what_is_your_name|whats_your_name"
+      ],
+      "a": [
+        "I'm Stella, a small virtual assistant on the Astreya website. I'm a program, not a person. I know the catalog, brands, training schedule, partnership terms and contacts.",
+        "My name is Stella — a pearl with a star. I'm a chatbot of this website and answer questions about its products, training and partnership."
+      ]
+    },
+    {
+      "id": "en_thanks", "g": "chat", "stage": "en", "local": true, "b": false,
+      "q": [
+        "*thanks|thank|thx|cheers|appreciate|thank_you"
+      ],
+      "a": [
+        "You're welcome! Anything else I can help with?",
+        "Happy to help!"
+      ]
+    },
+    {
+      "id": "en_bye", "g": "chat", "stage": "en", "local": true, "b": false,
+      "q": [
+        "*bye|goodbye|cya|farewell|goodnight|see_you|take_care"
+      ],
+      "a": [
+        "Goodbye! Stella is always here if you need her.",
+        "Bye! Have a nice day."
+      ]
+    },
+    {
+      "id": "en_help", "g": "chat", "stage": "en", "b": false, "chips": ["Catalog", "Training", "Partnership", "Contacts"],
+      "q": [
+        "*help|assist|assistance|support|question|need|want"
+      ],
+      "a": [
+        "I can help with the catalog and brands, the training schedule, partnership terms and discounts, and contacts. My English is limited, so please write in Russian if you can.",
+        "Tell me what you're looking for: products by task (e.g. pigmentation, sun protection), training seminars, partnership terms or contacts. Writing in Russian works best."
+      ]
+    },
+    {
+      "id": "en_price", "g": "business", "stage": "en", "b": false, "act": ["callback"], "chips": ["Contacts", "Partnership"],
+      "q": [
+        "*price|prices|cost|pricing|how_much|buy|order|purchase|shop"
+      ],
+      "a": [
+        "Prices are not published on the website: they depend on the purchase volume and partnership terms, and are given by the manager. Phone: {phone} ({hours}).",
+        "Our products are supplied to professionals and partners. For prices, availability and ordering please contact the manager: {phone}, {hours}."
+      ]
+    },
+    {
+      "id": "en_catalog", "g": "business", "stage": "en", "b": false, "links": [["catalog.html", "Catalog"], ["brands.html", "Brands"]],
+      "q": [
+        "*catalog|catalogue|products|brands|range|assortment"
+      ],
+      "a": [
+        "The catalog has products from several professional brands for cosmetologists, salons and clinics. You can open it here: the Catalog page. For help choosing, tell me the task in Russian — for example, «пигментация» or «фотозащита».",
+        "Here is our catalog. You can filter it by brand, category and task. If you tell me what you need (in Russian, please), I'll suggest suitable products."
+      ]
+    },
+    {
+      "id": "en_contacts", "g": "business", "stage": "en", "b": false, "act": ["callback"], "links": [["contacts.html", "Contacts"]],
+      "q": [
+        "*contact|contacts|phone|email|address|manager|hours|whatsapp|call_you"
+      ],
+      "a": [
+        "Phone: {phone} ({hours}). Email: {email}. The full list of offices is on the Contacts page.",
+        "You can reach the manager by phone {phone} ({hours}) or by email {email}."
+      ]
+    },
+    {
+      "id": "en_training", "g": "business", "stage": "en", "b": false, "links": [["training.html", "Training"]],
+      "q": [
+        "*training|seminar|seminars|webinar|webinars|education|course|courses|academy|schedule"
+      ],
+      "a": [
+        "The training center holds seminars, master classes and webinars. You can see the current schedule on the Training page; to sign up, use the form on the event page.",
+        "Seminars and webinars for specialists are listed on the Training page — dates, cities and formats."
+      ]
+    },
+    {
+      "id": "en_partner", "g": "business", "stage": "en", "b": false, "act": ["partner", "callback"], "links": [["partners.html", "Partners"]],
+      "q": [
+        "*partner|partners|partnership|distributor|wholesale|cooperation|dealer|supplier"
+      ],
+      "a": [
+        "The «Become a partner» page describes how to start working with us and includes a discount calculator. For details, ask the manager: {phone} ({hours}).",
+        "Partnership terms and the volume-discount calculator are on the Partners page. The manager will confirm exact conditions: {phone}, {hours}."
+      ]
+    },
+    {
+      "id": "en_speak", "g": "persona", "stage": "en", "local": true, "b": false,
+      "q": [
+        "*do_you_speak|speak_english|english_please|in_english|speak_russian|your_language"
+      ],
+      "a": [
+        "I understand Russian best and know only a little English, so my answers may be short. The website and the manager work in Russian: {phone} ({hours}).",
+        "My English is basic — I work best in Russian. For other languages please contact the manager: {phone}."
+      ]
+    }
+  ]
+}
