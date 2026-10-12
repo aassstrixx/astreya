@@ -191,13 +191,13 @@ const cfg = JSON.parse(fs.readFileSync(pth.join(ROOT, 'data/redesign.json'), 'ut
     await p.goto(base + 'catalog.html'); await skipSplash(); await p.evaluate(() => { sessionStorage.removeItem('astreya:chat2'); sessionStorage.removeItem('astreya:asst-tip'); }); await p.reload(); await skipSplash();
     const fabOn = () => p.evaluate(() => { const f = document.getElementById('asst-fab'); if (!f) return null; const cs = getComputedStyle(f); return {vis: cs.opacity > 0.5 && cs.pointerEvents !== 'none', exp: f.getAttribute('aria-expanded')}; });
     const idle = () => p.waitForFunction(() => !document.getElementById('asst-form').classList.contains('busy') && !document.querySelector('.asst-typing'), null, {timeout: 14000});
-    await wait(900); let fo = await fabOn(); ok(fo && fo.vis && fo.exp === 'false' && await p.$eval('#asst', e => e.hidden), 'кнопка «Помощник» на месте, чат закрыт');
+    await p.waitForFunction(() => { const f = document.getElementById('asst-fab'); return f && getComputedStyle(f).opacity > 0.5; }, null, {timeout: 9000}).catch(() => {}); let fo = await fabOn(); ok(fo && fo.vis && fo.exp === 'false' && await p.$eval('#asst', e => e.hidden), 'кнопка «Помощник» на месте, чат закрыт');
     /* кнопка Стеллы: маскот, подпись, искры при появлении, «магнит» и ховер (только компьютер) */
     const fabI = await p.evaluate(() => { const f = document.getElementById('asst-fab'), t = f.querySelector('.asst-fab-t'); return {pe: f.querySelectorAll('svg.pe').length, mood: (f.querySelector('.pe') || {getAttribute: () => ''}).getAttribute('data-m'), label: t ? t.textContent.trim() : '', aria: f.getAttribute('aria-label'), sparks: f.querySelectorAll('.asst-fab-fx i').length, burst: !!f.querySelector('.asst-fab-fx.go'), defs: !!document.getElementById('pe-g')}; });
     ok(fabI.pe === 1 && fabI.label === 'Спросить Стеллу' && /Стелла/.test(fabI.aria) && fabI.sparks >= 6 && fabI.defs, 'кнопка: жемчужинка Стелла, подпись «Спросить Стеллу», доступное имя, искры и градиент на месте', fabI);
     if (!mobile) {
       ok(fabI.burst, 'при появлении кнопки запускается россыпь искр');
-      await p.waitForFunction(() => { const f = document.getElementById('asst-fab'); return f.classList.contains('long') && f.offsetWidth > 150; }, null, {timeout: 9000}).catch(() => {}); const w1 = await p.$eval('#asst-fab', e => ({long: e.classList.contains('long'), w: e.offsetWidth})); ok(w1.long && w1.w > 150, 'в первые секунды подпись раскрыта (кнопка-«таблетка»), ширина ' + w1.w, w1);
+      await p.waitForFunction(() => { const f = document.getElementById('asst-fab'); return f.classList.contains('long') && f.offsetWidth > 150; }, null, {timeout: 16000}).catch(() => {}); const w1 = await p.$eval('#asst-fab', e => ({long: e.classList.contains('long'), w: e.offsetWidth})); ok(w1.long && w1.w > 150, 'в первые секунды подпись раскрыта (кнопка-«таблетка»), ширина ' + w1.w, w1);
       await p.mouse.move(700, 300); await wait(150); const far = await p.$eval('#asst-fab', e => e.style.getPropertyValue('--ex'));
       const bx = await p.$eval('#asst-fab', e => { const r = e.getBoundingClientRect(); return {x: r.left + r.width / 2, y: r.top + r.height / 2}; });
       await p.mouse.move(bx.x - 90, bx.y - 20); await wait(200); const near = await p.$eval('#asst-fab', e => ({ex: e.style.getPropertyValue('--ex'), mx: e.style.getPropertyValue('--mx')}));
@@ -209,7 +209,9 @@ const cfg = JSON.parse(fs.readFileSync(pth.join(ROOT, 'data/redesign.json'), 'ut
     ok(await p.$eval('#asst-form', e => e.classList.contains('busy')) && await p.$('#asst-log .asst-m') !== null, 'первое сообщение приходит «живым»: чат занят, пока Стелла «печатает», а не показывает всё мгновенно');
     await idle(); await wait(200);
     ok(/Стелла/.test(await p.$eval('.asst-h', e => e.textContent)) && await p.$$eval('.asst-h svg.pe', e => e.length) === 1 && await p.$$eval('#asst-log .asst-b', e => e.length) === 1 && /Я Стелла/.test(await p.$eval('#asst-log .asst-b', e => e.textContent)) && await p.$$eval('#asst-log #asst-qr .chip', e => e.length) >= 3, 'Стелла представляется, маскот в шапке и у сообщения; приветствие и быстрые ответы внутри ленты (ничего не перекрывают)');
+    await p.evaluate(() => { window.ASTREYA_MOTION_SPEED = 6; });          // дальше паузы и печать ускорены в 6 раз (ритм проверяется отдельно, на реальной скорости)
     ok(await p.$eval('#asst-note', e => /программа/.test(e.textContent)), 'подпись: помощник — программа, не сотрудник');
+    ok(await p.$eval('.asst-motion', e => e.hidden) && await p.evaluate(() => !document.body.classList.contains('calm')), 'обычный режим: полные анимации, кнопка «спокойный режим» не мешает');
     if (mobile) ok(await p.$eval('#asst', e => Math.round(e.getBoundingClientRect().width) === innerWidth), 'на телефоне чат — во весь экран');
     const ask = async q => { await p.fill('#asst-in', q); await p.keyboard.press('Enter'); await p.waitForFunction(() => !document.querySelector('.asst-typing') && !document.getElementById('asst-form').classList.contains('busy'), null, {timeout: 14000}); await wait(150); };
     const last = sel => p.$eval('#asst-log .asst-m:nth-last-child(2)', (e, s) => s ? [...e.querySelectorAll(s)].map(x => x.textContent.trim()) : e.textContent, sel);
@@ -226,17 +228,19 @@ const cfg = JSON.parse(fs.readFileSync(pth.join(ROOT, 'data/redesign.json'), 'ut
     const hist = await p.evaluate(() => ((JSON.parse(sessionStorage.getItem('astreya:chat2') || '{}').msgs) || []).length); ok(hist >= 12, 'диалог сохраняется в sessionStorage вкладки', hist);
     if (mobile) { await p.keyboard.press('Escape'); } else await p.keyboard.press('Escape'); await wait(500); ok(await p.$eval('#asst', e => e.hidden || !e.classList.contains('open')), 'Esc закрывает чат');
     ok(await p.evaluate(() => document.activeElement && document.activeElement.id === 'asst-fab'), 'фокус возвращается на кнопку «Помощник»');
-    await p.reload(); await skipSplash(); await click('#asst-fab'); await wait(500); ok(await p.$$eval('#asst-log .asst-m', e => e.length) >= 12, 'после перезагрузки диалог на месте');
+    await p.reload(); await skipSplash(); await p.evaluate(() => { window.ASTREYA_MOTION_SPEED = 6; }); await click('#asst-fab'); await wait(500); ok(await p.$$eval('#asst-log .asst-m', e => e.length) >= 12, 'после перезагрузки диалог на месте');
     await click('[data-act="asst-reset"]'); await wait(300); ok(await p.$$eval('#asst-log .asst-m', e => e.length) === 1, '«Начать заново» очищает диалог'); await idle(); await p.keyboard.press('Escape'); await wait(400);
     /* ---- живость интерфейса: печать, стоп, оценка, память диалога, расчёт, менеджер ---- */
     await click('#asst-fab'); await wait(700); await click('[data-act="asst-reset"]'); await wait(300); await idle();
     const geom = await p.evaluate(() => { const l = document.getElementById('asst-log').getBoundingClientRect(), f = document.getElementById('asst-form').getBoundingClientRect(), q = document.getElementById('asst-qr').getBoundingClientRect(), h = document.querySelector('.asst-h').getBoundingClientRect(); return {qrInside: q.top >= l.top - 1 && q.bottom <= l.bottom + 400, formBelow: f.top >= l.bottom - 1, headAbove: h.bottom <= l.top + 1}; });
     ok(geom.formBelow && geom.headAbove, 'шапка, лента и поле ввода идут друг за другом без наложений', geom);
+    await p.evaluate(() => { window.ASTREYA_MOTION_SPEED = 1; });          // ритм «печати» — на реальной скорости
     await p.fill('#asst-in', 'Расскажите о компании'); await p.keyboard.press('Enter'); let caret = false, grow = [];
-    for (let i = 0; i < 40 && !caret; i++) { await wait(100); caret = await p.$('#asst-log .asst-caret') !== null; if (caret) grow.push(await p.$eval('#asst-log .asst-m:nth-last-child(2) .asst-tx', e => e.textContent.length)); }
+    for (let i = 0; i < 90 && !caret; i++) { await wait(100); caret = await p.$('#asst-log .asst-caret') !== null; if (caret) grow.push(await p.$eval('#asst-log .asst-m:nth-last-child(2) .asst-tx', e => e.textContent.length)); }
     ok(caret, 'ответ «печатается» (виден курсор), а не появляется целиком'); await wait(600); grow.push(await p.$eval('#asst-log .asst-m:nth-last-child(2) .asst-tx', e => e.textContent.length));
     ok(await p.$eval('#asst-send', e => e.classList.contains('stop') && /Остановить/.test(e.getAttribute('aria-label'))), 'во время ответа кнопка отправки превращается в «Остановить»');
     const t0 = Date.now(); await p.click('#asst-send'); await p.waitForFunction(() => !document.getElementById('asst-form').classList.contains('busy'), null, {timeout: 3000}); const stopMs = Date.now() - t0;
+    await p.evaluate(() => { window.ASTREYA_MOTION_SPEED = 6; });
     ok(stopMs < 1500 && await p.$('#asst-log .asst-caret') === null && /дистрибьютор/i.test(await p.$eval('#asst-log .asst-m:nth-last-child(2) .asst-tx', e => e.textContent)), '«Стоп» мгновенно показывает ответ целиком', stopMs);
     ok(await p.$$eval('#asst-log .asst-m:nth-last-child(2) .asst-fb button', e => e.length) === 2, 'под ответом — оценка 👍/👎');
     await click('#asst-log .asst-m:nth-last-child(2) .asst-fb button[data-v="1"]'); ok(await p.$eval('#asst-log .asst-m:nth-last-child(2) .asst-fb button[data-v="1"]', e => e.getAttribute('aria-pressed') === 'true'), '«Помог» отмечается');

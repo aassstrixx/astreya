@@ -7,6 +7,11 @@ const ROOT = path.join(__dirname, '..');
 const walk = d => fs.readdirSync(d, {withFileTypes: true}).flatMap(e => e.isDirectory() ? (['node_modules', '.git', 'src', 'tools', 'data', 'css', 'js', 'assets', 'server'].includes(e.name) ? [] : walk(path.join(d, e.name))) : [path.join(d, e.name)]);
 const files = walk(ROOT).filter(f => f.endsWith('.html'));
 const errors = [], warns = [];
+/* стили: лишняя или недостающая фигурная скобка «съедает» следующие правила (так однажды пропали правила печати) — проверяем баланс скобок в каждом css-файле */
+for (const f of fs.readdirSync(path.join(ROOT, 'css')).filter(x => x.endsWith('.css'))) {
+  const t = fs.readFileSync(path.join(ROOT, 'css', f), 'utf8').replace(/\/\*[\s\S]*?\*\//g, ''); let d = 0, neg = 0; for (const c of t) { if (c === '{') d++; else if (c === '}') { d--; if (d < 0) { neg++; d = 0; } } }
+  if (d || neg) errors.push(`css/${f}: несбалансированные скобки (не закрыто ${d}, лишних «}» ${neg})`);
+}
 const titles = new Map(), descs = new Map();
 const idsOf = html => new Set([...html.matchAll(/\sid="([^"]+)"/g)].map(m => m[1]));
 /* путь сайта на хостинге (для 404.html: ссылки от корня сайта /astreya/…) */

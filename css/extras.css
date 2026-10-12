@@ -211,30 +211,39 @@ button.qc-item{width:100%;text-align:left}
 /* ============ Помощник (js/assistant.js) ============ */
 .asst-fab{position:fixed;z-index:91;right:max(20px,env(safe-area-inset-right,0px));bottom:calc(22px + env(safe-area-inset-bottom,0px));display:inline-flex;align-items:center;gap:0;height:54px;padding:0 8px;border-radius:var(--pill);
   background:linear-gradient(135deg,var(--navy-2),var(--navy));color:var(--milk);font:700 13px/1 var(--sans);letter-spacing:.04em;box-shadow:0 20px 40px -14px rgba(11,26,51,.7),0 0 0 1px rgba(245,242,236,.12) inset;
-  opacity:0;transform:translateY(24px) scale(.72);transform-origin:100% 100%;translate:var(--mx,0px) var(--my,0px);pointer-events:none;
-  transition:opacity .8s cubic-bezier(.4,0,.2,1),transform 1.15s cubic-bezier(.22,.9,.28,1),translate .5s var(--ease),box-shadow .6s,bottom .4s var(--ease)}
+  opacity:0;transform:translateY(30px) scale(.82);transform-origin:100% 100%;translate:var(--mx,0px) var(--my,0px);pointer-events:none;
+  transition:opacity 1.5s cubic-bezier(.4,0,.2,1),transform 1.9s cubic-bezier(.25,.6,.3,1),translate .5s var(--ease),box-shadow .6s,bottom .4s var(--ease)}
 .asst-fab.in{opacity:1;transform:none;pointer-events:auto}
 /* после появления: мягкое возвращение после закрытия чата, быстрый и лёгкий отклик на наведение/нажатие */
-.asst-fab.in.settled{transition:opacity .55s ease .1s,transform .7s cubic-bezier(.22,.9,.28,1) .1s,translate .5s var(--ease),box-shadow .5s,bottom .4s var(--ease)}
+.asst-fab.in.settled{transition:opacity .6s ease .1s,transform .8s cubic-bezier(.22,.9,.28,1) .1s,translate .5s var(--ease),box-shadow .5s,bottom .4s var(--ease)}
 .asst-fab.in.settled:hover{transform:translateY(-2px) scale(1.03);box-shadow:0 26px 48px -14px rgba(11,26,51,.75),0 0 0 1px rgba(245,242,236,.2) inset;transition:opacity .4s,transform .4s var(--ease),translate .5s var(--ease),box-shadow .4s,bottom .4s var(--ease)}
 .asst-fab.in.settled:active{transform:scale(.94);transition:opacity .4s,transform .14s ease-out,translate .5s var(--ease),box-shadow .4s,bottom .4s var(--ease)}
+.asst-fab-glow{position:absolute;left:-14px;top:-14px;width:82px;height:82px;border-radius:50%;pointer-events:none;opacity:0;transform:scale(.4);background:radial-gradient(closest-side,rgba(157,180,245,.85),rgba(157,180,245,.3) 55%,transparent 74%)}
+.asst-fab.in .asst-fab-glow{animation:asstBloom 2.8s cubic-bezier(.25,.6,.3,1) .35s both}
+.asst-fab-sweep{position:absolute;inset:0;border-radius:inherit;overflow:hidden;pointer-events:none}
+.asst-fab-sweep::before{content:"";position:absolute;top:-10%;bottom:-10%;left:-60%;width:46%;opacity:0;transform:skewX(-18deg);background:linear-gradient(90deg,transparent,rgba(255,255,255,.18) 40%,rgba(255,255,255,.42) 50%,rgba(255,255,255,.18) 60%,transparent)}
+.asst-fab.sweep .asst-fab-sweep::before{animation:asstSweep 1.6s cubic-bezier(.4,0,.2,1) both}
 .asst-fab-i{position:relative;z-index:1;flex:none;width:38px;height:38px;border-radius:50%;display:grid;place-items:center;background:radial-gradient(circle at 50% 30%,#6f93f5,var(--blue) 75%);box-shadow:0 0 0 1px rgba(255,255,255,.22) inset;animation:asstFloat 4.6s ease-in-out infinite}
-.asst-fab-pe{display:block;width:44px;height:44px;margin:-3px;transform:scale(.55);transition:transform 1.1s cubic-bezier(.22,.9,.28,1) .15s}
-.asst-fab.in .asst-fab-pe{transform:none}
+/* Стелла «проявляется»: из размытия и прозрачности — в чёткую, пока глаза закрыты (потом открывает) */
+.asst-fab-pe{display:block;width:44px;height:44px;margin:-3px;opacity:0;filter:blur(9px);transform:scale(.55);transition:opacity 1.3s ease .4s,filter 1.6s ease .4s,transform 1.7s cubic-bezier(.25,.6,.3,1) .4s}
+.asst-fab.in .asst-fab-pe{opacity:1;filter:blur(0);transform:none}
 .asst-fab.in.settled:hover .asst-fab-pe{transform:scale(1.1) rotate(-6deg);transition-duration:.5s;transition-delay:0s}
 .asst-fab.hello .asst-fab-pe{animation:peHello 1.7s ease-in-out both}
 .asst-fab.nudge .asst-fab-pe{animation:peWiggle 1.1s ease-in-out 2}
-.asst-fab-ring{position:absolute;left:8px;top:8px;width:38px;height:38px;border-radius:50%;pointer-events:none;animation:asstBreath 3.8s ease-out 2.4s infinite}
+.asst-fab-ring{position:absolute;left:8px;top:8px;width:38px;height:38px;border-radius:50%;pointer-events:none;animation:asstBreath 3.8s ease-out 3s infinite}
 .asst-fab.nudge .asst-fab-ring{animation:asstRing 1.7s ease-out 2}
+/* искры слетаются к жемчужинке и вспыхивают в момент «пробуждения» */
 .asst-fab-fx{position:absolute;left:8px;top:8px;width:38px;height:38px;pointer-events:none}
 .asst-fab-fx i{position:absolute;left:50%;top:50%;width:9px;height:9px;margin:-4.5px 0 0 -4.5px;background:#f6d58b;clip-path:polygon(50% 0,63% 37%,100% 50%,63% 63%,50% 100%,37% 63%,0 50%,37% 37%);opacity:0}
-.asst-fab-fx.go i{animation:asstBurst 1.3s cubic-bezier(.2,.7,.3,1) both;animation-delay:calc(var(--k)*40ms + 350ms)}
+.asst-fab-fx::after{content:"";position:absolute;inset:-8px;border-radius:50%;opacity:0;background:radial-gradient(closest-side,rgba(255,255,255,.95),rgba(246,213,139,.45) 50%,transparent 72%)}
+.asst-fab-fx.go i{animation:asstGather 1.7s cubic-bezier(.4,0,.2,1) both;animation-delay:calc(var(--k)*80ms + 500ms)}
+.asst-fab-fx.go::after{animation:asstFlash 1.3s ease-out 1.9s both}
 /* подпись раскрывается одним плавным движением (ширина колонки 0fr → 1fr), текст проявляется чуть позже и слегка «выезжает»; сворачивается в обратном порядке */
-.asst-fab-t{position:relative;z-index:1;display:grid;grid-template-columns:0fr;transition:grid-template-columns .8s cubic-bezier(.4,0,.2,1) .12s}
+.asst-fab-t{position:relative;z-index:1;display:grid;grid-template-columns:0fr;transition:grid-template-columns .9s cubic-bezier(.4,0,.2,1) .12s}
 .asst-fab-t>span{display:block;min-width:0;overflow:hidden}
 .asst-fab-t b{display:block;padding:0 14px 0 10px;white-space:nowrap;font-weight:700;opacity:0;transform:translateX(-10px);transition:opacity .3s ease,transform .5s cubic-bezier(.4,0,.2,1)}
-.asst-fab.long .asst-fab-t{grid-template-columns:1fr;transition:grid-template-columns 1s cubic-bezier(.4,0,.12,1)}
-.asst-fab.long .asst-fab-t b{opacity:1;transform:none;transition:opacity .6s ease .32s,transform .85s cubic-bezier(.22,.9,.28,1) .26s}
+.asst-fab.long .asst-fab-t{grid-template-columns:1fr;transition:grid-template-columns 1.3s cubic-bezier(.4,0,.12,1)}
+.asst-fab.long .asst-fab-t b{opacity:1;transform:none;transition:opacity .8s ease .45s,transform 1.1s cubic-bezier(.22,.9,.28,1) .4s}
 .asst-fab.away,body.locked .asst-fab,body.menu-open .asst-fab,body.asst-open .asst-fab{opacity:0;pointer-events:none;transform:translateY(14px) scale(.9);transition:opacity .3s ease,transform .4s ease,translate .3s,box-shadow .3s,bottom .4s var(--ease)}
 .asst-tip{position:fixed;z-index:91;right:max(20px,env(safe-area-inset-right,0px));bottom:calc(22px + 54px + 14px + env(safe-area-inset-bottom,0px));display:flex;align-items:center;gap:2px;max-width:min(300px,calc(100vw - 40px));padding:4px 6px 4px 8px;border-radius:18px 18px 6px 18px;
   background:#fff;color:var(--navy);box-shadow:0 18px 40px -16px rgba(11,26,51,.5),0 0 0 1px rgba(11,26,51,.08);opacity:0;transform:translateY(10px) scale(.92);transform-origin:100% 100%;transition:opacity .3s,transform .55s cubic-bezier(.34,1.56,.64,1)}
@@ -264,9 +273,11 @@ button.qc-item{width:100%;text-align:left}
 }
 
 .asst{position:fixed;z-index:100;right:max(20px,env(safe-area-inset-right,0px));bottom:max(20px,env(safe-area-inset-bottom,0px));width:min(420px,calc(100vw - 32px));height:min(680px,calc(100vh - 40px));height:min(680px,calc(100dvh - 40px));display:flex;flex-direction:column;
-  background:var(--milk-2);color:var(--navy);border-radius:26px;overflow:hidden;box-shadow:0 44px 90px -30px rgba(11,26,51,.7),0 0 0 1px rgba(11,26,51,.08);opacity:0;visibility:hidden;transform:translateY(26px) scale(.9);transform-origin:calc(100% - 34px) calc(100% - 34px);
-  transition:opacity .3s ease,transform .6s cubic-bezier(.2,.9,.25,1.08),visibility 0s linear .6s}
-.asst.open{opacity:1;visibility:visible;transform:none;transition:opacity .3s ease,transform .6s cubic-bezier(.2,.9,.25,1.08),visibility 0s}
+  background:var(--milk-2);color:var(--navy);border-radius:26px;overflow:hidden;box-shadow:0 44px 90px -30px rgba(11,26,51,.7),0 0 0 1px rgba(11,26,51,.08);opacity:0;visibility:hidden;transform:translateY(30px) scale(.88);transform-origin:calc(100% - 34px) calc(100% - 34px);
+  transition:opacity .45s ease,transform .8s cubic-bezier(.22,1,.36,1),visibility 0s linear .8s}
+.asst.open{opacity:1;visibility:visible;transform:none;transition:opacity .6s ease,transform 1s cubic-bezier(.22,1,.36,1),visibility 0s}
+.asst.open .asst-h>*,.asst.open .asst-form,.asst.open .asst-note{animation:asstHeadIn .9s cubic-bezier(.22,1,.36,1) both;animation-delay:calc(var(--k,0)*90ms + 380ms)}
+.asst-h>:nth-child(2){--k:1}.asst-h>:nth-child(3){--k:2}.asst-h>:nth-child(4){--k:3}.asst-h>:nth-child(5){--k:4}.asst-form{--k:5}.asst-note{--k:6}
 .asst-h{flex:none;position:relative;display:flex;align-items:center;gap:10px;padding:16px 8px 16px 16px;color:var(--milk);background:radial-gradient(120% 240% at 0% 0%,#2f58b8 0%,var(--navy) 64%)}
 .asst-av{position:relative;flex:none;width:46px;height:46px;border-radius:50%;display:grid;place-items:center;background:radial-gradient(circle at 50% 32%,rgba(125,160,247,.6),rgba(47,91,214,.38) 80%);box-shadow:0 0 0 1px rgba(255,255,255,.24) inset}
 .asst-av::before{content:"";position:absolute;inset:-4px;border-radius:50%;border:1px solid rgba(157,180,245,.6);animation:asstHalo 3.4s ease-out infinite}
@@ -285,7 +296,11 @@ button.qc-item{width:100%;text-align:left}
 .asst-m{display:flex;align-items:flex-start;gap:8px;max-width:100%;font:500 14.5px/1.55 var(--sans);animation:asstIn .5s var(--ease) both}
 .asst-m.still,.asst-m.still *{animation:none!important}
 .asst-b{align-self:flex-start;max-width:96%}
-.asst-mav{flex:none;width:32px;height:32px;margin-top:0;filter:drop-shadow(0 3px 5px rgba(11,26,51,.16))}
+.asst-mav{position:relative;flex:none;width:32px;height:32px;margin-top:0;filter:drop-shadow(0 3px 5px rgba(11,26,51,.16))}
+.asst-typing .asst-mav::before,.asst-typing .asst-mav::after{content:"";position:absolute;left:62%;top:2px;width:7px;height:7px;opacity:0;background:#f6d58b;clip-path:polygon(50% 0,63% 37%,100% 50%,63% 63%,50% 100%,37% 63%,0 50%,37% 37%);animation:asstThought 2.4s ease-in-out infinite}
+.asst-typing .asst-mav::after{left:14%;top:6px;width:5px;height:5px;animation-delay:1.2s}
+.asst-u.fly{animation:none}
+.asst-u.fly .asst-bub{transition:transform .8s cubic-bezier(.22,1,.36,1),opacity .45s ease;will-change:transform}
 .asst-bub{min-width:0;padding:12px 14px;border-radius:18px 18px 18px 6px;background:#fff;border:1px solid var(--line-soft);box-shadow:0 6px 16px -12px rgba(11,26,51,.3)}
 .asst-u{align-self:flex-end;max-width:86%;flex-direction:column;align-items:flex-end;gap:3px}
 .asst-u .asst-bub{background:var(--navy);color:var(--milk);border-color:transparent;border-radius:18px 18px 6px 18px;overflow-wrap:anywhere}
@@ -369,11 +384,16 @@ button.qc-item{width:100%;text-align:left}
 .asst-note{flex:none;margin:0;padding:0 16px 12px;font:500 11px/1.4 var(--sans);color:var(--slate)}
 /* Стелла — настроения маскота (атрибут data-m у svg.pe) */
 .pe{display:block;width:100%;height:100%;overflow:visible}
-.pe-eh,.pe-mo{display:none}
+.pe-eh,.pe-mo,.pe-es{display:none}
 .pe-e{transform-box:fill-box;transform-origin:50% 50%;translate:var(--ex,0px) var(--ey,0px);transition:translate .3s var(--ease)}
 .pe-b,.pe-st,.pe-m,.pe-mo{transform-box:fill-box;transform-origin:50% 50%}
 .pe-bl{opacity:.55;transition:opacity .3s}
 .pe.live .pe-e{animation:peBlink 5.6s infinite}
+.pe[data-m="sleep"] .pe-e{display:none}
+.pe[data-m="sleep"] .pe-es{display:block}
+.pe.waking .pe-e{animation:peOpen .7s ease-out both}
+.pe.look .pe-e{animation:peBlink 5.6s infinite,peLook 11s ease-in-out infinite}
+.pe[data-m="think"] .pe-e{animation:peScan 2.6s ease-in-out infinite}
 .pe.live .pe-st{animation:peTwinkle 3.8s ease-in-out infinite}
 .pe[data-m="think"]{--ex:1.6px;--ey:-2px}
 .pe[data-m="think"] .pe-m{display:none}
@@ -386,6 +406,14 @@ button.qc-item{width:100%;text-align:left}
 .pe[data-m="happy"] .pe-bl{opacity:.95}
 .pe[data-m="happy"] .pe-m{transform:scale(1.3)}
 .pe[data-m="happy"] .pe-b{animation:peHop .55s ease-out 2}
+@keyframes peOpen{0%{transform:scaleY(.05)}55%{transform:scaleY(1.18)}100%{transform:scaleY(1)}}
+@keyframes peLook{0%,38%,100%{translate:0 0}44%,56%{translate:-2.2px 0}62%,74%{translate:2px -.6px}80%{translate:0 0}}
+@keyframes peScan{0%,100%{translate:1.6px -2px}33%{translate:-2px -1.7px}66%{translate:1.2px -2.5px}}
+@keyframes asstBloom{0%{opacity:0;transform:scale(.4)}38%{opacity:.95;transform:scale(1.15)}100%{opacity:0;transform:scale(1.9)}}
+@keyframes asstGather{0%{opacity:0;transform:rotate(var(--a)) translateX(calc(var(--d) + 24px)) scale(.5)}25%{opacity:1}86%{opacity:.9;transform:rotate(var(--a)) translateX(7px) scale(.9)}100%{opacity:0;transform:rotate(var(--a)) translateX(0) scale(.2)}}
+@keyframes asstFlash{0%{opacity:0;transform:scale(.3)}30%{opacity:.95;transform:scale(1)}100%{opacity:0;transform:scale(1.8)}}
+@keyframes asstSweep{0%{opacity:0;left:-60%}15%{opacity:1}85%{opacity:1}100%{opacity:0;left:135%}}
+@keyframes asstThought{0%{opacity:0;transform:translateY(5px) scale(.4)}30%{opacity:1}100%{opacity:0;transform:translateY(-17px) scale(1) rotate(70deg)}}
 @keyframes peBlink{0%,92%,100%{transform:scaleY(1)}95%{transform:scaleY(.08)}}
 @keyframes peTwinkle{0%,100%{transform:scale(1) rotate(0)}50%{transform:scale(1.2) rotate(18deg)}}
 @keyframes peSpin{to{transform:rotate(360deg)}}
@@ -398,6 +426,9 @@ button.qc-item{width:100%;text-align:left}
 @keyframes asstBurst{0%{opacity:0;transform:rotate(var(--a)) translateX(8px) scale(.2)}20%{opacity:1}100%{opacity:0;transform:rotate(var(--a)) translateX(var(--d,44px)) scale(1)}}
 @keyframes asstSent{0%{transform:scale(.72,.84) translateY(6px);box-shadow:0 0 0 0 rgba(47,91,214,.35)}50%{box-shadow:0 0 0 7px rgba(47,91,214,0)}100%{transform:none;box-shadow:0 6px 16px -12px rgba(11,26,51,.3)}}
 @keyframes asstIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+@keyframes asstFade{from{opacity:0}to{opacity:1}}
+@keyframes asstHeadIn{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:none}}
+@keyframes asstPulse{0%,100%{opacity:.25}50%{opacity:1}}
 @keyframes asstPop{from{opacity:0;transform:translateY(8px) scale(.94)}to{opacity:1;transform:none}}
 @keyframes asstDot{0%,60%,100%{opacity:.35;transform:translateY(0)}30%{opacity:1;transform:translateY(-3px)}}
 @keyframes asstBlink{to{opacity:0}}
@@ -412,7 +443,7 @@ button.qc-item{width:100%;text-align:left}
 }
 @media (max-height:600px){.asst-h{padding:10px 8px 10px 14px}.asst-av{width:36px;height:36px}.asst-note{display:none}.asst-down{bottom:84px}}
 @media (max-width:640px){
-  .asst{inset:0;width:auto;height:var(--asst-h,100dvh);border-radius:0;box-shadow:none;transform:translateY(100%);transform-origin:50% 100%;transition:opacity .25s ease,transform .5s cubic-bezier(.22,.8,.2,1),visibility 0s linear .5s}
+  .asst{inset:0;width:auto;height:var(--asst-h,100dvh);border-radius:0;box-shadow:none;transform:translateY(100%);transform-origin:50% 100%;transition:opacity .3s ease,transform .75s cubic-bezier(.22,1,.36,1),visibility 0s linear .75s}
   .asst.open{transform:none}
   .asst-h{padding-top:max(16px,env(safe-area-inset-top,0px))}
   .asst-note{padding-bottom:max(12px,env(safe-area-inset-bottom,0px))}
@@ -420,10 +451,22 @@ button.qc-item{width:100%;text-align:left}
   body.asst-open{overflow:hidden}
   body.asst-open #toast{bottom:calc(132px + env(safe-area-inset-bottom,0px))}
 }
-@media (prefers-reduced-motion:reduce){
-  .asst,.asst-fab,.asst-tip,.asst-fab-t,.asst-fab-t b,.asst-fab-pe,.asst-ck .k2,.pe-e{transition:none!important}.asst-m,.asst-m *,.asst-av::before,.asst-dot,.asst-qr .chip,.asst-acts,.asst-fb,.asst-down,.asst-bub.sent,.pe *,.asst-fab-i,.asst-fab-pe,.asst-fab-fx i{animation:none!important}.asst-fab{translate:none!important}
-  .asst-dots i{animation:none!important;opacity:.7}.asst-caret{animation:none!important}.asst-fab-ring{display:none}.pe[data-m="think"] .pe-mo{display:block}
-}
+/* «Спокойный режим» (body.calm — включается, если в системе стоит «уменьшить движение», либо кнопкой в чате): без перемещений, масштабирования, размытия и парения,
+   но с плавными появлениями (прозрачность), паузами «раздумья» и печатью текста — чтобы ответы не выскакивали мгновенно */
+body.calm .asst-fab{transform:none!important;translate:none!important;transition:opacity 1.4s ease!important}
+body.calm .asst-fab-i,body.calm .asst-fab-ring,body.calm .asst-fab-glow,body.calm .asst-fab-fx i,body.calm .asst-fab-fx::after,body.calm .asst-fab-sweep::before,body.calm .asst-fab.hello .asst-fab-pe,body.calm .asst-fab.nudge .asst-fab-pe,body.calm .pe *,body.calm .pe,body.calm .asst-mav::before,body.calm .asst-mav::after,body.calm .asst-av::before,body.calm .asst-dot,body.calm .asst-bub.sent{animation:none!important}
+body.calm .asst-fab-pe{opacity:1;filter:none;transform:none!important;transition:none!important}
+body.calm .asst-fab-t,body.calm .asst-fab.long .asst-fab-t{transition:none}
+body.calm .asst-fab-t b{transform:none;transition:opacity 1s ease .2s}
+body.calm .asst-tip{transform:none;transition:opacity .6s ease}
+body.calm .asst{transform:none;transition:opacity .6s ease,visibility 0s linear .6s}
+body.calm .asst.open{transform:none;transition:opacity .7s ease,visibility 0s}
+body.calm .asst.open .asst-h>*,body.calm .asst.open .asst-form,body.calm .asst.open .asst-note{animation:asstFade .9s ease both;animation-delay:calc(var(--k,0)*60ms + 200ms)}
+body.calm .asst-m,body.calm .asst-acts,body.calm .asst-fb,body.calm .asst-down,body.calm .asst-cards>*,body.calm .asst-evs>*,body.calm .asst-qr .chip{animation-name:asstFade}
+body.calm .asst-dots i{animation:asstPulse 1.4s ease-in-out infinite}
+body.calm .asst-dots i:nth-child(2){animation-delay:.2s}body.calm .asst-dots i:nth-child(3){animation-delay:.4s}
+body.calm .asst-ib,body.calm .asst-send,body.calm .asst-mic,body.calm .asst-fab-pe{transition:none}
+.asst-motion{display:inline;margin-left:6px;padding:0;border:0;background:none;color:var(--blue-d);font:inherit;text-decoration:underline;text-underline-offset:2px;cursor:pointer}
 
 /* ============ Чистая печать по Ctrl+P (без кнопок на страницах) ============ */
 @media print{

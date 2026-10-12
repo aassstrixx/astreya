@@ -29,7 +29,7 @@ const wait = ms => new Promise(r => setTimeout(r, ms));
     }};
   }}}));
   const b = await pw.chromium.launch(CHROME ? {executablePath: CHROME} : {});
-  const ctx = await b.newContext({viewport: {width: 1440, height: 900}}); await ctx.route(/^https:\/\/fonts\./, r => r.abort());
+  const ctx = await b.newContext({viewport: {width: 1440, height: 900}}); await ctx.route(/^https:\/\/fonts\./, r => r.abort()); await ctx.addInitScript(() => { window.ASTREYA_MOTION_SPEED = 6; });          // паузы и печать ускорены в 6 раз (кроме проверок ритма — они возвращают 1)
   const p = await ctx.newPage(); const errs = []; p.on('pageerror', e => errs.push(e.message)); p.on('console', m => { if (m.type() === 'error' && !/ERR_FAILED|fonts\.|status of (429|503)/.test(m.text())) errs.push(m.text()); });
   const base = 'http://127.0.0.1:' + S.port + '/';
   const skipSplash = async () => { const s = await p.$('#sp-in'); if (s) { try { await s.click({timeout: 1500}); } catch (e) {} } await wait(900); };
@@ -65,16 +65,16 @@ const wait = ms => new Promise(r => setTimeout(r, ms));
   await ask('Подробнее про первый'); ok(calls.length === n && /Discrom Control/.test(await lastRow()), '«Подробнее про первый» ведёт на товар из ответа ИИ');
 
   /* 2b. вопрос на любую тему и «человеческий» ритм: прочитано → раздумье → печать */
-  set([{chunks: ['Небо голубое из-за **рассеяния** света: ', 'короткие волны рассеиваются сильнее.\n\n```js\nconst sky = "blue";\n```']}]); const nq = calls.length, tq = Date.now();
+  set([{chunks: ['Небо голубое из-за **рассеяния** света: ', 'короткие волны рассеиваются сильнее.\n\n```js\nconst sky = "blue";\n```']}]); const nq = calls.length; await p.evaluate(() => { window.ASTREYA_MOTION_SPEED = 1; }); const tq = Date.now();
   await p.fill('#asst-in', 'Объясни, почему небо голубое'); await p.keyboard.press('Enter');
   await p.waitForSelector('#asst-log .asst-typing', {timeout: 4000}); const ticks1 = await tickOf();
-  await p.waitForSelector('#asst-log .asst-caret', {timeout: 10000}); const thinkMs = Date.now() - tq; await idle(); await wait(200);
+  await p.waitForSelector('#asst-log .asst-caret', {timeout: 10000}); const thinkMs = Date.now() - tq; await p.evaluate(() => { window.ASTREYA_MOTION_SPEED = 6; }); await idle(); await wait(200);
   const ro = await p.evaluate(() => { const row = document.querySelector('#asst-log .asst-m:nth-last-child(2)'); return {text: row.querySelector('.asst-tx').textContent, pre: row.querySelectorAll('pre.asst-code code').length, b: !!row.querySelector('.asst-tx b'), mood: row.querySelector('.pe').getAttribute('data-m')}; });
   ok(calls.length === nq + 1 && /рассеяния/.test(ro.text) && !/\[\[/.test(ro.text), 'вопрос не про сайт уходит к ИИ и получает ответ по существу', [calls.length - nq, ro.text.slice(0, 60)]);
   ok(/Стелла/.test(calls[calls.length - 1].system[0].text) && /ЛЮБУЮ тему/.test(calls[calls.length - 1].system[0].text), 'в инструкции модели — личность Стеллы и разрешение отвечать на любые темы');
   ok(ro.pre === 1 && ro.b, 'блок кода и **жирный** в ответе оформляются', ro);
   const tick2 = await tickOf(); ok(ticks1 === '1' || ticks1 === '2', 'сообщение посетителя помечено галочкой уже во время раздумья', ticks1); ok(tick2 === '2', 'после ответа у вопроса две галочки («прочитано»)', tick2);
-  ok(thinkMs >= 900, 'Стелла «думает» не меньше секунды, а не отвечает мгновенно (' + thinkMs + ' мс)', thinkMs);
+  ok(thinkMs >= 2200, 'Стелла не отвечает мгновенно: «прочитала» → «думает» → печатает; первые слова не раньше ~2,5 с после вопроса (' + thinkMs + ' мс)', thinkMs);
   ok(ro.mood === 'idle', 'после ответа Стелла спокойна (настроение idle)', ro.mood);
   const nsm = calls.length; set([{chunks: ['Спасибо, всё хорошо!']}]); await ask('Как дела?'); ok(calls.length === nsm + 1 && /всё хорошо/.test(await lastRow()), 'светская беседа («как дела?») при включённом ИИ отвечает модель');
   /* «Стоп» во время раздумья: ничего не отвечено, чат свободен, вопрос остаётся */
@@ -114,13 +114,17 @@ const wait = ms => new Promise(r => setTimeout(r, ms));
   await p.waitForFunction(() => document.querySelectorAll('#asst-log .asst-u').length === 1 && !document.getElementById('asst-form').classList.contains('busy') && !document.querySelector('.asst-typing'), null, {timeout: 20000}); await wait(200);
   ok(/925-51-62/.test(await lastRow()) && await p.$$eval('#asst-log .asst-b', e => e.length) === 2 && await p.$eval('#asst-in', e => e.value === ''), 'вопрос, набранный во время первого приветствия, отправляется сразу после него и не теряется');
 
-  /* 7. «уменьшить движение» в системе: без задержек «раздумья», без плавающих анимаций кнопки */
+  /* 7. «уменьшить движение» в системе → «спокойный режим»: без перемещений и парения, но с плавным появлением, паузой «раздумья» и печатью; есть кнопка «Включить анимации» */
   { const rc = await b.newContext({viewport: {width: 1440, height: 900}, reducedMotion: 'reduce'}); await rc.route(/^https:\/\/fonts\./, r => r.abort()); const rp = await rc.newPage(); const rerr = []; rp.on('pageerror', e => rerr.push(e.message));
-    await rp.goto(base + 'catalog.html'); const sp = await rp.$('#sp-in'); if (sp) { try { await sp.click({timeout: 1500}); } catch (e) {} } await wait(2200);
-    const anim = await rp.$eval('#asst-fab .asst-fab-i', e => getComputedStyle(e).animationName); ok(anim === 'none', 'при «уменьшить движение» кнопка не парит и не мерцает', anim);
-    await rp.click('#asst-fab'); await rp.waitForFunction(() => document.querySelectorAll('#asst-log .asst-b').length === 1 && !document.getElementById('asst-form').classList.contains('busy'), null, {timeout: 4000}); ok(true, 'первое сообщение появляется сразу');
-    const t0 = Date.now(); await rp.fill('#asst-in', 'Какие у вас контакты?'); await rp.keyboard.press('Enter'); await rp.waitForFunction(() => /925-51-62/.test(document.querySelector('#asst-log .asst-m:nth-last-child(2)').textContent), null, {timeout: 4000}); const ms = Date.now() - t0;
-    ok(ms < 1200, 'ответ без искусственных пауз (' + ms + ' мс)', ms); ok(rerr.length === 0, 'без ошибок JS', rerr); await rc.close(); }
+    await rp.goto(base + 'catalog.html'); const sp = await rp.$('#sp-in'); if (sp) { try { await sp.click({timeout: 1500}); } catch (e) {} } await wait(4500);
+    ok(await rp.evaluate(() => document.body.classList.contains('calm')), 'в системе «уменьшить движение» — включён спокойный режим');
+    const anim = await rp.$eval('#asst-fab .asst-fab-i', e => getComputedStyle(e).animationName); ok(anim === 'none', 'в спокойном режиме кнопка не парит и не мерцает', anim);
+    await rp.click('#asst-fab'); await rp.waitForFunction(() => document.querySelectorAll('#asst-log .asst-b').length === 1 && !document.getElementById('asst-form').classList.contains('busy'), null, {timeout: 12000}); ok(true, 'первое сообщение появилось (с паузой и печатью)');
+    ok(!(await rp.$eval('.asst-motion', e => e.hidden)) && /Включить анимации/.test(await rp.$eval('.asst-motion', e => e.textContent)), 'в подписи есть кнопка «Включить анимации»');
+    const t0 = Date.now(); await rp.fill('#asst-in', 'Какие у вас контакты?'); await rp.keyboard.press('Enter'); await rp.waitForFunction(() => /925-51-62/.test(document.querySelector('#asst-log .asst-m:nth-last-child(2)').textContent) && !document.getElementById('asst-form').classList.contains('busy'), null, {timeout: 15000}); const ms = Date.now() - t0;
+    ok(ms >= 1500 && ms < 12000, 'и в спокойном режиме ответ не мгновенный: пауза «раздумья» и печать (' + ms + ' мс)', ms);
+    await rp.click('.asst-motion'); await wait(200); ok(await rp.evaluate(() => !document.body.classList.contains('calm') && localStorage.getItem('astreya:motion') === 'full') && /Спокойный режим/.test(await rp.$eval('.asst-motion', e => e.textContent)), '«Включить анимации» возвращает полные анимации и запоминает выбор');
+    ok(rerr.length === 0, 'без ошибок JS', rerr); await rc.close(); }
   await b.close(); await S.close();
   console.log(`\nИтого: ✓ ${pass}  ✗ ${fail}`); process.exit(fail ? 1 : 0);
 })().catch(e => { console.error(e); process.exit(1); });

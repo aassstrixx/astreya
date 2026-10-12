@@ -25,13 +25,21 @@
   (D.products || []).forEach(p => { P[p.id] = p; }); (D.brands || []).forEach(b => { B[b.id] = b; }); (D.tasks || []).forEach(t => { TASK[t.id] = t.label; }); (D.events || []).forEach(e => { EV[e.id] = e; });
   const root = () => document.body.getAttribute('data-root') || '';
   const KEY = 'astreya:chat2', TIPKEY = 'astreya:asst-tip', MAXKEEP = 40, MAXIN = 500;
-  const reduced = () => window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+  /* движение: «спокойный режим» (calm) включается, если в системе стоит «уменьшить движение», или кнопкой в чате (запоминается в браузере). В нём нет перемещений, масштабирования и размытия,
+     но остаются плавные появления, паузы «раздумья» и печать — ответы не выскакивают мгновенно. window.ASTREYA_MOTION_SPEED > 1 ускоряет всё (нужно только проверкам). */
+  const osReduce = () => !!(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches);
+  const motionPref = () => { try { return localStorage.getItem('astreya:motion') || ''; } catch (e) { return ''; } };
+  const calm = () => { const v = motionPref(); return v === 'full' ? false : v === 'calm' ? true : osReduce(); };
+  const speed = () => { const v = +window.ASTREYA_MOTION_SPEED; return v > 0 ? v : 1; };
+  const T = ms => Math.round(ms * (calm() ? 0.6 : 1) / speed());
+  const reduced = calm;
+  function applyCalm() { document.body.classList.toggle('calm', calm()); const b = $('.asst-motion'); if (b) { b.hidden = !(osReduce() || motionPref()); b.textContent = calm() ? 'Включить анимации' : 'Спокойный режим'; } }
   const mobile = () => matchMedia('(max-width:640px)').matches;
   const PLUS = '<svg class="ic i-pl" viewBox="0 0 20 20" aria-hidden="true" focusable="false"><path d="M10 4.5v11M4.5 10h11"/></svg>', CHECK = '<svg class="ic i-ck" viewBox="0 0 20 20" aria-hidden="true" focusable="false"><path d="m4.5 10.5 3.5 3.5 7.5-8"/></svg>';
   /* маскот Стелла: жемчужинка со звёздочкой. Рисунок один на все места (градиент берётся из скрытого набора #pe-defs); настроения переключает атрибут data-m: idle · think · talk · happy */
-  const PEARL = (mood, live) => '<svg class="pe' + (live ? ' live' : '') + '" data-m="' + (mood || 'idle') + '" viewBox="0 0 48 48" aria-hidden="true" focusable="false"><g class="pe-b"><circle cx="24" cy="26" r="19" fill="url(#pe-g)"/><circle cx="24" cy="26" r="18.6" fill="none" stroke="#8ea3d8" stroke-opacity=".55" stroke-width=".8"/><ellipse cx="16.4" cy="17.4" rx="6.2" ry="3.1" transform="rotate(-32 16.4 17.4)" fill="#fff" opacity=".92"/><circle cx="31.5" cy="35.6" r="2.2" fill="#fff" opacity=".35"/>' +
+  const PEARL = (mood, live, cls) => '<svg class="pe' + (live ? ' live' : '') + (cls ? ' ' + cls : '') + '" data-m="' + (mood || 'idle') + '" viewBox="0 0 48 48" aria-hidden="true" focusable="false"><g class="pe-b"><circle cx="24" cy="26" r="19" fill="url(#pe-g)"/><circle cx="24" cy="26" r="18.6" fill="none" stroke="#8ea3d8" stroke-opacity=".55" stroke-width=".8"/><ellipse cx="16.4" cy="17.4" rx="6.2" ry="3.1" transform="rotate(-32 16.4 17.4)" fill="#fff" opacity=".92"/><circle cx="31.5" cy="35.6" r="2.2" fill="#fff" opacity=".35"/>' +
     '<g class="pe-f"><g class="pe-e"><ellipse cx="18" cy="26.6" rx="2.1" ry="2.9" fill="#0b1a33"/><ellipse cx="30" cy="26.6" rx="2.1" ry="2.9" fill="#0b1a33"/><circle cx="18.8" cy="25.4" r=".85" fill="#fff"/><circle cx="30.8" cy="25.4" r=".85" fill="#fff"/></g>' +
-    '<g class="pe-eh"><path d="M15.4 27.6q2.6-3.9 5.2 0M27.4 27.6q2.6-3.9 5.2 0" fill="none" stroke="#0b1a33" stroke-width="1.9" stroke-linecap="round"/></g>' +
+    '<g class="pe-eh"><path d="M15.4 27.6q2.6-3.9 5.2 0M27.4 27.6q2.6-3.9 5.2 0" fill="none" stroke="#0b1a33" stroke-width="1.9" stroke-linecap="round"/></g><g class="pe-es"><path d="M15.4 26.2q2.6 3.5 5.2 0M27.4 26.2q2.6 3.5 5.2 0" fill="none" stroke="#0b1a33" stroke-width="1.8" stroke-linecap="round"/></g>' +
     '<ellipse class="pe-bl" cx="12.8" cy="31.6" rx="2.7" ry="1.75" fill="#f4a3b8"/><ellipse class="pe-bl" cx="35.2" cy="31.6" rx="2.7" ry="1.75" fill="#f4a3b8"/>' +
     '<path class="pe-m" d="M20.8 31.6q3.2 3.3 6.4 0" fill="none" stroke="#0b1a33" stroke-width="1.6" stroke-linecap="round"/><ellipse class="pe-mo" cx="24" cy="33.2" rx="2" ry="2.4" fill="#0b1a33"/></g></g>' +
     '<path class="pe-st" d="M37.6 2.6l1.7 4.4 4.4 1.7-4.4 1.7-1.7 4.4-1.7-4.4-4.4-1.7 4.4-1.7z" fill="#f6d58b" stroke="#e3b95c" stroke-width=".5" stroke-linejoin="round"/></svg>';
@@ -145,7 +153,7 @@
   /* печатает по времени, а не по кадрам: скорость cps знаков в секунду, на знаках препинания короткая пауза; win — «окно догоняния» для потока ИИ (отставание от потока не больше win мс) */
   function typer(tx, row, o) {
     o = o || {}; let buf = '', shown = 0, raf = 0, ended = false, cb = null, stopped = false, last = 0, acc = 0, hold = 0;
-    const base = (o.cps || 70) / 1000, win = o.win || 0;
+    const base0 = (o.cps || 70) / 1000, win = o.win || 0, k = () => speed() * (calm() ? 1.5 : 1);
     const paint = () => { tx.innerHTML = fmt(buf.slice(0, shown)) + (!ended || shown < buf.length ? CARET : ''); follow(row); };
     const tick = now => {
       raf = 0; const dt = Math.min(64, last ? now - last : 16); last = now;
@@ -153,8 +161,8 @@
       else {
         const back = buf.length - shown;
         if (back > 0) {
-          const rate = reduced() ? Infinity : Math.max(base, win ? back / win : 0); acc += dt * rate; let n = Math.floor(acc); acc -= n; if (reduced()) n = back;
-          if (n > 0) { n = Math.min(n, back); shown += n; const ch = buf.charAt(shown - 1); if (!reduced() && shown < buf.length) hold = /[.!?…]/.test(ch) && /\s/.test(buf.charAt(shown) || ' ') ? 150 : ch === '\n' ? 110 : /[,;:]/.test(ch) ? 55 : 0; paint(); }
+          const rate = Math.max(base0 * k(), win ? back / win * k() : 0); acc += dt * rate; let n = Math.floor(acc); acc -= n;
+          if (n > 0) { n = Math.min(n, back); shown += n; const ch = buf.charAt(shown - 1); if (shown < buf.length) hold = (/[.!?…]/.test(ch) && /\s/.test(buf.charAt(shown) || ' ') ? 240 : ch === '\n' ? 180 : /[,;:]/.test(ch) ? 90 : 0) / k(); paint(); }
         }
       }
       if (shown < buf.length || !ended) raf = requestAnimationFrame(tick); else finish();
@@ -165,7 +173,7 @@
   }
   /* ожидания, которые «Стоп» может прервать: нажал — Стелла сразу показывает готовый ответ */
   let skipping = false; const sleepers = new Set();
-  const sleep = ms => new Promise(res => { if (skipping || ms <= 0) { res(); return; } const done = () => { clearTimeout(t); sleepers.delete(done); res(); }, t = setTimeout(done, ms); sleepers.add(done); });
+  const sleep = ms => new Promise(res => { ms = ms * (calm() ? 0.6 : 1) / speed(); if (skipping || ms <= 0) { res(); return; } const done = () => { clearTimeout(t); sleepers.delete(done); res(); }, t = setTimeout(done, ms); sleepers.add(done); });
   const wake = () => { Array.from(sleepers).forEach(f => f()); };
   const STEP = {search_products: 'Ищу в каталоге…', get_product: 'Открываю карточку товара…', get_brand: 'Смотрю информацию о бренде…', list_events: 'Сверяю с расписанием…', discount_for_amount: 'Считаю скидку…', get_contacts: 'Нахожу контакты…', search_info: 'Ищу в материалах сайта…', tool: 'Проверяю данные…'};
 
@@ -182,15 +190,15 @@
   function setStatus(row, label) { const s = $('.asst-status', row); if (!s || s.textContent === label) return; s.classList.add('swap'); setTimeout(() => { s.textContent = label; s.classList.remove('swap'); }, 140); }
   /* «раздумье»: статусы меняются равномерно за T мс (первый уже показан) */
   async function thinkOver(row, labels, T) { const per = T / labels.length; for (let i = 0; i < labels.length; i++) { if (i) setStatus(row, labels[i]); await sleep(per); } }
-  const thinkMs = res => reduced() ? 0 : ['greet', 'thanks', 'bye', 'empty', 'calc', 'datetime', 'no', 'yes'].indexOf(res.intent) >= 0 ? 650 : Math.max(900, Math.min(2400, 700 + (res.text || '').length * 6));
+  const thinkMs = res => ['greet', 'thanks', 'bye', 'empty', 'calc', 'datetime', 'no', 'yes'].indexOf(res.intent) >= 0 ? 1000 : Math.max(1300, Math.min(2800, 900 + (res.text || '').length * 6));
 
   /* показ готового ответа: сообщение «отправляется» (всплывает) → печатается → затем карточки/кнопки с плавным появлением → быстрые ответы */
   async function reveal(m, row, o) {
     o = o || {}; row = row || botRow(); row.setAttribute('data-i', String(msgs.indexOf(m))); const bub = $('.asst-bub', row); row.classList.remove('asst-typing'); row.removeAttribute('aria-hidden'); bub.innerHTML = '<div class="asst-tx"></div>'; const tx = $('.asst-tx', bub);
     sentPop(bub); rowMood(row, 'talk'); current = null;
     if (m.t) {
-      const len = m.t.length, ty = typer(tx, row, {cps: o.fast ? Math.max(90, len * 1000 / 1400) : Math.min(420, Math.max(55, len * 1000 / 3000))}); current = ty; ty.push(m.t);
-      await new Promise(res => { if (reduced() || skipping) { ty.skip(); res(); } else ty.end(res); });
+      const len = m.t.length, ty = typer(tx, row, {cps: o.fast ? Math.max(80, len * 1000 / 3200) : Math.min(300, Math.max(58, len * 1000 / 3500))}); current = ty; ty.push(m.t);
+      await new Promise(res => { if (skipping) { ty.skip(); res(); } else ty.end(res); });
       current = null;
     }
     const extra = extraHTML(m); if (extra) { const d = document.createElement('div'); d.className = 'asst-extra'; d.innerHTML = extra; bub.appendChild(d); }
@@ -209,30 +217,30 @@
   function build() {
     if (built) return; built = true; document.body.classList.add('has-asst');
     const fab = document.createElement('button'); fab.type = 'button'; fab.id = 'asst-fab'; fab.className = 'asst-fab'; fab.setAttribute('data-act', 'asst-open'); fab.setAttribute('aria-haspopup', 'dialog'); fab.setAttribute('aria-expanded', 'false'); fab.setAttribute('aria-controls', 'asst'); fab.setAttribute('aria-label', 'Стелла, помощник «Астреи»: задать вопрос');
-    const sparks = [0, 1, 2, 3, 4, 5, 6, 7].map(k => '<i style="--a:' + (k * 45 + 12) + 'deg;--d:' + (38 + (k % 3) * 8) + 'px;--k:' + k + '"></i>').join('');
-    fab.innerHTML = '<span class="asst-fab-fx" aria-hidden="true">' + sparks + '</span><span class="asst-fab-ring" aria-hidden="true"></span><span class="asst-fab-i"><span class="asst-fab-pe">' + PEARL('idle', true) + '</span></span><span class="asst-fab-t"><span><b>Спросить Стеллу</b></span></span>';
+    const sparks = [0, 1, 2, 3, 4, 5, 6, 7].map(k => '<i style="--a:' + (k * 45 + 12) + 'deg;--d:' + (40 + (k % 3) * 9) + 'px;--k:' + k + '"></i>').join('');
+    fab.innerHTML = '<span class="asst-fab-glow" aria-hidden="true"></span><span class="asst-fab-sweep" aria-hidden="true"></span><span class="asst-fab-fx" aria-hidden="true">' + sparks + '</span><span class="asst-fab-ring" aria-hidden="true"></span><span class="asst-fab-i"><span class="asst-fab-pe">' + PEARL('sleep', true) + '</span></span><span class="asst-fab-t"><span><b>Спросить Стеллу</b></span></span>';
     document.body.insertAdjacentHTML('beforeend', PEARL_DEFS); document.body.appendChild(fab);
     fab.addEventListener('pointerenter', () => { fab.classList.add('long'); clearTimeout(longT); }); fab.addEventListener('pointerleave', () => { if (!fab.matches(':focus-visible')) longT = setTimeout(() => fab.classList.remove('long'), 450); });
     fab.addEventListener('focus', () => { if (fab.matches(':focus-visible')) { fab.classList.add('long'); clearTimeout(longT); } }); fab.addEventListener('blur', () => { longT = setTimeout(() => fab.classList.remove('long'), 450); });
     const tip = document.createElement('div'); tip.id = 'asst-tip'; tip.className = 'asst-tip'; tip.hidden = true; tip.innerHTML = '<span class="asst-tip-pe" aria-hidden="true">' + PEARL('happy', true) + '</span><button class="asst-tip-b" type="button" data-act="asst-open"></button><button class="asst-tip-x" type="button" data-act="asst-tip-x" aria-label="Скрыть подсказку">' + I.close + '</button>'; document.body.appendChild(tip);
     const el = document.createElement('section'); el.id = 'asst'; el.className = 'asst'; el.hidden = true; el.setAttribute('role', 'dialog'); el.setAttribute('aria-label', 'Стелла — помощник «Астреи»');
     const SR = window.SpeechRecognition || window.webkitSpeechRecognition, voice = !!SR && (location.protocol === 'https:' || location.hostname === 'localhost' || location.hostname === '127.0.0.1');
-    el.innerHTML = '<header class="asst-h"><span class="asst-av" aria-hidden="true">' + PEARL('idle', true) + '</span><div class="asst-ht"><b>Стелла<span class="asst-n2"> · помощник</span></b><small id="asst-mode"><i class="asst-dot" aria-hidden="true"></i><span>Отвечаю по данным сайта</span></small></div>' +
+    el.innerHTML = '<header class="asst-h"><span class="asst-av" aria-hidden="true">' + PEARL('idle', true, 'look') + '</span><div class="asst-ht"><b>Стелла<span class="asst-n2"> · помощник</span></b><small id="asst-mode"><i class="asst-dot" aria-hidden="true"></i><span>Отвечаю по данным сайта</span></small></div>' +
       '<button class="asst-ib" type="button" data-act="asst-human" aria-label="Связаться с менеджером" title="Связаться с менеджером">' + PERSON + '</button><button class="asst-ib" type="button" data-act="asst-reset" aria-label="Начать диалог заново" title="Начать заново">' + RESET + '</button><button class="asst-ib" type="button" data-act="asst-close" aria-label="Закрыть помощника">' + I.close + '</button></header>' +
       '<div class="asst-log" id="asst-log" tabindex="0" aria-label="Диалог с помощником"><div class="asst-qr" id="asst-qr"></div></div><button class="asst-down" id="asst-down" type="button" data-act="asst-down" aria-label="К последним сообщениям" hidden>' + ARROWDOWN + '</button><div class="sr" id="asst-sr" role="status" aria-live="polite"></div>' +
       '<form class="asst-form" id="asst-form" autocomplete="off"><label class="sr" for="asst-in">Ваш вопрос</label><textarea id="asst-in" rows="1" maxlength="' + MAXIN + '" placeholder="Напишите вопрос…" enterkeyhint="send"></textarea>' +
       (voice ? '<button class="asst-mic" type="button" data-act="asst-mic" aria-pressed="false" aria-label="Надиктовать вопрос голосом" title="Надиктовать">' + MIC + '</button>' : '') + '<button class="asst-send" id="asst-send" type="submit" aria-label="Отправить">' + SEND + '</button></form>' +
-      '<p class="asst-note" id="asst-note">Я программа, а не сотрудник. Не вводите личные данные; цены, наличие и условия подтверждает менеджер.</p>';
+      '<p class="asst-note" id="asst-note"><span id="asst-note-t">Я программа, а не сотрудник. Не вводите личные данные; цены, наличие и условия подтверждает менеджер.</span><button class="asst-motion" type="button" data-act="asst-motion" hidden></button></p>';
     document.body.appendChild(el);
     const ta = $('#asst-in', el), log = $('#asst-log', el);
-    $('#asst-form', el).addEventListener('submit', e => { e.preventDefault(); const v = ta.value.trim(); if (busy && introOn && v) { introQ = v; ta.value = ''; grow(ta); stopGen(); return; } if (busy) { stopGen(); return; } if (v) { ta.value = ''; grow(ta); send(v); } });          // вопрос, набранный пока Стелла «печатает» приветствие, отправится сразу после него
+    $('#asst-form', el).addEventListener('submit', e => { e.preventDefault(); const v = ta.value.trim(); if (busy && introOn && v) { introQ = v; ta.value = ''; grow(ta); stopGen(); return; } if (busy) { stopGen(); return; } if (v) { const from = ta.getBoundingClientRect(); ta.value = ''; grow(ta); send(v, from); } });          // вопрос, набранный пока Стелла «печатает» приветствие, отправится сразу после него
     ta.addEventListener('input', () => grow(ta));
     ta.addEventListener('keydown', e => { if (e.key === 'Enter' && !e.shiftKey && !e.isComposing) { e.preventDefault(); if (!busy || introOn) $('#asst-form', el).requestSubmit(); } });
     log.addEventListener('scroll', () => { stick = log.scrollHeight - log.scrollTop - log.clientHeight < 90; const d = $('#asst-down'); if (d && stick) d.hidden = true; }, {passive: true});
   }
   function grow(ta) { ta.style.height = 'auto'; ta.style.height = Math.min(ta.scrollHeight + 2, 120) + 'px'; }
   function setMode() {
-    const m = $('#asst-mode span'), n = $('#asst-note'); if (!m) return;
+    const m = $('#asst-mode span'), n = $('#asst-note-t'); if (!m) return;
     m.textContent = ai ? 'На связи · ИИ: любые вопросы и данные сайта' : 'Отвечаю по данным сайта';
     n.textContent = ai ? 'Я Стелла — программа (ИИ), а не сотрудник; могу ошибаться и не знаю свежих новостей. Вопросы обрабатываются на сервере сайта и в сервисе ИИ — не вводите личные данные. Цены, наличие и условия подтверждает менеджер.' : 'Я Стелла — программа, а не сотрудник. Не вводите здесь личные данные; цены, наличие и условия подтверждает менеджер.';
   }
@@ -260,12 +268,12 @@
      Первые слова появляются не раньше, чем через ~1 с после вопроса: Стелла «думает», а не выпаливает ответ. */
   async function askAI(ctx, row, onStep) {
     if (skipping) { const e = new Error('stopped'); e.name = 'AbortError'; throw e; }          // «Стоп» нажат ещё до отправки на сервер
-    const ep = endpoint(); ctrl = new AbortController(); const t0 = Date.now(), MIN = reduced() ? 0 : 1000;
+    const ep = endpoint(); ctrl = new AbortController(); const t0 = Date.now(), MIN = 1600 * (calm() ? 0.6 : 1) / speed();
     const hist = plainHistory(), lastU = hist[hist.length - 1]; if (lastU) lastU.content = ctxLine(ctx) + lastU.content;
     const r = await fetch(ep, {method: 'POST', credentials: 'omit', signal: ctrl.signal, headers: {'Content-Type': 'application/json', Accept: 'text/event-stream'}, body: JSON.stringify({messages: hist})});
     if (!r.ok) { const e = new Error('HTTP ' + r.status); e.status = r.status; try { e.body = await r.json(); } catch (x) {} throw e; }
     const rd = r.body.getReader(), dec = new TextDecoder(); let buf = '', got = '', shown = '', err = null, ty = null, tx = null, timer = 0;
-    const open = () => { if (ty) return; const bub = $('.asst-bub', row); row.classList.remove('asst-typing'); row.removeAttribute('aria-hidden'); bub.innerHTML = '<div class="asst-tx"></div>'; tx = $('.asst-tx', bub); sentPop(bub); rowMood(row, 'talk'); ty = typer(tx, row, {cps: 60, win: 1500}); current = ty; };
+    const open = () => { if (ty) return; const bub = $('.asst-bub', row); row.classList.remove('asst-typing'); row.removeAttribute('aria-hidden'); bub.innerHTML = '<div class="asst-tx"></div>'; tx = $('.asst-tx', bub); sentPop(bub); rowMood(row, 'talk'); ty = typer(tx, row, {cps: 56, win: 2200}); current = ty; };
     const flush = () => { timer = 0; const now = hideMarks(got); if (now.length > shown.length) { open(); ty.push(now.slice(shown.length)); shown = now; } };
     const feed = () => { const left = MIN - (Date.now() - t0); if (left <= 0 || skipping) { if (timer) { clearTimeout(timer); timer = 0; } flush(); } else if (!timer) timer = setTimeout(flush, left); };
     for (;;) {
@@ -280,25 +288,32 @@
     }
     if (err && !got) throw new Error(err);
     if (timer) { const left = MIN - (Date.now() - t0); if (left > 0) await sleep(left); clearTimeout(timer); timer = 0; flush(); }
-    if (ty) await new Promise(res => (reduced() || skipping ? (ty.skip(), res()) : ty.end(res)));
+    if (ty) await new Promise(res => (skipping ? (ty.skip(), res()) : ty.end(res)));
     current = null; return {text: got, row, tx};
   }
 
   const userRow = text => { const d = addRow('u', userHTML(text, 1)); return d; };
-  async function send(text) {
+  /* вопрос «вылетает» из поля ввода (или кнопки-подсказки) в ленту */
+  function flyIn(row, from) {
+    if (!from || calm() || speed() > 2) return; const bub = $('.asst-bub', row); if (!bub) return; row.classList.add('fly'); bub.style.transition = 'none';
+    const to = bub.getBoundingClientRect(), dx = from.left + from.width / 2 - (to.left + to.width / 2), dy = from.top + from.height / 2 - (to.top + to.height / 2);
+    bub.style.transform = 'translate(' + Math.round(dx) + 'px,' + Math.round(dy) + 'px) scale(.55)'; bub.style.opacity = '.15'; void bub.offsetWidth; bub.style.transition = ''; bub.style.transform = ''; bub.style.opacity = '';
+    setTimeout(() => row.classList.remove('fly'), 950);
+  }
+  async function send(text, from) {
     if (busy) return; text = String(text).trim().slice(0, MAXIN); if (!text) return;
     ensureBrain(); interacted = true; hideTip(); skipping = false;
     setBusy(true); qrPaint([]); stick = true; const down = $('#asst-down'); if (down) down.hidden = true;
-    msgs.push({r: 'u', t: text}); const urow = userRow(text); scrollLog();
+    msgs.push({r: 'u', t: text}); const urow = userRow(text); scrollLog(); flyIn(urow, from);
     await loadKb(); ensureBrain(); bst.ai = !!ai; const ctx = ctxOf(), res = brain.reply(text, bst, ctx), useAI = !!(ai && !res.sure);
     A.track && A.track('assistant_msg', {mode: useAI ? 'ai' : 'local', intent: res.intent});
-    await sleep(reduced() ? 0 : 320); tickRead(urow); await sleep(reduced() ? 0 : 200);          // ✓ → ✓✓: вопрос прочитан
+    await sleep(650); tickRead(urow); await sleep(450);          // ✓ → ✓✓: вопрос прочитан, и только потом Стелла начинает «думать»
     const row = typingRow('Читаю вопрос…');
     try {
       if (useAI) {
         try {
-          let stepped = false; const t1 = setTimeout(() => { if (!stepped) setStatus(row, 'Думаю над ответом…'); }, 1500);
-          const out = await askAI(ctx, row, label => { stepped = true; setStatus(row, label); }).finally(() => clearTimeout(t1)), mk = parseMarks(out.text);
+          let stepped = false; const t1 = setTimeout(() => { if (!stepped) setStatus(row, 'Думаю над ответом…'); }, T(1500)), t2 = setTimeout(() => { if (!stepped) setStatus(row, 'Подбираю слова…'); }, T(3300));
+          const out = await askAI(ctx, row, label => { stepped = true; setStatus(row, label); }).finally(() => { clearTimeout(t1); clearTimeout(t2); }), mk = parseMarks(out.text);
           const m = {r: 'b', t: mk.text || 'Не получилось сформулировать ответ — переформулируйте вопрос или свяжитесь с менеджером.', c: mk.cards, ev: mk.events, a: mk.actions, l: mk.links, fb: 0}; msgs.push(m); msgs.chips = followUps(mk);
           if (mk.cards.length) brain.noteExternal(bst, mk.cards);
           const bub = $('.asst-bub', row); row.classList.remove('asst-typing'); row.removeAttribute('aria-hidden'); row.setAttribute('data-i', String(msgs.length - 1));
@@ -312,7 +327,7 @@
           await reveal(pushBot(res), row, {intent: res.intent});
         }
       } else {
-        const labels = ['Читаю вопрос…'].concat(res.steps.length ? res.steps : ['Думаю над ответом…']); if (thinkMs(res) > 1500) labels.push('Подбираю слова…');
+        const labels = ['Читаю вопрос…'].concat(res.steps.length ? res.steps : ['Думаю над ответом…']); if (thinkMs(res) > 1900) labels.push('Подбираю слова…');
         await thinkOver(row, labels, thinkMs(res));
         await reveal(pushBot(res), row, {intent: res.intent});
       }
@@ -327,7 +342,7 @@
     const l = $('#asst-log'); $$('.asst-m', l).forEach(e => e.remove()); qrPaint([]); skipping = false; introOn = true; setBusy(true);
     const row = typingRow('Стелла печатает…');
     try {
-      await Promise.race([probe().then(setMode), sleep(1100)]); await sleep(reduced() ? 0 : 700);
+      await Promise.race([probe().then(setMode), sleep(1100)]); await sleep(1000);
       msgs[0] = Object.assign(welcome(), {}); const m = msgs[0]; msgs.chips = brain.starters(ctxOf(), bst);
       if (row.isConnected) await reveal(m, row, {fast: true, cheer: true});
     } finally { introOn = false; setBusy(false); skipping = false; persist(); if (introQ) { const q = introQ; introQ = ''; send(q); } }
@@ -357,6 +372,7 @@
     return c.product && P[c.product] ? 'Привет, я Стелла! Подскажу по этому товару?' : pg === 'catalog' ? 'Я Стелла. Помочь подобрать средство?' : pg === 'training' || pg === 'event' ? 'Я Стелла. Найти ближайший семинар?' : pg === 'partners' ? 'Я Стелла. Посчитать скидку по закупке?' : 'Привет, я Стелла! Есть вопрос — подскажу.';
   }
   function maybeTip() {
+    const fb = $('#asst-fab'); if (fb && fb.classList.contains('long') && !isOpen) { clearTimeout(tipT); tipT = setTimeout(maybeTip, 2500); return; }          // пока раскрыта подпись «Спросить Стеллу», подсказку не показываем: не дублировать
     if (isOpen || interacted || document.body.classList.contains('x-intro') || document.body.classList.contains('locked') || document.body.classList.contains('menu-open')) return;
     let seen = false; try { seen = !!sessionStorage.getItem(TIPKEY); } catch (e) {} if (seen) return;
     const tip = $('#asst-tip'); if (!tip) return; $('.asst-tip-b', tip).textContent = tipText(); tip.hidden = false; void tip.offsetWidth; tip.classList.add('on'); heyFab(1800); try { sessionStorage.setItem(TIPKEY, '1'); } catch (e) {}
@@ -364,7 +380,7 @@
   }
   function hideTip() { const tip = $('#asst-tip'); if (!tip || tip.hidden) return; tip.classList.remove('on'); setTimeout(() => { tip.hidden = true; }, 300); }
   function nudge() {
-    const f = $('#asst-fab'); if (!f || isOpen || interacted || nudges >= 3 || reduced() || !f.classList.contains('in')) return; nudges++; f.classList.remove('nudge'); void f.offsetWidth; f.classList.add('nudge'); heyFab(1500); if (!mobile()) { f.classList.add('long'); clearTimeout(longT); longT = setTimeout(() => { if (!f.matches(':hover, :focus-visible')) f.classList.remove('long'); }, 4200); } nudgeT = setTimeout(nudge, 22000);
+    const f = $('#asst-fab'); if (!f || isOpen || interacted || nudges >= 3 || !f.classList.contains('in')) return; nudges++; f.classList.remove('nudge'); void f.offsetWidth; f.classList.add('nudge'); heyFab(1500); if (!mobile()) { f.classList.add('long'); clearTimeout(longT); longT = setTimeout(() => { if (!f.matches(':hover, :focus-visible')) f.classList.remove('long'); }, 4200); } nudgeT = setTimeout(nudge, 22000);
   }
   /* Стелла на кнопке радуется (машет, улыбается) */
   function heyFab(ms) { const f = $('#asst-fab'); if (!f) return; const pe = $('.pe', f); if (pe) pe.setAttribute('data-m', 'happy'); f.classList.remove('hello'); void f.offsetWidth; f.classList.add('hello'); clearTimeout(helloT); helloT = setTimeout(() => { f.classList.remove('hello'); if (pe) pe.setAttribute('data-m', 'idle'); }, ms || 1500); }
@@ -375,7 +391,7 @@
     mg.ox = dx / d * 9 * near; mg.oy = dy / d * 9 * near; const eye = Math.max(0, 1 - d / 560);
     f.style.setProperty('--mx', mg.ox.toFixed(1) + 'px'); f.style.setProperty('--my', mg.oy.toFixed(1) + 'px'); f.style.setProperty('--ex', (dx / d * 1.9 * eye).toFixed(2) + 'px'); f.style.setProperty('--ey', (dy / d * 1.9 * eye).toFixed(2) + 'px');
   }
-  document.addEventListener('pointermove', e => { if (e.pointerType !== 'mouse' || reduced() || isOpen || !built) return; mg.x = e.clientX; mg.y = e.clientY; if (!mg.raf) mg.raf = requestAnimationFrame(magnet); }, {passive: true});
+  document.addEventListener('pointermove', e => { if (e.pointerType !== 'mouse' || calm() || isOpen || !built) return; mg.x = e.clientX; mg.y = e.clientY; if (!mg.raf) mg.raf = requestAnimationFrame(magnet); }, {passive: true});
   document.documentElement.addEventListener('mouseleave', () => { const f = $('#asst-fab'); if (f) ['--mx', '--my', '--ex', '--ey'].forEach(k => f.style.removeProperty(k)); mg.ox = mg.oy = 0; });
   function stopVoice() { if (rec && recOn) { try { rec.stop(); } catch (e) {} } recOn = false; const m = $('.asst-mic'); if (m) { m.classList.remove('on'); m.setAttribute('aria-pressed', 'false'); } }
   function toggleVoice() {
@@ -394,10 +410,11 @@
   A.actions['asst-open'] = t => isOpen ? closeChat() : openChat(t);
   A.actions['asst-close'] = () => closeChat();
   A.actions['asst-reset'] = () => reset();
-  A.actions['asst-chip'] = t => send(t.getAttribute('data-q'));
+  A.actions['asst-chip'] = t => send(t.getAttribute('data-q'), t.getBoundingClientRect());
   A.actions['asst-human'] = () => send('Хочу связаться с менеджером');
   A.actions['asst-mic'] = () => toggleVoice();
   A.actions['asst-tip-x'] = () => hideTip();
+  A.actions['asst-motion'] = () => { try { localStorage.setItem('astreya:motion', calm() ? 'full' : 'calm'); } catch (e) {} applyCalm(); A.toast && A.toast(calm() ? 'Спокойный режим: без лишних движений' : 'Полные анимации включены'); };
   A.actions['asst-down'] = () => { stick = true; scrollLog(); const d = $('#asst-down'); if (d) d.hidden = true; };
   A.actions['asst-ask'] = t => { const q = t.getAttribute('data-q') || ''; A.openForm('question', 'Вопрос из чата помощника'); const f = $('#modal form'); if (f && f.elements.msg && q) f.elements.msg.value = q; };
   A.actions['asst-form'] = t => { const type = t.getAttribute('data-type'); A.openForm(type, t.getAttribute('data-ref') || ''); const f = $('#modal form'); if (!f) return; const spec = t.getAttribute('data-spec'), city = t.getAttribute('data-city'); if (spec && f.elements.spec) f.elements.spec.value = spec; if (city && f.elements.city) f.elements.city.value = city; };
@@ -416,6 +433,7 @@
     }
   }, true);
   document.addEventListener('click', e => { const a = e.target.closest && e.target.closest('#asst a[href]'); if (a && !a.target && mobile() && !/^(tel:|mailto:)/.test(a.getAttribute('href'))) setTimeout(closeChat, 50); });
+  if (window.matchMedia) { const mq = matchMedia('(prefers-reduced-motion: reduce)'); if (mq.addEventListener) mq.addEventListener('change', applyCalm); else if (mq.addListener) mq.addListener(applyCalm); }
   document.addEventListener('astreya:intro', () => { const f = $('#asst-fab'); if (f) f.classList.toggle('away', document.body.classList.contains('x-intro')); });
   if (window.visualViewport) window.visualViewport.addEventListener('resize', () => { const el = $('#asst'); if (el) el.style.setProperty('--asst-h', mobile() ? Math.round(window.visualViewport.height) + 'px' : ''); if (isOpen && stick) scrollLog(); });
 
@@ -434,14 +452,16 @@
   }
 
   function init() {
-    build(); ensureBrain(); if (isOpen && msgs.length === 1) { msgs.chips = brain.starters(ctxOf(), bst); qrPaint(msgs.chips); }
+    build(); applyCalm(); ensureBrain(); if (isOpen && msgs.length === 1) { msgs.chips = brain.starters(ctxOf(), bst); qrPaint(msgs.chips); }
     const f = $('#asst-fab');
-    if (f && !f.classList.contains('in')) setTimeout(() => {          // появление одним плавным движением: круг всплывает → Стелла машет → подпись раскрывается (0,7 → 1,3 → 2,2 с)
-      f.classList.add('in'); const fx = $('.asst-fab-fx', f); if (fx && !reduced()) { fx.classList.remove('go'); void fx.offsetWidth; fx.classList.add('go'); }
-      setTimeout(() => f.classList.add('settled'), reduced() ? 0 : 1300); setTimeout(() => heyFab(1800), reduced() ? 0 : 900);
-      if (!mobile()) { setTimeout(() => { f.classList.add('long'); longT = setTimeout(() => { if (!f.matches(':hover, :focus-visible')) f.classList.remove('long'); }, 6500); }, reduced() ? 0 : 2100); }
-    }, reduced() ? 0 : 700);
-    clearTimeout(tipT); tipT = setTimeout(maybeTip, 8000); if (!nudgeT) nudgeT = setTimeout(nudge, 14000);
+    if (f && !f.classList.contains('in')) setTimeout(() => {          // появление как сцена (≈ 6 с): круг проявляется → искры слетаются и вспыхивают → Стелла «просыпается» → машет → подпись раскрывается, по ней пробегает блик
+      f.classList.add('in'); const fx = $('.asst-fab-fx', f); if (fx) { fx.classList.remove('go'); void fx.offsetWidth; fx.classList.add('go'); }
+      const pe = $('.pe', f);
+      setTimeout(() => { if (pe) { pe.classList.add('waking'); pe.setAttribute('data-m', 'idle'); setTimeout(() => pe.classList.remove('waking'), 800); } }, T(2100));
+      setTimeout(() => f.classList.add('settled'), T(2300)); setTimeout(() => heyFab(1900), T(2900));
+      if (!mobile()) { setTimeout(() => { f.classList.add('long'); setTimeout(() => { f.classList.remove('sweep'); void f.offsetWidth; f.classList.add('sweep'); }, T(1300)); longT = setTimeout(() => { if (!f.matches(':hover, :focus-visible')) f.classList.remove('long'); }, T(8000)); }, T(4100)); }
+    }, T(1200));
+    clearTimeout(tipT); tipT = setTimeout(maybeTip, Math.round(15500 / speed())); if (!nudgeT) nudgeT = setTimeout(nudge, Math.round(26000 / speed()));
     registerWebMCP();
   }
   A.assistant = {answer: t => { ensureBrain(); return brain.reply(t, brain.newState(), ctxOf()); }};          // для проверок (tools/check-extras.js)
