@@ -114,16 +114,14 @@ const wait = ms => new Promise(r => setTimeout(r, ms));
   await p.waitForFunction(() => document.querySelectorAll('#asst-log .asst-u').length === 1 && !document.getElementById('asst-form').classList.contains('busy') && !document.querySelector('.asst-typing'), null, {timeout: 20000}); await wait(200);
   ok(/925-51-62/.test(await lastRow()) && await p.$$eval('#asst-log .asst-b', e => e.length) === 2 && await p.$eval('#asst-in', e => e.value === ''), 'вопрос, набранный во время первого приветствия, отправляется сразу после него и не теряется');
 
-  /* 7. «уменьшить движение» в системе → «спокойный режим»: без перемещений и парения, но с плавным появлением, паузой «раздумья» и печатью; есть кнопка «Включить анимации» */
+  /* 7. анимации работают всегда — даже если в системе стоит «уменьшить движение»: полный ритм ответа, никаких переключателей */
   { const rc = await b.newContext({viewport: {width: 1440, height: 900}, reducedMotion: 'reduce'}); await rc.route(/^https:\/\/fonts\./, r => r.abort()); const rp = await rc.newPage(); const rerr = []; rp.on('pageerror', e => rerr.push(e.message));
-    await rp.goto(base + 'catalog.html'); const sp = await rp.$('#sp-in'); if (sp) { try { await sp.click({timeout: 1500}); } catch (e) {} } await wait(4500);
-    ok(await rp.evaluate(() => document.body.classList.contains('calm')), 'в системе «уменьшить движение» — включён спокойный режим');
-    const anim = await rp.$eval('#asst-fab .asst-fab-i', e => getComputedStyle(e).animationName); ok(anim === 'none', 'в спокойном режиме кнопка не парит и не мерцает', anim);
-    await rp.click('#asst-fab'); await rp.waitForFunction(() => document.querySelectorAll('#asst-log .asst-b').length === 1 && !document.getElementById('asst-form').classList.contains('busy'), null, {timeout: 12000}); ok(true, 'первое сообщение появилось (с паузой и печатью)');
-    ok(!(await rp.$eval('.asst-motion', e => e.hidden)) && /Включить анимации/.test(await rp.$eval('.asst-motion', e => e.textContent)), 'в подписи есть кнопка «Включить анимации»');
-    const t0 = Date.now(); await rp.fill('#asst-in', 'Какие у вас контакты?'); await rp.keyboard.press('Enter'); await rp.waitForFunction(() => /925-51-62/.test(document.querySelector('#asst-log .asst-m:nth-last-child(2)').textContent) && !document.getElementById('asst-form').classList.contains('busy'), null, {timeout: 15000}); const ms = Date.now() - t0;
-    ok(ms >= 1500 && ms < 12000, 'и в спокойном режиме ответ не мгновенный: пауза «раздумья» и печать (' + ms + ' мс)', ms);
-    await rp.click('.asst-motion'); await wait(200); ok(await rp.evaluate(() => !document.body.classList.contains('calm') && localStorage.getItem('astreya:motion') === 'full') && /Спокойный режим/.test(await rp.$eval('.asst-motion', e => e.textContent)), '«Включить анимации» возвращает полные анимации и запоминает выбор');
+    await rp.goto(base + 'catalog.html'); const sp = await rp.$('#sp-in'); if (sp) { try { await sp.click({timeout: 1500}); } catch (e) {} } await wait(5000);
+    const anim = await rp.$eval('#asst-fab .asst-fab-i', e => getComputedStyle(e).animationName); ok(anim !== 'none', 'при системном «уменьшить движение» кнопка всё равно парит (анимации включены изначально)', anim);
+    await rp.click('#asst-fab'); await rp.waitForFunction(() => document.querySelectorAll('#asst-log .asst-b').length === 1 && !document.getElementById('asst-form').classList.contains('busy'), null, {timeout: 14000}); ok(true, 'первое сообщение появилось (с паузой и печатью)');
+    ok(await rp.$('.asst-motion') === null && await rp.evaluate(() => !document.body.classList.contains('calm')), 'кнопки «Включить анимации» и «спокойного режима» нет');
+    const t0 = Date.now(); await rp.fill('#asst-in', 'Какие у вас контакты?'); await rp.keyboard.press('Enter'); await rp.waitForFunction(() => /925-51-62/.test(document.querySelector('#asst-log .asst-m:nth-last-child(2)').textContent) && !document.getElementById('asst-form').classList.contains('busy'), null, {timeout: 20000}); const ms = Date.now() - t0;
+    ok(ms >= 3000 && ms < 16000, 'ответ приходит с полным ритмом «прочитано → думает → печатает» (' + ms + ' мс), а не мгновенно', ms);
     ok(rerr.length === 0, 'без ошибок JS', rerr); await rc.close(); }
   await b.close(); await S.close();
   console.log(`\nИтого: ✓ ${pass}  ✗ ${fail}`); process.exit(fail ? 1 : 0);

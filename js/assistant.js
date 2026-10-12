@@ -25,15 +25,9 @@
   (D.products || []).forEach(p => { P[p.id] = p; }); (D.brands || []).forEach(b => { B[b.id] = b; }); (D.tasks || []).forEach(t => { TASK[t.id] = t.label; }); (D.events || []).forEach(e => { EV[e.id] = e; });
   const root = () => document.body.getAttribute('data-root') || '';
   const KEY = 'astreya:chat2', TIPKEY = 'astreya:asst-tip', MAXKEEP = 40, MAXIN = 500;
-  /* движение: «спокойный режим» (calm) включается, если в системе стоит «уменьшить движение», или кнопкой в чате (запоминается в браузере). В нём нет перемещений, масштабирования и размытия,
-     но остаются плавные появления, паузы «раздумья» и печать — ответы не выскакивают мгновенно. window.ASTREYA_MOTION_SPEED > 1 ускоряет всё (нужно только проверкам). */
-  const osReduce = () => !!(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches);
-  const motionPref = () => { try { return localStorage.getItem('astreya:motion') || ''; } catch (e) { return ''; } };
-  const calm = () => { const v = motionPref(); return v === 'full' ? false : v === 'calm' ? true : osReduce(); };
+  /* анимации работают всегда, независимо от системной настройки «уменьшить движение» (так решил владелец сайта). window.ASTREYA_MOTION_SPEED > 1 ускоряет паузы и печать — нужно только автоматическим проверкам. */
   const speed = () => { const v = +window.ASTREYA_MOTION_SPEED; return v > 0 ? v : 1; };
-  const T = ms => Math.round(ms * (calm() ? 0.6 : 1) / speed());
-  const reduced = calm;
-  function applyCalm() { document.body.classList.toggle('calm', calm()); const b = $('.asst-motion'); if (b) { b.hidden = !(osReduce() || motionPref()); b.textContent = calm() ? 'Включить анимации' : 'Спокойный режим'; } }
+  const T = ms => Math.round(ms / speed());
   const mobile = () => matchMedia('(max-width:640px)').matches;
   const PLUS = '<svg class="ic i-pl" viewBox="0 0 20 20" aria-hidden="true" focusable="false"><path d="M10 4.5v11M4.5 10h11"/></svg>', CHECK = '<svg class="ic i-ck" viewBox="0 0 20 20" aria-hidden="true" focusable="false"><path d="m4.5 10.5 3.5 3.5 7.5-8"/></svg>';
   /* маскот Стелла: жемчужинка со звёздочкой. Рисунок один на все места (градиент берётся из скрытого набора #pe-defs); настроения переключает атрибут data-m: idle · think · talk · happy */
@@ -153,7 +147,7 @@
   /* печатает по времени, а не по кадрам: скорость cps знаков в секунду, на знаках препинания короткая пауза; win — «окно догоняния» для потока ИИ (отставание от потока не больше win мс) */
   function typer(tx, row, o) {
     o = o || {}; let buf = '', shown = 0, raf = 0, ended = false, cb = null, stopped = false, last = 0, acc = 0, hold = 0;
-    const base0 = (o.cps || 70) / 1000, win = o.win || 0, k = () => speed() * (calm() ? 1.5 : 1);
+    const base0 = (o.cps || 70) / 1000, win = o.win || 0, k = () => speed();
     const paint = () => { tx.innerHTML = fmt(buf.slice(0, shown)) + (!ended || shown < buf.length ? CARET : ''); follow(row); };
     const tick = now => {
       raf = 0; const dt = Math.min(64, last ? now - last : 16); last = now;
@@ -173,7 +167,7 @@
   }
   /* ожидания, которые «Стоп» может прервать: нажал — Стелла сразу показывает готовый ответ */
   let skipping = false; const sleepers = new Set();
-  const sleep = ms => new Promise(res => { ms = ms * (calm() ? 0.6 : 1) / speed(); if (skipping || ms <= 0) { res(); return; } const done = () => { clearTimeout(t); sleepers.delete(done); res(); }, t = setTimeout(done, ms); sleepers.add(done); });
+  const sleep = ms => new Promise(res => { ms = ms / speed(); if (skipping || ms <= 0) { res(); return; } const done = () => { clearTimeout(t); sleepers.delete(done); res(); }, t = setTimeout(done, ms); sleepers.add(done); });
   const wake = () => { Array.from(sleepers).forEach(f => f()); };
   const STEP = {search_products: 'Ищу в каталоге…', get_product: 'Открываю карточку товара…', get_brand: 'Смотрю информацию о бренде…', list_events: 'Сверяю с расписанием…', discount_for_amount: 'Считаю скидку…', get_contacts: 'Нахожу контакты…', search_info: 'Ищу в материалах сайта…', tool: 'Проверяю данные…'};
 
@@ -218,7 +212,7 @@
     if (built) return; built = true; document.body.classList.add('has-asst');
     const fab = document.createElement('button'); fab.type = 'button'; fab.id = 'asst-fab'; fab.className = 'asst-fab'; fab.setAttribute('data-act', 'asst-open'); fab.setAttribute('aria-haspopup', 'dialog'); fab.setAttribute('aria-expanded', 'false'); fab.setAttribute('aria-controls', 'asst'); fab.setAttribute('aria-label', 'Стелла, помощник «Астреи»: задать вопрос');
     const sparks = [0, 1, 2, 3, 4, 5, 6, 7].map(k => '<i style="--a:' + (k * 45 + 12) + 'deg;--d:' + (40 + (k % 3) * 9) + 'px;--k:' + k + '"></i>').join('');
-    fab.innerHTML = '<span class="asst-fab-glow" aria-hidden="true"></span><span class="asst-fab-sweep" aria-hidden="true"></span><span class="asst-fab-fx" aria-hidden="true">' + sparks + '</span><span class="asst-fab-ring" aria-hidden="true"></span><span class="asst-fab-i"><span class="asst-fab-pe">' + PEARL('sleep', true) + '</span></span><span class="asst-fab-t"><span><b>Спросить Стеллу</b></span></span>';
+    fab.innerHTML = '<span class="asst-fab-glow" aria-hidden="true"></span><span class="asst-fab-sweep" aria-hidden="true"></span><span class="asst-fab-fx" aria-hidden="true">' + sparks + '</span><span class="asst-fab-ring" aria-hidden="true"></span><span class="asst-fab-roll"><span class="asst-fab-i"><span class="asst-fab-pe">' + PEARL('sleep', true) + '</span></span></span><span class="asst-fab-t"><span><b>Спросить Стеллу</b></span></span>';
     document.body.insertAdjacentHTML('beforeend', PEARL_DEFS); document.body.appendChild(fab);
     fab.addEventListener('pointerenter', () => { fab.classList.add('long'); clearTimeout(longT); }); fab.addEventListener('pointerleave', () => { if (!fab.matches(':focus-visible')) longT = setTimeout(() => fab.classList.remove('long'), 450); });
     fab.addEventListener('focus', () => { if (fab.matches(':focus-visible')) { fab.classList.add('long'); clearTimeout(longT); } }); fab.addEventListener('blur', () => { longT = setTimeout(() => fab.classList.remove('long'), 450); });
@@ -230,7 +224,7 @@
       '<div class="asst-log" id="asst-log" tabindex="0" aria-label="Диалог с помощником"><div class="asst-qr" id="asst-qr"></div></div><button class="asst-down" id="asst-down" type="button" data-act="asst-down" aria-label="К последним сообщениям" hidden>' + ARROWDOWN + '</button><div class="sr" id="asst-sr" role="status" aria-live="polite"></div>' +
       '<form class="asst-form" id="asst-form" autocomplete="off"><label class="sr" for="asst-in">Ваш вопрос</label><textarea id="asst-in" rows="1" maxlength="' + MAXIN + '" placeholder="Напишите вопрос…" enterkeyhint="send"></textarea>' +
       (voice ? '<button class="asst-mic" type="button" data-act="asst-mic" aria-pressed="false" aria-label="Надиктовать вопрос голосом" title="Надиктовать">' + MIC + '</button>' : '') + '<button class="asst-send" id="asst-send" type="submit" aria-label="Отправить">' + SEND + '</button></form>' +
-      '<p class="asst-note" id="asst-note"><span id="asst-note-t">Я программа, а не сотрудник. Не вводите личные данные; цены, наличие и условия подтверждает менеджер.</span><button class="asst-motion" type="button" data-act="asst-motion" hidden></button></p>';
+      '<p class="asst-note" id="asst-note"><span id="asst-note-t">Я программа, а не сотрудник. Не вводите личные данные; цены, наличие и условия подтверждает менеджер.</span></p>';
     document.body.appendChild(el);
     const ta = $('#asst-in', el), log = $('#asst-log', el);
     $('#asst-form', el).addEventListener('submit', e => { e.preventDefault(); const v = ta.value.trim(); if (busy && introOn && v) { introQ = v; ta.value = ''; grow(ta); stopGen(); return; } if (busy) { stopGen(); return; } if (v) { const from = ta.getBoundingClientRect(); ta.value = ''; grow(ta); send(v, from); } });          // вопрос, набранный пока Стелла «печатает» приветствие, отправится сразу после него
@@ -268,7 +262,7 @@
      Первые слова появляются не раньше, чем через ~1 с после вопроса: Стелла «думает», а не выпаливает ответ. */
   async function askAI(ctx, row, onStep) {
     if (skipping) { const e = new Error('stopped'); e.name = 'AbortError'; throw e; }          // «Стоп» нажат ещё до отправки на сервер
-    const ep = endpoint(); ctrl = new AbortController(); const t0 = Date.now(), MIN = 1600 * (calm() ? 0.6 : 1) / speed();
+    const ep = endpoint(); ctrl = new AbortController(); const t0 = Date.now(), MIN = 1600 / speed();
     const hist = plainHistory(), lastU = hist[hist.length - 1]; if (lastU) lastU.content = ctxLine(ctx) + lastU.content;
     const r = await fetch(ep, {method: 'POST', credentials: 'omit', signal: ctrl.signal, headers: {'Content-Type': 'application/json', Accept: 'text/event-stream'}, body: JSON.stringify({messages: hist})});
     if (!r.ok) { const e = new Error('HTTP ' + r.status); e.status = r.status; try { e.body = await r.json(); } catch (x) {} throw e; }
@@ -295,7 +289,7 @@
   const userRow = text => { const d = addRow('u', userHTML(text, 1)); return d; };
   /* вопрос «вылетает» из поля ввода (или кнопки-подсказки) в ленту */
   function flyIn(row, from) {
-    if (!from || calm() || speed() > 2) return; const bub = $('.asst-bub', row); if (!bub) return; row.classList.add('fly'); bub.style.transition = 'none';
+    if (!from || speed() > 2) return; const bub = $('.asst-bub', row); if (!bub) return; row.classList.add('fly'); bub.style.transition = 'none';
     const to = bub.getBoundingClientRect(), dx = from.left + from.width / 2 - (to.left + to.width / 2), dy = from.top + from.height / 2 - (to.top + to.height / 2);
     bub.style.transform = 'translate(' + Math.round(dx) + 'px,' + Math.round(dy) + 'px) scale(.55)'; bub.style.opacity = '.15'; void bub.offsetWidth; bub.style.transition = ''; bub.style.transform = ''; bub.style.opacity = '';
     setTimeout(() => row.classList.remove('fly'), 950);
@@ -391,7 +385,7 @@
     mg.ox = dx / d * 9 * near; mg.oy = dy / d * 9 * near; const eye = Math.max(0, 1 - d / 560);
     f.style.setProperty('--mx', mg.ox.toFixed(1) + 'px'); f.style.setProperty('--my', mg.oy.toFixed(1) + 'px'); f.style.setProperty('--ex', (dx / d * 1.9 * eye).toFixed(2) + 'px'); f.style.setProperty('--ey', (dy / d * 1.9 * eye).toFixed(2) + 'px');
   }
-  document.addEventListener('pointermove', e => { if (e.pointerType !== 'mouse' || calm() || isOpen || !built) return; mg.x = e.clientX; mg.y = e.clientY; if (!mg.raf) mg.raf = requestAnimationFrame(magnet); }, {passive: true});
+  document.addEventListener('pointermove', e => { if (e.pointerType !== 'mouse' || isOpen || !built) return; mg.x = e.clientX; mg.y = e.clientY; if (!mg.raf) mg.raf = requestAnimationFrame(magnet); }, {passive: true});
   document.documentElement.addEventListener('mouseleave', () => { const f = $('#asst-fab'); if (f) ['--mx', '--my', '--ex', '--ey'].forEach(k => f.style.removeProperty(k)); mg.ox = mg.oy = 0; });
   function stopVoice() { if (rec && recOn) { try { rec.stop(); } catch (e) {} } recOn = false; const m = $('.asst-mic'); if (m) { m.classList.remove('on'); m.setAttribute('aria-pressed', 'false'); } }
   function toggleVoice() {
@@ -414,7 +408,6 @@
   A.actions['asst-human'] = () => send('Хочу связаться с менеджером');
   A.actions['asst-mic'] = () => toggleVoice();
   A.actions['asst-tip-x'] = () => hideTip();
-  A.actions['asst-motion'] = () => { try { localStorage.setItem('astreya:motion', calm() ? 'full' : 'calm'); } catch (e) {} applyCalm(); A.toast && A.toast(calm() ? 'Спокойный режим: без лишних движений' : 'Полные анимации включены'); };
   A.actions['asst-down'] = () => { stick = true; scrollLog(); const d = $('#asst-down'); if (d) d.hidden = true; };
   A.actions['asst-ask'] = t => { const q = t.getAttribute('data-q') || ''; A.openForm('question', 'Вопрос из чата помощника'); const f = $('#modal form'); if (f && f.elements.msg && q) f.elements.msg.value = q; };
   A.actions['asst-form'] = t => { const type = t.getAttribute('data-type'); A.openForm(type, t.getAttribute('data-ref') || ''); const f = $('#modal form'); if (!f) return; const spec = t.getAttribute('data-spec'), city = t.getAttribute('data-city'); if (spec && f.elements.spec) f.elements.spec.value = spec; if (city && f.elements.city) f.elements.city.value = city; };
@@ -433,7 +426,6 @@
     }
   }, true);
   document.addEventListener('click', e => { const a = e.target.closest && e.target.closest('#asst a[href]'); if (a && !a.target && mobile() && !/^(tel:|mailto:)/.test(a.getAttribute('href'))) setTimeout(closeChat, 50); });
-  if (window.matchMedia) { const mq = matchMedia('(prefers-reduced-motion: reduce)'); if (mq.addEventListener) mq.addEventListener('change', applyCalm); else if (mq.addListener) mq.addListener(applyCalm); }
   document.addEventListener('astreya:intro', () => { const f = $('#asst-fab'); if (f) f.classList.toggle('away', document.body.classList.contains('x-intro')); });
   if (window.visualViewport) window.visualViewport.addEventListener('resize', () => { const el = $('#asst'); if (el) el.style.setProperty('--asst-h', mobile() ? Math.round(window.visualViewport.height) + 'px' : ''); if (isOpen && stick) scrollLog(); });
 
@@ -452,14 +444,14 @@
   }
 
   function init() {
-    build(); applyCalm(); ensureBrain(); if (isOpen && msgs.length === 1) { msgs.chips = brain.starters(ctxOf(), bst); qrPaint(msgs.chips); }
+    build(); ensureBrain(); if (isOpen && msgs.length === 1) { msgs.chips = brain.starters(ctxOf(), bst); qrPaint(msgs.chips); }
     const f = $('#asst-fab');
     if (f && !f.classList.contains('in')) setTimeout(() => {          // появление как сцена (≈ 6 с): круг проявляется → искры слетаются и вспыхивают → Стелла «просыпается» → машет → подпись раскрывается, по ней пробегает блик
       f.classList.add('in'); const fx = $('.asst-fab-fx', f); if (fx) { fx.classList.remove('go'); void fx.offsetWidth; fx.classList.add('go'); }
       const pe = $('.pe', f);
       setTimeout(() => { if (pe) { pe.classList.add('waking'); pe.setAttribute('data-m', 'idle'); setTimeout(() => pe.classList.remove('waking'), 800); } }, T(2100));
       setTimeout(() => f.classList.add('settled'), T(2300)); setTimeout(() => heyFab(1900), T(2900));
-      if (!mobile()) { setTimeout(() => { f.classList.add('long'); setTimeout(() => { f.classList.remove('sweep'); void f.offsetWidth; f.classList.add('sweep'); }, T(1300)); longT = setTimeout(() => { if (!f.matches(':hover, :focus-visible')) f.classList.remove('long'); }, T(8000)); }, T(4100)); }
+      if (!mobile()) { setTimeout(() => { f.classList.add('long'); setTimeout(() => { f.classList.remove('sweep'); void f.offsetWidth; f.classList.add('sweep'); }, T(900)); longT = setTimeout(() => { if (!f.matches(':hover, :focus-visible')) f.classList.remove('long'); }, T(8000)); }, T(4100)); }
     }, T(1200));
     clearTimeout(tipT); tipT = setTimeout(maybeTip, Math.round(15500 / speed())); if (!nudgeT) nudgeT = setTimeout(nudge, Math.round(26000 / speed()));
     registerWebMCP();
