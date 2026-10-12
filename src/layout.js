@@ -214,7 +214,7 @@ ${ld.map(o => `<script type="application/ld+json">${JSON.stringify(o)}</script>`
 <a class="skip" href="#main">К основному содержимому</a>
 ${logoDefs}
 <div id="progress" aria-hidden="true"></div>
-${splash}
+${P.key === 'notfound' ? '' : splash}
 <div id="curtain" aria-hidden="true"><div class="cs">${Array.from({length: 8}, (_, i) => `<i style="--i:${i}"></i>`).join('')}</div><div class="ct" aria-hidden="true"></div></div>
 
 ${header(P)}

@@ -93,10 +93,20 @@ const pickPages = () => { const want = (arg('pages') || '').split(',').filter(Bo
 async function openPage(ctx, file, errs) {
   const p = await ctx.newPage();
   await p.addInitScript(() => { window.__cls = 0; try { new PerformanceObserver(l => { for (const e of l.getEntries()) if (!e.hadRecentInput) window.__cls += e.value; }).observe({type: 'layout-shift', buffered: true}); } catch (e) {} });
-  p.on('pageerror', e => errs.push('JS: ' + e.message)); p.on('console', m => { if (m.type() === 'error' && !/fonts\.(googleapis|gstatic)|net::ERR_(FAILED|BLOCKED|INTERNET)/.test(m.text())) errs.push('консоль: ' + m.text().slice(0, 140)); });
+  p.on('pageerror', e => errs.push('JS: ' + e.message)); const is404 = path.basename(file) === '404.html';   // сам документ 404.html приходит со статусом 404 — это не ошибка; но битые файлы внутри него ловим по ответам
+  p.on('console', m => { if (m.type() === 'error' && !/fonts\.(googleapis|gstatic)|net::ERR_(FAILED|BLOCKED|INTERNET)/.test(m.text()) && !(is404 && /status of 404/.test(m.text()))) errs.push('консоль: ' + m.text().slice(0, 140)); });
+  if (is404) p.on('response', r => { if (r.status() >= 400 && r.request().resourceType() !== 'document') errs.push('ответ ' + r.status() + ': ' + r.url().slice(-80)); });
   p.on('requestfailed', r => { if (!/fonts\.(googleapis|gstatic)|mc\.yandex|google-analytics|googletagmanager/.test(r.url())) errs.push('запрос не удался: ' + r.url().slice(-80)); });
-  await p.goto('file://' + file); await p.waitForTimeout(900);
+  await p.goto(path.basename(file) === '404.html' ? await url404() : 'file://' + file); await p.waitForTimeout(900);
   return p;
+}
+/* 404.html хостинг отдаёт на любой неверный адрес, а ссылки в нём — от корня сайта (/astreya/…): по file:// они не открываются, поэтому в аудите он идёт по http, как на GitHub Pages */
+let srv404 = null;
+async function url404() {
+  const http = require('http'), sitePath = new URL(JSON.parse(fs.readFileSync(path.join(ROOT, 'data/site.json'), 'utf8')).url).pathname.replace(/\/?$/, '/');
+  const MIME = {'.html': 'text/html; charset=utf-8', '.css': 'text/css', '.js': 'application/javascript', '.json': 'application/json', '.webp': 'image/webp', '.png': 'image/png', '.jpg': 'image/jpeg', '.svg': 'image/svg+xml'};
+  if (!srv404) { srv404 = http.createServer((q, r) => { const p = decodeURIComponent(q.url.split('?')[0]), f = p.startsWith(sitePath) ? path.join(ROOT, p.slice(sitePath.length)) : ''; if (f && f.startsWith(ROOT) && fs.existsSync(f) && fs.statSync(f).isFile()) { r.writeHead(200, {'Content-Type': MIME[path.extname(f)] || 'application/octet-stream'}); fs.createReadStream(f).pipe(r); } else { r.writeHead(404, {'Content-Type': MIME['.html']}); fs.createReadStream(path.join(ROOT, '404.html')).pipe(r); } }); await new Promise(r => srv404.listen(0, '127.0.0.1', r)); srv404.unref(); }
+  return `http://127.0.0.1:${srv404.address().port}${sitePath}takoy-stranicy-net`;
 }
 async function browserAudit() {
   const {chromium} = req('playwright'), axeSrc = fs.readFileSync(path.join(GLOBAL, 'axe-core/axe.min.js'), 'utf8');

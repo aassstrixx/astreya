@@ -6,7 +6,7 @@
 ## Структура
 
 ```
-index.html catalog.html brands.html training.html news.html company.html contacts.html partners.html search.html privacy.html terms.html
+index.html catalog.html brands.html training.html news.html company.html contacts.html partners.html search.html privacy.html terms.html 404.html
 brands/<бренд>.html      страницы брендов (9)
 products/<товар>.html    страницы товаров (30)
 training/<мероприятие>.html   страницы мероприятий (7)
@@ -22,6 +22,7 @@ sitemap.xml robots.txt
 ```
 
 HTML-файлы в корне и в `brands/ products/ training/ news/` — **результат сборки**: не правьте их руками, меняйте `data/` или `src/` и запускайте сборку.
+`404.html` — страница «Такой страницы нет»: GitHub Pages сам отдаёт её на любой неверный адрес (на любой глубине), поэтому ссылки в ней идут от корня сайта (`/astreya/…`), а не «../»; из папки напрямую (file://) она не откроется — это нормально. Не попадает в sitemap (`noindex`). Аудит (`npm run audit`) открывает её по http.
 
 ## Сборка и проверка
 
@@ -112,7 +113,7 @@ GitHub Pages не выполняет серверный код, поэтому �
 
 * **Быстрый откат доработок без git:** `npm run redesign:off` (то же: `node tools/redesign.js off`) — ставит `site.redesign = false` в `data/site.json`, пересобирает и проверяет сайт. Вернуть: `npm run redesign:on`. Карточки брендов при этом остаются.
 * **Точки возврата** (коммиты уже в ветке `claude/oryzo-ai-style-reference-ac1alz`; теги сервер не принимает — при желании поставьте тег на GitHub вручную: Releases → «Draft a new release» → Create new tag):
-  `b615aa8` — до правок про лого и вступление (админка и заявки, анимация появления карточек, пауза лозунга 0.6 / 0.65 экрана); `9a17a1a` — вариант «вступление только при первом заходе» (откачен, ссылка на случай, если понадобится).
+  `98c166a` — **сайт и админка до шлифовки 404-страницей** (последний коммит перед ней; чтобы вернуться ровно к нему: `git revert <коммиты после 98c166a>` или `git checkout -B claude/oryzo-ai-style-reference-ac1alz 98c166a && git push --force-with-lease`); `b615aa8` — до правок про лого и вступление (админка и заявки, анимация появления карточек, пауза лозунга 0.6 / 0.65 экрана); `9a17a1a` — вариант «вступление только при первом заходе» (откачен, ссылка на случай, если понадобится).
   Откат: `git revert <коммит>` (история сохраняется) или `git checkout -B claude/oryzo-ai-style-reference-ac1alz b615aa8 && git push --force-with-lease`.
 * **Откат через git:** контрольная точка — коммит `2c778d6` (тег `cards-baseline`, если он есть локально): `git reset --hard cards-baseline` возвращает состояние «всё, что сделано до доработок, включая карточки». Точечно: `git revert <коммит доработок>`.
 * Слой доработок ничего не удаляет и не переписывает в прежних шаблонах: при выключенном флаге `redesign.css`/`redesign.js` не подключаются, страницы собираются прежними шаблонами.

@@ -18,7 +18,7 @@ const {newsPage, articlePage} = require('../src/pages/news.js');
 const company = require('../src/pages/company.js');
 const contacts = require('../src/pages/contacts.js');
 const partners = require('../src/pages/partners.js');
-const {searchPage, legalPage} = require('../src/pages/misc.js');
+const {searchPage, legalPage, notFoundPage} = require('../src/pages/misc.js');
 const customPage = require('../src/pages/custom.js');
 const blocks = require('../src/blocks-schema.js');
 
@@ -62,6 +62,9 @@ page({key: 'partners', path: 'partners.html', nav: '/partners', title: seo('part
 page({key: 'search', path: 'search.html', nav: '', title: seo('search').title, description: seo('search').description, noindex: true, priority: 0}, P => searchPage(ctx, C, P));
 page({key: 'privacy', path: 'privacy.html', nav: '', title: seo('privacy').title, description: seo('privacy').description, priority: 0.2, breadcrumbs: [['Главная', 'index.html'], ['Политика конфиденциальности', 'privacy.html']]}, P => legalPage(ctx, C, P, 'privacy'));
 page({key: 'terms', path: 'terms.html', nav: '', title: seo('terms').title, description: seo('terms').description, priority: 0.2, breadcrumbs: [['Главная', 'index.html'], ['Пользовательское соглашение', 'terms.html']]}, P => legalPage(ctx, C, P, 'terms'));
+
+/* ---- 404.html: GitHub Pages показывает его на любом неверном адресе (на любой глубине), поэтому пути в нём — от корня сайта, не «../» ---- */
+page({key: 'notfound', path: '404.html', nav: '', root: new URL(L.base).pathname, title: 'Страница не найдена — ошибка 404 | Астрея', description: 'Такой страницы нет на сайте «Астреи». Воспользуйтесь поиском или перейдите в каталог, к брендам, обучению и новостям.', noindex: true, priority: 0}, P => notFoundPage(ctx, C, P));
 
 /* ---- бренды ---- */
 ctx.brands.forEach(b => page({key: 'brand', path: `brands/${b.id}.html`, nav: '/brands', ogType: 'website', priority: 0.7,
@@ -136,4 +139,4 @@ fs.writeFileSync(path.join(ROOT, 'robots.txt'), `User-agent: *\nAllow: /\nDisall
 console.log(`Собрано страниц: ${pages.length} (в sitemap: ${urls.length}); js/data.js: ${(fs.statSync(path.join(ROOT, 'js', 'data.js')).size / 1024).toFixed(1)} КБ`);
 module.exports = {pages, ctx};
 
-if (process.argv.some(a => a.startsWith('--bundle='))) require('./bundle.js')({pages, ctx, layout: L, root: ROOT, out: process.argv.find(a => a.startsWith('--bundle=')).slice(9)});
+if (process.argv.some(a => a.startsWith('--bundle='))) require('./bundle.js')({pages: pages.filter(p => p.P.key !== 'notfound'), ctx, layout: L, root: ROOT, out: process.argv.find(a => a.startsWith('--bundle=')).slice(9)});

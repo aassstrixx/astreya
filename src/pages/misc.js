@@ -28,4 +28,19 @@ function legalPage(ctx, C, P, kind) {
   </div>`;
 }
 
-module.exports = {searchPage, legalPage};
+/* Страница 404. GitHub Pages отдаёт её на любой неверный адрес, на любой глубине (/a/b/c), поэтому все пути в ней — от корня сайта (P.root), а не «../» */
+function notFoundPage(ctx, C, P) {
+  const go = [['Каталог', 'catalog.html'], ['Бренды', 'brands.html'], ['Обучение', 'training.html'], ['Новости', 'news.html'], ['Контакты', 'contacts.html']];
+  return `<div class="wrap nf">
+    ${C.pageHead('Ошибка 404', 'Такой страницы нет', 'Возможно, ссылка устарела или в адресе опечатка. Найдите нужное через поиск или перейдите в один из разделов.')}
+    <form class="search-page reveal" role="search" action="${C.u(P, 'search.html')}" method="get">
+      <label class="search"><span class="sr">Запрос</span>${I.search}<input type="search" name="q" placeholder="Например: Heliocare, пилинг, семинар" autocomplete="off" enterkeyhint="search"></label>
+      <button class="btn btn-fill" type="submit">Найти</button>
+    </form>
+    <div class="row reveal" style="margin-top:28px;flex-wrap:wrap"><a class="btn btn-fill" href="${C.u(P, 'index.html')}">На главную ${I.arrow}</a>${go.map(([t, h]) => `<a class="chip" href="${C.u(P, h)}">${esc(t)}</a>`).join('')}</div>
+    <div class="srch-hints" style="margin-top:28px"><span>Популярное:</span>${ctx.content.searchHints.map(h => `<a class="chip" href="${C.u(P, 'search.html')}?q=${encodeURIComponent(h)}">${esc(h)}</a>`).join('')}</div>
+    <div style="height:clamp(60px,8vw,110px)"></div>
+  </div>`;
+}
+
+module.exports = {searchPage, legalPage, notFoundPage};

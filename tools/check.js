@@ -9,6 +9,8 @@ const files = walk(ROOT).filter(f => f.endsWith('.html'));
 const errors = [], warns = [];
 const titles = new Map(), descs = new Map();
 const idsOf = html => new Set([...html.matchAll(/\sid="([^"]+)"/g)].map(m => m[1]));
+/* путь сайта на хостинге (для 404.html: ссылки от корня сайта /astreya/…) */
+const SITE_PATH = (() => { try { return new URL(JSON.parse(fs.readFileSync(path.join(ROOT, 'data/site.json'), 'utf8')).url).pathname.replace(/\/?$/, '/'); } catch (e) { return '/'; } })();
 const cache = new Map(files.map(f => [f, fs.readFileSync(f, 'utf8')]));
 
 for (const f of files) {
@@ -28,7 +30,7 @@ for (const f of files) {
     const u = m[1];
     if (/^(https?:|mailto:|tel:|data:|javascript:)/.test(u)) continue;
     const [p, hash] = u.split('#'), pth = p.split('?')[0];
-    const target = pth ? path.resolve(dir, pth) : f;
+    const target = pth ? (pth.startsWith('/') ? path.resolve(ROOT, pth.startsWith(SITE_PATH) ? pth.slice(SITE_PATH.length) : pth.slice(1)) : path.resolve(dir, pth)) : f;
     if (pth && !fs.existsSync(target)) { err(`битая ссылка: ${u}`); continue; }
     if (hash && (target.endsWith('.html'))) { const th = cache.get(target) || fs.readFileSync(target, 'utf8'); if (!idsOf(th).has(hash)) err(`нет якоря #${hash} в ${path.relative(ROOT, target)} (ссылка ${u})`); }
   }

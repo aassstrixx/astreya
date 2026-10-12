@@ -45,3 +45,14 @@ test('сбой отправки: понятная ошибка, коммит о�
   git(S.root, 'remote', 'set-url', 'origin', bare);
   const again = await admin.post('/api/publish', {}); assert.equal(again.status, 200, again.text);   // нет новых изменений, но локальный коммит нужно отправить
 });
+
+test('своя страница из конструктора (pages/<адрес>.html) и 404.html попадают в публикацию', async () => {
+  const cur = (await admin.get('/api/collections/pages')).json, slug = 'usloviya-publikatsii';
+  const item = {slug, title: 'Условия публикации', eyebrow: 'Партнёрам', lead: 'Проверка публикации своей страницы из конструктора.', description: 'Страница для проверки того, что свои страницы из конструктора уходят в репозиторий при публикации из админки.', published: true, noindex: false, nav: false, navTitle: '', blocks: [{type: 'text', title: 'Как это работает', paragraphs: ['Первый абзац.']}]};
+  const put = await admin.put('/api/collections/pages', {data: Object.assign({}, cur.data, {items: [...(cur.data.items || []), item]}), version: cur.version}); assert.equal(put.status, 200, put.text);
+  assert.ok(fs.existsSync(path.join(S.root, 'pages', slug + '.html')), 'страница собрана');
+  assert.ok((await admin.get('/api/publish')).json.files.some(f => f.file.startsWith('pages/')), 'pages/ видна в статусе публикации');
+  const r = await admin.post('/api/publish', {message: 'Своя страница'}); assert.equal(r.status, 200, r.text);
+  assert.match(git(bare, 'show', 'main:pages/' + slug + '.html'), /Условия публикации/, 'страница дошла до удалённого репозитория');
+  assert.ok(git(bare, 'ls-tree', '--name-only', 'main').split('\n').includes('404.html'), '404.html лежит в репозитории');
+});

@@ -3,7 +3,7 @@
 const {execFile} = require('child_process');
 const C = require('./config');
 const {httpErr} = require('./auth');
-const PATHS = ['data', 'assets', 'js', 'css', 'index.html', 'catalog.html', 'brands.html', 'training.html', 'news.html', 'company.html', 'contacts.html', 'partners.html', 'search.html', 'privacy.html', 'terms.html', 'brands', 'products', 'training', 'news', 'sitemap.xml', 'robots.txt'];
+const PATHS = ['data', 'assets', 'js', 'css', 'index.html', 'catalog.html', 'brands.html', 'training.html', 'news.html', 'company.html', 'contacts.html', 'partners.html', 'search.html', 'privacy.html', 'terms.html', '404.html', 'brands', 'products', 'training', 'news', 'pages', 'sitemap.xml', 'robots.txt'];   // pages/ — свои страницы из конструктора; без них на GitHub Pages они не появились бы
 const scrub = s => s.replace(/\/\/[^@/\s]+@/g, '//***@');                       // токен в адресе репозитория не должен попадать в сообщения
 const git = (args, env) => new Promise((res, rej) => execFile('git', args, {cwd: C.ROOT, timeout: 120000, maxBuffer: 4e6, env: Object.assign({}, process.env, env || {}, {GIT_TERMINAL_PROMPT: '0'})}, (e, out, err) => e ? rej(Object.assign(new Error(scrub((String(err) || e.message).trim().slice(-600))), {code: e.code})) : res(String(out).trim())));
 
