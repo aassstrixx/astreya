@@ -88,6 +88,7 @@
     el.hidden = n === 0 || document.body.classList.contains('x-intro'); A.dockUpdate && A.dockUpdate();
     if (bump && !el.hidden) { el.classList.remove('bump'); void el.offsetWidth; el.classList.add('bump'); }
   }
+  A.cmpSync = () => cmpSync();
   function cmpToggle(id) {
     if (!P[id]) return; let l = cmpGet();
     if (l.indexOf(id) >= 0) { l = l.filter(x => x !== id); A.toast('Убрано из сравнения: ' + P[id].name); A.track && A.track('cmp_remove', {product: id}); }

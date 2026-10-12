@@ -20,7 +20,7 @@ module.exports = function layout(ctx, C) {
   const showNote = !!site.demoNotice && !(ctx.redesign && ctx.redesign.ui && ctx.redesign.ui.showDemoNotices === false);   // пометка «демо-данные» в подвале (в режиме доработок скрывается флагом redesign.ui)
   const rd = !!site.redesign, BD = rd ? backdropsFactory(ctx) : {on: false, apply: (P, h) => h};
   const EX = !!(rd && ctx.redesign && ctx.redesign.extras && ctx.redesign.extras.enabled);       // дополнения интерфейса (css/extras.css, js/extras.js): список запроса, быстрая связь, быстрый просмотр, сравнение, обратный отсчёт, помощник
-  const cssList = rd ? [...CSS, 'redesign', ...(BD.on ? ['backdrops'] : []), ...(EX ? ['extras'] : [])] : CSS, jsList = rd ? [...JS, 'redesign', ...(BD.on ? ['backdrops'] : []), ...(EX ? ['extras', 'explore'] : [])] : JS;   // слой доработок включается одним флагом site.redesign; фоновые вставки — backdrops.enabled в data/redesign.json
+  const cssList = rd ? [...CSS, 'redesign', ...(BD.on ? ['backdrops'] : []), ...(EX ? ['extras'] : [])] : CSS, jsList = rd ? [...JS, 'redesign', ...(BD.on ? ['backdrops'] : []), ...(EX ? ['extras', 'explore', 'assistant'] : [])] : JS;   // слой доработок включается одним флагом site.redesign; фоновые вставки — backdrops.enabled в data/redesign.json
   const ver = ctx.assetVersion ? '?v=' + ctx.assetVersion : '';
   const jarCfg = rd && ctx.redesign && ctx.redesign.jar && ctx.redesign.jar.enabled ? ctx.redesign.jar : null;     // вступление с баночкой: css/jar.css + js/jar.js — только на главной и только пока jar.enabled
   const pageCss = P => jarCfg && P.key === 'home' ? [...cssList, 'jar'] : cssList, pageJs = P => jarCfg && P.key === 'home' ? [...jsList, 'jar'] : jsList;
@@ -31,6 +31,9 @@ module.exports = function layout(ctx, C) {
   const nav = [...ctx.nav, ...ctx.customNav].map(i => [i.title, i.href, i.key]);                    // меню — data/menu.json + свои страницы с включённым пунктом меню
   const c = site.contacts;
 
+
+  /* подписка на новости (extras.subscribe): компактная форма в подвале — та же система заявок (тип subscribe), поле только одно: e-mail */
+  const subBlock = P => C.xon('subscribe') ? `<div class="ftr-sub"><div class="ftr-sub-t"><h2 class="ftr-h">Новости и приглашения</h2><p>${esc(S.FORM_TYPES.subscribe.lead)}</p></div>${S.formHTML('subscribe', {uid: 'sub-ftr', root: u(P, '')})}</div>` : '';
 
   const header = P => `<header class="hdr" id="hdr">
   <div class="wrap hdr-in">
@@ -104,6 +107,7 @@ module.exports = function layout(ctx, C) {
         </ul>
       </div>
     </div>
+    ${subBlock(P)}
     <div class="ftr-bottom">
       <span>© ${esc(site.name)}, ${site.year}</span>
       <span class="ftr-legal"><a href="${u(P, 'privacy.html')}">Политика конфиденциальности</a><a href="${u(P, 'terms.html')}">Пользовательское соглашение</a></span>
@@ -130,6 +134,7 @@ module.exports = function layout(ctx, C) {
       </ul>
     </div>
     <div class="ftr-rd-cols">${f.columns.map(col => `<div><h2 class="ftr-h">${esc(col.title)}</h2><ul>${col.links.map(([t, h]) => `<li><a href="${u(P, h)}">${esc(t)}</a></li>`).join('')}</ul></div>`).join('')}</div>
+    ${subBlock(P)}
     <div class="ftr-bottom">
       <span>© ${esc(site.name)}, ${site.year}</span>
       <span class="ftr-legal"><a href="${u(P, 'privacy.html')}">Политика конфиденциальности</a><a href="${u(P, 'terms.html')}">Пользовательское соглашение</a></span>

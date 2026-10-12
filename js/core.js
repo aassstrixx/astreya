@@ -170,7 +170,7 @@
   }
   function letterOf(pl) {
     const ft = FT[pl.type] || FT.question, subject = ft.subject + (pl.context ? ': ' + pl.context : '');
-    const L = [pl.context ? 'Тема: ' + pl.context : null, 'Имя: ' + pl.name, pl.city ? 'Город: ' + pl.city : null, pl.org ? 'Организация: ' + pl.org : null, pl.spec ? 'Специализация: ' + pl.spec : null,
+    const L = [pl.context ? 'Тема: ' + pl.context : null, 'Имя: ' + (pl.name || '—'), pl.city ? 'Город: ' + pl.city : null, pl.org ? 'Организация: ' + pl.org : null, pl.spec ? 'Специализация: ' + pl.spec : null,
       'Email: ' + (pl.email || '—'), 'Телефон: ' + (pl.phone || '—'), '', 'Сообщение: ' + (pl.msg || '—'), '', 'Согласие на обработку персональных данных: да', 'Отправлено с сайта «Астрея».'].filter(x => x !== null);
     return {subject, body: L.join('\r\n'), href: 'mailto:' + D.site.contacts.email + '?subject=' + encodeURIComponent(subject) + '&body=' + encodeURIComponent(L.join('\r\n'))};
   }
@@ -187,7 +187,12 @@
   function showDone(form, mode, letter) {
     const host = form.parentNode, c = D.site.contacts, wrapEl = document.createElement('div');
     wrapEl.className = 'ok'; wrapEl.setAttribute('role', 'status');
-    if (mode === 'sent') {
+    const ft = FT[form.getAttribute('data-form')] || {};
+    if (mode === 'sent' && ft.done) {
+      wrapEl.innerHTML = `<div class="tick">${I.check}</div><h3>${esc(ft.done[0])}</h3><p>${esc(ft.done[1])}</p>`;
+    } else if (ft.done) {                                                      // короткие формы (подписка) без сервера: письмо уже открыто в почтовой программе — просим только отправить его
+      wrapEl.innerHTML = `<div class="tick">${I.check}</div><h3>Почти готово</h3><p>Отправьте подготовленное письмо на ${esc(c.email)} — и адрес будет добавлен. <a href="${esc(letter.href)}">Открыть письмо ещё раз</a></p>`;
+    } else if (mode === 'sent') {
       wrapEl.innerHTML = `<div class="tick">${I.check}</div><h3>Заявка отправлена</h3><p>Спасибо! Мы свяжемся с вами в рабочее время (${esc(c.hours)}).</p>
         <div class="row" style="justify-content:center;margin-top:18px"><button class="btn btn-ghost" type="button" data-act="form-again">Отправить ещё одну</button></div>`;
     } else {

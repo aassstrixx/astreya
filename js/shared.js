@@ -81,6 +81,9 @@
   /* «Заказать звонок»: только имя и телефон — самый короткий путь к менеджеру (кнопки появляются при data/redesign.json → extras.callback) */
   FORM_TYPES.callback = {title: 'Заказать звонок', subject: 'Просьба перезвонить', lead: 'Оставьте номер — менеджер перезвонит в рабочее время.', submit: 'Перезвоните мне', ph: 'Когда удобно позвонить и что обсудить? (необязательно)',
                fields: [['name', 1], ['phone', 1], ['msg']]};
+  FORM_TYPES.subscribe = {title: 'Подписка на новости', subject: 'Подписка на новости и приглашения', lead: 'Новинки каталога и анонсы мероприятий учебного центра — на почту.', submit: 'Подписаться',
+               agree: 'Согласен(-на) получать новости и приглашения на e-mail и на обработку адреса для этой рассылки.', done: ['Спасибо, адрес принят', 'Мы будем присылать новинки каталога и приглашения на мероприятия. Отказаться можно в любой момент — напишите нам на почту.'],
+               phs: {email: 'Ваш e-mail'}, fields: [['email', 1]]};
   FORM_TYPES.contact = Object.assign({}, FORM_TYPES.question);
 
   function fieldHTML(uid, id, req, ft) {
@@ -88,7 +91,7 @@
     let ctl;
     if (f.type === 'textarea') ctl = `<textarea id="${fid}" name="${id}"${r} placeholder="${esc(ft.ph || '')}" rows="4"></textarea>`;
     else if (f.type === 'select') ctl = `<div class="sel"><select id="${fid}" name="${id}"><option value="">Выберите…</option>${SPECS.map(s => `<option>${esc(s)}</option>`).join('')}</select>${I.chevron}</div>`;
-    else ctl = `<input id="${fid}" name="${id}" type="${f.type}" autocomplete="${f.ac}"${f.ph ? ` placeholder="${f.ph}"` : ''}${f.type === 'tel' ? ' inputmode="tel"' : ''}${r}>`;
+    else ctl = `<input id="${fid}" name="${id}" type="${f.type}" autocomplete="${f.ac}"${(ft.phs && ft.phs[id]) || f.ph ? ` placeholder="${(ft.phs && ft.phs[id]) || f.ph}"` : ''}${f.type === 'tel' ? ' inputmode="tel"' : ''}${r}>`;
     return `<div class="fld" data-f="${id}"><label for="${fid}">${f.label}${star}</label>${ctl}${f.err ? `<span class="err" id="${fid}-err">${f.err}</span>` : ''}</div>`;
   }
   /* opts: {root:'../', uid:'lf1', ref:'ctx text', track:'partner_form'} */
@@ -105,7 +108,7 @@
     return `<form class="lead-form" data-form="${type}" data-ref="${esc(opts.ref || '')}" novalidate>
       ${rows.join('\n      ')}
       <input class="hp" type="text" name="company_site" tabindex="-1" autocomplete="off" aria-hidden="true">
-      <label class="agree"><input type="checkbox" name="agree" required><span>Я согласен(-на) на обработку персональных данных для ответа на обращение. <a href="${root}privacy.html" target="_blank" rel="noopener">Политика конфиденциальности</a></span></label>
+      <label class="agree"><input type="checkbox" name="agree" required><span>${ft.agree ? esc(ft.agree) : 'Я согласен(-на) на обработку персональных данных для ответа на обращение.'} <a href="${root}privacy.html" target="_blank" rel="noopener">Политика конфиденциальности</a></span></label>
       <div class="form-status" role="status" aria-live="polite" hidden></div>
       <div class="row form-actions"><button class="btn btn-fill" type="submit" data-track="form_submit_click"><span class="lbl">${ft.submit}</span>${I.arrow}<i class="spin" aria-hidden="true"></i></button>${opts.cancel ? '<button class="btn btn-lnk" type="button" data-act="close">Отмена</button>' : ''}</div>
     </form>`;

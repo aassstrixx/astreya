@@ -77,6 +77,7 @@
     if (bump && show) { el.classList.remove('bump'); void el.offsetWidth; el.classList.add('bump'); }
     document.dispatchEvent(new CustomEvent('astreya:rl', {detail: list.slice()}));
   }
+  A.rlSync = () => sync();                                                                   // чат помощника перерисовывает свои кнопки «+»
   const panelOpen = () => { const m = $('#modal'); return !!(m && m.classList.contains('open') && $('.rl-dlg', m)); };
   function toggle(id) {
     if (!P[id]) return;

@@ -6,7 +6,7 @@
   const D = window.__DEMO, B = D.blocks, clone = v => JSON.parse(JSON.stringify(v));
   const now = () => new Date().toISOString(), ago = h => new Date(Date.now() - h * 3600e3).toISOString();
   const STATUSES = {new: 'Новая', in_work: 'В работе', done: 'Обработана', spam: 'Спам', archived: 'В архиве'};
-  const TYPES = {partner: 'Партнёрство', seminar: 'Запись на мероприятие', product: 'Запрос по товару', question: 'Вопрос', callback: 'Обратный звонок', contact: 'Контакты'};
+  const TYPES = {partner: 'Партнёрство', seminar: 'Запись на мероприятие', product: 'Запрос по товару', question: 'Вопрос', callback: 'Обратный звонок', subscribe: 'Подписка на новости', contact: 'Контакты'};
   const ROLES = {admin: 'Администратор', manager: 'Менеджер (только заявки)'};
   const DEMO_ONLY = 'Это демонстрационная версия админки в одном файле: сайт здесь не пересобирается и не публикуется. Запустите админку с сервером (node server/index.js) — там это работает по-настоящему.';
   let ver = 1; const nextVer = () => 'demo' + (++ver);

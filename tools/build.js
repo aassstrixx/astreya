@@ -21,13 +21,14 @@ const partners = require('../src/pages/partners.js');
 const {searchPage, legalPage, notFoundPage} = require('../src/pages/misc.js');
 const customPage = require('../src/pages/custom.js');
 const blocks = require('../src/blocks-schema.js');
+const buildKb = require('../src/assistant-kb.js');
 
 const ROOT = path.join(__dirname, '..');
 const ctx = load();
 /* версия ресурсов (?v=…) в ссылках на CSS/JS: меняется при любой правке стилей, скриптов или данных — браузер и CDN не показывают устаревшие файлы */
 ctx.assetVersion = (() => {
   const h = require('crypto').createHash('md5');
-  const list = d => fs.readdirSync(path.join(__dirname, '..', d)).filter(f => /\.(css|js|json)$/.test(f) && f !== 'data.js').sort().map(f => path.join(__dirname, '..', d, f));
+  const list = d => fs.readdirSync(path.join(__dirname, '..', d)).filter(f => /\.(css|js|json)$/.test(f) && f !== 'data.js' && f !== 'kb.js').sort().map(f => path.join(__dirname, '..', d, f));
   [...list('css'), ...list('js'), ...list('data')].forEach(f => h.update(fs.readFileSync(f)));
   const walk = d => fs.readdirSync(d, {withFileTypes: true}).sort((a, b) => a.name < b.name ? -1 : 1).forEach(e => e.isDirectory() ? walk(path.join(d, e.name)) : h.update(fs.readFileSync(path.join(d, e.name))));
   ['brands', 'photos', 'teachers', 'jar', 'bg'].filter(d => fs.existsSync(path.join(__dirname, '..', 'assets', d))).forEach(d => walk(path.join(__dirname, '..', 'assets', d)));
@@ -129,8 +130,11 @@ const data = {
     return {id: p.id, slug: p.slug, name: p.name, brand: p.brand, t: p.type, im: p.image || undefined, d: p.desc, c: p.cat, k: p.kind, ts: p.tasks, n: p.isNew ? 1 : undefined, x: Object.keys(x).length ? x : undefined}; }),
   events: ctx.sortedEvents.map(e => ({id: e.id, slug: e.slug, title: e.title, date: e.date, city: e.city, tm: e.time, fm: e.fmt, pl: e.place, b: e.brand, sp: e.speaker})),
   index,
-  extras: site.redesign && ctx.redesign && ctx.redesign.extras && ctx.redesign.extras.enabled ? {requestList: C.xon('requestList'), quickContact: C.xon('quickContact'), recent: C.xon('recent'), callback: C.xon('callback'), quickView: C.xon('quickView'), compare: C.xon('compare'), countdown: C.xon('countdown'), subscribe: C.xon('subscribe'), assistant: C.xon('assistant')} : null
+  extras: site.redesign && ctx.redesign && ctx.redesign.extras && ctx.redesign.extras.enabled ? {requestList: C.xon('requestList'), quickContact: C.xon('quickContact'), recent: C.xon('recent'), callback: C.xon('callback'), quickView: C.xon('quickView'), compare: C.xon('compare'), countdown: C.xon('countdown'), subscribe: C.xon('subscribe'), assistant: C.xon('assistant'), kb: C.xon('assistant') ? 'js/kb.js' + (ctx.assetVersion ? '?v=' + ctx.assetVersion : '') : undefined} : null
 };
+/* база знаний помощника: js/kb.js подгружается браузером при первом открытии чата; нет флага extras.assistant — файла нет */
+const KB_FILE = path.join(ROOT, 'js', 'kb.js');
+if (C.xon('assistant')) fs.writeFileSync(KB_FILE, `/* Сгенерировано tools/build.js из data/*.json — не редактировать вручную. */\nwindow.ASTREYA_KB = ${JSON.stringify(buildKb(ctx))};\n`); else fs.rmSync(KB_FILE, {force: true});
 fs.writeFileSync(path.join(ROOT, 'js', 'data.js'), `/* Сгенерировано tools/build.js из data/*.json — не редактировать вручную. */\nwindow.ASTREYA_DATA = ${JSON.stringify(data)};\n`);
 
 /* ---- sitemap.xml и robots.txt ---- */

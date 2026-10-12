@@ -14,6 +14,7 @@ const F = require('./lib/files');
 const P = require('./lib/publish');
 const AUD = require('./lib/audit');
 const INS = require('./lib/insight');
+const ASSIST = require('./lib/assistant');
 const {httpErr} = A;
 
 const ADMIN_DIR = path.join(__dirname, 'admin');
@@ -58,6 +59,13 @@ async function handleLead(req, res) {
   }
 }
 
+/* ---------- публичное: ИИ-режим помощника (ответ потоком; без ключа и модели в окружении — выключен) ---------- */
+function handleAssistant(req, res) {
+  const cors = corsHeaders(req);
+  if (req.method !== 'GET' && !originAllowed(req)) return H.json(res, 403, {ok: false, error: 'forbidden', message: 'Помощник отвечает только на сайте.'}, cors);
+  return ASSIST.handle(req, res, {cors, ip: L.ipHash(clientIp(req))});
+}
+
 /* ---------- админский API ---------- */
 const need = (ctx, ...roles) => { if (!roles.includes(ctx.user.role)) throw httpErr(403, 'Недостаточно прав.'); };
 const maskSettings = s => { const o = JSON.parse(JSON.stringify(s)); const m = (obj, k) => { if (obj && obj[k]) obj[k] = SECRET_MASK; }; m(o.notify.telegram, 'token'); m(o.notify.smtp, 'pass'); return o; };
@@ -75,6 +83,7 @@ function checkSettings(s) {
 async function handleApi(req, res, url) {
   const p = url.pathname, m = req.method;
   if (p === '/api/lead') return handleLead(req, res);
+  if (p === '/api/assistant' || p === '/api/assistant/status') return handleAssistant(req, res);
   if (p === '/api/health') return H.json(res, 200, {ok: true, time: new Date().toISOString(), build: (B.last() || {}).at || null});
 
   if (!originAllowed(req) && m !== 'GET') throw httpErr(403, 'Запрос с чужого сайта отклонён.');

@@ -20,7 +20,7 @@ const cfg = JSON.parse(fs.readFileSync(pth.join(ROOT, 'data/redesign.json'), 'ut
 
   for (const [name, W, H, mobile] of [['компьютер', 1440, 900, false], ['телефон', 390, 844, true]]) {
     console.log(`\n[${name}]`);
-    const ctx = await b.newContext({viewport: {width: W, height: H}, isMobile: mobile, hasTouch: mobile, deviceScaleFactor: 1}); await ctx.route(/^https:\/\/fonts\./, r => r.abort());
+    const ctx = await b.newContext({viewport: {width: W, height: H}, isMobile: mobile, hasTouch: mobile, deviceScaleFactor: 1}); await ctx.route(/^https:\/\/fonts\./, r => r.abort()); await ctx.route('**/api/assistant/status', r => r.fulfill({status: 200, contentType: 'application/json', body: '{"ai":false}'}));      // статический сервер проверки не знает про /api
     const p = await ctx.newPage(); p.errs = []; p.on('pageerror', e => p.errs.push(e.message)); p.on('console', m => { if (m.type() === 'error' && !/ERR_FAILED|fonts\./.test(m.text())) p.errs.push(m.text()); });
     const skipSplash = async () => { const s = await p.$('#sp-in'); if (s) { try { await s.click({timeout: 1500}); } catch (e) {} } await wait(900); };
     const barN = () => p.evaluate(() => { const bar = document.getElementById('rl-bar'); return bar && !bar.hidden ? +bar.querySelector('.rl-count').textContent : 0; });
@@ -115,6 +115,102 @@ const cfg = JSON.parse(fs.readFileSync(pth.join(ROOT, 'data/redesign.json'), 'ut
     await p.keyboard.press('Escape'); await wait(500); await p.unroute('**/api/lead');
     await p.goto(base + 'products/biretix-gel-protiv-nesovershenstv.html'); await skipSplash(); ok(await p.$$eval('.p-req button[data-type="callback"]', e => e.length) === 1, 'на странице товара в карточке запроса есть «Заказать звонок»');
     if (mobile) { await p.evaluate(() => window.scrollTo({top: 900, behavior: 'instant'})); await wait(800); await click('#qc .qc-btn'); ok(await p.$$eval('#qc .qc-item', e => e.length) === 3, 'в меню быстрой связи три пункта: звонок, WhatsApp, заказать звонок'); await click('#qc button.qc-item'); ok(await p.$eval('#modal', e => e.classList.contains('open')) && await p.$eval('#qc-menu', e => e.hidden), 'пункт открывает форму и закрывает меню связи'); await p.keyboard.press('Escape'); await wait(500); }
+
+    /* ---- быстрый просмотр ---- */
+    await p.goto(base + 'catalog.html'); await skipSplash(); await p.evaluate(() => { localStorage.removeItem('astreya:cmp'); localStorage.removeItem('astreya:rl'); });
+    await p.reload(); await skipSplash();
+    const cardsN = await p.$$eval('.pcard[data-id]', e => e.length);
+    ok(cardsN >= 20 && await p.$$eval('.pcard[data-id] > .qv-btn', e => e.length) === cardsN, 'на каждой карточке есть «Быстрый просмотр» (' + cardsN + ')');
+    const urlQ = p.url(); await p.locator('.pcard[data-id]').nth(1).scrollIntoViewIfNeeded(); if (!mobile) await p.locator('.pcard[data-id]').nth(1).hover();
+    await p.locator('.pcard[data-id] .qv-btn').nth(1).click(); await wait(500);
+    ok(p.url() === urlQ && await p.$eval('#modal', e => e.classList.contains('open') && !!e.querySelector('.qv-dlg')), 'кнопка открывает окно, страница не уходит на карточку');
+    const qv = await p.$eval('#modal', e => ({h: e.querySelector('h2').textContent, art: !!e.querySelector('.qv-art .art'), dt: [...e.querySelectorAll('.qv-spec dt')].map(x => x.textContent), dd: [...e.querySelectorAll('.qv-spec dd')].every(x => x.textContent.trim().length > 0), nav: (e.querySelector('.qv-nav span') || {}).textContent, foc: !!document.activeElement.closest('#modal')}));
+    ok(qv.art && qv.h.length > 2 && qv.dt.includes('Бренд') && qv.dt.includes('Категория') && qv.dd, 'в окне: иллюстрация, название и только заполненные характеристики', qv);
+    ok(/^2 из \d+$/.test(qv.nav) && qv.foc, 'счётчик «2 из N», фокус внутри окна', qv.nav);
+    await click('#modal [data-act="qv-next"]'); ok(await p.$eval('#modal .qv-nav span', e => /^3 из/.test(e.textContent)) && await p.$eval('#modal h2', e => e.textContent) !== qv.h, 'стрелка «вперёд» листает товары');
+    await p.keyboard.press('ArrowLeft'); await wait(300); ok(await p.$eval('#modal h2', e => e.textContent) === qv.h, 'клавиша ← возвращает к предыдущему');
+    await click('#modal [data-act="qv-list"]'); ok(await barN() === 1 && await p.$eval('#modal [data-act="qv-list"]', e => e.getAttribute('aria-pressed') === 'true'), 'из окна можно добавить в список запроса');
+    await click('#modal [data-act="qv-ask"]'); await wait(700); ok(await p.$eval('#modal', e => !!e.querySelector('form[data-form="product"]') && e.querySelector('.ctx').textContent.includes(document.querySelector('#modal h2') ? '' : '')), '«Запросить информацию» открывает форму запроса по товару');
+    await p.keyboard.press('Escape'); await wait(500); await p.evaluate(() => localStorage.removeItem('astreya:rl'));
+
+    /* ---- сравнение ---- */
+    await p.goto(base + 'catalog.html'); await skipSplash();
+    const cmpN = () => p.evaluate(() => JSON.parse(localStorage.getItem('astreya:cmp') || '[]').length), cmpBarOn = () => p.evaluate(() => { const b = document.getElementById('cmp-bar'); return b && !b.hidden ? {n: +b.querySelector('.cmp-count').textContent, dis: b.querySelector('.cmp-open').disabled} : null; });
+    ok(await p.$$eval('.pcard[data-id] > .cmp-add', e => e.length) === cardsN && await cmpBarOn() === null, 'на карточках есть кнопка сравнения, плашки пока нет');
+    for (const i of [0, 1]) { await p.locator('.pcard[data-id] .cmp-add').nth(i).scrollIntoViewIfNeeded(); await p.locator('.pcard[data-id] .cmp-add').nth(i).click(); await wait(300); }
+    let cb = await cmpBarOn(); ok(cb && cb.n === 2 && !cb.dis && await p.$eval('.pcard[data-id] .cmp-add', e => e.getAttribute('aria-pressed') === 'true'), 'после двух товаров плашка «Сравнение» активна');
+    await p.locator('.pcard[data-id] .cmp-add').nth(2).scrollIntoViewIfNeeded(); await p.locator('.pcard[data-id] .cmp-add').nth(2).click(); await wait(300);
+    await p.locator('.pcard[data-id] .cmp-add').nth(3).scrollIntoViewIfNeeded(); await p.locator('.pcard[data-id] .cmp-add').nth(3).click(); await wait(400);
+    ok(await cmpN() === 3 && /до 3 товаров/.test(await p.$eval('#toast', e => e.textContent)), 'больше трёх товаров не добавляется — подсказка', await cmpN());
+    ok(await p.evaluate(() => { const d = document.getElementById('xdock'), r = document.querySelectorAll('#xdock > *:not([hidden])').length; return !!d && getComputedStyle(d).position === 'fixed' && r >= 1; }), 'плашки лежат в общем доке');
+    await click('#cmp-bar .cmp-open'); await wait(300);
+    const ct = await p.$eval('#modal', e => ({cols: e.querySelectorAll('.cmp-t thead th[scope="col"]').length, rows: e.querySelectorAll('.cmp-t tbody tr').length, hdr: [...e.querySelectorAll('.cmp-t tbody th')].map(x => x.textContent), over: e.querySelector('.cmp-wrap').scrollWidth > e.querySelector('.cmp-wrap').clientWidth + 1}));
+    ok(ct.cols === 3 && ct.hdr.includes('Бренд') && ct.hdr.includes('Назначение') && ct.rows >= 5, 'таблица: три товара, строки «Бренд … Назначение»', ct);
+    if (mobile) ok(ct.over || await p.$eval('#modal .cmp-wrap', e => e.scrollWidth <= e.clientWidth + 1), 'на телефоне таблица листается внутри окна, а не расширяет страницу'); ok(await p.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1), 'страница не получила горизонтальной прокрутки');
+    await p.check('#modal [data-act="cmp-only"]'); await wait(300); const rowsOnly = await p.$$eval('#modal .cmp-t tbody tr', e => e.length); ok(rowsOnly > 0 && rowsOnly <= ct.rows, '«Только различия» не добавляет строк', [rowsOnly, ct.rows]);
+    await click('#modal .cmp-x'); ok(await p.$$eval('#modal .cmp-t thead th[scope="col"]', e => e.length) === 2 && await cmpN() === 2, 'крестик убирает товар из сравнения');
+    await p.reload(); await skipSplash(); cb = await cmpBarOn(); ok(cb && cb.n === 2, 'выбор сохраняется после перезагрузки');
+    await click('#cmp-bar .cmp-open'); await click('#modal [data-act="cmp-clear"]'); await wait(300); ok(await cmpN() === 0 && await cmpBarOn() === null, '«Очистить сравнение» убирает выбор и плашку');
+    await p.keyboard.press('Escape'); await wait(400);
+
+    /* ---- обратный отсчёт ---- */
+    await p.goto(base + 'training.html'); await skipSplash();
+    const nextEv = await p.evaluate(() => { const E = (ASTREYA_DATA.events || []).filter(e => new Date(e.date + 'T23:59:59+03:00') > Date.now()).sort((a, b) => a.date.localeCompare(b.date)); return E[0] ? E[0].id : null; });
+    const cdId = await p.$eval('.cd', e => e.getAttribute('data-ev')).catch(() => null);
+    ok(nextEv ? cdId === nextEv : cdId === null, 'отсчёт идёт до ближайшего мероприятия (' + nextEv + ')', cdId);
+    if (cdId) {
+      const cdv = await p.$eval('.cd', e => ({cells: e.querySelectorAll('.cd-b span').length, live: !!e.querySelector('.cd-live'), role: e.getAttribute('role'), msk: /московск/.test(e.textContent), btn: !!e.querySelector('[data-act="form"][data-type="seminar"]')}));
+      ok((cdv.cells === 3 || cdv.live) && cdv.role === 'timer' && cdv.msk && cdv.btn, 'таймер: дни/часы/минуты, подпись «время московское», кнопка «Записаться»', cdv);
+      await click('.cd [data-act="form"]'); ok(await p.$eval('#modal', e => e.classList.contains('open') && !!e.querySelector('form[data-form="seminar"]')), 'кнопка открывает запись на это мероприятие'); await p.keyboard.press('Escape'); await wait(400);
+      await p.goto(base + 'index.html'); await skipSplash(); await wait(300); ok(await p.$$eval('.cd', e => e.length) <= 1, 'на главной не больше одного отсчёта');
+    }
+
+    /* ---- подписка в подвале ---- */
+    await p.goto(base + 'company.html'); await skipSplash();
+    ok(await p.$$eval('.ftr-sub form[data-form="subscribe"] .fld', e => e.map(x => x.getAttribute('data-f')).join()) === 'email', 'в подвале форма подписки: одно поле — e-mail');
+    let posted3 = null; await p.route('**/api/lead', async r => { posted3 = JSON.parse(r.request().postData() || '{}'); await r.fulfill({status: 200, contentType: 'application/json', body: '{"ok":true}'}); });
+    await p.evaluate(() => { window.Astreya.config.formEndpoint = '/api/lead'; });
+    await p.locator('.ftr-sub button[type=submit]').scrollIntoViewIfNeeded(); await p.click('.ftr-sub button[type=submit]'); await wait(300);
+    ok(await p.$$eval('.ftr-sub .fld.bad', e => e.length) === 1 && await p.$eval('.ftr-sub .agree', e => e.classList.contains('bad')) && posted3 === null, 'без адреса и согласия подписка не уходит');
+    await p.fill('.ftr-sub input[type=email]', 'нет-собаки'); await p.check('.ftr-sub [name=agree]'); await p.click('.ftr-sub button[type=submit]'); await wait(300); ok(posted3 === null && await p.$$eval('.ftr-sub .fld.bad', e => e.length) === 1, 'неверный адрес не принимается');
+    await p.fill('.ftr-sub input[type=email]', 'test@example.ru'); await wait(800); await p.click('.ftr-sub button[type=submit]'); await p.waitForSelector('.ftr-sub .ok h3', {timeout: 6000});
+    ok(posted3 && posted3.type === 'subscribe' && posted3.email === 'test@example.ru' && !posted3.name && posted3.consent === true, 'на сервер ушла заявка типа «subscribe» (только e-mail и согласие)', posted3);
+    ok(/Спасибо/.test(await p.$eval('.ftr-sub .ok h3', e => e.textContent)), 'после отправки — короткая благодарность'); await p.unroute('**/api/lead');
+
+    /* ---- помощник ---- */
+    await p.goto(base + 'catalog.html'); await skipSplash(); await p.evaluate(() => { sessionStorage.removeItem('astreya:chat'); }); await p.reload(); await skipSplash();
+    const fabOn = () => p.evaluate(() => { const f = document.getElementById('asst-fab'); if (!f) return null; const cs = getComputedStyle(f); return {vis: cs.opacity > 0.5 && cs.pointerEvents !== 'none', exp: f.getAttribute('aria-expanded')}; });
+    let fo = await fabOn(); ok(fo && fo.vis && fo.exp === 'false' && await p.$eval('#asst', e => e.hidden), 'кнопка «Помощник» на месте, чат закрыт');
+    await click('#asst-fab'); await wait(500);
+    ok(await p.$eval('#asst', e => !e.hidden && e.classList.contains('open') && e.getAttribute('role') === 'dialog') && await p.evaluate(() => document.activeElement && document.activeElement.id === 'asst-in'), 'чат открывается, фокус в поле ввода');
+    ok(/Помощник/.test(await p.$eval('.asst-h', e => e.textContent)) && await p.$$eval('#asst-log .asst-b', e => e.length) === 1 && await p.$$eval('#asst-chips .chip', e => e.length) >= 3, 'приветствие и подсказки');
+    ok(await p.$eval('#asst-note', e => /программа/.test(e.textContent)), 'подпись: помощник — программа, не сотрудник');
+    if (mobile) ok(await p.$eval('#asst', e => Math.round(e.getBoundingClientRect().width) === innerWidth), 'на телефоне чат — во весь экран');
+    const ask = async q => { await p.fill('#asst-in', q); await p.keyboard.press('Enter'); await p.waitForFunction(() => !document.querySelector('.asst-typing') && !document.getElementById('asst-form').classList.contains('busy'), null, {timeout: 6000}); await wait(150); };
+    const last = sel => p.$eval('#asst-log .asst-m:last-child', (e, s) => s ? [...e.querySelectorAll(s)].map(x => x.textContent.trim()) : e.textContent, sel);
+    await ask('Какие у вас контакты и часы работы?'); const ans1 = await last(); ok(/925-51-62/.test(ans1) && /10:00/.test(ans1) && await p.$$eval('#asst-log .asst-m:last-child a[href^="tel:"]', e => e.length) === 1, 'контакты берутся из данных сайта');
+    await ask('Сколько стоит Acidcure?'); const ans2 = await last(); ok(/Цен на сайте нет/.test(ans2) && !/\d\s?(₽|руб)/.test(ans2.replace(/от \d[\d\s]* ₽ — \d+%/g, '')) && await p.$$eval('#asst-log .asst-m:last-child .asst-card', e => e.length) === 1, 'о цене — честно «цен на сайте нет», без выдуманных сумм, с карточкой товара');
+    await ask('Посоветуйте от пигментации'); ok(await p.$$eval('#asst-log .asst-m:last-child .asst-card', e => e.length) >= 2 && /не назначение/.test(await last()), 'подбор по задаче: карточки товаров и оговорка «не назначение»');
+    await p.locator('#asst-log .asst-m:last-child .asst-card .rl-tog').first().click(); await wait(300); ok(await barN() === 1, 'кнопка «+» в чате кладёт товар в список запроса'); await p.evaluate(() => localStorage.removeItem('astreya:rl'));
+    await ask('Мне можно при беременности?'); ok(/не даю медицинских рекомендаций/.test(await last()), 'медицинские вопросы — без рекомендаций, к специалисту');
+    await ask('Ближайшие семинары'); ok(await p.$$eval('#asst-log .asst-m:last-child .asst-ev', e => e.length) >= 1, 'расписание: мероприятия с кнопкой «Записаться»');
+    await p.locator('#asst-log .asst-m:last-child .asst-ev [data-act="form"]').first().click(); await wait(600); ok(await p.$eval('#modal', e => e.classList.contains('open') && !!e.querySelector('form[data-form="seminar"]')), 'запись открывает форму поверх чата');
+    await p.keyboard.press('Escape'); await wait(500); ok(await p.$eval('#asst', e => e.classList.contains('open')), 'Esc закрывает только форму, чат остаётся');
+    await ask('абракадабра квантовый'); ok(await p.$$eval('#asst-log .asst-m:last-child [data-act="asst-ask"]', e => e.length) === 1, 'непонятный вопрос — предложение передать менеджеру');
+    await click('#asst-log .asst-m:last-child [data-act="asst-ask"]'); await wait(500); ok(await p.$eval('#modal', e => e.classList.contains('open') && /абракадабра/.test(e.querySelector('textarea').value)), 'вопрос переносится в форму «Вопрос менеджеру»'); await p.keyboard.press('Escape'); await wait(500);
+    const hist = await p.evaluate(() => JSON.parse(sessionStorage.getItem('astreya:chat') || '[]').length); ok(hist >= 12, 'диалог сохраняется в sessionStorage вкладки', hist);
+    if (mobile) { await p.keyboard.press('Escape'); } else await p.keyboard.press('Escape'); await wait(500); ok(await p.$eval('#asst', e => e.hidden || !e.classList.contains('open')), 'Esc закрывает чат');
+    ok(await p.evaluate(() => document.activeElement && document.activeElement.id === 'asst-fab'), 'фокус возвращается на кнопку «Помощник»');
+    await p.reload(); await skipSplash(); await click('#asst-fab'); await wait(500); ok(await p.$$eval('#asst-log .asst-m', e => e.length) >= 12, 'после перезагрузки диалог на месте');
+    await click('[data-act="asst-reset"]'); await wait(300); ok(await p.$$eval('#asst-log .asst-m', e => e.length) === 1, '«Начать заново» очищает диалог'); await p.keyboard.press('Escape'); await wait(400);
+    /* автопроверка встроенных ответов на реальных данных */
+    const sweep = await p.evaluate(() => { const A = Astreya, D = ASTREYA_DATA, bad = []; D.products.forEach(pr => { const r = A.assistant.answer('Расскажите про ' + pr.name); if (r.cards.indexOf(pr.id) < 0) bad.push('товар ' + pr.name); });
+      D.brands.forEach(b => { const r = A.assistant.answer('Расскажите про ' + b.name); if (!r.links.some(l => l.h === 'brands/' + b.id + '.html') && !r.cards.some(id => (D.products.find(x => x.id === id) || {}).brand === b.id)) bad.push('бренд ' + b.name); });
+      D.tasks.forEach(t => { const r = A.assistant.answer(t.label); if (!r.cards.length || !r.links.some(l => /task=/.test(l.h))) bad.push('задача ' + t.label); }); return bad; });
+    ok(sweep.length === 0, 'на все товары, бренды и задачи каталога помощник отвечает по существу', sweep);
+    if (mobile) { await p.goto(base + 'company.html'); await skipSplash(); await p.evaluate(() => window.scrollTo({top: 900, behavior: 'instant'})); await wait(900);
+      const ov = await p.evaluate(() => { const a = document.getElementById('asst-fab').getBoundingClientRect(), q = document.getElementById('qc').getBoundingClientRect(); return {fab: [Math.round(a.top), Math.round(a.bottom)], qc: [Math.round(q.top), Math.round(q.bottom)], inter: !(a.right <= q.left || a.left >= q.right || a.bottom <= q.top || a.top >= q.bottom)}; });
+      ok(!ov.inter, 'на телефоне «Помощник» и «Быстрая связь» не накладываются', ov); }
 
     /* ---- поле «Комментарий»: без растяжки, растёт по мере набора ---- */
     await p.goto(base + 'partners.html'); await skipSplash(); await p.locator('main textarea').first().scrollIntoViewIfNeeded();

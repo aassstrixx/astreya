@@ -38,7 +38,7 @@
           const tr = h('tr', {class: 'click' + (l.status === 'new' ? ' is-new' : ''), tabindex: '0', dataset: {id: l.id}, onclick: () => AD.go('#/leads/' + l.id), onkeydown: e => { if (e.key === 'Enter') AD.go('#/leads/' + l.id); }},
             h('td', {class: 'nowrap', dataset: {l: 'Дата'}}, h('div', {}, AD.fmt(l.created_at)), h('div', {class: 'sub'}, l.id)),
             h('td', {dataset: {l: 'Статус'}}, pill(l.status), (l.flags || []).length ? h('span', {class: 'flag', title: l.flags.join('; ')}, '⚠') : null),
-            h('td', {dataset: {l: 'Заявка'}}, h('b', {}, l.name || '—'), h('div', {class: 'sub'}, typeName(l.type) + (l.context ? ' · ' + l.context : '')), l.org || l.city ? h('div', {class: 'sub'}, [l.org, l.city].filter(Boolean).join(', ')) : null),
+            h('td', {dataset: {l: 'Заявка'}}, h('b', {}, l.name || l.email || '—'), h('div', {class: 'sub'}, typeName(l.type) + (l.context ? ' · ' + l.context : '')), l.org || l.city ? h('div', {class: 'sub'}, [l.org, l.city].filter(Boolean).join(', ')) : null),
             h('td', {dataset: {l: 'Контакты'}}, l.phone ? h('div', {class: 'ph'}, l.phone) : null, l.email ? h('div', {class: 'sub'}, l.email) : null),
             h('td', {dataset: {l: 'Сообщение'}}, h('div', {class: 'msg'}, l.msg || '—'), l.notes ? h('div', {class: 'sub'}, '💬 ' + l.notes) : null, l.duplicates ? h('div', {class: 'sub'}, '↻ повторов: ' + l.duplicates) : null));
           return tr;
@@ -82,7 +82,7 @@
           (l.spam_reasons || []).length ? h('div', {style: {marginTop: '12px'}}, AD.alertBox('err', 'Отмечена как спам: ' + l.spam_reasons.join('; ') + '.')) : null,
           (l.flags || []).length ? h('div', {style: {marginTop: '12px'}}, AD.alertBox('warn', '⚠ Подозрительная: ' + l.flags.join('; ') + '. Проверьте, прежде чем перезванивать.')) : null,
           h('dl', {class: 'kv', style: {marginTop: '16px'}},
-            field('Имя', l.name), field('Телефон', l.phone ? h('span', {class: 'row gap-s'}, h('a', {href: telHref(l.phone)}, l.phone), h('button', {class: 'btn sm', type: 'button', onclick: () => AD.copy(l.phone, 'Телефон скопирован')}, 'Копировать')) : ''),
+            field('Имя', l.name || '—'), field('Телефон', l.phone ? h('span', {class: 'row gap-s'}, h('a', {href: telHref(l.phone)}, l.phone), h('button', {class: 'btn sm', type: 'button', onclick: () => AD.copy(l.phone, 'Телефон скопирован')}, 'Копировать')) : ''),
             field('E-mail', l.email ? h('span', {class: 'row gap-s'}, h('a', {href: 'mailto:' + l.email}, l.email), h('button', {class: 'btn sm', type: 'button', onclick: () => AD.copy(l.email, 'Адрес скопирован')}, 'Копировать')) : ''),
             field('Город', l.city), field('Организация', l.org), field('Специализация', l.spec), field('Тема', l.context), field('Страница', page ? h('a', {href: page, target: '_blank', rel: 'noopener noreferrer'}, page.replace(/^https?:\/\//, '')) : '')),
           l.msg ? h('div', {class: 'sect'}, h('h3', {}, 'Сообщение'), h('div', {class: 'msg-box'}, l.msg)) : null,
