@@ -18,7 +18,7 @@ const ASSIST = require('./lib/assistant');
 const {httpErr} = A;
 
 const ADMIN_DIR = path.join(__dirname, 'admin');
-const SITE_ALLOW = rel => /^[^/]+\.(html|xml|txt|ico)$/.test(rel) || /^(assets|css|js|brands|products|training|news|pages)\//.test(rel);
+const SITE_ALLOW = rel => /^[^/]+\.(html|xml|txt|ico|webmanifest)$/.test(rel) || /^(assets|css|js|brands|products|training|news|pages)\//.test(rel);
 const ADMIN_CSP = "default-src 'self'; img-src 'self' data: blob:; style-src 'self' 'unsafe-inline'; script-src 'self'; connect-src 'self'; frame-ancestors 'none'; base-uri 'none'; form-action 'self'";
 const SECRET_MASK = '••••••••';
 

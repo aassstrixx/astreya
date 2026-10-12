@@ -79,12 +79,12 @@
   /* ---------- 2. Сравнение ---------- */
   const CMAX = 3; let cmpOnly = false, cmpRestore = null;
   function cmpBar() { let el = $('#cmp-bar'); if (el) return el; el = document.createElement('div'); el.id = 'cmp-bar'; el.className = 'cmp-bar'; el.hidden = true; el.setAttribute('role', 'region'); el.setAttribute('aria-label', 'Сравнение товаров');
-    el.innerHTML = '<button class="cmp-open" type="button" data-act="cmp-open" aria-haspopup="dialog"><span class="cmp-count" aria-hidden="true">0</span><span class="cmp-txt"></span><span class="cmp-go" aria-hidden="true">Сравнить ' + I.arrow + '</span></button>'; A.dock().appendChild(el); return el; }
+    el.innerHTML = '<button class="cmp-open" type="button" data-act="cmp-open" aria-haspopup="dialog"><span class="cmp-count" aria-hidden="true">0</span><span class="cmp-txt"></span><span class="cmp-go" aria-hidden="true"><span class="cmp-go-t">Сравнить</span> ' + I.arrow + '</span></button>'; A.dock().appendChild(el); return el; }
   function cmpSync(bump) {
     if (!X.compare) return; const l = cmpGet(), el = cmpBar(), n = l.length;
     $$('[data-cmp-id]').forEach(b => { const id = b.getAttribute('data-cmp-id'), on = l.indexOf(id) >= 0; b.setAttribute('aria-pressed', String(on)); b.setAttribute('aria-label', (on ? 'Убрать из сравнения: ' : 'Добавить к сравнению: ') + P[id].name); b.title = on ? 'Убрать из сравнения' : 'Сравнить'; });
-    $('.cmp-count', el).textContent = n; $('.cmp-txt', el).innerHTML = '<span class="sr">Сравнение: </span>' + (n < 2 ? 'Добавьте ещё товар' : n + ' ' + plural(n, 'товар', 'товара', 'товаров'));
-    const go = $('.cmp-go', el), op = $('.cmp-open', el); go.hidden = n < 2; op.disabled = n < 2; op.setAttribute('aria-disabled', String(n < 2));
+    $('.cmp-count', el).textContent = n; $('.cmp-txt', el).innerHTML = '<span class="sr">Сравнение: </span>' + n + ' ' + plural(n, 'товар', 'товара', 'товаров');
+    const go = $('.cmp-go', el), op = $('.cmp-open', el); go.hidden = n < 1; $('.cmp-go-t', el).textContent = n < 2 ? 'Открыть' : 'Сравнить'; op.disabled = n < 1; op.setAttribute('aria-disabled', String(n < 1));       // таблица открывается уже с одним товаром: остальные добавляются прямо в ней
     el.hidden = n === 0 || document.body.classList.contains('x-intro'); A.dockUpdate && A.dockUpdate();
     if (bump && !el.hidden) { el.classList.remove('bump'); void el.offsetWidth; el.classList.add('bump'); }
   }
@@ -111,16 +111,25 @@
     const foot = '<tr><td></td>' + ps.map(p => '<td><button class="btn btn-fill btn-sm" type="button" data-act="qv-ask" data-id="' + p.id + '">Запросить</button></td>').join('') + '</tr>';
     return '<div class="cmp-wrap"><table class="cmp-t" style="--n:' + ps.length + '"><thead>' + head + '</thead><tbody>' + (body || '<tr><td colspan="' + (ps.length + 1) + '" class="muted">Различий в этих полях нет.</td></tr>') + '</tbody><tfoot>' + foot + '</tfoot></table></div>';
   }
+  /* выбор ещё одного товара прямо в окне: сначала «похожие по задаче», затем весь каталог по брендам */
+  function cmpPicker(l) {
+    const mine = new Set(); l.forEach(id => (P[id].ts || []).forEach(t => mine.add(t)));
+    const rest = (D.products || []).filter(p => l.indexOf(p.id) < 0), opt = p => '<option value="' + p.id + '">' + esc(p.name) + '</option>';
+    const near = rest.filter(p => (p.ts || []).some(t => mine.has(t))), far = rest.filter(p => near.indexOf(p) < 0);
+    const groups = (D.brands || []).map(b => { const g = far.filter(p => p.brand === b.id); return g.length ? '<optgroup label="' + esc(b.name) + '">' + g.map(opt).join('') + '</optgroup>' : ''; }).join('');
+    return '<label class="cmp-pick"><span>Добавить товар к сравнению</span><select data-act="cmp-pick" aria-label="Добавить товар к сравнению"><option value="">Выберите товар…</option>' + (near.length ? '<optgroup label="Похожие по задаче">' + near.map(opt).join('') + '</optgroup>' : '') + groups + '</select></label>';
+  }
   function cmpHTML() {
     const l = cmpGet();
     return '<div class="dlg cmp-dlg" role="document"><button class="x" type="button" data-act="close" aria-label="Закрыть">' + I.close + '</button><span class="eyebrow in">Сравнение</span><h2 id="m-title">Сравнение товаров</h2>' +
-      (l.length < 2 ? '<p class="muted">Добавьте к сравнению ещё хотя бы один товар — кнопка ⇄ на карточке.</p>' :
-        '<p class="muted">Показаны данные из каталога; чего в нём нет, уточняет менеджер. Совпадающие задачи выделены.</p><label class="chk cmp-only"><input type="checkbox" data-act="cmp-only"' + (cmpOnly ? ' checked' : '') + '> Только различия</label>' + cmpTable(l)) +
+      (!l.length ? '<p class="muted">Пока ничего не выбрано — нажмите ⇄ на карточке товара.</p>' :
+        '<p class="muted">' + (l.length < 2 ? 'Это данные одного товара. Добавьте ещё один — таблица покажет сходства и различия.' : 'Показаны данные из каталога; чего в нём нет, уточняет менеджер. Совпадающие задачи выделены.') + '</p>' +
+        (l.length >= 2 ? '<label class="chk cmp-only"><input type="checkbox" data-act="cmp-only"' + (cmpOnly ? ' checked' : '') + '> Только различия</label>' : '') + cmpTable(l) + (l.length < CMAX ? cmpPicker(l) : '')) +
       '<div class="rl-actions">' + (l.length ? '<button class="btn btn-lnk" type="button" data-act="cmp-clear">Очистить сравнение</button>' : '') + '</div></div>';
   }
   function cmpPaint() { const m = $('#modal'); if (!m) return; const keep = document.activeElement && document.activeElement.getAttribute && document.activeElement.getAttribute('data-act'); m.innerHTML = cmpHTML(); const f = (keep && $('[data-act="' + keep + '"]', m)) || $('.x', m); if (f) f.focus(); }
   function cmpOpen(opener) {
-    const m = $('#modal'); if (!m || cmpGet().length < 2) return; cmpRestore = opener || document.activeElement;
+    const m = $('#modal'); if (!m || cmpGet().length < 1) return; cmpRestore = opener || document.activeElement;
     m.classList.remove('closing'); m.setAttribute('aria-hidden', 'false'); m.setAttribute('aria-labelledby', 'm-title'); m.innerHTML = cmpHTML(); m.classList.add('open'); document.body.classList.add('locked');
     A.track && A.track('cmp_open', {count: cmpGet().length}); setTimeout(() => { const f = $('.x', m); if (f) f.focus(); }, 40);
   }
@@ -172,7 +181,7 @@
   A.actions['cmp-open'] = t => cmpOpen(t);
   A.actions['cmp-del'] = (t, id) => cmpToggle(id || t.getAttribute('data-id'));
   A.actions['cmp-clear'] = () => { store.set('astreya:cmp', []); cmpSync(); if (cmpPanelOn()) cmpPaint(); A.toast('Сравнение очищено'); };
-  document.addEventListener('change', e => { const t = e.target; if (t && t.getAttribute && t.getAttribute('data-act') === 'cmp-only') { cmpOnly = t.checked; cmpPaint(); } });
+  document.addEventListener('change', e => { const t = e.target, a = t && t.getAttribute && t.getAttribute('data-act'); if (a === 'cmp-only') { cmpOnly = t.checked; cmpPaint(); } else if (a === 'cmp-pick' && t.value) { cmpToggle(t.value); } });
   document.addEventListener('keydown', e => { if (qvOn() && qvIds.length > 1 && !/INPUT|TEXTAREA|SELECT/.test((document.activeElement || {}).tagName || '')) { if (e.key === 'ArrowLeft') { e.preventDefault(); qvStep(-1); } else if (e.key === 'ArrowRight') { e.preventDefault(); qvStep(1); } } });
   document.addEventListener('astreya:rl', () => { if (qvOn()) qvPaint(document.activeElement && document.activeElement.getAttribute && document.activeElement.getAttribute('data-act') ? '[data-act="' + document.activeElement.getAttribute('data-act') + '"]' : null); });
   window.addEventListener('storage', e => { if (e.key === 'astreya:cmp') cmpSync(); });

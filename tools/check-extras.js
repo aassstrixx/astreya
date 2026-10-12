@@ -20,7 +20,8 @@ const cfg = JSON.parse(fs.readFileSync(pth.join(ROOT, 'data/redesign.json'), 'ut
 
   for (const [name, W, H, mobile] of [['компьютер', 1440, 900, false], ['телефон', 390, 844, true]]) {
     console.log(`\n[${name}]`);
-    const ctx = await b.newContext({viewport: {width: W, height: H}, isMobile: mobile, hasTouch: mobile, deviceScaleFactor: 1}); await ctx.route(/^https:\/\/fonts\./, r => r.abort()); await ctx.route('**/api/assistant/status', r => r.fulfill({status: 200, contentType: 'application/json', body: '{"ai":false}'}));      // статический сервер проверки не знает про /api
+    const ctx = await b.newContext({viewport: {width: W, height: H}, isMobile: mobile, hasTouch: mobile, deviceScaleFactor: 1}); await ctx.route(/^https:\/\/fonts\./, r => r.abort()); await ctx.addInitScript(() => { window.__mcp = []; try { Object.defineProperty(navigator, 'modelContext', {value: {registerTool(t) { window.__mcp.push(t); }}, configurable: true}); } catch (e) {} });          // «браузер с WebMCP» для проверки
+    await ctx.route('**/api/assistant/status', r => r.fulfill({status: 200, contentType: 'application/json', body: '{"ai":false}'}));      // статический сервер проверки не знает про /api
     const p = await ctx.newPage(); p.errs = []; p.on('pageerror', e => p.errs.push(e.message)); p.on('console', m => { if (m.type() === 'error' && !/ERR_FAILED|fonts\./.test(m.text())) p.errs.push(m.text()); });
     const skipSplash = async () => { const s = await p.$('#sp-in'); if (s) { try { await s.click({timeout: 1500}); } catch (e) {} } await wait(900); };
     const barN = () => p.evaluate(() => { const bar = document.getElementById('rl-bar'); return bar && !bar.hidden ? +bar.querySelector('.rl-count').textContent : 0; });
@@ -137,6 +138,15 @@ const cfg = JSON.parse(fs.readFileSync(pth.join(ROOT, 'data/redesign.json'), 'ut
     await p.goto(base + 'catalog.html'); await skipSplash();
     const cmpN = () => p.evaluate(() => JSON.parse(localStorage.getItem('astreya:cmp') || '[]').length), cmpBarOn = () => p.evaluate(() => { const b = document.getElementById('cmp-bar'); return b && !b.hidden ? {n: +b.querySelector('.cmp-count').textContent, dis: b.querySelector('.cmp-open').disabled} : null; });
     ok(await p.$$eval('.pcard[data-id] > .cmp-add', e => e.length) === cardsN && await cmpBarOn() === null, 'на карточках есть кнопка сравнения, плашки пока нет');
+    /* таблица открывается уже с одним товаром; остальные добавляются прямо в окне */
+    await p.locator('.pcard[data-id] .cmp-add').nth(0).scrollIntoViewIfNeeded(); await p.locator('.pcard[data-id] .cmp-add').nth(0).click(); await wait(300);
+    let one = await cmpBarOn(); ok(one && one.n === 1 && !one.dis && /Открыть/.test(await p.$eval('#cmp-bar .cmp-go', e => e.textContent)), 'уже с одним товаром плашка «Сравнение» видна и открывается', one);
+    await click('#cmp-bar .cmp-open'); await wait(300);
+    const c1 = await p.$eval('#modal', e => ({cols: e.querySelectorAll('.cmp-t thead th[scope="col"]').length, pick: !!e.querySelector('select[data-act="cmp-pick"]'), only: !!e.querySelector('[data-act="cmp-only"]'), opts: e.querySelectorAll('select[data-act="cmp-pick"] option').length, hint: /одного товара/i.test(e.textContent)}));
+    ok(c1.cols === 1 && c1.pick && !c1.only && c1.opts > 20 && c1.hint, 'окно с одним товаром: его данные, подсказка и список для добавления ещё одного', c1);
+    await p.selectOption('#modal select[data-act="cmp-pick"]', {index: 1}); await wait(400);
+    ok(await p.$$eval('#modal .cmp-t thead th[scope="col"]', e => e.length) === 2 && await cmpN() === 2 && await p.$eval('#modal', e => !!e.querySelector('[data-act="cmp-only"]')), 'выбор товара в окне добавляет колонку; появляется «Только различия»');
+    await p.keyboard.press('Escape'); await wait(400); await p.evaluate(() => localStorage.removeItem('astreya:cmp')); await p.reload(); await skipSplash();
     for (const i of [0, 1]) { await p.locator('.pcard[data-id] .cmp-add').nth(i).scrollIntoViewIfNeeded(); await p.locator('.pcard[data-id] .cmp-add').nth(i).click(); await wait(300); }
     let cb = await cmpBarOn(); ok(cb && cb.n === 2 && !cb.dis && await p.$eval('.pcard[data-id] .cmp-add', e => e.getAttribute('aria-pressed') === 'true'), 'после двух товаров плашка «Сравнение» активна');
     await p.locator('.pcard[data-id] .cmp-add').nth(2).scrollIntoViewIfNeeded(); await p.locator('.pcard[data-id] .cmp-add').nth(2).click(); await wait(300);
@@ -178,31 +188,57 @@ const cfg = JSON.parse(fs.readFileSync(pth.join(ROOT, 'data/redesign.json'), 'ut
     ok(/Спасибо/.test(await p.$eval('.ftr-sub .ok h3', e => e.textContent)), 'после отправки — короткая благодарность'); await p.unroute('**/api/lead');
 
     /* ---- помощник ---- */
-    await p.goto(base + 'catalog.html'); await skipSplash(); await p.evaluate(() => { sessionStorage.removeItem('astreya:chat'); }); await p.reload(); await skipSplash();
+    await p.goto(base + 'catalog.html'); await skipSplash(); await p.evaluate(() => { sessionStorage.removeItem('astreya:chat2'); sessionStorage.removeItem('astreya:asst-tip'); }); await p.reload(); await skipSplash();
     const fabOn = () => p.evaluate(() => { const f = document.getElementById('asst-fab'); if (!f) return null; const cs = getComputedStyle(f); return {vis: cs.opacity > 0.5 && cs.pointerEvents !== 'none', exp: f.getAttribute('aria-expanded')}; });
-    let fo = await fabOn(); ok(fo && fo.vis && fo.exp === 'false' && await p.$eval('#asst', e => e.hidden), 'кнопка «Помощник» на месте, чат закрыт');
+    await wait(900); let fo = await fabOn(); ok(fo && fo.vis && fo.exp === 'false' && await p.$eval('#asst', e => e.hidden), 'кнопка «Помощник» на месте, чат закрыт');
     await click('#asst-fab'); await wait(500);
-    ok(await p.$eval('#asst', e => !e.hidden && e.classList.contains('open') && e.getAttribute('role') === 'dialog') && await p.evaluate(() => document.activeElement && document.activeElement.id === 'asst-in'), 'чат открывается, фокус в поле ввода');
-    ok(/Помощник/.test(await p.$eval('.asst-h', e => e.textContent)) && await p.$$eval('#asst-log .asst-b', e => e.length) === 1 && await p.$$eval('#asst-chips .chip', e => e.length) >= 3, 'приветствие и подсказки');
+    ok(await p.$eval('#asst', e => !e.hidden && e.classList.contains('open') && e.getAttribute('role') === 'dialog') && await p.evaluate(m => m ? true : (document.activeElement && document.activeElement.id === 'asst-in'), mobile), 'чат открывается; на компьютере фокус в поле ввода (на телефоне клавиатуру сами не открываем)');
+    ok(/Помощник/.test(await p.$eval('.asst-h', e => e.textContent)) && await p.$$eval('#asst-log .asst-b', e => e.length) === 1 && await p.$$eval('#asst-log #asst-qr .chip', e => e.length) >= 3, 'приветствие и быстрые ответы внутри ленты (ничего не перекрывают)');
     ok(await p.$eval('#asst-note', e => /программа/.test(e.textContent)), 'подпись: помощник — программа, не сотрудник');
     if (mobile) ok(await p.$eval('#asst', e => Math.round(e.getBoundingClientRect().width) === innerWidth), 'на телефоне чат — во весь экран');
     const ask = async q => { await p.fill('#asst-in', q); await p.keyboard.press('Enter'); await p.waitForFunction(() => !document.querySelector('.asst-typing') && !document.getElementById('asst-form').classList.contains('busy'), null, {timeout: 6000}); await wait(150); };
-    const last = sel => p.$eval('#asst-log .asst-m:last-child', (e, s) => s ? [...e.querySelectorAll(s)].map(x => x.textContent.trim()) : e.textContent, sel);
-    await ask('Какие у вас контакты и часы работы?'); const ans1 = await last(); ok(/925-51-62/.test(ans1) && /10:00/.test(ans1) && await p.$$eval('#asst-log .asst-m:last-child a[href^="tel:"]', e => e.length) === 1, 'контакты берутся из данных сайта');
-    await ask('Сколько стоит Acidcure?'); const ans2 = await last(); ok(/Цен на сайте нет/.test(ans2) && !/\d\s?(₽|руб)/.test(ans2.replace(/от \d[\d\s]* ₽ — \d+%/g, '')) && await p.$$eval('#asst-log .asst-m:last-child .asst-card', e => e.length) === 1, 'о цене — честно «цен на сайте нет», без выдуманных сумм, с карточкой товара');
-    await ask('Посоветуйте от пигментации'); ok(await p.$$eval('#asst-log .asst-m:last-child .asst-card', e => e.length) >= 2 && /не назначение/.test(await last()), 'подбор по задаче: карточки товаров и оговорка «не назначение»');
-    await p.locator('#asst-log .asst-m:last-child .asst-card .rl-tog').first().click(); await wait(300); ok(await barN() === 1, 'кнопка «+» в чате кладёт товар в список запроса'); await p.evaluate(() => localStorage.removeItem('astreya:rl'));
+    const last = sel => p.$eval('#asst-log .asst-m:nth-last-child(2)', (e, s) => s ? [...e.querySelectorAll(s)].map(x => x.textContent.trim()) : e.textContent, sel);
+    await ask('Какие у вас контакты и часы работы?'); const ans1 = await last(); ok(/925-51-62/.test(ans1) && /10:00/.test(ans1) && await p.$$eval('#asst-log .asst-m:nth-last-child(2) a[href^="tel:"]', e => e.length) === 1, 'контакты берутся из данных сайта');
+    await ask('Сколько стоит Acidcure?'); const ans2 = await last(); ok(/Цен на сайте нет/.test(ans2) && !/\d\s?(₽|руб)/.test(ans2.replace(/от \d[\d\s]* ₽ — \d+%/g, '')) && await p.$$eval('#asst-log .asst-m:nth-last-child(2) .asst-card', e => e.length) === 1, 'о цене — честно «цен на сайте нет», без выдуманных сумм, с карточкой товара');
+    await ask('Посоветуйте от пигментации'); ok(await p.$$eval('#asst-log .asst-m:nth-last-child(2) .asst-card', e => e.length) >= 2 && /не назначение/.test(await last()), 'подбор по задаче: карточки товаров и оговорка «не назначение»');
+    await p.locator('#asst-log .asst-m:nth-last-child(2) .asst-card .rl-tog').first().click(); await wait(300); ok(await barN() === 1, 'кнопка «+» в чате кладёт товар в список запроса'); await p.evaluate(() => localStorage.removeItem('astreya:rl'));
     await ask('Мне можно при беременности?'); ok(/не даю медицинских рекомендаций/.test(await last()), 'медицинские вопросы — без рекомендаций, к специалисту');
-    await ask('Ближайшие семинары'); ok(await p.$$eval('#asst-log .asst-m:last-child .asst-ev', e => e.length) >= 1, 'расписание: мероприятия с кнопкой «Записаться»');
-    await p.locator('#asst-log .asst-m:last-child .asst-ev [data-act="form"]').first().click(); await wait(600); ok(await p.$eval('#modal', e => e.classList.contains('open') && !!e.querySelector('form[data-form="seminar"]')), 'запись открывает форму поверх чата');
+    await ask('Ближайшие семинары'); ok(await p.$$eval('#asst-log .asst-m:nth-last-child(2) .asst-ev', e => e.length) >= 1, 'расписание: мероприятия с кнопкой «Записаться»');
+    await p.locator('#asst-log .asst-m:nth-last-child(2) .asst-ev [data-act="form"]').first().click(); await wait(600); ok(await p.$eval('#modal', e => e.classList.contains('open') && !!e.querySelector('form[data-form="seminar"]')), 'запись открывает форму поверх чата');
     await p.keyboard.press('Escape'); await wait(500); ok(await p.$eval('#asst', e => e.classList.contains('open')), 'Esc закрывает только форму, чат остаётся');
-    await ask('абракадабра квантовый'); ok(await p.$$eval('#asst-log .asst-m:last-child [data-act="asst-ask"]', e => e.length) === 1, 'непонятный вопрос — предложение передать менеджеру');
-    await click('#asst-log .asst-m:last-child [data-act="asst-ask"]'); await wait(500); ok(await p.$eval('#modal', e => e.classList.contains('open') && /абракадабра/.test(e.querySelector('textarea').value)), 'вопрос переносится в форму «Вопрос менеджеру»'); await p.keyboard.press('Escape'); await wait(500);
-    const hist = await p.evaluate(() => JSON.parse(sessionStorage.getItem('astreya:chat') || '[]').length); ok(hist >= 12, 'диалог сохраняется в sessionStorage вкладки', hist);
+    await ask('абракадабра квантовый'); ok(await p.$$eval('#asst-log .asst-m:nth-last-child(2) [data-act="asst-ask"]', e => e.length) === 1, 'непонятный вопрос — предложение передать менеджеру');
+    await click('#asst-log .asst-m:nth-last-child(2) [data-act="asst-ask"]'); await wait(500); ok(await p.$eval('#modal', e => e.classList.contains('open') && /абракадабра/.test(e.querySelector('textarea').value)), 'вопрос переносится в форму «Вопрос менеджеру»'); await p.keyboard.press('Escape'); await wait(500);
+    const hist = await p.evaluate(() => ((JSON.parse(sessionStorage.getItem('astreya:chat2') || '{}').msgs) || []).length); ok(hist >= 12, 'диалог сохраняется в sessionStorage вкладки', hist);
     if (mobile) { await p.keyboard.press('Escape'); } else await p.keyboard.press('Escape'); await wait(500); ok(await p.$eval('#asst', e => e.hidden || !e.classList.contains('open')), 'Esc закрывает чат');
     ok(await p.evaluate(() => document.activeElement && document.activeElement.id === 'asst-fab'), 'фокус возвращается на кнопку «Помощник»');
     await p.reload(); await skipSplash(); await click('#asst-fab'); await wait(500); ok(await p.$$eval('#asst-log .asst-m', e => e.length) >= 12, 'после перезагрузки диалог на месте');
     await click('[data-act="asst-reset"]'); await wait(300); ok(await p.$$eval('#asst-log .asst-m', e => e.length) === 1, '«Начать заново» очищает диалог'); await p.keyboard.press('Escape'); await wait(400);
+    /* ---- живость интерфейса: печать, стоп, оценка, память диалога, расчёт, менеджер ---- */
+    await click('#asst-fab'); await wait(700); await click('[data-act="asst-reset"]'); await wait(300);
+    const geom = await p.evaluate(() => { const l = document.getElementById('asst-log').getBoundingClientRect(), f = document.getElementById('asst-form').getBoundingClientRect(), q = document.getElementById('asst-qr').getBoundingClientRect(), h = document.querySelector('.asst-h').getBoundingClientRect(); return {qrInside: q.top >= l.top - 1 && q.bottom <= l.bottom + 400, formBelow: f.top >= l.bottom - 1, headAbove: h.bottom <= l.top + 1}; });
+    ok(geom.formBelow && geom.headAbove, 'шапка, лента и поле ввода идут друг за другом без наложений', geom);
+    await p.fill('#asst-in', 'Расскажите о компании'); await p.keyboard.press('Enter'); let caret = false, grow = [];
+    for (let i = 0; i < 40 && !caret; i++) { await wait(100); caret = await p.$('#asst-log .asst-caret') !== null; if (caret) grow.push(await p.$eval('#asst-log .asst-m:nth-last-child(2) .asst-tx', e => e.textContent.length)); }
+    ok(caret, 'ответ «печатается» (виден курсор), а не появляется целиком'); await wait(600); grow.push(await p.$eval('#asst-log .asst-m:nth-last-child(2) .asst-tx', e => e.textContent.length));
+    ok(await p.$eval('#asst-send', e => e.classList.contains('stop') && /Остановить/.test(e.getAttribute('aria-label'))), 'во время ответа кнопка отправки превращается в «Остановить»');
+    const t0 = Date.now(); await p.click('#asst-send'); await p.waitForFunction(() => !document.getElementById('asst-form').classList.contains('busy'), null, {timeout: 3000}); const stopMs = Date.now() - t0;
+    ok(stopMs < 1500 && await p.$('#asst-log .asst-caret') === null && /дистрибьютор/i.test(await p.$eval('#asst-log .asst-m:nth-last-child(2) .asst-tx', e => e.textContent)), '«Стоп» мгновенно показывает ответ целиком', stopMs);
+    ok(await p.$$eval('#asst-log .asst-m:nth-last-child(2) .asst-fb button', e => e.length) === 2, 'под ответом — оценка 👍/👎');
+    await click('#asst-log .asst-m:nth-last-child(2) .asst-fb button[data-v="1"]'); ok(await p.$eval('#asst-log .asst-m:nth-last-child(2) .asst-fb button[data-v="1"]', e => e.getAttribute('aria-pressed') === 'true'), '«Помог» отмечается');
+    await click('#asst-log .asst-m:nth-last-child(2) .asst-fb button[data-v="-1"]'); await wait(400); ok(await p.$$eval('#asst-log .asst-m:nth-last-child(2) [data-act="asst-ask"]', e => e.length) === 1 && /не помог/.test(await last()), '«Не помог» → предлагает передать вопрос менеджеру');
+    await click('[data-act="asst-reset"]'); await wait(300);
+    await ask('Посоветуйте от пигментации'); await ask('а у Dermatime?'); ok(await p.$$eval('#asst-log .asst-m:nth-last-child(2) .asst-card-t small', e => e.length > 0 && e.every(x => /dermatime/i.test(x.textContent))), 'помнит предыдущую задачу: «а у Dermatime?» → тот же подбор у бренда');
+    await ask('почему именно эти?'); ok(/Порядок такой/.test(await last()), '«почему именно эти?» — объясняет, как подобрано');
+    await ask('Какие скидки?'); await ask('а при 200 тысячах?'); ok(/10%/.test(await last()) && /20\s000/.test(await last()), 'считает скидку по названной сумме (200 000 → 10%, экономия 20 000)');
+    await ask('Я косметолог из Ростова'); await ask('какие семинары?'); ok(/Ростов/.test(await last()) && await p.$$eval('#asst-log .asst-m:nth-last-child(2) .asst-ev', e => e.length) === 1, 'запомнил роль и город: семинары — сразу по городу');
+    await click('[data-act="asst-human"]'); await p.waitForFunction(() => !document.getElementById('asst-form').classList.contains('busy'), null, {timeout: 6000}); ok(await p.$$eval('#asst-log .asst-m:nth-last-child(2) [data-type="callback"]', e => e.length) === 1, 'кнопка «Связаться с менеджером» в шапке всегда под рукой');
+    await ask('пигментацыя'); ok(await p.$$eval('#asst-log .asst-m:nth-last-child(2) .asst-card', e => e.length) >= 2, 'опечатка в слове не мешает понять вопрос');
+    await click('[data-act="asst-reset"]'); await wait(300);
+    /* ---- WebMCP: инструменты только для чтения отдаются ИИ-агентам браузера ---- */
+    const mcp = await p.evaluate(() => (window.__mcp || []).map(t => ({name: t.name, ro: !!(t.annotations && t.annotations.readOnlyHint), schema: !!(t.inputSchema && t.inputSchema.type === 'object'), desc: (t.description || '').length > 20})));
+    ok(mcp.map(x => x.name).join() === 'search_products,list_events,discount_for_amount,get_contacts' && mcp.every(x => x.ro && x.schema && x.desc), 'WebMCP: четыре инструмента «только чтение» с описаниями и схемами', mcp);
+    const mcpOut = await p.evaluate(async () => { const t = window.__mcp.find(x => x.name === 'discount_for_amount'), r = await t.execute({amount_rub: 200000}), e = await window.__mcp.find(x => x.name === 'list_events').execute({online: true}); return {d: JSON.parse(r.content[0].text), e: JSON.parse(e.content[0].text)}; });
+    ok(mcpOut.d.pct === 10 && mcpOut.d.saving === 20000 && mcpOut.e.events.every(x => /Онлайн|Вебинар/i.test(x.city + x.format)), 'WebMCP: инструменты возвращают данные сайта (скидка 200 000 → 10%, онлайн-мероприятия)', mcpOut);
     /* автопроверка встроенных ответов на реальных данных */
     const sweep = await p.evaluate(() => { const A = Astreya, D = ASTREYA_DATA, bad = []; D.products.forEach(pr => { const r = A.assistant.answer('Расскажите про ' + pr.name); if (r.cards.indexOf(pr.id) < 0) bad.push('товар ' + pr.name); });
       D.brands.forEach(b => { const r = A.assistant.answer('Расскажите про ' + b.name); if (!r.links.some(l => l.h === 'brands/' + b.id + '.html') && !r.cards.some(id => (D.products.find(x => x.id === id) || {}).brand === b.id)) bad.push('бренд ' + b.name); });

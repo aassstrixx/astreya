@@ -20,7 +20,7 @@ module.exports = function layout(ctx, C) {
   const showNote = !!site.demoNotice && !(ctx.redesign && ctx.redesign.ui && ctx.redesign.ui.showDemoNotices === false);   // пометка «демо-данные» в подвале (в режиме доработок скрывается флагом redesign.ui)
   const rd = !!site.redesign, BD = rd ? backdropsFactory(ctx) : {on: false, apply: (P, h) => h};
   const EX = !!(rd && ctx.redesign && ctx.redesign.extras && ctx.redesign.extras.enabled);       // дополнения интерфейса (css/extras.css, js/extras.js): список запроса, быстрая связь, быстрый просмотр, сравнение, обратный отсчёт, помощник
-  const cssList = rd ? [...CSS, 'redesign', ...(BD.on ? ['backdrops'] : []), ...(EX ? ['extras'] : [])] : CSS, jsList = rd ? [...JS, 'redesign', ...(BD.on ? ['backdrops'] : []), ...(EX ? ['extras', 'explore', 'assistant'] : [])] : JS;   // слой доработок включается одним флагом site.redesign; фоновые вставки — backdrops.enabled в data/redesign.json
+  const cssList = rd ? [...CSS, 'redesign', ...(BD.on ? ['backdrops'] : []), ...(EX ? ['extras'] : [])] : CSS, jsList = rd ? [...JS, 'redesign', ...(BD.on ? ['backdrops'] : []), ...(EX ? ['extras', 'explore', ...(ctx.redesign.extras.assistant ? ['assistant-brain', 'assistant'] : [])] : [])] : JS;   // слой доработок включается одним флагом site.redesign; фоновые вставки — backdrops.enabled в data/redesign.json
   const ver = ctx.assetVersion ? '?v=' + ctx.assetVersion : '';
   const jarCfg = rd && ctx.redesign && ctx.redesign.jar && ctx.redesign.jar.enabled ? ctx.redesign.jar : null;     // вступление с баночкой: css/jar.css + js/jar.js — только на главной и только пока jar.enabled
   const pageCss = P => jarCfg && P.key === 'home' ? [...cssList, 'jar'] : cssList, pageJs = P => jarCfg && P.key === 'home' ? [...jsList, 'jar'] : jsList;
@@ -205,7 +205,7 @@ ${P.noindex ? '<meta name="robots" content="noindex,follow">\n' : ''}<meta name=
 <meta name="twitter:image" content="${img}">
 <link rel="icon" href="${u(P, 'assets/favicon.svg')}" type="image/svg+xml">
 <link rel="icon" href="${u(P, 'assets/favicon-32.png')}" type="image/png" sizes="32x32">
-<link rel="apple-touch-icon" href="${u(P, 'assets/apple-touch-icon.png')}">
+<link rel="apple-touch-icon" href="${u(P, 'assets/apple-touch-icon.png')}">${C.xon('agentReady') ? `\n<link rel="manifest" href="${u(P, 'manifest.webmanifest')}">` : ''}
 <script>${EARLY}</script>
 ${P.key === 'home' ? `<script>${LEGACY}</script>\n` : ''}
 <link rel="preconnect" href="https://fonts.googleapis.com">

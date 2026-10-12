@@ -456,7 +456,7 @@
     }
   },
   "extras": {
-    "_note": "Дополнения интерфейса (css/extras.css, js/extras.js, js/explore.js, js/assistant.js). enabled=false выключает все сразу; по отдельности: requestList — «Список запроса» (несколько товаров одной заявкой), quickContact — кнопка связи на телефоне, recent — «Вы недавно смотрели», callback — «Заказать звонок», quickView — «Быстрый просмотр» на карточках, compare — сравнение до трёх товаров, countdown — отсчёт до ближайшего мероприятия, subscribe — подписка на новости в подвале, assistant — чат-помощник «Астрея» (встроенные ответы + необязательный ИИ-режим через сервер). Чтобы вернуть прежний вид, достаточно enabled=false и пересборки.",
+    "_note": "Дополнения интерфейса (css/extras.css, js/extras.js, js/explore.js, js/assistant.js). enabled=false выключает все сразу; по отдельности: requestList — «Список запроса» (несколько товаров одной заявкой), quickContact — кнопка связи на телефоне, recent — «Вы недавно смотрели», callback — «Заказать звонок», quickView — «Быстрый просмотр» на карточках, compare — сравнение до трёх товаров, countdown — отсчёт до ближайшего мероприятия, subscribe — подписка на новости в подвале, agentReady — файлы для ИИ-агентов и установки (llms.txt, manifest.webmanifest) и инструменты WebMCP, assistant — чат-помощник «Астрея» (встроенные ответы + необязательный ИИ-режим через сервер). Чтобы вернуть прежний вид, достаточно enabled=false и пересборки.",
     "enabled": true,
     "requestList": true,
     "quickContact": true,
@@ -466,6 +466,7 @@
     "compare": true,
     "countdown": true,
     "subscribe": true,
-    "assistant": true
+    "assistant": true,
+    "agentReady": true
   }
 }
