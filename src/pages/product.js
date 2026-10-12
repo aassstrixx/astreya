@@ -54,6 +54,7 @@ module.exports = function product(ctx, C, P, p) {
             <p class="muted">Пришлём описание, наличие и условия поставки.</p>
             ${request('btn btn-fill', 'product-side')}
             <a class="lnk" href="tel:${ctx.site.contacts.phoneRaw}" data-track="phone_click">${I.phone} ${esc(ctx.site.contacts.phone)}</a>
+            ${C.callbackBtn('lnk', 'product-side')}
           </div>
         </aside>
       </div>

@@ -182,3 +182,4 @@ hr.sp{border:0;border-top:1px solid var(--line-s);margin:18px 0}
 .tbl td .ph{white-space:nowrap}
 .btn.sm{white-space:nowrap}
 input[readonly]{background:#f3f5f9;color:#4a5a78}
+#lead-note{min-height:104px;max-height:50vh;resize:none;overflow-y:auto}   /* комментарий к заявке: без ручной растяжки, растёт по мере набора (leads.js) */

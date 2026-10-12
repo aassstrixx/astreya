@@ -70,6 +70,8 @@
       function paintDetail(l, dlgBody, head) {
         head.textContent = `${l.id} · ${typeName(l.type)}`;
         const note = h('textarea', {id: 'lead-note', rows: '3', placeholder: 'Например: позвонили, договорились на четверг…', maxlength: '2000'});
+        const grow = () => { if (!note.offsetParent) return; const lim = Math.round(innerHeight * 0.5), ex = note.offsetHeight - note.clientHeight; note.style.height = 'auto'; const hh = note.scrollHeight + ex; note.style.height = Math.min(hh, lim) + 'px'; note.style.overflowY = hh > lim ? 'auto' : 'hidden'; };
+        note.addEventListener('input', grow); setTimeout(grow, 0);
         const addBtn = h('button', {class: 'btn primary', type: 'button'}, 'Добавить комментарий');
         const setStatus = async (st, btn) => { await AD.busy(btn, async () => { try { const x = await AD.patch('/api/leads/' + l.id, {status: st}); AD.toast('Статус: ' + statusName(st), 'ok'); paintDetail(x, dlgBody, head); load(true); AD.pollNew(); } catch (e) { AD.toast(e.message, 'err'); } }); };
         const addNote = async () => { if (!note.value.trim()) { note.focus(); return; } await AD.busy(addBtn, async () => { try { const x = await AD.patch('/api/leads/' + l.id, {comment: note.value}); paintDetail(x, dlgBody, head); load(true); } catch (e) { AD.toast(e.message, 'err'); } }); };

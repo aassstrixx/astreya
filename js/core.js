@@ -103,6 +103,16 @@
     return ref;
   }
 
+  /* поле «Комментарий» без ручной растяжки: высота подстраивается под текст (до 55% высоты экрана, дальше — прокрутка внутри поля) */
+  A.autosize = function (ta) {
+    if (!ta || ta.tagName !== 'TEXTAREA' || !ta.offsetParent) return;
+    const max = Math.max(160, Math.round(window.innerHeight * 0.55)), extra = ta.offsetHeight - ta.clientHeight;
+    ta.style.height = 'auto'; const h = ta.scrollHeight + extra;
+    ta.style.height = Math.min(h, max) + 'px'; ta.style.overflowY = h > max ? 'auto' : 'hidden';
+  };
+  document.addEventListener('input', e => { const t = e.target; if (t && t.tagName === 'TEXTAREA' && t.closest && t.closest('.fld')) A.autosize(t); });
+  let rzT = 0; window.addEventListener('resize', () => { clearTimeout(rzT); rzT = setTimeout(() => { $$('.fld textarea').forEach(A.autosize); }, 150); });
+
   A.openForm = function (type, ref) {
     const ft = FT[type] || FT.question, m = modal(); if (!m) return;
     const ctxText = context(type, ref);
@@ -120,7 +130,7 @@
     m.classList.add('open'); m.setAttribute('aria-hidden', 'false'); m.setAttribute('aria-labelledby', 'm-title');
     document.body.classList.add('locked');
     A.track('form_open', {form_type: type, ref: ref || ''});
-    setTimeout(() => { const i = $('input', m); if (i) i.focus(); }, 40);
+    setTimeout(() => { const i = $('input', m); if (i) i.focus(); $$('.fld textarea', m).forEach(A.autosize); }, 40);
   };
   A.closeModal = function () {
     const m = modal(); if (!m || !m.classList.contains('open') || m.classList.contains('closing')) return;
@@ -276,7 +286,7 @@
       case 'form': A.openForm(t.getAttribute('data-type'), t.getAttribute('data-ref')); break;
       case 'close': A.closeModal(); break;
       case 'copy': t.getAttribute('data-what') === 'address' ? copyText(D.site.contacts.email, 'Адрес скопирован') : copyText(mailDraft, 'Письмо скопировано'); break;
-      case 'form-again': { const host = t.closest('.ok').parentNode, f = $('form', host); t.closest('.ok').remove(); if (f) { f.hidden = false; f.reset(); f._t0 = 0; setStatus(f, '', ''); } break; }
+      case 'form-again': { const host = t.closest('.ok').parentNode, f = $('form', host); t.closest('.ok').remove(); if (f) { f.hidden = false; f.reset(); f._t0 = 0; setStatus(f, '', ''); $$('.fld textarea', f).forEach(x => { x.style.height = ''; }); } break; }
       case 'faq': { const it = t.closest('.faq-item'), open = it.classList.toggle('open'); t.setAttribute('aria-expanded', String(open)); break; }
       case 'scroll': { const el = document.getElementById(t.getAttribute('data-target')); if (el) { e.preventDefault(); el.scrollIntoView({behavior: 'smooth', block: 'start'}); } break; }
       default: if (A.actions && A.actions[act]) A.actions[act](t, id, e);

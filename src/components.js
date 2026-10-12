@@ -11,6 +11,9 @@ module.exports = function components(ctx) {
   const nurl = (P, n) => u(P, `news/${n.slug}.html`);
   const phoneHref = site.contacts.phoneRaw;
   const FMT_KEY = {'Очно': 'offline', 'Вебинар': 'online'};
+  /* дополнения интерфейса (data/redesign.json → extras): включено ли конкретное */
+  const xon = k => !!(site.redesign && ctx.redesign && ctx.redesign.extras && ctx.redesign.extras.enabled && ctx.redesign.extras[k]);
+  const callbackBtn = (cls, place) => xon('callback') ? `<button class="${cls}" type="button" data-act="form" data-type="callback" data-track="callback_open" data-place="${place}">Заказать звонок</button>` : '';
 
   /* Картинка товара: фото (поле image в products.json — путь вида assets/products/….webp; ставится в админке «Товары по брендам») или, пока фото нет, CSS-иллюстрация упаковки */
   const art = (P, p) => {
@@ -196,6 +199,6 @@ module.exports = function components(ctx) {
 
   const noteBox = html => `<div class="note">${I.info}<span>${html}</span></div>`;
 
-  return {u, purl, burl, eurl, nurl, art, tag, tasksLine, timeTag, chip, crumbs, pageHead, secHead, lnk, partnerBtn, productCard, eventCard, eventRow,
+  return {xon, callbackBtn, u, purl, burl, eurl, nurl, art, tag, tasksLine, timeTag, chip, crumbs, pageHead, secHead, lnk, partnerBtn, productCard, eventCard, eventRow,
     newsCard, newsStyle, articleCard, logoMark, heroLogo, marqueeLogo, slotLogo, sibLogo, brandCardHome, brandCardList, advantageCards, officeCard, ctaLogo, ctaBand, noteBox, FMT_KEY};
 };

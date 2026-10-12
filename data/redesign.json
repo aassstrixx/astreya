@@ -456,10 +456,15 @@
     }
   },
   "extras": {
-    "_note": "Дополнения интерфейса (css/extras.css, js/extras.js). enabled=false выключает все сразу; по отдельности: requestList — «Список запроса» (несколько товаров одной заявкой), quickContact — кнопка связи на телефоне, calendar — кнопка «В календарь» (.ics) на страницах мероприятий. Чтобы вернуть прежний вид, достаточно enabled=false и пересборки.",
+    "_note": "Дополнения интерфейса (css/extras.css, js/extras.js, js/explore.js, js/assistant.js). enabled=false выключает все сразу; по отдельности: requestList — «Список запроса» (несколько товаров одной заявкой), quickContact — кнопка связи на телефоне, recent — «Вы недавно смотрели», callback — «Заказать звонок», quickView — «Быстрый просмотр» на карточках, compare — сравнение до трёх товаров, countdown — отсчёт до ближайшего мероприятия, subscribe — подписка на новости в подвале. Чтобы вернуть прежний вид, достаточно enabled=false и пересборки.",
     "enabled": true,
     "requestList": true,
     "quickContact": true,
-    "calendar": true
+    "recent": true,
+    "callback": true,
+    "quickView": true,
+    "compare": true,
+    "countdown": true,
+    "subscribe": true
   }
 }

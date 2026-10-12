@@ -78,6 +78,9 @@
     question: {title: 'Задать вопрос', subject: 'Вопрос с сайта', lead: 'Напишите нам — ответим по почте или телефону в рабочее время.', submit: 'Отправить', ph: 'Ваш вопрос…',
                fields: [['name', 1], ['email', 1], ['phone'], ['msg', 1]]}
   };
+  /* «Заказать звонок»: только имя и телефон — самый короткий путь к менеджеру (кнопки появляются при data/redesign.json → extras.callback) */
+  FORM_TYPES.callback = {title: 'Заказать звонок', subject: 'Просьба перезвонить', lead: 'Оставьте номер — менеджер перезвонит в рабочее время.', submit: 'Перезвоните мне', ph: 'Когда удобно позвонить и что обсудить? (необязательно)',
+               fields: [['name', 1], ['phone', 1], ['msg']]};
   FORM_TYPES.contact = Object.assign({}, FORM_TYPES.question);
 
   function fieldHTML(uid, id, req, ft) {

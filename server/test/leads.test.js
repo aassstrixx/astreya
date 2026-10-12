@@ -54,6 +54,15 @@ test('проверка полей: e-mail, телефон, согласие, н�
   r = await send(Object.assign({}, good, {name: 'Я'})); assert.equal(r.status, 200, 'одна буква в имени допустима, как и на клиенте');
 });
 
+test('«Заказать звонок»: достаточно имени и телефона; без телефона — ошибка; в админке тип называется «Обратный звонок»', async () => {
+  const ok = await send({type: 'callback', name: 'Ирина', phone: '+7 916 222-33-44', consent: true, page: 'https://astreya.example/index.html'});
+  assert.equal(ok.status, 200, ok.text);
+  const bad = await send({type: 'callback', name: 'Ирина', consent: true}); assert.equal(bad.status, 422); assert.ok(bad.json.errors.phone, 'телефон обязателен');
+  const nameless = await send({type: 'callback', phone: '+7 916 222-33-44', consent: true}); assert.equal(nameless.status, 422); assert.ok(nameless.json.errors.name, 'имя обязательно');
+  const cfg = (await admin.get('/api/config')).json; assert.equal(cfg.types.callback, 'Обратный звонок');
+  const list = (await admin.get('/api/leads?status=all&type=callback')).json.items; assert.ok(list.some(x => x.name === 'Ирина' && x.type === 'callback'), 'заявка попала в админку');
+});
+
 test('мусорный и слишком большой запрос', async () => {
   const c = anon();
   let r = await c.raw('POST', '/api/lead', '{нет', {Origin: ORIGIN, 'Content-Type': 'application/json'}); assert.equal(r.status, 400);

@@ -8,7 +8,7 @@ const {getSecret, httpErr} = require('./auth');
 const FILE = path.join(C.DATA, 'leads.json');
 const mu = new Mutex();
 const STATUSES = {new: 'Новая', in_work: 'В работе', done: 'Обработана', spam: 'Спам', archived: 'В архиве'};
-const TYPE_TITLES = {partner: 'Партнёрство', seminar: 'Запись на мероприятие', product: 'Запрос по товару', question: 'Вопрос', contact: 'Контакты'};
+const TYPE_TITLES = {partner: 'Партнёрство', seminar: 'Запись на мероприятие', product: 'Запрос по товару', question: 'Вопрос', callback: 'Обратный звонок', contact: 'Контакты'};
 
 /* какие поля обязательны — берём из той же таблицы, по которой строятся формы на сайте (js/shared.js): единый источник правды */
 function formTypes() { try { delete require.cache[require.resolve(path.join(C.ROOT, 'js', 'shared.js'))]; return require(path.join(C.ROOT, 'js', 'shared.js')).FORM_TYPES; } catch (e) { return null; } }

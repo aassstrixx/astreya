@@ -21,7 +21,6 @@ const partners = require('../src/pages/partners.js');
 const {searchPage, legalPage, notFoundPage} = require('../src/pages/misc.js');
 const customPage = require('../src/pages/custom.js');
 const blocks = require('../src/blocks-schema.js');
-const {eventIcs} = require('../src/ics.js');
 
 const ROOT = path.join(__dirname, '..');
 const ctx = load();
@@ -110,9 +109,6 @@ for (const pg of pages) {
   fs.writeFileSync(f, pg.html);
 }
 
-/* ---- «В календарь»: training/<адрес>.ics для каждого мероприятия (data/redesign.json → extras.calendar) ---- */
-if (L.extrasOn && ctx.redesign.extras.calendar) for (const e of ctx.events) fs.writeFileSync(path.join(ROOT, 'training', e.slug + '.ics'), eventIcs(e, {url: L.absUrl(`training/${e.slug}.html`), brand: ctx.brandById[e.brand].name, org: site.name}));
-
 /* ---- данные для браузера: js/data.js (формы, поиск, калькулятор) ---- */
 const brandName = id => ctx.brandById[id].name;
 const index = [
@@ -126,12 +122,14 @@ const index = [
 ];
 const data = {
   site: {name: site.name, contacts: {email: site.contacts.email, phone: site.contacts.phone, phoneRaw: site.contacts.phoneRaw, hours: site.contacts.hours, whatsapp: site.contacts.whatsapp || ''}, formEndpoint: site.formEndpoint || '', discounts: site.discounts},
-  brands: ctx.brands.map(b => ({id: b.id, name: b.name, logo: b.logo || undefined, logoW: b.logoW, logoH: b.logoH, logoScale: b.logoScale})),
+  brands: ctx.brands.map(b => ({id: b.id, name: b.name, logo: b.logo || undefined, logoW: b.logoW, logoH: b.logoH, logoScale: b.logoScale, c1: b.c1, c2: b.c2, ink: b.ink})),
   cats: ctx.cats, tasks: ctx.tasks.map(t => ({id: t.id, label: t.label})), kinds: ctx.kinds,
-  products: ctx.products.map(p => ({id: p.id, slug: p.slug, name: p.name, brand: p.brand})),
-  events: ctx.sortedEvents.map(e => ({id: e.id, slug: e.slug, title: e.title, date: e.date, city: e.city})),
+  /* products/events: поля для «Быстрого просмотра», сравнения, обратного отсчёта и помощника (d — описание, c — категория, k — вид, ts — задачи, n — новинка, x — только заполненные характеристики) */
+  products: ctx.products.map(p => { const x = {}; if (p.volume) x.volume = p.volume; if (p.sku) x.sku = p.sku; if (p.usage) x.usage = p.usage; if (p.indications && p.indications.length) x.indications = p.indications; if (p.actives && p.actives.length) x.actives = p.actives;
+    return {id: p.id, slug: p.slug, name: p.name, brand: p.brand, t: p.type, im: p.image || undefined, d: p.desc, c: p.cat, k: p.kind, ts: p.tasks, n: p.isNew ? 1 : undefined, x: Object.keys(x).length ? x : undefined}; }),
+  events: ctx.sortedEvents.map(e => ({id: e.id, slug: e.slug, title: e.title, date: e.date, city: e.city, tm: e.time, fm: e.fmt, pl: e.place, b: e.brand, sp: e.speaker})),
   index,
-  extras: ctx.redesign && ctx.redesign.extras && ctx.redesign.extras.enabled ? {requestList: !!ctx.redesign.extras.requestList, quickContact: !!ctx.redesign.extras.quickContact} : null
+  extras: site.redesign && ctx.redesign && ctx.redesign.extras && ctx.redesign.extras.enabled ? {requestList: C.xon('requestList'), quickContact: C.xon('quickContact'), recent: C.xon('recent'), callback: C.xon('callback'), quickView: C.xon('quickView'), compare: C.xon('compare'), countdown: C.xon('countdown'), subscribe: C.xon('subscribe'), assistant: C.xon('assistant')} : null
 };
 fs.writeFileSync(path.join(ROOT, 'js', 'data.js'), `/* Сгенерировано tools/build.js из data/*.json — не редактировать вручную. */\nwindow.ASTREYA_DATA = ${JSON.stringify(data)};\n`);
 

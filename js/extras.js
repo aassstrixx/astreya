@@ -7,6 +7,9 @@
       тема — «Список запроса (N): названия», полный список — в тексте сообщения. После отправленной заявки список очищается.
    2) Быстрая связь на телефоне (≤ 900 px) — круглая кнопка внизу справа: «Позвонить» и «WhatsApp» (контакты из data/site.json).
       Показывается после небольшой прокрутки, не мешает вступлению на главной, подвалу и открытым окнам.
+   3) «Вы недавно смотрели» (extras.recent) — на странице товара запоминаем товар (localStorage, до 8 штук, только id), на странице товара и в каталоге
+      показываем до четырёх последних (кроме текущего). Блок можно очистить.
+   4) «Заказать звонок» (extras.callback) — форма из двух полей (имя, телефон); кнопки: в подвале, на странице товара и в меню быстрой связи.
    Страницы подменяются без перезагрузки — поэтому работаем делегированием и перерисовываем кнопки в A.initPage. */
 (function () {
   'use strict';
@@ -20,6 +23,15 @@
   const CHECK = '<svg class="ic i-ck" viewBox="0 0 20 20" aria-hidden="true" focusable="false"><path d="m4.5 10.5 3.5 3.5 7.5-8"/></svg>';
   const brandOf = id => (B[P[id].brand] || {}).name || '';
   const noun = n => A.plural ? A.plural(n, 'товар', 'товара', 'товаров') : 'позиций';
+
+  A.actions = A.actions || {};
+
+  /* Общий «док» внизу экрана: плашки «В списке» (extras.js) и «Сравнение» (explore.js) стоят рядом; плавающие кнопки поднимаются над ним */
+  A.dock = function () { let d = document.getElementById('xdock'); if (!d) { d = document.createElement('div'); d.id = 'xdock'; d.className = 'xdock'; document.body.appendChild(d); } return d; };
+  A.dockUpdate = function () {
+    const d = A.dock(), any = Array.prototype.some.call(d.children, c => !c.hidden); document.body.classList.toggle('dock-on', any);
+    requestAnimationFrame(() => { document.body.style.setProperty('--dock-h', any ? Math.round(d.getBoundingClientRect().height + 12) + 'px' : '0px'); });
+  };
 
   /* ---------- Список запроса ---------- */
   let mem = [], list = [], sending = false, restore = null, introSeen = false;
@@ -50,7 +62,7 @@
     let el = $('#rl-bar'); if (el) return el;
     el = document.createElement('div'); el.id = 'rl-bar'; el.className = 'rl-bar'; el.hidden = true; el.setAttribute('role', 'region'); el.setAttribute('aria-label', 'Список запроса');
     el.innerHTML = '<button class="rl-open" type="button" data-act="rl-open" aria-haspopup="dialog"><span class="rl-count" aria-hidden="true">0</span><span class="rl-txt"></span><span class="rl-go" aria-hidden="true">Открыть ' + I.arrow + '</span></button>';
-    document.body.appendChild(el); return el;
+    A.dock().appendChild(el); return el;
   }
   function sync(bump) {
     if (!X.requestList) return;
@@ -61,8 +73,9 @@
     });
     const el = bar(), n = list.length;
     $('.rl-count', el).textContent = n; $('.rl-txt', el).innerHTML = '<span class="sr">Список запроса: </span>' + n + ' ' + noun(n);
-    const show = n > 0 && !introSeen; el.hidden = !show; document.body.classList.toggle('rl-on', show);
+    const show = n > 0 && !introSeen; el.hidden = !show; A.dockUpdate();
     if (bump && show) { el.classList.remove('bump'); void el.offsetWidth; el.classList.add('bump'); }
+    document.dispatchEvent(new CustomEvent('astreya:rl', {detail: list.slice()}));
   }
   const panelOpen = () => { const m = $('#modal'); return !!(m && m.classList.contains('open') && $('.rl-dlg', m)); };
   function toggle(id) {
@@ -127,6 +140,7 @@
       el.innerHTML = `<div class="qc-menu" id="qc-menu" hidden>
         <a class="qc-item" href="tel:${esc(c.phoneRaw)}" data-track="phone_click" data-place="quick"><span class="qc-ic">${I.phone}</span><span><b>Позвонить</b><small>${esc(c.phone)}</small></span></a>
         ${wa ? `<a class="qc-item" href="${esc(wa)}" target="_blank" rel="noopener" data-track="messenger_click" data-place="quick"><span class="qc-ic">${I.chat}</span><span><b>WhatsApp</b><small>Написать сообщение</small></span></a>` : ''}
+        ${X.callback ? `<button class="qc-item" type="button" data-act="form" data-type="callback" data-track="callback_open" data-place="quick"><span class="qc-ic">${I.clock}</span><span><b>Заказать звонок</b><small>Перезвоним в рабочее время</small></span></button>` : ''}
       </div>
       <button class="qc-btn" type="button" aria-expanded="false" aria-controls="qc-menu" aria-label="Связаться с нами">${I.phone}</button>`;
       document.body.appendChild(el);
@@ -142,22 +156,48 @@
 
   /* вступление на главной (баночка, лозунг) и подвал: поверх них плавающие кнопки не показываем */
   let io = null;
+  function setIntro() { document.body.classList.toggle('x-intro', introSeen); document.dispatchEvent(new CustomEvent('astreya:intro', {detail: introSeen})); }
   function watch() {
     if (io) io.disconnect();
-    introSeen = false; qcFooter = false;
+    introSeen = false; qcFooter = false; setIntro();
     if (!('IntersectionObserver' in window)) return;
     const state = new Map();
     io = new IntersectionObserver(es => {
       es.forEach(e => state.set(e.target, e.isIntersecting));
       introSeen = ['#jar-story', '#jar-outro'].some(s => { const t = $(s); return t && state.get(t); });
       qcFooter = !!(state.get($('.ftr')));
-      sync(); qcUpdate();
+      setIntro(); sync(); qcUpdate();
     }, {threshold: 0});
     ['#jar-story', '#jar-outro', '.ftr'].forEach(s => { const t = $(s); if (t) io.observe(t); });
   }
 
+  /* ---------- «Вы недавно смотрели» ---------- */
+  const RV = 'astreya:rv', RVMAX = 8, RVSHOW = 4;
+  const rvLoad = () => { try { const v = JSON.parse(localStorage.getItem(RV) || '[]'); return Array.isArray(v) ? v.filter(id => P[id]) : []; } catch (e) { return []; } };
+  const rvSave = l => { try { localStorage.setItem(RV, JSON.stringify(l)); } catch (e) {} };
+  const root = () => document.body.getAttribute('data-root') || '';
+  function rvArt(p) {
+    const b = B[p.brand] || {}, st = A.bstyle ? A.bstyle(b) : '';
+    if (p.im) return '<div class="art art-photo" style="' + esc(st) + '"><img src="' + esc(root() + p.im) + '" alt="' + esc(b.name + ' — ' + p.name) + '" loading="lazy" decoding="async"></div>';
+    return '<div class="art" role="img" aria-label="' + esc(b.name + ' — ' + p.name + ': иллюстрация упаковки') + '" style="' + esc(st) + '"><div class="pk pk-' + esc(p.t || 'bottle') + '"><i class="sh"></i><i class="hd"></i><i class="cap"></i><i class="body"><b class="lbl"></b></i></div></div>';
+  }
+  function recent() {
+    if (!X.recent) return;
+    const old = $('#recent'); if (old) old.remove();
+    const page = document.body.getAttribute('data-page'), cur = page === 'product' ? (($('.p-page[data-product]') || {getAttribute: () => ''}).getAttribute('data-product')) : '';
+    let l = rvLoad();
+    if (cur && P[cur]) { l = [cur].concat(l.filter(x => x !== cur)).slice(0, RVMAX); rvSave(l); }
+    const show = l.filter(id => id !== cur).slice(0, RVSHOW); if (!show.length || (page !== 'product' && page !== 'catalog')) return;
+    const sec = document.createElement('section'); sec.className = 'sec rv-sec'; sec.id = 'recent'; sec.setAttribute('aria-labelledby', 'rv-h');
+    sec.innerHTML = '<div class="wrap"><div class="sec-head"><div><span class="eyebrow">Вы смотрели</span><h2 id="rv-h">Недавно просмотренные</h2></div><button class="lnk" type="button" data-act="rv-clear">Очистить ' + I.close + '</button></div>' +
+      '<div class="rv-grid">' + show.map(id => { const p = P[id]; return '<a class="mini-p" href="' + esc(root() + 'products/' + p.slug + '.html') + '" data-track="recent_click" data-product="' + esc(id) + '">' + rvArt(p) + '<div class="t"><small>' + esc(brandOf(id)) + '</small>' + esc(p.name) + '</div></a>'; }).join('') + '</div></div>';
+    const main = $('#main'); if (!main) return;
+    const anchor = page === 'catalog' ? $('#results', main) : $('.cta-band', main) || null;
+    if (page === 'catalog' && anchor) anchor.parentNode.insertBefore(sec, anchor); else if (anchor) { const host = anchor.closest('section') || anchor; host.parentNode.insertBefore(sec, host); } else main.appendChild(sec);
+  }
+
   /* ---------- события ---------- */
-  A.actions = A.actions || {};
+  A.actions['rv-clear'] = () => { rvSave([]); const s = $('#recent'); if (s) s.remove(); A.toast('Список просмотренных очищен'); };
   A.actions['rl-add'] = (t, id) => toggle(id || t.getAttribute('data-id'));
   A.actions['rl-open'] = t => openPanel(t);
   A.actions['rl-del'] = (t, id) => { id = id || t.getAttribute('data-id'); const p = P[id]; list = list.filter(x => x !== id); save(list); sync(); if (panelOpen()) paintPanel(); if (p) A.toast('Убрано из списка запроса: ' + p.name); };
@@ -166,7 +206,7 @@
   document.addEventListener('click', e => {
     const b = e.target.closest && e.target.closest('.qc-btn');
     if (b) { const el = $('#qc'), m = $('#qc-menu'), open = b.getAttribute('aria-expanded') !== 'true'; b.setAttribute('aria-expanded', String(open)); m.hidden = !open; el.classList.toggle('open', open); if (open) { const f = $('a', m); if (f) f.focus(); } return; }
-    if (!e.target.closest('#qc')) qcClose();
+    if (!e.target.closest('#qc') || e.target.closest('.qc-item')) qcClose();
   });
   document.addEventListener('keydown', e => { if (e.key === 'Escape' && $('#qc.open')) { qcClose(); const b = $('#qc .qc-btn'); if (b) b.focus(); } });
   window.addEventListener('scroll', onScroll, {passive: true});
@@ -174,7 +214,7 @@
 
   function init() {
     if (X.requestList) { inject(document); sync(); }
-    qc(); watch();
+    qc(); watch(); recent();
   }
   const prev = A.initPage;
   A.initPage = function () { if (prev) prev.apply(this, arguments); init(); };
