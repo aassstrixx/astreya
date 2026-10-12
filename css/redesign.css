@@ -218,7 +218,7 @@
 .ftr-rd-contacts li{margin:0}
 .ftr-rd-cols{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:clamp(24px,3.4vw,56px);padding-top:clamp(28px,4vw,48px)}
 @media (max-width:760px){.ftr-rd-cols{grid-template-columns:1fr 1fr}}
-@media (max-width:420px){.ftr-rd-cols{grid-template-columns:1fr}}
+@media (max-width:420px){.ftr-rd-cols{grid-template-columns:minmax(0,1fr)}}
 
 /* ---------- микроанимации (лёгкие; только transform/opacity, целые пиксели — текст остаётся чётким) ---------- */
 .rd .lnk{position:relative}
@@ -244,7 +244,7 @@
 /* ---------- адаптивность ---------- */
 @media (max-width:1000px){
   .rd-tgrid{grid-template-columns:repeat(2,minmax(0,1fr))}
-  .rd-stats-grid,.rd-why-grid,.rd-ed-grid,.rd-train-grid,.rd-aud-grid,.rd-final-band,.rd-about-grid{grid-template-columns:1fr}
+  .rd-stats-grid,.rd-why-grid,.rd-ed-grid,.rd-train-grid,.rd-aud-grid,.rd-final-band,.rd-about-grid{grid-template-columns:minmax(0,1fr)}   /* minmax(0,…): колонка не растягивается по самому широкому содержимому (на 280–320 px) */
   .rd .hero-bgphoto{width:100%;bottom:auto;height:62%;-webkit-mask-image:radial-gradient(ellipse 80% 80% at 50% 28%,#000 10%,transparent 76%);mask-image:radial-gradient(ellipse 80% 80% at 50% 28%,#000 10%,transparent 76%)}
   .rd .hero-bgphoto img{opacity:.2}
   .rd-ed-photo{aspect-ratio:4/4.4}
@@ -259,7 +259,7 @@
 }
 @media (max-width:640px){
   .rd-task-foot{white-space:normal;flex-wrap:wrap}
-  .rd-tasks,.rd-aud-list{grid-template-columns:1fr}
+  .rd-tasks,.rd-aud-list{grid-template-columns:minmax(0,1fr)}
   .rd-task-lead,.rd-task:last-child{grid-column:auto}
   .rd-nums{grid-template-columns:1fr 1fr}
   .rd-num{padding-inline:12px}
@@ -279,4 +279,10 @@
   .rd .hero-mark{left:-20px;right:-20px;top:-320px;height:calc(100% + 320px);opacity:.7;
     -webkit-mask-image:linear-gradient(to bottom,transparent 110px,#000 205px);mask-image:linear-gradient(to bottom,transparent 110px,#000 205px)}
   .rd .hm{width:125vw;height:calc(125vw * 379 / 396);left:calc(50% - 52.5vw);top:260px}
+}
+
+/* ---------- очень узкие экраны (≤ 340 px: сложенный Galaxy Fold и т. п.): длинные слова заголовков не выходят за край ---------- */
+@media (max-width:340px){
+  .rd-sec h2,.rd-ed-copy h2{font-size:clamp(24px,8.6vw,32px);overflow-wrap:anywhere;hyphens:auto}
+  .rd-ed-trio{flex-wrap:wrap}
 }

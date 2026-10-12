@@ -21,6 +21,7 @@ const partners = require('../src/pages/partners.js');
 const {searchPage, legalPage, notFoundPage} = require('../src/pages/misc.js');
 const customPage = require('../src/pages/custom.js');
 const blocks = require('../src/blocks-schema.js');
+const {eventIcs} = require('../src/ics.js');
 
 const ROOT = path.join(__dirname, '..');
 const ctx = load();
@@ -109,6 +110,9 @@ for (const pg of pages) {
   fs.writeFileSync(f, pg.html);
 }
 
+/* ---- «В календарь»: training/<адрес>.ics для каждого мероприятия (data/redesign.json → extras.calendar) ---- */
+if (L.extrasOn && ctx.redesign.extras.calendar) for (const e of ctx.events) fs.writeFileSync(path.join(ROOT, 'training', e.slug + '.ics'), eventIcs(e, {url: L.absUrl(`training/${e.slug}.html`), brand: ctx.brandById[e.brand].name, org: site.name}));
+
 /* ---- данные для браузера: js/data.js (формы, поиск, калькулятор) ---- */
 const brandName = id => ctx.brandById[id].name;
 const index = [
@@ -121,12 +125,13 @@ const index = [
   ...ctx.sortedEvents.map(e => ({t: 'event', title: e.title, url: `training/${e.slug}.html`, sub: `${e.fmt} · ${e.city} · ${S.dparts(e.date).full}`, date: e.date, q: S.norm([e.title, e.description, e.city, e.fmt, e.speaker, brandName(e.brand), 'семинар мероприятие обучение запись'].join(' '))}))
 ];
 const data = {
-  site: {name: site.name, contacts: {email: site.contacts.email, phone: site.contacts.phone, phoneRaw: site.contacts.phoneRaw, hours: site.contacts.hours}, formEndpoint: site.formEndpoint || '', discounts: site.discounts},
+  site: {name: site.name, contacts: {email: site.contacts.email, phone: site.contacts.phone, phoneRaw: site.contacts.phoneRaw, hours: site.contacts.hours, whatsapp: site.contacts.whatsapp || ''}, formEndpoint: site.formEndpoint || '', discounts: site.discounts},
   brands: ctx.brands.map(b => ({id: b.id, name: b.name, logo: b.logo || undefined, logoW: b.logoW, logoH: b.logoH, logoScale: b.logoScale})),
   cats: ctx.cats, tasks: ctx.tasks.map(t => ({id: t.id, label: t.label})), kinds: ctx.kinds,
   products: ctx.products.map(p => ({id: p.id, slug: p.slug, name: p.name, brand: p.brand})),
   events: ctx.sortedEvents.map(e => ({id: e.id, slug: e.slug, title: e.title, date: e.date, city: e.city})),
-  index
+  index,
+  extras: ctx.redesign && ctx.redesign.extras && ctx.redesign.extras.enabled ? {requestList: !!ctx.redesign.extras.requestList, quickContact: !!ctx.redesign.extras.quickContact} : null
 };
 fs.writeFileSync(path.join(ROOT, 'js', 'data.js'), `/* Сгенерировано tools/build.js из data/*.json — не редактировать вручную. */\nwindow.ASTREYA_DATA = ${JSON.stringify(data)};\n`);
 

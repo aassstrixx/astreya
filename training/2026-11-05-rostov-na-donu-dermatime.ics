@@ -1,0 +1,24 @@
+BEGIN:VCALENDAR
+VERSION:2.0
+PRODID:-//Астрея//Учебный центр//RU
+CALSCALE:GREGORIAN
+METHOD:PUBLISH
+BEGIN:VEVENT
+UID:s4@astreya
+DTSTAMP:20261105T000000Z
+DTSTART:20261105T103000
+DTEND:20261105T180000
+SUMMARY:Dermatime: мезотерапия и домашний уход по
+ сле процедур
+LOCATION:ул. Мурлычева\, 30/28\, Ростов-на-Дону
+DESCRIPTION:Мезотерапевтические препараты Derma
+ time и домашний уход\, продлевающий резуль
+ тат процедур.\n\nПреподаватель: Тренер на
+ правления Dermatime.\n\nПодробности и запись: h
+ ttps://aassstrixx.github.io/astreya/training/2026-11-05-rostov-na-donu-der
+ matime.html
+URL:https://aassstrixx.github.io/astreya/training/2026-11-05-rostov-na-donu
+ -dermatime.html
+CATEGORIES:Dermatime
+END:VEVENT
+END:VCALENDAR

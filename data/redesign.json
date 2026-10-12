@@ -454,5 +454,12 @@
       "privacy": {"top": {"tex": "film", "pos": "tr", "o": 5}},
       "terms": {"top": {"tex": "film", "pos": "tr", "o": 5}}
     }
+  },
+  "extras": {
+    "_note": "Дополнения интерфейса (css/extras.css, js/extras.js). enabled=false выключает все сразу; по отдельности: requestList — «Список запроса» (несколько товаров одной заявкой), quickContact — кнопка связи на телефоне, calendar — кнопка «В календарь» (.ics) на страницах мероприятий. Чтобы вернуть прежний вид, достаточно enabled=false и пересборки.",
+    "enabled": true,
+    "requestList": true,
+    "quickContact": true,
+    "calendar": true
   }
 }

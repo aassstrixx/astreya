@@ -70,6 +70,7 @@ function eventPage(ctx, C, P, e) {
   const b = ctx.brandById[e.brand], t = ctx.teacherById[e.teacher], d = dparts(e.date);
   const others = ctx.sortedEvents.filter(x => x.id !== e.id).slice(0, 3);
   const online = e.fmt !== 'Очно';
+  const cal = !!(ctx.site.redesign && ctx.redesign && ctx.redesign.extras && ctx.redesign.extras.enabled && ctx.redesign.extras.calendar);   // кнопка «В календарь» (.ics) — extras.calendar
   const facts = [['Дата', C.timeTag(e.date)], ['Время', esc(e.time)], ['Город', esc(e.city)], ['Формат', esc(e.fmt)], [online ? 'Подключение' : 'Место', esc(e.place)],
     ['Преподаватель', esc(e.speaker)], ['Бренд', `<a href="${C.burl(P, b)}">${esc(b.name)}</a>`], ['Места', e.seats ? esc(String(e.seats)) : 'Количество мест уточняйте при регистрации']];
   return `<div class="wrap" style="${bstyle(b)}" data-event="${e.id}" data-date="${e.date}">
@@ -83,7 +84,7 @@ function eventPage(ctx, C, P, e) {
           <p class="lead reveal">${esc(e.description)}</p>
           <div class="notice past reveal" id="past-note" hidden>${I.info}<span>Мероприятие уже прошло. Актуальные даты — в <a href="${C.u(P, 'training.html')}">расписании</a>.</span></div>
           <div class="row reveal" id="e-cta"><button class="btn btn-fill" type="button" data-act="form" data-type="seminar" data-ref="${e.id}" data-track="event_register" data-place="event-hero">Записаться ${I.arrow}</button>
-            <a class="btn btn-ghost" href="${C.u(P, 'training.html')}">Все мероприятия</a></div>
+            <a class="btn btn-ghost" href="${C.u(P, 'training.html')}">Все мероприятия</a>${cal ? `<a class="btn btn-ghost" href="${e.slug}.ics" download data-track="event_calendar" data-place="event-hero">${I.calendar} В календарь</a>` : ''}</div>
         </div>
       </div>
     </section>

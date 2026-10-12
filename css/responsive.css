@@ -18,7 +18,7 @@
   .menu-open .nav{clip-path:inset(0);visibility:visible;transition:clip-path .4s var(--ease),visibility 0s}
   .nav a.nl{font-size:17px;letter-spacing:.1em;width:100%;padding:20px 0;border-bottom:1px dashed var(--line)}
   .hdr-cta .btn{display:none}
-  .hero-grid{grid-template-columns:1fr}
+  .hero-grid{grid-template-columns:minmax(0,1fr)}
   .pearl-wrap{max-width:400px;margin-bottom:64px}
   .pearl-wrap{--k:.58}
   .ring.r3{inset:6%}.ring.r1{inset:11.5%}.ring.r2{inset:17%}.pearl{inset:21%}
@@ -29,33 +29,33 @@
   .g3{grid-template-columns:repeat(2,1fr)}
   .bgrid{grid-template-columns:repeat(2,1fr)}
   .bgrid .bcard:last-child{grid-column:1/-1}
-  .pick-out,.promo,.b-cols,.about-grid,.forms-band,.feat{grid-template-columns:1fr}
+  .pick-out,.promo,.b-cols,.about-grid,.forms-band,.feat{grid-template-columns:minmax(0,1fr)}
   .steps{grid-template-columns:repeat(2,1fr);row-gap:32px}
   .step:nth-child(3){padding-left:0;border-left:0}
-  .sib{grid-template-columns:1fr}
-  .cities{grid-template-columns:1fr}
-  .news-row{grid-template-columns:1fr;gap:10px}
+  .sib{grid-template-columns:minmax(0,1fr)}
+  .cities{grid-template-columns:minmax(0,1fr)}
+  .news-row{grid-template-columns:minmax(0,1fr);gap:10px}
   .news-row:hover{padding-left:0}
 }
 @media (max-width:640px){
   :root{--hdr:68px}
-  .g2,.g3,.g4{grid-template-columns:1fr}
-  .bgrid{grid-template-columns:1fr;padding:10px}
+  .g2,.g3,.g4{grid-template-columns:minmax(0,1fr)}
+  .bgrid{grid-template-columns:minmax(0,1fr);padding:10px}
   .bgrid .bcard:last-child{grid-column:auto}
   .bcard{min-height:0}
   .mini-prods{grid-template-columns:repeat(2,1fr)}
   .cat-tiles{grid-template-columns:repeat(2,minmax(0,1fr))}
-  .linkcards{grid-template-columns:1fr}
+  .linkcards{grid-template-columns:minmax(0,1fr)}
   .linkcard{min-height:130px}
   .cat-tile{min-height:112px;padding:16px}
   .cat-tile b{font-size:17px}
-  .steps{grid-template-columns:1fr}
+  .steps{grid-template-columns:minmax(0,1fr)}
   .step,.step+.step{padding:0;border-left:0}
-  .ftr-grid{grid-template-columns:1fr}
-  .two{grid-template-columns:1fr}
+  .ftr-grid{grid-template-columns:minmax(0,1fr)}
+  .two{grid-template-columns:minmax(0,1fr)}
   .tiers{gap:6px}
   .tier b{font-size:22px}
-  .sem-item{grid-template-columns:1fr;gap:12px}
+  .sem-item{grid-template-columns:minmax(0,1fr);gap:12px}
   .sem-item .who,.sem-item .go{grid-column:auto;grid-row:auto}
   .sem-item .date{display:flex;width:auto;gap:10px;align-items:baseline;justify-content:flex-start;padding:8px 14px;text-align:left}
   .sem-item .date b{font-size:24px}
@@ -86,11 +86,11 @@
   .tb-top .filters-toggle{align-self:flex-start}
   .filters{display:none;grid-template-columns:repeat(2,1fr)}
   .filters-open .filters{display:grid}
-  .about-home,.p-hero,.p-cols,.e-cols,.reg-card,.form-card,.map-row,.split-panel,.cta-band{grid-template-columns:1fr}
+  .about-home,.p-hero,.p-cols,.e-cols,.reg-card,.form-card,.map-row,.split-panel,.cta-band{grid-template-columns:minmax(0,1fr)}
   .p-side,.e-side{position:static}
   .ah-visual{aspect-ratio:1.5}
   .cb-art{max-width:190px;justify-self:start;justify-content:flex-start;order:-1}
-  .e-top{grid-template-columns:1fr}
+  .e-top{grid-template-columns:minmax(0,1fr)}
   .date.big{width:auto;display:flex;gap:12px;align-items:baseline;justify-content:flex-start;padding:10px 18px;text-align:left;border-radius:18px;justify-self:start}
   .date.big b{font-size:36px}
   .date.big em{margin:0}
@@ -98,13 +98,13 @@
   .srch-form{gap:8px}
 }
 @media (max-width:640px){
-  .filters{grid-template-columns:1fr}
-  .specs>div{grid-template-columns:1fr;gap:4px}
-  .brand-list{grid-template-columns:1fr}
+  .filters{grid-template-columns:minmax(0,1fr)}
+  .specs>div{grid-template-columns:minmax(0,1fr);gap:4px}
+  .brand-list{grid-template-columns:minmax(0,1fr)}
   .search-page{flex-direction:column}
-  .facts-dl.reqs{grid-template-columns:1fr}
+  .facts-dl.reqs{grid-template-columns:minmax(0,1fr)}
   .facts-dl.reqs>div:nth-last-child(2){border-bottom:1px dashed var(--line)}
-  .sr-item{grid-template-columns:1fr;gap:2px}
+  .sr-item{grid-template-columns:minmax(0,1fr);gap:2px}
   .sr-type{grid-row:auto}
   .teaser{flex-direction:column;align-items:flex-start}
   .e-teacher{flex-direction:column;align-items:flex-start}

@@ -19,7 +19,8 @@ module.exports = function layout(ctx, C) {
   const {site} = ctx, {u} = C;
   const showNote = !!site.demoNotice && !(ctx.redesign && ctx.redesign.ui && ctx.redesign.ui.showDemoNotices === false);   // пометка «демо-данные» в подвале (в режиме доработок скрывается флагом redesign.ui)
   const rd = !!site.redesign, BD = rd ? backdropsFactory(ctx) : {on: false, apply: (P, h) => h};
-  const cssList = rd ? [...CSS, 'redesign', ...(BD.on ? ['backdrops'] : [])] : CSS, jsList = rd ? [...JS, 'redesign', ...(BD.on ? ['backdrops'] : [])] : JS;   // слой доработок включается одним флагом site.redesign; фоновые вставки — backdrops.enabled в data/redesign.json
+  const EX = !!(rd && ctx.redesign && ctx.redesign.extras && ctx.redesign.extras.enabled);       // дополнения интерфейса (css/extras.css, js/extras.js): список запроса, быстрая связь, печать
+  const cssList = rd ? [...CSS, 'redesign', ...(BD.on ? ['backdrops'] : []), ...(EX ? ['extras'] : [])] : CSS, jsList = rd ? [...JS, 'redesign', ...(BD.on ? ['backdrops'] : []), ...(EX ? ['extras'] : [])] : JS;   // слой доработок включается одним флагом site.redesign; фоновые вставки — backdrops.enabled в data/redesign.json
   const ver = ctx.assetVersion ? '?v=' + ctx.assetVersion : '';
   const jarCfg = rd && ctx.redesign && ctx.redesign.jar && ctx.redesign.jar.enabled ? ctx.redesign.jar : null;     // вступление с баночкой: css/jar.css + js/jar.js — только на главной и только пока jar.enabled
   const pageCss = P => jarCfg && P.key === 'home' ? [...cssList, 'jar'] : cssList, pageJs = P => jarCfg && P.key === 'home' ? [...jsList, 'jar'] : jsList;
@@ -234,5 +235,5 @@ ${pageJs(P).map(n => `<script src="${u(P, `js/${n}.js`)}${ver}" defer></script>`
 </html>
 `;
   }
-  return {shell: (P, body) => verAssets(shell(P, body)), absUrl, base, nav};
+  return {shell: (P, body) => verAssets(shell(P, body)), absUrl, base, nav, extrasOn: EX};
 };

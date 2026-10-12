@@ -1,0 +1,25 @@
+BEGIN:VCALENDAR
+VERSION:2.0
+PRODID:-//Астрея//Учебный центр//RU
+CALSCALE:GREGORIAN
+METHOD:PUBLISH
+BEGIN:VEVENT
+UID:s3@astreya
+DTSTAMP:20261028T000000Z
+DTSTART:20261028T120000
+DTEND:20261028T133000
+SUMMARY:Фотозащита в протоколе: как объяснит
+ ь клиенту и что выбрать
+LOCATION:Онлайн (ссылку пришлём после регист
+ рации)
+DESCRIPTION:Вебинар о месте фотозащиты в прото
+ коле: как рассказать клиенту о ежедневно
+ й защите и какие решения Heliocare включить в
+  уход.\n\nПреподаватель: Савиных С. В.\n\nПод
+ робности и запись: https://aassstrixx.github.io/astreya/tra
+ ining/2026-10-28-onlayn-heliocare.html
+URL:https://aassstrixx.github.io/astreya/training/2026-10-28-onlayn-helioca
+ re.html
+CATEGORIES:Heliocare
+END:VEVENT
+END:VCALENDAR
