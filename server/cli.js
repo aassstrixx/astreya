@@ -46,8 +46,8 @@ const cmds = {
   async build() { const r = await B.build('командная строка'); console.log(r.build.out); if (r.check) console.log(r.check.out); process.exit(r.ok ? 0 : 1); },
   async 'assistant-check'() {
     const AS = require('./lib/assistant'), i = AS.info(); console.log('ИИ-помощник «Стелла»');
-    console.log((i.key ? '  ✓ ' : '  ✗ ') + 'ключ API (ANTHROPIC_API_KEY): ' + (i.key ? 'задан' : 'не задан'));
-    console.log((i.model ? '  ✓ ' : '  ✗ ') + 'модель (ASSISTANT_MODEL): ' + (i.model || 'не указана'));
+    console.log((i.key ? '  ✓ ' : '  ✗ ') + 'ключ API: ' + (i.key ? 'задан (' + (i.keyFrom === 'env' ? 'окружение / .env' : 'настройки админки') + ')' : 'не задан — вставьте в админке или задайте ANTHROPIC_API_KEY (шаблон: server/.env.example)'));
+    console.log((i.model ? '  ✓ ' : '  ✗ ') + 'модель: ' + (i.model ? i.model + ' (' + (i.modelFrom === 'env' ? 'окружение / .env' : 'настройки админки') + ')' : 'не указана — впишите в админке или задайте ASSISTANT_MODEL'));
     console.log((i.sdk ? '  ✓ ' : '  ✗ ') + 'пакет @anthropic-ai/sdk: ' + (i.sdk ? 'установлен' : 'не установлен (npm install в корне проекта)'));
     console.log((i.data ? '  ✓ ' : '  ✗ ') + 'данные сайта js/data.js и js/kb.js: ' + (i.data ? 'есть' : 'нет — выполните node tools/build.js'));
     if (!i.ai) { console.log('\nИИ-режим выключен: ' + i.message); process.exit(1); }

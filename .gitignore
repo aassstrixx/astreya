@@ -5,3 +5,7 @@ tools/jar-bench/.cache/
 server/data/
 node_modules/
 __pycache__/
+
+# секреты: ключи API и пароли (шаблон — server/.env.example)
+.env
+server/.env

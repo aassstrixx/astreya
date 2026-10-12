@@ -68,14 +68,15 @@ function handleAssistant(req, res) {
 
 /* ---------- админский API ---------- */
 const need = (ctx, ...roles) => { if (!roles.includes(ctx.user.role)) throw httpErr(403, 'Недостаточно прав.'); };
-const maskSettings = s => { const o = JSON.parse(JSON.stringify(s)); const m = (obj, k) => { if (obj && obj[k]) obj[k] = SECRET_MASK; }; m(o.notify.telegram, 'token'); m(o.notify.smtp, 'pass'); return o; };
-const mergeSecrets = (neu, old) => { const o = JSON.parse(JSON.stringify(neu)); const keep = (a, b, k) => { if (a && a[k] === SECRET_MASK) a[k] = b && b[k] || ''; }; keep(o.notify && o.notify.telegram, old.notify.telegram, 'token'); keep(o.notify && o.notify.smtp, old.notify.smtp, 'pass'); return o; };
+const maskSettings = s => { const o = JSON.parse(JSON.stringify(s)); const m = (obj, k) => { if (obj && obj[k]) obj[k] = SECRET_MASK; }; m(o.notify.telegram, 'token'); m(o.notify.smtp, 'pass'); m(o.assistant, 'apiKey'); return o; };
+const mergeSecrets = (neu, old) => { const o = JSON.parse(JSON.stringify(neu)); const keep = (a, b, k) => { if (a && a[k] === SECRET_MASK) a[k] = b && b[k] || ''; }; keep(o.notify && o.notify.telegram, old.notify.telegram, 'token'); keep(o.notify && o.notify.smtp, old.notify.smtp, 'pass'); keep(o.assistant, old.assistant, 'apiKey'); return o; };
 function checkSettings(s) {
   const url = v => !v || /^https?:\/\/[^\s]+$/.test(v);
   if (!s || typeof s !== 'object') throw httpErr(400, 'Некорректные настройки.');
   if (!Array.isArray(s.allowedOrigins) || !s.allowedOrigins.every(x => typeof x === 'string' && /^https?:\/\/[^\s/]+$/.test(x))) throw httpErr(422, 'Разрешённые сайты: адреса вида https://example.com (без пути и слэша на конце).');
   if (s.notify && !url(s.notify.webhookUrl)) throw httpErr(422, 'Веб-хук: полный адрес https://…');
   const sm = s.notify && s.notify.smtp; if (sm && sm.host && (!sm.to || !sm.from && !sm.user)) throw httpErr(422, 'SMTP: укажите получателя и отправителя.');
+  const as = s.assistant || {}; if (typeof as.apiKey !== 'string' || (as.apiKey && !/^[\x21-\x7e]{8,400}$/.test(as.apiKey))) throw httpErr(422, 'Ключ API: только латиница, цифры и знаки без пробелов (8–400 символов), как он выдан в консоли.'); if (typeof as.model !== 'string' || (as.model && !/^[A-Za-z0-9._:\/-]{1,100}$/.test(as.model))) throw httpErr(422, 'Модель: идентификатор из документации, латиница, цифры и знаки . _ : / - (до 100 символов).');
   const rl = s.rateLimit || {}; if (!(+rl.per10min >= 1 && +rl.perDay >= 1)) throw httpErr(422, 'Ограничение заявок: положительные числа.');
   if (s.retentionDays !== undefined && !(+s.retentionDays >= 0)) throw httpErr(422, 'Срок хранения: число дней (0 — не удалять).');
 }

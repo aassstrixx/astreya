@@ -210,7 +210,7 @@
     if (built) return; built = true; document.body.classList.add('has-asst');
     const fab = document.createElement('button'); fab.type = 'button'; fab.id = 'asst-fab'; fab.className = 'asst-fab'; fab.setAttribute('data-act', 'asst-open'); fab.setAttribute('aria-haspopup', 'dialog'); fab.setAttribute('aria-expanded', 'false'); fab.setAttribute('aria-controls', 'asst'); fab.setAttribute('aria-label', 'Стелла, помощник «Астреи»: задать вопрос');
     const sparks = [0, 1, 2, 3, 4, 5, 6, 7].map(k => '<i style="--a:' + (k * 45 + 12) + 'deg;--d:' + (38 + (k % 3) * 8) + 'px;--k:' + k + '"></i>').join('');
-    fab.innerHTML = '<span class="asst-fab-fx" aria-hidden="true">' + sparks + '</span><span class="asst-fab-ring" aria-hidden="true"></span><span class="asst-fab-i"><span class="asst-fab-pe">' + PEARL('idle', true) + '</span></span><span class="asst-fab-t"><span>Спросить Стеллу</span></span>';
+    fab.innerHTML = '<span class="asst-fab-fx" aria-hidden="true">' + sparks + '</span><span class="asst-fab-ring" aria-hidden="true"></span><span class="asst-fab-i"><span class="asst-fab-pe">' + PEARL('idle', true) + '</span></span><span class="asst-fab-t"><span><b>Спросить Стеллу</b></span></span>';
     document.body.insertAdjacentHTML('beforeend', PEARL_DEFS); document.body.appendChild(fab);
     fab.addEventListener('pointerenter', () => { fab.classList.add('long'); clearTimeout(longT); }); fab.addEventListener('pointerleave', () => { if (!fab.matches(':focus-visible')) longT = setTimeout(() => fab.classList.remove('long'), 450); });
     fab.addEventListener('focus', () => { if (fab.matches(':focus-visible')) { fab.classList.add('long'); clearTimeout(longT); } }); fab.addEventListener('blur', () => { longT = setTimeout(() => fab.classList.remove('long'), 450); });
@@ -436,9 +436,10 @@
   function init() {
     build(); ensureBrain(); if (isOpen && msgs.length === 1) { msgs.chips = brain.starters(ctxOf(), bst); qrPaint(msgs.chips); }
     const f = $('#asst-fab');
-    if (f && !f.classList.contains('in')) setTimeout(() => {          // появление: пружина + россыпь искр, Стелла машет и на первых секундах показывает подпись
+    if (f && !f.classList.contains('in')) setTimeout(() => {          // появление одним плавным движением: круг всплывает → Стелла машет → подпись раскрывается (0,7 → 1,3 → 2,2 с)
       f.classList.add('in'); const fx = $('.asst-fab-fx', f); if (fx && !reduced()) { fx.classList.remove('go'); void fx.offsetWidth; fx.classList.add('go'); }
-      heyFab(1700); if (!mobile()) { setTimeout(() => { f.classList.add('long'); longT = setTimeout(() => { if (!f.matches(':hover, :focus-visible')) f.classList.remove('long'); }, 6500); }, reduced() ? 0 : 1000); }
+      setTimeout(() => f.classList.add('settled'), reduced() ? 0 : 1300); setTimeout(() => heyFab(1800), reduced() ? 0 : 900);
+      if (!mobile()) { setTimeout(() => { f.classList.add('long'); longT = setTimeout(() => { if (!f.matches(':hover, :focus-visible')) f.classList.remove('long'); }, 6500); }, reduced() ? 0 : 2100); }
     }, reduced() ? 0 : 700);
     clearTimeout(tipT); tipT = setTimeout(maybeTip, 8000); if (!nudgeT) nudgeT = setTimeout(nudge, 14000);
     registerWebMCP();

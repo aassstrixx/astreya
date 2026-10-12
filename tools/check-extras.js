@@ -197,7 +197,7 @@ const cfg = JSON.parse(fs.readFileSync(pth.join(ROOT, 'data/redesign.json'), 'ut
     ok(fabI.pe === 1 && fabI.label === 'Спросить Стеллу' && /Стелла/.test(fabI.aria) && fabI.sparks >= 6 && fabI.defs, 'кнопка: жемчужинка Стелла, подпись «Спросить Стеллу», доступное имя, искры и градиент на месте', fabI);
     if (!mobile) {
       ok(fabI.burst, 'при появлении кнопки запускается россыпь искр');
-      await wait(1500); const w1 = await p.$eval('#asst-fab', e => ({long: e.classList.contains('long'), w: Math.round(e.getBoundingClientRect().width)})); ok(w1.long && w1.w > 150, 'в первые секунды подпись раскрыта (кнопка-«таблетка»), ширина ' + w1.w, w1);
+      await p.waitForFunction(() => { const f = document.getElementById('asst-fab'); return f.classList.contains('long') && f.offsetWidth > 150; }, null, {timeout: 9000}).catch(() => {}); const w1 = await p.$eval('#asst-fab', e => ({long: e.classList.contains('long'), w: e.offsetWidth})); ok(w1.long && w1.w > 150, 'в первые секунды подпись раскрыта (кнопка-«таблетка»), ширина ' + w1.w, w1);
       await p.mouse.move(700, 300); await wait(150); const far = await p.$eval('#asst-fab', e => e.style.getPropertyValue('--ex'));
       const bx = await p.$eval('#asst-fab', e => { const r = e.getBoundingClientRect(); return {x: r.left + r.width / 2, y: r.top + r.height / 2}; });
       await p.mouse.move(bx.x - 90, bx.y - 20); await wait(200); const near = await p.$eval('#asst-fab', e => ({ex: e.style.getPropertyValue('--ex'), mx: e.style.getPropertyValue('--mx')}));

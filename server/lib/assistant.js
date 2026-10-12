@@ -1,13 +1,16 @@
-/* ИИ-режим помощника сайта «Стеллы»: POST /api/assistant (ответ потоком SSE) и GET /api/assistant/status.
+/* ИИ-режим помощника сайта «Стелла»: POST /api/assistant (ответ потоком SSE) и GET /api/assistant/status.
    Помощник работает и без этого файла — встроенный «мозг» (js/assistant-brain.js) отвечает прямо в браузере. Здесь — «умный» режим для свободных вопросов
    на ЛЮБУЮ тему (не только про сайт): общие знания, объяснения, тексты, расчёты, перевод, код, обычный разговор. Всё, что касается компании, каталога, обучения
    и условий, модель берёт из ИНСТРУМЕНТОВ — поиск товаров, карточка товара и бренда, расписание, расчёт скидки, контакты, поиск по материалам сайта.
    Она сама решает, что проверить, вызывает инструменты (сервер выполняет их по данным сайта: js/data.js + js/kb.js), и отвечает по найденному — без «выдумок по памяти».
    Ответ приходит браузеру потоком: текст по мере появления, а также короткие «статусы шагов» («Ищу в каталоге…») — чтобы было видно, что помощник делает.
 
-   Включается переменными окружения (без них ИИ-режим выключен, остальной сайт и админка не затронуты):
-     ANTHROPIC_API_KEY — ключ API (SDK читает его сам);
-     ASSISTANT_MODEL   — идентификатор модели (обязательно; в репозитории намеренно не прописан — берите из документации Anthropic);
+   Включается ключом и моделью — любым из способов (без них ИИ-режим выключен, остальной сайт и админка не затронуты):
+     1) в админке: «Настройки и заявки» → «ИИ-помощник сайта» (вписать ключ и модель; хранятся в server/data/settings.json, наружу не отдаются);
+     2) переменные окружения / файл server/.env (см. server/.env.example) — они главнее настроек админки:
+        ANTHROPIC_API_KEY — ключ API (SDK читает его сам);
+        ASSISTANT_MODEL   — идентификатор модели (обязательно; в репозитории намеренно не прописан — берите из документации Anthropic);
+     Ограничения (только окружение):
      ASSISTANT_MAX_TOKENS (по умолчанию 1200) · ASSISTANT_RATE (сообщений с одного адреса за 10 минут, по умолчанию 20) · ASSISTANT_DAILY (всего за сутки, по умолчанию 400).
    Пакет @anthropic-ai/sdk — необязательная зависимость (npm install в корне): подключается при первом запросе; нет пакета — ИИ-режим выключен.
    Текст диалогов на сервере не сохраняется и не пишется в журнал; в логе — только служебные ошибки. */
@@ -19,7 +22,16 @@ const Brain = require('../../js/assistant-brain.js');
 
 const MAX_MSGS = 14, MAX_CHARS = 1200, BODY_LIMIT = 24 * 1024, MAX_ROUNDS = 5, MAX_TOOL_CALLS = 8;
 const num = (v, d) => { const n = +v; return Number.isFinite(n) && n > 0 ? Math.floor(n) : d; };
-const cfg = () => ({model: String(C.env.ASSISTANT_MODEL || '').trim(), maxTokens: Math.min(num(C.env.ASSISTANT_MAX_TOKENS, 1200), 3000), rate: num(C.env.ASSISTANT_RATE, 20), daily: num(C.env.ASSISTANT_DAILY, 400), key: !!(C.env.ANTHROPIC_API_KEY || C.env.ANTHROPIC_AUTH_TOKEN)});
+/* ключ и модель: переменные окружения главнее, иначе — то, что админ ввёл в «Настройках» (хранится в server/data/settings.json, наружу не отдаётся); файл читается заново только при изменении */
+let setCache = {m: -1, v: {}};
+function saved() {
+  let m = 0; try { m = fs.statSync(path.join(C.DATA, 'settings.json')).mtimeMs; } catch (e) { return {}; }
+  if (m !== setCache.m) { let a = {}; try { a = C.loadSettings().assistant || {}; } catch (e) {} setCache = {m, v: {apiKey: String(a.apiKey || '').trim(), model: String(a.model || '').trim()}}; }
+  return setCache.v;
+}
+const cfg = () => { const sv = saved(), envKey = C.env.ANTHROPIC_API_KEY || '', envTok = C.env.ANTHROPIC_AUTH_TOKEN || '', envModel = String(C.env.ASSISTANT_MODEL || '').trim();
+  return {model: envModel || sv.model, modelFrom: envModel ? 'env' : sv.model ? 'settings' : null, maxTokens: Math.min(num(C.env.ASSISTANT_MAX_TOKENS, 1200), 3000), rate: num(C.env.ASSISTANT_RATE, 20), daily: num(C.env.ASSISTANT_DAILY, 400),
+    key: !!(envKey || envTok || sv.apiKey), keyFrom: envKey || envTok ? 'env' : sv.apiKey ? 'settings' : null, apiKey: envKey || envTok ? '' : sv.apiKey}; };
 
 /* ---------- данные сайта: js/data.js и js/kb.js (их пишет tools/build.js) ---------- */
 const cache = new Map();
@@ -126,13 +138,13 @@ function limited(ip, lim) {
 }
 
 /* ---------- клиент Anthropic (подключается лениво; в тестах подменяется) ---------- */
-let factory = null, clientCache = null;
+let factory = null, clientCache = null, clientTag = '';
 function getClient() {
   if (factory) return factory();
-  if (clientCache) return clientCache;
+  if (clientCache && clientTag === cfg().apiKey) return clientCache;          // сменили ключ в админке — клиент создаётся заново
   let mod; try { mod = require('@anthropic-ai/sdk'); } catch (e) { return null; }
-  const Anthropic = mod.default || mod;
-  return (clientCache = new Anthropic({timeout: 45000, maxRetries: 1}));
+  const Anthropic = mod.default || mod, c = cfg(), o = {timeout: 45000, maxRetries: 1}; if (c.apiKey) o.apiKey = c.apiKey;          // ключ из настроек админки; иначе SDK берёт его из окружения сам
+  clientCache = new Anthropic(o); clientTag = c.apiKey; return clientCache;
 }
 
 function status() {
@@ -145,10 +157,10 @@ function status() {
 }
 
 /* сведения для администратора: что настроено и чего не хватает (без значений секретов) */
-const REASONS = {no_key: 'Не задан ключ API: добавьте ANTHROPIC_API_KEY в окружение сервера.', no_model: 'Не указана модель: задайте ASSISTANT_MODEL (идентификатор из документации Anthropic).', no_kb: 'Нет данных сайта: выполните «Пересобрать сайт» (нужны js/data.js и js/kb.js).', no_sdk: 'Не установлен пакет @anthropic-ai/sdk: выполните npm install в корне проекта.'};
+const REASONS = {no_key: 'Не задан ключ API: вставьте его в поле ниже (Настройки и заявки → ИИ-помощник сайта) или задайте ANTHROPIC_API_KEY в окружении сервера.', no_model: 'Не указана модель: впишите идентификатор из документации Anthropic в поле ниже или задайте ASSISTANT_MODEL.', no_kb: 'Нет данных сайта: выполните «Пересобрать сайт» (нужны js/data.js и js/kb.js).', no_sdk: 'Не установлен пакет @anthropic-ai/sdk: выполните npm install в корне проекта.'};
 function info() {
   const c = cfg(), st = status(); let sdk = false; if (!factory) { try { require.resolve('@anthropic-ai/sdk'); sdk = true; } catch (e) {} } else sdk = true;
-  return {ai: st.ai, reason: st.reason || null, message: st.ai ? 'ИИ-режим готов к работе.' : REASONS[st.reason] || 'ИИ-режим выключен.', key: c.key, model: c.model, sdk, data: !!(loadJs('js/data.js') && loadJs('js/kb.js')), limits: {maxTokens: c.maxTokens, rate: c.rate, daily: c.daily}};
+  return {ai: st.ai, reason: st.reason || null, message: st.ai ? 'ИИ-режим готов к работе.' : REASONS[st.reason] || 'ИИ-режим выключен.', key: c.key, keyFrom: c.keyFrom, model: c.model, modelFrom: c.modelFrom, sdk, data: !!(loadJs('js/data.js') && loadJs('js/kb.js')), limits: {maxTokens: c.maxTokens, rate: c.rate, daily: c.daily}};
 }
 
 /* пробный вопрос к модели (кнопка «Проверить подключение» и команда assistant-check): тратит несколько токенов, диалоги не сохраняет */

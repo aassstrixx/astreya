@@ -208,3 +208,12 @@ test('админка: сведения и проверка ИИ доступны
   const again = await adm.post('/api/assistant/test', {}); assert.equal(again.status, 429, 'частые проверки ограничены');
   A.setClientFactory(fake);
 });
+
+test('.env: переменные читаются из файла, но не перезаписывают заданные в окружении; значения не выводятся', () => {
+  const fs = require('fs'), os = require('os'), path = require('path'), C = require('../lib/config');
+  const f = path.join(fs.mkdtempSync(path.join(os.tmpdir(), 'astreya-env-')), '.env');
+  fs.writeFileSync(f, ['# комментарий', 'ANTHROPIC_API_KEY=sk-from-file', 'ASSISTANT_MODEL="model x" # пояснение', "export ASSISTANT_RATE='7'", 'ASSISTANT_DAILY=500 # без кавычек', 'EMPTY=', 'KEEP=file', '  # ещё комментарий', 'мусор без равенства'].join('\r\n'));
+  const target = {KEEP: 'env'}; const n = C.loadDotEnv(f, target);
+  assert.deepEqual(target, {KEEP: 'env', ANTHROPIC_API_KEY: 'sk-from-file', ASSISTANT_MODEL: 'model x', ASSISTANT_RATE: '7', ASSISTANT_DAILY: '500'}); assert.equal(n, 4);
+  assert.equal(C.loadDotEnv(path.join(os.tmpdir(), 'нет-такого-файла.env'), {}), 0, 'нет файла — не ошибка');
+});
