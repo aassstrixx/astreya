@@ -47,6 +47,7 @@
   const STOP = '<svg class="ic" viewBox="0 0 20 20" aria-hidden="true" focusable="false"><rect x="5.5" y="5.5" width="9" height="9" rx="2"/></svg>';
   const RESET = '<svg class="ic" viewBox="0 0 20 20" aria-hidden="true" focusable="false"><path d="M4 10a6 6 0 1 0 2-4.5M4 3.8v3.4h3.4"/></svg>';
   const MIC = '<svg class="ic" viewBox="0 0 20 20" aria-hidden="true" focusable="false"><rect x="7.2" y="2.5" width="5.6" height="9.5" rx="2.8"/><path d="M4.5 9.5a5.5 5.5 0 0 0 11 0M10 15v2.5"/></svg>';
+  const TOURI = '<svg class="ic" viewBox="0 0 20 20" aria-hidden="true" focusable="false"><circle cx="10" cy="10" r="7"/><path d="m12.8 7.2-1.6 4-4 1.6 1.6-4 4-1.6Z"/></svg>';          // компас: «Покажи сайт»
   const PERSON = '<svg class="ic" viewBox="0 0 20 20" aria-hidden="true" focusable="false"><circle cx="10" cy="7" r="3.2"/><path d="M3.8 16.5c.8-3 3.2-4.5 6.2-4.5s5.4 1.5 6.2 4.5"/></svg>';
   const UP = '<svg class="ic" viewBox="0 0 20 20" aria-hidden="true" focusable="false"><path d="M7 9v7.5H4V9h3Zm0 0 2.6-5.5c1.2 0 2 .9 1.8 2L11 8h4.2c1 0 1.7.9 1.5 1.9l-1 5.2c-.2.8-.9 1.4-1.7 1.4H7"/></svg>';
   const DOWN = '<svg class="ic" viewBox="0 0 20 20" aria-hidden="true" focusable="false"><g transform="rotate(180 10 10)"><path d="M7 9v7.5H4V9h3Zm0 0 2.6-5.5c1.2 0 2 .9 1.8 2L11 8h4.2c1 0 1.7.9 1.5 1.9l-1 5.2c-.2.8-.9 1.4-1.7 1.4H7"/></g></svg>';
@@ -253,6 +254,7 @@
     const el = document.createElement('section'); el.id = 'asst'; el.className = 'asst'; el.hidden = true; el.setAttribute('role', 'dialog'); el.setAttribute('aria-label', 'Стелла — помощник «Астреи»');
     const SR = window.SpeechRecognition || window.webkitSpeechRecognition, voice = !!SR && (location.protocol === 'https:' || location.hostname === 'localhost' || location.hostname === '127.0.0.1');
     el.innerHTML = '<header class="asst-h"><span class="asst-av" aria-hidden="true">' + PEARL('idle', true, 'look') + '</span><div class="asst-ht"><b>Стелла<span class="asst-n2"> · помощник</span></b><small id="asst-mode"><i class="asst-dot" aria-hidden="true"></i><span>Отвечаю по данным сайта</span></small></div>' +
+      (D.guide && D.extras && D.extras.navigator ? '<button class="asst-ib asst-ib-tour" type="button" data-act="asst-tour-site" aria-label="Показать сайт — экскурсия" title="Показать сайт — экскурсия">' + TOURI + '</button>' : '') +
       '<button class="asst-ib" type="button" data-act="asst-human" aria-label="Связаться с менеджером" title="Связаться с менеджером">' + PERSON + '</button><button class="asst-ib" type="button" data-act="asst-reset" aria-label="Начать диалог заново" title="Начать заново">' + RESET + '</button><button class="asst-ib" type="button" data-act="asst-close" aria-label="Закрыть помощника">' + I.close + '</button></header>' +
       '<div class="asst-log" id="asst-log" tabindex="0" aria-label="Диалог с помощником"><div class="asst-qr" id="asst-qr"></div></div><button class="asst-down" id="asst-down" type="button" data-act="asst-down" aria-label="К последним сообщениям" hidden>' + ARROWDOWN + '</button><div class="sr" id="asst-sr" role="status" aria-live="polite"></div>' +
       '<form class="asst-form" id="asst-form" autocomplete="off"><label class="sr" for="asst-in">Ваш вопрос</label><textarea id="asst-in" rows="1" maxlength="' + MAXIN + '" placeholder="Напишите вопрос…" enterkeyhint="send"></textarea>' +
@@ -451,6 +453,7 @@
   A.actions['asst-reset'] = () => reset();
   A.actions['asst-chip'] = t => send(t.getAttribute('data-q'), t.getBoundingClientRect());
   A.actions['asst-human'] = () => send('Хочу связаться с менеджером');
+  A.actions['asst-tour-site'] = () => send('Покажи сайт');          // экскурсия запускается только по нажатию посетителя
   A.actions['asst-mic'] = () => toggleVoice();
   A.actions['asst-tip-x'] = () => hideTip();
   A.actions['asst-down'] = () => { stick = true; scrollLog(); const d = $('#asst-down'); if (d) d.hidden = true; };

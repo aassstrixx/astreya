@@ -3,7 +3,7 @@
    Что здесь: «руки» Стеллы. Чат (assistant.js) и «мозг» (assistant-brain.js) решают, ЧТО показать, — этот файл делает это на странице:
    · spot()    — подсветка элемента с пояснением (затемнение вокруг, подсказка рядом, следит за прокруткой);
    · tour()    — экскурсия по шагам, переживает переходы между страницами (состояние в sessionStorage, живёт ≈ 3 минуты);
-     «Знакомство с сайтом» (tour «site») — по меню сайта: «вы на главной» → каждый пункт меню → поиск → «Стать партнёром» → «начните с главной». Страница не прокручивается, шапка сама показывается, на узких экранах сам открывается ящик меню;
+     «Покажи сайт» (tour «site») — интерактивная экскурсия из четырёх этапов: Стелла сама прокручивает, подсвечивает, переходит между страницами, нажимает ссылку меню и карточку, набирает запрос в поиске и выбирает фильтр (всё обратимо); запускается только по просьбе посетителя;
    · go()      — открыть страницу этого сайта (только известные адреса), filter() — выставить фильтры каталога, scroll() — прокрутка;
    · точки входа — на каждой странице блок «Не знаете, что выбрать? Спросите Стеллу» с готовыми вопросами;
    · проактивная подсказка — аккуратный пузырь у кнопки Стеллы: при долгом чтении, прокрутке, паузе, «мышь ушла вверх», пустых результатах и выбранных для сравнения товарах.
@@ -52,7 +52,7 @@
   }
 
   /* ---------- подсветка ---------- */
-  let spotEl = null, spotRaf = 0, cur = null, onClose = null;
+  let spotEl = null, spotRaf = 0, cur = null, onClose = null, navPending = 0;
   function spotDom() {
     let s = $('#g-spot'); if (s) return s;
     s = document.createElement('div'); s.id = 'g-spot'; s.className = 'g-spot'; s.hidden = true;
@@ -63,7 +63,8 @@
   const PAD = 8;
   function place() {
     spotRaf = 0; const s = $('#g-spot'); if (!s || s.hidden || !spotEl) return;
-    if (!spotEl.isConnected || !shown(spotEl)) { const t = cur && cur.t, again = t ? resolveEl(t) : null; if (again) spotEl = again; else { hideSpot(); return; } }
+    if (cur && cur.free) { const hole = $('.g-hole', s), pop = $('.g-pop', s); hole.style.width = '0px'; hole.style.height = '0px'; if (mobile()) { pop.style.left = ''; pop.style.top = ''; pop.classList.add('sheet'); pop.classList.remove('sheet-top'); } else { pop.classList.remove('sheet'); pop.style.left = Math.round(innerWidth - (pop.offsetWidth || 320) - 24) + 'px'; pop.style.top = Math.round(innerHeight - (pop.offsetHeight || 160) - 96) + 'px'; } spotRaf = requestAnimationFrame(place); return; }
+    if (!spotEl.isConnected || !shown(spotEl)) { const t = cur && cur.t, again = t ? resolveEl(t) : null; if (again) spotEl = again; else { if (navPending && Date.now() - navPending < 6000) hideSpot(true); else hideSpot(); return; } }          // цель пропала: если это переход, который начала сама экскурсия, — состояние экскурсии сохраняем
     const r = spotEl.getBoundingClientRect(), vw = innerWidth, vh = innerHeight, hole = $('.g-hole', s), pop = $('.g-pop', s);
     const x = Math.max(4, r.left - PAD), y = Math.max(4, r.top - PAD), w = Math.min(vw - 8, r.width + PAD * 2), h = Math.min(Math.round(vh * .6), r.height + PAD * 2);          // очень большой блок подсвечиваем только в пределах экрана
     hole.style.transform = 'translate(' + Math.round(x) + 'px,' + Math.round(y) + 'px)'; hole.style.width = Math.round(w) + 'px'; hole.style.height = Math.round(h) + 'px';
@@ -82,27 +83,32 @@
     spotRaf = requestAnimationFrame(place);
   }
   function scrollTo(el) {
-    if (el.closest && el.closest('#hdr')) return;          // шапка и меню закреплены сверху — страницу не прокручиваем
+    for (let n = el; n && n !== document.body && n.nodeType === 1; n = n.parentElement) { if (n.id === 'hdr' || getComputedStyle(n).position === 'fixed') return; }          // шапка, меню и кнопка Стеллы закреплены на экране — страницу не прокручиваем
     const r = el.getBoundingClientRect(), vh = innerHeight, want = mobile() ? vh * .3 : vh * .38, hdr = 76;
     if (r.top >= hdr + 10 && r.bottom <= vh - (mobile() ? 190 : 24) && r.height < vh * .8) return;          // и так на виду
     const top = Math.max(0, Math.round(scrollY + r.top - Math.max(hdr + 16, Math.min(want, (vh - r.height) / 2))));
     window.scrollTo({top, behavior: 'smooth'});
   }
-  /* cfg: {t: описание цели, text, label, step: {i, n}, buttons: [{l, act, d, primary}], onClose} */
+  /* прогресс экскурсии: «2 из 4 · этап» и четыре отрезка (пройденные заполнены, текущий — по шагам внутри этапа) */
+  function progHTML(p) {
+    let seg = ''; for (let k = 0; k < p.gn; k++) seg += '<i style="--p:' + (k < p.g ? 1 : k === p.g ? p.sub : 0) + '"></i>';
+    return '<small class="g-st"><b>' + (p.g + 1) + ' из ' + p.gn + '</b>' + (p.label ? ' · ' + esc(p.label) : '') + '</small><span class="g-bar" aria-hidden="true">' + seg + '</span>';
+  }
+  /* cfg: {t: описание цели, text, tour, prog: {g, gn, sub, label}, buttons: [{l, act, d, primary}], free — без выделения элемента, noScroll, onClose} */
   function spot(el, cfg) {
     const s = spotDom(); spotEl = el; cur = cfg; onClose = cfg.onClose || null;
     const pop = $('.g-pop', s), fresh = s.hidden, hole = $('.g-hole', s); if (fresh) hole.classList.add('g-nt'); $('.g-pe', s).innerHTML = A.pearl ? A.pearl('talk', true) : '';          // первое появление — сразу на месте, без «вылета» из угла
-    $$('.g-sel, .g-pulse').forEach(e => { if (e !== el) e.classList.remove('g-sel', 'g-pulse'); }); if (cfg.mark && el.classList) el.classList.add('g-sel');          // выбранная «вкладка» меню
-    $('.g-tx', s).innerHTML = '<p>' + bold(cfg.text || '') + '</p>' + (cfg.step && cfg.step.n > 1 ? '<small class="g-st">Шаг ' + (cfg.step.i + 1) + ' из ' + cfg.step.n + '</small><span class="g-bar" aria-hidden="true"><i style="width:' + Math.round((cfg.step.i + 1) / cfg.step.n * 100) + '%"></i></span>' : '');
-    const bt = (cfg.buttons || []).map(b => '<button class="btn ' + (b.primary ? 'btn-fill' : b.act === 'asst-open' ? 'btn-lnk' : 'btn-ghost') + ' btn-sm" type="button" data-act="' + esc(b.act) + '"' + (b.d ? ' data-d="' + esc(JSON.stringify(b.d)) + '"' : '') + '>' + esc(b.l) + '</button>').join('');
+    $$('.g-pulse').forEach(e => { if (e !== el) e.classList.remove('g-pulse'); });
+    $('.g-tx', s).innerHTML = '<p>' + bold(cfg.text || '') + '</p>' + (cfg.prog ? progHTML(cfg.prog) : '');
+    const bt = (cfg.buttons || []).map(b => '<button class="btn ' + (b.primary ? 'btn-fill' : b.act === 'asst-open' || b.act === 'g-spot-x' ? 'btn-lnk' : 'btn-ghost') + ' btn-sm" type="button" data-act="' + esc(b.act) + '"' + (b.d ? ' data-d="' + esc(JSON.stringify(b.d)) + '"' : '') + '>' + esc(b.l) + '</button>').join('');
     $('.g-ctl', s).innerHTML = bt; s.hidden = false; document.body.classList.add('g-on');
     pop.classList.remove('in'); void pop.offsetWidth; pop.classList.add('in');
-    scrollTo(el); cancelAnimationFrame(spotRaf); spotRaf = requestAnimationFrame(place); if (fresh) requestAnimationFrame(() => requestAnimationFrame(() => hole.classList.remove('g-nt')));
+    if (!cfg.noScroll && !cfg.free) scrollTo(el); cancelAnimationFrame(spotRaf); spotRaf = requestAnimationFrame(place); if (fresh) requestAnimationFrame(() => requestAnimationFrame(() => hole.classList.remove('g-nt')));
     const f = $('.g-ctl .btn-fill', s); if (f) { try { f.focus({preventScroll: true}); } catch (e) {} }
     A.track && A.track('guide_spot', {target: cfg.t ? cfg.t.id : '', tour: cfg.tour || ''});
   }
   function hideSpot(silent, keep) {
-    if (!keep) menuRelease();
+    if (!keep) { runCleanup(true); menuRelease(); }
     const s = $('#g-spot'); if (!s || s.hidden) { spotEl = null; return; }
     s.hidden = true; document.body.classList.remove('g-on'); cancelAnimationFrame(spotRaf); spotRaf = 0; spotEl = null; const cb = onClose; onClose = null; cur = null; if (cb && !silent) cb();
   }
@@ -114,7 +120,7 @@
     if (A.toggleMenu) A.toggleMenu(open); mUI.drawer = open; return Math.round(480 / speed());
   }
   function menuRelease() {
-    $$('.g-sel').forEach(e => e.classList.remove('g-sel')); if (!mUI.hdr) return;
+    if (!mUI.hdr) return;
     document.body.classList.remove('g-hdr'); if (mUI.drawer && A.closeMenu) A.closeMenu(); mUI = {drawer: false, hdr: false};
   }
 
@@ -133,70 +139,125 @@
   }
   function pulse(el) { el.classList.remove('g-pulse'); void el.offsetWidth; el.classList.add('g-pulse'); setTimeout(() => el.classList.remove('g-pulse'), 2600); }
 
-  /* ---------- экскурсии ---------- */
-  const tourById = id => { const T = TOURS.find(t => t.id === id); if (T && T.menu) T.steps = menuSteps(T); return T || null; };
-  /* «Знакомство с сайтом»: шаги берутся из настоящего меню страницы (порядок и подписи — как в шапке), тексты — из guide.json → tours[site].menu */
-  const pageName = () => { const on = $('#nav > a.nl.on'), n = on ? on.textContent.trim() : (document.title || '').split(/\s[—–|·]\s|:\s/)[0].trim(); return n ? (n.length > 40 ? n.slice(0, 38).replace(/\s+\S*$/, '') + '…' : n) : 'сайта'; };          // название раздела: пункт меню, к которому относится страница, иначе начало заголовка
-  function menuSteps(T) {
-    const M = T.menu || {}, home = pageKey() === 'home', fill = (t, o) => String(t || '').replace(/\{(\w+)\}/g, (m, k) => o && o[k] != null ? o[k] : m);
-    const st = [{id: 'menu-intro', label: 'Главная', sel: '.logo', say: fill((M.intro || {})[home ? 'home' : 'other'], {page: pageName()}), kind: 'intro'}];
-    $$('#nav > a.nl').forEach(a => {
-      const k = a.getAttribute('data-nav') || '', title = a.textContent.trim(); if (!title) return;
-      st.push({id: 'menu-' + k, label: title, sel: '#nav > a.nl[data-nav="' + k.replace(/"/g, '') + '"]', drawer: true, mark: true, say: (M.nav || {})[k] || fill(M.navOther, {title}), kind: 'nav'});
-    });
-    if (M.search) st.push({id: 'menu-search', label: 'Поиск', sel: '.hdr-cta [data-act="search"]', selM: '.nav-search .search', drawer: true, mark: true, say: M.search, kind: 'search'});
-    if (M.partner) st.push({id: 'menu-partner', label: 'Стать партнёром', sel: '.hdr-partner', selM: '.nav-extra .btn-fill', drawer: true, mark: true, say: M.partner, kind: 'partner'});
-    if (M.outro) st.push({id: 'menu-outro', label: 'Главная', sel: '.logo', say: (M.outro || {})[home ? 'home' : 'other'], kind: 'outro', home});
-    return st.map(x => Object.assign({page: 'any', menu: true}, x));
-  }
-  const stepMatches = (st, key) => st.page === 'any' || st.page === key || (st.page === 'brand' && key === 'brand');
+  /* ---------- экскурсия «Покажи сайт» ----------
+     Шаги — в data/stella/guide.json → tours[site].steps: {g — номер этапа (их четыре), page — на какой странице шаг, target — id из targets, say — текст Стеллы,
+     do — действие, которое Стелла выполняет на странице сама (brand-open, type-search, pick-task), pre — текст, пока действие идёт,
+     next — {l, click}: кнопка «Далее» с настоящим нажатием на ссылку/карточку (переход на другую страницу), offer — предложение попробовать (только по нажатию посетителя),
+     chrome — цель в шапке: шапка закрепляется на виду, на узких экранах сам раскрывается ящик меню; final — финальный шаг с предложением, что делать дальше}.
+     Экскурсия НИКОГДА не запускается сама: только по просьбе посетителя («Покажи сайт» в панели Стеллы). Корзину и заявки она не трогает. */
+  const tourById = id => TOURS.find(t => t.id === id) || null;
+  const stepMatches = (st, key) => st.page === 'any' || st.page === key;
   const isStatic = page => PAGES.some(p => p.id === page);
+  const fill = (t, v) => String(t || '').replace(/\{(\w+)\}/g, (m, k) => v && v[k] != null ? v[k] : m);
+  const targetOf = st => (TARGETS[st.page === 'any' ? '*' : st.page] || []).concat(TARGETS['*'] || []).find(x => x.id === st.target) || findTarget(st.target);
   function saveTour(id, i, nav) { store.set(KT, {id, i, t: Date.now(), nav: nav ? 1 : 0}); }
+  /* то, что экскурсия временно изменила на странице (набранный запрос, фильтр, раскрытая карточка бренда, отмеченные для сравнения товары), возвращается назад */
+  let undo = [], undoT = [], demoTimer = 0;          // undo — на время шага; undoT — на время всей экскурсии на странице (набранный запрос и фильтр остаются, пока показываем карточки)
+  function runCleanup(all) { clearTimeout(demoTimer); demoTimer = 0; const l = undo.concat(all ? undoT : []); undo = []; if (all) undoT = []; l.forEach(fn => { try { fn(); } catch (e) {} }); }
+  const later = (fn, ms) => { demoTimer = setTimeout(fn, Math.round(ms / speed())); };
+  const prog = (T, i) => { if (!T.groups) return {g: i, gn: T.steps.length, sub: 1, label: ''}; const st = T.steps[i], g = st.g || 0, ids = T.steps.map((x, k) => (x.g || 0) === g ? k : -1).filter(k => k >= 0); return {g, gn: (T.groups || []).length || 1, sub: (ids.indexOf(i) + 1) / ids.length, label: (T.groups || [])[g] || ''}; };
+
+  /* действия, которые Стелла выполняет на странице сама — они безопасны и обратимы (ничего не отправляется, корзина и заявки не затрагиваются) */
+  const DO = {
+    'brand-open'(st, el, ctx) {                                                    // раскрыть карточку первого бренда на главной
+      const c = el.matches && el.matches('.bcard') ? el : $('.bcard[data-act="brand-card"]', el); if (!c || c.classList.contains('is-active')) return;
+      later(() => { c.click(); undo.push(() => { if (A.actions['brand-back']) A.actions['brand-back'](); }); later(() => scrollTo(c), 700); }, 700);          // карточка при раскрытии сама подъезжает к краю экрана — возвращаем её в удобное место
+    },
+    'type-search'(st, el, ctx) {                                                   // набрать название реального товара в поиске каталога
+      const q = $('#cat-q'), p = (D.products || [])[0]; if (!q || !p) return;
+      const word = String(p.name || '').split(/\s+/)[0], total = (D.products || []).length; let k = 0;
+      q.value = ''; undoT.push(() => { if (A.actions['cat-reset']) A.actions['cat-reset'](); });
+      const tick = () => {
+        q.value = word.slice(0, ++k); q.dispatchEvent(new Event('input', {bubbles: true}));
+        if (k < word.length) { later(tick, 95); return; }
+        demoTimer = setTimeout(() => { const m = /(\d+)\D+(\d+)/.exec(($('#res-count') || {}).textContent || ''); ctx.say({q: word, n: m ? m[1] : '?', total: m ? m[2] : total}); }, 420);          // поиск срабатывает с небольшой задержкой — ждём её в реальном времени
+      };
+      later(tick, 600);
+    },
+    'pick-task'(st, el, ctx) {                                                     // выбрать назначение в фильтре каталога
+      const sel = $('#f-task'); if (!sel) return; const opt = Array.from(sel.options).find(o => o.value === 'pigment') || Array.from(sel.options).find(o => o.value !== 'all'); if (!opt) return;
+      if (A.actions['cat-reset']) A.actions['cat-reset'](); undoT.push(() => { if (A.actions['cat-reset']) A.actions['cat-reset'](); });
+      later(() => {
+        sel.value = opt.value; sel.dispatchEvent(new Event('change', {bubbles: true}));
+        demoTimer = setTimeout(() => { const m = /(\d+)\D+(\d+)/.exec(($('#res-count') || {}).textContent || ''); ctx.say({task: opt.textContent.trim(), n: m ? m[1] : '?', total: m ? m[2] : '?'}); }, 380);
+      }, 650);
+    }
+  };
+  /* «попробовать» — действие, которое меняет состояние (отметка товаров для сравнения): выполняется только по явному нажатию посетителя и откатывается */
+  const OFFER = {
+    'cmp-demo'(T, i, st) {
+      const cards = $$('.pcard:not([hidden])').filter(shown).slice(0, 2), ids = cards.map(c => c.getAttribute('data-id')).filter(Boolean); if (ids.length < 2 || !A.actions['cmp-toggle']) return false;
+      let have = []; try { have = JSON.parse(localStorage.getItem('astreya:cmp') || '[]'); } catch (e) {}
+      const added = ids.filter(id => have.indexOf(id) < 0); added.forEach(id => A.actions['cmp-toggle'](null, id));
+      undo.push(() => { let cur = []; try { cur = JSON.parse(localStorage.getItem('astreya:cmp') || '[]'); } catch (e) {} added.forEach(id => { if (cur.indexOf(id) >= 0) A.actions['cmp-toggle'](null, id); }); });
+      later(() => {
+        const bar = $('#cmp-bar'); if (!bar || bar.hidden) return;
+        spot(bar, {t: {id: 'compare-bar'}, tour: T.id, prog: prog(T, i), text: st.offer.say || 'Готово: два товара отмечены. Нажмите «Попросить Стеллу рассказать» — расскажу, чем они отличаются.',
+          buttons: [{l: 'Далее', act: 'g-tour-next', primary: true}, {l: 'Рассказать о товарах', act: 'g-tour-cmp'}, {l: 'Пропустить', act: 'g-spot-x'}], onClose: () => { runCleanup(true); store.del(KT); }});
+      }, 450);
+      return true;
+    }
+  };
+
   function tour(id, from) {
-    const T = tourById(id); if (!T) return false; hideNudge(); const key = pageKey();
-    let i = typeof from === 'number' ? from : T.steps.findIndex(s => stepMatches(s, key)); if (i < 0) i = 0;
-    return tourStep(T, i, true);
+    const T = tourById(id); if (!T || !(T.steps || []).length) return false; hideNudge(); runCleanup(true);
+    const key = pageKey(); let i = typeof from === 'number' ? from : T.start === 'first' ? 0 : T.steps.findIndex(s => stepMatches(s, key)); if (i < 0) i = 0;
+    return tourStep(T, i, 1);
   }
-  function tourStep(T, i, user) {
-    const key = pageKey(), n = T.steps.length;
-    while (i < n && T.steps[i].optional && stepMatches(T.steps[i], key) && !resolveStepEl(T.steps[i], key)) i++;          // необязательный шаг без цели пропускаем
-    if (i >= n) { tourEnd(T, true); return true; }
+  const RETRY = 12;          // сколько раз (≈ 0,2 с каждый) ждём, пока нужный элемент появится на странице
+  function tourStep(T, i, dir) {
+    dir = dir || 1; const key = pageKey(), n = T.steps.length;
+    if (i >= n) { tourEnd(T, true); return true; } if (i < 0) i = 0;
     const st = T.steps[i];
-    if (!stepMatches(st, key)) {                                                       // шаг относится к другой странице
+    if (!stepMatches(st, key)) {                                                       // шаг относится к другой странице — переходим и продолжаем после загрузки
       const pg = PAGES.find(p => p.id === st.page);
-      if (pg) { saveTour(T.id, i, true); go(pg.href, {keepTour: true}); return true; }
+      if (pg) { runCleanup(true); saveTour(T.id, i, true); go(pg.href, {keepTour: true}); return true; }
       saveTour(T.id, i, true); hintWaitPage(T, i, st); return true;                    // страница-«лист» (товар, мероприятие): ждём, пока посетитель её откроет
     }
-    const t = st.menu ? {id: st.id, label: st.label, say: st.say, sel: narrow() && st.selM ? st.selM : st.sel} : (TARGETS[st.page === 'any' ? '*' : st.page] || []).concat(TARGETS['*'] || []).find(x => x.id === st.target) || findTarget(st.target);
-    if (!t) { return tourStep(T, i + 1, user); }
-    const wait = st.menu ? menuHold(!!st.drawer) : prepFilters(t); const run = () => {
-      const el = resolveEl(t); if (!el) return tourStep(T, i + 1, user);          // нет на экране — идём дальше
+    runCleanup();
+    const t = targetOf(st);
+    if (!t && !st.final) return tourStep(T, i + dir, dir);
+    const wait = st.chrome ? menuHold(!!st.drawer) : (menuRelease(), t ? prepFilters(t) : 0);
+    const run = tries => {
+      const el = t ? resolveEl(t) : null;
+      if (!el && !st.final) { if (tries < RETRY) { setTimeout(() => run(tries + 1), Math.round(220 / speed())); return; } return tourStep(T, i + dir, dir); }          // элемент так и не появился или скрыт — безопасно пропускаем шаг
       if (S().close) S().close(true);
-      const last = i >= n - 1, nextSt = T.steps[i + 1], need = nextSt && !stepMatches(nextSt, key) && !isStatic(nextSt.page); saveTour(T.id, i, need);
-      const buttons = [].concat(i > 0 ? [{l: 'Назад', act: 'g-tour-prev'}] : [], need ? [{l: nextSt.page === 'product' ? 'Открыть первый товар' : 'Дальше', act: 'g-tour-next', primary: true}] : st.kind === 'outro' && !st.home ? [{l: 'На главную', act: 'asst-go', d: {href: 'index.html'}, primary: true}, {l: 'Закрыть', act: 'g-spot-x'}] : [{l: last ? 'Готово' : 'Далее', act: 'g-tour-next', primary: true}]);
-      spot(el, {t, tour: T.id, mark: !!st.mark, text: st.say || t.say || t.label, step: {i, n}, buttons: buttons.concat([{l: 'Спросить Стеллу', act: 'asst-open'}]), onClose: () => { store.del(KT); }});
-      pulse(el);
+      const last = i >= n - 1; saveTour(T.id, i, false);
+      const say = v => { const p = $('#g-spot .g-tx p'); if (p && cur && cur.stepI === i && cur.tour === T.id) p.innerHTML = bold(fill(st.say, v)); };
+      const buttons = [].concat(i > 0 ? [{l: 'Назад', act: 'g-tour-prev'}] : []);
+      if (st.final) buttons.push({l: 'Открыть каталог', act: 'asst-go', d: {href: 'catalog.html'}, primary: true}, {l: 'Подобрать по задаче', act: 'asst-go', d: {href: 'catalog.html', show: 'task-filter'}}, {l: 'Спросить Стеллу', act: 'asst-open'}, {l: 'Закрыть', act: 'g-spot-x'});
+      else buttons.push({l: st.next && st.next.l || (last ? 'Готово' : 'Далее'), act: 'g-tour-next', primary: true}, ...(st.offer ? [{l: st.offer.l, act: 'g-tour-offer'}] : []), {l: 'Пропустить', act: 'g-spot-x'});
+      if (el && st.view) { const v = $(st.view); if (v) { const top = Math.max(0, Math.round(scrollY + v.getBoundingClientRect().top - 76)); window.scrollTo({top, behavior: 'smooth'}); } }          // «показать с начала»: главная — с первого экрана
+      spot(el || document.body, {t: t || {id: 'free'}, tour: T.id, stepI: i, prog: prog(T, i), text: st.do && st.pre ? st.pre : fill(st.say, {}), buttons, free: !el, noScroll: !!st.view, onClose: () => { runCleanup(true); store.del(KT); }});
+      if (el) pulse(el);
+      if (st.do && DO[st.do] && el) DO[st.do](st, el, {say});
     };
-    if (wait) setTimeout(run, wait); else run(); return true;
+    if (wait) setTimeout(() => run(0), wait); else run(0); return true;
   }
-  function resolveStepEl(st, key) { if (st.menu) return resolveEl({sel: narrow() && st.selM ? st.selM : st.sel}); const t = (TARGETS[st.page === 'any' ? '*' : st.page] || []).concat(TARGETS['*'] || []).find(x => x.id === st.target); return t ? resolveEl(t) : null; }
   function hintWaitPage(T, i, st) {
     const s = spotDom(), pg = st.page === 'product' ? 'товар' : st.page === 'event' ? 'мероприятие' : 'страницу';
-    spot(document.body, {t: {id: 'wait'}, tour: T.id, text: 'Откройте ' + pg + ' — и я продолжу показ.', step: {i, n: T.steps.length}, buttons: [{l: 'Прервать', act: 'g-spot-x', primary: true}], onClose: () => { store.del(KT); }});
-    const hole = $('.g-hole', s); hole.style.width = '0px'; hole.style.height = '0px';
+    spot(document.body, {t: {id: 'wait'}, tour: T.id, text: 'Откройте ' + pg + ' — и я продолжу показ.', buttons: [{l: 'Пропустить', act: 'g-spot-x', primary: true}], free: true, onClose: () => { store.del(KT); }});
   }
   function tourEnd(T, done) {
-    store.del(KT); hideSpot(true);
-    if (done) { A.toast && A.toast('Экскурсия окончена. Я рядом — спрашивайте!'); S().hey && S().hey(); }
+    runCleanup(true); store.del(KT); hideSpot(true);
+    if (done && T.id !== 'site') { A.toast && A.toast('Экскурсия окончена. Я рядом — спрашивайте!'); S().hey && S().hey(); }
+  }
+  /* «Далее» с настоящим нажатием: Стелла сама нажимает на ссылку меню или на карточку товара — так же, как это сделал бы посетитель */
+  function realClick(T, i, st) {
+    const cs = st.next && st.next.click; if (!cs) return false;
+    const t = targetOf(st), el = t ? resolveEl(t) : null; let link = el;
+    if (st.next.link) link = $(st.next.link, el) || el;
+    if (!link) return false;
+    const before = pageKey(), at = location.href; runCleanup(true); saveTour(T.id, i + 1, true); navPending = Date.now();
+    link.click();
+    setTimeout(() => { const c = store.get(KT); if (pageKey() === before && location.href === at && c && c.i === i + 1 && !(cur && cur.tour === T.id && cur.stepI !== i)) tourStep(T, i + 1, 1); }, 3600);          // нажатие не привело к переходу (ссылки нет или она заблокирована) — продолжаем сами; время не зависит от темпа анимаций
+    return true;
   }
   function tourMove(d) {
     const st = store.get(KT); if (!st) { hideSpot(true); return; } const T = tourById(st.id); if (!T) { hideSpot(true); return; }
+    if (d > 0 && T.steps[st.i] && realClick(T, st.i, T.steps[st.i])) return;
     let i = st.i + d; if (i < 0) i = 0;
-    if (d > 0 && T.steps[st.i + 1] && !stepMatches(T.steps[st.i + 1], pageKey()) && !isStatic(T.steps[st.i + 1].page)) {          // следующий шаг — на странице товара: помогаем её открыть
-      const nextSt = T.steps[st.i + 1];
-      if (nextSt.page === 'product') { const a = $$('.pcard:not([hidden]) a.stretch').find(shown); if (a) { saveTour(T.id, st.i + 1, true); hideSpot(true); a.click(); return; } }
-    }
-    if (!T.menu) hideSpot(true); tourStep(T, i, true);          // шаги меню плавно «перетекают» один в другой, без мигания
+    tourStep(T, i, d < 0 ? -1 : 1);
   }
 
   /* ---------- переходы ---------- */
@@ -205,6 +266,7 @@
     if (o.show) store.set(KP, {show: o.show, t: Date.now()}); if (!o.keepTour && !(store.get(KT) || {}).nav) store.del(KT);
     if (S().isOpen && S().isOpen()) { if (mobile()) { if (S().close) S().close(true); } else store.set(KC, 1); }          // на телефоне чат занимает весь экран — убираем, чтобы была видна страница; на компьютере при обычной перезагрузке (файл с диском) он откроется снова
     hideSpot(true);
+    const pgx = PAGES.find(p => p.href === h.path); if (pgx && pgx.id === pageKey() && !h.rest) { window.scrollTo({top: 0, behavior: 'smooth'}); setTimeout(resume, 60); return true; }          // уже на этой странице: просто наверх и продолжаем (так же и в автономной сборке с её роутером)
     if (A.showPage) { const u = new URL(h.href, 'http://x/'); A.showPage(u.pathname.replace(/^\//, ''), u.search, u.hash, true, false); return true; }          // автономная сборка: свой роутер
     let u; try { u = new URL(root() + h.href, location.href); } catch (e) { return false; }
     if (u.pathname === location.pathname && u.search === location.search && !u.hash) { window.scrollTo({top: 0, behavior: 'smooth'}); resume(); return true; }
@@ -243,6 +305,8 @@
   A.actions['g-spot-x'] = () => { hideSpot(); };
   A.actions['g-tour-next'] = () => tourMove(1);
   A.actions['g-tour-prev'] = () => tourMove(-1);
+  A.actions['g-tour-offer'] = () => { const c = store.get(KT), T = c && tourById(c.id), st = T && T.steps[c.i]; if (st && st.offer && OFFER[st.offer.do]) OFFER[st.offer.do](T, c.i, st); };
+  A.actions['g-tour-cmp'] = () => { undo = []; undoT = []; store.del(KT); hideSpot(true); if (A.actions['cmp-ask']) A.actions['cmp-ask'](); };          // посетитель сам попросил рассказать об отмеченных товарах — они остаются в сравнении
   A.actions['g-chip'] = t => { hideNudge(true); S().ask && S().ask(t.getAttribute('data-q') || ''); };
   A.actions['g-nudge-x'] = () => { hideNudge(true); store.set(KN, Object.assign(nstate(), {off: 1})); };
   document.addEventListener('keydown', e => { if (e.key === 'Escape' && $('#g-spot') && !$('#g-spot').hidden) hideSpot(); });
@@ -258,7 +322,7 @@
     const pend = store.get(KP), tr = store.get(KT), reopen = store.get(KC);
     if (pend && Date.now() - pend.t < 60000) { store.del(KP); afterLoad(() => show(pend.show, {})); return; }
     if (pend) store.del(KP);
-    if (tr && Date.now() - tr.t < 180000 && tr.nav) {
+    if (tr && Date.now() - tr.t < 60000 && tr.nav) {
       const T = tourById(tr.id); if (!T) { store.del(KT); return; }
       const key = pageKey(); let j = -1; for (let k = tr.i; k < T.steps.length; k++) { if (stepMatches(T.steps[k], key)) { j = k; break; } }
       if (j >= 0) { afterLoad(() => tourStep(T, j, false)); return; }
