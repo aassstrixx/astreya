@@ -8,14 +8,14 @@ const {getSecret, httpErr} = require('./auth');
 const FILE = path.join(C.DATA, 'leads.json');
 const mu = new Mutex();
 const STATUSES = {new: 'Новая', in_work: 'В работе', done: 'Обработана', spam: 'Спам', archived: 'В архиве'};
-const TYPE_TITLES = {partner: 'Партнёрство', seminar: 'Запись на мероприятие', product: 'Запрос по товару', question: 'Вопрос', callback: 'Обратный звонок', subscribe: 'Подписка на новости', contact: 'Контакты'};
+const TYPE_TITLES = {partner: 'Партнёрство', seminar: 'Запись на мероприятие', product: 'Запрос по товару', question: 'Вопрос', callback: 'Обратный звонок', plan: 'Стартовый подбор', subscribe: 'Подписка на новости', contact: 'Контакты'};
 
 /* какие поля обязательны — берём из той же таблицы, по которой строятся формы на сайте (js/shared.js): единый источник правды */
 function formTypes() { try { delete require.cache[require.resolve(path.join(C.ROOT, 'js', 'shared.js'))]; return require(path.join(C.ROOT, 'js', 'shared.js')).FORM_TYPES; } catch (e) { return null; } }
 
 const clean = (v, max) => String(v === undefined || v === null ? '' : v).replace(/[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f]/g, '').replace(/\r\n?/g, '\n').trim().slice(0, max);
 const emailOk = v => v.length <= 254 && /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(v);
-const LIMITS = {name: 120, phone: 40, email: 254, city: 120, org: 200, spec: 120, msg: 4000, context: 300};
+const LIMITS = {name: 120, phone: 40, email: 254, city: 120, org: 200, spec: 120, msg: 4000, context: 300, src: 200};          // src — откуда пришла заявка (страница, шаг воронки, вариант эксперимента); только метка, на отправку не влияет
 
 /* ---- проверка входных данных. Возвращает {ok, lead} или {ok:false, errors:{поле: текст}} ---- */
 function validate(body) {
@@ -25,7 +25,7 @@ function validate(body) {
   if (!types[type]) errors.type = 'Неизвестный тип формы.';
   const req = {}; (types[type] ? types[type].fields : []).forEach(([id, r]) => { req[id] = !!r; });
   const f = {};
-  for (const k of ['name', 'phone', 'email', 'city', 'org', 'spec', 'msg', 'context']) f[k] = clean(body[k], LIMITS[k]);
+  for (const k of ['name', 'phone', 'email', 'city', 'org', 'spec', 'msg', 'context', 'src']) f[k] = clean(body[k], LIMITS[k]);
   for (const k of Object.keys(req)) if (req[k] && !f[k]) errors[k] = 'Обязательное поле.';
   if (f.email && !emailOk(f.email)) errors.email = 'Некорректный e-mail.';
   const digits = f.phone.replace(/\D/g, '');
@@ -79,7 +79,7 @@ function receive(body, meta, settings) {
     d.seq++;
     const rec = {
       id: 'L' + String(d.seq).padStart(5, '0'), n: d.seq, created_at: nowISO(), updated_at: nowISO(), status: reasons.length ? 'spam' : 'new',
-      type: lead.type, name: lead.name, phone: lead.phone, email: lead.email, city: lead.city, org: lead.org, spec: lead.spec, msg: lead.msg, context: lead.context, page: lead.page,
+      type: lead.type, name: lead.name, phone: lead.phone, email: lead.email, city: lead.city, org: lead.org, spec: lead.spec, msg: lead.msg, context: lead.context, src: lead.src || '', page: lead.page,
       consent: true, fill_ms: lead.fill_ms, ip: ipH, ua: clean(meta.ua, 200), origin: clean(meta.origin, 200), spam_reasons: reasons, flags: sr.flags, duplicates: 0,
       notes: [], history: [{t: nowISO(), who: 'сайт', action: 'created', detail: reasons.length ? 'отмечена как спам: ' + reasons.join('; ') : sr.flags.length ? 'подозрительная: ' + sr.flags.join('; ') : ''}]
     };
@@ -89,7 +89,7 @@ function receive(body, meta, settings) {
 }
 
 /* ---- просмотр ---- */
-function toListItem(x) { return {id: x.id, n: x.n, created_at: x.created_at, status: x.status, type: x.type, name: x.name, phone: x.phone, email: x.email, city: x.city, org: x.org, context: x.context, msg: x.msg.slice(0, 140), notes: x.notes.length, duplicates: x.duplicates || 0, flags: x.flags || [], spam_reasons: x.spam_reasons || []}; }
+function toListItem(x) { return {id: x.id, n: x.n, created_at: x.created_at, status: x.status, type: x.type, name: x.name, phone: x.phone, email: x.email, city: x.city, org: x.org, context: x.context, src: x.src || '', msg: x.msg.slice(0, 140), notes: x.notes.length, duplicates: x.duplicates || 0, flags: x.flags || [], spam_reasons: x.spam_reasons || []}; }
 function filtered(q) {
   const d = load(); let a = d.items;
   if (q.status === 'active' || !q.status) a = a.filter(x => x.status !== 'archived' && x.status !== 'spam'); else if (q.status !== 'all') a = a.filter(x => x.status === q.status);
@@ -133,8 +133,8 @@ function purgeOld(days) {                    // срок хранения: уд�
 const cell = v => { let s = String(v === undefined || v === null ? '' : v); if (/^[=+\-@\t\r]/.test(s)) s = "'" + s; return /[;"\n\r]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s; };
 function csv(q) {
   const rows = filtered(Object.assign({}, q, {status: q.status || 'all'}));      // выгрузка без явного статуса — все заявки
-  const head = ['№', 'Дата (UTC)', 'Статус', 'Тип', 'Имя', 'Телефон', 'E-mail', 'Город', 'Организация', 'Специализация', 'Тема', 'Сообщение', 'Страница', 'Комментарии'];
-  const lines = [head.map(cell).join(';')].concat(rows.map(x => [x.id, x.created_at, STATUSES[x.status], TYPE_TITLES[x.type] || x.type, x.name, x.phone, x.email, x.city, x.org, x.spec, x.context, x.msg, x.page, x.notes.map(n => n.who + ': ' + n.text).join(' | ')].map(cell).join(';')));
+  const head = ['№', 'Дата (UTC)', 'Статус', 'Тип', 'Имя', 'Телефон', 'E-mail', 'Город', 'Организация', 'Специализация', 'Тема', 'Сообщение', 'Страница', 'Источник', 'Комментарии'];
+  const lines = [head.map(cell).join(';')].concat(rows.map(x => [x.id, x.created_at, STATUSES[x.status], TYPE_TITLES[x.type] || x.type, x.name, x.phone, x.email, x.city, x.org, x.spec, x.context, x.msg, x.page, x.src || '', x.notes.map(n => n.who + ': ' + n.text).join(' | ')].map(cell).join(';')));
   return '﻿' + lines.join('\r\n') + '\r\n';
 }
 module.exports = {STATUSES, TYPE_TITLES, validate, receive, list, get, stats, update, remove, purgeOld, csv, ipHash, spamReasons};

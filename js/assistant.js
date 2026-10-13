@@ -80,11 +80,12 @@
     const ev = $('[data-event]'); if (ev && page === 'event') c.event = ev.getAttribute('data-event');
     const br = $('[data-brand-page]'); if (br && page === 'brand') c.brand = br.getAttribute('data-brand-page');
     const cm = cmpIds(); if (cm.length) c.cmp = cm;
+    if (A.sales && A.sales.plan) { const pl = A.sales.plan(); if (pl) c.plan = pl; }          // стартовый подбор посетителя (extras.sales): чтобы Стелла говорила о «его плане»
     return c;
   }
 
   /* ---------- маркеры в ответе ИИ ---------- */
-  const FORM_LBL = {partner: 'Стать партнёром', callback: 'Заказать звонок', question: 'Задать вопрос менеджеру', seminar: 'Записаться на мероприятие', product: 'Запросить информацию'};
+  const FORM_LBL = {partner: 'Стать партнёром', callback: 'Заказать звонок', question: 'Задать вопрос менеджеру', seminar: 'Записаться на мероприятие', product: 'Запросить информацию', plan: 'Получить подбор от менеджера'};
   function knownUrl(path) {
     const p = String(path || '').replace(/[?#].*$/, ''); if (!/^(?:[a-z0-9-]+\/)?[a-z0-9-]+\.html$/i.test(p)) return null;
     const idx = (D.index || []).find(i => i.url === p); if (idx) return {h: path, l: idx.title};
@@ -116,7 +117,7 @@
       else if (kind === 'product') { if (P[a] && out.cards.length < 3 && out.cards.indexOf(a) < 0) out.cards.push(a); }
       else if (kind === 'event') { if (EV[a] && out.events.length < 2 && out.events.indexOf(a) < 0) out.events.push(a); }
       else if (kind === 'form') {
-        const okType = FORM_LBL[a] && A.FORM_TYPES[a] && (a !== 'callback' || X.callback);
+        const okType = FORM_LBL[a] && A.FORM_TYPES[a] && (a !== 'callback' || X.callback) && (a !== 'plan' || X.sales);
         if (okType && (a !== 'seminar' || EV[b]) && (a !== 'product' || !b || P[b]) && out.actions.length < 3) out.actions.push({l: FORM_LBL[a], act: 'form', type: a, ref: b || ''});
       } else { const u = knownUrl(a); if (u && out.links.length < 3) out.links.push(u); }
       return '';
@@ -295,6 +296,7 @@
     else if (c.brand && B[c.brand]) parts.push('сейчас на странице бренда: ' + B[c.brand].name + ' (' + c.brand + ')');
     else if (pg) parts.push('сейчас на странице «' + pg.label + '»');
     if (c.cmp && c.cmp.length) parts.push('отметил для сравнения: ' + c.cmp.map(id => P[id].name + ' (' + id + ')').join(', '));
+    if (c.plan && c.plan.summary && c.plan.summary.length) parts.push('собрал стартовый подбор: ' + c.plan.summary.join('; '));
     if (bst && (bst.city || bst.role)) parts.push('из диалога: ' + [bst.role ? 'роль — ' + bst.role : '', bst.city ? 'город — ' + bst.city : ''].filter(Boolean).join(', '));
     return parts.length ? '[Посетитель ' + parts.join('; ') + ']\n' : '';
   }

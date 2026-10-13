@@ -456,6 +456,14 @@
       if (W('скидк|порог|объем|объём').test(n)) L.push(discountAnswer(0, st).text.split(' Назовите')[0]);
       return R(L.join('\n\n'), {actions: [act.partner(st)], links: [link('partners.html', 'Условия и калькулятор скидок')], chips: ['Какие скидки?', 'Контакты менеджера'], intent: 'partner', steps: ['Смотрю условия сотрудничества…']});
     }
+    function planAnswer(pl, st) {
+      const L = ['Ваш стартовый план: ' + (pl.summary || []).join('; ') + '.'];
+      const bn = (pl.brands || []).map(id => K.brandName(id)).filter(Boolean); if (bn.length) L.push('Линейки: ' + bn.join(', ') + '.');
+      const pn = (pl.products || []).map(id => (P[id] || {}).name).filter(Boolean).slice(0, 4); if (pn.length) L.push('С чего можно начать: ' + pn.join(', ') + '.');
+      const ev = (pl.events || []).map(id => EV[id]).filter(Boolean)[0]; if (ev) L.push('Ближайшее обучение: ' + fmtDate(ev.date) + ', ' + ev.city + ' — ' + ev.title + '.');
+      L.push('Подбор ориентировочный; условия и наличие подтверждает менеджер. План можно отправить ему одной кнопкой.');
+      return R(L.join('\n\n'), {actions: compact([act.form('plan', 'Получить подбор от менеджера', ''), act.callback()]), links: [link('start.html', 'Открыть план')], chips: ['Какие скидки?', 'Ближайшие семинары'], intent: 'plan', steps: ['Смотрю ваш план…']});
+    }
     function moreAnswer(st) {
       const l = st.last || {}; if (!l.all || l.offset >= l.all.length) return R('Это всё, что нашёл по вашему запросу. Можно уточнить задачу или бренд — подберу заново.', {chips: starters({}, st), intent: 'more'});
       const next = l.all.slice(l.offset, l.offset + 4); const from = l.offset + 1; l.offset += next.length; l.cards = next;
@@ -785,6 +793,9 @@
 
       /* ---- «навигатор»: открыть страницу, показать место, провести по шагам, отфильтровать каталог ---- */
       { const nv = navIntent(text, n, tk, st, ctx, {tasks: tasksInText, brands: brandsInText, products: productsInText}); if (nv) return done(nv); }
+
+      /* ---- продающий слой (extras.sales): «мой план» при сохранённом стартовом подборе; без плана отвечает тема sx_plan_none из data/stella/sales.json ---- */
+      if (ctx.plan && W('мой план|моего плана|моему плану|мой подбор|моего подбора|мой стартовый|покажи план|открой план|что в плане|что в моем плане|что в моём плане|где мой план').test(n)) return done(planAnswer(ctx.plan, st));
 
       /* ---- библиотека реплик: о Стелле, светская беседа, не по теме, чего сайт не знает (стадия «mid») — раньше общих «прямых намерений», чтобы «договорились» не принималось за «договор» ---- */
       if (SL) { const rm = slReply('mid', X, st, ctx); if (rm) return done(rm); }

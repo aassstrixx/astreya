@@ -130,6 +130,7 @@
     m.classList.add('open'); m.setAttribute('aria-hidden', 'false'); m.setAttribute('aria-labelledby', 'm-title');
     document.body.classList.add('locked');
     A.track('form_open', {form_type: type, ref: ref || ''});
+    try { document.dispatchEvent(new CustomEvent('astreya:form-open', {detail: {type: type, ref: ref || '', form: f}})); } catch (e) {}
     setTimeout(() => { const i = $('input', m); if (i) i.focus(); $$('.fld textarea', m).forEach(A.autosize); }, 40);
   };
   A.closeModal = function () {
@@ -166,6 +167,7 @@
     const o = {type: form.getAttribute('data-form'), context: form.getAttribute('data-ctx') || form.getAttribute('data-ref') || '', page: location.href, sent_at: new Date().toISOString(), consent: true};
     ['name', 'phone', 'email', 'city', 'org', 'spec', 'msg'].forEach(k => { const el = form.elements[k]; if (el) o[k] = el.value.trim(); });
     if (form._t0) o.fill_ms = Math.round(performance.now() - form._t0);       // сколько форму заполняли: бот отправляет мгновенно
+    if (A.leadSrc) { const src = A.leadSrc(o); if (src) o.src = src; }                // метка «откуда пришла заявка» (extras.sales): страница, шаг пути, вариант проверки; на отправку не влияет
     return o;
   }
   function letterOf(pl) {
@@ -207,6 +209,7 @@
         <p class="muted small" style="margin-top:16px">Или позвоните: <a href="tel:${c.phoneRaw}">${esc(c.phone)}</a></p>`;
     }
     form.hidden = true; host.insertBefore(wrapEl, form);
+    if (A.afterForm) { try { A.afterForm(form, wrapEl, mode); } catch (e) {} }          // «что дальше» после заявки (extras.sales)
     const h = $('h3', wrapEl); if (h) { h.tabIndex = -1; h.focus(); }
   }
   A.submitForm = async function (form) {
@@ -233,14 +236,14 @@
           A.track('form_error', {form_type: type, message: 'rate_limited'}); return;
         }
         if (!r.ok || (j && j.ok === false)) throw new Error('HTTP ' + r.status);
-        A.track('form_submit', {form_type: type, mode: 'endpoint', context: pl.context});
+        A.track('form_submit', {form_type: type, mode: 'endpoint', context: pl.context, src: pl.src || ''});
         setBusy(form, false); delete form.dataset.busy; setStatus(form, '', ''); showDone(form, 'sent');
       } else {
         await wait(650);
         const letter = letterOf(pl);
         mailDraft = 'Кому: ' + D.site.contacts.email + '\nТема: ' + letter.subject + '\n\n' + letter.body.replace(/\r\n/g, '\n');
         try { const a = document.createElement('a'); a.href = letter.href; document.body.appendChild(a); a.click(); a.remove(); } catch (e) {}
-        A.track('form_submit', {form_type: type, mode: 'mailto', context: pl.context});
+        A.track('form_submit', {form_type: type, mode: 'mailto', context: pl.context, src: pl.src || ''});
         setBusy(form, false); delete form.dataset.busy; setStatus(form, '', ''); showDone(form, 'draft', letter);
       }
     } catch (err) {

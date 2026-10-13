@@ -18,6 +18,7 @@ const {newsPage, articlePage} = require('../src/pages/news.js');
 const company = require('../src/pages/company.js');
 const contacts = require('../src/pages/contacts.js');
 const partners = require('../src/pages/partners.js');
+const start = require('../src/pages/start.js');
 const {searchPage, legalPage, notFoundPage} = require('../src/pages/misc.js');
 const customPage = require('../src/pages/custom.js');
 const blocks = require('../src/blocks-schema.js');
@@ -61,6 +62,8 @@ page({key: 'news', path: 'news.html', nav: '/news', title: seo('news').title, de
 page({key: 'company', path: 'company.html', nav: '/company', title: seo('company').title, description: seo('company').description, priority: 0.7, breadcrumbs: [['Главная', 'index.html'], ['Компания', 'company.html']]}, P => company(ctx, C, P));
 page({key: 'contacts', path: 'contacts.html', nav: '/contacts', title: seo('contacts').title, description: seo('contacts').description, priority: 0.7, breadcrumbs: [['Главная', 'index.html'], ['Контакты', 'contacts.html']]}, P => contacts(ctx, C, P));
 page({key: 'partners', path: 'partners.html', nav: '/partners', title: seo('partners').title, description: seo('partners').description, priority: 0.9, breadcrumbs: [['Главная', 'index.html'], ['Стать партнёром', 'partners.html']]}, P => partners(ctx, C, P));
+/* ---- «Стартовый подбор» (extras.sales): страница без пункта меню; нет флага — страницы нет ---- */
+if (ctx.sales) page({key: 'start', path: ctx.sales.planner.path, nav: '', title: ctx.sales.planner.seoTitle, description: ctx.sales.planner.seoDescription, priority: 0.8, breadcrumbs: [['Главная', 'index.html'], [ctx.sales.planner.eyebrow, ctx.sales.planner.path]]}, P => start(ctx, C, P));
 page({key: 'search', path: 'search.html', nav: '', title: seo('search').title, description: seo('search').description, noindex: true, priority: 0}, P => searchPage(ctx, C, P));
 page({key: 'privacy', path: 'privacy.html', nav: '', title: seo('privacy').title, description: seo('privacy').description, priority: 0.2, breadcrumbs: [['Главная', 'index.html'], ['Политика конфиденциальности', 'privacy.html']]}, P => legalPage(ctx, C, P, 'privacy'));
 page({key: 'terms', path: 'terms.html', nav: '', title: seo('terms').title, description: seo('terms').description, priority: 0.2, breadcrumbs: [['Главная', 'index.html'], ['Пользовательское соглашение', 'terms.html']]}, P => legalPage(ctx, C, P, 'terms'));
@@ -118,6 +121,7 @@ const index = [
     q: S.norm([p.name, p.desc, brandName(p.brand), ctx.catById[p.cat].name, (ctx.kindById[p.kind] || {}).name, p.tasks.map(t => ctx.taskById[t].label).join(' ')].join(' '))})),
   ...ctx.brands.map(b => ({t: 'brand', title: b.name, url: `brands/${b.id}.html`, sub: b.tag,
     q: S.norm([b.name, b.tag, b.desc, b.group, b.country, b.tasks.map(t => ctx.taskById[t].label).join(' ')].join(' '))})),
+  ...(ctx.sales ? [{t: 'page', title: ctx.sales.planner.eyebrow, url: ctx.sales.planner.path, sub: 'Соберите стартовый план закупки и обучения за минуту', q: S.norm([ctx.sales.planner.eyebrow, ctx.sales.planner.title, ctx.sales.planner.lead, 'с чего начать подбор план закупки ассортимент обучение условия старт'].join(' '))}] : []),
   ...ctx.customPages.filter(pg => !pg.noindex).map(pg => ({t: 'page', title: pg.title, url: `pages/${pg.slug}.html`, sub: pg.description || pg.lead || '', q: S.norm([pg.title, pg.description, pg.lead, ...pg.blocks.flatMap(b => [b.title, b.text, ...(b.paragraphs || []), ...(b.left || []), ...(b.right || []), ...(b.items || []).map(i => typeof i === 'string' ? i : [i.title, i.text, i.q, i.a, i.label].join(' '))])].filter(Boolean).join(' '))})),
   ...ctx.news.map(n => ({t: 'news', title: n.title, url: `news/${n.slug}.html`, sub: `${ctx.newsCatById[n.category].name} · ${S.dparts(n.date).full}`, q: S.norm([n.title, n.excerpt, n.body.join(' '), ctx.newsCatById[n.category].name].join(' '))})),
   ...ctx.sortedEvents.map(e => ({t: 'event', title: e.title, url: `training/${e.slug}.html`, sub: `${e.fmt} · ${e.city} · ${S.dparts(e.date).full}`, date: e.date, q: S.norm([e.title, e.description, e.city, e.fmt, e.speaker, brandName(e.brand), 'семинар мероприятие обучение запись'].join(' '))}))
@@ -131,8 +135,9 @@ const data = {
     return {id: p.id, slug: p.slug, name: p.name, brand: p.brand, t: p.type, im: p.image || undefined, d: p.desc, c: p.cat, k: p.kind, ts: p.tasks, n: p.isNew ? 1 : undefined, x: Object.keys(x).length ? x : undefined}; }),
   events: ctx.sortedEvents.map(e => ({id: e.id, slug: e.slug, title: e.title, date: e.date, city: e.city, tm: e.time, fm: e.fmt, pl: e.place, b: e.brand, sp: e.speaker})),
   index,
-  guide: C.xon('assistant') && C.xon('navigator') && ctx.stella && ctx.stella.guide ? ctx.stella.guide : undefined,       // «навигатор» Стеллы: цели подсветки, экскурсии, подсказки (data/stella/guide.json)
-  extras: site.redesign && ctx.redesign && ctx.redesign.extras && ctx.redesign.extras.enabled ? {requestList: C.xon('requestList'), quickContact: C.xon('quickContact'), recent: C.xon('recent'), callback: C.xon('callback'), quickView: C.xon('quickView'), compare: C.xon('compare'), countdown: C.xon('countdown'), subscribe: C.xon('subscribe'), assistant: C.xon('assistant'), navigator: C.xon('assistant') && C.xon('navigator'), agentReady: C.xon('agentReady'), kb: C.xon('assistant') ? 'js/kb.js' + (ctx.assetVersion ? '?v=' + ctx.assetVersion : '') : undefined} : null
+  sales: ctx.sales ? Object.assign({}, ctx.sales, {_comment: undefined}) : undefined,                                    // продающий слой «Путь к закупке»: тексты и настройки (data/sales.json) + факты сайта
+  guide: C.xon('assistant') && C.xon('navigator') && ctx.stella && ctx.stella.guide ? (ctx.sales ? ctx.stella.guide : Object.assign({}, ctx.stella.guide, {pages: ctx.stella.guide.pages.filter(p => p.id !== 'start')})) : undefined,       // «навигатор» Стеллы: цели подсветки, экскурсии, подсказки (data/stella/guide.json)
+  extras: site.redesign && ctx.redesign && ctx.redesign.extras && ctx.redesign.extras.enabled ? {requestList: C.xon('requestList'), quickContact: C.xon('quickContact'), recent: C.xon('recent'), callback: C.xon('callback'), quickView: C.xon('quickView'), compare: C.xon('compare'), countdown: C.xon('countdown'), subscribe: C.xon('subscribe'), assistant: C.xon('assistant'), navigator: C.xon('assistant') && C.xon('navigator'), sales: !!ctx.sales, agentReady: C.xon('agentReady'), kb: C.xon('assistant') ? 'js/kb.js' + (ctx.assetVersion ? '?v=' + ctx.assetVersion : '') : undefined} : null
 };
 /* «агент-ready» (extras.agentReady): llms.txt и manifest.webmanifest; флаг выключен — файлов нет */
 for (const f of ['llms.txt', 'manifest.webmanifest']) if (!C.xon('agentReady')) fs.rmSync(path.join(ROOT, f), {force: true});

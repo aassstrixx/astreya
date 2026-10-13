@@ -8,7 +8,7 @@ const LOG = path.join(C.DATA, 'notify.log');
 const log = (...a) => { try { fs.appendFileSync(LOG, new Date().toISOString() + ' ' + a.join(' ') + '\n'); } catch (e) {} };
 
 function text(lead, site) {
-  const L = [`Новая заявка ${lead.id} — ${TYPE_TITLES[lead.type] || lead.type}`, (lead.flags || []).length ? '⚠ Подозрительная: ' + lead.flags.join('; ') : null, lead.context ? 'Тема: ' + lead.context : null, 'Имя: ' + lead.name, lead.phone ? 'Телефон: ' + lead.phone : null, lead.email ? 'E-mail: ' + lead.email : null,
+  const L = [`Новая заявка ${lead.id} — ${TYPE_TITLES[lead.type] || lead.type}`, (lead.flags || []).length ? '⚠ Подозрительная: ' + lead.flags.join('; ') : null, lead.context ? 'Тема: ' + lead.context : null, lead.src ? 'Источник: ' + lead.src : null, 'Имя: ' + lead.name, lead.phone ? 'Телефон: ' + lead.phone : null, lead.email ? 'E-mail: ' + lead.email : null,
     lead.city ? 'Город: ' + lead.city : null, lead.org ? 'Организация: ' + lead.org : null, lead.spec ? 'Специализация: ' + lead.spec : null, lead.msg ? '\n' + lead.msg : null,
     '\nСтраница: ' + (lead.page || '—'), site ? 'Админка: ' + site : null];
   return L.filter(x => x !== null).join('\n');

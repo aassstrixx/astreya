@@ -21,6 +21,8 @@
     "check:motion": "node tools/check-fab-motion.js",
     "check:assistant": "node tools/check-assistant.js && node tools/check-stella.js && node tools/check-assistant-ai.js && node tools/check-navigator.js",
     "check:navigator": "node tools/check-navigator.js",
+    "check:sales": "node tools/check-sales.js",
+    "arena:sales": "node tools/arena-sales.js",
     "arena:stella": "node tools/arena-stella.js",
     "arena:admin": "node tools/arena-admin.js --n=100",
     "admin:demo": "node tools/admin-demo.js astreya-admin-demo.html",

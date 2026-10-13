@@ -20,7 +20,7 @@ const b0 = brain(), LIB = b0.library, S = KB.stella;
 /* ---------- 1. разбор данных ---------- */
 console.log('1. Данные библиотеки');
 {
-  const ids = new Set(), pages = new Set(['catalog.html', 'brands.html', 'training.html', 'news.html', 'partners.html', 'company.html', 'contacts.html', 'privacy.html', 'terms.html', 'search.html']);
+  const ids = new Set(), pages = new Set(['catalog.html', 'brands.html', 'training.html', 'news.html', 'partners.html', 'company.html', 'contacts.html', 'privacy.html', 'terms.html', 'search.html', ...((KB.pages || []).map(p => p.u))]);
   const tasks = new Set(D.tasks.map(t => t.id)), cats = new Set(D.cats.map(c => c.id));
   const STAGES = new Set(['early', 'mid', 'pre', 'post', 'en']), GROUPS = new Set(['persona', 'chat', 'fun', 'scope', 'glossary', 'business', 'safety']);
   const ACTS = new Set(['callback', 'partner', 'request', 'ask']), FNS = new Set(['pickval', 'randnum', 'either', 'countdown', 'dayplus', 'nameSet', 'nameGet', 'repeat', 'clarify', 'riddle', 'fact', 'joke', 'social']);

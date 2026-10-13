@@ -357,6 +357,7 @@
     if (nEl && nEl.isConnected) return nEl; nEl = document.createElement('div'); nEl.id = 'g-nudge'; nEl.className = 'g-nudge'; nEl.hidden = true; nEl.setAttribute('role', 'status'); document.body.appendChild(nEl); return nEl;
   }
   function allowed(force) {
+    const pgOff = NU.pages && NU.pages[pageKey()] && NU.pages[pageKey()].off; if (pgOff) return false;          // на странице стартового подбора подсказка «Не знаете, что выбрать?» не нужна: человек уже выбирает
     const st = nstate(), S_ = S(); if (st.off || st.n >= MAXN || (!force && Date.now() - st.last < COOL)) return false;
     if (document.hidden || (S_.state && (S_.state().open || S_.state().interacted || S_.state().busy))) return false;
     const b = document.body.classList; if (b.contains('x-intro') || b.contains('locked') || b.contains('menu-open') || b.contains('asst-open') || b.contains('g-on')) return false;

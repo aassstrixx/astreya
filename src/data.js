@@ -23,6 +23,20 @@ function loadStella() {
   return out;
 }
 
+/* продающий слой: тексты — data/sales.json, факты — из остальных файлов. Доверительный блок собирается только из ссылок на разделы сайта (advantages.N): выдумать утверждение здесь нельзя */
+function loadSales(content, site, tasks, training) {
+  const sales = read('sales'), out = JSON.parse(JSON.stringify(sales));
+  out.trust.items = sales.trust.items.map(it => {
+    const m = /^(\w+)\.(\d+)$/.exec(it.ref || ''), src = m && content[m[1]] && content[m[1]][+m[2]];
+    if (!src) throw new Error('data/sales.json → trust.items: нет раздела «' + it.ref + '» в data/content.json');
+    return {ref: it.ref, icon: src.icon, title: src.title, text: src.text};
+  });
+  out.discounts = site.discounts;
+  out.taskBrands = Object.fromEntries(tasks.map(t => [t.id, t.brands]));          // какие бренды работают с задачей (data/catalog.json) — основа подбора
+  out.cities = training.cities;
+  return out;
+}
+
 function load() {
   const site = read('site'), content = read('content'), catalog = read('catalog'), training = read('training');
   const brands = read('brands'), products = read('products'), events = read('events'), newsRaw = read('news');
@@ -34,6 +48,7 @@ function load() {
   ctx.customPages = ctx.pagesRaw.filter(p => p.published !== false);
   ctx.customNav = ctx.customPages.filter(p => p.nav).map(p => ({title: p.navTitle || p.title, href: `pages/${p.slug}.html`, key: '/p/' + p.slug}));
   ctx.redesign = site.redesign ? read('redesign') : null;      // слой доработок (см. README → «Доработки и откат»)
+  ctx.sales = ctx.redesign && ctx.redesign.extras && ctx.redesign.extras.enabled && ctx.redesign.extras.sales ? loadSales(content, site, catalog.tasks, training) : null;      // продающий слой «Путь к закупке» (data/sales.json)
 
   ctx.cats = catalog.cats; ctx.tasks = catalog.tasks; ctx.kinds = catalog.kinds;
   ctx.brandById = byId(brands); ctx.catById = byId(ctx.cats); ctx.taskById = byId(ctx.tasks); ctx.kindById = byId(ctx.kinds);

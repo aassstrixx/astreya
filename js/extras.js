@@ -78,6 +78,8 @@
     document.dispatchEvent(new CustomEvent('astreya:rl', {detail: list.slice()}));
   }
   A.rlSync = () => sync();                                                                   // чат помощника перерисовывает свои кнопки «+»
+  A.rlAdd = ids => { let n = 0; (ids || []).forEach(id => { if (P[id] && !has(id) && list.length < MAX) { list = list.concat(id); n++; A.track('rl_add', {product: id, via: 'plan'}); } }); if (n) { save(list); sync(true); } return n; };      // добавить сразу несколько (стартовый подбор): только по явному нажатию, уже добавленные пропускаются
+  A.rlHas = id => has(id);
   const panelOpen = () => { const m = $('#modal'); return !!(m && m.classList.contains('open') && $('.rl-dlg', m)); };
   function toggle(id) {
     if (!P[id]) return;
