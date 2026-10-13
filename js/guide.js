@@ -71,7 +71,8 @@
     if (mobile()) {
       pop.style.left = ''; pop.style.top = ''; pop.classList.add('sheet');
       const dock = document.body.classList.contains('dock-on') ? (parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--dock-h')) || 66) : 0, ph = pop.offsetHeight || 200;
-      pop.classList.toggle('sheet-top', vh - (y + h) - dock < ph + 16 && y > ph + 16);          // внизу не хватает места (цель ниже или плашки в доке) — подсказка уходит наверх, цель остаётся видна
+      const top = vh - (y + h) - dock < ph + 16 && y > ph + 16; pop.classList.toggle('sheet-top', top);          // внизу не хватает места (цель ниже или плашки в доке) — подсказка уходит наверх, цель остаётся видна
+      const popTop = vh - ph - 12 - dock; if (!top && y + h > popTop - 6 && y < popTop - 70) hole.style.height = Math.round(popTop - 6 - y) + 'px';          // места нет ни сверху, ни снизу: подсвечиваем только ту часть, что не закрыта карточкой
     }
     else {
       pop.classList.remove('sheet'); const pw = pop.offsetWidth || 320, ph = pop.offsetHeight || 120; let top, below = y + h + 14, above = y - ph - 14;
@@ -161,7 +162,7 @@
   const DO = {
     'brand-open'(st, el, ctx) {                                                    // раскрыть карточку первого бренда на главной
       const c = el.matches && el.matches('.bcard') ? el : $('.bcard[data-act="brand-card"]', el); if (!c || c.classList.contains('is-active')) return;
-      later(() => { c.click(); undo.push(() => { if (A.actions['brand-back']) A.actions['brand-back'](); }); later(() => scrollTo(c), 700); }, 700);          // карточка при раскрытии сама подъезжает к краю экрана — возвращаем её в удобное место
+      later(() => { c.click(); undo.push(() => { if (A.actions['brand-back']) A.actions['brand-back'](); }); demoTimer = setTimeout(() => scrollTo(c), 800); }, 700);          // карточка при раскрытии сама подъезжает к краю экрана — возвращаем её в удобное место
     },
     'type-search'(st, el, ctx) {                                                   // набрать название реального товара в поиске каталога
       const q = $('#cat-q'), p = (D.products || [])[0]; if (!q || !p) return;
