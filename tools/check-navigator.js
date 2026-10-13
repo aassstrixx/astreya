@@ -240,7 +240,7 @@ const wait = ms => new Promise(r => setTimeout(r, ms));
   await p.click('.asst-ib-tour'); await mt.until(() => document.body.getAttribute('data-page') === 'home' && !document.getElementById('g-spot').hidden, 25000); await wait(1000);
   let mx = await mt.snap(); ok(mx && /^1 из 4/.test(mx.st) && mOk(mx) && !mx.menu, 'на телефоне: экскурсия с каталога перешла на главную, шаг 1, карточка — нижняя «шторка», не перекрывает шапку', mx);
   const mBad = []; let drawerSeen = 0;
-  for (let k = 0; k < 3; k++) { await mt.press('Далее'); await wait(1500); mx = await mt.snap(); if (!mOk(mx)) mBad.push(['home' + k, mx]); }
+  for (let k = 0; k < 3; k++) { await mt.press('Далее'); await wait(k === 1 ? 2600 : 1500); mx = await mt.snap(); if (!mOk(mx)) mBad.push(['home' + k, mx]); }          // шаг с брендами: раскрытие карточки, возврат прокруткой и плавное смещение подсветки занимают ≈ 2 с
   ok(!!mx && /Каталог — главный раздел/.test(mx.tx) && mx.menu === true, 'на телефоне перед «Открыть каталог» ящик меню раскрылся сам, пункт «Каталог» подсвечен', mx);
   await mt.press('Открыть каталог'); await mt.until(() => document.body.getAttribute('data-page') === 'catalog' && !!document.querySelector('#cat-q').value, 25000); await wait(1000); mx = await mt.snap();
   ok(mx && /нашёлся 1 из/.test(mx.tx) && !mx.menu && mOk(mx), 'на телефоне: каталог открыт нажатием на пункт меню, ящик закрылся, в поиске набран запрос', mx);
