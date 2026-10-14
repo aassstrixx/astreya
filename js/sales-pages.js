@@ -69,20 +69,50 @@
     const ids = (card.getAttribute('data-ids') || '').split(','), all = ids.length && ids.every(id => A.rlHas && A.rlHas(id)), btn = $('[data-kit-add]', card), cfg = PG.catalog || {};
     card.classList.toggle('on', !!all); if (btn) { btn.setAttribute('aria-pressed', all ? 'true' : 'false'); $('.lbl', btn).textContent = all ? cfg.added : cfg.add; }
   }
+  /* карусель: одна подборка крупно спереди, две соседние — позади, меньше и бледнее; листается пальцем, стрелками, точками и клавишами */
+  function kitsCarousel(sec) {
+    const row = $('.sx-kit-row', sec), cards = $$('.sx-kit', sec), dots = $$('[data-kit-go]', sec); if (!row || !cards.length) return;
+    let raf = 0, cur = 0;
+    const layout = () => {
+      raf = 0; const mid = row.clientWidth / 2; let best = 0, bd = 1e9;
+      cards.forEach((c, i) => {
+        const d = (c.offsetLeft + c.offsetWidth / 2 - row.scrollLeft - mid) / (c.offsetWidth * .82), ad = Math.abs(d);
+        c.style.setProperty('--s', (1 - Math.min(ad, 2) * .12).toFixed(3)); c.style.setProperty('--o', ad <= 1 ? (1 - ad * .4).toFixed(3) : Math.max(0, .6 - (ad - 1) * .6).toFixed(3));
+        c.style.setProperty('--z', String(20 - Math.round(ad * 6))); c.style.setProperty('--tx', (-d * c.offsetWidth * .03).toFixed(1) + 'px');
+        if (ad < bd) { bd = ad; best = i; }
+      });
+      if (best !== cur || !cards[best].classList.contains('is-active')) { cur = best; cards.forEach((c, i) => { c.classList.toggle('is-active', i === best); c.setAttribute('aria-current', i === best ? 'true' : 'false'); }); dots.forEach((d, i) => { d.classList.toggle('on', i === best); d.setAttribute('aria-current', i === best ? 'true' : 'false'); }); }
+      const pv = $('[data-kit-nav="-1"]', sec), nx = $('[data-kit-nav="1"]', sec); if (pv) pv.disabled = best === 0; if (nx) nx.disabled = best === cards.length - 1;
+    };
+    const sched = () => { if (!raf) raf = requestAnimationFrame(layout); };
+    const go = i => { i = Math.max(0, Math.min(cards.length - 1, i)); const c = cards[i]; row.scrollTo({left: c.offsetLeft - (row.clientWidth - c.offsetWidth) / 2, behavior: 'smooth'}); };
+    row.addEventListener('scroll', sched, {passive: true}); window.addEventListener('resize', sched);
+    sec.addEventListener('click', e => { const n = e.target.closest('[data-kit-nav]'); if (n) { go(cur + (+n.getAttribute('data-kit-nav'))); track('sales_kit_nav'); return; } const d = e.target.closest('[data-kit-go]'); if (d) go(+d.getAttribute('data-kit-go')); });
+    /* карточка «на фоне» сначала выходит вперёд, и только потом её кнопки работают */
+    row.addEventListener('click', e => { const c = e.target.closest('.sx-kit'); if (c && !c.classList.contains('is-active')) { e.preventDefault(); e.stopPropagation(); go(cards.indexOf(c)); } }, true);
+    row.addEventListener('focusin', e => { const c = e.target.closest('.sx-kit'); if (c && !c.classList.contains('is-active')) go(cards.indexOf(c)); });
+    row.addEventListener('keydown', e => { if (e.key === 'ArrowRight') { e.preventDefault(); go(cur + 1); } else if (e.key === 'ArrowLeft') { e.preventDefault(); go(cur - 1); } });
+    const mid = cards.length > 2 ? 1 : 0, c0 = cards[mid];          // начинаем со второй подборки: справа и слева видно по соседней — «одна вперёд, две позади»
+    row.scrollLeft = c0.offsetLeft - (row.clientWidth - c0.offsetWidth) / 2;
+    layout(); setTimeout(() => { row.scrollLeft = c0.offsetLeft - (row.clientWidth - c0.offsetWidth) / 2; layout(); }, 350); setTimeout(layout, 1200);
+  }
   function catalog(c, main) {
     const wrap = $('[data-catalog]', main), tb = $('#results', main); if (!wrap || !tb || mod('kits', wrap)) return;
     const cfg = PG.catalog || {}, kits = kitsFor(); if (!kits.length) return;
     const sec = el('section', 'sx-mod sx-kits', '<header class="sx-head"><span class="eyebrow">' + esc(cfg.eyebrow) + '</span><h2>' + esc(cfg.title) + '</h2><p class="lead">' + esc(cfg.lead) + '</p></header>' +
-      '<div class="sx-kit-row" role="list">' + kits.map((k, i) => {
+      '<div class="sx-kit-stage"><button class="sx-kit-nav prev" type="button" data-kit-nav="-1" aria-label="' + esc(cfg.prev) + '">' + I.arrow + '</button>' +
+      '<div class="sx-kit-row" role="list" tabindex="0" aria-label="' + esc(cfg.title) + '">' + kits.map((k, i) => {
         const ids = k.products.map(p => p.id), b0 = B[k.products[0].brand];
         return '<article class="sx-kit" role="listitem" style="--c1:' + esc(b0.c1) + ';--c2:' + esc(b0.c2) + ';--i:' + i + '" data-ids="' + esc(ids.join(',')) + '" data-task="' + esc(k.task.id) + '">' +
           '<div class="sx-kit-art" aria-hidden="true">' + k.products.map(pack).join('') + '</div>' +
           '<h3>' + esc(k.task.label) + '</h3><p class="sx-kit-sub">' + esc(fill(cfg.count, {n: ids.length, nword: nword(ids.length), brands: k.brands.map(id => B[id].name).join(', ')})) + '</p>' +
           '<div class="sx-kit-act"><button class="btn btn-fill btn-sm" type="button" data-kit-add data-sx="kit-add"><span class="lbl">' + esc(cfg.add) + '</span></button><button class="btn btn-lnk" type="button" data-kit-show>' + esc(cfg.show) + '</button></div></article>';
-      }).join('') + '</div>' + '<p class="sx-kit-meta" aria-live="polite" data-kit-meta></p>');
+      }).join('') + '</div><button class="sx-kit-nav next" type="button" data-kit-nav="1" aria-label="' + esc(cfg.next) + '">' + I.arrow + '</button></div>' +
+      '<div class="sx-kit-dots" role="group" aria-label="' + esc(cfg.title) + '">' + kits.map((k, i) => '<button type="button" data-kit-go="' + i + '" aria-label="' + esc(k.task.label) + '"></button>').join('') + '</div>' +
+      '<p class="sx-kit-meta" aria-live="polite" data-kit-meta></p>');
     sec.setAttribute('data-sx-mod', 'kits'); tb.parentNode.insertBefore(sec, tb);
     $$('.sx-kit', sec).forEach(kitState);
-    metaKits(sec);
+    metaKits(sec); kitsCarousel(sec);
     track('sales_kits_view', {kits: kits.length});
   }
   function metaKits(sec) {
@@ -303,9 +333,14 @@
     const near = findSection(main, /Мы рядом/), anchorEl = near || $$('section', main).filter(s => $('.cta-band', s)).pop(); if (!anchorEl) return;
     const pref = K.city(), start = offs.find(o => o.city === pref) || offs[0];
     const sec = el('section', 'sx-mod sx-region', '<div class="wrap"><header class="sx-head"><span class="eyebrow">' + esc(cfg.eyebrow) + '</span><h2>' + esc(cfg.title) + '</h2><p class="lead">' + esc(cfg.lead) + '</p></header>' +
-      '<div class="sx-reg-tabs" role="group" aria-label="' + esc(cfg.eyebrow) + '">' + offs.map((o, i) => '<button type="button" class="sx-reg-n' + (o.city === start.city ? ' on' : '') + '" data-sx-reg="' + esc(o.city) + '" aria-pressed="' + (o.city === start.city) + '"><small>0' + (i + 1) + '</small><span>' + esc(o.city) + '</span></button>').join('') + '</div>' +
+      '<div class="sx-reg-tabs" style="--n:' + offs.length + '" role="group" aria-label="' + esc(cfg.eyebrow) + '">' + offs.map((o, i) => '<button type="button" class="sx-reg-n' + (o.city === start.city ? ' on' : '') + '" data-sx-reg="' + esc(o.city) + '" aria-pressed="' + (o.city === start.city) + '"><small>0' + (i + 1) + '</small><span>' + esc(o.city) + '</span></button>').join('') + '</div>' +
       '<div class="sx-reg-card" data-sx-reg-card aria-live="polite"></div></div>', {'data-sx-mod': 'region'});
     anchorEl.parentNode.insertBefore(sec, near ? anchorEl.nextSibling : anchorEl);
+    const tr = cfg.trust;
+    if (tr && (tr.items || []).length && !mod('trust', main)) {
+      const t = el('section', 'sx-mod sx-trust', '<div class="wrap"><header class="sx-head"><h2>' + esc(tr.title) + '</h2></header><ul class="sx-tl">' + tr.items.map(it => '<li><span class="sx-ti" aria-hidden="true">' + (I[it.icon] || I.check) + '</span><span><b>' + esc(it.title) + '</b><small>' + esc(it.text) + '</small></span></li>').join('') + '</ul>' + (tr.note ? '<p class="sx-fine">' + esc(tr.note) + '</p>' : '') + '</div>', {'data-sx-mod': 'trust'});
+      sec.parentNode.insertBefore(t, sec.nextSibling);
+    }
     const draw = city => {
       const o = offs.find(x => x.city === city) || offs[0], evs = upcoming(), ev = evs.find(e => e.city === o.city) || null, ol = evs.find(e => e.city === 'Онлайн') || null, ph = o.phones[0], more = o.phones.length - 1;
       $$('[data-sx-reg]', sec).forEach(b => { const on = b.getAttribute('data-sx-reg') === o.city; b.classList.toggle('on', on); b.setAttribute('aria-pressed', String(on)); });

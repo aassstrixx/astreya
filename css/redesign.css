@@ -184,7 +184,6 @@
 /* ---------- страница «Бренды»: группы ---------- */
 .br-group{grid-column:1/-1;display:flex;align-items:baseline;gap:12px;margin:clamp(14px,2vw,28px) 0 0;padding-top:clamp(18px,2.4vw,30px);border-top:1px solid var(--line);font:500 clamp(26px,3vw,40px)/1.1 var(--serif)}
 .br-group:first-child{margin-top:0;padding-top:0;border-top:0}
-.br-group small{font:600 12px/1 var(--sans);letter-spacing:.14em;color:var(--slate)}
 .br-dev-note{grid-column:1/-1;margin:-10px 0 0;font-size:14px}
 .br-group-dev{color:var(--navy)}
 

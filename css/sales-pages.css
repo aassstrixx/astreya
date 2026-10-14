@@ -74,12 +74,24 @@
 }
 
 /* ============ Каталог: подборки по задачам ============ */
-.sx-kits{margin:clamp(6px,1.6vw,18px) 0 clamp(18px,2.6vw,34px)}
-.sx-kit-row{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(236px,26%);gap:12px;overflow-x:auto;padding:6px 2px 14px;scroll-snap-type:x proximity;scrollbar-width:thin}
-.sx-kit{scroll-snap-align:start;position:relative;display:flex;flex-direction:column;gap:6px;padding:12px 12px 14px;border:1px solid var(--line-soft);border-top:4px solid var(--c1);border-radius:var(--sx-r);background:#fff;transition:transform .45s var(--ease),box-shadow .45s var(--ease),border-color .3s;animation:sxIn .6s var(--ease) both;animation-delay:calc(var(--i,0)*70ms)}
-.sx-kit:hover{transform:translateY(-3px);box-shadow:var(--sh-h)}
-.sx-kit.on{border-color:var(--blue);border-top-color:var(--blue);box-shadow:0 0 0 1px var(--blue)}
-.sx-kit-art{position:relative;height:128px;margin-bottom:6px;border-radius:6px;overflow:hidden;display:flex;align-items:flex-end;justify-content:center;padding-bottom:12px;background:linear-gradient(180deg,#fff 0,color-mix(in srgb,var(--c1) 11%,#f5f2ec) 100%)}
+.sx-kits{--kw:min(360px,76vw);margin:clamp(6px,1.6vw,18px) 0 clamp(18px,2.6vw,34px);overflow:hidden}
+.sx-kit-stage{position:relative}
+.sx-kit-row{display:flex;align-items:center;overflow-x:auto;padding:22px calc(50% - var(--kw) / 2 + var(--kw) * .09) 28px;scroll-snap-type:x mandatory;scrollbar-width:none;-webkit-overflow-scrolling:touch;outline:0}
+.sx-kit-row::-webkit-scrollbar{display:none}
+.sx-kit{flex:none;width:var(--kw);margin:0 calc(var(--kw) * -.09);scroll-snap-align:center;scroll-snap-stop:always;position:relative;display:flex;flex-direction:column;gap:6px;padding:14px 14px 16px;border:1px solid var(--line-soft);border-top:5px solid var(--c1);border-radius:var(--sx-r);background:#fff;box-shadow:0 14px 26px -18px rgba(11,26,51,.45);transform:translateX(var(--tx,0)) scale(var(--s,.88));opacity:var(--o,.6);z-index:var(--z,1);transform-origin:50% 55%;transition:box-shadow .35s,border-color .3s;cursor:pointer}
+.sx-kit.is-active{cursor:auto;box-shadow:0 30px 44px -22px rgba(11,26,51,.6)}
+.sx-kit:not(.is-active) .sx-kit-act{pointer-events:none}
+.sx-kit.on{border-color:var(--blue);border-top-color:var(--blue);box-shadow:0 0 0 1px var(--blue),0 30px 44px -22px rgba(11,26,51,.5)}
+.sx-kit-nav{position:absolute;top:50%;z-index:40;width:48px;height:48px;margin-top:-30px;display:grid;place-items:center;border:1px solid var(--sx-line);border-radius:8px;background:#fff;color:var(--navy);box-shadow:var(--sh);transition:background-color .25s,opacity .25s}
+.sx-kit-nav.prev{left:clamp(4px,2vw,26px)}.sx-kit-nav.next{right:clamp(4px,2vw,26px)}
+.sx-kit-nav .ic{width:17px;height:17px}.sx-kit-nav.prev .ic{transform:scaleX(-1)}
+.sx-kit-nav:hover:not(:disabled){background:var(--mist)}
+.sx-kit-nav:disabled{opacity:.3;cursor:default}
+.sx-kit-dots{display:flex;justify-content:center;gap:8px;margin-top:-4px}
+.sx-kit-dots button{position:relative;width:34px;height:20px;background:none}
+.sx-kit-dots button::before{content:"";position:absolute;left:0;right:0;top:8px;height:4px;border-radius:1px;background:var(--line);transition:background-color .3s,height .3s,top .3s}
+.sx-kit-dots button.on::before{background:var(--navy);height:6px;top:7px}
+.sx-kit-art{position:relative;height:150px;margin-bottom:6px;border-radius:6px;overflow:hidden;display:flex;align-items:flex-end;justify-content:center;padding-bottom:12px;background:linear-gradient(180deg,#fff 0,color-mix(in srgb,var(--c1) 11%,#f5f2ec) 100%)}
 .sx-kit-art::before{content:"";position:absolute;left:0;right:0;bottom:0;height:30%;background:color-mix(in srgb,var(--c1) 16%,transparent)}
 .sx-pk{position:relative;flex:none;display:block;width:50px;height:88px;margin:0 -5px}
 .sx-pk .pk{position:absolute;left:50%;bottom:0;translate:-50% 0;scale:.62;transform-origin:50% 100%}
@@ -91,7 +103,7 @@
 .sx-kit-act .btn{min-height:44px}
 .sx-kit-act .btn-fill[aria-pressed="true"]{background:var(--navy)}
 .sx-kit-meta{min-height:20px;margin:2px 0 0;font:500 13px/1.4 var(--sans);color:var(--muted)}
-@media (max-width:900px){.sx-kit-row{grid-auto-columns:minmax(230px,78%)}}
+@media (max-width:640px){.sx-kit-nav{display:none}.sx-kit{padding:12px 12px 14px}.sx-kit-art{height:132px}}
 
 /* пустая выдача (каталог, поиск) */
 .sx-rescue{margin:18px auto 0;max-width:560px;padding:18px 20px;border:1px solid var(--line-soft);border-left:4px solid var(--blue);border-radius:var(--sx-r);background:#fff;text-align:left;display:grid;gap:8px}
@@ -240,13 +252,14 @@
 
 /* ============ Компания: «Ваш регион» ============ */
 .sx-region{padding:clamp(34px,5vw,70px) 0}
-.sx-reg-tabs{display:flex;flex-wrap:wrap;width:max-content;max-width:100%;margin:6px 0 18px;border:1px solid var(--sx-line);border-radius:var(--sx-r);overflow:hidden;background:#fff}
-.sx-reg-n{display:flex;align-items:baseline;gap:8px;min-height:50px;padding:0 22px;border-right:1px solid var(--line-soft);font:600 14.5px/1 var(--sans);color:var(--muted);transition:background-color .25s,color .25s}
-.sx-reg-n:last-child{border-right:0}
-.sx-reg-n small{font:700 10.5px/1 var(--sans);letter-spacing:.1em;color:var(--slate)}
-.sx-reg-n:hover{background:var(--mist-2);color:var(--navy)}
+.sx-reg-tabs{display:grid;grid-template-columns:repeat(var(--n,4),minmax(0,1fr));gap:1px;width:100%;max-width:920px;margin:6px 0 20px;border:1px solid var(--sx-line);border-radius:var(--sx-r);overflow:hidden;background:var(--sx-line)}
+.sx-reg-n{position:relative;display:flex;flex-direction:column;align-items:flex-start;justify-content:center;gap:7px;min-height:76px;padding:14px 20px 17px;background:#fff;text-align:left;font:500 clamp(17px,1.5vw,20px)/1.15 var(--serif);color:var(--navy);transition:background-color .25s,color .25s}
+.sx-reg-n small{font:700 10.5px/1 var(--sans);letter-spacing:.18em;color:var(--slate);transition:color .25s}
+.sx-reg-n::after{content:"";position:absolute;left:0;right:0;bottom:0;height:3px;background:transparent;transition:background-color .25s}
+.sx-reg-n:hover{background:var(--mist-2)}
 .sx-reg-n.on{background:var(--navy);color:var(--milk)}
 .sx-reg-n.on small{color:var(--silver)}
+.sx-reg-n.on::after{background:var(--blue)}
 .sx-reg-card{display:grid;grid-template-columns:1.2fr 1fr;gap:clamp(18px,3vw,40px);padding:clamp(22px,3vw,38px);border:1px solid var(--line-soft);border-left:5px solid var(--blue);border-radius:var(--sx-r);background:#fff;animation:sxIn .5s var(--ease) both}
 .sx-reg-col h3{margin:12px 0 8px;font:500 clamp(22px,2.2vw,28px)/1.2 var(--serif)}
 .sx-reg-col p{margin:0 0 8px}
@@ -254,7 +267,7 @@
 .sx-reg-col .btn{min-height:44px}
 .sx-reg-ev{padding-left:clamp(0px,2vw,28px);border-left:1px dashed var(--sx-line)}
 @media (max-width:760px){
-  .sx-reg-tabs{width:100%}.sx-reg-n{flex:1 1 50%;border-bottom:1px solid var(--line-soft);padding:0 14px}
+  .sx-reg-tabs{grid-template-columns:repeat(2,minmax(0,1fr))}.sx-reg-n{min-height:68px;padding:12px 16px 15px;font-size:17px}.sx-reg-n:last-child:nth-child(odd){grid-column:1/-1}
   .sx-reg-card{grid-template-columns:1fr}.sx-reg-ev{padding:18px 0 0;border:0;border-top:1px dashed var(--sx-line)}
 }
 
@@ -279,3 +292,15 @@
 @media print{.sx-mod,.sx-fork{display:none!important}}
 /* кнопки слоя — не меньше 44 px (удобно нажимать пальцем) */
 .sx-mod .btn.btn-sm,[data-sx-mod] .btn.btn-sm{min-height:44px}
+
+/* ============ Компания: «Почему «Астрее» можно доверять» (только факты сайта) ============ */
+.sx-trust{padding:clamp(18px,3vw,40px) 0 clamp(30px,4.5vw,60px)}
+.sx-tl{list-style:none;margin:clamp(14px,2vw,22px) 0 0;padding:0;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:clamp(14px,2vw,26px)}
+.sx-tl li{display:flex;gap:12px;align-items:flex-start}
+.sx-ti{flex:none;width:40px;height:40px;border-radius:10px;display:grid;place-items:center;background:var(--mist-2);color:var(--blue);box-shadow:0 0 0 1px var(--line-soft) inset}
+.sx-ti .ic{width:19px;height:19px}
+.sx-tl b{display:block;font:600 15px/1.3 var(--sans)}
+.sx-tl small{display:block;margin-top:4px;font:400 13.5px/1.5 var(--sans);color:var(--muted)}
+.sx-trust .sx-fine{margin:18px 0 0}
+@media (max-width:1000px){.sx-tl{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media (max-width:520px){.sx-tl{grid-template-columns:1fr}}

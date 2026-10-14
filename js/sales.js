@@ -18,7 +18,7 @@
   if (!A || !D || !D.sales || !D.extras || !D.extras.sales) return;
   const SX = D.sales, I = A.I, esc = A.esc, X = D.extras;
   const $ = (s, r) => (r || document).querySelector(s), $$ = (s, r) => Array.prototype.slice.call((r || document).querySelectorAll(s));
-  const V = Object.assign({planFlow: 'four', optionStyle: 'cards', barStyle: 'bottom'}, SX.variants || {});
+  const V = Object.assign({planFlow: 'four', barStyle: 'bottom'}, SX.variants || {});
   /* для проверок и арены: ?v=planFlow:three,barStyle:pill принудительно включает вариант оформления (только на этой загрузке страницы) */
   (function () { try { const q = new URLSearchParams(location.search).get('v'); if (q) q.split(',').forEach(x => { const kv = x.split(':'); if (kv[0] in V && /^[a-z]+$/.test(kv[1] || '')) V[kv[0]] = kv[1]; }); } catch (e) {} })();
   const EXCL = new Set(SX.exclude || []), BAR_EXCL = new Set(SX.barExclude || []);
@@ -99,7 +99,7 @@
   const PL = SX.planner || {}, STEPS = PL.steps || {}, RES = PL.result || {};
   const flowName = () => (PL.flows && PL.flows[V.planFlow]) ? V.planFlow : 'four';
   const flow = () => PL.flows[flowName()].slice();
-  const emptySt = () => ({role: '', tasks: [], goal: '', city: '', volume: '', brand: ''});
+  const emptySt = () => ({role: '', tasks: [], goal: '', city: '', volume: '', brand: '', note: ''});
   function savedPlan() {
     const s = local.get(KP);
     if (!s || !s.st || !s.done || Date.now() - (s.t || 0) > 60 * 24 * 3600 * 1000) return null;
@@ -136,6 +136,7 @@
     if (st.goal) L.push('Цель: ' + optLabel('goal', st.goal));
     if (st.city) L.push('Город: ' + st.city);
     if (st.volume && st.volume !== 'na') L.push('Ориентир по первой закупке: ' + optLabel('volume', st.volume));
+    if (st.note) L.push('Комментарий: ' + st.note);
     return L;
   }
   function planText(pl) {
@@ -165,36 +166,76 @@
     return any ? st : null;
   }
 
+  /* ---------- диалог со Стеллой: подбор в виде переписки (варианты кнопками или свои слова) ---------- */
+  const CH = PL.chat || {}, SYN = CH.syn || {};
   let UI = null;       // состояние открытой страницы подбора
-  function renderPlanner(host) {
-    const fromQ = stFromQuery(), prev = savedPlan();
-    UI = {host: host, st: emptySt(), i: 0, result: false};
-    if (fromQ) {
-      UI.st = fromQ;
-      if (fromQ.tasks.length && (fromQ.goal || fromQ.role || fromQ.city)) { UI.result = true; }
-      else if (fromQ.brand && !fromQ.tasks.length) { UI.st.tasks = ((D.tasks || []).filter(t => (SX.taskBrands[t.id] || []).indexOf(fromQ.brand) >= 0).slice(0, 3)).map(t => t.id); UI.i = 0; }
-      else if (fromQ.tasks.length) UI.i = Math.max(0, flow().indexOf('goal'));
-    } else if (prev) { UI.st = Object.assign(emptySt(), prev.st); UI.result = true; }
-    else { const dr = local.get(KD); if (dr && dr.st && Date.now() - (dr.t || 0) < 7 * 24 * 3600 * 1000 && (dr.st.tasks || []).length) { UI.st = Object.assign(emptySt(), dr.st); UI.i = Math.min(+dr.i || 0, flow().length - 1); UI.resumed = true; } }
-    track('sales_planner_view', {source: fromQ ? 'link' : prev ? 'saved' : UI.resumed ? 'draft' : 'new'});
-    paint(true);
+  const delay = ms => new Promise(r => setTimeout(r, Math.max(0, Math.round(ms / speed()))));
+  const plain = h => String(h).replace(/<[^>]*>/g, '');
+  const avatar = mood => A.pearl ? A.pearl(mood || 'idle', false, '') : '<span class="pc-mono" aria-hidden="true">С</span>';
+  const labelOf = (name, v) => name === 'tasks' ? (T[v] || {}).label || v : name === 'city' ? v : optLabel(name, v) || v;
+  const answered = name => name === 'tasks' ? UI.st.tasks.length > 0 : !!UI.st[name] || !!UI.skip[name];
+  const firstOpen = () => flow().findIndex(n => !answered(n));
+  const logEl = () => UI && UI.host ? $('.pchat-log', UI.host) : null;
+  const toEnd = () => { const l = logEl(); if (l) l.scrollTo({top: l.scrollHeight, behavior: 'smooth'}); };
+  const toEndSoon = () => { toEnd(); requestAnimationFrame(toEnd); setTimeout(toEnd, 260); };
+  function bubble(r, html, cls) {
+    const l = logEl(); if (!l) return null;
+    const row = document.createElement('div'); row.className = 'pc-m pc-' + r + (cls ? ' ' + cls : '');
+    row.innerHTML = (r === 'b' ? '<span class="pc-av">' + avatar() + '</span>' : '') + '<div class="pc-bub">' + html + '</div>';
+    l.appendChild(row); toEnd(); return row;
   }
-  const stepNo = () => UI.i + 1;
+  async function say(html, ms) {                 // «Стелла печатает…» → сообщение
+    const run = UI.run, l = logEl(); if (!l) return;
+    const t = document.createElement('div'); t.className = 'pc-m pc-b pc-typing'; t.setAttribute('role', 'status'); t.setAttribute('aria-label', CH.typing || '');
+    t.innerHTML = '<span class="pc-av">' + avatar('think') + '</span><div class="pc-bub"><i></i><i></i><i></i></div>';
+    l.appendChild(t); toEnd(); setComp(null);
+    await delay(ms != null ? ms : Math.min(1100, 380 + plain(html).length * 8));
+    t.remove(); if (!UI || UI.run !== run) return;
+    bubble('b', html);
+  }
   function progress(n, total) {
     const left = total - n, hint = n === 1 ? 'меньше минуты' : left === 0 ? 'последний вопрос' : 'осталось ' + left + ' ' + plural(left, 'вопрос', 'вопроса', 'вопросов');
     let dots = ''; for (let k = 1; k <= total; k++) dots += '<i class="' + (k < n ? 'done' : k === n ? 'cur' : '') + '"></i>';
     return '<div class="plan-prog" role="progressbar" aria-valuemin="1" aria-valuemax="' + total + '" aria-valuenow="' + n + '" aria-label="Шаг ' + n + ' из ' + total + '"><span class="plan-prog-t">Шаг ' + n + ' из ' + total + ' <em>· ' + hint + '</em></span><span class="plan-dots" aria-hidden="true">' + dots + '</span></div>';
   }
-  function optHTML(kind, o, on, disabled) {
-    return '<button class="plan-opt' + (on ? ' on' : '') + '" type="button" role="' + (kind === 'multi' ? 'checkbox' : 'radio') + '" aria-checked="' + (on ? 'true' : 'false') + '"' + (disabled ? ' aria-disabled="true" tabindex="-1"' : '') + ' data-v="' + esc(o.id) + '"><span class="plan-chk" aria-hidden="true">' + I.check + '</span><span class="plan-ot"><b>' + esc(o.label) + '</b>' + (o.sub ? '<small>' + esc(o.sub) + '</small>' : '') + '</span></button>';
+  function paintHead() {
+    const h = UI && UI.host ? $('.pchat-prog', UI.host) : null; if (!h) return; const fl = flow();
+    h.innerHTML = UI.result ? '<span class="plan-prog-t">План готов</span>' : progress(Math.min(UI.i + 1, fl.length), fl.length);
   }
   function stepOptions(name) {
     if (name === 'tasks') return (D.tasks || []).map(t => ({id: t.id, label: t.label}));
     if (name === 'city') return (SX.cities || []).map(c => ({id: c, label: c}));
     return (STEPS[name] || {}).options || [];
   }
-  /* «доска линеек»: по мере выбора задач на глазах появляются подходящие линейки — человек видит, что план строится из его ответов (эффект «своего» результата) */
-  function brandPearl(b, i) {
+  function chip(kind, o, on, disabled) {
+    return '<button class="plan-opt' + (on ? ' on' : '') + '" type="button" role="' + (kind === 'multi' ? 'checkbox' : 'radio') + '" aria-checked="' + (on ? 'true' : 'false') + '"' + (disabled ? ' aria-disabled="true" tabindex="-1"' : '') + ' data-v="' + esc(o.id) + '">' +
+      (kind === 'multi' ? '<span class="plan-chk" aria-hidden="true">' + I.check + '</span>' : '') + '<span class="plan-ot"><b>' + esc(o.label) + '</b>' + (o.sub ? '<small>' + esc(o.sub) + '</small>' : '') + '</span></button>';
+  }
+  const quick = (act, label, extra) => '<button class="pc-quick' + (extra && extra.fill ? ' fill' : '') + '" type="button" data-pl="' + act + '"' + (extra && extra.v ? ' data-v="' + esc(extra.v) + '"' : '') + '>' + esc(label) + '</button>';
+  /* нижняя панель: варианты ответа на текущий вопрос (или быстрые действия) */
+  function fitChat() {                           // окно диалога целиком на экране: варианты ответа и поле ввода внизу не прячутся за краем
+    if (!UI || UI.fitted) return; UI.fitted = true; const c = $('.pchat', UI.host); if (!c) return; const r = c.getBoundingClientRect();
+    if (r.bottom > innerHeight - 6) window.scrollTo({top: Math.max(0, window.scrollY + r.top - 78), behavior: 'smooth'});
+  }
+  function setComp(name) {
+    const c = UI && UI.host ? $('.pchat-comp', UI.host) : null; if (!c) return;
+    if (!name) { c.hidden = true; c.innerHTML = ''; c.removeAttribute('data-step'); return; }
+    c.hidden = false; c.setAttribute('data-step', name);
+    toEndSoon();
+    fitChat();
+    if (name === 'after') {
+      c.innerHTML = '<div class="pc-chips"><span class="pc-chips-l">' + esc(CH.editLabel) + '</span>' + flow().map(n => quick('editstep', (CH.stepNames || {})[n] || n, {v: n})).join('') + quick('again', CH.btnAgain) + '</div>'; return;
+    }
+    if (name === 'resume') { c.innerHTML = '<div class="pc-chips">' + quick('resume-yes', CH.btnResumeYes, {fill: 1}) + quick('again', CH.btnResumeNo) + '</div>'; return; }
+    const S = STEPS[name] || {}, multi = name === 'tasks', st = UI.st, sel = multi ? st.tasks : [st[name]], max = S.max || 3, full = multi && st.tasks.length >= max;
+    c.innerHTML = '<div class="plan-opts' + (stepOptions(name).some(o => o.sub) ? ' plan-opts--sub' : '') + '" role="' + (multi ? 'group' : 'radiogroup') + '" aria-label="' + esc(S.q || '') + '">' +
+      stepOptions(name).map(o => chip(multi ? 'multi' : 'single', o, sel.indexOf(o.id) >= 0, multi && full && sel.indexOf(o.id) < 0)).join('') + '</div>' +
+      '<div class="pc-foot">' + (UI.i > 0 ? '<button class="btn-lnk plan-back" type="button" data-pl="back">' + esc(CH.btnBack) + '</button>' : '<span></span>') + '<span class="pc-foot-r">' +
+      (multi ? '<span class="pc-count" aria-live="polite">' + st.tasks.length + ' / ' + max + '</span>' : '') +
+      (S.skip ? '<button class="btn-lnk" type="button" data-pl="skip">' + esc(S.skip) + '</button>' : '') +
+      (multi ? '<button class="btn btn-fill btn-sm plan-next" type="button" data-pl="next"' + (st.tasks.length ? '' : ' disabled') + '>' + esc(CH.btnDone) + ' ' + I.arrow + '</button>' : '') + '</span></div>';
+  }
+  function brandTile(b, i) {
     const img = b.logo && A.assetUrl ? A.assetUrl(b.logo) : '';
     return '<span class="plan-btile" style="--c1:' + esc(b.c1) + ';--c2:' + esc(b.c2) + ';--i:' + i + '" title="' + esc(b.name) + '">' + (img ? '<img src="' + esc(img) + '" alt="' + esc(b.name) + '" loading="lazy" decoding="async">' : '<b aria-hidden="true">' + esc(b.name.charAt(0)) + '</b>') + '</span>';
   }
@@ -202,30 +243,140 @@
     const st = UI.st; if (!(st.tasks || []).length) return '';
     const pl = compute(st); if (!pl.brands.length) return '';
     const n = (D.products || []).filter(p => (p.ts || []).some(t => st.tasks.indexOf(t) >= 0)).length;
-    return '<div class="plan-board" aria-live="polite"><span class="plan-board-t">Подходящие линейки</span><span class="plan-tiles">' + pl.brands.map((id, i) => brandPearl(B[id], i)).join('') + '</span><span class="plan-board-n">и ещё ' + n + ' ' + plural(n, 'товар', 'товара', 'товаров') + ' под ваши задачи</span></div>';
+    return '<p class="pc-lead">' + esc(CH.board) + '</p><div class="plan-board" aria-live="polite"><span class="plan-tiles">' + pl.brands.map((id, i) => brandTile(B[id], i)).join('') + '</span><span class="plan-board-n">' + pl.brands.map(id => esc(B[id].name)).join(', ') + ' · и ещё ' + n + ' ' + plural(n, 'товар', 'товара', 'товаров') + '</span></div>';
   }
-  const roleHint = () => { const r = UI.st.role; return r && flow().indexOf('role') < 0 && optLabel('role', r) ? '<p class="plan-for">Подбираем для: <b>' + esc(optLabel('role', r)) + '</b></p>' : ''; };
-  function paint(first) {
-    const h = UI.host; if (!h) return;
-    saveDraft();
-    let html;
-    if (UI.result) html = resultHTML();
-    else {
-      const fl = flow(), name = fl[UI.i], S = STEPS[name] || {}, total = fl.length, st = UI.st, multi = name === 'tasks';
-      const sel = multi ? st.tasks : [st[name]];
-      const full = multi && st.tasks.length >= (S.max || 3);
-      const opts = stepOptions(name).map(o => optHTML(multi ? 'multi' : 'single', o, sel.indexOf(o.id) >= 0, multi && full && sel.indexOf(o.id) < 0)).join('');
-      html = '<div class="plan-card card" data-step="' + name + '">' + progress(stepNo(), total) +
-        (UI.resumed ? '<p class="plan-resume">Продолжаем с того места, где вы остановились · <button class="btn-lnk" type="button" data-pl="again">начать заново</button></p>' : '') +
-        '<h2 id="plan-h" class="plan-q" tabindex="-1">' + esc(S.q || '') + '</h2>' + (S.hint ? '<p class="plan-hint muted">' + esc(S.hint) + '</p>' : '') + roleHint() + boardHTML() +
-        '<div class="plan-opts plan-opts--' + (V.optionStyle === 'chips' || name === 'city' ? 'chips' : 'cards') + '" role="' + (multi ? 'group' : 'radiogroup') + '" aria-labelledby="plan-h">' + opts + '</div>' +
-        '<div class="plan-foot">' + (UI.i > 0 ? '<button class="btn btn-lnk plan-back" type="button" data-pl="back">← Назад</button>' : '<span></span>') +
-        '<span class="plan-foot-r">' + (S.skip ? '<button class="btn btn-lnk" type="button" data-pl="skip">' + esc(S.skip) + '</button>' : '') +
-        (multi || name === 'city' || name === 'volume' ? '<button class="btn btn-fill plan-next" type="button" data-pl="next"' + (multi && !st.tasks.length ? ' disabled' : '') + '>' + (UI.i === total - 1 ? 'Показать план' : 'Далее') + ' ' + I.arrow + '</button>' : '') + '</span></div></div>';
+  const leftLine = open => open <= 0 ? '' : open === 1 ? CH.left.one : fill(open < 5 ? CH.left.few : CH.left.many, {n: open});
+  const knownList = st => { const L = []; if (st.role) L.push(optLabel('role', st.role)); if ((st.tasks || []).length) L.push(st.tasks.map(t => (T[t] || {}).label).filter(Boolean).join(', ')); if (st.goal) L.push(optLabel('goal', st.goal)); if (st.city) L.push(st.city); if (st.volume && st.volume !== 'na') L.push(optLabel('volume', st.volume)); return L.filter(Boolean); };
+
+  /* ----- ход диалога ----- */
+  async function ask(i, lead) {
+    const run = UI.run, fl = flow(), name = fl[i], S = STEPS[name] || {};
+    UI.i = i; saveDraft(); paintHead();
+    await say((lead ? '<p class="pc-lead">' + lead + '</p>' : '') + '<p class="pc-q">' + esc(S.q || '') + '</p>' + (S.hint ? '<p class="pc-hint">' + esc(S.hint) + '</p>' : ''));
+    if (!UI || UI.run !== run) return;
+    setComp(name);
+  }
+  async function advance(run, lead) {
+    if (!UI || UI.run !== run) return;
+    const k = firstOpen(); if (k < 0) return complete(run);
+    const open = flow().filter(n => !answered(n)).length, left = leftLine(open);
+    await ask(k, [lead, left].filter(Boolean).join(' '));
+  }
+  async function complete(run) {
+    await say('<p>' + esc(UI.updated ? CH.updated : CH.ready) + '</p>'); if (!UI || UI.run !== run) return;
+    UI.updated = false; finish(); setComp('after');
+  }
+  const stepTrack = (name, v) => { if (!UI.started) { UI.started = true; track('plan_start', {flow: flowName()}); } track('plan_step', {step: name, value: v || '-'}); };
+  async function pick(name, v) {
+    const run = ++UI.run; UI.st[name] = v; UI.skip[name] = false; stepTrack(name, v);
+    bubble('u', esc(labelOf(name, v))); setComp(null);
+    await advance(run, esc((CH.ack || {})[name] || ''));
+  }
+  async function pickTasks() {
+    const run = ++UI.run, st = UI.st; if (!st.tasks.length) return; stepTrack('tasks', st.tasks.join(','));
+    bubble('u', esc(st.tasks.map(t => labelOf('tasks', t)).join(', '))); setComp(null);
+    const board = boardHTML(); if (board) { await say(board, 700); if (!UI || UI.run !== run) return; }
+    await advance(run, esc((CH.ack || {}).tasks || ''));
+  }
+  async function skip(name) {
+    const run = ++UI.run; UI.st[name] = ''; UI.skip[name] = true; stepTrack(name, 'skip'); bubble('u', esc(CH.skipLabel)); setComp(null); await advance(run, '');
+  }
+  async function back() {
+    if (UI.i <= 0) return; const run = ++UI.run; bubble('u', esc(CH.btnBack)); setComp(null); await ask(UI.i - 1, esc(CH.backSay));
+  }
+  async function editStep(name) {
+    const i = flow().indexOf(name); if (i < 0) return; const run = ++UI.run; UI.updated = true; bubble('u', esc(CH.editLabel + ' ' + ((CH.stepNames || {})[name] || name).toLowerCase())); setComp(null); await ask(i, esc(CH.editLead));
+  }
+  function resetAll(msg) {
+    local.del(KP); local.del(KD); UI.st = emptySt(); UI.skip = {}; UI.i = 0; UI.result = false; UI.started = false; UI.updated = false; const res = $('[data-plan-result]', UI.host); if (res) res.innerHTML = ''; const l = logEl(); if (l) l.innerHTML = '';
+  }
+  async function begin(lead) {
+    const run = ++UI.run; paintHead(); setComp(null);
+    if (lead === 'hello') { for (const h of CH.hello || []) { await say('<p>' + esc(h) + '</p>'); if (!UI || UI.run !== run) return; } }
+    else if (lead) { await say('<p>' + lead + '</p>'); if (!UI || UI.run !== run) return; }
+    const k = firstOpen(); if (k < 0) return complete(run);
+    await ask(k, '');
+  }
+
+  /* ----- свободный ввод: понимаем, что человек имел в виду (роль, задачи, цель, город, объём) ----- */
+  function interpret(raw) {
+    const t = ' ' + A.norm(raw).replace(/[^a-zа-я0-9\- ]+/g, ' ').replace(/\s+/g, ' ') + ' ', fl = flow(), has = list => (list || []).some(s => t.indexOf(s) >= 0), patch = {};
+    if (fl.indexOf('role') >= 0) { const r = Object.keys(SYN.role || {}).find(id => has(SYN.role[id])); if (r) patch.role = r; }
+    const tasks = Object.keys(SYN.tasks || {}).filter(id => T[id] && has(SYN.tasks[id]));
+    (D.tasks || []).forEach(x => { if (tasks.indexOf(x.id) < 0 && t.indexOf(' ' + A.norm(x.label)) >= 0) tasks.push(x.id); });
+    if (tasks.length) patch.tasks = tasks;
+    if (fl.indexOf('goal') >= 0) { const tr = has(SYN.goal && SYN.goal.train), rg = has(SYN.goal && SYN.goal.range), both = has(SYN.goal && SYN.goal.both) || (tr && rg); const g = both ? 'both' : tr ? 'train' : rg ? 'range' : ''; if (g) patch.goal = g; }
+    if (fl.indexOf('city') >= 0) { const c = Object.keys(SYN.city || {}).find(id => (SX.cities || []).indexOf(id) >= 0 && has(SYN.city[id])); if (c) patch.city = c; }
+    if (fl.indexOf('volume') >= 0) {
+      const m = /(\d[\d ]*(?:[.,]\d+)?)\s*(тыс|т р|тр|к |k |млн|миллион)?/.exec(' ' + A.norm(raw).replace(/₽|руб[а-я.]*/g, ' ') + ' ');
+      if (m) { let n = parseFloat(m[1].replace(/\s/g, '').replace(',', '.')); const u = m[2] || ''; if (/^(тыс|т р|тр|к |k )/.test(u)) n *= 1000; else if (/^(млн|миллион)/.test(u)) n *= 1e6; if (n >= 1000) patch.volume = n < 50000 ? 'u50' : n < 150000 ? '50' : n < 300000 ? '150' : '300'; }
+      else if (fl[UI.i] === 'volume' && has(SYN.unknown)) patch.volume = 'na';
     }
-    h.innerHTML = html;
-    const hd = $('#plan-h', h) || $('.plan-res h2', h);
-    if (!first && hd) { hd.focus({preventScroll: true}); const r = hd.getBoundingClientRect(); if (r.top < 70 || r.top > innerHeight * .6) window.scrollTo({top: Math.max(0, window.scrollY + r.top - 110), behavior: 'smooth'}); }
+    return patch;
+  }
+  const isQuestion = raw => { const t = ' ' + A.norm(raw) + ' '; return (SYN.question || []).some(s => t.indexOf(s) >= 0); };
+  const fmtBrain = tx => esc(String(tx || '').replace(/\[\[[^\]]*\]\]/g, '').replace(/[`#>]/g, '').trim().slice(0, 700)).replace(/\*\*([^*]+)\*\*/g, '<b>$1</b>').replace(/\n+/g, '<br>');
+  async function onText(raw) {
+    const text = String(raw || '').trim().slice(0, 400); if (!text || !UI) return;
+    const run = ++UI.run, st = UI.st, max = (STEPS.tasks || {}).max || 3; bubble('u', esc(text)); setComp(null);
+    let patch = interpret(text), keys = Object.keys(patch);
+    if (isQuestion(text) && keys.length === 1 && keys[0] === 'goal') { patch = {}; keys = []; }          // «как проходит доставка заказа?» — это вопрос, а не ответ про цель
+    if (keys.length) {
+      let many = false;
+      if (patch.tasks && patch.tasks.length > max) { patch.tasks = patch.tasks.slice(0, max); many = true; }
+      keys.forEach(k => { st[k] = patch[k]; UI.skip[k] = false; stepTrack(k, k === 'tasks' ? patch.tasks.join(',') : patch[k]); });
+      track('plan_text', {kind: 'recognized', fields: keys.join(',')});
+      const list = keys.map(k => k === 'tasks' ? patch.tasks.map(x => labelOf('tasks', x)).join(', ') : labelOf(k, patch[k])).join('; ');
+      if (UI.result) UI.updated = true;
+      const board = patch.tasks ? boardHTML() : ''; const lead = esc(fill(CH.understood, {list: list})) + (many ? ' ' + esc(fill(CH.tooMany, {n: max})) : '');
+      if (board) { await say('<p>' + lead + '</p>' + board, 900); if (!UI || UI.run !== run) return; return advance(run, ''); }
+      return advance(run, lead);
+    }
+    if (isQuestion(text)) {
+      track('plan_text', {kind: 'question'});
+      let a = null; try { a = A.assistant && A.assistant.answer ? A.assistant.answer(text) : null; } catch (e) { a = null; }
+      const body = a && a.text ? fmtBrain(a.text) : '';
+      await say('<p>' + (body || esc(CH.noBrain)) + '</p>'); if (!UI || UI.run !== run) return;
+      if (UI.result) return setComp('after');
+      return ask(Math.max(0, firstOpen()), esc(CH.backTo));
+    }
+    track('plan_text', {kind: 'note'});
+    st.note = ((st.note ? st.note + '; ' : '') + text).slice(0, 300);
+    await say('<p>' + esc(fill(CH.noted, {text: text.length > 90 ? text.slice(0, 90) + '…' : text})) + '</p>'); if (!UI || UI.run !== run) return;
+    if (UI.result) { UI.updated = true; return advance(run, ''); }
+    const k = firstOpen(); if (k < 0) return complete(run);
+    return ask(k, '');
+  }
+
+  const shell = () => '<section class="pchat card" aria-label="' + esc(CH.label) + '"><header class="pchat-h"><span class="pchat-av">' + avatar('idle') + '</span><div class="pchat-ht"><b>' + esc(CH.name) + '<span class="pc-n2"> · ' + esc(CH.role) + '</span></b><small><i class="asst-dot" aria-hidden="true"></i><span>' + esc(CH.sub) + '</span></small></div><div class="pchat-prog"></div>' +
+    '<button class="btn-lnk pchat-re" type="button" data-pl="again">' + esc(CH.btnAgain) + '</button></header>' +
+    '<div class="pchat-log" role="log" aria-live="polite" tabindex="0"></div><div class="pchat-comp" hidden></div>' +
+    '<form class="pchat-in" autocomplete="off"><input class="pchat-text" name="t" type="text" maxlength="400" placeholder="' + esc(CH.placeholder) + '" aria-label="' + esc(CH.inputLabel) + '" enterkeyhint="send"><button class="pchat-send" type="submit" aria-label="' + esc(CH.send) + '">' + I.arrow + '</button></form></section><div data-plan-result></div>';
+
+  function renderPlanner(host) {
+    const fromQ = stFromQuery(), prev = savedPlan();
+    UI = {host: host, st: emptySt(), skip: {}, i: 0, result: false, run: 0, started: false, updated: false};
+    host.innerHTML = shell();
+    let source = 'new';
+    if (fromQ) {
+      UI.st = Object.assign(emptySt(), fromQ); source = 'link';
+      if (fromQ.brand && !fromQ.tasks.length) UI.st.tasks = ((D.tasks || []).filter(t => (SX.taskBrands[t.id] || []).indexOf(fromQ.brand) >= 0).slice(0, 3)).map(t => t.id);
+      const full = UI.st.tasks.length && (fromQ.goal || fromQ.role || fromQ.city);
+      if (full) { UI.result = true; paintHead(); finishView(); bubble('b', '<p>' + esc(CH.linked) + '</p>'); setComp('after'); }
+      else { const kn = knownList(UI.st); begin(kn.length ? esc(fill(CH.known, {list: kn.join('; ')})) : ''); }
+    } else if (prev) {
+      UI.st = Object.assign(emptySt(), prev.st); UI.result = true; source = 'saved'; paintHead(); finishView(); bubble('b', '<p>' + esc(CH.saved) + '</p>'); setComp('after');
+    } else {
+      const dr = local.get(KD);
+      if (dr && dr.st && Date.now() - (dr.t || 0) < 7 * 24 * 3600 * 1000 && (dr.st.tasks || []).length) {
+        UI.st = Object.assign(emptySt(), dr.st); UI.i = Math.min(+dr.i || 0, flow().length - 1); source = 'draft'; paintHead();
+        bubble('b', '<p>' + esc(CH.resume) + '</p><p class="pc-lead">' + esc(knownList(UI.st).join('; ')) + '</p>'); setComp('resume');
+      } else begin('hello');
+    }
+    track('sales_planner_view', {source: source});
+  }
+  function finishView() {        // план рисуется под диалогом
+    const res = $('[data-plan-result]', UI.host); if (res) res.innerHTML = resultHTML();
   }
   function resultHTML() {
     const pl = compute(UI.st), st = pl.st, goal = pl.goal;
@@ -257,37 +408,31 @@
   function finish() {
     UI.result = true; savePlan(UI.st, true); local.del(KD); const pl = compute(UI.st);
     track('plan_result', {tasks: pl.tasks.join(','), goal: pl.goal, role: UI.st.role, city: UI.st.city, products: pl.products.length, events: pl.events.length, flow: flowName()});
-    paint(); document.dispatchEvent(new CustomEvent('astreya:plan', {detail: {done: true}}));
+    finishView(); paintHead(); document.dispatchEvent(new CustomEvent('astreya:plan', {detail: {done: true}}));
+    const res = $('[data-plan-result]', UI.host); if (res) setTimeout(() => { const r = res.getBoundingClientRect(); if (r.top > innerHeight * .55) window.scrollTo({top: Math.max(0, window.scrollY + r.top - 96), behavior: 'smooth'}); }, Math.round(450 / speed()));
   }
   function onPlanClick(e) {
     const t = e.target.closest && e.target.closest('[data-pl], .plan-opt'); if (!t || !UI || !UI.host || !UI.host.contains(t)) return;
-    const fl = flow(), name = fl[UI.i], st = UI.st;
-    if (t.getAttribute('data-pl') !== 'again') UI.resumed = false;
+    const comp = $('.pchat-comp', UI.host), name = comp ? comp.getAttribute('data-step') : '';
     if (t.classList.contains('plan-opt')) {
-      if (t.getAttribute('aria-disabled') === 'true') return;
-      const v = t.getAttribute('data-v');
+      if (t.getAttribute('aria-disabled') === 'true' || !name) return;
+      const v = t.getAttribute('data-v'), st = UI.st;
       if (name === 'tasks') {
         const k = st.tasks.indexOf(v); if (k >= 0) st.tasks.splice(k, 1); else if (st.tasks.length < ((STEPS.tasks || {}).max || 3)) st.tasks.push(v);
-        paint(true); const re = $('.plan-opt[data-v="' + v + '"]', UI.host); if (re) re.focus({preventScroll: true}); return;
+        setComp('tasks'); const re = $('.plan-opt[data-v="' + v + '"]', UI.host); if (re) re.focus({preventScroll: true}); return;
       }
-      st[name] = v; track('plan_step', {step: name, value: v});
-      if (UI.i === 0 && !UI.started) { UI.started = true; track('plan_start', {flow: flowName()}); }
-      if (name === 'city' || name === 'volume') { paint(true); const re = $('.plan-opt[data-v="' + v + '"]', UI.host); if (re) re.focus({preventScroll: true}); return; }
-      setTimeout(() => { if (UI && UI.i === fl.indexOf(name) && !UI.result) { UI.i < fl.length - 1 ? (UI.i++, paint()) : finish(); } }, Math.round(220 / speed()));
-      paint(true); const re = $('.plan-opt[data-v="' + v + '"]', UI.host); if (re) re.focus({preventScroll: true}); return;
+      pick(name, v); return;
     }
     const act = t.getAttribute('data-pl');
-    if (act === 'back') { if (UI.i > 0) { UI.i--; paint(); } }
-    else if (act === 'next' || act === 'skip') {
-      if (act === 'skip') { st[name] = ''; track('plan_step', {step: name, value: 'skip'}); }
-      else track('plan_step', {step: name, value: name === 'tasks' ? st.tasks.join(',') : st[name] || '-'});
-      if (UI.i === 0 && !UI.started) { UI.started = true; track('plan_start', {flow: flowName()}); }
-      UI.i < fl.length - 1 ? (UI.i++, paint()) : finish();
-    }
-    else if (act === 'again') { local.del(KP); local.del(KD); UI.resumed = false; UI.st = emptySt(); UI.i = 0; UI.result = false; UI.started = false; track('plan_restart'); paint(); }
+    if (act === 'back') back();
+    else if (act === 'next') pickTasks();
+    else if (act === 'skip') skip(name);
+    else if (act === 'editstep') editStep(t.getAttribute('data-v'));
+    else if (act === 'resume-yes') { const run = ++UI.run; bubble('u', esc(CH.btnResumeYes)); setComp(null); advance(run, ''); }
+    else if (act === 'again') { track('plan_restart'); resetAll(); begin(esc(CH.againSay)); }
     else if (act === 'main') { const pl = compute(UI.st); track('plan_cta', {tasks: pl.tasks.join(','), goal: pl.goal}); setVia('plan-main'); A.openForm('plan', planRef(pl)); }
     else if (act === 'signup') { track('plan_signup', {event: t.getAttribute('data-id')}); setVia('plan-event'); A.openForm('seminar', t.getAttribute('data-id')); }
-    else if (act === 'addall') { const pl = compute(UI.st), n = A.rlAdd ? A.rlAdd(pl.products.map(p => p.id)) : 0; track('plan_list_add', {added: n}); if (A.toast) A.toast(n ? 'В списке запроса: добавлено ' + n + ' ' + plural(n, 'товар', 'товара', 'товаров') : 'Эти товары уже в списке запроса'); paint(true); }
+    else if (act === 'addall') { const pl = compute(UI.st), n = A.rlAdd ? A.rlAdd(pl.products.map(p => p.id)) : 0; track('plan_list_add', {added: n}); if (A.toast) A.toast(n ? 'В списке запроса: добавлено ' + n + ' ' + plural(n, 'товар', 'товара', 'товаров') : 'Эти товары уже в списке запроса'); finishView(); }
     else if (act === 'copy') {
       const url = planShareUrl(UI.st), done = () => A.toast && A.toast('Ссылка на план скопирована');
       if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(url).then(done, () => { A.toast && A.toast(url); }); else { A.toast && A.toast(url); }
@@ -296,6 +441,10 @@
     else if (act === 'ask') { const pl = compute(UI.st); track('plan_ask_stella'); if (A.stella) A.stella.ask('Объясни мой стартовый план: ' + summaryLines(pl).join('; ') + '. Что в нём главное и с чего начать?', {sales: true}); }
   }
   document.addEventListener('click', onPlanClick);
+  document.addEventListener('submit', e => {
+    const f = e.target; if (!f || !f.classList || !f.classList.contains('pchat-in') || !UI || !UI.host || !UI.host.contains(f)) return;
+    e.preventDefault(); const inp = f.elements.t, v = inp ? inp.value : ''; if (inp) inp.value = ''; onText(v);
+  });
   document.addEventListener('astreya:form-open', e => {
     const d = e.detail || {}; if (d.type !== 'plan' || !d.form) return;
     const s = savedPlan() || (UI && UI.result ? {st: UI.st} : null); if (!s) return;

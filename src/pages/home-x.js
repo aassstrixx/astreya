@@ -184,6 +184,6 @@ module.exports = function homeRedesign(ctx, C, P, parts, {events, val}) {
     </div>
   </section>`;
   })();
-  const fork = ctx.sales ? require('./sales-home.js')(ctx, C, P) : '';          // продающий слой: развилка «Учиться / Закупать» сразу под строкой брендов (героя и вступление не трогаем)
-  return [jar, outro, hero, parts.marquee, fork, about, stats, why, solutions, parts.brands.replace('class="sec tint"', 'class="rd-sec rd-brands"'), picker, featured, editorial, training, forWhom, news, wall, finalCta].join('\n\n  ');
+  const fork = ctx.sales && ctx.sales.homeFork ? require('./sales-home.js')(ctx, C, P) : '';          // продающий слой: развилка «Учиться / Закупать» сразу под строкой брендов (героя и вступление не трогаем)
+  return [jar, outro, hero, parts.marquee, ...(fork ? [fork] : []), about, stats, why, solutions, parts.brands.replace('class="sec tint"', 'class="rd-sec rd-brands"'), picker, featured, editorial, training, forWhom, news, wall, finalCta].join('\n\n  ');
 };

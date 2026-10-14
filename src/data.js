@@ -26,6 +26,12 @@ function loadStella() {
 /* продающий слой: тексты — data/sales.json, факты — из остальных файлов (пороги скидок, связь «задача → бренды», города обучения) */
 function loadSales(content, site, tasks, training) {
   const out = JSON.parse(JSON.stringify(read('sales')));
+  const tr = out.pages && out.pages.company && out.pages.company.trust;                    // блок доверия на странице «Компания» — только ссылки на уже написанные разделы (data/content.json), выдумать утверждение нельзя
+  if (tr) tr.items = tr.items.map(it => {
+    const m = /^(\w+)\.(\d+)$/.exec(it.ref || ''), src = m && content[m[1]] && content[m[1]][+m[2]];
+    if (!src) throw new Error('data/sales.json → pages.company.trust.items: нет раздела «' + it.ref + '» в data/content.json');
+    return {ref: it.ref, icon: src.icon, title: src.title, text: src.text};
+  });
   out.discounts = site.discounts;
   out.taskBrands = Object.fromEntries(tasks.map(t => [t.id, t.brands]));          // какие бренды работают с задачей (data/catalog.json) — основа подбора
   out.cities = training.cities;

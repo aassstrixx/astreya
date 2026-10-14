@@ -33,24 +33,25 @@ const VIEWS = {m: {width: 390, height: 844, mobile: true}, d: {width: 1280, heig
     return p;
   };
 
-  /* ---------- 1. Стартовый подбор: число шагов × вид вариантов ---------- */
-  async function planner(flow, style, vk) {
-    const p = await mk(VIEWS[vk]); await p.open('start.html?v=planFlow:' + flow + ',optionStyle:' + style);
+  /* ---------- 1. Стартовый подбор (диалог со Стеллой): число вопросов ---------- */
+  async function planner(flow, vk) {
+    const p = await mk(VIEWS[vk]); await p.open('start.html?v=planFlow:' + flow);
     const m = {clicks: 0, steps: 0, chars: 0, fold: 0, tapMin: 999, overflow: false, fields: new Set()};
     for (let guard = 0; guard < 8; guard++) {
-      const step = await p.evaluate(() => { const c = document.querySelector('.plan-card[data-step]'); return c ? c.getAttribute('data-step') : null; });
-      if (!step) break;
-      const info = await p.evaluate(() => { const c = document.querySelector('.plan-card'), r = c.getBoundingClientRect(); const btns = [...c.querySelectorAll('.plan-opt, .plan-next, .plan-foot button')].map(e => e.getBoundingClientRect().height);
-        return {h: r.height, vh: innerHeight, chars: [...c.querySelectorAll('h2, .plan-hint, .plan-opt b, .plan-opt small')].map(e => e.textContent.length).reduce((a, x) => a + x, 0), tap: Math.min.apply(null, btns), ov: document.documentElement.scrollWidth > innerWidth + 1}; });
-      m.steps++; m.chars += info.chars; if (info.h > info.vh - 150) m.fold++; m.tapMin = Math.min(m.tapMin, info.tap); m.overflow = m.overflow || info.ov; m.fields.add(step);
+      const step = await p.waitForFunction(() => { const c = document.querySelector('.pchat-comp[data-step]:not([hidden])'); return c && !/^(after|resume)$/.test(c.getAttribute('data-step')) ? c.getAttribute('data-step') : (document.querySelector('.plan-res') ? 'done' : false); }, null, {timeout: 15000}).then(h => h.jsonValue()).catch(() => 'done');
+      if (step === 'done') break;
+      await wait(250);
+      const info = await p.evaluate(() => { const ch = document.querySelector('.pchat').getBoundingClientRect(), c = document.querySelector('.pchat-comp').getBoundingClientRect(), btns = [...document.querySelectorAll('.pchat-comp .plan-opt, .pchat-comp .plan-next, .pchat-send')].map(e => e.getBoundingClientRect().height);
+        const q = [...document.querySelectorAll('.pchat-log .pc-b:not(.pc-typing)')].pop();
+        return {h: c.height, ch: ch.height, chars: q ? q.textContent.length : 0, tap: Math.min.apply(null, btns), ov: document.documentElement.scrollWidth > innerWidth + 1}; });
+      m.steps++; m.chars += info.chars; if (info.h > info.ch * .45) m.fold++; m.tapMin = Math.min(m.tapMin, info.tap); m.overflow = m.overflow || info.ov; m.fields.add(step);
       const click = async sel => { await p.click(sel); m.clicks++; await wait(120); };
       if (step === 'role') { await click('.plan-opt[data-v="salon"]'); }
       else if (step === 'tasks') { const ids = await p.evaluate(() => [...document.querySelectorAll('.plan-opt')].map(o => o.getAttribute('data-v'))); await click('.plan-opt[data-v="' + ids[0] + '"]'); await click('.plan-opt[data-v="' + ids[1] + '"]'); await click('.plan-next'); }
       else if (step === 'goal') { await click('.plan-opt[data-v="both"]'); }
-      else if (step === 'city') { await click('.plan-opt[data-v="Москва"]'); await click('.plan-next'); }
-      else if (step === 'volume') { await click('.plan-opt[data-v="150"]'); await click('.plan-next'); }
-      await p.waitForFunction(s => { const c = document.querySelector('.plan-card[data-step]'); return !c || c.getAttribute('data-step') !== s; }, step, {timeout: 6000}).catch(() => {});
-      await wait(100);
+      else if (step === 'city') { await click('.plan-opt[data-v="Москва"]'); }
+      else if (step === 'volume') { await click('.plan-opt[data-v="150"]'); }
+      await p.waitForFunction(s => { const c = document.querySelector('.pchat-comp[data-step]:not([hidden])'); return !c || c.getAttribute('data-step') !== s || !!document.querySelector('.plan-res'); }, step, {timeout: 15000}).catch(() => {});
     }
     const done = await p.evaluate(() => !!document.querySelector('.plan-res'));
     await p.context().close(); m.done = done; m.fields = m.fields.size; return m;
@@ -62,7 +63,7 @@ const VIEWS = {m: {width: 390, height: 844, mobile: true}, d: {width: 1280, heig
   /* ---------- 2. Панель следующего шага (телефон): вид × сколько места занимает и мешает ли ---------- */
   async function bar(style) {
     const p = await mk(VIEWS.m); await p.open('products/' + (JSON.parse(fs.readFileSync(path.join(ROOT, 'data/products.json'), 'utf8'))[0].slug) + '.html?v=barStyle:' + style);
-    await p.evaluate(() => window.scrollTo(0, (document.documentElement.scrollHeight - innerHeight) * .45)); await wait(1200);
+    for (const f of [.25, .3, .2, .6, .35, .15]) { await p.evaluate(f => window.scrollTo(0, (document.documentElement.scrollHeight - innerHeight) * f), f); await wait(1100); if (await p.evaluate(() => { const b = document.querySelector('#sx-bar'); return !!b && !b.hidden && b.offsetHeight > 0; })) break; }          // панель уступает место ходам страницы — ищем просвет между ними
     const r = await p.evaluate(() => { const hit = (a, c) => !!(a && c && a.left < c.right && a.right > c.left && a.top < c.bottom && a.bottom > c.top); const q = s => { const e = document.querySelector(s); return e && !e.hidden && (e.offsetWidth || e.offsetHeight) ? e.getBoundingClientRect() : null; };
       const bar = q('#sx-bar'); if (!bar) return null; const cta = document.querySelector('#sx-bar .sx-bar-cta').getBoundingClientRect(), x = document.querySelector('#sx-bar .sx-bar-x').getBoundingClientRect();
       return {h: bar.height, w: bar.width, collide: ['.asst-fab', '.qc', '.asst-tip'].filter(s => hit(bar, q(s))).length, tap: Math.min(cta.height, x.height, x.width), ov: document.documentElement.scrollWidth > innerWidth + 1, inView: bar.bottom <= innerHeight + 1 && bar.left >= 0 && bar.right <= innerWidth + 1, lines: Math.round(document.querySelector('#sx-bar .sx-bar-t').getBoundingClientRect().height / parseFloat(getComputedStyle(document.querySelector('#sx-bar .sx-bar-t')).lineHeight))}; });
@@ -73,7 +74,7 @@ const VIEWS = {m: {width: 390, height: 844, mobile: true}, d: {width: 1280, heig
 
   /* ---------- 3. Ходы по страницам: не ломают ли вёрстку (замеряется, выбор не меняется — убедительность хода арена не оценивает) ---------- */
   const first = dir => fs.readdirSync(path.join(ROOT, dir)).filter(f => /\.html$/.test(f)).sort()[0];
-  const PAGES = [['главная', 'index.html'], ['каталог', 'catalog.html'], ['бренды', 'brands.html'], ['бренд', 'brands/keenwell.html'], ['товар', 'products/' + first('products')], ['обучение', 'training.html'],
+  const PAGES = [['главная', 'index.html', true], ['каталог', 'catalog.html'], ['бренды', 'brands.html'], ['бренд', 'brands/keenwell.html'], ['товар', 'products/' + first('products')], ['обучение', 'training.html'],
     ['мероприятие', 'training/' + first('training')], ['партнёры', 'partners.html'], ['новости', 'news.html', true], ['статья', 'news/' + first('news')], ['компания', 'company.html'], ['контакты', 'contacts.html'], ['подбор', 'start.html']];
   async function pageMods(url, vk) {
     const p = await mk(VIEWS[vk]); await p.open(url); await wait(2500);
@@ -85,10 +86,9 @@ const VIEWS = {m: {width: 390, height: 844, mobile: true}, d: {width: 1280, heig
 
   /* ---------- прогон ---------- */
   const out = {}, tables = [];
-  const flows = ['three', 'four', 'five'], styles = ['cards', 'chips'];
+  const flows = ['three', 'four', 'five'];
   const pr = {};
-  for (const vk of ['m', 'd']) for (const f of flows) for (const s of styles) pr[vk + f + s] = await planner(f, s, vk);
-  const planCombos = []; for (const f of flows) for (const s of styles) planCombos.push([f, s]);
+  for (const vk of ['m', 'd']) for (const f of flows) pr[vk + f] = await planner(f, vk);
   const rank = (items, scoreFn, weights) => { const res = {}; for (const [wn, w] of Object.entries(weights)) { const sc = items.map(it => [it.id, scoreFn(it, w)]).sort((x, y) => y[1] - x[1]); res[wn] = sc; } return res; };
   /* победитель — первый минимум при двух расстановках весов из трёх И с отрывом ≥ 2 баллов от второго места в этих расстановках (иначе разница в пределах произвола весов); при равенстве или малом отрыве остаётся текущий */
   const MARGIN = 2;
@@ -99,17 +99,12 @@ const VIEWS = {m: {width: 390, height: 844, mobile: true}, d: {width: 1280, heig
   };
   const fmt = n => (Math.round(n * 10) / 10).toFixed(1);
 
-  /* сначала сравниваем число шагов (при текущем виде вариантов), затем вид вариантов внутри выбранного числа шагов */
-  const curStyle = SALES.variants.optionStyle, avg = (it, w) => (planScore(it.m, w) + planScore(it.d, w)) / 2;
-  const flowItems = flows.map(f => ({id: f, m: pr['m' + f + curStyle], d: pr['d' + f + curStyle]}));
+  const avg = (it, w) => (planScore(it.m, w) + planScore(it.d, w)) / 2;
+  const flowItems = flows.map(f => ({id: f, m: pr['m' + f], d: pr['d' + f]}));
   const flowRanks = rank(flowItems, avg, W3);
   out.planFlow = robust(flowRanks, SALES.variants.planFlow);
-  const styleItems = styles.map(s => ({id: s, m: pr['m' + out.planFlow + s], d: pr['d' + out.planFlow + s]}));
-  const styleRanks = rank(styleItems, avg, W3);
-  out.optionStyle = robust(styleRanks, curStyle);
-  const planRows = planCombos.map(([f, s]) => { const it = {m: pr['m' + f + s], d: pr['d' + f + s]}; return [f + '+' + s, it.m.clicks, it.m.steps, it.m.chars, it.m.fold, Math.round(it.m.tapMin), ...Object.values(W3).map(w => fmt(avg(it, w)))]; });
-  tables.push(['Стартовый подбор: число шагов (при текущем виде вариантов)', ['вариант', 'нажатий', 'шагов', 'знаков', 'не помещ. (тел.)', 'мин. кнопка (тел.), px', ...Object.keys(W3).map(k => 'балл: ' + k)], planRows, flowRanks, out.planFlow]);
-  tables.push(['Стартовый подбор: вид вариантов ответа (внутри «' + out.planFlow + '»)', ['вариант', ...Object.keys(W3).map(k => 'балл: ' + k)], styleItems.map(it => [it.id, ...Object.values(W3).map(w => fmt(avg(it, w)))]), styleRanks, out.optionStyle]);
+  const planRows = flows.map(f => { const it = {m: pr['m' + f], d: pr['d' + f]}; return [f, it.m.clicks, it.m.steps, it.m.chars, it.m.fold, Math.round(it.m.tapMin), ...Object.values(W3).map(w => fmt(avg(it, w)))]; });
+  tables.push(['Стартовый подбор в диалоге: число вопросов', ['вариант', 'нажатий', 'шагов', 'знаков', 'нижняя панель > 45 % окна (тел.)', 'мин. кнопка (тел.), px', ...Object.keys(W3).map(k => 'балл: ' + k)], planRows, flowRanks, out.planFlow]);
 
   const barItems = []; for (const s of ['bottom', 'card']) barItems.push({id: s, m: await bar(s)});
   barItems.push({id: 'pill', m: await bar('pill')});

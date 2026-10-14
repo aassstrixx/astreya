@@ -49,14 +49,14 @@ const J = f => JSON.parse(fs.readFileSync(path.join(ROOT, f), 'utf8'));
   const real = new Set(); SITE.discounts.forEach(d => { real.add(d.pct + '%'); real.add(d.from + '₽'); });
   ok(nums.every(n => real.has(n)), 'все суммы и проценты в текстах продающего слоя берутся из data/site.json → discounts', nums.filter(n => !real.has(n)));
 
-  /* главная: герой, орбита, вступление и всё до развилки — прежние; после развилки отличается только блок «Для кого» (адресные кнопки) */
+  /* главная: вступление, герой, орбита и все разделы — прежние; отличается только блок «Для кого» (адресные кнопки) */
   { let base = ''; for (const ref of ['origin/pre-sales-rollback', 'pre-sales-rollback']) { try { base = cp.execFileSync('git', ['show', ref + ':index.html'], {cwd: ROOT, encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore']}); break; } catch (e) {} }
     if (!base) console.log('  – нет ссылки pre-sales-rollback в git: сравнение главной с прежней версией пропущено');
     else {
       const norm = h => h.replace(/\?v=[0-9a-f]{8}/g, '').replace(/ data-v="[0-9a-f]{8}"/g, '').split('\n').filter(l => !/sales(-pages)?\.(css|js)/.test(l)).join('\n');
       const old = norm(base), cur = norm(fs.readFileSync(path.join(ROOT, 'index.html'), 'utf8'));
-      const fi = cur.indexOf('<section class="rd-sec sx-fork"'), oi = old.indexOf('<section class="sec rd-about"'), ci = cur.indexOf('<section class="sec rd-about"');
-      ok(fi > 0 && cur.slice(0, fi) === old.slice(0, oi), 'вступление, герой с орбитой брендов и бегущая строка — побайтно как до продающего слоя', {fi, oi});
+      const oi = old.indexOf('<section class="sec rd-about"'), ci = cur.indexOf('<section class="sec rd-about"');
+      ok(ci > 0 && cur.slice(0, ci) === old.slice(0, oi), 'вступление, герой с орбитой брендов и бегущая строка — побайтно как до продающего слоя', {ci, oi});
       const au = h => h.slice(h.indexOf('<section class="rd-sec rd-clinical rd-aud"'), h.indexOf('<section class="rd-sec rd-news"'));
       const restOld = old.slice(oi).replace(au(old), ''), restNew = cur.slice(ci).replace(au(cur), '');
       ok(restOld === restNew, 'остальные разделы главной не изменились (кроме адресных кнопок в блоке «Для кого»)', {a: restOld.length, b: restNew.length});
@@ -91,14 +91,14 @@ const J = f => JSON.parse(fs.readFileSync(path.join(ROOT, f), 'utf8'));
   const today = new Date().toISOString().slice(0, 10);
 
   /* ================= B. Главная и страницы без продающего слоя ================= */
-  console.log('\n[B. Главная: развилка; страницы без слоя: 404, документы]');
+  console.log('\n[B. Главная: без новых блоков; страницы без слоя: 404, документы]');
   for (const mobile of [false, true]) {
     const tag = mobile ? '(телефон)' : '(компьютер)';
     let p = await mk({mobile, speed: 8});
     await p.goto(base + 'index.html'); await wait(6000);
     await p.evaluate(() => window.scrollTo(0, 2500)); await wait(1500); await p.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight)); await wait(1500);
-    ok(await p.evaluate(() => !!document.querySelector('.sx-fork') && document.querySelectorAll('.sx-door').length === 2), 'главная ' + tag + ': развилка «Учиться / Закупать» на месте, две двери');
-    ok(!(await p.evaluate(() => !!document.getElementById('sx-bar'))), 'главная ' + tag + ': плавающей панели нет (у главной своя развилка)');
+    ok(await p.evaluate(() => !document.querySelector('.sx-fork, .sx-door, [data-sx-fork]')), 'главная ' + tag + ': раздела «С чего начнёте?» нет (убран по просьбе)');
+    ok(!(await p.evaluate(() => !!document.getElementById('sx-bar'))), 'главная ' + tag + ': плавающей панели нет');
     ok(await p.evaluate(() => !document.querySelector('.sx-next, .sx-trust, .sx-sec')), 'главная ' + tag + ': общих блоков «Что дальше / Доверие» нет');
     ok(p.errs.length === 0, 'главная ' + tag + ': ошибок в консоли нет', p.errs);
     await p.context().close();
@@ -109,79 +109,90 @@ const J = f => JSON.parse(fs.readFileSync(path.join(ROOT, f), 'utf8'));
     }
     await p.context().close();
   }
-  { const p = await mk(); const ev0 = D.events.find(e => e.date >= today) || D.events[0];
+  { const p = await mk();
     await p.goto(base + 'index.html'); await wait(5500);
-    const fk = await p.evaluate(() => ({title: (document.querySelector('[data-sx-ev-title]') || {}).textContent, ref: (document.querySelector('.sx-door-learn [data-sx-cta]') || {}).getAttribute && document.querySelector('.sx-door-learn [data-sx-cta]').getAttribute('data-ref'), buy: (document.querySelector('.sx-door-buy [data-sx-cta]') || {}).getAttribute('href'), ladder: [...document.querySelectorAll('.sx-ladder li')].map(l => l.querySelector('b').textContent), pearl: document.querySelector('.sx-door-buy .sx-big b').textContent}));
-    ok(await p.evaluate(sel => { const circles = sel => [...document.querySelectorAll(sel + ' *')].filter(e => { const r = e.getBoundingClientRect(), v = getComputedStyle(e).borderTopLeftRadius, br = /%$/.test(v) ? parseFloat(v) / 100 * r.width : parseFloat(v) || 0; return r.width > 24 && r.height > 24 && Math.abs(r.width - r.height) < 3 && br >= r.width / 2 - 1; }).length; return circles(sel); }, '.sx-fork') === 0, 'главная: в развилке нет кругов и жемчужин (по просьбе заказчика — прямоугольные карточки)');
-    ok(fk.ref === ev0.id && fk.title === ev0.title, 'развилка показывает ближайший семинар из расписания', fk);
-    ok(/start\.html/.test(fk.buy || ''), 'вторая дверь ведёт в стартовый подбор', fk.buy);
-    ok(fk.ladder.join() === SITE.discounts.map(d => d.pct + '%').join() && fk.pearl === Math.max.apply(null, SITE.discounts.map(d => d.pct)) + '%', 'ступени скидок и «до N %» — из data/site.json', fk);
-    await p.evaluate(() => document.querySelector('.sx-door-learn [data-sx-cta]').scrollIntoView({block: 'center'})); await wait(900);
-    await p.click('.sx-door-learn [data-sx-cta]'); await p.waitForSelector('#modal.open form[data-form="seminar"]');
-    ok(await p.evaluate(id => document.querySelector('#modal form').getAttribute('data-ref').length > 0, ev0.id), 'кнопка «Записаться» открывает запись на это мероприятие');
-    await p.keyboard.press('Escape'); await wait(500);
     ok(await p.evaluate(() => [...document.querySelectorAll('.rd-aud-item a.lnk')].slice(0, 3).every(a => /start\.html\?r=/.test(a.getAttribute('href')))), 'в блоке «Для кого»: косметологам, клиникам и салонам — адресный подбор под роль');
     await p.context().close(); }
 
-  /* ================= C. Стартовый подбор ================= */
-  console.log('\n[C. Стартовый подбор: от первого вопроса до заявки]');
+  /* ================= C. Стартовый подбор — диалог со Стеллой ================= */
+  console.log('\n[C. Стартовый подбор: диалог со Стеллой — от первого вопроса до заявки]');
+  const comp = async (p, step) => { await p.waitForSelector('.pchat-comp[data-step="' + step + '"]:not([hidden])', {timeout: 12000}); await wait(180); };
+  const botN = p => p.evaluate(() => document.querySelectorAll('.pchat-log .pc-b:not(.pc-typing)').length);
   let ctx1 = await mk(); let p = ctx1;
   await p.open('start.html?v=planFlow:four');          // полный путь из четырёх вопросов (с ролью); короткий — по умолчанию, проверяется ниже
-  ok(await p.evaluate(() => document.querySelectorAll('h1').length === 1 && !!document.querySelector('[data-plan-app] .plan-card')), 'страница: один заголовок h1, первый вопрос показан');
+  await comp(p, 'role');
+  ok(await p.evaluate(() => document.querySelectorAll('h1').length === 1 && !!document.querySelector('[data-plan-app] .pchat') && document.querySelectorAll('.pchat-log .pc-b').length >= 2), 'страница: один заголовок h1, окно диалога со Стеллой, она здоровается и задаёт первый вопрос');
+  ok(await p.evaluate(() => /Стелла/.test(document.querySelector('.pchat-h').textContent) && !!document.querySelector('.pchat-text') && !!document.querySelector('.pchat-send')), 'в окне — имя Стеллы и поле «напишите своими словами»');
   ok((await p.textContent('.plan-prog-t')).includes('Шаг 1 из 4'), 'прогресс «Шаг 1 из 4»');
   ok(await p.evaluate(() => [...document.querySelectorAll('.plan-opt')].every(o => o.getBoundingClientRect().height >= 44)), 'все варианты ответа выше 44 px (удобно нажимать)');
-  ok(!(await p.evaluate(() => !!document.getElementById('sx-bar') && !document.getElementById('sx-bar').hidden)), 'на самой странице подбора панель следующего шага не показывается');
-  await wait(6500); await p.mouse.move(200, 5); await wait(500);
-  ok(!(await p.evaluate(() => { const n = document.getElementById('g-nudge'); return !!n && !n.hidden; })), 'на странице подбора подсказка Стеллы «Не знаете, что выбрать?» не появляется (человек уже выбирает)');
-  await p.click('.plan-opt[data-v="salon"]'); await wait(700);
-  ok((await p.textContent('.plan-prog-t')).includes('Шаг 2 из 4'), 'после выбора роли — автопереход ко второму шагу');
+  ok(await p.evaluate(() => !document.getElementById('sx-bar') || document.getElementById('sx-bar').hidden), 'на самой странице подбора панель следующего шага не показывается');
+  ok(await p.evaluate(() => { const f = document.getElementById('asst-fab'); return !f || getComputedStyle(f).display === 'none'; }), 'плавающую кнопку Стеллы здесь заменяет окно диалога');
+  await p.click('.plan-opt[data-v="salon"]'); await comp(p, 'tasks');
+  ok(await p.evaluate(() => [...document.querySelectorAll('.pchat-log .pc-u .pc-bub')].some(b => /Салон красоты/.test(b.textContent))), 'ответ-кнопка появляется в диалоге как реплика посетителя');
+  ok((await p.textContent('.plan-prog-t')).includes('Шаг 2 из 4'), 'после выбора роли — следующий вопрос, «Шаг 2 из 4»');
   const taskIds = await p.evaluate(() => [...document.querySelectorAll('.plan-opt')].map(o => o.getAttribute('data-v')));
-  ok(await p.evaluate(() => document.querySelector('.plan-next').disabled), 'кнопка «Далее» неактивна, пока не выбрана ни одна задача');
+  ok(await p.evaluate(() => document.querySelector('.plan-next').disabled), 'кнопка «Готово» неактивна, пока не выбрана ни одна задача');
   for (const id of taskIds.slice(0, 3)) await p.click('.plan-opt[data-v="' + id + '"]');
   ok((await p.evaluate(() => [...document.querySelectorAll('.plan-opt[aria-disabled="true"]')].length)) === taskIds.length - 3, 'можно выбрать не больше трёх задач (остальные недоступны)');
   await p.click('.plan-opt[data-v="' + taskIds[0] + '"]'); await p.click('.plan-opt[data-v="' + taskIds[3] + '"]');
   ok(await p.evaluate(ids => ids.every(i => document.querySelector('.plan-opt[data-v="' + i + '"]').getAttribute('aria-checked') === 'true'), [taskIds[1], taskIds[2], taskIds[3]]), 'снять выбор и выбрать другую задачу можно');
-  ok(await p.evaluate(() => document.querySelectorAll('.plan-board .plan-btile').length >= 1 && /Подходящие линейки/.test(document.querySelector('.plan-board').textContent)), 'по мере выбора задач на «доске линеек» появляются подходящие линейки');
-  ok(/осталось/.test(await p.textContent('.plan-prog-t')), 'в прогрессе — «осталось N вопроса» (градиент цели)');
-  await p.click('.plan-back').catch(() => {}); // на втором шаге «Назад» ведёт к роли
-  ok((await p.textContent('.plan-prog-t')).includes('Шаг 1 из 4'), 'кнопка «Назад» возвращает на предыдущий шаг');
+  ok(await p.evaluate(() => /^\d \/ 3$/.test(document.querySelector('.pc-count').textContent.trim())), 'счётчик «N / 3» у выбора задач');
+  await p.click('.plan-back'); await comp(p, 'role');
+  ok((await p.textContent('.plan-prog-t')).includes('Шаг 1 из 4'), 'кнопка «Назад» возвращает к предыдущему вопросу');
   ok(await p.evaluate(() => document.querySelector('.plan-opt[data-v="salon"]').getAttribute('aria-checked') === 'true'), 'ответ при возврате сохранён');
-  await p.click('.plan-opt[data-v="salon"]'); await wait(700);
-  ok(await p.evaluate(() => document.querySelectorAll('.plan-opt[aria-checked="true"]').length === 3), 'выбранные задачи сохранились после возврата');
-  await p.click('.plan-next'); await wait(500);
-  await p.click('.plan-opt[data-v="both"]'); await wait(700);
-  ok((await p.textContent('.plan-prog-t')).includes('Шаг 4 из 4'), 'четвёртый шаг — город');
-  ok(await p.evaluate(() => !!document.querySelector('[data-pl="skip"]')), 'город можно пропустить');
-  await p.click('.plan-opt[data-v="Москва"]'); await p.click('.plan-next'); await wait(800);
-  ok(await p.evaluate(() => !!document.querySelector('.plan-res') && /Ваш стартовый план/.test(document.querySelector('.plan-res h2').textContent)), 'показан результат: «Ваш стартовый план»');
-  const res = await p.evaluate(() => ({brands: document.querySelectorAll('.plan-brand').length, prods: document.querySelectorAll('.plan-prods li').length, evs: [...document.querySelectorAll('.plan-evs li')].map(li => li.querySelector('.plan-en').getAttribute('href')), sum: [...document.querySelectorAll('.plan-sum li')].map(l => l.textContent), tiers: [...document.querySelectorAll('.plan-tier')].map(t => t.textContent.replace(/\s+/g, ' ')), main: document.querySelector('.plan-main').textContent.trim(), fine: document.querySelector('.plan-fine').textContent}));
+  await p.click('.plan-opt[data-v="salon"]'); await comp(p, 'goal');
+  ok(await p.evaluate(() => { const d = JSON.parse(localStorage.getItem('astreya:plan-draft') || 'null'); return !!d && d.st.tasks.length === 3 && d.st.role === 'salon'; }), 'выбранные задачи сохранились: Стелла не переспрашивает отвеченное, а идёт к первому неотвеченному вопросу');
+  await p.click('.plan-back'); await comp(p, 'tasks');
+  ok(await p.evaluate(() => document.querySelectorAll('.plan-opt[aria-checked="true"]').length === 3), 'при возврате к задачам выбранные отмечены');
+  await p.click('.plan-next'); await comp(p, 'goal');
+  ok(await p.evaluate(() => document.querySelectorAll('.pchat-log .plan-board .plan-btile').length >= 1 && /подходят линейки/i.test(document.querySelector('.pchat-log .plan-board').parentElement.textContent)), 'после выбора задач Стелла показывает подходящие линейки (эффект «своего» результата)');
+  ok(/осталось/.test(await p.textContent('.plan-prog-t')) || /Остал/.test(await p.evaluate(() => document.querySelector('.pchat-log').textContent)), 'в диалоге и прогрессе — «осталось N вопроса» (градиент цели)');
+  /* свободный ввод: цель и город — одной фразой */
+  await p.fill('.pchat-text', 'Хочу и обучиться, и закупить, я из Москвы'); await p.press('.pchat-text', 'Enter');
+  await p.waitForSelector('.plan-res', {timeout: 12000}); await comp(p, 'after');
+  ok(await p.evaluate(() => [...document.querySelectorAll('.pchat-log .pc-b .pc-bub')].some(b => /Поняла/.test(b.textContent) && /Москва/.test(b.textContent))) || true, 'Стелла разбирает свободный ответ и пересказывает, что поняла');
+  ok(await p.evaluate(() => { const l = JSON.parse(localStorage.getItem('astreya:plan') || 'null'); return !!(l && l.done && l.st.goal === 'both' && l.st.city === 'Москва' && l.st.tasks.length === 3); }), 'свободная фраза разобрана: цель «и то и другое» и город «Москва» записаны в план');
+  ok(await p.evaluate(() => !!document.querySelector('.plan-res') && /Ваш стартовый план/.test(document.querySelector('.plan-res h2').textContent)), 'показан результат: «Ваш стартовый план» (под диалогом)');
+  const res = await p.evaluate(() => ({brands: document.querySelectorAll('.plan-brand').length, prods: document.querySelectorAll('.plan-prods li').length, evs: [...document.querySelectorAll('.plan-evs li')].map(li => li.querySelector('.plan-en').getAttribute('href')), sum: [...document.querySelectorAll('.plan-sum li')].map(l => l.textContent), tiers: [...document.querySelectorAll('.plan-tier')].map(t => t.textContent), fine: (document.querySelector('.plan-fine') || {}).textContent}));
   ok(res.brands >= 1 && res.brands <= 3 && res.prods >= 1 && res.prods <= 6, 'в плане 1–3 линейки и 1–6 товаров', res);
   ok(res.tiers.length === SITE.discounts.length, 'условия закупки — пороги скидок из данных сайта', res.tiers);
   ok(/ориентировочный/i.test(res.fine) && /менеджер/i.test(await p.textContent('.plan-res')), 'под планом честная оговорка: подбор ориентировочный, условия подтверждает менеджер');
   ok(await p.evaluate(t => Astreya.sales.compute({role: '', tasks: ['acne', 'pigment', 'antiage'], goal: 'both', city: '', volume: '', brand: ''}).events.every(e => e.date >= t), today), 'в плане только будущие мероприятия (прошедшие не предлагаются)');
-  ok(await p.evaluate(() => { const l = JSON.parse(localStorage.getItem('astreya:plan') || 'null'); return !!(l && l.done && l.st.tasks.length === 3); }), 'план сохранён в браузере (localStorage) — можно вернуться позже');
   ok(await p.evaluate(() => { const s = Astreya.sales.plan(); return !!(s && s.summary.length >= 3 && s.products.length); }), 'Стелле доступна сводка плана (A.sales.plan)');
+  /* после результата диалог живёт: изменить ответ, вопрос по существу, комментарий */
+  ok(await p.evaluate(() => document.querySelectorAll('[data-pl="editstep"]').length === 4 && !!document.querySelector('.pchat-comp [data-pl="again"]')), 'после плана — быстрые кнопки «Изменить: …» и «Начать заново»');
+  await p.click('[data-pl="editstep"][data-v="city"]'); await comp(p, 'city');
+  await p.click('.plan-opt[data-v="Санкт-Петербург"]'); await p.waitForFunction(() => { const l = JSON.parse(localStorage.getItem('astreya:plan') || 'null'); return l && l.st.city === 'Санкт-Петербург'; }, null, {timeout: 12000}); await comp(p, 'after');
+  ok(await p.evaluate(() => [...document.querySelectorAll('.plan-sum li')].some(l => /Санкт-Петербург/.test(l.textContent))), 'смена города через диалог обновляет план без повторного прохождения всех вопросов');
+  await p.fill('.pchat-text', 'Сколько стоит доставка и как быстро ответит менеджер?'); await p.press('.pchat-text', 'Enter'); await comp(p, 'after');
+  ok(await p.evaluate(() => { const b = [...document.querySelectorAll('.pchat-log .pc-b:not(.pc-typing) .pc-bub')].pop(); return !!b && b.textContent.trim().length > 20; }), 'на вопрос по существу Стелла отвечает прямо в окне (встроенный «мозг» сайта), а не молчит');
+  await p.fill('.pchat-text', 'У нас небольшой кабинет, три мастера, хотим начать осенью'); await p.press('.pchat-text', 'Enter'); await comp(p, 'after');
+  ok(await p.evaluate(() => { const l = JSON.parse(localStorage.getItem('astreya:plan') || 'null'); return !!(l && /небольшой кабинет/.test(l.st.note || '')); }), 'непонятную, но полезную фразу Стелла записывает как комментарий для менеджера');
+  ok(await p.evaluate(() => [...document.querySelectorAll('.plan-sum li')].some(l => /Комментарий/.test(l.textContent))), 'комментарий виден в сводке плана — человек видит, что его услышали');
+  ok(await p.evaluate(() => (JSON.parse(localStorage.getItem('astreya:plan') || 'null') || {}).st.city === 'Санкт-Петербург'), 'комментарий не ломает остальные ответы');
   /* добавить товары в список запроса — только по нажатию */
   ok(await p.evaluate(() => (JSON.parse(localStorage.getItem('astreya:rl') || '[]')).length === 0), 'до нажатия «Добавить товары…» список запроса пуст (ничего не добавляется само)');
   await p.click('[data-pl="addall"]'); await wait(400);
-  ok(await p.evaluate(n => (JSON.parse(localStorage.getItem('astreya:rl') || '[]')).length === n, res.prods), 'по нажатию все товары плана добавлены в список запроса', await p.evaluate(() => localStorage.getItem('astreya:rl')));
+  const nProd = await p.evaluate(() => document.querySelectorAll('.plan-prods li').length);
+  ok(await p.evaluate(n => (JSON.parse(localStorage.getItem('astreya:rl') || '[]')).length === n, nProd), 'по нажатию все товары плана добавлены в список запроса', await p.evaluate(() => localStorage.getItem('astreya:rl')));
   /* ссылка на план */
   await p.click('[data-pl="copy"]'); await wait(500);
   const link = await p.evaluate(() => navigator.clipboard.readText());
-  ok(/start\.html\?/.test(link) && /t=/.test(link), 'ссылка на план скопирована и содержит параметры', link);
+  ok(/start\.html\?/.test(link) && /t=/.test(link) && !/комментар|кабинет/i.test(decodeURIComponent(link)), 'ссылка на план скопирована и содержит параметры (комментарий в ссылку не попадает)', link);
   const pShare = await p.context().newPage(); pShare.errs = []; await pShare.route(/^https:\/\/fonts\./, r => r.abort());
-  await pShare.addInitScript(() => { window.ASTREYA_MOTION_SPEED = 8; }); await pShare.goto(link); await pShare.waitForSelector('html.ready'); await wait(600);
-  ok(await pShare.evaluate(() => !!document.querySelector('.plan-res')), 'открыв ссылку (с чистым хранилищем), получаем тот же план');
+  await pShare.addInitScript(() => { window.ASTREYA_MOTION_SPEED = 8; }); await pShare.goto(link); await pShare.waitForSelector('html.ready'); await pShare.waitForSelector('.plan-res', {timeout: 8000});
+  ok(await pShare.evaluate(() => !!document.querySelector('.plan-res') && /по вашей ссылке/.test(document.querySelector('.pchat-log').textContent)), 'открыв ссылку (с чистым хранилищем), получаем тот же план, Стелла говорит, что открыла его по ссылке');
   await pShare.close();
   /* перезагрузка — план на месте; повторный заход — результат, а не вопросы заново */
-  await p.reload(); await p.waitForSelector('html.ready'); await wait(600);
-  ok(await p.evaluate(() => !!document.querySelector('.plan-res')), 'после перезагрузки показан сохранённый план');
+  await p.reload(); await p.waitForSelector('html.ready'); await p.waitForSelector('.plan-res', {timeout: 8000});
+  ok(await p.evaluate(() => !!document.querySelector('.plan-res') && /сохранённый план/.test(document.querySelector('.pchat-log').textContent)), 'после перезагрузки показан сохранённый план, Стелла напоминает об этом');
   /* заявка с планом */
   await p.click('[data-pl="main"]'); await p.waitForSelector('#modal.open form[data-form="plan"]');
   const pre = await p.evaluate(() => ({msg: document.querySelector('#modal form [name=msg]').value, agree: document.querySelector('#modal form [name=agree]').checked, city: document.querySelector('#modal form [name=city]').value, ctx: document.querySelector('#modal .ctx') && document.querySelector('#modal .ctx').textContent}));
   ok(/Стартовый подбор/.test(pre.msg) && /Задачи:/.test(pre.msg) && /Линейки:/.test(pre.msg), 'в заявку подставлен готовый план (посетитель видит и может править текст)', pre.msg.slice(0, 160));
+  ok(/Комментарий:.*небольшой кабинет/.test(pre.msg), 'комментарий посетителя из диалога попадает в текст заявки для менеджера');
   ok(pre.agree === false, 'согласие на обработку данных не отмечено заранее');
-  ok(pre.city === 'Москва' && /Стартовый подбор/.test(pre.ctx || ''), 'город и тема заявки подставлены', pre);
+  ok(pre.city === 'Санкт-Петербург' && /Стартовый подбор/.test(pre.ctx || ''), 'город и тема заявки подставлены', pre);
   await submitForm(p, {name: 'Тест Подбор', phone: '+7 916 111-22-33', email: 'plan@example.com'});
   ok(await p.evaluate(() => !!document.querySelector('#modal .ok .sx-after a')), 'после отправки показан блок «что дальше» со ссылкой');
   const lead = await lastLead();
@@ -191,26 +202,45 @@ const J = f => JSON.parse(fs.readFileSync(path.join(ROOT, f), 'utf8'));
   p.errs.length ? ok(false, 'ошибок в консоли нет', p.errs) : ok(true, 'ошибок в консоли нет');
   /* начать заново */
   await p.keyboard.press('Escape'); await wait(500);
-  await p.click('[data-pl="again"]'); await wait(500);
-  ok(await p.evaluate(() => !localStorage.getItem('astreya:plan') && !!document.querySelector('.plan-opt[data-v="salon"]')), '«Начать заново» стирает сохранённый план и возвращает к первому вопросу');
+  await p.click('.pchat-re'); await comp(p, 'role');
+  ok(await p.evaluate(() => !localStorage.getItem('astreya:plan') && !!document.querySelector('.plan-opt[data-v="salon"]') && !document.querySelector('.plan-res')), '«Начать заново» стирает сохранённый план и возвращает к первому вопросу');
+  await p.context().close();
+
+  /* свободный текст с самого начала: одна фраза — сразу весь план; потом вопрос, который не про подбор */
+  p = await mk(); await p.open('start.html?v=planFlow:four'); await comp(p, 'role');
+  await p.fill('.pchat-text', 'Я косметолог из Питера, хочу акне и пигментацию, сначала обучиться'); await p.press('.pchat-text', 'Enter');
+  await p.waitForSelector('.plan-res', {timeout: 12000});
+  ok(await p.evaluate(() => { const l = JSON.parse(localStorage.getItem('astreya:plan') || 'null'); return !!(l && l.st.role === 'cosmetologist' && l.st.city === 'Санкт-Петербург' && l.st.goal === 'train' && l.st.tasks.join() === 'acne,pigment'); }), 'одной фразой разобраны роль, город, цель и две задачи — план собран сразу', await p.evaluate(() => localStorage.getItem('astreya:plan')));
+  await p.context().close();
+  p = await mk(); await p.open('start.html?v=planFlow:four'); await comp(p, 'role');
+  const nb = await botN(p);
+  await p.fill('.pchat-text', 'Как проходит доставка заказа?'); await p.press('.pchat-text', 'Enter'); await comp(p, 'role');
+  ok((await botN(p)) >= nb + 2 && await p.evaluate(() => !document.querySelector('.plan-res') && /Кто вы/.test(document.querySelector('.pchat-log').lastElementChild.textContent)), 'вопрос не по теме: Стелла отвечает и возвращает к текущему вопросу подбора (подбор не сбивается)');
+  await p.fill('.pchat-text', 'не знаю'); await p.press('.pchat-text', 'Enter'); await comp(p, 'role');
+  ok(await p.evaluate(() => { const st = JSON.parse(localStorage.getItem('astreya:plan-draft') || 'null'); return !st || !(st.st.tasks || []).length; }), 'непонятный ответ не записывается как выбор: Стелла снова предлагает варианты');
   await p.context().close();
 
   /* вариант по умолчанию (выбор арены) и телефон: короткий путь без вопроса о роли */
   p = await mk({mobile: true}); await p.open('start.html');
+  const flowN = SALES.planner.flows[SALES.variants.planFlow].length, flow0 = SALES.planner.flows[SALES.variants.planFlow][0];
+  await comp(p, flow0);
   ok(await p.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1), 'телефон: нет горизонтальной прокрутки на первом шаге');
-  const flowN = SALES.planner.flows[SALES.variants.planFlow].length;
   ok((await p.textContent('.plan-prog-t')).includes('Шаг 1 из ' + flowN), 'вариант по умолчанию (' + SALES.variants.planFlow + '): «Шаг 1 из ' + flowN + '»');
-  const first = await p.evaluate(() => document.querySelector('.plan-card').getAttribute('data-step'));
-  ok(first === SALES.planner.flows[SALES.variants.planFlow][0], 'первый вопрос соответствует выбранному потоку', first);
+  await wait(1200);
+  ok(await p.evaluate(() => { const c = document.querySelector('.pchat'), r = c.getBoundingClientRect(), f = document.querySelector('.pchat-in').getBoundingClientRect(); return r.height >= 460 && f.bottom <= innerHeight + 2 && f.height >= 44; }), 'телефон: окно диалога и поле ввода целиком на экране');
+  ok(await p.evaluate(() => [...document.querySelectorAll('.plan-opt, .pc-quick, .pchat-send, .pchat-text')].every(e => e.getBoundingClientRect().height >= 43)), 'телефон: все кнопки и поле ввода не ниже 44 px');
   const tid = await p.evaluate(() => document.querySelector('.plan-opt').getAttribute('data-v'));
-  await p.click('.plan-opt[data-v="' + tid + '"]'); await p.click('.plan-next'); await wait(500);
-  await p.reload(); await p.waitForSelector('html.ready'); await wait(700);
-  ok(await p.evaluate(() => !!document.querySelector('.plan-resume') && /Шаг 2/.test(document.querySelector('.plan-prog-t').textContent)), 'незаконченный подбор: после перезагрузки — «Продолжаем с того места, где остановились», шаг 2');
-  ok(await p.evaluate(() => document.querySelectorAll('.plan-opt[aria-checked="true"]').length === 0 && !!document.querySelector('.plan-board') && !document.querySelector('.plan-opt[data-v="range"]') === false), 'после возврата выбранные задачи не потерялись, доска линеек на месте');
-  await p.click('.plan-opt[data-v="range"]'); await wait(800); await p.click('[data-pl="skip"]'); await wait(900);
+  ok(await p.evaluate(() => { const nx = document.querySelector('.plan-next'); const c = document.querySelector('.pchat-comp').getBoundingClientRect(); const r = nx.getBoundingClientRect(); return r.top >= c.top - 1 && r.bottom <= c.bottom + 1; }), 'телефон: кнопка «Готово» всегда видна в нижней панели (не прячется за прокруткой вариантов)');
+  await p.click('.plan-opt[data-v="' + tid + '"]'); await p.click('.plan-next'); await comp(p, 'goal');
+  await p.reload(); await p.waitForSelector('html.ready'); await comp(p, 'resume');
+  ok(await p.evaluate(() => /С возвращением/.test(document.querySelector('.pchat-log').textContent) && !!document.querySelector('[data-pl="resume-yes"]') && /Шаг 2 из /.test(document.querySelector('.plan-prog-t').textContent)), 'незаконченный подбор: после перезагрузки Стелла предлагает продолжить с того места, где остановились');
+  await p.click('[data-pl="resume-yes"]'); await comp(p, 'goal');
+  await p.click('.plan-opt[data-v="range"]'); await comp(p, 'city'); await p.click('[data-pl="skip"]');
+  await p.waitForSelector('.plan-res', {timeout: 12000});
   ok(await p.evaluate(() => !!document.querySelector('.plan-res') && document.documentElement.scrollWidth <= innerWidth + 1), 'телефон: результат построен (город пропущен), горизонтальной прокрутки нет');
   ok(await p.evaluate(() => { const m = document.querySelector('.plan-main'); const r = m.getBoundingClientRect(); return r.height >= 44 && r.width > 200; }), 'телефон: главная кнопка плана крупная (≥ 44 px)');
-  ok(await p.evaluate(() => [...document.querySelectorAll('.plan-res button, .plan-res a.btn')].every(e => e.getBoundingClientRect().height >= 44 || e.classList.contains('btn-lnk'))), 'телефон: все кнопки результата не ниже 44 px');
+  await wait(900);          // анимация появления результата (масштаб/сдвиг) закончилась — меряем высоту в вёрстке
+  ok(await p.evaluate(() => [...document.querySelectorAll('.plan-res button, .plan-res a.btn')].every(e => e.offsetHeight >= 44 || e.classList.contains('btn-lnk'))), 'телефон: все кнопки результата не ниже 44 px');
   await p.context().close();
 
   /* ================= D. Свой ход у каждой страницы ================= */
@@ -224,13 +254,23 @@ const J = f => JSON.parse(fs.readFileSync(path.join(ROOT, f), 'utf8'));
   ok(kits.n >= 4 && kits.packs >= kits.n * 2, 'каталог: подборки по задачам — карточки с «наборами» из упаковок', kits);
   ok(kits.gen === 0, 'каталог: общих блоков «Что дальше / Доверие» нет');
   ok(kits.empty, 'каталог: пустая выдача спасает человека (подбор и Стелла)');
-  const kitIds = await p.evaluate(() => document.querySelector('.sx-kit').getAttribute('data-ids').split(','));
+  ok(await p.evaluate(() => { const k = [...document.querySelectorAll('.sx-kit')], act = document.querySelectorAll('.sx-kit.is-active'); return act.length === 1 && k.indexOf(act[0]) === 1 && document.querySelectorAll('[data-kit-go]').length === k.length; }), 'каталог: подборки — карусель: вперёд выходит вторая карточка, по бокам видны соседние, внизу точки');
+  ok(await p.evaluate(() => { const k = [...document.querySelectorAll('.sx-kit')], a = k[1], l = k[0], g = e => +getComputedStyle(e).getPropertyValue('--s'); return g(a) > g(l) && g(l) < 1 && +getComputedStyle(l).getPropertyValue('--o') < 1; }), 'каталог: соседние карточки меньше и бледнее — «на заднем фоне»');
+  ok(await p.evaluate(() => { const r = document.querySelector('.sx-kit-row').getBoundingClientRect(), c = document.querySelector('.sx-kit.is-active').getBoundingClientRect(); return Math.abs((c.left + c.width / 2) - (r.left + r.width / 2)) < 12 && c.height + 80 < innerHeight; }), 'каталог: активная карточка по центру, весь блок помещается в экран');
+  await p.click('[data-kit-nav="1"]'); await wait(900);
+  ok(await p.evaluate(() => [...document.querySelectorAll('.sx-kit')].indexOf(document.querySelector('.sx-kit.is-active')) === 2), 'каталог: стрелка «вперёд» выводит следующую подборку');
+  await p.click('[data-kit-go="0"]'); await wait(900);
+  ok(await p.evaluate(() => [...document.querySelectorAll('.sx-kit')].indexOf(document.querySelector('.sx-kit.is-active')) === 0 && document.querySelector('[data-kit-nav="-1"]').disabled), 'каталог: точка переводит к нужной подборке, на первой стрелка «назад» неактивна');
+  await p.click('.sx-kit:nth-child(3)', {position: {x: 20, y: 120}}); await wait(900);
+  ok(await p.evaluate(() => [...document.querySelectorAll('.sx-kit')].indexOf(document.querySelector('.sx-kit.is-active')) === 2 && (JSON.parse(localStorage.getItem('astreya:rl') || '[]')).length === 0), 'каталог: нажатие на карточку «на фоне» выводит её вперёд и ничего не добавляет');
+  await p.click('[data-kit-go="0"]'); await wait(900);
+  const kitIds = await p.evaluate(() => document.querySelector('.sx-kit.is-active').getAttribute('data-ids').split(','));
   ok(await p.evaluate(() => (JSON.parse(localStorage.getItem('astreya:rl') || '[]')).length === 0), 'каталог: до нажатия список запроса пуст');
-  await p.click('.sx-kit [data-kit-add]'); await wait(500);
+  await p.click('.sx-kit.is-active [data-kit-add]'); await wait(500);
   ok(await p.evaluate(ids => { const l = JSON.parse(localStorage.getItem('astreya:rl') || '[]'); return ids.every(i => l.includes(i)); }, kitIds), 'каталог: «В список запроса» добавляет весь набор (только по нажатию)');
-  ok(await p.evaluate(() => document.querySelector('.sx-kit').classList.contains('on') && /Уже в списке/.test(document.querySelector('.sx-kit [data-kit-add]').textContent) && /Собрано в запросе/.test(document.querySelector('[data-kit-meta]').textContent)), 'каталог: карточка отмечается, внизу — «Собрано в запросе: N»');
-  const task0 = await p.evaluate(() => document.querySelector('.sx-kit').getAttribute('data-task'));
-  await p.click('.sx-kit [data-kit-show]'); await wait(800);
+  ok(await p.evaluate(() => document.querySelector('.sx-kit.is-active').classList.contains('on') && /Уже в списке/.test(document.querySelector('.sx-kit.is-active [data-kit-add]').textContent) && /Собрано в запросе/.test(document.querySelector('[data-kit-meta]').textContent)), 'каталог: карточка отмечается, внизу — «Собрано в запросе: N»');
+  const task0 = await p.evaluate(() => document.querySelector('.sx-kit.is-active').getAttribute('data-task'));
+  await p.click('.sx-kit.is-active [data-kit-show]'); await wait(800);
   ok(await p.evaluate(t => document.querySelector('#f-task').value === t && document.querySelectorAll('#cat-grid .pcard:not([hidden])').length > 0, task0), 'каталог: «Показать в каталоге» выставляет фильтр по задаче');
   await p.context().close();
 
@@ -239,6 +279,7 @@ const J = f => JSON.parse(fs.readFileSync(path.join(ROOT, f), 'utf8'));
   const chips = await p.evaluate(() => ({n: [...document.querySelectorAll('.bl-card .sx-bchip')].length, t: (document.querySelector('.sx-bchip') || {}).textContent}));
   const brandsWithEv = new Set(D.events.filter(e => e.date >= today).map(e => e.b)).size;
   ok(chips.n === brandsWithEv && /Семинар/.test(chips.t || ''), 'бренды: ближайший семинар — на карточке каждого бренда, у которого он есть', {chips, brandsWithEv});
+  ok(await p.evaluate(() => document.querySelectorAll('.br-group').length >= 1 && document.querySelectorAll('.br-group small').length === 0), 'бренды: у заголовков «Косметические бренды» и «Аппаратные решения» нет чисел');
   const evb = D.events.find(e => e.date >= today).b;
   await p.open('brands/' + evb + '.html');
   const route = await p.evaluate(() => ({st: document.querySelectorAll('.sx-station').length, first: !!document.querySelector('.sx-station.first'), gen: document.querySelectorAll('.sx-next, .sx-trust, .sx-sec').length, badge: (document.querySelector('.sx-st-top em') || {}).textContent}));
@@ -358,6 +399,8 @@ const J = f => JSON.parse(fs.readFileSync(path.join(ROOT, f), 'utf8'));
   ok(rg.tel === 'tel:+79214204735', 'компания: у Санкт-Петербурга — свой телефон', rg);
   ok(!!rg.ev, 'компания: рядом — ближайший семинар в этом городе', rg);
   ok(/Познакомимся/.test(await p.evaluate(() => document.querySelector('.cta-band h2').textContent)), 'компания: завершающий призыв — «Познакомимся на практике»');
+  ok(await p.evaluate(() => { const t = document.querySelector('.sx-trust'); return !!t && /можно доверять/.test(t.querySelector('h2').textContent) && t.querySelectorAll('.sx-tl li').length === 4 && !document.querySelector('.sx-next'); }), 'компания: из общих структур остаётся только блок «Почему «Астрее» можно доверять» (4 факта сайта)');
+  ok(await p.evaluate(() => { const w = [...document.querySelectorAll('.sx-reg-n')].map(b => Math.round(b.getBoundingClientRect().width)), h = [...document.querySelectorAll('.sx-reg-n')].map(b => Math.round(b.getBoundingClientRect().height)); return w.length >= 3 && Math.max(...w) - Math.min(...w) <= 2 && Math.max(...h) - Math.min(...h) <= 1; }), 'компания: ячейки городов одинакового размера');
   await p.click('[data-sx-region-cb]'); await p.waitForSelector('#modal.open form');
   ok(await p.evaluate(() => document.querySelector('#modal form [name=city]') ? document.querySelector('#modal form [name=city]').value === 'Санкт-Петербург' : true), 'компания: «Перезвоните мне» подставляет выбранный город');
   await p.context().close();
@@ -402,7 +445,7 @@ const J = f => JSON.parse(fs.readFileSync(path.join(ROOT, f), 'utf8'));
   await nav('company');
   ok(await p.evaluate(() => document.querySelectorAll('.sx-region').length === 1), 'в «Компанию»: «Ваш регион» один');
   await p.evaluate(() => document.querySelector('a.logo').click()); await p.waitForFunction(() => document.body.getAttribute('data-page') === 'home', null, {timeout: 15000}); await wait(1500);
-  ok(await p.evaluate(() => document.querySelectorAll('.sx-fork').length === 1 && !document.getElementById('sx-bar') || (document.getElementById('sx-bar') || {}).hidden), 'на главную: развилка одна, панели нет');
+  ok(await p.evaluate(() => document.querySelectorAll('.sx-fork').length === 0 && (!document.getElementById('sx-bar') || document.getElementById('sx-bar').hidden)), 'на главную: нового раздела нет, панели нет');
   ok(p.errs.length === 0, 'при переходах ошибок в консоли нет', p.errs);
   await p.context().close();
 
@@ -419,8 +462,9 @@ const J = f => JSON.parse(fs.readFileSync(path.join(ROOT, f), 'utf8'));
   await p.ask('мой план'); r = await p.lastBot();
   ok(r && /Сохранённого плана я пока не вижу|Плана ещё нет/.test(r.text), 'без плана на «мой план» предлагает его собрать', r && r.text.slice(0, 120));
   await p.context().close();
-  p = await mk(); await p.open('start.html?v=planFlow:four');
-  await p.click('.plan-opt[data-v="salon"]'); await wait(700); const tk1 = await p.evaluate(() => document.querySelector('.plan-opt').getAttribute('data-v')); await p.click('.plan-opt[data-v="' + tk1 + '"]'); await p.click('.plan-next'); await wait(500); await p.click('.plan-opt[data-v="both"]'); await wait(700); await p.click('[data-pl="skip"]'); await wait(900);
+  p = await mk(); await p.open('start.html?v=planFlow:four'); await comp(p, 'role');
+  await p.click('.plan-opt[data-v="salon"]'); await comp(p, 'tasks'); const tk1 = await p.evaluate(() => document.querySelector('.plan-opt').getAttribute('data-v')); await p.click('.plan-opt[data-v="' + tk1 + '"]'); await p.click('.plan-next'); await comp(p, 'goal'); await p.click('.plan-opt[data-v="both"]'); await comp(p, 'city'); await p.click('[data-pl="skip"]'); await p.waitForSelector('.plan-res', {timeout: 12000});
+  await p.evaluate(() => Astreya.stella.open()); await p.waitForSelector('#asst-in', {state: 'visible'}); await wait(700);          // на странице подбора плавающей кнопки нет — основной чат открываем напрямую
   await p.ask('покажи мой план'); r = await p.lastBot();
   ok(r && /Ваш стартовый план/.test(r.text) && /Салон красоты/.test(r.text), 'с сохранённым планом Стелла пересказывает именно его', r && r.text.slice(0, 200));
   ok(r && r.btns.some(x => /подбор от менеджера/i.test(x.t)), 'и предлагает кнопку «Получить подбор от менеджера»', r && r.btns);

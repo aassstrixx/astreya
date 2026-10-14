@@ -23,8 +23,8 @@ function brandCards(ctx, C, P) {
   if (!redesign) return brands.map(b => C.brandCardList(P, b)).join('');
   const bp = redesign.brandsPage, dev = new Set(bp.deviceIds);
   const cos = brands.filter(b => !dev.has(b.id)), dv = brands.filter(b => dev.has(b.id));
-  return `<h2 class="br-group reveal">${esc(bp.groups.cosmetic)}<small>${cos.length}</small></h2>${cos.map(b => C.brandCardList(P, b)).join('')}` +
-    (dv.length ? `<h2 class="br-group br-group-dev reveal">${esc(bp.groups.device)}<small>${dv.length}</small></h2><p class="br-dev-note muted">${esc(bp.deviceNote)}</p>${dv.map(b => C.brandCardList(P, b)).join('')}` : '');
+  return `<h2 class="br-group reveal">${esc(bp.groups.cosmetic)}</h2>${cos.map(b => C.brandCardList(P, b)).join('')}` +
+    (dv.length ? `<h2 class="br-group br-group-dev reveal">${esc(bp.groups.device)}</h2><p class="br-dev-note muted">${esc(bp.deviceNote)}</p>${dv.map(b => C.brandCardList(P, b)).join('')}` : '');
 }
 
 function brandPage(ctx, C, P, b) {
