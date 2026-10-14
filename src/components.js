@@ -178,7 +178,23 @@ module.exports = function components(ctx) {
 
   /* вместо шара в блоках-призывах — логотип «Астрея» (светлый вариант на тёмном фоне; тот же вектор, что в подвале) */
   const ctaLogo = '<div class="cb-art" aria-hidden="true"><span class="logo inv"><svg class="lgo" viewBox="46 338 836 436"><use href="#logo-art"/></svg></span></div>';
-  const ctaBand = (P, place = 'cta-band') => `<section class="sec"><div class="wrap">
+  /* продающий слой: у каждой страницы свой завершающий призыв (data/sales.json → closing); нет слоя или нет записи — прежний общий блок «Станьте партнёром» */
+  const closingCfg = (key, sub) => { const c = ctx.sales && ctx.sales.closing && ctx.sales.closing[key]; return c && sub ? c[sub] || null : c || null; };
+  const fillT = (t, v) => String(t == null ? '' : t).replace(/\{(\w+)\}/g, (m, k) => v && v[k] != null ? v[k] : m);
+  const closeBtn = (P, b, cls, place, vars) => !b ? '' : b.form ? `<button class="${cls}" type="button" data-act="form" data-type="${b.form}" data-ref="${esc(fillT(b.ref || vars.ref || '', vars))}" data-track="closing_cta" data-place="${place}">${esc(b.label)} ${I.arrow}</button>`
+    : b.scroll ? `<a class="${cls}" href="#${b.scroll}" data-act="scroll" data-target="${b.scroll}" data-track="closing_cta" data-place="${place}">${esc(b.label)} ${I.arrow}</a>`
+    : `<a class="${cls}" href="${u(P, b.href)}" data-track="closing_cta" data-place="${place}">${esc(b.label)} ${I.arrow}</a>`;
+  const ctaBand = (P, place = 'cta-band', o) => o ? `<section class="sec"><div class="wrap">
+    <div class="cta-band reveal pushin" data-sx-closing="${place}">
+      <div class="cb-copy">
+        <span class="eyebrow">${esc(o.eyebrow)}</span>
+        <h2>${esc(fillT(o.title, o.vars))}</h2>
+        <p>${esc(fillT(o.text, o.vars))}</p>
+        <div class="row">${closeBtn(P, o.primary, 'btn btn-light', place, o.vars || {})}${closeBtn(P, o.secondary, 'btn btn-ghost-inv', place, o.vars || {})}</div>
+      </div>
+      ${ctaLogo}
+    </div>
+  </div></section>` : `<section class="sec"><div class="wrap">
     <div class="cta-band reveal pushin">
       <div class="cb-copy">
         <span class="eyebrow">Партнёрам</span>
@@ -201,6 +217,6 @@ module.exports = function components(ctx) {
 
   const noteBox = html => `<div class="note">${I.info}<span>${html}</span></div>`;
 
-  return {xon, cdSlot, callbackBtn, u, purl, burl, eurl, nurl, art, tag, tasksLine, timeTag, chip, crumbs, pageHead, secHead, lnk, partnerBtn, productCard, eventCard, eventRow,
+  return {xon, closingCfg, cdSlot, callbackBtn, u, purl, burl, eurl, nurl, art, tag, tasksLine, timeTag, chip, crumbs, pageHead, secHead, lnk, partnerBtn, productCard, eventCard, eventRow,
     newsCard, newsStyle, articleCard, logoMark, heroLogo, marqueeLogo, slotLogo, sibLogo, brandCardHome, brandCardList, advantageCards, officeCard, ctaLogo, ctaBand, noteBox, FMT_KEY};
 };

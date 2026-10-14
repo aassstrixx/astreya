@@ -118,6 +118,7 @@ module.exports = function homeRedesign(ctx, C, P, parts, {events, val}) {
 
   /* ---------- 8. Для кого Астрея (CLINICAL, асимметрия) ---------- */
   const au = rd.audience;
+  if (ctx.sales && ctx.sales.homeAudience) au.items = au.items.map((a, i) => ctx.sales.homeAudience[i] ? Object.assign({}, a, ctx.sales.homeAudience[i]) : a);          // продающий слой: у каждой аудитории — свой адресный шаг (подбор под роль)
   const forWhom = `<section class="rd-sec rd-clinical rd-aud"><div class="wrap rd-aud-grid">
     <div class="rd-aud-head reveal"><span class="eyebrow">${esc(au.eyebrow)}</span><h2>${esc(au.title)}</h2></div>
     <div class="rd-aud-list">${au.items.map((a, i) => `<article class="rd-aud-item reveal"><h3>${esc(a.title)}</h3><p>${esc(a.text)}</p><a class="lnk" href="${C.u(P, a.href.split('#')[0])}${a.href.includes('#') ? '#' + a.href.split('#')[1] : ''}">${esc(a.cta)} ${I.arrow}</a></article>`).join('')}</div>
@@ -183,5 +184,6 @@ module.exports = function homeRedesign(ctx, C, P, parts, {events, val}) {
     </div>
   </section>`;
   })();
-  return [jar, outro, hero, parts.marquee, about, stats, why, solutions, parts.brands.replace('class="sec tint"', 'class="rd-sec rd-brands"'), picker, featured, editorial, training, forWhom, news, wall, finalCta].join('\n\n  ');
+  const fork = ctx.sales ? require('./sales-home.js')(ctx, C, P) : '';          // продающий слой: развилка «Учиться / Закупать» сразу под строкой брендов (героя и вступление не трогаем)
+  return [jar, outro, hero, parts.marquee, fork, about, stats, why, solutions, parts.brands.replace('class="sec tint"', 'class="rd-sec rd-brands"'), picker, featured, editorial, training, forWhom, news, wall, finalCta].join('\n\n  ');
 };

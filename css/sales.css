@@ -30,46 +30,6 @@
   .sx-bar--pill{width:100%}
 }
 
-/* ============ блоки в конце страницы ============ */
-.sx-sec{padding-top:clamp(40px,6vw,80px);padding-bottom:clamp(40px,6vw,80px);animation:sxIn .7s var(--ease) both}
-@keyframes sxIn{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:none}}
-.sx-head h2{margin:0 0 8px;font:500 var(--fs-h2-sm)/1.12 var(--serif);letter-spacing:-.01em}
-.sx-head p{margin:0 0 clamp(18px,2.4vw,28px);max-width:62ch}
-.sx-trust{margin-bottom:clamp(36px,5vw,64px)}
-.sx-tl{list-style:none;margin:clamp(14px,2vw,22px) 0 0;padding:0;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:clamp(14px,2vw,26px)}
-.sx-tl li{display:flex;gap:12px;align-items:flex-start}
-.sx-ti{flex:none;width:40px;height:40px;border-radius:50%;display:grid;place-items:center;background:var(--mist-2);color:var(--blue);box-shadow:0 0 0 1px var(--line-soft) inset}
-.sx-ti .ic{width:19px;height:19px}
-.sx-tl b{display:block;font:600 15px/1.3 var(--sans)}
-.sx-tl small{display:block;margin-top:4px;font:400 13.5px/1.5 var(--sans);color:var(--muted)}
-.sx-note{margin:16px 0 0;font-size:13px}
-.sx-trust--inline .sx-tl{display:flex;flex-wrap:wrap;gap:10px}
-.sx-trust--inline .sx-tl li{align-items:center;gap:8px;padding:6px 16px 6px 8px;border-radius:var(--pill);background:#fff;box-shadow:var(--sh)}
-.sx-trust--inline .sx-ti{width:30px;height:30px}
-.sx-trust--inline .sx-ti .ic{width:16px;height:16px}
-.sx-trust--inline .sx-tl b{font-size:14px}
-.sx-cards{display:grid;gap:clamp(14px,2vw,22px);grid-template-columns:repeat(3,minmax(0,1fr))}
-.sx-n1 .sx-cards{grid-template-columns:minmax(0,720px)}
-.sx-n2 .sx-cards{grid-template-columns:repeat(2,minmax(0,1fr))}
-.sx-card{display:flex;flex-direction:column;align-items:flex-start;gap:10px;padding:clamp(20px,2.2vw,28px);border-radius:var(--r-lg);background:#fff;box-shadow:var(--sh);transition:transform .45s var(--ease),box-shadow .45s var(--ease)}
-.sx-card:hover{transform:translateY(-4px);box-shadow:var(--sh-h)}
-.sx-card h3{margin:0;font:600 19px/1.25 var(--sans)}
-.sx-card p{margin:0;color:var(--muted);font:400 14.5px/1.55 var(--sans);flex:1}
-.sx-cta{margin-top:6px;min-height:44px}
-.sx-next--list .sx-cards{grid-template-columns:1fr;gap:0;border-top:1px solid var(--line-soft)}
-.sx-next--list .sx-card{flex-direction:row;align-items:center;gap:18px;border-radius:0;box-shadow:none;background:transparent;border-bottom:1px solid var(--line-soft);padding:16px 2px}
-.sx-next--list .sx-card:hover{transform:none;box-shadow:none}
-.sx-next--list .sx-card h3{flex:0 0 28%}
-.sx-next--list .sx-cta{margin:0 0 0 auto;flex:none}
-@media (max-width:900px){
-  .sx-tl{grid-template-columns:repeat(2,minmax(0,1fr))}
-  .sx-cards,.sx-n2 .sx-cards{grid-template-columns:1fr}
-  .sx-next--list .sx-card{flex-direction:column;align-items:flex-start;gap:8px}
-  .sx-next--list .sx-card h3{flex:none}
-  .sx-next--list .sx-cta{margin:4px 0 0}
-}
-@media (max-width:520px){.sx-tl{grid-template-columns:1fr}}
-
 /* ============ после заявки ============ */
 .sx-after{margin:22px auto 0;max-width:460px;padding:18px 20px;border-radius:var(--r);background:var(--mist-2);text-align:left;display:flex;flex-direction:column;gap:6px;align-items:flex-start;animation:sxIn .6s var(--ease) both}
 .sx-after b{font:600 15.5px/1.3 var(--sans)}
@@ -107,6 +67,20 @@
 .plan-next[disabled]{opacity:.45;pointer-events:none}
 .plan-back,.plan-foot .btn-lnk{min-height:44px}
 
+/* доска линеек: по мере выбора задач появляются подходящие линейки */
+.plan-prog-t em{font-style:normal;font-weight:600;letter-spacing:.04em;text-transform:none;color:var(--blue-d)}
+.plan-resume{margin:0 0 12px;padding:9px 14px;border-radius:6px;background:var(--mist-2);font:600 13px/1.4 var(--sans);color:var(--muted)}
+.plan-resume .btn-lnk{padding:0 0 0 2px;font-size:13px;text-decoration:underline;text-underline-offset:3px;color:var(--blue-d)}
+.plan-for{margin:8px 0 0;font:500 14px/1.4 var(--sans);color:var(--muted)}
+.plan-board{display:flex;flex-wrap:wrap;align-items:center;gap:8px 16px;margin-top:18px;padding:14px 16px;border:1px solid var(--line-soft);border-left:4px solid var(--blue);border-radius:8px;background:#fff;animation:sxIn .5s var(--ease) both}
+.plan-board-t{font:700 11px/1 var(--sans);letter-spacing:.14em;text-transform:uppercase;color:var(--slate)}
+.plan-tiles{display:flex;gap:8px}
+.plan-btile{display:grid;place-items:center;width:52px;height:46px;border:1px solid var(--line-soft);border-bottom:4px solid var(--c1);border-radius:6px;background:#fff;box-shadow:0 8px 14px -10px rgba(11,26,51,.45);animation:sxPop .55s var(--ease) both;animation-delay:calc(var(--i,0)*90ms)}
+.plan-btile img{max-width:78%;max-height:64%;object-fit:contain}
+.plan-btile b{font:500 22px/1 var(--serif);color:var(--c1)}
+.plan-board-n{font:500 13.5px/1.4 var(--sans);color:var(--muted)}
+@keyframes sxPop{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+
 /* результат */
 .plan-evs .btn,.plan-cta .btn{min-height:44px}
 .plan-res{display:flex;flex-direction:column;gap:clamp(18px,2.4vw,28px);animation:sxIn .6s var(--ease) both}
@@ -121,7 +95,7 @@
 .plan-brand .ic{margin-left:auto;color:var(--slate)}
 .plan-brand b{display:block;font:600 15.5px/1.3 var(--sans)}
 .plan-brand small{display:block;margin-top:2px;font:400 12.5px/1.35 var(--sans);color:var(--muted)}
-.plan-bdot{flex:none;width:34px;height:34px;border-radius:50%;background:linear-gradient(140deg,var(--c1),var(--c2));box-shadow:0 0 0 1px rgba(11,26,51,.1) inset}
+.plan-bsw{flex:none;width:34px;height:34px;border-radius:50%;background:linear-gradient(140deg,var(--c1),var(--c2));box-shadow:0 0 0 1px rgba(11,26,51,.1) inset}
 .plan-prods,.plan-evs{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;border-top:1px solid var(--line-soft)}
 .plan-prods li,.plan-evs li{display:flex;align-items:center;gap:14px;padding:13px 2px;border-bottom:1px solid var(--line-soft)}
 .plan-pn{flex:1;min-width:0}
@@ -168,4 +142,4 @@
 }
 
 /* печать: панели и блоки продающего слоя не нужны */
-@media print{.sx-bar,.sx-sec,.sx-after{display:none!important}}
+@media print{.sx-bar,.sx-mod,.sx-fork,.sx-after{display:none!important}}

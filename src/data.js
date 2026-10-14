@@ -23,17 +23,13 @@ function loadStella() {
   return out;
 }
 
-/* продающий слой: тексты — data/sales.json, факты — из остальных файлов. Доверительный блок собирается только из ссылок на разделы сайта (advantages.N): выдумать утверждение здесь нельзя */
+/* продающий слой: тексты — data/sales.json, факты — из остальных файлов (пороги скидок, связь «задача → бренды», города обучения) */
 function loadSales(content, site, tasks, training) {
-  const sales = read('sales'), out = JSON.parse(JSON.stringify(sales));
-  out.trust.items = sales.trust.items.map(it => {
-    const m = /^(\w+)\.(\d+)$/.exec(it.ref || ''), src = m && content[m[1]] && content[m[1]][+m[2]];
-    if (!src) throw new Error('data/sales.json → trust.items: нет раздела «' + it.ref + '» в data/content.json');
-    return {ref: it.ref, icon: src.icon, title: src.title, text: src.text};
-  });
+  const out = JSON.parse(JSON.stringify(read('sales')));
   out.discounts = site.discounts;
   out.taskBrands = Object.fromEntries(tasks.map(t => [t.id, t.brands]));          // какие бренды работают с задачей (data/catalog.json) — основа подбора
   out.cities = training.cities;
+  out.offices = site.offices.map(o => ({city: o.city, role: o.role, addr: o.addr, hours: o.hours || site.contacts.hours, phones: (o.phones || []).map(x => ({n: x[0], l: x[1], raw: String(x[0]).replace(/[^\d+]/g, '')}))}));          // для блока «Ваш регион» (без e-mail сотрудников)
   return out;
 }
 

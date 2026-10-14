@@ -47,5 +47,5 @@ module.exports = function company(ctx, C, P) {
       <div class="cities">${site.offices.slice(0, 2).map(C.officeCard).join('')}</div>
     </section>
   </div>
-  ${C.ctaBand(P, 'company-cta')}`;
+  ${C.ctaBand(P, 'company-cta', C.closingCfg('company') && Object.assign({}, C.closingCfg('company'), {vars: {}}))}`;
 };

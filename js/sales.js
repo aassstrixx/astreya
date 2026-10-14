@@ -6,11 +6,11 @@
    Что здесь:
    · стартовый подбор (страница start.html) — 3–5 коротких вопросов → план: линейки, товары, ближайшее обучение, ориентировочные условия → заявка менеджеру;
    · панель следующего шага — плашка в «доке» внизу экрана (телефон — по умолчанию; компьютер — только в варианте проверки barDesktop=pill);
-   · блоки «Что дальше» и «Почему можно доверять» в конце страниц (даты считаются в браузере — статичная сборка быстро устарела бы);
+   · ходы по страницам (подборки, маршрут бренда, календарь встреч, ориентир скидки…) — отдельный файл js/sales-pages.js, он подключается к этому ядру (A.sales.kit); даты считаются в браузере — статичная сборка быстро устарела бы;
    · «что дальше» после отправленной заявки;
    · метка источника заявки (поле src: страница, элемент, варианты проверок) и события sales_… и plan_… для аналитики;
    · A.exp — честные A/B-проверки на посетителях (вариант запоминается в браузере; ?x=barDesktop:pill — принудительно, для проверки).
-   Не затрагивает главную, шапку, подвал, вступление и меню (список страниц-исключений — sales.exclude). Выключить всё: extras.sales = false и пересборка.
+   Не затрагивает вступление, героя, шапку, подвал и меню (страницы без слоя — sales.exclude, без панели — sales.barExclude). Выключить всё: extras.sales = false и пересборка.
    Страницы подменяются без перезагрузки — всё идемпотентно и перерисовывается в A.initPage. Ничего не отправляется на сервер без заявки посетителя. */
 (function () {
   'use strict';
@@ -18,10 +18,10 @@
   if (!A || !D || !D.sales || !D.extras || !D.extras.sales) return;
   const SX = D.sales, I = A.I, esc = A.esc, X = D.extras;
   const $ = (s, r) => (r || document).querySelector(s), $$ = (s, r) => Array.prototype.slice.call((r || document).querySelectorAll(s));
-  const V = Object.assign({planFlow: 'four', optionStyle: 'cards', barStyle: 'bottom', nextStyle: 'cards', trustStyle: 'strip'}, SX.variants || {});
+  const V = Object.assign({planFlow: 'four', optionStyle: 'cards', barStyle: 'bottom'}, SX.variants || {});
   /* для проверок и арены: ?v=planFlow:three,barStyle:pill принудительно включает вариант оформления (только на этой загрузке страницы) */
   (function () { try { const q = new URLSearchParams(location.search).get('v'); if (q) q.split(',').forEach(x => { const kv = x.split(':'); if (kv[0] in V && /^[a-z]+$/.test(kv[1] || '')) V[kv[0]] = kv[1]; }); } catch (e) {} })();
-  const EXCL = new Set(SX.exclude || []);
+  const EXCL = new Set(SX.exclude || []), BAR_EXCL = new Set(SX.barExclude || []);
   const root = () => document.body.getAttribute('data-root') || '';
   const pageKey = () => document.body.getAttribute('data-page') || '';
   const narrow = () => matchMedia('(max-width:900px)').matches;
@@ -33,7 +33,7 @@
     del: k => { try { window[st].removeItem(k); } catch (e) {} }
   });
   const local = mkStore('localStorage'), sess = mkStore('sessionStorage');
-  const KP = 'astreya:plan', KX = 'astreya:exp', KV = 'astreya:sx-via', KB = 'astreya:sx-bar-x';
+  const KP = 'astreya:plan', KD = 'astreya:plan-draft', KC = 'astreya:city', KX = 'astreya:exp', KV = 'astreya:sx-via', KB = 'astreya:sx-bar-x';
   const track = (n, p) => { try { A.track(n, p || {}); } catch (e) {} };
   const fill = (s, v) => String(s == null ? '' : s).replace(/\{(\w+)\}/g, (m, k) => v && v[k] != null ? v[k] : m);
   const plural = A.plural || ((n, a, b, c) => { const m = Math.abs(n) % 100, k = m % 10; return m > 10 && m < 20 ? c : k > 1 && k < 5 ? b : k === 1 ? a : c; });
@@ -106,6 +106,7 @@
     return s;
   }
   const savePlan = (st, done) => local.set(KP, {v: 1, st: st, done: !!done, t: Date.now()});
+  const saveDraft = () => { if (UI && !UI.result && (UI.st.tasks || []).length) local.set(KD, {st: UI.st, i: UI.i, t: Date.now()}); };
   const optLabel = (step, id) => { const o = ((STEPS[step] || {}).options || []).find(x => x.id === id); return o ? o.label : ''; };
   const roleSpec = id => { const i = ((STEPS.role || {}).options || []).findIndex(o => o.id === id); return i >= 0 && A.SPECS ? A.SPECS[i] || '' : ''; };
 
@@ -174,13 +175,15 @@
       else if (fromQ.brand && !fromQ.tasks.length) { UI.st.tasks = ((D.tasks || []).filter(t => (SX.taskBrands[t.id] || []).indexOf(fromQ.brand) >= 0).slice(0, 3)).map(t => t.id); UI.i = 0; }
       else if (fromQ.tasks.length) UI.i = Math.max(0, flow().indexOf('goal'));
     } else if (prev) { UI.st = Object.assign(emptySt(), prev.st); UI.result = true; }
-    track('sales_planner_view', {source: fromQ ? 'link' : prev ? 'saved' : 'new'});
+    else { const dr = local.get(KD); if (dr && dr.st && Date.now() - (dr.t || 0) < 7 * 24 * 3600 * 1000 && (dr.st.tasks || []).length) { UI.st = Object.assign(emptySt(), dr.st); UI.i = Math.min(+dr.i || 0, flow().length - 1); UI.resumed = true; } }
+    track('sales_planner_view', {source: fromQ ? 'link' : prev ? 'saved' : UI.resumed ? 'draft' : 'new'});
     paint(true);
   }
   const stepNo = () => UI.i + 1;
   function progress(n, total) {
+    const left = total - n, hint = n === 1 ? 'меньше минуты' : left === 0 ? 'последний вопрос' : 'осталось ' + left + ' ' + plural(left, 'вопрос', 'вопроса', 'вопросов');
     let dots = ''; for (let k = 1; k <= total; k++) dots += '<i class="' + (k < n ? 'done' : k === n ? 'cur' : '') + '"></i>';
-    return '<div class="plan-prog" role="progressbar" aria-valuemin="1" aria-valuemax="' + total + '" aria-valuenow="' + n + '" aria-label="Шаг ' + n + ' из ' + total + '"><span class="plan-prog-t">Шаг ' + n + ' из ' + total + '</span><span class="plan-dots" aria-hidden="true">' + dots + '</span></div>';
+    return '<div class="plan-prog" role="progressbar" aria-valuemin="1" aria-valuemax="' + total + '" aria-valuenow="' + n + '" aria-label="Шаг ' + n + ' из ' + total + '"><span class="plan-prog-t">Шаг ' + n + ' из ' + total + ' <em>· ' + hint + '</em></span><span class="plan-dots" aria-hidden="true">' + dots + '</span></div>';
   }
   function optHTML(kind, o, on, disabled) {
     return '<button class="plan-opt' + (on ? ' on' : '') + '" type="button" role="' + (kind === 'multi' ? 'checkbox' : 'radio') + '" aria-checked="' + (on ? 'true' : 'false') + '"' + (disabled ? ' aria-disabled="true" tabindex="-1"' : '') + ' data-v="' + esc(o.id) + '"><span class="plan-chk" aria-hidden="true">' + I.check + '</span><span class="plan-ot"><b>' + esc(o.label) + '</b>' + (o.sub ? '<small>' + esc(o.sub) + '</small>' : '') + '</span></button>';
@@ -190,8 +193,21 @@
     if (name === 'city') return (SX.cities || []).map(c => ({id: c, label: c}));
     return (STEPS[name] || {}).options || [];
   }
+  /* «доска линеек»: по мере выбора задач на глазах появляются подходящие линейки — человек видит, что план строится из его ответов (эффект «своего» результата) */
+  function brandPearl(b, i) {
+    const img = b.logo && A.assetUrl ? A.assetUrl(b.logo) : '';
+    return '<span class="plan-btile" style="--c1:' + esc(b.c1) + ';--c2:' + esc(b.c2) + ';--i:' + i + '" title="' + esc(b.name) + '">' + (img ? '<img src="' + esc(img) + '" alt="' + esc(b.name) + '" loading="lazy" decoding="async">' : '<b aria-hidden="true">' + esc(b.name.charAt(0)) + '</b>') + '</span>';
+  }
+  function boardHTML() {
+    const st = UI.st; if (!(st.tasks || []).length) return '';
+    const pl = compute(st); if (!pl.brands.length) return '';
+    const n = (D.products || []).filter(p => (p.ts || []).some(t => st.tasks.indexOf(t) >= 0)).length;
+    return '<div class="plan-board" aria-live="polite"><span class="plan-board-t">Подходящие линейки</span><span class="plan-tiles">' + pl.brands.map((id, i) => brandPearl(B[id], i)).join('') + '</span><span class="plan-board-n">и ещё ' + n + ' ' + plural(n, 'товар', 'товара', 'товаров') + ' под ваши задачи</span></div>';
+  }
+  const roleHint = () => { const r = UI.st.role; return r && flow().indexOf('role') < 0 && optLabel('role', r) ? '<p class="plan-for">Подбираем для: <b>' + esc(optLabel('role', r)) + '</b></p>' : ''; };
   function paint(first) {
     const h = UI.host; if (!h) return;
+    saveDraft();
     let html;
     if (UI.result) html = resultHTML();
     else {
@@ -200,7 +216,8 @@
       const full = multi && st.tasks.length >= (S.max || 3);
       const opts = stepOptions(name).map(o => optHTML(multi ? 'multi' : 'single', o, sel.indexOf(o.id) >= 0, multi && full && sel.indexOf(o.id) < 0)).join('');
       html = '<div class="plan-card card" data-step="' + name + '">' + progress(stepNo(), total) +
-        '<h2 id="plan-h" class="plan-q" tabindex="-1">' + esc(S.q || '') + '</h2>' + (S.hint ? '<p class="plan-hint muted">' + esc(S.hint) + '</p>' : '') +
+        (UI.resumed ? '<p class="plan-resume">Продолжаем с того места, где вы остановились · <button class="btn-lnk" type="button" data-pl="again">начать заново</button></p>' : '') +
+        '<h2 id="plan-h" class="plan-q" tabindex="-1">' + esc(S.q || '') + '</h2>' + (S.hint ? '<p class="plan-hint muted">' + esc(S.hint) + '</p>' : '') + roleHint() + boardHTML() +
         '<div class="plan-opts plan-opts--' + (V.optionStyle === 'chips' || name === 'city' ? 'chips' : 'cards') + '" role="' + (multi ? 'group' : 'radiogroup') + '" aria-labelledby="plan-h">' + opts + '</div>' +
         '<div class="plan-foot">' + (UI.i > 0 ? '<button class="btn btn-lnk plan-back" type="button" data-pl="back">← Назад</button>' : '<span></span>') +
         '<span class="plan-foot-r">' + (S.skip ? '<button class="btn btn-lnk" type="button" data-pl="skip">' + esc(S.skip) + '</button>' : '') +
@@ -215,7 +232,7 @@
     const chips = summaryLines(pl).map(l => '<li>' + esc(l) + '</li>').join('');
     const brandsH = pl.brands.length ? '<section class="plan-sec"><h3>' + esc(RES.brandsTitle) + '</h3><div class="plan-brands">' + pl.brands.map(id => {
       const b = B[id], why = pl.tasks.filter(t => ((SX.taskBrands || {})[t] || []).indexOf(id) >= 0).map(t => T[t].label);
-      return link(bUrl(b), 'plan-brand', '<span class="plan-bdot" style="--c1:' + esc(b.c1) + ';--c2:' + esc(b.c2) + '" aria-hidden="true"></span><span><b>' + esc(b.name) + '</b>' + (why.length ? '<small>' + esc(why.join(', ')) + '</small>' : '') + '</span>' + I.arrow, 'plan-brand');
+      return link(bUrl(b), 'plan-brand', '<span class="plan-bsw" style="--c1:' + esc(b.c1) + ';--c2:' + esc(b.c2) + '" aria-hidden="true"></span><span><b>' + esc(b.name) + '</b>' + (why.length ? '<small>' + esc(why.join(', ')) + '</small>' : '') + '</span>' + I.arrow, 'plan-brand');
     }).join('') + '</div></section>' : '';
     const prodH = pl.products.length ? '<section class="plan-sec"><h3>' + esc(RES.productsTitle) + '</h3><ul class="plan-prods">' + pl.products.map(p => {
       const b = B[p.brand] || {name: ''}, inList = A.rlHas && A.rlHas(p.id);
@@ -238,13 +255,14 @@
       '<button class="btn btn-lnk" type="button" data-pl="again">' + esc(RES.restart) + '</button></div></div></div>';
   }
   function finish() {
-    UI.result = true; savePlan(UI.st, true); const pl = compute(UI.st);
+    UI.result = true; savePlan(UI.st, true); local.del(KD); const pl = compute(UI.st);
     track('plan_result', {tasks: pl.tasks.join(','), goal: pl.goal, role: UI.st.role, city: UI.st.city, products: pl.products.length, events: pl.events.length, flow: flowName()});
     paint(); document.dispatchEvent(new CustomEvent('astreya:plan', {detail: {done: true}}));
   }
   function onPlanClick(e) {
     const t = e.target.closest && e.target.closest('[data-pl], .plan-opt'); if (!t || !UI || !UI.host || !UI.host.contains(t)) return;
     const fl = flow(), name = fl[UI.i], st = UI.st;
+    if (t.getAttribute('data-pl') !== 'again') UI.resumed = false;
     if (t.classList.contains('plan-opt')) {
       if (t.getAttribute('aria-disabled') === 'true') return;
       const v = t.getAttribute('data-v');
@@ -266,7 +284,7 @@
       if (UI.i === 0 && !UI.started) { UI.started = true; track('plan_start', {flow: flowName()}); }
       UI.i < fl.length - 1 ? (UI.i++, paint()) : finish();
     }
-    else if (act === 'again') { local.del(KP); UI.st = emptySt(); UI.i = 0; UI.result = false; UI.started = false; track('plan_restart'); paint(); }
+    else if (act === 'again') { local.del(KP); local.del(KD); UI.resumed = false; UI.st = emptySt(); UI.i = 0; UI.result = false; UI.started = false; track('plan_restart'); paint(); }
     else if (act === 'main') { const pl = compute(UI.st); track('plan_cta', {tasks: pl.tasks.join(','), goal: pl.goal}); setVia('plan-main'); A.openForm('plan', planRef(pl)); }
     else if (act === 'signup') { track('plan_signup', {event: t.getAttribute('data-id')}); setVia('plan-event'); A.openForm('seminar', t.getAttribute('data-id')); }
     else if (act === 'addall') { const pl = compute(UI.st), n = A.rlAdd ? A.rlAdd(pl.products.map(p => p.id)) : 0; track('plan_list_add', {added: n}); if (A.toast) A.toast(n ? 'В списке запроса: добавлено ' + n + ' ' + plural(n, 'товар', 'товара', 'товаров') : 'Эти товары уже в списке запроса'); paint(true); }
@@ -364,9 +382,12 @@
     armed = true;
     dwellT = setTimeout(() => { dwellDone = true; schedule(); }, Math.round((BR.dwellSec || 12) * 1000 / speed()));
     if ('IntersectionObserver' in window) {
-      io = new IntersectionObserver(es => { es.forEach(en => { const k = en.target.getAttribute('data-sx-watch'); if (k) blockers[k] = en.isIntersecting; }); schedule(); }, {threshold: 0.12});
-      const ft = $('footer'), sec = $('.sx-sec'), form = ctxCache.type === 'partners' ? $('#form') : null;
-      if (ft) { ft.setAttribute('data-sx-watch', 'footer'); io.observe(ft); } if (sec) { sec.setAttribute('data-sx-watch', 'sec'); io.observe(sec); } if (form) { form.setAttribute('data-sx-watch', 'form'); io.observe(form); }
+      io = new IntersectionObserver(es => { es.forEach(en => { const k = en.target.getAttribute('data-sx-watch'); if (!k) return; if (k.indexOf('own') === 0) { const o = io.__own; en.isIntersecting ? o.add(k) : o.delete(k); blockers.sec = o.size > 0; } else blockers[k] = en.isIntersecting; }); schedule(); }, {threshold: 0.12});
+      const ft = $('footer'), form = ctxCache.type === 'partners' ? $('#form') : null;
+      if (ft) { ft.setAttribute('data-sx-watch', 'footer'); io.observe(ft); } if (form) { form.setAttribute('data-sx-watch', 'form'); io.observe(form); }
+      /* свои призывы страницы (модули слоя и завершающий блок) важнее панели: пока один из них на экране, панель уступает место */
+      const own = new Set(); $$('[data-sx-mod], .cta-band[data-sx-closing]').forEach((el, k) => { el.setAttribute('data-sx-watch', 'own' + k); io.observe(el); });
+      io.__own = own;
     }
     schedule();
   }
@@ -376,64 +397,6 @@
   document.addEventListener('astreya:plan', () => { if (armed) { model = barModel(ctxOf()); if (bar && !bar.hidden) paintBar(); } });
   document.addEventListener('visibilitychange', schedule);
   (function watchDock() { const d = A.dock(); new MutationObserver(schedule).observe(d, {childList: true, attributes: true, subtree: true, attributeFilter: ['hidden']}); })();
-
-  /* ================= БЛОКИ В КОНЦЕ СТРАНИЦЫ: «ДОВЕРИЕ» И «ЧТО ДАЛЬШЕ» ================= */
-  const NX = SX.next || {}, TR = SX.trust || {};
-  function cardOf(c, def) {
-    const id = def.id, v = {brand: c.brand ? c.brand.name : '', product: c.product ? c.product.name : ''};
-    const ev = id === 'learn' ? (c.type === 'brand' || c.type === 'product' ? nextEvent(c.brand && c.brand.id) : nextEvent()) : null;
-    const base = {id: id, t: def.t};
-    if (id === 'learn') {
-      if (ev) return Object.assign(base, {p: fill(def.p, {brand: v.brand, date: dShort(ev.date), city: ev.city}), cta: def.cta, kind: 'link', path: evUrl(ev)});
-      return Object.assign(base, {p: fill(def.pNone || def.p, v), cta: def.ctaNone || def.cta, kind: 'link', path: 'training.html'});
-    }
-    if (id === 'plan') return Object.assign(base, {p: fill(def.p, v), cta: def.cta, kind: 'link', path: planPath + (c.brand && (c.type === 'brand' || c.type === 'event') ? '?b=' + c.brand.id : '')});
-    if (id === 'ask') { if (!A.stella) return null; return Object.assign(base, {p: fill(def.p, v), cta: def.cta, kind: 'ask', q: fill(def.q || 'С чего начать закупки?', {brand: v.brand, product: v.product, event: c.event ? c.event.title : ''})}); }
-    if (id === 'request') {
-      if (c.type === 'product' && c.product) return Object.assign(base, {p: fill(def.p, v), cta: ctaLabel(), kind: 'form', form: 'product', ref: c.product.id});
-      return Object.assign(base, {p: fill(def.p, v), cta: ctaLabel(), kind: 'form', form: 'product', ref: c.brand ? 'Бренд ' + c.brand.name : 'Запрос условий'});
-    }
-    if (id === 'signup') { const e = c.event; if (!e || e.date < today()) return null; return Object.assign(base, {p: fill(def.p, {date: dShort(e.date), city: e.city}), cta: def.cta, kind: 'form', form: 'seminar', ref: e.id}); }
-    if (id === 'pick') return Object.assign(base, {p: def.p, cta: def.cta, kind: 'scroll', sel: '#sched'});
-    if (id === 'call') return Object.assign(base, {p: def.p, cta: def.cta, kind: 'form', form: X.callback ? 'callback' : 'question', ref: ''});
-    return null;
-  }
-  function nextHTML(c) {
-    const d = (NX.pages || {})[c.type] || (NX.pages || {})['default']; if (!d) return '';
-    const cards = d.cards.map(x => cardOf(c, x)).filter(Boolean); if (!cards.length) return '';
-    const cls = 'sx-next sx-next--' + (V.nextStyle === 'list' ? 'list' : 'cards') + ' sx-n' + cards.length;
-    return '<div class="' + cls + '"><div class="sx-head"><h2>' + esc(NX.title || 'Что дальше') + '</h2>' + (d.lead ? '<p class="muted">' + esc(fill(d.lead, {brand: c.brand ? c.brand.name : ''})) + '</p>' : '') + '</div><div class="sx-cards">' + cards.map(k => {
-      const cta = k.kind === 'link' ? link(k.path, 'btn btn-ghost btn-sm sx-cta', esc(k.cta) + ' ' + I.arrow, 'next-' + k.id) :
-        '<button class="btn btn-ghost btn-sm sx-cta" type="button" data-sx="next-' + k.id + '" data-nx="' + k.kind + '"' + (k.form ? ' data-form-type="' + k.form + '" data-ref="' + esc(k.ref || '') + '"' : '') + (k.q ? ' data-q="' + esc(k.q) + '"' : '') + (k.sel ? ' data-sel="' + esc(k.sel) + '"' : '') + '>' + esc(k.cta) + ' ' + I.arrow + '</button>';
-      return '<article class="sx-card" data-card="' + k.id + '"><h3>' + esc(k.t) + '</h3><p>' + esc(k.p) + '</p>' + cta + '</article>';
-    }).join('') + '</div></div>';
-  }
-  function trustHTML() {
-    const items = TR.items || []; if (!items.length) return '';
-    const inline = V.trustStyle === 'inline';
-    return '<div class="sx-trust sx-trust--' + (inline ? 'inline' : 'strip') + '"><div class="sx-head"><h2>' + esc(TR.title) + '</h2></div><ul class="sx-tl">' + items.map(it => '<li' + (inline ? ' title="' + esc(it.text) + '"' : '') + '><span class="sx-ti" aria-hidden="true">' + (I[it.icon] || I.check) + '</span><span><b>' + esc(it.title) + '</b>' + (inline ? '' : '<small>' + esc(it.text) + '</small>') + '</span></li>').join('') + '</ul>' + (TR.note ? '<p class="sx-note muted">' + esc(TR.note) + '</p>' : '') + '</div>';
-  }
-  function sections() {
-    const main = $('#main'); if (!main || $('.sx-sec', main)) return;
-    const c = ctxOf(), parts = [];
-    if ((TR.pages || []).indexOf(c.key) >= 0 || (c.key === 'brands' && (TR.pages || []).indexOf('brands') >= 0)) parts.push(trustHTML());
-    parts.push(nextHTML(c));
-    const html = parts.filter(Boolean).join(''); if (!html) return;
-    const sec = document.createElement('section'); sec.className = 'sec sx-sec'; sec.setAttribute('data-sx-sec', c.type); sec.innerHTML = '<div class="wrap">' + html + '</div>';
-    const form = c.type === 'partners' ? $('#form', main) : null;
-    if (form) form.parentNode.insertBefore(sec, form); else main.appendChild(sec);
-    if ('IntersectionObserver' in window) {
-      const o = new IntersectionObserver(es => { es.forEach(en => { if (en.isIntersecting) { track('sales_next_view', {page: c.key, type: c.type}); o.disconnect(); } }); }, {threshold: .25}); o.observe(sec);
-    }
-  }
-  document.addEventListener('click', e => {
-    const b = e.target.closest && e.target.closest('[data-nx]'); if (!b) return;
-    const k = b.getAttribute('data-nx'), id = (b.getAttribute('data-sx') || '').replace('next-', '');
-    track('sales_next_click', {card: id, page: pageKey(), exp: assigned()});
-    if (k === 'form') A.openForm(b.getAttribute('data-form-type'), b.getAttribute('data-ref') || '');
-    else if (k === 'ask') { if (A.stella) A.stella.ask(b.getAttribute('data-q') || 'С чего начать закупки?', {sales: true}); }
-    else if (k === 'scroll') { const t = $(b.getAttribute('data-sel')); if (t) t.scrollIntoView({behavior: 'smooth', block: 'start'}); }
-  });
 
   /* ================= «ЧТО ДАЛЬШЕ» ПОСЛЕ ЗАЯВКИ ================= */
   A.afterForm = function (form, ok, mode) {
@@ -445,11 +408,21 @@
     track('sales_after_view', {form_type: type});
   };
 
+  /* ================= общие помощники для модулей страниц (js/sales-pages.js) ================= */
+  const kit = {A: A, D: D, SX: SX, I: I, esc: esc, $: $, $$: $$, track: track, fill: fill, plural: plural, rub: rub, local: local, sess: sess, root: root, href: href, link: link, upcoming: upcoming, nextEvent: nextEvent,
+    dShort: dShort, dFull: dFull, daysTo: daysTo, evUrl: evUrl, pUrl: pUrl, bUrl: bUrl, P: P, B: B, T: T, EV: EV, planPath: planPath, planRel: planRel, savedPlan: savedPlan, compute: compute, summaryLines: summaryLines,
+    planText: planText, setVia: setVia, ctaLabel: ctaLabel, PLUS: PLUS, narrow: narrow, speed: speed, today: today,
+    whenText: (n, c) => n <= 0 ? c['0'] : n === 1 ? c['1'] : fill(c.n, {days: n + ' ' + plural(n, 'день', 'дня', 'дней')}),
+    city: () => { const c = local.get(KC); if (c) return c; const s = savedPlan(); return s && s.st && s.st.city && s.st.city !== 'Онлайн' ? s.st.city : ''; },
+    setCity: c => { if (c) local.set(KC, c); else local.del(KC); }};
+  document.addEventListener('astreya:plan', () => { const s = savedPlan(); if (s && s.st && s.st.city && s.st.city !== 'Онлайн' && !local.get(KC)) local.set(KC, s.st.city); });
+
   /* ================= публичный интерфейс (для Стеллы и проверок) ================= */
   A.sales = {
     plan: () => { const s = savedPlan(); if (!s) return null; const pl = compute(s.st); return {state: s.st, text: planText(pl), summary: summaryLines(pl), brands: pl.brands, products: pl.products.map(p => p.id), events: pl.events.map(e => e.id)}; },
     compute: compute, planText: planText, exp: A.exp, ctaLabel: ctaLabel, path: planPath,
-    excluded: key => EXCL.has(key || pageKey()) || (key || pageKey()) === 'start',
+    excluded: key => EXCL.has(key || pageKey()),
+    kit: kit,          // общие помощники для модулей страниц
     state: () => ({armed: armed, shown: shownOnPage, dwell: dwellDone, model: !!model, blocked: barBlocked(), blockers: Object.assign({}, blockers), dismissed: !!sess.get(KB), device: barDevice()})          // для проверок: почему панель показана или скрыта
   };
 
@@ -461,9 +434,12 @@
     lastTok = tok;
     const host = $('[data-plan-app]');
     if (key === 'start' && host) { armed = false; clearTimeout(dwellT); hideBar(); renderPlanner(host); return; }
-    if (EXCL.has(key) || key === 'start') { armed = false; clearTimeout(dwellT); hideBar(); return; }
-    sections(); barArm();
-    track('sales_page', {page: key, type: typeOf(key)});
+    if (EXCL.has(key)) { armed = false; clearTimeout(dwellT); hideBar(); return; }
+    const c = ctxOf();
+    if (A.salesPages && A.salesPages.mount) { try { A.salesPages.mount(c); } catch (e) { track('sales_error', {page: key, message: String(e && e.message || e)}); } }          // свой ход у каждой страницы (js/sales-pages.js)
+    if (BAR_EXCL.has(key)) { armed = false; clearTimeout(dwellT); hideBar(); }
+    else barArm();
+    track('sales_page', {page: key, type: c.type});
   }
   const prev = A.initPage;
   A.initPage = function () { if (prev) prev.apply(this, arguments); init(); };

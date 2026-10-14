@@ -71,18 +71,17 @@ const VIEWS = {m: {width: 390, height: 844, mobile: true}, d: {width: 1280, heig
   const W_BAR = {'экономия места': [0.6, 60, 40], 'баланс': [0.35, 50, 40], 'читаемость': [0.2, 50, 40]};
   const barScore = (m, w) => !m ? -999 : 100 - m.h * w[0] - m.collide * w[1] - (m.tap < 44 ? w[2] : 0) - (m.ov ? 60 : 0) - (m.inView ? 0 : 60) - Math.max(0, m.lines - 2) * 8;
 
-  /* ---------- 3. «Что дальше» и «Доверие»: высота, нажатия до кнопки, доступность ---------- */
-  async function blocks(next, trust, vk) {
-    const p = await mk(VIEWS[vk]); const slug = JSON.parse(fs.readFileSync(path.join(ROOT, 'data/products.json'), 'utf8'))[0].slug;
-    await p.open('products/' + slug + '.html?v=nextStyle:' + next + ',trustStyle:' + trust);
-    const r = await p.evaluate(() => { const n = document.querySelector('.sx-next'), t = document.querySelector('.sx-trust'); const ctas = [...document.querySelectorAll('.sx-cta')].map(e => e.getBoundingClientRect());
-      return {nh: n ? n.getBoundingClientRect().height : 0, th: t ? t.getBoundingClientRect().height : 0, tap: Math.min.apply(null, ctas.map(c => c.height)), ov: document.documentElement.scrollWidth > innerWidth + 1, nchars: n ? n.innerText.length : 0, tchars: t ? t.innerText.length : 0, evidence: t ? [...t.querySelectorAll('small')].reduce((a, e) => a + e.textContent.length, 0) : 0}; });
+  /* ---------- 3. Ходы по страницам: не ломают ли вёрстку (замеряется, выбор не меняется — убедительность хода арена не оценивает) ---------- */
+  const first = dir => fs.readdirSync(path.join(ROOT, dir)).filter(f => /\.html$/.test(f)).sort()[0];
+  const PAGES = [['главная', 'index.html'], ['каталог', 'catalog.html'], ['бренды', 'brands.html'], ['бренд', 'brands/keenwell.html'], ['товар', 'products/' + first('products')], ['обучение', 'training.html'],
+    ['мероприятие', 'training/' + first('training')], ['партнёры', 'partners.html'], ['новости', 'news.html', true], ['статья', 'news/' + first('news')], ['компания', 'company.html'], ['контакты', 'contacts.html'], ['подбор', 'start.html']];
+  async function pageMods(url, vk) {
+    const p = await mk(VIEWS[vk]); await p.open(url); await wait(2500);
+    await p.evaluate(async () => { for (const y of [.25, .5, .75, 1]) { scrollTo(0, (document.documentElement.scrollHeight - innerHeight) * y); await new Promise(r => setTimeout(r, 250)); } });
+    const r = await p.evaluate(() => { const mods = [...document.querySelectorAll('[data-sx-mod], [data-sx-closing], .sx-mod, .sx-fork, .plan, .sx-bchip, .sx-status')]; const taps = [...document.querySelectorAll('[data-sx-mod] .btn, .sx-mod .btn, .sx-fork .btn, [data-sx-mod] [data-sx-act], .sx-fork [data-sx-cta], [data-lad-cta], .sx-cal-nav')].filter(e => e.offsetWidth && e.offsetHeight).map(e => e.offsetHeight);       // высота в вёрстке, без учёта анимации появления (масштаб)
+      return {n: mods.length, h: mods.reduce((a, e) => a + e.getBoundingClientRect().height, 0), tap: taps.length ? Math.min.apply(null, taps) : 999, ov: document.documentElement.scrollWidth > innerWidth + 1}; });
     await p.context().close(); return r;
   }
-  const W_NEXT = {'экономия места': 0.12, 'баланс': 0.07, 'читаемость': 0.04};
-  const nextScore = (m, w) => 100 - m.nh * w - m.nchars / 60 - (m.tap < 44 ? 40 : 0) - (m.ov ? 60 : 0);
-  const W_TRUST = {'экономия места': [0.12, 0], 'баланс': [0.07, 0.05], 'доказательность': [0.04, 0.12]};
-  const trustScore = (m, w) => 100 - m.th * w[0] - m.tchars / 60 + m.evidence * w[1] / 4 - (m.ov ? 60 : 0);
 
   /* ---------- прогон ---------- */
   const out = {}, tables = [];
@@ -119,17 +118,10 @@ const VIEWS = {m: {width: 390, height: 844, mobile: true}, d: {width: 1280, heig
   tables.push(['Панель следующего шага на телефоне', ['вариант', 'высота, px', 'наложений', 'мин. кнопка, px', 'строк текста', 'на экране', ...Object.keys(W_BAR).map(k => 'балл: ' + k)],
     barItems.map(it => [it.id, it.m ? Math.round(it.m.h) : '—', it.m ? it.m.collide : '—', it.m ? Math.round(it.m.tap) : '—', it.m ? it.m.lines : '—', it.m ? (it.m.inView ? 'да' : 'нет') : '—', ...Object.values(W_BAR).map(w => fmt(barScore(it.m, w)))]), barRanks, out.barStyle]);
 
-  const nextItems = []; for (const s of ['cards', 'list']) nextItems.push({id: s, m: await blocks(s, SALES.variants.trustStyle, 'm'), d: await blocks(s, SALES.variants.trustStyle, 'd')});
-  const nextRanks = rank(nextItems, (it, w) => (nextScore(it.m, w) + nextScore(it.d, w)) / 2, W_NEXT);
-  out.nextStyle = robust(nextRanks, SALES.variants.nextStyle, false);          // только «цена» (высота, знаки): убедительность арена не измеряет — вариант решает живая проверка
-  tables.push(['Блок «Что дальше» (среднее по телефону и компьютеру)', ['вариант', 'высота тел., px', 'высота комп., px', 'мин. кнопка, px', ...Object.keys(W_NEXT).map(k => 'балл: ' + k)],
-    nextItems.map(it => [it.id, Math.round(it.m.nh), Math.round(it.d.nh), Math.round(it.m.tap), ...Object.values(W_NEXT).map(w => fmt((nextScore(it.m, w) + nextScore(it.d, w)) / 2))]), nextRanks, out.nextStyle]);
-
-  const trustItems = []; for (const s of ['strip', 'inline']) trustItems.push({id: s, m: await blocks(SALES.variants.nextStyle, s, 'm'), d: await blocks(SALES.variants.nextStyle, s, 'd')});
-  const trustRanks = rank(trustItems, (it, w) => (trustScore(it.m, w) + trustScore(it.d, w)) / 2, W_TRUST);
-  out.trustStyle = robust(trustRanks, SALES.variants.trustStyle, false);      // арена видит только занимаемое место; ценность конкретных пояснений она не оценивает — остаётся «strip»
-  tables.push(['Блок «Почему можно доверять»', ['вариант', 'высота тел., px', 'высота комп., px', 'знаков пояснений', ...Object.keys(W_TRUST).map(k => 'балл: ' + k)],
-    trustItems.map(it => [it.id, Math.round(it.m.th), Math.round(it.d.th), it.m.evidence, ...Object.values(W_TRUST).map(w => fmt((trustScore(it.m, w) + trustScore(it.d, w)) / 2))]), trustRanks, out.trustStyle]);
+  const modRows = [], modBad = [];
+  for (const [name, url, noMod] of PAGES) { const m = await pageMods(url, 'm'), d = await pageMods(url, 'd'); modRows.push([name, m.n, Math.round(m.h), Math.round(d.h), Math.round(Math.min(m.tap, d.tap)), m.ov || d.ov ? 'да' : 'нет']); if ((!m.n && !noMod) || m.ov || d.ov || Math.min(m.tap, d.tap) < 44) modBad.push(name); }
+  tables.push(['Ходы по страницам (замер вёрстки, выбор не меняется)', ['страница', 'блоков', 'высота тел., px', 'высота комп., px', 'мин. кнопка, px', 'гориз. прокрутка'], modRows, null, modBad.length ? 'нарушения: ' + modBad.join(', ') : 'все в норме']);
+  out.pageModules = modBad.length ? 'нарушения: ' + modBad.join(', ') : 'ok';
 
   /* ---------- отчёт ---------- */
   const L = ['# Арена продающего слоя — отчёт', '', '_Сгенерировано `node tools/arena-sales.js`. Это замеры оформления в браузере, **не данные о конверсии и не поведение посетителей**._', '',
@@ -137,18 +129,18 @@ const VIEWS = {m: {width: 390, height: 844, mobile: true}, d: {width: 1280, heig
     '* Каждое сочетание оформления прогнано в настоящем браузере (Chromium) на телефоне 390×844 и на компьютере 1280×860: сквозной сценарий «типичный посетитель», замеры размеров и наложений.',
     '* Жёсткие условия: кнопки ≥ 44 px, нет горизонтальной прокрутки, панель целиком на экране и не накрывает Стеллу/быструю связь, подбор доходит до результата. Нарушение — сильный штраф.',
     '* Веса условны, поэтому каждая размерность оценивается при **трёх** расстановках весов. Победитель назначается, если он первый минимум при двух из трёх **и** с отрывом не менее 2 баллов от второго места; иначе остаётся текущий вариант.',
-    '* Для блоков «Что дальше» и «Доверие» арена видит только занимаемое место и размер кнопок — убедительность она не измеряет, поэтому там она лишь **сообщает цену** вариантов и не меняет выбор (его проверяют живые эксперименты).',
+    '* Ходы по страницам (у каждой страницы свой: развилка на главной, подборки, маршрут бренда, календарь встреч и т. д.) арена только **проверяет вёрстку** — блок на месте, нет горизонтальной прокрутки, кнопки ≥ 44 px, — но убедительность хода не оценивает и выбор не меняет.',
     '* Что арена не знает: какой вариант лучше убеждает. Это решают живые проверки на посетителях (`data/sales.json → experiments`: `barDesktop`, `ctaCopy`) и ваша аналитика/заявки (поле «Источник» у заявки).', ''];
   for (const [title, head, rows, ranks, win] of tables) {
     L.push('## ' + title, '', '| ' + head.join(' | ') + ' |', '|' + head.map(() => '---').join('|') + '|', ...rows.map(r => '| ' + r.join(' | ') + ' |'), '');
-    L.push('Первое место по расстановкам весов: ' + Object.entries(ranks).map(([k, v]) => k + ' → **' + v[0][0] + '**').join('; ') + '. **Итог: ' + win + '**', '');
+    L.push((ranks ? 'Первое место по расстановкам весов: ' + Object.entries(ranks).map(([k, v]) => k + ' → **' + v[0][0] + '**').join('; ') + '. ' : '') + '**Итог: ' + win + '**', '');
   }
   L.push('## Итог', '', '```json', JSON.stringify(out, null, 2), '```', '');
   fs.writeFileSync(path.join(__dirname, 'arena-sales-report.md'), L.join('\n'));
   console.log(L.join('\n'));
   if (APPLY) {
     const f = path.join(ROOT, 'data/sales.json'), j = JSON.parse(fs.readFileSync(f, 'utf8'));
-    Object.assign(j.variants, out); fs.writeFileSync(f, JSON.stringify(j, null, 2) + '\n');
+    const {pageModules, ...vars} = out; Object.assign(j.variants, vars); fs.writeFileSync(f, JSON.stringify(j, null, 2) + '\n');
     console.log('\nЗаписано в data/sales.json → variants. Теперь: node tools/build.js');
   }
   await b.close(); await S.close(); process.exit(0);

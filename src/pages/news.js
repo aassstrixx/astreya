@@ -65,7 +65,7 @@ function articlePage(ctx, C, P, n) {
       <div class="grid g3">${more.map(x => C.newsCard(P, x)).join('')}</div>
     </section>
   </div>
-  ${C.ctaBand(P, 'article-cta')}`;
+  ${C.ctaBand(P, 'article-cta', C.closingCfg('article', n.category) && Object.assign({}, C.closingCfg('article', n.category), {vars: {}}))}`;
 }
 
 module.exports = {newsPage, articlePage};

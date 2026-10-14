@@ -1,0 +1,281 @@
+/* sales-pages.css — ходы по страницам продающего слоя (js/sales-pages.js, src/pages/sales-home.js).
+   Оформление «картотека»: прямоугольные карточки с цветной шиной сверху или слева, крупные засечные цифры (дата, процент, номер шага),
+   линейки с насечками, ступени, квадратные маркеры. Без жемчужин и нумерованных кругов (главная, маршрут бренда); кнопки — как на всём сайте.
+   Анимации идут всегда (как и на остальном сайте). */
+.sx-fork,.sx-mod,.sx-bar,.plan{--sx-r:10px;--sx-line:rgba(11,26,51,.16)}
+@keyframes sxIn{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:none}}
+@keyframes sxBlink{0%,100%{opacity:1}50%{opacity:.35}}
+@keyframes sxRise{from{transform:scaleY(.2);opacity:0}to{transform:none;opacity:1}}
+
+/* общее */
+.sx-mod{animation:sxIn .7s var(--ease) both}
+.sx-head{margin-bottom:clamp(16px,2.4vw,28px);max-width:64ch}
+.sx-head h2{margin:12px 0 8px;font:500 var(--fs-h2-sm)/1.12 var(--serif);letter-spacing:-.01em}
+.sx-head .lead{margin:0}
+.sx-fine{font:500 12.5px/1.45 var(--sans);color:var(--muted)}
+.sx-sq{flex:none;width:26px;height:26px;display:grid;place-items:center;border:1px solid var(--sx-line);border-radius:6px;background:#fff;font:700 12px/1 var(--sans);color:var(--blue-d)}
+.lnk-btn{padding:0;font:600 13px/1.2 var(--sans);color:var(--blue-d);text-decoration:underline;text-underline-offset:3px}
+/* календарная плитка: число и месяц (используется в крючке товара и на карточках брендов) */
+.sx-bt{flex:none;display:flex;flex-direction:column;align-items:center;justify-content:center;width:46px;padding:6px 0 5px;border-radius:6px;background:var(--navy);color:var(--milk);line-height:1}
+.sx-bt b{font:500 20px/1 var(--serif)}
+.sx-bt small{margin-top:3px;font:700 9px/1 var(--sans);letter-spacing:.14em;text-transform:uppercase;color:var(--silver)}
+
+/* ============ Главная: развилка «Учиться / Закупать» — одна карточка-«папка» с корешком ============ */
+.sx-fork{padding:clamp(44px,6.5vw,92px) 0}
+.sx-fork-head{margin-bottom:clamp(22px,3.2vw,42px);max-width:62ch}
+.sx-fork-head h2{margin:14px 0 10px}
+.sx-doors{display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);align-items:stretch;border:1px solid var(--sx-line);border-radius:14px;overflow:hidden;background:#fff;box-shadow:var(--sh)}
+.sx-door{position:relative;display:grid;grid-template-columns:minmax(128px,.44fr) minmax(0,1fr);gap:clamp(18px,2.4vw,34px);align-items:start;padding:clamp(26px,3vw,44px);transition:background-color .4s}
+.sx-door::before{content:"";position:absolute;left:0;right:0;top:0;height:5px;background:var(--c1,#2f5bd6)}
+.sx-door-learn{background:#fff;color:var(--navy)}
+.sx-door-buy{background:var(--navy);color:var(--milk)}
+.sx-door-buy::before{background:linear-gradient(90deg,var(--blue),#8ea8f0)}
+.sx-big{display:flex;flex-direction:column;align-items:flex-start;gap:6px;min-height:100%;padding-right:clamp(14px,2vw,28px);border-right:1px dashed var(--sx-line)}
+.sx-big-k{padding:5px 8px;border-radius:4px;background:color-mix(in srgb,var(--c1,#2f5bd6) 11%,#fff);color:var(--c1,var(--blue-d));font:700 11px/1 var(--sans);letter-spacing:.14em;text-transform:uppercase}
+.sx-big-k:empty{display:none}
+.sx-big b{font:500 clamp(76px,9.4vw,132px)/.84 var(--serif);letter-spacing:-.045em}
+.sx-big small{margin-top:12px;font:700 12px/1.2 var(--sans);letter-spacing:.2em;text-transform:uppercase;color:var(--slate)}
+.sx-door-buy .sx-big{border-right-color:rgba(245,242,236,.24)}
+.sx-door-buy .sx-big-k{background:rgba(245,242,236,.12);color:var(--milk)}
+.sx-door-buy .sx-big b{color:#fff;font-size:clamp(60px,7.2vw,100px)}
+.sx-door-buy{grid-template-columns:minmax(150px,.5fr) minmax(0,1fr)}
+.sx-door-buy .sx-big small{color:var(--silver)}
+.sx-door-body{min-width:0;display:flex;flex-direction:column;gap:6px;padding-top:4px}
+.sx-door h3{margin:2px 0 0;font:500 clamp(24px,2.4vw,30px)/1.12 var(--serif)}
+.sx-door-line{margin:0;font:500 15.5px/1.45 var(--sans)}
+.sx-door-line a{border-bottom:1px dashed currentColor}
+.sx-door-line a:hover{color:var(--blue);border-color:var(--blue)}
+.sx-door-meta{margin:0;font:500 13.5px/1.4 var(--sans);color:var(--muted)}
+.sx-door .row{margin-top:10px}
+.sx-door .btn{min-height:46px}
+.sx-door-note{margin:8px 0 0;font:500 12.5px/1.5 var(--sans);color:var(--muted)}
+.sx-door-buy .eyebrow,.sx-door-buy .sx-door-note,.sx-door-buy .sx-door-meta{color:var(--silver)}
+.sx-door-buy .eyebrow::before{border-color:var(--silver)}
+.sx-door-buy .btn-lnk{color:var(--silver)}
+.sx-door-buy .btn-lnk:hover{color:#fff}
+/* корешок между карточками */
+.sx-or{display:grid;place-items:center;width:52px;background:var(--milk-2);border-left:1px solid var(--sx-line);border-right:1px solid var(--sx-line)}
+.sx-or span{writing-mode:vertical-rl;transform:rotate(180deg);font:700 11px/1 var(--sans);letter-spacing:.34em;text-transform:uppercase;color:var(--slate)}
+/* ступени скидок */
+.sx-ladder{list-style:none;margin:12px 0 2px;padding:0;display:flex;gap:8px;align-items:flex-end;height:96px}
+.sx-ladder li{flex:1;min-width:0;height:var(--h);padding:9px 10px;display:flex;flex-direction:column;justify-content:flex-end;border-radius:6px 6px 3px 3px;background:rgba(245,242,236,.07);border:1px solid rgba(245,242,236,.22);transform-origin:bottom;animation:sxRise .9s var(--ease) both}
+.sx-ladder li:nth-child(2){animation-delay:.12s;background:rgba(245,242,236,.11)}
+.sx-ladder li:nth-child(3){animation-delay:.24s;background:rgba(245,242,236,.16)}
+.sx-ladder b{font:500 22px/1 var(--serif);color:#fff}
+.sx-ladder span{font:600 10.5px/1.25 var(--sans);letter-spacing:.04em;color:var(--silver)}
+@media (max-width:900px){
+  .sx-doors{grid-template-columns:1fr}
+  .sx-or{width:auto;height:38px;border:0;border-top:1px solid var(--sx-line);border-bottom:1px solid var(--sx-line)}
+  .sx-or span{writing-mode:horizontal-tb;transform:none}
+  .sx-door{grid-template-columns:1fr}
+  .sx-big{flex-direction:row;flex-wrap:wrap;align-items:baseline;gap:6px 14px;padding:0 0 16px;border-right:0;border-bottom:1px dashed var(--sx-line)}
+  .sx-door-buy .sx-big{border-bottom-color:rgba(245,242,236,.24)}
+  .sx-big b{font-size:clamp(68px,20vw,96px)}
+}
+
+/* ============ Каталог: подборки по задачам ============ */
+.sx-kits{margin:clamp(6px,1.6vw,18px) 0 clamp(18px,2.6vw,34px)}
+.sx-kit-row{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(236px,26%);gap:12px;overflow-x:auto;padding:6px 2px 14px;scroll-snap-type:x proximity;scrollbar-width:thin}
+.sx-kit{scroll-snap-align:start;position:relative;display:flex;flex-direction:column;gap:6px;padding:12px 12px 14px;border:1px solid var(--line-soft);border-top:4px solid var(--c1);border-radius:var(--sx-r);background:#fff;transition:transform .45s var(--ease),box-shadow .45s var(--ease),border-color .3s;animation:sxIn .6s var(--ease) both;animation-delay:calc(var(--i,0)*70ms)}
+.sx-kit:hover{transform:translateY(-3px);box-shadow:var(--sh-h)}
+.sx-kit.on{border-color:var(--blue);border-top-color:var(--blue);box-shadow:0 0 0 1px var(--blue)}
+.sx-kit-art{position:relative;height:128px;margin-bottom:6px;border-radius:6px;overflow:hidden;display:flex;align-items:flex-end;justify-content:center;padding-bottom:12px;background:linear-gradient(180deg,#fff 0,color-mix(in srgb,var(--c1) 11%,#f5f2ec) 100%)}
+.sx-kit-art::before{content:"";position:absolute;left:0;right:0;bottom:0;height:30%;background:color-mix(in srgb,var(--c1) 16%,transparent)}
+.sx-pk{position:relative;flex:none;display:block;width:50px;height:88px;margin:0 -5px}
+.sx-pk .pk{position:absolute;left:50%;bottom:0;translate:-50% 0;scale:.62;transform-origin:50% 100%}
+.sx-pk:nth-child(2){z-index:2;margin:0 -2px}.sx-pk:nth-child(2) .pk{scale:.74}
+.sx-pk:nth-child(1) .pk{rotate:-4deg}.sx-pk:nth-child(3) .pk{rotate:4deg}
+.sx-kit h3{margin:0;font:600 18px/1.25 var(--sans)}
+.sx-kit-sub{margin:0;font:500 13px/1.4 var(--sans);color:var(--muted)}
+.sx-kit-act{display:flex;flex-wrap:wrap;align-items:center;gap:4px 6px;margin-top:auto;padding-top:10px}
+.sx-kit-act .btn{min-height:44px}
+.sx-kit-act .btn-fill[aria-pressed="true"]{background:var(--navy)}
+.sx-kit-meta{min-height:20px;margin:2px 0 0;font:500 13px/1.4 var(--sans);color:var(--muted)}
+@media (max-width:900px){.sx-kit-row{grid-auto-columns:minmax(230px,78%)}}
+
+/* пустая выдача (каталог, поиск) */
+.sx-rescue{margin:18px auto 0;max-width:560px;padding:18px 20px;border:1px solid var(--line-soft);border-left:4px solid var(--blue);border-radius:var(--sx-r);background:#fff;text-align:left;display:grid;gap:8px}
+.sx-rescue>b{font:600 17px/1.3 var(--sans)}
+.sx-rescue p{margin:0;color:var(--muted);font:400 14.5px/1.5 var(--sans)}
+.sx-rescue .row .btn{min-height:44px}
+.sx-rescue-tasks{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:16px;justify-content:center;font:600 12.5px/1 var(--sans);color:var(--slate)}
+.sx-rescue-tasks .chip{border-radius:8px}
+
+/* ============ Бренды: ближайший семинар на карточке ============ */
+.sx-bchip{position:relative;z-index:3;display:inline-flex;align-items:stretch;align-self:flex-start;margin-top:4px;overflow:hidden;border:1px solid color-mix(in srgb,var(--c1,#2f5bd6) 38%,var(--sx-line));border-radius:8px;background:#fff;color:var(--navy);font:700 12.5px/1.25 var(--sans);transition:border-color .25s,transform .3s var(--ease),box-shadow .3s}
+.sx-bchip:hover{transform:translateY(-2px);border-color:var(--c1,var(--blue));box-shadow:0 10px 18px -12px rgba(11,26,51,.5)}
+.sx-bchip .sx-bt{width:42px;border-radius:0;background:var(--c1,var(--navy));color:var(--ink,#fff)}
+.sx-bchip .sx-bt b{font-size:17px}
+.sx-bchip .sx-bt small{color:inherit;opacity:.85;font-size:8.5px}
+.sx-bchip>span:last-child{display:flex;align-items:center;padding:7px 12px}
+
+/* ============ Бренд: «Путь с брендом» ============ */
+.sx-route-sec{padding:clamp(4px,1.4vw,18px) 0 clamp(26px,4vw,50px)}
+.sx-route{--g:clamp(12px,1.8vw,22px);list-style:none;margin:20px 0 0;padding:0;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:var(--g)}
+.sx-station{position:relative;display:flex;flex-direction:column;border:1px solid var(--line-soft);border-top:4px solid var(--sx-line);border-radius:var(--sx-r);background:#fff;animation:sxIn .6s var(--ease) both;animation-delay:calc(var(--i,0)*120ms)}
+.sx-station.first{border-top-color:var(--c1,#2f5bd6);box-shadow:var(--sh)}
+.sx-station:not(:last-child)::after{content:"→";position:absolute;z-index:2;right:calc(var(--g) / -2 - 12px);top:34px;width:24px;height:24px;display:grid;place-items:center;border:1px solid var(--sx-line);border-radius:6px;background:var(--milk-2);font:700 13px/1 var(--sans);color:var(--slate)}
+.sx-st-top{display:flex;align-items:center;gap:12px;padding:14px 20px 0}
+.sx-num{font:500 clamp(44px,4.6vw,60px)/.86 var(--serif);letter-spacing:-.03em;color:color-mix(in srgb,var(--c1,#2f5bd6) 28%,#fff)}
+.sx-station.first .sx-num{color:var(--c1,var(--blue))}
+.sx-st-k{font:700 11px/1 var(--sans);letter-spacing:.16em;text-transform:uppercase;color:var(--slate)}
+.sx-st-top em{margin-left:auto;padding:5px 8px;border-radius:4px;background:var(--c1,var(--blue));color:var(--ink,#fff);font:700 10.5px/1 var(--sans);font-style:normal;letter-spacing:.06em;text-transform:uppercase}
+.sx-st-body{flex:1;display:flex;flex-direction:column;align-items:flex-start;gap:8px;padding:12px 20px 20px}
+.sx-st-body h3{margin:0;font:500 clamp(19px,1.8vw,23px)/1.2 var(--serif)}
+.sx-st-body p{margin:0;flex:1;color:var(--muted);font:400 14px/1.55 var(--sans)}
+.sx-st-body .btn{margin-top:6px;min-height:44px}
+@media (max-width:760px){
+  .sx-route{grid-template-columns:1fr}
+  .sx-station:not(:last-child)::after{right:auto;left:24px;top:auto;bottom:calc(var(--g) / -2 - 12px);transform:rotate(90deg)}
+}
+
+/* ============ Товар: «Освоить в работе» и «Что будет после запроса» ============ */
+.sx-hook{display:flex;align-items:center;flex-wrap:wrap;gap:8px 14px;margin-top:16px;padding:10px 14px 10px 10px;border:1px solid var(--sx-line);border-left:4px solid #3aa76d;border-radius:var(--sx-r);background:#fff;animation:sxIn .6s var(--ease) both}
+.sx-hook.off{border-left-color:var(--silver);padding-left:14px}
+.sx-hook-t{flex:1;min-width:200px;font:600 14px/1.4 var(--sans)}
+.sx-hook-a{margin-left:auto;min-height:44px;padding:0 4px;font:700 13px/1 var(--sans);color:var(--blue-d);display:inline-flex;align-items:center;gap:8px}
+.sx-hook-a:hover{color:var(--blue)}
+.sx-after-steps{margin-top:16px;padding:20px 20px 12px;border:1px solid var(--line-soft);border-top:4px solid var(--blue);border-radius:var(--sx-r);background:#fff;animation:sxIn .6s var(--ease) both}
+.sx-after-steps>b{font:700 11px/1 var(--sans);letter-spacing:.16em;text-transform:uppercase;color:var(--slate)}
+.sx-after-steps ol,.sx-steps3{list-style:none;margin:14px 0 0;padding:0}
+.sx-after-steps li,.sx-steps3 li{position:relative;display:flex;gap:12px;padding-bottom:14px}
+.sx-after-steps li:not(:last-child)::before{content:"";position:absolute;left:12px;top:30px;bottom:2px;border-left:1px dashed var(--silver)}
+.sx-after-steps li b,.sx-steps3 li b{display:block;font:600 14.5px/1.3 var(--sans)}
+.sx-after-steps li p,.sx-steps3 li p{margin:3px 0 0;font:400 13px/1.45 var(--sans);color:var(--muted)}
+.sx-after-steps .sx-fine{margin:2px 0 8px}
+
+/* ============ Обучение: «Календарь встреч» ============ */
+.sx-tl-sec{padding:clamp(26px,4vw,54px) 0}
+.sx-tl-bar{margin-bottom:6px}
+.sx-tl-city{display:flex;flex-wrap:wrap;align-items:center;gap:8px}
+.sx-tl-city>span{margin-right:4px;font:700 11px/1 var(--sans);letter-spacing:.16em;text-transform:uppercase;color:var(--slate)}
+.sx-tl-city .chip{min-height:44px;border-radius:8px}
+.sx-tl-main{display:grid;grid-template-columns:minmax(250px,.62fr) 2fr;gap:clamp(14px,2.4vw,28px);margin-top:18px;align-items:start}
+.sx-tl-next{display:flex;flex-direction:column;align-items:flex-start;gap:8px;padding:clamp(20px,2.4vw,30px);border-top:5px solid var(--blue);border-radius:var(--sx-r);background:var(--navy);color:var(--milk);box-shadow:var(--sh-h)}
+.sx-tl-soon{font:700 11px/1 var(--sans);letter-spacing:.16em;text-transform:uppercase;color:var(--silver)}
+.sx-tl-in{font:500 clamp(36px,4.2vw,54px)/1 var(--serif);letter-spacing:-.02em}
+.sx-tl-t{margin:6px 0 0;font:600 16px/1.35 var(--sans)}
+.sx-tl-m{margin:0;color:var(--silver);font:500 13.5px/1.4 var(--sans)}
+.sx-tl-next .btn{margin-top:10px;min-height:46px}
+.sx-tl-next .btn-ghost{color:var(--milk);border-color:rgba(245,242,236,.4)}
+.sx-tl-free{margin:6px 0 0;color:var(--silver);font:500 12.5px/1.45 var(--sans)}
+.sx-tl-none{margin:0;color:var(--silver);font:500 14px/1.45 var(--sans)}
+/* календарик: сетка месяца и список встреч месяца */
+.sx-cal{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);gap:clamp(16px,2.4vw,30px);padding:clamp(16px,2.2vw,26px);border:1px solid var(--line-soft);border-top:5px solid var(--navy);border-radius:var(--sx-r);background:#fff;box-shadow:var(--sh);animation:sxIn .6s var(--ease) both}
+.sx-cal[hidden]{display:none}
+.sx-cal-h{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px}
+.sx-cal-m{margin:0;font:500 clamp(22px,2.4vw,30px)/1 var(--serif);letter-spacing:-.01em;text-align:center;flex:1}
+.sx-cal-m small{font:700 12px/1 var(--sans);letter-spacing:.14em;color:var(--slate);vertical-align:middle}
+.sx-cal-nav{flex:none;width:44px;height:44px;display:grid;place-items:center;border:1px solid var(--sx-line);border-radius:8px;background:#fff;color:var(--navy);transition:background-color .25s,border-color .25s,opacity .25s}
+.sx-cal-nav .ic{width:16px;height:16px}
+.sx-cal-nav.prev .ic{transform:scaleX(-1)}
+.sx-cal-nav:hover:not(:disabled){background:var(--mist);border-color:var(--navy)}
+.sx-cal-nav:disabled{opacity:.3;cursor:default}
+.sx-cal-wd,.sx-cal-grid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:5px}
+.sx-cal-wd{margin-bottom:5px}
+.sx-cal-wd span{padding:4px 0;text-align:center;font:700 11px/1 var(--sans);letter-spacing:.12em;text-transform:uppercase;color:var(--slate)}
+.sx-cal-wd .we{color:#b4553b}
+.sx-cd{position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;min-height:48px;border:1px solid transparent;border-radius:6px;color:var(--navy);background:var(--milk-2)}
+.sx-cd.off{background:transparent;border-color:transparent}
+.sx-cd b{font:500 17px/1 var(--serif)}
+.sx-cd.we b{color:#b4553b}
+.sx-cd.past{background:transparent}
+.sx-cd.past b{color:var(--silver);font-weight:400}
+.sx-cd.today{box-shadow:inset 0 0 0 2px var(--blue)}
+.sx-cd.today b{color:var(--blue-d)}
+.sx-cd.ev{border:1px solid color-mix(in srgb,var(--c1) 55%,var(--line-soft));border-top:4px solid var(--c1);background:color-mix(in srgb,var(--c1) 13%,#fff);transition:transform .3s var(--ease),box-shadow .3s}
+.sx-cd.ev b,.sx-cd.we.ev b,.sx-cd.today.ev b{color:var(--navy);font-weight:600}
+.sx-cd.ev:hover,.sx-cd.ev:focus-visible{transform:translateY(-3px);box-shadow:0 14px 18px -12px rgba(11,26,51,.6);z-index:1}
+.sx-cd.ev.near{background:var(--navy);border-color:var(--navy);border-top-color:var(--c1)}
+.sx-cd.ev.near b{color:var(--milk)}
+.sx-cd-bars{display:flex;gap:3px}
+.sx-cd-bars i{display:block;width:12px;height:3px;border-radius:1px}
+.sx-cal-leg{display:flex;align-items:center;flex-wrap:wrap;gap:4px 8px;margin:12px 0 0;font:500 12.5px/1 var(--sans);color:var(--muted)}
+.sx-cal-leg i{display:inline-block;width:14px;height:14px;border-radius:3px;margin-left:8px}
+.sx-cal-leg i:first-child{margin-left:0}
+.sx-cal-leg .t{box-shadow:inset 0 0 0 2px var(--blue);background:#fff}
+.sx-cal-leg .e{border-top:3px solid var(--blue);background:color-mix(in srgb,var(--blue) 14%,#fff);border-left:1px solid color-mix(in srgb,var(--blue) 40%,var(--line-soft));border-right:1px solid color-mix(in srgb,var(--blue) 40%,var(--line-soft));border-bottom:1px solid color-mix(in srgb,var(--blue) 40%,var(--line-soft))}
+.sx-cal-lt{display:block;margin-bottom:10px;font:700 11px/1 var(--sans);letter-spacing:.16em;text-transform:uppercase;color:var(--slate)}
+.sx-cal-list{list-style:none;margin:0;padding:0;display:grid;gap:8px}
+.sx-cal-row{display:flex;align-items:center;gap:12px;padding:10px 12px 10px 10px;border:1px solid var(--line-soft);border-left:4px solid var(--c1);border-radius:8px;background:#fff;color:inherit;transition:transform .3s var(--ease),box-shadow .3s,border-color .25s}
+.sx-cal-row .sx-bt{background:var(--c1);color:var(--ink,#fff)}
+.sx-cal-row:hover,.sx-cal-row:focus-visible{transform:translateX(3px);box-shadow:var(--sh);border-color:var(--c1)}
+.sx-cal-t{display:flex;flex-direction:column;gap:2px;min-width:0;flex:1}
+.sx-cal-t b{font:700 11px/1.2 var(--sans);letter-spacing:.12em;text-transform:uppercase;color:var(--slate)}
+.sx-cal-t em{font:600 14.5px/1.3 var(--sans);font-style:normal;color:var(--navy)}
+.sx-cal-t span{font:500 12.5px/1.3 var(--sans);color:var(--muted)}
+.sx-cal-go{flex:none;color:var(--blue)}
+.sx-cal-go .ic{width:16px;height:16px}
+.sx-cal-empty{margin:0;padding:16px;border:1px dashed var(--sx-line);border-radius:8px;color:var(--muted);font:500 14px/1.5 var(--sans)}
+@media (max-width:1060px){.sx-cal{grid-template-columns:1fr}}
+@media (max-width:860px){.sx-tl-main{grid-template-columns:1fr}}
+@media (max-width:480px){.sx-cal-wd,.sx-cal-grid{gap:4px}.sx-cd{min-height:44px}.sx-cd b{font-size:16px}.sx-cal{padding:14px 12px}}
+
+/* ============ Мероприятие: «Как проходит запись» ============ */
+.sx-ticket{position:relative;margin-top:20px;max-width:580px;padding:20px 24px 18px;border:1px solid var(--sx-line);border-left:5px solid var(--c1,var(--blue));border-radius:var(--sx-r);background:#fff;box-shadow:var(--sh);animation:sxIn .6s var(--ease) both}
+.sx-tk-t{display:block;font:700 11px/1 var(--sans);letter-spacing:.16em;text-transform:uppercase;color:var(--slate)}
+.sx-steps3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;margin-top:14px;padding-bottom:12px;border-bottom:1px dashed var(--sx-line)}
+.sx-steps3 li{flex-direction:column;gap:8px;padding:0}
+.sx-tk-row{display:flex;flex-wrap:wrap;align-items:center;gap:8px 14px;margin-top:14px}
+.sx-tk-row .btn{min-height:44px}
+.sx-tk-after{margin:12px 0 0;font:500 13.5px/1.5 var(--sans);color:var(--muted)}
+.sx-tk-after .lnk{margin-left:6px}
+@media (max-width:640px){.sx-steps3{grid-template-columns:1fr}.sx-steps3 li{flex-direction:row}}
+
+/* ============ Партнёры: «Ваш ориентир» внутри калькулятора ============ */
+.sx-lad{display:grid;gap:12px;margin-top:22px;padding-top:20px;border-top:1px dashed rgba(185,194,208,.35)}
+.sx-lad-t{font:700 11px/1 var(--sans);letter-spacing:.16em;text-transform:uppercase;color:var(--silver)}
+.sx-lad-bars{list-style:none;display:flex;gap:8px;align-items:flex-end;height:70px;margin:0;padding:0}
+.sx-lad-bars li{flex:1;height:var(--h);display:flex;align-items:flex-end;padding:6px 8px;border-radius:6px 6px 3px 3px;background:rgba(245,242,236,.07);border:1px dashed rgba(185,194,208,.4);color:var(--silver);transition:background .5s,border-color .5s,transform .5s var(--ease),color .5s}
+.sx-lad-bars li b{font:500 18px/1 var(--serif)}
+.sx-lad-bars li.on{background:linear-gradient(180deg,var(--blue),color-mix(in srgb,var(--blue) 50%,#fff));border-color:transparent;color:#fff;transform:translateY(-3px)}
+.sx-lad-msg{margin:0;min-height:42px;color:var(--milk);font:600 14.5px/1.45 var(--sans)}
+.sx-lad .btn,.sx-lad .btn.btn-sm{align-self:flex-start;min-height:46px}
+.sx-lad .sx-fine{color:var(--slate)}
+
+/* ============ Новости: действие по теме новости ============ */
+.sx-nact{display:inline-flex;align-items:center;gap:6px;margin-top:10px;min-height:36px;font:700 12.5px/1 var(--sans);color:var(--blue-d);border-bottom:1px dashed currentColor;align-self:flex-start}
+.sx-nact:hover{color:var(--blue)}
+.sx-nact .ic{width:14px;height:14px}
+
+/* ============ Компания: «Ваш регион» ============ */
+.sx-region{padding:clamp(34px,5vw,70px) 0}
+.sx-reg-tabs{display:flex;flex-wrap:wrap;width:max-content;max-width:100%;margin:6px 0 18px;border:1px solid var(--sx-line);border-radius:var(--sx-r);overflow:hidden;background:#fff}
+.sx-reg-n{display:flex;align-items:baseline;gap:8px;min-height:50px;padding:0 22px;border-right:1px solid var(--line-soft);font:600 14.5px/1 var(--sans);color:var(--muted);transition:background-color .25s,color .25s}
+.sx-reg-n:last-child{border-right:0}
+.sx-reg-n small{font:700 10.5px/1 var(--sans);letter-spacing:.1em;color:var(--slate)}
+.sx-reg-n:hover{background:var(--mist-2);color:var(--navy)}
+.sx-reg-n.on{background:var(--navy);color:var(--milk)}
+.sx-reg-n.on small{color:var(--silver)}
+.sx-reg-card{display:grid;grid-template-columns:1.2fr 1fr;gap:clamp(18px,3vw,40px);padding:clamp(22px,3vw,38px);border:1px solid var(--line-soft);border-left:5px solid var(--blue);border-radius:var(--sx-r);background:#fff;animation:sxIn .5s var(--ease) both}
+.sx-reg-col h3{margin:12px 0 8px;font:500 clamp(22px,2.2vw,28px)/1.2 var(--serif)}
+.sx-reg-col p{margin:0 0 8px}
+.sx-reg-col .row{margin-top:14px}
+.sx-reg-col .btn{min-height:44px}
+.sx-reg-ev{padding-left:clamp(0px,2vw,28px);border-left:1px dashed var(--sx-line)}
+@media (max-width:760px){
+  .sx-reg-tabs{width:100%}.sx-reg-n{flex:1 1 50%;border-bottom:1px solid var(--line-soft);padding:0 14px}
+  .sx-reg-card{grid-template-columns:1fr}.sx-reg-ev{padding:18px 0 0;border:0;border-top:1px dashed var(--sx-line)}
+}
+
+/* ============ Контакты: «Сейчас на связи» ============ */
+.sx-status{display:flex;flex-wrap:wrap;align-items:center;gap:14px 26px;max-width:860px;margin-top:22px;padding:14px 20px;border:1px solid var(--line-soft);border-left:5px solid #3aa76d;border-radius:var(--sx-r);background:#fff;animation:sxIn .6s var(--ease) both}
+.sx-status.off{border-left-color:#d9a441}
+.sx-live{display:flex;align-items:center;gap:8px}
+.sx-live i{display:block;width:4px;height:20px;background:#3aa76d;animation:sxBlink 2s ease-in-out infinite}
+.sx-live em{padding:5px 8px;border-radius:4px;background:rgba(58,167,109,.13);color:#2b7f52;font:700 10.5px/1 var(--sans);font-style:normal;letter-spacing:.14em;text-transform:uppercase}
+.sx-status.off .sx-live i{background:#d9a441;animation:none}
+.sx-status.off .sx-live em{background:rgba(217,164,65,.17);color:#8d6414}
+.sx-status>div:nth-child(2){display:flex;flex-direction:column;gap:2px}
+.sx-status b{font:700 16px/1.3 var(--sans)}
+.sx-status span{font:500 14px/1.4 var(--sans);color:var(--muted)}
+.sx-status .sx-live em{font:700 10.5px/1 var(--sans);color:#2b7f52}
+.sx-status.off .sx-live em{color:#8d6414}
+.sx-tips{margin-left:auto;display:flex;flex-wrap:wrap;align-items:center;gap:6px 8px}
+.sx-tips span{font:600 12.5px/1 var(--sans);color:var(--slate)}
+.sx-tips em{padding:6px 10px;border-radius:5px;background:var(--mist-2);font:600 12.5px/1 var(--sans);font-style:normal;color:var(--navy)}
+@media (max-width:760px){.sx-tips{margin-left:0}}
+
+@media print{.sx-mod,.sx-fork{display:none!important}}
+/* кнопки слоя — не меньше 44 px (удобно нажимать пальцем) */
+.sx-mod .btn.btn-sm,[data-sx-mod] .btn.btn-sm{min-height:44px}

@@ -66,5 +66,5 @@ module.exports = function product(ctx, C, P, p) {
       <div class="grid g4">${related.map((q, i) => C.productCard(P, q, i)).join('')}</div>
     </div></section>` : ''}
 
-    ${C.ctaBand(P, 'product-cta')}`;
+    ${C.ctaBand(P, 'product-cta', C.closingCfg('product') && Object.assign({}, C.closingCfg('product'), {vars: {product: p.name, ref: p.id}}))}`;
 };

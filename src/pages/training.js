@@ -64,7 +64,7 @@ function trainingPage(ctx, C, P) {
     <div class="grid g3">${training.articles.slice(0, 3).map(C.articleCard).join('')}</div>
   </div></section>
 
-  ${C.ctaBand(P, 'training-cta')}`;
+  ${C.ctaBand(P, 'training-cta', C.closingCfg('training') && Object.assign({}, C.closingCfg('training'), {vars: {}}))}`;
 }
 
 function eventPage(ctx, C, P, e) {

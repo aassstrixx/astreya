@@ -33,16 +33,17 @@
      Шрифты подключаются асинхронно: страница стартует сразу, даже если Google Fonts медленный (у всех гарнитур есть запасные — см. --serif / --sans). -->
 <script>(function(){var l=document.createElement('link');l.rel='stylesheet';l.href='https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Playfair+Display:ital,wght@0,500;0,600;1,400;1,500&family=Manrope:wght@400;500;600;700&display=swap';document.head.appendChild(l);})();</script>
 <noscript><link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Playfair+Display:ital,wght@0,500;0,600;1,400;1,500&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet"></noscript>
-<link rel="stylesheet" href="../css/base.css?v=ee0249d5">
-<link rel="stylesheet" href="../css/components.css?v=ee0249d5">
-<link rel="stylesheet" href="../css/pages.css?v=ee0249d5">
-<link rel="stylesheet" href="../css/responsive.css?v=ee0249d5">
-<link rel="stylesheet" href="../css/motion.css?v=ee0249d5">
-<link rel="stylesheet" href="../css/redesign.css?v=ee0249d5">
-<link rel="stylesheet" href="../css/backdrops.css?v=ee0249d5">
-<link rel="stylesheet" href="../css/extras.css?v=ee0249d5">
-<link rel="stylesheet" href="../css/guide.css?v=ee0249d5">
-<link rel="stylesheet" href="../css/sales.css?v=ee0249d5">
+<link rel="stylesheet" href="../css/base.css?v=e30c6c70">
+<link rel="stylesheet" href="../css/components.css?v=e30c6c70">
+<link rel="stylesheet" href="../css/pages.css?v=e30c6c70">
+<link rel="stylesheet" href="../css/responsive.css?v=e30c6c70">
+<link rel="stylesheet" href="../css/motion.css?v=e30c6c70">
+<link rel="stylesheet" href="../css/redesign.css?v=e30c6c70">
+<link rel="stylesheet" href="../css/backdrops.css?v=e30c6c70">
+<link rel="stylesheet" href="../css/extras.css?v=e30c6c70">
+<link rel="stylesheet" href="../css/guide.css?v=e30c6c70">
+<link rel="stylesheet" href="../css/sales.css?v=e30c6c70">
+<link rel="stylesheet" href="../css/sales-pages.css?v=e30c6c70">
 
 <script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Главная","item":"https://aassstrixx.github.io/astreya/"},{"@type":"ListItem","position":2,"name":"Каталог","item":"https://aassstrixx.github.io/astreya/catalog.html"},{"@type":"ListItem","position":3,"name":"EVA","item":"https://aassstrixx.github.io/astreya/brands/eva.html"},{"@type":"ListItem","position":4,"name":"EVA","item":"https://aassstrixx.github.io/astreya/products/eva.html"}]}</script>
 </head>
@@ -166,12 +167,12 @@
     
 
     <section class="sec"><div class="wrap">
-    <div class="cta-band reveal pushin">
+    <div class="cta-band reveal pushin" data-sx-closing="product-cta">
       <div class="cb-copy">
-        <span class="eyebrow">Партнёрам</span>
-        <h2>Станьте партнёром Астреи</h2>
-        <p>Оригинальная продукция, обучение вашей команды и поддержка менеджеров. Оставьте заявку — мы свяжемся и обсудим условия сотрудничества.</p>
-        <div class="row"><a class="btn btn-light" href="../partners.html" data-track="partner_cta" data-place="product-cta">Стать партнёром <svg class="ic" viewBox="0 0 20 20" aria-hidden="true" focusable="false"><path d="M3.5 10h13M11.5 5l5 5-5 5"/></svg></a><a class="btn btn-ghost-inv" href="tel:+74959255162" data-track="phone_click"><svg class="ic" viewBox="0 0 20 20" aria-hidden="true" focusable="false"><path d="M5 3h3l1.4 3.6-1.8 1.2a9 9 0 0 0 4.6 4.6l1.2-1.8L17 12v3a2 2 0 0 1-2 2A12 12 0 0 1 3 5a2 2 0 0 1 2-2Z"/></svg> +7 (495) 925-51-62</a></div>
+        <span class="eyebrow">Запрос по продукту</span>
+        <h2>Нужны условия по «EVA»?</h2>
+        <p>Менеджер ответит по наличию, условиям поставки и тому, как освоить продукт на семинаре. Заявка ни к чему не обязывает.</p>
+        <div class="row"><button class="btn btn-light" type="button" data-act="form" data-type="product" data-ref="eva-dev" data-track="closing_cta" data-place="product-cta">Запросить информацию <svg class="ic" viewBox="0 0 20 20" aria-hidden="true" focusable="false"><path d="M3.5 10h13M11.5 5l5 5-5 5"/></svg></button><a class="btn btn-ghost-inv" href="../training.html" data-track="closing_cta" data-place="product-cta">Расписание семинаров <svg class="ic" viewBox="0 0 20 20" aria-hidden="true" focusable="false"><path d="M3.5 10h13M11.5 5l5 5-5 5"/></svg></a></div>
       </div>
       <div class="cb-art" aria-hidden="true"><span class="logo inv"><svg class="lgo" viewBox="46 338 836 436"><use href="#logo-art"/></svg></span></div>
     </div>
@@ -224,20 +225,21 @@
 <div id="modal" aria-hidden="true"></div>
 <div id="toast" role="status" aria-live="polite"></div>
 
-<script src="../js/shared.js?v=ee0249d5" defer></script>
-<script src="../js/data.js?v=ee0249d5" defer></script>
-<script src="../js/core.js?v=ee0249d5" defer></script>
-<script src="../js/motion.js?v=ee0249d5" defer></script>
-<script src="../js/pages.js?v=ee0249d5" defer></script>
-<script src="../js/hero-mark.js?v=ee0249d5" defer></script>
-<script src="../js/redesign.js?v=ee0249d5" defer></script>
-<script src="../js/backdrops.js?v=ee0249d5" defer></script>
-<script src="../js/extras.js?v=ee0249d5" defer></script>
-<script src="../js/explore.js?v=ee0249d5" defer></script>
-<script src="../js/assistant-brain.js?v=ee0249d5" defer></script>
-<script src="../js/stella-policy.js?v=ee0249d5" defer></script>
-<script src="../js/assistant.js?v=ee0249d5" defer></script>
-<script src="../js/guide.js?v=ee0249d5" defer></script>
-<script src="../js/sales.js?v=ee0249d5" defer></script>
+<script src="../js/shared.js?v=e30c6c70" defer></script>
+<script src="../js/data.js?v=e30c6c70" defer></script>
+<script src="../js/core.js?v=e30c6c70" defer></script>
+<script src="../js/motion.js?v=e30c6c70" defer></script>
+<script src="../js/pages.js?v=e30c6c70" defer></script>
+<script src="../js/hero-mark.js?v=e30c6c70" defer></script>
+<script src="../js/redesign.js?v=e30c6c70" defer></script>
+<script src="../js/backdrops.js?v=e30c6c70" defer></script>
+<script src="../js/extras.js?v=e30c6c70" defer></script>
+<script src="../js/explore.js?v=e30c6c70" defer></script>
+<script src="../js/assistant-brain.js?v=e30c6c70" defer></script>
+<script src="../js/stella-policy.js?v=e30c6c70" defer></script>
+<script src="../js/assistant.js?v=e30c6c70" defer></script>
+<script src="../js/guide.js?v=e30c6c70" defer></script>
+<script src="../js/sales.js?v=e30c6c70" defer></script>
+<script src="../js/sales-pages.js?v=e30c6c70" defer></script>
 </body>
 </html>
