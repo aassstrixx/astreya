@@ -395,7 +395,11 @@
     finally { setBusy(false); ctrl = null; current = null; skipping = false; const f = $('#asst-in'); if (f && isOpen && !mobile()) f.focus(); }
   }
 
-  function welcome() { ensureBrain(); const hr = new Date().getHours(), hi = hr < 5 ? 'Доброй ночи' : hr < 12 ? 'Доброе утро' : hr < 18 ? 'Добрый день' : 'Добрый вечер'; return {r: 'b', t: hi + '! Я Стелла, мини-консультант «Астреи». Подскажу по каталогу и брендам, обучению, условиям сотрудничества и контактам: подберу продукты по задаче и объясню выбор, сравню товары, посчитаю скидку, найду ближайший семинар.' + (NAVI ? ' Могу и провести по сайту: открою нужный раздел, покажу, где что находится, выставлю фильтры в каталоге и расскажу о товарах, которые вы отметите для сравнения.' : '') + (ai ? ' А ещё с удовольствием отвечу на любые вопросы — не только про сайт.' : '') + ' С чего начнём?'}; }
+  function welcome() {
+    ensureBrain(); const hr = new Date().getHours(), hi = hr < 5 ? 'Доброй ночи' : hr < 12 ? 'Доброе утро' : hr < 18 ? 'Добрый день' : 'Добрый вечер';
+    const own = brain && brain.welcome ? brain.welcome(ctxOf(), bst, {nav: NAVI, ai: !!ai}) : '';          // приветствие «своими словами» (data/stella/voice.json): по странице и времени суток, варианты чередуются
+    return {r: 'b', t: own || hi + '! Я Стелла, мини-консультант «Астреи». Подскажу по каталогу и брендам, обучению, условиям сотрудничества и контактам: подберу продукты по задаче и объясню выбор, сравню товары, посчитаю скидку, найду ближайший семинар.' + (NAVI ? ' Могу и провести по сайту: открою нужный раздел, покажу, где что находится, выставлю фильтры в каталоге и расскажу о товарах, которые вы отметите для сравнения.' : '') + (ai ? ' А ещё с удовольствием отвечу на любые вопросы — не только про сайт.' : '') + ' С чего начнём?'};
+  }
   /* первое сообщение приходит как живое: Стелла «печатает», затем сообщение отправляется и печатается */
   async function introWelcome() {
     const l = $('#asst-log'); $$('.asst-m', l).forEach(e => e.remove()); qrPaint([]); skipping = false; introOn = true; setBusy(true);
@@ -426,12 +430,10 @@
   function reset() { stopGen(); setBusy(false); ensureBrain(); bst = brain.newState(); msgs = [welcome()]; msgs.chips = brain.starters(ctxOf(), bst); persist(); A.toast && A.toast('Диалог очищен'); introWelcome(); }
 
   /* ---------- подсказка у кнопки, внимание, голос ---------- */
-  function tipText() {
-    const c = ctxOf(), pg = c.page;
-    return c.product && P[c.product] ? 'Привет, я Стелла! Подскажу по этому товару?' : pg === 'catalog' ? 'Я Стелла. Помочь подобрать средство?' : pg === 'training' || pg === 'event' ? 'Я Стелла. Найти ближайший семинар?' : pg === 'partners' ? 'Я Стелла. Посчитать скидку по закупке?' : 'Привет, я Стелла! Есть вопрос — подскажу.';
-  }
+  function tipText() { return 'Добро пожаловать! Я Стелла — помогу выбрать, подскажу и расскажу.'; }
   function maybeTip() {
-    if (NAVI) return;          // с навигатором приветственную подсказку показывает js/guide.js (по странице и поведению посетителя)
+    if (NAVI) return;          // с навигатором приветствие показывает js/guide.js
+    if (ctxOf().page !== 'home') return;          // всплывающая подсказка — только на главной, на остальных страницах окон нет
     const fb = $('#asst-fab'); if (fb && fb.classList.contains('long') && !isOpen) { clearTimeout(tipT); tipT = setTimeout(maybeTip, 2500); return; }          // пока раскрыта подпись «Спросить Стеллу», подсказку не показываем: не дублировать
     if (isOpen || interacted || document.body.classList.contains('x-intro') || document.body.classList.contains('locked') || document.body.classList.contains('menu-open')) return;
     let seen = false; try { seen = !!sessionStorage.getItem(TIPKEY); } catch (e) {} if (seen) return;

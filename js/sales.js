@@ -201,7 +201,7 @@
   }
   function paintHead() {
     const h = UI && UI.host ? $('.pchat-prog', UI.host) : null; if (!h) return; const fl = flow();
-    h.innerHTML = UI.redirect ? '<span class="plan-prog-t">' + esc(CH.redirecting) + '</span>' : UI.result ? '<span class="plan-prog-t">План готов</span>' : progress(Math.min(UI.i + 1, fl.length), fl.length);
+    h.innerHTML = UI.result ? '<span class="plan-prog-t">План готов</span>' : progress(Math.min(UI.i + 1, fl.length), fl.length);
   }
   function stepOptions(name) {
     if (name === 'tasks') return (D.tasks || []).map(t => ({id: t.id, label: t.label}));
@@ -220,7 +220,7 @@
     c.hidden = false; c.setAttribute('data-step', name);
     toEnd();
     if (name === 'after') {
-      c.innerHTML = '<div class="pc-chips">' + quick('toplan', CH.btnToPlan, {fill: 1}) + '<span class="pc-chips-l">' + esc(CH.editLabel) + '</span>' + flow().map(n => quick('editstep', (CH.stepNames || {})[n] || n, {v: n})).join('') + quick('again', CH.btnAgain) + '</div>'; return;
+      c.innerHTML = '<div class="pc-chips">' + (isRange(UI.st) ? catalogLink(UI.st) + quick('toplan', CH.btnToPlan) : quick('toplan', CH.btnToPlan, {fill: 1})) + '<span class="pc-chips-l">' + esc(CH.editLabel) + '</span>' + flow().map(n => quick('editstep', (CH.stepNames || {})[n] || n, {v: n})).join('') + quick('again', CH.btnAgain) + '</div>'; return;
     }
     if (name === 'resume') { c.innerHTML = '<div class="pc-chips">' + quick('resume-yes', CH.btnResumeYes, {fill: 1}) + quick('again', CH.btnResumeNo) + '</div>'; return; }
     const S = STEPS[name] || {}, multi = name === 'tasks', st = UI.st, sel = multi ? st.tasks : [st[name]], max = S.max || 3, full = multi && st.tasks.length >= max;
@@ -266,7 +266,7 @@
     return '<section class="plan-sec plan-facts"><h3>' + esc(FC.title) + '</h3><ul class="plan-facts-l">' + list.map(f => '<li class="pf-' + f.src + '"><span class="pf-tag">' + esc(f.tag) + '</span><p>' + esc(f.text) + '</p><small>' + esc(f.src === 's' ? FC.tagSite : FC.tagGeneral) + '</small></li>').join('') + '</ul><p class="plan-fine muted">' + esc(FC.note) + '</p></section>';
   }
   function finalMessages(pl) {
-    const F = CH.finish || {}, st = pl.st, ev = pl.events[0], n = flow().length;
+    const F = CH.finish || {}, st = pl.st, ev = pl.events[0], n = flow().filter(x => !(UI.auto && UI.auto[x])).length;          // вопросы, которые не задавали (город при цели «ассортимент»), не считаем
     const tasksTxt = pl.tasks.map(t => T[t].label).join(', '), brandsTxt = pl.brands.map(id => B[id].name).join(', '), evTxt = ev ? dShort(ev.date) + ', ' + ev.city : '';
     const eventLine = ev ? fill(F.eventLine.some, {event: evTxt}) : F.eventLine.none;
     const productsLine = pl.products.length ? fill(F.productsLine.some, {n: pl.products.length, nword: plural(pl.products.length, 'товар', 'товара', 'товаров'), brands: brandsTxt}) : F.productsLine.none;
@@ -278,6 +278,10 @@
     const out = ['<p>' + esc(lead + ' ' + body) + '</p><p class="pc-lead">' + esc(roleLine) + '</p><p class="pc-lead">' + esc(F.closer) + '</p>'];
     const g = factsFor(pl).filter(f => f.src === 'g' && f.tag !== 'Для старта' && !(st.role && f.tag === optLabel('role', st.role)))[0];
     if (g && !UI.updated) out.push('<p>' + esc(fill(F.factTeaser, {fact: g.text})) + '</p>');
+    if (pl.goal === 'range' && pl.tasks.length) {          // про каталог — напоследок: сначала сводка, переход — когда человек будет готов
+      const tip = ev ? fill(CH.rangeTip, {event: evTxt}) : CH.rangeTipNone;
+      out.push('<p>' + esc(fill(CH.rangeHint, {task: T[pl.tasks[0]].label}) + (pl.tasks.length > 1 ? ' ' + CH.rangeMore : '')) + '</p><p class="pc-lead">' + esc(tip) + '</p>');
+    }
     return out;
   }
 
@@ -289,21 +293,17 @@
     if (!UI || UI.run !== run) return;
     setComp(name);
   }
-  /* «Сразу подобрать ассортимент»: человек хочет смотреть продукцию — переводим в каталог по его задаче, а про обучение лишь советуем (без вопросов про город и без плана с семинарами) */
-  async function toCatalog(run) {
-    const st = UI.st, t0 = st.tasks[0], path = 'catalog.html?task=' + encodeURIComponent(t0), ev = upcoming()[0];
-    savePlan(st, true); local.del(KD); UI.redirect = true; track('plan_range', {tasks: st.tasks.join(','), task: t0}); paintHead();
-    const lead = esc(fill(CH.rangeGo, {task: labelOf('tasks', t0)})) + (st.tasks.length > 1 ? ' ' + esc(CH.rangeMore) : '');
-    const tip = esc(ev ? fill(CH.rangeTip, {event: dShort(ev.date) + ', ' + ev.city}) : CH.rangeTipNone);
-    await say('<p>' + lead + '</p><p class="pc-lead">' + tip + '</p>'); if (!UI || UI.run !== run) return;
-    const c = $('.pchat-comp', UI.host); if (!c) return; c.hidden = false; c.setAttribute('data-step', 'range');
-    c.innerHTML = '<div class="pc-chips">' + link(path, 'pc-quick fill', esc(CH.btnCatalog) + ' ' + I.arrow, 'plan-range', ' data-pl-go="catalog"') + link('training.html', 'pc-quick', esc(CH.btnTrain), 'plan-range-train') + quick('again', CH.btnAgain) + '</div>'; toEnd();
-    clearTimeout(UI.rangeT); UI.rangeT = setTimeout(() => { const a = $('[data-pl-go="catalog"]', UI.host); if (a && UI && UI.run === run) a.click(); }, Math.round(4200 / speed()));          // сами откроем каталог, если человек не выбрал иное
+  /* «Сразу подобрать ассортимент»: человек хочет смотреть продукцию — вопрос про город не задаём (обучение лишь советуем), план собираем сразу, а в каталог он переходит САМ, когда прочитает сводку: синяя кнопка, без автоперехода */
+  const isRange = st => st.goal === 'range' && (st.tasks || []).some(t => T[t]);
+  const catalogPath = st => 'catalog.html?task=' + encodeURIComponent((st.tasks || []).filter(t => T[t])[0] || '');
+  const catalogLink = st => link(catalogPath(st), 'pc-quick fill', esc(CH.btnCatalog) + ' ' + I.arrow, 'plan-range', ' data-pl-go="catalog"');
+  function syncSkips() {          // для цели «ассортимент» город не спрашиваем; передумал (обучение/и то и другое) — вопрос возвращается
+    if (isRange(UI.st)) { if (flow().indexOf('city') >= 0 && !answered('city')) { UI.skip.city = true; (UI.auto = UI.auto || {}).city = 1; } }
+    else if (UI.auto) { Object.keys(UI.auto).forEach(n => { if (UI.skip[n] && !UI.st[n]) UI.skip[n] = false; }); UI.auto = null; }
   }
   async function advance(run, lead) {
     if (!UI || UI.run !== run) return;
-    if (UI.st.goal === 'range' && UI.st.tasks.length) return toCatalog(run);
-    const k = firstOpen(); if (k < 0) return complete(run);
+    syncSkips(); const k = firstOpen(); if (k < 0) return complete(run);
     const open = flow().filter(n => !answered(n)).length, left = leftLine(open);
     await ask(k, [lead, left].filter(Boolean).join(' '));
   }
@@ -335,8 +335,7 @@
     const i = flow().indexOf(name); if (i < 0) return; const run = ++UI.run; UI.updated = true; bubble('u', esc(CH.editLabel + ' ' + ((CH.stepNames || {})[name] || name).toLowerCase())); setComp(null); await ask(i, esc(CH.editLead));
   }
   function resetAll(msg) {
-    clearTimeout(UI.rangeT); UI.redirect = false;
-    local.del(KP); local.del(KD); UI.st = emptySt(); UI.skip = {}; UI.i = 0; UI.result = false; UI.started = false; UI.updated = false; const res = $('[data-plan-result]', UI.host); if (res) res.innerHTML = ''; const l = logEl(); if (l) l.innerHTML = '';
+    local.del(KP); local.del(KD); UI.st = emptySt(); UI.skip = {}; UI.auto = null; UI.i = 0; UI.result = false; UI.started = false; UI.updated = false; const res = $('[data-plan-result]', UI.host); if (res) res.innerHTML = ''; const l = logEl(); if (l) l.innerHTML = '';
   }
   async function begin(lead) {
     const run = ++UI.run; paintHead(); setComp(null);
@@ -366,7 +365,6 @@
   const fmtBrain = tx => esc(String(tx || '').replace(/\[\[[^\]]*\]\]/g, '').replace(/[`#>]/g, '').trim().slice(0, 700)).replace(/\*\*([^*]+)\*\*/g, '<b>$1</b>').replace(/\n+/g, '<br>');
   async function onText(raw) {
     const text = String(raw || '').trim().slice(0, 400); if (!text || !UI) return;
-    clearTimeout(UI.rangeT); UI.redirect = false;
     const run = ++UI.run, st = UI.st, max = (STEPS.tasks || {}).max || 3; bubble('u', esc(text)); setComp(null);
     let patch = interpret(text), keys = Object.keys(patch);
     if (isQuestion(text) && keys.length === 1 && keys[0] === 'goal') { patch = {}; keys = []; }          // «как проходит доставка заказа?» — это вопрос, а не ответ про цель
@@ -451,7 +449,7 @@
     return '<div class="plan-res"><div class="plan-card card"><span class="eyebrow in">' + esc(PL.eyebrow || '') + '</span><h2 id="plan-h" tabindex="-1">' + esc(RES.title) + '</h2><ul class="plan-sum">' + chips + '</ul><p class="plan-fine muted">' + esc(RES.fine) + '</p></div>' + factsHTML(pl) +
       order.join('') +
       '<div class="plan-cta card"><button class="btn btn-fill btn-lg plan-main" type="button" data-pl="main" data-sx="plan-main">' + esc(RES.main) + ' ' + I.arrow + '</button><p class="plan-mainfine muted">' + esc(RES.mainFine) + '</p>' +
-      '<div class="plan-sec-actions">' + (X.requestList && pl.products.length ? '<button class="btn btn-ghost" type="button" data-pl="addall">' + esc(RES.addList) + '</button>' : '') +
+      '<div class="plan-sec-actions">' + (isRange(st) ? link(catalogPath(st), 'btn btn-ghost', esc(fill(RES.catalog, {task: T[pl.tasks[0]].label})) + ' ' + I.arrow, 'plan-range-card') : '') + (X.requestList && pl.products.length ? '<button class="btn btn-ghost" type="button" data-pl="addall">' + esc(RES.addList) + '</button>' : '') +
       '<button class="btn btn-ghost" type="button" data-pl="copy">' + esc(RES.copyLink) + '</button>' + (A.stella ? '<button class="btn btn-ghost" type="button" data-pl="ask">' + esc(RES.ask) + '</button>' : '') +
       '<button class="btn btn-lnk" type="button" data-pl="again">' + esc(RES.restart) + '</button></div></div></div>';
   }

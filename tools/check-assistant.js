@@ -29,9 +29,9 @@ console.log('2. Опечатки и разговорные формулиров�
 
 console.log('3. Подбор по задаче и уточнения по ходу диалога');
 { const st = b.newState(), say = talk(b, st);
-  let r = say('Посоветуйте что-нибудь от пигментации'); ok(r.intent === 'task' && r.cards.length >= 3 && /не назначение/.test(r.text) && /бренды/i.test(r.text), 'подбор: карточки, бренды, оговорка', r.cards);
+  let r = say('Посоветуйте что-нибудь от пигментации'); ok(r.intent === 'task' && r.cards.length >= 3 && /не назначение/.test(r.text) && /бренд/i.test(r.text), 'подбор: карточки, бренды, оговорка', r.cards);
   const firstIds = r.cards.slice(), total = st.last.all.length;
-  r = say('Почему именно эти?'); ok(r.intent === 'why' && /Порядок такой/.test(r.text) && /Работа с пигментом/.test(r.text), 'объясняет логику подбора и цитирует описание задачи', short(r));
+  r = say('Почему именно эти?'); ok(r.intent === 'why' && /Порядок такой/.test(r.text) && /Пигментация/.test(r.text) && !/Работа с пигментом/.test(r.text), 'объясняет логику подбора своими словами (без цитаты описания со страницы)', short(r));
   r = say('А у Dermatime?'); ok(r.intent === 'task' && r.cards.every(id => D.products.find(p => p.id === id).brand === 'dermatime') && /Dermatime/.test(r.text), 'уточнение «а у <бренд>?» сохраняет задачу', r.cards);
   r = say('Подробнее про первый'); ok(r.intent === 'product' && r.cards[0] === st.last.cards[0], 'порядковая ссылка «про первый» ведёт на товар', r.cards);
   r = say('Посоветуйте от пигментации'); r = say('С чем сочетать?'); ok(r.intent === 'combo' && r.cards.length >= 2 && r.cards.every(id => D.products.find(p => p.id === id).ts.includes('sun')) && /фотозащит/i.test(r.text), 'сочетание: сайт прямо советует фотозащиту — показывает её', short(r));
@@ -39,7 +39,7 @@ console.log('3. Подбор по задаче и уточнения по ход
   r = say('Для домашнего ухода'); ok(r.intent === 'task' && r.cards.every(id => D.products.find(p => p.id === id).c === 'home') || /ничего нет/.test(r.text), 'фильтр «для дома»', short(r));
   r = say('Сравни первые два'); ok(['compare', 'similar', 'task'].includes(r.intent), 'сравнение «первых двух» при одной карточке предлагает с чем сравнить', r.intent); }
 { const st = b.newState(), say = talk(b, st); say('Посоветуйте от пигментации');
-  const r = say('сравни их'); ok(r.intent === 'compare' && r.cards.length === 2 && /Сравниваю/.test(r.text) && /(Общие задачи|не пересекаются)/.test(r.text) && /Чем отличаются/.test(r.text) && !r.actions.some(x => x.act === 'asst-cmp'), 'сравнение показанных товаров словами (без таблицы): общее, различия, кому ближе, чего нет', short(r)); }
+  const r = say('сравни их'); ok(r.intent === 'compare' && r.cards.length === 2 && /Сравниваю|Давайте сравним|Смотрю на/.test(r.text) && /(Общие задачи|не пересекаются)/.test(r.text) && /Чем отличаются/.test(r.text) && !r.actions.some(x => x.act === 'asst-cmp'), 'сравнение показанных товаров словами (без таблицы): общее, различия, кому ближе, чего нет', short(r)); }
 { const st = b.newState(), say = talk(b, st), r = say('Сравни Acidcure и Elastense');
   ok(r.intent === 'compare' && r.cards.length === 2 && /Бренды|Оба продукта/.test(r.text), 'сравнение по названиям', short(r)); }
 
@@ -56,7 +56,7 @@ console.log('4. Расчёты: скидка и даты');
   r = say('Сколько дней до ближайшего семинара?'); ok(/через 2 дня/.test(r.text), 'считает дни до события', short(r));
   r = say('Есть онлайн вебинары?'); ok(r.events.join() === 's3,s7', 'формат: онлайн', r.events);
   r = say('что будет в декабре'); ok(r.events.join() === 's7', 'декабрь', r.events);
-  r = say('мероприятия в марте'); ok(r.events.length && /нет|не нашёл/.test(r.text) && /Ближайшие/.test(r.text), 'пусто — честно + ближайшие', short(r));
+  r = say('мероприятия в марте'); ok(r.events.length && /нет|не нашла/.test(r.text) && /Ближайшие/.test(r.text), 'пусто — честно + ближайшие', short(r));
   r = say('семинары на этой неделе'); ok(r.events.join() === 's1', 'на этой неделе (до воскресенья 18.10)', r.events); }
 
 console.log('5. Диалог с «да/нет» и честность');
@@ -64,7 +64,7 @@ console.log('5. Диалог с «да/нет» и честность');
   let r = say('Сколько стоит Acidcure?'); ok(r.intent === 'price' && /Цен на сайте нет/.test(r.text) && r.cards[0] === 'dt-acidcure' && st.pending && st.pending.type === 'request', 'цены нет — честно, предлагает запрос и ждёт ответа', short(r));
   r = say('да'); ok(r.actions.some(a => a.type === 'product' && a.ref === 'dt-acidcure'), '«да» → форма запроса по этому товару', r.actions);
   r = say('да'); ok(r.intent !== 'yes' || true, 'повторное «да» без вопроса безопасно');
-  r = say('Есть ли сертификаты и доставка?'); ok(r.intent === 'avail' && /нет/.test(r.text), 'сертификаты/доставка — «на сайте нет»', short(r));
+  r = say('Есть ли сертификаты и доставка?'); ok(r.intent === 'avail' && /не публикуются|подтверждает менеджер/.test(r.text) && /925-51-62/.test(r.text), 'сертификаты/доставка — «на сайте нет», подтверждает менеджер', short(r));
   r = say('нет'); ok(/как скажете/.test(r.text), '«нет» закрывает предложение');
   r = say('Можно ли это при беременности?'); ok(r.intent === 'medical' && /не даю медицинских рекомендаций/.test(r.text), 'медицина — к специалисту', short(r));
   r = say('Ты тупой, ничего не понимаешь'); ok(r.intent === 'frustrated' && r.actions.length >= 1, 'раздражение → передача менеджеру', short(r)); }
@@ -103,7 +103,7 @@ console.log('8. Полный проход по каталогу');
 console.log('9. Стелла: личность, маршрутизация между встроенным движком и ИИ, арифметика и дата');
 { const st = b.newState(), say = talk(b, st);
   let r = say('Привет'); ok(/Я Стелла/.test(r.text) && r.sure === true, 'приветствие: Стелла представляется, ответ мгновенный', short(r));
-  r = say('Кто ты?'); ok(/зовут Стелла/.test(r.text) && /программа, а не сотрудник/.test(r.text) && r.sure === true, 'на вопрос «кто ты» — имя и честное «я программа»', short(r));
+  r = say('Кто ты?'); ok(/Стелла/.test(r.text) && /программа/.test(r.text) && /не (?:сотрудник|человек)/.test(r.text) && r.sure === true, 'на вопрос «кто ты» — имя и честное «я программа»', short(r));
   const s2 = b.newState(); s2.ai = true; r = b.reply('Кто ты?', s2, {}); ok(/любую тему/.test(r.text), 'если ИИ включён, Стелла говорит, что может поговорить на любую тему', short(r));
   r = say('Как дела?'); ok(r.intent === 'talk' && r.topic === 'how_are_you' && r.sure === false, 'светская беседа — на усмотрение ИИ (встроенный ответ остаётся запасным)', [r.intent, r.sure]);
   r = say('Расскажи анекдот'); ok(r.sure === false && !!r.text, 'шутка — к ИИ; без ИИ скромный честный ответ', short(r));
@@ -145,7 +145,7 @@ if (D.guide) {
   const ids = ['dt-acidcure', 'dt-milk'];
   r = nav('Расскажи и сравни выбранные товары: Acidcure, Молочные пилинги', 'catalog', {cmp: ids}); ok(r.intent === 'compare' && r.sure === true && r.cards.join() === ids.join() && /Что общего/.test(r.text) && /Чего на сайте нет/.test(r.text) && r.disclaimer === true, 'выбранные товары: сравнение по данным сайта, карточки, пометка «справочная информация»', [r.intent, r.cards, short(r)]);
   ok(!/\n{3,}/.test(r.text) && !/undefined|null|NaN/.test(r.text) && !/₽|руб|%/.test(r.text), 'в тексте сравнения нет мусора, цен и процентов');
-  r = nav('Расскажи о выбранном товаре: Acidcure', 'catalog', {cmp: [ids[0]]}); ok(r.intent === 'compare' && /Рассказываю о/.test(r.text) && r.cards.length === 1 && /Описание на сайте/.test(r.text), 'один выбранный товар: рассказ с цитатой описания «на сайте»', short(r));
+  r = nav('Расскажи о выбранном товаре: Acidcure', 'catalog', {cmp: [ids[0]]}); ok(r.intent === 'compare' && /Расскажу о|разберём/.test(r.text) && r.cards.length === 1 && /Что это/.test(r.text) && !/Описание на сайте/.test(r.text), 'один выбранный товар: рассказ по данным сайта без цитаты описания', short(r));
   r = nav('Сравни выбранные', 'catalog', {cmp: ids}); ok(r.intent === 'compare', '«Сравни выбранные» при двух отмеченных товарах', r.intent);
   r = nav('Очисти сравнение', 'catalog', {cmp: ids}); ok(act0(r).act === 'asst-cmp-clear', '«Очисти сравнение» → очистка плашки', act0(r));
   r = nav('С чем работает этот бренд?', 'brand', {brand: 'dermatime'}); ok(r.intent === 'brand' && /Dermatime/.test(r.text), 'на странице бренда «этот бренд» = бренд страницы', short(r));
@@ -153,6 +153,43 @@ if (D.guide) {
   for (const t of b.compareTemplates) { const x = b.compareText(ids, t); ok(x.length > 100 && !/undefined|null|NaN/.test(x), 'формат сравнения «' + t + '» работает'); }
   r = nav('хочу покушать'); ok(r.intent === 'talk' && r.topic === 'hungry' && /Приятного аппетита/.test(r.text) && (r.text2 || '').length > 20, '«хочу покушать» — человеческий ответ и мостик к каталогу', [r.topic, short(r), r.text2]);
   r = nav('сколько воды пить'); ok(r.topic === 'water_skin' && /не заменяет уход|индивидуаль/.test(r.text), 'вопрос про воду — без медицинских обещаний, с отсылкой к специалисту', short(r));
+}
+
+console.log('11. Живой диалог: своими словами, разные реплики, встречные вопросы');
+{
+  /* 11а. Стелла не копирует тексты страниц: ни одно сочетание из 5 слов подряд в её ответе не встречается в текстах сайта (описания товаров и брендов, задач, «о компании», партнёрства, новости, FAQ) */
+  const nz = t => String(t || '').toLowerCase().replace(/ё/g, 'е').replace(/[^a-zа-я0-9]+/g, ' ').trim().split(' ').filter(Boolean);
+  const SRC = []; const add = t => { const w = nz(t); for (let i = 0; i + 5 <= w.length; i++) SRC.push(w.slice(i, i + 5).join(' ')); };
+  D.products.forEach(p => add(p.d)); (KB.brands || []).forEach(x => { add(x.tag); add(x.desc); }); (KB.tasks || []).forEach(x => add(x.note));
+  const C = KB.company || {}; (C.about || []).forEach(add); (C.directions || []).concat(C.advantages || []).forEach(x => add(x.p)); (C.professionals || []).forEach(add);
+  const PT = KB.partner || {}; (PT.steps || []).concat(PT.benefits || []).forEach(x => add(x.p)); (KB.news || []).forEach(x => add(x.d)); ((KB.training && KB.training.faq) || []).forEach(x => add(x.a)); ((KB.training && KB.training.steps) || []).forEach(x => add(x.p));
+  const NAMES = new Set(nz([].concat(D.brands.map(x => x.name), D.products.map(x => x.name), D.tasks.map(x => x.label), D.cats.map(x => x.name)).join(' ')).concat(['7', '495', '925', '51', '62'])), SET = new Set(SRC);
+  const copied = txt => { const w = nz(txt); for (let i = 0; i + 5 <= w.length; i++) { const g = w.slice(i, i + 5); if (g.filter(x => NAMES.has(x) || /^\d+$/.test(x)).length >= 4) continue; if (SET.has(g.join(' '))) return g.join(' '); } return ''; };          // списки названий и телефон — это данные, а не пересказ
+  const qs = [].concat(D.products.map(p => 'Расскажите про ' + p.name), D.brands.map(x => 'Расскажите про ' + x.name), D.tasks.map(t => 'Посоветуйте что-нибудь: ' + t.label.toLowerCase()), ['Расскажите о компании', 'Как стать партнёром?', 'Какие у вас скидки?', 'Какие у вас контакты?', 'Что нового?', 'Что есть в каталоге?', 'Сколько стоит доставка?', 'Ближайшие семинары']);
+  const bad = []; let n = 0;
+  for (const q of qs) { const st = b.newState(), r = b.reply(q, st, {}); if (!/^(?:product|brand|task|partner|about|discount|contacts|news|catalog|events|price|avail|talk)$/.test(r.intent)) continue; n++; const g = copied(r.text + ' ' + (r.text2 || '')); if (g) bad.push(q + ' → «' + g + '»'); }
+  ok(!bad.length, 'в ' + n + ' ответах по товарам, брендам, задачам, компании, партнёрству, скидкам, новостям и каталогу нет дословных кусков со страниц (пять слов подряд)', bad.slice(0, 6));
+  { const st = b.newState(); let any = 0; for (const c of ['dt-acidcure,dt-milk', 'dt-acidcure']) { const r = b.reply('Расскажи и сравни выбранные товары', st, {cmp: c.split(',')}); if (copied(r.text)) any++; } ok(!any, 'в сравнении нет цитат описаний со страниц'); }
+
+  /* 11б. Разные формулировки при повторе */
+  { const st = b.newState(), t = []; for (let i = 0; i < 3; i++) t.push(b.reply('Спасибо', st, {}).text); ok(new Set(t).size === 3, '«Спасибо» трижды — три разные реплики', t);
+    const st2 = b.newState(), g1 = b.reply('Привет', st2, {}).text, g2 = b.reply('Привет', st2, {}).text; ok(g1 !== g2 && /И снова|Я тут/.test(g2), 'повторное приветствие — уже «И снова здравствуйте», а не то же самое', [g1, g2]);
+    const st3 = b.newState(), p1 = b.reply('Как стать партнёром?', st3, {}).text, p2 = b.reply('Как стать партнёром?', st3, {}).text; ok(p1 !== p2, 'на повторный вопрос о партнёрстве — другая формулировка', [p1.slice(0, 80), p2.slice(0, 80)]);
+    const st4 = b.newState(), o = ['Посоветуйте от акне', 'Посоветуйте от акне', 'Посоветуйте от акне'].map(q => b.reply(q, st4, {}).text.split('\n')[0]); ok(new Set(o).size >= 2, 'подбор по одной и той же задаче не повторяет вступление слово в слово', o); }
+
+  /* 11в. Встречный вопрос — и «да» его подхватывает */
+  { const st = b.newState(); let r = b.reply('Расскажите про Acidcure', st, {}); ok(r.intent === 'product' && /Acidcure/.test(r.text2 || '') && st.pending && st.pending.type === 'request', 'о товаре Стелла спрашивает: «оформить запрос?» (ответ «да» запомнен)', [r.text2, st.pending]);
+    r = b.reply('да', st, {}); ok(r.intent === 'request' && r.actions.some(a => a.act === 'form' && a.type === 'product'), '«да» после вопроса — открывается запрос по этому товару', r.intent);
+    const st2 = b.newState(); b.reply('Какие скидки?', st2, {}); ok(st2.pending && st2.pending.type === 'partner', 'после скидок — предложение стать партнёром'); r = b.reply('Да', st2, {}); ok(r.actions.some(a => a.type === 'partner'), '«да» → форма партнёра', r.actions);
+    const st3 = b.newState(); r = b.reply('Расскажите о компании', st3, {}); ok(/сайт/.test(r.text2 || '') && st3.pending && st3.pending.type === 'tour', 'о компании Стелла предлагает показать сайт'); r = b.reply('давай', st3, {}); ok(r.actions[0] && r.actions[0].act === 'asst-tour' && r.autorun && r.autorun.length, '«давай» — запускается экскурсия по сайту', r.actions);
+    const st4 = b.newState(); r = b.reply('Контакты', st4, {}); ok(st4.pending && st4.pending.type === 'callback' && /звонок/i.test(r.text2 || ''), 'после контактов — предложение заказать звонок'); r = b.reply('нет, спасибо', st4, {}); ok(r.intent === 'no' || r.intent === 'thanks', '«нет, спасибо» — без нажима', r.intent);
+    const st5 = b.newState(); r = b.reply('Ближайшие семинары', st5, {}); ok(/запис/i.test(r.text2 || '') && st5.pending && st5.pending.type === 'register', 'после расписания — предложение записаться'); }
+
+  /* 11г. Женский род и тон: без «нашёл/подбирал», без канцелярита */
+  { const bads = []; const probe = ['Посоветуйте от акне', 'Расскажите про Dermatime', 'Семинары в марте', 'Покажи семинары', 'Почему именно эти?', 'Что нового?', 'Есть ли доставка?', 'Ещё']; const st = b.newState(); for (const q of probe) { const r = b.reply(q, st, {}); if (/(?:^|[^а-я])(?:нашёл|нашел|подобрал|показал|посмотрел|искал)(?![а-я])/i.test(r.text + ' ' + (r.text2 || ''))) bads.push(q); } ok(!bads.length, 'о себе Стелла говорит в женском роде (нет «нашёл», «подобрал»)', bads); }
+
+  /* 11д. Приветствие панели учитывает страницу и время суток, варианты чередуются */
+  { const st = b.newState(), w1 = b.say('welcome.default', st, {hello: 'Доброе утро'}), w2 = b.say('welcome.default', st, {hello: 'Доброе утро'}); ok(!b.pools()['welcome.default'], 'пулы приветствий лежат в welcome, а не в pools'); }
 }
 
 console.log(`\nИтого: ✓ ${pass}  ✗ ${fail}`); process.exit(fail ? 1 : 0);

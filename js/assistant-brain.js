@@ -240,6 +240,17 @@
     const brandList = ids => ids.map(K.brandName).filter(Boolean).join(', ');
     const lower = s => String(s || '').charAt(0).toLowerCase() + String(s || '').slice(1);
     const hello = () => { const h = K.now().getHours(); return h < 5 ? 'Доброй ночи' : h < 12 ? 'Доброе утро' : h < 18 ? 'Добрый день' : 'Добрый вечер'; };
+    /* ---------- голос Стеллы (data/stella/voice.json → KB.stella.voice) ----------
+       Ответы без ИИ складываются из ЕЁ слов, а не из абзацев со страниц сайта: факты (названия, задачи, числа, даты) берутся из данных, а оборот речи — из пула.
+       Варианты идут по кругу (счётчик в состоянии диалога), поэтому повторный вопрос не получает ту же фразу. Нет пула (библиотека выключена) — берётся запасной текст dflt. */
+    const VPOOL = k => { const v = SL && SL.voice && SL.voice.pools; return v && v[k] && v[k].length ? v[k] : null; };
+    function V(key, st, vars, dflt) {
+      const pool = VPOOL(key); if (!pool) return dflt == null ? '' : String(dflt).replace(/\{([^{}]+)\}/g, (a, k) => vars && vars[k] != null ? vars[k] : '');
+      st.vc = st.vc || {}; const c = st.vc[key] || 0; st.vc[key] = c + 1;
+      return slFill(pool[c % pool.length], st, vars);
+    }
+    const nw = (n, a, b, c) => n + ' ' + plural(n, a, b, c);
+    const KIND_ONE = {serum: 'сыворотка', cream: 'крем', gel: 'гель', peel: 'пилинг', ampoule: 'ампулы для мезотерапии', sun: 'солнцезащитное средство', cleanse: 'средство для очищения', hair: 'средство для волос', decor: 'тональное средство или корректор', device: 'устройство'};          // «программы» и «препараты серий» — общие слова: тип не называем
 
     function starters(ctx, st) {
       ctx = ctx || {};
@@ -256,20 +267,24 @@
     }
 
     function productAnswer(p, st, intro) {
-      const x = p.x || {}, lines = [intro || ('**' + p.name + '** — ' + K.brandName(p.brand) + ', ' + lower(CAT[p.c] || '') + (KIND[p.k] ? ' (' + lower(KIND[p.k]) + ')' : '') + '.')];
-      if (p.d) lines.push(p.d);
-      if ((p.ts || []).length) lines.push('Подходит для задач: ' + p.ts.map(t => lower(TASK[t] || t)).join(', ') + (p.n ? '. Это новинка каталога.' : '.'));
-      if (x.volume) lines.push('Объём: ' + x.volume + '.'); if (x.usage) lines.push('Применение: ' + x.usage + '.');
-      lines.push('Состав, цену и наличие на сайте не указываем — их подтверждает менеджер; можно отправить запрос по этому товару.');
-      st.last = {intent: 'product', cards: [p.id], all: [p.id], offset: 1, tasks: (p.ts || []).slice(), brand: p.brand, product: p.id};
-      return R(lines.join('\n\n'), {cards: [p.id], actions: [act.form('product', 'Запросить информацию', p.id)], links: [link('products/' + p.slug + '.html', 'Страница товара')], chips: ['С чем сочетать?', 'С чем сравнить?', 'Ближайшие семинары'], intent: 'product', steps: ['Открываю карточку товара…']});
+      const x = p.x || {}, brand = K.brandName(p.brand), cat = CAT[p.c] || '', kind = lower(KIND[p.k] || ''), tasksTxt = (p.ts || []).map(t => lower(TASK[t] || t)).join(', ');
+      const lines = [(intro || V('product.open', st, {name: '**' + p.name + '**', brand, cat}, '{name} — ' + brand + ', ' + lower(cat) + '.')) + (!intro && KIND_ONE[p.k] ? ' ' + V('product.kind', st, {kind: KIND_ONE[p.k]}, 'По типу это {kind}.') : '')];
+      if ((p.ts || []).length) lines.push(V('product.tasks', st, {tasks: tasksTxt}, 'Подходит для задач: {tasks}.') + (p.n ? ' ' + V('product.new', st, {}, 'Это новинка каталога.') : ''));
+      const facts = []; if ((x.actives || []).length) facts.push(V('product.actives', st, {actives: x.actives.join(', ')}, 'Ключевые компоненты: {actives}.')); if (x.volume) facts.push('Объём — ' + x.volume + '.'); if (x.usage) facts.push('Применение — ' + x.usage + '.'); if (facts.length) lines.push(facts.join(' '));
+      lines.push(V('product.gap', st, {}, 'Состав, цену и наличие на сайте не указываем — их подтверждает менеджер; можно отправить запрос по этому товару.'));
+      st.last = {intent: 'product', cards: [p.id], all: [p.id], offset: 1, tasks: (p.ts || []).slice(), brand: p.brand, product: p.id}; st.pending = {type: 'request', ref: p.id};
+      return R(lines.join('\n\n'), {text2: V('product.follow', st, {name: p.name}, ''), cards: [p.id], actions: [act.form('product', 'Запросить информацию', p.id)], links: [link('products/' + p.slug + '.html', 'Страница товара')], chips: ['С чем сочетать?', 'С чем сравнить?', 'Ближайшие семинары'], intent: 'product', steps: ['Открываю карточку товара…']});
     }
     function brandAnswer(b, st) {
-      const info = K.getBrand(b.id), ps = (D.products || []).filter(p => p.brand === b.id);
-      const lines = ['**' + info.name + '**' + (info.origin ? ' — ' + info.origin : '') + (info.summary ? '. ' + info.summary : '.')]; if (info.description) lines.push(info.description);
-      lines.push('В каталоге: ' + ps.length + ' ' + plural(ps.length, 'позиция', 'позиции', 'позиций') + (info.tasks.length ? '. Основные задачи: ' + info.tasks.map(lower).join(', ') : '') + '.');
+      const info = K.getBrand(b.id), kb = K.kbBrand(b.id), ps = (D.products || []).filter(p => p.brand === b.id), cnt = {}; ps.forEach(p => { cnt[p.c] = (cnt[p.c] || 0) + 1; });
+      const country = kb.country || '', grp = kb.group && kb.group !== country && !/решени/i.test(kb.group) ? kb.group : '';
+      const cats = Object.keys(cnt).sort((x, y) => cnt[y] - cnt[x]).map(c => lower(CAT[c] || '')).filter(Boolean).slice(0, 3).join(', ');
+      const lines = [country ? V('brand.open', st, {name: '**' + info.name + '**', country}, '{name} — {country}.') : V('brand.open.nocountry', st, {name: '**' + info.name + '**'}, '{name}.')];
+      if (grp) lines[0] += ' ' + V('brand.group', st, {group: grp}, 'Группа: {group}.');
+      if (cats) lines[0] += ' ' + V('brand.profile', st, {cats}, 'Разделы каталога: {cats}.');
+      lines.push(V('brand.count', st, {name: info.name, n: ps.length, nword: plural(ps.length, 'позиция', 'позиции', 'позиций'), tasks: info.tasks.length ? '; по задачам — ' + info.tasks.map(lower).join(', ') : ''}, 'В каталоге: {n} {nword}{tasks}.'));
       const first = showList(st, ps.map(p => p.id), {intent: 'brand', brand: b.id, tasks: []});
-      return R(lines.join('\n\n'), {cards: first, links: [link('brands/' + b.id + '.html', 'Страница бренда'), link('catalog.html?brand=' + b.id, 'Все продукты бренда')], chips: ps.length > 4 ? ['Ещё товары бренда', 'Ближайшие семинары'] : ['Ближайшие семинары', 'Как стать партнёром'], intent: 'brand', steps: ['Смотрю информацию о бренде…']});
+      return R(lines.join('\n\n'), {text2: V('brand.follow', st, {name: info.name}, ''), cards: first, links: [link('brands/' + b.id + '.html', 'Страница бренда'), link('catalog.html?brand=' + b.id, 'Все продукты бренда')], chips: ps.length > 4 ? ['Ещё товары бренда', 'Ближайшие семинары'] : ['Ближайшие семинары', 'Как стать партнёром'], intent: 'brand', steps: ['Смотрю информацию о бренде…']});
     }
     function taskAnswer(ids, st, filt) {
       filt = filt || {}; const id = ids[0], t = K.kbTask(id);
@@ -282,13 +297,13 @@
         return R('По задаче «' + label + '»' + (filt.brand ? ' у бренда ' + K.brandName(filt.brand) : '') + (filt.home === true ? ' для домашнего ухода' : filt.home === false ? ' для кабинета' : '') + ' в каталоге ничего нет.' + (base.length ? ' Зато по этой задаче есть: ' + alt.join(', ') + '.' : ''), {cards: base.slice(0, 3).map(p => p.id), chips: ['Все по задаче «' + label + '»', 'Другая задача'], intent: 'task'});
       }
       const first = showList(st, ps.map(p => p.id), {intent: 'task', tasks: ids, brand: filt.brand || '', home: filt.home});
-      lines.push('**' + label + '**' + (filt.brand ? ' · ' + K.brandName(filt.brand) : '') + (filt.home === true ? ' · для дома' : filt.home === false ? ' · для кабинета' : '') + '. ' + (t.note || ''));
-      const brands = ps.map(p => p.brand).filter((v, i, a) => a.indexOf(v) === i);
-      if (t.brands && t.brands.length) lines.push('Сайт называет основными для этой задачи бренды: ' + brandList(t.brands) + '.');
-      lines.push('Нашёл ' + ps.length + ' ' + plural(ps.length, 'позицию', 'позиции', 'позиций') + ' (' + brandList(brands) + '). ' + (ps.length > first.length ? 'Показываю первые ' + first.length + ' — напишите «ещё», чтобы увидеть остальные.' : ''));
-      lines.push('Это ориентир по каталогу, а не назначение: протокол определяет специалист по результатам консультации.');
+      const brands = ps.map(p => p.brand).filter((v, i, a) => a.indexOf(v) === i), where = (filt.brand ? ' · ' + K.brandName(filt.brand) : '') + (filt.home === true ? ' · для дома' : filt.home === false ? ' · для кабинета' : '');
+      lines.push(V('task.open', st, {label: '**' + label + '**' + where, n: ps.length, nword: plural(ps.length, 'позицию', 'позиции', 'позиций'), brands: brandList(brands)}, '{label}. Нашла {n} {nword} ({brands}).') + (ps.length > first.length ? ' ' + V('task.more', st, {m: first.length}, 'Показываю первые {m} — напишите «ещё».') : ''));
+      if (t.brands && t.brands.length) lines.push(V('task.brands', st, {brands: brandList(t.brands)}, 'Основные бренды для этой задачи: {brands}.'));
+      lines.push(V('task.note', st, {}, 'Это ориентир по каталогу, а не назначение: протокол определяет специалист по результатам консультации.'));
       const chips = ['Почему именно эти?', 'С чем сочетать?']; if (first.length > 1 && hasCompare) chips.push('Сравни первые два'); if (!filt.brand && brands.length > 1) chips.push('А у ' + K.brandName(brands[0]) + '?');
-      return R(lines.join('\n\n'), {cards: first, links: [link('catalog.html?task=' + ids[0], 'Все продукты по задаче')], chips: chips.slice(0, 4), intent: 'task', steps: ['Смотрю каталог по задаче…', 'Подбираю бренды…']});
+      const roleFollow = st.role && VPOOL('task.follow.' + st.role) && (st.turns || 0) % 2 === 1;          // помнит, кто спрашивает: то салону, то клинике — по-своему
+      return R(lines.join('\n\n'), {text2: roleFollow ? V('task.follow.' + st.role, st, {}) : V('task.follow', st, {}, ''), cards: first, links: [link('catalog.html?task=' + ids[0], 'Все продукты по задаче')], chips: chips.slice(0, 4), intent: 'task', steps: ['Смотрю каталог по задаче…', 'Подбираю бренды…']});
     }
     /* ---------- сравнение: текст по данным сайта; шаблон выбрала «арена» (tools/arena-stella.js), остальные оставлены для проверок ---------- */
     const nm = i => '**' + i.name + '**', lowT = t => lower(t), join = (a, w) => a.length > 1 ? a.slice(0, -1).join(', ') + ' ' + (w || 'и') + ' ' + a[a.length - 1] : a[0] || '';
@@ -297,27 +312,26 @@
     const firstSent = t => { const m = /^[\s\S]*?[.!?](?=\s|$)/.exec(String(t || '')); return (m ? m[0] : String(t || '')).trim(); };
     const CMPT = {
       /* A — «строки»: бренд / категория / вид / назначение / описание (как прежняя таблица, но словами) */
-      lines(f) {
-        const it = f.products, L = ['Сравниваю ' + join(it.map(nm)) + ' по данным сайта:', ''];
+      lines(f, st) {
+        const it = f.products, L = [V('compare.open', st || {}, {names: join(it.map(nm))}, 'Сравниваю {names} по данным сайта.') + ' Коротко по строкам:', ''];
         L.push('- Бренд: ' + it.map(i => i.name + ' — ' + i.brand).join('; ') + '.'); L.push('- Категория: ' + it.map(i => i.name + ' — ' + lowT(i.category)).join('; ') + '.'); L.push('- Вид: ' + it.map(i => i.name + ' — ' + lowT(i.kind || '—')).join('; ') + '.');
-        L.push('- Назначение: ' + it.map(i => i.name + ' — ' + (i.tasks.map(lowT).join(', ') || 'не указано')).join('; ') + '.'); L.push('- Описание на сайте: ' + it.map(i => i.name + ' — «' + firstSent(i.description).replace(/[.!\s]+$/, '') + '».').join(' '));
+        L.push('- Назначение: ' + it.map(i => i.name + ' — ' + (i.tasks.map(lowT).join(', ') || 'не указано')).join('; ') + '.');
         return L.join('\n');
       },
       /* B — «разделы»: общее → различия → кому что ближе → чего на сайте нет */
-      sections(f) {
-        const it = f.products, one = it.length === 1, L = [];
+      sections(f, st) {
+        const it = f.products, one = it.length === 1, L = []; st = st || {};
         if (one) {
-          const i = it[0]; L.push('Рассказываю о ' + nm(i) + ' по данным сайта.'); L.push('**Что это.** ' + i.category + ', ' + lowT(i.kind || 'продукт') + ' бренда ' + brandLine(i) + (i.brand_summary ? ' — «' + i.brand_summary + '»' : '') + '.');
-          L.push('**Для каких задач указан.** ' + (i.tasks.length ? i.tasks.map(lowT).join(', ') : 'на сайте не указано') + (i.new ? '. Новинка каталога' : '') + '.'); L.push('**Описание на сайте.** «' + String(i.description || '').replace(/[.!\s]+$/, '') + '».'); L.push('**Чего на сайте нет.** ' + capF(f.missing_on_site.join(', ')) + ' — это уточняет менеджер.');
+          const i = it[0]; L.push(V('compare.one', st, {name: nm(i)}, 'Расскажу о {name} по данным сайта.')); L.push('**Что это.** ' + i.category + ', ' + lowT(i.kind || 'продукт') + ' бренда ' + brandLine(i) + '.');
+          L.push('**Для каких задач указан.** ' + (i.tasks.length ? i.tasks.map(lowT).join(', ') : 'на сайте не указано') + (i.new ? '. Новинка каталога' : '') + '.'); L.push('**Чего на сайте нет.** ' + capF(f.missing_on_site.join(', ')) + ' — это уточняет менеджер.');
           return L.join('\n\n');
         }
-        L.push('Сравниваю ' + join(it.map(nm)) + ' по данным сайта.');
+        L.push(V('compare.open', st, {names: join(it.map(nm))}, 'Сравниваю {names} по данным сайта.'));
         const common = []; common.push(f.same_brand ? (it.length === 2 ? 'Оба продукта' : 'Все продукты') + ' — ' + brandLine(it[0]) + '.' : 'Бренды разные: ' + uniqBy(it, i => i.brand).map(b => brandLine(b) + ' — ' + join(it.filter(i => i.brand === b.brand).map(i => i.name))).join('; ') + '.');
-        if (f.shared_tasks.length) common.push('Общие задачи: ' + f.shared_tasks.map(lowT).join(', ') + (f.shared_task_notes[0] ? ' («' + f.shared_task_notes[0].note.replace(/[.!\s]+$/, '') + '»)' : '') + '.'); else common.push('По указанным на сайте задачам они не пересекаются.');
+        if (f.shared_tasks.length) common.push('Общие задачи: ' + f.shared_tasks.map(lowT).join(', ') + '.'); else common.push('По указанным на сайте задачам они не пересекаются.');
         if (f.same_category && f.same_kind) common.push('Категория и вид совпадают: ' + lowT(it[0].category) + ', ' + lowT(it[0].kind) + '.');
         L.push('**Что общего.** ' + common.join(' '));
         const diff = [];
-        if (!f.same_brand) { const bs = uniqBy(it.filter(i => i.brand_summary), i => i.brand); if (bs.length) diff.push('На сайте бренды описаны так: ' + bs.map(i => i.brand + ' — «' + i.brand_summary + '»').join('; ') + '.'); }
         if (!f.same_category) diff.push('Категории: ' + it.map(i => i.name + ' — ' + lowT(i.category)).join('; ') + '.'); if (!f.same_kind) diff.push('Вид: ' + it.map(i => i.name + ' — ' + lowT(i.kind || '—')).join('; ') + '.');
         const homeSet = it.filter(i => i.for_home), cab = it.filter(i => !i.for_home); if (homeSet.length && cab.length) diff.push('Домашний уход: ' + join(homeSet.map(i => i.name)) + '; для кабинета: ' + join(cab.map(i => i.name)) + '.');
         const un = it.filter(i => f.unique_tasks[i.id].length); if (un.length) diff.push('Только у ' + un.map(i => i.name + ': ' + f.unique_tasks[i.id].map(lowT).join(', ')).join('; ') + '.');
@@ -329,14 +343,14 @@
         return L.join('\n\n');
       },
       /* C — «визитки»: короткий профиль каждого и общий вывод */
-      cards(f) {
-        const it = f.products, L = ['Вот что известно по данным сайта:', '']; it.forEach(i => { L.push('**' + i.name + '** — ' + brandLine(i) + '; ' + lowT(i.category) + ', ' + lowT(i.kind || 'продукт') + '. Задачи: ' + (i.tasks.map(lowT).join(', ') || 'не указаны') + '. На сайте: «' + firstSent(i.description).replace(/[.!\s]+$/, '') + '».'); L.push(''); });
+      cards(f, st) {
+        const it = f.products, L = [V('compare.open', st || {}, {names: join(it.map(nm))}, 'Вот что известно по данным сайта.'), '']; it.forEach(i => { L.push('**' + i.name + '** — ' + brandLine(i) + '; ' + lowT(i.category) + ', ' + lowT(i.kind || 'продукт') + '. Задачи: ' + (i.tasks.map(lowT).join(', ') || 'не указаны') + '.'); L.push(''); });
         L.push(it.length > 1 ? '**Итог.** ' + (f.shared_tasks.length ? 'Общее — ' + f.shared_tasks.map(lowT).join(', ') + '; различия — в бренде, категории и дополнительных задачах.' : 'Пересечений по задачам нет: это продукты для разных целей.') + ' Состав и цену уточнит менеджер.' : '**Итог.** Состав, цену и применение уточнит менеджер.');
         return L.join('\n');
       },
       /* E — «вердикт»: сначала короткий вывод, затем по строке на товар и честная оговорка */
-      verdict(f) {
-        const it = f.products; if (it.length === 1) return CMPT.sections(f);
+      verdict(f, st) {
+        const it = f.products; if (it.length === 1) return CMPT.sections(f, st);
         const un = it.filter(i => f.unique_tasks[i.id].length).map(i => 'для «' + lowT(f.unique_tasks[i.id][0]) + '» — ' + nm(i));
         const head = f.shared_tasks.length ? 'общая задача — «' + lowT(f.shared_tasks[0]) + '»' + (un.length ? '; а ' + join(un) : '') + '.' : 'продукты решают разные задачи — ' + it.map(i => nm(i) + ': ' + (i.tasks.map(lowT).join(', ') || 'не указано')).join('; ') + '.';
         const L = ['**Коротко.** ' + capF(head), ''];
@@ -345,17 +359,17 @@
         return L.join('\n');
       },
       /* D — «коротко + вопрос»: пара предложений и встречный вопрос */
-      brief(f) {
+      brief(f, st) {
         const it = f.products; if (it.length === 1) return nm(it[0]) + ' — ' + brandLine(it[0]) + '; задачи: ' + (it[0].tasks.map(lowT).join(', ') || 'не указаны') + '. Чтобы подсказать точнее: для кабинета или для дома, и какая задача главная?';
         return 'Коротко: ' + join(it.map(nm)) + (f.shared_tasks.length ? ' объединяет задача «' + lowT(f.shared_tasks[0]) + '»' : ' решают разные задачи') + (f.same_brand ? ', бренд один — ' + it[0].brand : ', бренды разные: ' + join(it.map(i => i.brand))) + '. Чтобы подсказать точнее: для кабинета или для дома, и какая задача главная?';
       }
     };
     const CMP_TPL = (D.guide && D.guide.compare && D.guide.compare.template) || 'sections';
     function comparison(list, st, tpl) {
-      const ids = list.map(p => p.id), f = K.compareFacts(ids), body = (CMPT[tpl || CMP_TPL] || CMPT.sections)(f);
+      const ids = list.map(p => p.id), f = K.compareFacts(ids), body = (CMPT[tpl || CMP_TPL] || CMPT.sections)(f, st);
       st.last = {intent: 'compare', cards: ids, all: ids, offset: ids.length, tasks: f.shared_task_ids, brand: ''};
       const chips = list.length > 1 ? ['Для кабинета или для дома?', 'С чем сочетать?', 'Запросить условия', 'Добавить ещё товар'] : ['С чем сравнить?', 'С чем сочетать?', 'Запросить условия'];
-      return R(body, {cards: ids, actions: compact([{l: 'Запросить информацию', act: 'form', type: 'product', ref: ids[0]}]), chips, intent: 'compare', disclaimer: true, steps: ['Сравниваю по данным сайта…', 'Собираю общее и различия…']});
+      return R(body, {text2: V('compare.follow', st, {}, ''), cards: ids, actions: compact([{l: 'Запросить информацию', act: 'form', type: 'product', ref: ids[0]}]), chips, intent: 'compare', disclaimer: true, steps: ['Сравниваю по данным сайта…', 'Собираю общее и различия…']});
     }
 
     /* ---------- «навигатор»: команды по сайту (открыть страницу, показать место, провести по шагам, отфильтровать каталог, сравнить выбранное) ----------
@@ -392,21 +406,21 @@
       }
       /* экскурсия / «покажи, как…» */
       const tour = tourOf(n), howShow = W('покажи как|покажи,? как|объясни как|научи|проведи|экскурс|покажи сайт|что есть на сайте|пошагово|шаг за шагом|покажи шаги|покажи на сайте|как сделать|как можно|подскажи как|помоги').test(n);
-      if (tour && howShow && words0 <= 9) return NAV(tour.id === 'site' ? 'Хорошо, покажу сайт: четыре коротких шага — главная, каталог и бренды, подбор и товары, остальные разделы. Всё покажу прямо на странице; выйти можно в любой момент.' : 'Хорошо, покажу по шагам: **' + tour.title + '**. Подсвечу нужные места прямо на странице.', [act('Начать: ' + tour.title, 'asst-tour', {tour: tour.id})], {quiet: [0], chips: GTOURS.filter(t => t.id !== tour.id).slice(0, 3).map(t => t.title)});
+      if (tour && howShow && words0 <= 9) return NAV(tour.id === 'site' ? 'Хорошо, покажу сайт: шесть коротких остановок — главная, каталог, бренды и обучение, новости и подбор, партнёрам и о компании. Всё покажу прямо на странице; выйти можно в любой момент.' : 'Хорошо, покажу по шагам: **' + tour.title + '**. Подсвечу нужные места прямо на странице.', [act('Начать: ' + tour.title, 'asst-tour', {tour: tour.id})], {quiet: [0], chips: GTOURS.filter(t => t.id !== tour.id).slice(0, 3).map(t => t.title)});
       /* где находится / покажи место на странице */
       const where = W('где (?:находится|найти|найду|тут|здесь|у вас|можно найти|расположен|искать)|как найти|покажи где|покажи мне где|подсвети|покажи кнопку|на что нажать|куда нажать|где кнопка|где поле|где строка').test(n) || (/^где\s/.test(n) && words0 <= 5 && !cityOf(n) && !ents.products.length && !W('ближайш|когда|сколько|дата|во сколько|стоит|цена|купить|заказать|офис|адрес|находится ли').test(n));
       if (where) {
         const tg = targetOf(n, page);
         if (tg) {
           const here = tg.page === page || tg.page === '*', pg = pageById(tg.page);
-          if (here) return NAV('Показываю: **' + tg.t.label + '**. ' + tg.t.say, [act('Показать: ' + tg.t.label, 'asst-show', {target: tg.t.id})]);
+          if (here) return NAV(V('nav.show', st, {label: tg.t.label, say: Array.isArray(tg.t.say) ? tg.t.say[0] : tg.t.say}) || 'Показываю: **' + tg.t.label + '**. ' + tg.t.say, [act('Показать: ' + tg.t.label, 'asst-show', {target: tg.t.id})]);
           if (pg) return NAV('«' + tg.t.label + '» — на странице **' + pg.label + '**. Перейду и покажу.', [act('Перейти и показать', 'asst-go', {href: pg.href, show: tg.t.id})]);
         }
       }
       /* открыть страницу */
       const goVerb = W('открой|откройте|открыть|перейд|зайди|зайти|веди|отведи|на страницу|страницу|верни(?:сь)? на|вернись|перенеси меня|переключи на|давай на|хочу на|мне на').test(n), showVerb = W('покажи|показать|покажите|ведите').test(n);
       const pg = pageOf(n), clean = !ents.tasks.length && !ents.brands.length && !ents.products.length;
-      if (pg && ((goVerb && words0 <= 8) || (showVerb && words0 <= 4 && clean)) && !(where && targetOf(n, page))) return NAV('Открываю: **' + pg.label + '**.', [act('Открыть: ' + pg.label, 'asst-go', {href: pg.href})]);
+      if (pg && ((goVerb && words0 <= 8) || (showVerb && words0 <= 4 && clean)) && !(where && targetOf(n, page))) return NAV(V('nav.open', st, {label: pg.label}) || 'Открываю: **' + pg.label + '**.', [act('Открыть: ' + pg.label, 'asst-go', {href: pg.href})]);
       if (goVerb && words0 <= 8 && ents.products.length === 1 && !ents.brands.length) { const p = ents.products[0]; return NAV('Открываю страницу продукта **' + p.name + '**.', [act('Открыть: ' + p.name, 'asst-go', {href: 'products/' + p.slug + '.html'})]); }
       if (goVerb && words0 <= 8 && ents.brands.length === 1 && !ents.products.length && !ents.tasks.length) { const b = ents.brands[0]; return NAV('Открываю страницу бренда **' + b.name + '**.', [act('Открыть: ' + b.name, 'asst-go', {href: urlOfBrand(b.id)})]); }
       return null;
@@ -419,42 +433,46 @@
       let list = K.listEvents(q);
       const homeCity = !city && st.city ? st.city : ''; let usedCity = '';
       if (homeCity && !W('все|любой|любом').test(n)) { const mine = K.listEvents(Object.assign({}, q, {city: homeCity})); if (mine.length) { list = mine; usedCity = homeCity; } }
-      const ask = W('сколько дней|когда|через сколько|ближайш').test(n);
+      const ask = W('сколько дней|когда|через сколько|ближайш').test(n), ctxTxt = (per ? ' ' + per.label : '') + (city ? ' в городе ' + city : '');
       if (!list.length) {
         const any = K.listEvents({}).slice(0, 3);
         st.last = {intent: 'events', eventIds: any.map(e => e.id)};
-        return R('В расписании на сайте ' + (per ? per.label + ' ' : '') + (city ? 'в городе ' + city + ' ' : '') + 'мероприятий не нашёл.' + (any.length ? ' Ближайшие из остальных — ниже.' : ' Расписание может обновиться: следите за новостями или уточните у менеджера.'), {events: any.map(e => e.id), actions: compact([act.callback()]), links: [link('training.html', 'Всё расписание')], chips: ['Показать все семинары', 'Онлайн-вебинары'], intent: 'events', steps: ['Сверяю с расписанием…']});
+        return R((V('events.none', st, {ctx: ctxTxt}) || 'В расписании на сайте' + ctxTxt + ' мероприятий не нашла.') + (any.length ? ' Ближайшие из остальных — ниже.' : ' Расписание может обновиться: следите за новостями или уточните у менеджера.'), {events: any.map(e => e.id), actions: compact([act.callback()]), links: [link('training.html', 'Всё расписание')], chips: ['Показать все семинары', 'Онлайн-вебинары'], intent: 'events', steps: ['Сверяю с расписанием…']});
       }
       const shown = list.slice(0, 3); st.last = Object.assign({}, st.last, {intent: 'events', eventIds: shown.map(e => e.id), cards: [], all: [], offset: 0});
       const first = shown[0]; let head;
-      if (ask && !per && list.length) head = 'Ближайшее — **' + first.title + '**: ' + fmtDate(first.date) + ', ' + first.city + ' (' + lower(first.format) + '), ' + inDays(first.days_until) + '.';
-      else head = (usedCity ? 'Вы из города ' + usedCity + ' — показываю мероприятия там. ' : '') + (per ? 'Мероприятия ' + per.label : 'Ближайшие мероприятия') + (city ? ' (' + city + ')' : '') + ' — нашёл ' + list.length + ' ' + plural(list.length, 'мероприятие', 'мероприятия', 'мероприятий') + (list.length > shown.length ? ', показываю первые ' + shown.length : '') + ':';
-      return R(head, {events: shown.map(e => e.id), text2: 'Базовые семинары бесплатные; время проведения и условия подтверждает менеджер при регистрации.', links: [link('training.html', 'Всё расписание')], chips: ['Как записаться?', 'Сколько стоит участие?', usedCity ? 'Все города' : 'Онлайн-вебинары'], intent: 'events', steps: ['Сверяю с расписанием…']});
+      if (ask && !per && list.length) head = V('events.next', st, {title: first.title, date: fmtDate(first.date), city: first.city, fm: lower(first.format), days: inDays(first.days_until)}) || 'Ближайшее — **' + first.title + '**: ' + fmtDate(first.date) + ', ' + first.city + ' (' + lower(first.format) + '), ' + inDays(first.days_until) + '.';
+      else head = (usedCity ? 'Вы из города ' + usedCity + ' — показываю мероприятия там. ' : '') + (V('events.list', st, {n: list.length, nword: plural(list.length, 'мероприятие', 'мероприятия', 'мероприятий'), ctx: (per ? ' ' + per.label : '') + (city ? ' (' + city + ')' : '')}) || ((per ? 'Мероприятия ' + per.label : 'Ближайшие мероприятия') + (city ? ' (' + city + ')' : '') + ' — нашла ' + list.length + ' ' + plural(list.length, 'мероприятие', 'мероприятия', 'мероприятий') + ':')) + (list.length > shown.length ? ' Показываю первые ' + shown.length + '.' : '');
+      return R(head, {events: shown.map(e => e.id), text2: (V('events.free', st, {}) || 'Базовые семинары бесплатные; время проведения и условия подтверждает менеджер при регистрации.') + ' ' + V('events.follow', st, {}), links: [link('training.html', 'Всё расписание')], chips: ['Как записаться?', 'Сколько стоит участие?', usedCity ? 'Все города' : 'Онлайн-вебинары'], intent: 'events', steps: ['Сверяю с расписанием…']});
     }
     function discountAnswer(amount, st) {
-      st.last = Object.assign({}, st.last, {intent: 'discount'}); const d = K.discount(amount);
-      if (!amount) return R('Скидки по объёму закупки (ориентировочно): ' + d.tiers.map(t => 'от ' + fmtRub(t.from) + ' — ' + t.pct + '%').join('; ') + '. ' + d.note + ' Назовите сумму закупки — посчитаю.', {actions: [act.partner(st)], links: [link('partners.html', 'Калькулятор скидок')], chips: ['А при 200 тысячах?', 'Как стать партнёром'], intent: 'discount', steps: ['Смотрю пороги скидок…']});
+      st.last = Object.assign({}, st.last, {intent: 'discount'}); const d = K.discount(amount); st.pending = {type: 'partner'};
+      const follow = V('discount.follow', st, {});
+      if (!amount) { const tiers = d.tiers.map(t => 'от ' + fmtRub(t.from) + ' — ' + t.pct + '%').join('; ');
+        return R((V('discount.tiers', st, {tiers}) || 'Скидки по объёму закупки (ориентировочно): ' + tiers + '.') + ' ' + (V('discount.note', st, {}) || d.note) + ' ' + (V('discount.ask', st, {}) || 'Назовите сумму закупки — посчитаю.'), {text2: follow, actions: [act.partner(st)], links: [link('partners.html', 'Калькулятор скидок')], chips: ['А при 200 тысячах?', 'Как стать партнёром'], intent: 'discount', steps: ['Смотрю пороги скидок…']}); }
       let t;
       if (!d.pct) t = 'При закупке на ' + fmtRub(d.amount) + ' скидки пока нет: первый порог — от ' + fmtRub(d.tiers[0].from) + ' (' + d.tiers[0].pct + '%). Не хватает ' + fmtRub(d.shortfall) + '.';
       else t = 'При закупке на ' + fmtRub(d.amount) + ' ориентировочная скидка — **' + d.pct + '%** (порог от ' + fmtRub(d.threshold) + '): экономия около ' + fmtRub(d.saving) + ', к оплате около ' + fmtRub(d.total) + '.' + (d.next_from ? ' До следующего порога (' + d.next_pct + '% от ' + fmtRub(d.next_from) + ') не хватает ' + fmtRub(d.shortfall) + '.' : ' Это максимальный из указанных на сайте порогов.');
-      return R(t + '\n\n' + d.note, {actions: compact([act.partner(st), act.callback()]), links: [link('partners.html', 'Калькулятор скидок')], chips: ['Как стать партнёром', 'Контакты менеджера'], intent: 'discount', steps: ['Считаю скидку…']});
+      return R(V('discount.lead', st, {}) + ' ' + t + '\n\n' + (V('discount.note', st, {}) || d.note), {text2: follow, actions: compact([act.partner(st), act.callback()]), links: [link('partners.html', 'Калькулятор скидок')], chips: ['Как стать партнёром', 'Контакты менеджера'], intent: 'discount', steps: ['Считаю скидку…']});
     }
     function contactsAnswer(n, st) {
-      const city = cityOf(n), c = K.contacts(city), L = [], links = [];
+      const city = cityOf(n), c = K.contacts(city), L = [V('contacts.open', st, {}) || ''], links = [];
       if (c.office && city !== 'Москва') { L.push('**' + c.office.city + '** (' + lower(c.office.role) + '): ' + c.office.addr + '.'); (c.office.phones || []).forEach(p => L.push(p[1] + ': ' + p[0])); (c.office.emails || []).forEach(e => L.push(e)); }
       else { L.push('Главный офис: ' + (c.main.address || '') + (contactsMain.addressNote ? ' (' + contactsMain.addressNote + ')' : '') + '.'); L.push('Телефон: ' + c.main.phone + ' · e-mail: ' + c.main.email); L.push('Часы работы: ' + c.main.hours + '.'); }
       links.push({h: 'tel:' + c.main.phoneRaw, l: 'Позвонить ' + c.main.phone}, {h: 'mailto:' + c.main.email, l: c.main.email}); if (c.main.whatsapp) links.push({h: c.main.whatsapp, l: 'WhatsApp', ext: true}); links.push(link('contacts.html', 'Контакты'));
       if (!city) L.push('Есть представительства: ' + c.offices.map(o => o.city).join(', ') + '.');
-      return R(L.join('\n'), {links, actions: compact([act.callback()]), chips: ['Как стать партнёром', 'Ближайшие семинары'], intent: 'contacts', steps: ['Нахожу контакты…']});
+      if (hasCallback) st.pending = {type: 'callback'};
+      return R(L.filter(Boolean).join('\n'), {text2: hasCallback ? V('contacts.follow', st, {}) : '', links, actions: compact([act.callback()]), chips: ['Как стать партнёром', 'Ближайшие семинары'], intent: 'contacts', steps: ['Нахожу контакты…']});
     }
     function partnerAnswer(n, st) {
       const pt = (KB && KB.partner) || {steps: [], benefits: []}, L = [];
-      const intro = st.role ? {cosmetologist: 'Как специалист, вы можете работать с нами напрямую или через салон.', salon: 'Для салона сотрудничество строится так.', clinic: 'Для клиники сотрудничество строится так.', shop: 'Для магазина или дистрибьютора сотрудничество строится так.'}[st.role] || '' : '';
+      const intro = st.role ? V('partner.role.' + st.role, st, {}) || {cosmetologist: 'Как специалист, вы можете работать с нами напрямую или через салон.', salon: 'Для салона сотрудничество строится так.', clinic: 'Для клиники сотрудничество строится так.', shop: 'Для магазина или дистрибьютора сотрудничество строится так.'}[st.role] || '' : '';
       if (intro) L.push(intro);
-      L.push('Сотрудничество строится так: ' + (pt.steps.length ? pt.steps.map((s, i) => (i + 1) + ') ' + lower(s.t)).join(', ') + '.' : 'оставьте заявку — менеджер свяжется и обсудит условия.'));
-      if (pt.benefits.length) L.push('Что получает партнёр: ' + pt.benefits.slice(0, 4).map(b => lower(b.t)).join(', ') + '.');
+      L.push(V('partner.how', st, {}) || 'Сотрудничество строится так: ' + (pt.steps.length ? pt.steps.map((s, i) => (i + 1) + ') ' + lower(s.t)).join(', ') + '.' : 'оставьте заявку — менеджер свяжется и обсудит условия.'));
+      const gain = V('partner.gain', st, {}) || (pt.benefits.length ? 'Что получает партнёр: ' + pt.benefits.slice(0, 4).map(b => lower(b.t)).join(', ') + '.' : ''); if (gain) L.push(gain);
       if (W('скидк|порог|объем|объём').test(n)) L.push(discountAnswer(0, st).text.split(' Назовите')[0]);
-      return R(L.join('\n\n'), {actions: [act.partner(st)], links: [link('partners.html', 'Условия и калькулятор скидок')], chips: ['Какие скидки?', 'Контакты менеджера'], intent: 'partner', steps: ['Смотрю условия сотрудничества…']});
+      st.pending = {type: 'partner'};
+      return R(L.join('\n\n'), {text2: V('partner.follow', st, {}), actions: [act.partner(st)], links: [link('partners.html', 'Условия и калькулятор скидок')], chips: ['Какие скидки?', 'Контакты менеджера'], intent: 'partner', steps: ['Смотрю условия сотрудничества…']});
     }
     function planAnswer(pl, st) {
       const L = ['Ваш стартовый план: ' + (pl.summary || []).join('; ') + '.'];
@@ -465,7 +483,7 @@
       return R(L.join('\n\n'), {actions: compact([act.form('plan', 'Получить подбор от менеджера', ''), act.callback()]), links: [link('start.html', 'Открыть план')], chips: ['Какие скидки?', 'Ближайшие семинары'], intent: 'plan', steps: ['Смотрю ваш план…']});
     }
     function moreAnswer(st) {
-      const l = st.last || {}; if (!l.all || l.offset >= l.all.length) return R('Это всё, что нашёл по вашему запросу. Можно уточнить задачу или бренд — подберу заново.', {chips: starters({}, st), intent: 'more'});
+      const l = st.last || {}; if (!l.all || l.offset >= l.all.length) return R('Это всё, что нашла по вашему запросу. Можно уточнить задачу или бренд — подберу заново.', {chips: starters({}, st), intent: 'more'});
       const next = l.all.slice(l.offset, l.offset + 4); const from = l.offset + 1; l.offset += next.length; l.cards = next;
       return R((next.length === 1 ? 'Ещё один вариант (' + l.offset + ' из ' + l.all.length + '):' : 'Ещё варианты (' + from + '–' + l.offset + ' из ' + l.all.length + '):'), {cards: next, chips: l.offset < l.all.length ? ['Ещё', 'Сравни первые два'] : ['Почему именно эти?', 'С чем сочетать?'], intent: 'more'});
     }
@@ -473,9 +491,9 @@
       const l = st.last || {};
       if (l.intent === 'task' && l.tasks && l.tasks.length) {
         const t = K.kbTask(l.tasks[0]); const brands = (t.brands || []).map(K.brandName).filter(Boolean);
-        return R('Подбор простой и прозрачный. Сначала беру из каталога продукты, у которых в карточке указана задача «' + K.TASK[l.tasks[0]] + '». Порядок такой: сначала бренды, которые сайт называет основными для этой задачи (' + brands.join(', ') + '), затем новинки. Описание задачи — со страницы каталога: «' + (t.note || '') + '» Я не оцениваю эффективность и не даю назначений — это решает специалист.', {chips: ['С чем сочетать?', 'Ещё'], intent: 'why', steps: ['Вспоминаю, как подбирал…']});
+        return R('Подбор простой и прозрачный. Сначала беру из каталога продукты, у которых в карточке указана задача «' + K.TASK[l.tasks[0]] + '». Порядок такой: сначала бренды, которые сайт считает основными для этой задачи (' + brands.join(', ') + '), затем новинки. Эффективность я не оцениваю и назначений не даю — это решает специалист.', {chips: ['С чем сочетать?', 'Ещё'], intent: 'why', steps: ['Вспоминаю, как подбирала…']});
       }
-      return R('По сайту я отвечаю только по его данным: каталогу, расписанию, материалам для партнёров. Спросите, что именно вас интересует, — объясню, откуда взял ответ.', {chips: starters({}, st), intent: 'why'});
+      return R('По сайту я отвечаю только по его данным: каталогу, расписанию, материалам для партнёров. Спросите, что именно вас интересует, — объясню, откуда взяла ответ.', {chips: starters({}, st), intent: 'why'});
     }
     function comboAnswer(st) {
       const l = st.last || {}, ids = l.tasks && l.tasks.length ? l.tasks : [], L = [];
@@ -483,10 +501,10 @@
       const sun = K.searchProducts({task: 'sun'}).filter(p => (l.cards || []).indexOf(p.id) < 0);
       if (/фотозащит/i.test(note) && sun.length) {
         const first = showList(st, sun.map(p => p.id), {intent: 'combo', tasks: ['sun']});
-        return R('Сайт прямо указывает: «' + String(K.kbTask(ids[0]).note || '').replace(/[.!\s]+$/, '') + '». Поэтому к этой задаче логично добавить ежедневную фотозащиту — вот продукты из каталога:', {cards: first, links: [link('catalog.html?task=sun', 'Вся фотозащита')], chips: ['Сравни первые два', 'Как запросить условия?'], intent: 'combo', steps: ['Ищу, что сочетается…']});
+        return R('Работа с этой задачей обычно идёт в паре с ежедневной фотозащитой — без неё результат труднее закрепить. Поэтому предлагаю добавить солнцезащиту, вот что есть в каталоге:', {cards: first, links: [link('catalog.html?task=sun', 'Вся фотозащита')], chips: ['Сравни первые два', 'Как запросить условия?'], intent: 'combo', steps: ['Ищу, что сочетается…']});
       }
       const first = l.cards && l.cards[0] && P[l.cards[0]];
-      if (first && first.c !== 'home') { const home = K.searchProducts({task: (first.ts || [])[0], home: true}).filter(p => p.id !== first.id); if (home.length) { const f = showList(st, home.map(p => p.id), {intent: 'combo'}); return R('Сайт описывает связку «кабинет и дом»: домашний уход продлевает результат процедур. По этой задаче для дома в каталоге есть:', {cards: f, chips: ['Подробнее про первый', 'Как запросить условия?'], intent: 'combo'}); } }
+      if (first && first.c !== 'home') { const home = K.searchProducts({task: (first.ts || [])[0], home: true}).filter(p => p.id !== first.id); if (home.length) { const f = showList(st, home.map(p => p.id), {intent: 'combo'}); return R('Хорошая мысль — связать кабинетные процедуры с домашним уходом: он помогает дольше сохранять результат. По этой задаче для дома в каталоге есть:', {cards: f, chips: ['Подробнее про первый', 'Как запросить условия?'], intent: 'combo'}); } }
       return R('Сочетания зависят от протокола, а его определяет специалист. По данным сайта могу показать продукты по другой задаче — например, фотозащиту: она нужна почти в любом протоколе.', {links: [link('catalog.html?task=sun', 'Фотозащита')], chips: ['Покажи фотозащиту', 'Подобрать средство по задаче'], intent: 'combo'});
     }
     function infoAnswer(text, st) {
@@ -494,7 +512,8 @@
       if (hits.length && hits[0].hit >= Math.min(2, hits[0].of) && hits[0].score > 0.02) {
         const h = hits[0], sent = K.bestSentence(h.text, h._q);
         st.last = Object.assign({}, st.last, {intent: 'info'});
-        return R((h.kind === 'faq' ? '' : '**' + h.title + '.** ') + sent, {links: compact([h.url ? link(h.url, h.kind === 'news' ? 'Читать новость' : 'Подробнее на сайте') : null]), actions: [], chips: ['Спасибо', 'Задать другой вопрос'], intent: 'info', sure: false, steps: ['Ищу в материалах сайта…'], meta: {score: h.score, source: h.title}});
+        const io = V('info.open', st, {});
+        return R((io ? io + '\n\n' : '') + (h.kind === 'faq' ? '' : '**' + h.title + '.** ') + sent, {text2: V('info.follow', st, {}), links: compact([h.url ? link(h.url, h.kind === 'news' ? 'Читать новость' : 'Подробнее на сайте') : null]), actions: [], chips: ['Спасибо', 'Задать другой вопрос'], intent: 'info', sure: false, steps: ['Ищу в материалах сайта…'], meta: {score: h.score, source: h.title}});
       }
       return null;
     }
@@ -738,12 +757,12 @@
 
       /* ---- светские реплики ---- */
       const greetRe = new RegExp('^(?:ну |а )?(?:привет|здравствуй|добрый день|доброе утро|добрый вечер|доброй ночи|(?:хай|hello|hi|салют)' + END + ')', 'i');
-      if (greetRe.test(n) && ntok <= 4) { st.last = {}; return done(R(hello() + '! Я Стелла, мини-консультант «Астреи». Подскажу по каталогу и брендам, обучению, условиям сотрудничества и контактам. ' + pick(st, ['Что вас интересует?', 'С чего начнём?', 'Чем помочь?']), {chips: starters(ctx, st), intent: 'greet'})); }
-      if ((W('спасиб|благодар|выручил').test(n) && ntok <= 6 && !W('нет|не надо|не нужно').test(n)) || (W('супер|отлично|класс($|\\s)|здорово|молодец|круто').test(n) && ntok <= 1)) return done(R(pick(st, ['Пожалуйста! Если появятся вопросы — пишите.', 'Рада помочь! Обращайтесь, если понадобится ещё что-то.', 'Всегда пожалуйста. Что ещё подсказать?']), {chips: ['Ближайшие семинары', 'Контакты менеджера'], intent: 'thanks'}));
-      if ((W('до свидани|всего доброго|удачи|до встречи|bye').test(n) && ntok <= 5) || (/^пока(?![а-я])/.test(n) && ntok <= 2)) return done(R('Всего доброго! Если понадоблюсь — Стелла всегда на связи.', {intent: 'bye'}));
+      if (greetRe.test(n) && ntok <= 4) { const again = (st.vc && st.vc.greet) > 0; st.last = {}; return done(R(V(again ? 'greet.again' : 'greet', st, {hello: hello()}) || hello() + '! Я Стелла, мини-консультант «Астреи». Подскажу по каталогу и брендам, обучению, условиям сотрудничества и контактам. ' + pick(st, ['Что вас интересует?', 'С чего начнём?', 'Чем помочь?']), {chips: starters(ctx, st), intent: 'greet'})); }
+      if ((W('спасиб|благодар|выручил').test(n) && ntok <= 6 && !W('нет|не надо|не нужно').test(n)) || (W('супер|отлично|класс($|\\s)|здорово|молодец|круто').test(n) && ntok <= 1)) return done(R(V('thanks', st, {}) || pick(st, ['Пожалуйста! Если появятся вопросы — пишите.', 'Рада помочь! Обращайтесь, если понадобится ещё что-то.', 'Всегда пожалуйста. Что ещё подсказать?']), {chips: ['Ближайшие семинары', 'Контакты менеджера'], intent: 'thanks'}));
+      if ((W('до свидани|всего доброго|удачи|до встречи|bye').test(n) && ntok <= 5) || (/^пока(?![а-я])/.test(n) && ntok <= 2)) return done(R(V('bye', st, {}) || 'Всего доброго! Если понадоблюсь — Стелла всегда на связи.', {intent: 'bye'}));
       if (W('тупой|глупый|бесполезн|ерунда|не понимаешь|не то|плохо отвечаешь|ничего не понимаешь|дурак|идиот').test(n)) return done(R('Сожалею, что не получилось помочь. Давайте передадим вопрос человеку — менеджер ответит в рабочее время (' + contactsMain.hours + ').', {actions: compact([act.callback(), act.ask(st.last.q || text)]), links: [link('contacts.html', 'Контакты')], chips: ['Подобрать средство по задаче', 'Ближайшие семинары'], intent: 'frustrated'}));
       if (W('кто ты|что ты умеешь|что умеешь|ты бот|ты человек|ты робот|ты живой|ты ии|нейросет|чем ты можешь|чем можешь помочь|что можно спросить|как тебя зовут|ты настоящ').test(n))
-        return done(R('Меня зовут Стелла — я мини-консультант сайта «Астреи»: программа, а не сотрудник. Умею: подобрать продукты по задаче и объяснить выбор, рассказать о товарах и брендах, сравнить товары, показать расписание обучения и записать, посчитать скидку по сумме закупки, дать контакты. Помню, о чём мы говорили: можно спрашивать «а у Dermatime?», «ещё», «почему именно эти?». Цены, наличие и персональные рекомендации — к менеджеру.' + (st.ai ? ' А ещё могу поговорить на любую тему и ответить на общие вопросы.' : ''), {chips: starters(ctx, st), intent: 'who'}));
+        return done(R((V('who', st, {}) || 'Меня зовут Стелла — я мини-консультант сайта «Астреи»: программа, а не сотрудник. Умею: подобрать продукты по задаче и объяснить выбор, рассказать о товарах и брендах, сравнить товары, показать расписание обучения и записать, посчитать скидку по сумме закупки, дать контакты. Помню, о чём мы говорили: можно спрашивать «а у Dermatime?», «ещё», «почему именно эти?». Цены, наличие и персональные рекомендации — к менеджеру.') + (st.ai ? ' А ещё могу поговорить на любую тему и ответить на общие вопросы.' : ''), {chips: starters(ctx, st), intent: 'who'}));
 
       const cx = calcOf(text); if (cx) { if (cx.err) return done(R(cx.err, {chips: starters(ctx, st), intent: 'calc'})); return done(R('**' + cx.expr + ' = ' + fmtNum(cx.val) + '**', {chips: starters(ctx, st), intent: 'calc'})); }
       if (ntok <= 6 && W('какое сегодня число|какое число|какая сегодня дата|какая дата|сегодня какое|какой сегодня день|какой день недели|который час|сколько времени|сколько сейчас времени|какой сейчас год|какой год|текущая дата|текущее время').test(n)) return done(R(dateAnswer(n), {chips: starters(ctx, st), intent: 'datetime'}));
@@ -751,18 +770,20 @@
       /* ---- роль и город ---- */
       if (role && ntok <= 9 && !tasksInText.length && !brandsInText.length) {
         const who = ROLE_NAME[role];
-        return done(R('Принято: ' + who + (st.city ? ', ' + st.city : '') + '. Учту это в ответах.' + (role === 'cosmetologist' ? ' Могу подобрать продукты по задаче или показать ближайшие семинары.' : ' Могу рассказать об условиях сотрудничества и скидках по объёму.'), {chips: role === 'cosmetologist' ? ['Подобрать средство по задаче', 'Ближайшие семинары'] : ['Как стать партнёром', 'Какие скидки?', 'Ближайшие семинары'], actions: role === 'cosmetologist' ? [] : [act.partner(st)], intent: 'role'}));
+        return done(R((V('role', st, {who: who, city: st.city ? ', ' + st.city : ''}) || 'Принято: ' + who + (st.city ? ', ' + st.city : '') + '. Учту это в ответах.') + (role === 'cosmetologist' ? ' Могу подобрать продукты по задаче или показать ближайшие семинары.' : ' Могу рассказать об условиях сотрудничества и скидках по объёму.'), {chips: role === 'cosmetologist' ? ['Подобрать средство по задаче', 'Ближайшие семинары'] : ['Как стать партнёром', 'Какие скидки?', 'Ближайшие семинары'], actions: role === 'cosmetologist' ? [] : [act.partner(st)], intent: 'role'}));
       }
 
       /* ---- ответ на собственный вопрос («да», «нет») ---- */
       const yes = ntok <= 3 && W('(?:да|ага|угу|конечно|давай|хорошо|ок|окей|можно|пожалуйста|буду)' + END).test(n), no = ntok <= 3 && W('(?:нет|не надо|не нужно|не стоит|потом|позже)' + END).test(n);
       if (yes && st.pending) {
         const p = st.pending; st.pending = null;
-        if (p.type === 'register' && p.ids && p.ids.length) return done(R('Выберите мероприятие — откроется форма записи:', {events: p.ids, intent: 'register'}));
-        if (p.type === 'request') return done(R('Хорошо, оформим запрос — менеджер уточнит условия и наличие:', {actions: compact([act.form('product', 'Запросить информацию', p.ref || ''), act.callback()]), intent: 'request'}));
-        if (p.type === 'callback') return done(R('Оставьте имя и телефон — менеджер перезвонит.', {actions: compact([act.callback()]), intent: 'callback'}));
+        if (p.type === 'register' && p.ids && p.ids.length) return done(R(V('yes.register', st, {}) || 'Выберите мероприятие — откроется форма записи:', {events: p.ids, intent: 'register'}));
+        if (p.type === 'request') return done(R(V('yes.request', st, {}) || 'Хорошо, оформим запрос — менеджер уточнит условия и наличие:', {actions: compact([act.form('product', 'Запросить информацию', p.ref || ''), act.callback()]), intent: 'request'}));
+        if (p.type === 'callback') return done(R(V('yes.callback', st, {}) || 'Оставьте имя и телефон — менеджер перезвонит.', {actions: compact([act.callback()]), intent: 'callback'}));
+        if (p.type === 'partner') return done(R(V('yes.partner', st, {}) || 'Открываю форму заявки на сотрудничество:', {actions: [act.partner(st)], links: [link('partners.html', 'Условия сотрудничества')], intent: 'partner', local: true}));
+        if (p.type === 'tour' && G) { const tr = GTOURS.find(t => t.id === 'site'); if (tr) return done(R(V('yes.tour', st, {}) || 'Хорошо, покажу сайт по шагам.', {actions: [{l: 'Начать: ' + tr.title, act: 'asst-tour', d: {tour: tr.id}}], autorun: [0], quiet: [0], intent: 'nav', local: true, steps: ['Понимаю, куда вести…']})); }
       }
-      if (no && st.pending) { st.pending = null; return done(R('Хорошо, как скажете. Чем ещё помочь?', {chips: starters(ctx, st), intent: 'no'})); }
+      if (no && st.pending) { st.pending = null; return done(R(V('declined', st, {}) || 'Хорошо, как скажете. Чем ещё помочь?', {chips: starters(ctx, st), intent: 'no'})); }
 
       /* ---- уточнения по ходу диалога ---- */
       const l = st.last || {};
@@ -809,11 +830,12 @@
       if (W('цен(?:а|ы|у|е|ой|ам|ах|ами)?(?![а-яa-z0-9])|стоит|стоимост|прайс|почем(?![а-яa-z])|сколько стоит|дорог(?:о|ой|ая|ие|ое|ий)?(?![а-яa-z])|дешев|недорог|бюджет').test(n) && !W('обучен|семинар|мастер|вебинар|участи|регистрац').test(n)) {
         const pp = productsInText[0] || (refd && P[ctx.product || l.product]) || null; st.pending = {type: 'request', ref: pp ? pp.id : ''};
         const d = K.discount(0);
-        return done(R('Цен на сайте нет: стоимость зависит от объёма закупки и условий партнёрства, её называет менеджер (' + contactsMain.phone + ', ' + contactsMain.hours + '). Для ориентира: ' + lower('Скидки по объёму закупки (ориентировочно): ') + d.tiers.map(t => 'от ' + fmtRub(t.from) + ' — ' + t.pct + '%').join('; ') + '. Назовите сумму закупки — посчитаю скидку. Отправить запрос менеджеру?', {cards: pp ? [pp.id] : [], actions: compact([act.form('product', 'Запросить условия', pp ? pp.id : ''), act.callback()]), links: [link('partners.html', 'Калькулятор скидок')], chips: ['Да, отправить запрос', 'А при 200 тысячах?'], intent: 'price'}));
+        const tiers = d.tiers.map(t => 'от ' + fmtRub(t.from) + ' — ' + t.pct + '%').join('; ');
+        return done(R(V('price', st, {tiers}) || 'Цен на сайте нет: стоимость зависит от объёма закупки и условий партнёрства, её называет менеджер (' + contactsMain.phone + ', ' + contactsMain.hours + '). Для ориентира: ' + lower('Скидки по объёму закупки (ориентировочно): ') + tiers + '. Назовите сумму закупки — посчитаю скидку. Отправить запрос менеджеру?', {cards: pp ? [pp.id] : [], actions: compact([act.form('product', 'Запросить условия', pp ? pp.id : ''), act.callback()]), links: [link('partners.html', 'Калькулятор скидок')], chips: ['Да, отправить запрос', 'А при 200 тысячах?'], intent: 'price'}));
       }
       if (W('налич|на склад|достав|отгруз|срок поставк|сроки|сертификат|регистрац|декларац|документ|состав|дозиров|штрихкод|гарант').test(n) && !productsInText.length && !W('мероприят|семинар|вебинар|обучен|записат').test(n)) {
         st.pending = {type: 'request', ref: ''};
-        return done(R('Этих сведений на сайте нет — чтобы не ошибиться, их подтверждает менеджер: наличие, сроки и условия доставки, документы и сертификаты, состав. ' + MGR() + ' Отправить запрос?', {actions: compact([act.form('product', 'Запросить информацию', ''), act.callback()]), chips: ['Да, отправить запрос'], intent: 'avail'}));
+        return done(R(V('avail', st, {}) || 'Этих сведений на сайте нет — чтобы не ошибиться, их подтверждает менеджер: наличие, сроки и условия доставки, документы и сертификаты, состав. ' + MGR() + ' Отправить запрос?', {actions: compact([act.form('product', 'Запросить информацию', ''), act.callback()]), chips: ['Да, отправить запрос'], intent: 'avail'}));
       }
       if (W('где купить|как купить|как заказать|как приобрести|как оформить заказ|физлиц|частн\\S* лиц|для себя|интернет-магазин').test(n)) return done(R('Продукция «Астреи» рассчитана на специалистов — косметологов, салоны и клиники — и поставляется партнёрам. Чтобы начать, оставьте заявку на партнёрство или запрос по товару: менеджер уточнит условия и подскажет, как оформить поставку. Для частных покупателей условия уточняйте у менеджера.', {actions: compact([act.partner(st), act.form('product', 'Запросить информацию', ''), act.callback()]), links: [link('partners.html', 'Условия сотрудничества')], intent: 'buy'}));
       if ((W('контакт|телефон|позвонить|номер|почт|e-?mail|адрес|как добрат|как найти|офис|график|часы работ|режим работ|когда работа|whatsapp|ватсап|представительств').test(n) && !W('семинар|мероприят|вебинар').test(n)) || (W('где наход').test(n) && W('вы|ваш|офис|компани|склад|представительств|магазин|учебн|центр').test(n) && !W('семинар|мероприят|вебинар').test(n))) return done(contactsAnswer(n, st));
@@ -831,13 +853,14 @@
         const res = eventsAnswer(n, st, ctx); st.pending = {type: 'register', ids: res.events.slice(0, 2)}; return done(res);
       }
       if (periodOf(n) && !tasksInText.length && !productsInText.length && K.listEvents({from: periodOf(n).from, to: periodOf(n).to}).length) return done(eventsAnswer(n, st, ctx));
-      if (W('новост|акци[июя]|что нового|анонс').test(n)) { const nw = ((KB && KB.news) || []).slice().sort((a, b) => b.date.localeCompare(a.date)).slice(0, 3); return done(R(nw.length ? 'Свежее на сайте: ' + nw.map(x => x.t).join('; ') + '.' : 'Новости — на странице «Новости».', {links: nw.map(x => link(x.u, x.t)).concat(nw.length ? [] : [link('news.html', 'Новости')]), intent: 'news', steps: ['Смотрю новости…']})); }
+      if (W('новост|акци[июя]|что нового|анонс').test(n)) { const nw = ((KB && KB.news) || []).slice().sort((a, b) => b.date.localeCompare(a.date)).slice(0, 3); return done(R(nw.length ? V('news.open', st, {titles: nw.map(x => x.t).join('; ')}) || 'Свежее на сайте: ' + nw.map(x => x.t).join('; ') + '.' : V('news.none', st, {}) || 'Новости — на странице «Новости».', {links: nw.map(x => link(x.u, x.t)).concat(nw.length ? [] : [link('news.html', 'Новости')]), intent: 'news', steps: ['Смотрю новости…']})); }
       if (W('новинк').test(n)) { const ps = (D.products || []).filter(p => p.n); const first = showList(st, ps.map(p => p.id), {intent: 'new'}); return done(R(ps.length ? 'Новинки каталога:' : 'Сейчас новинок в каталоге нет.', {cards: first, links: [link('catalog.html', 'Весь каталог')], intent: 'new'})); }
-      if (W('о компании|про компани|про вашу компани|о вас($|\\s)|про вас($|\\s)|об астре|про астре|о вашей компании|кто вы|чем занимаетесь|занима(?:ет|ете)ся|расскажите о себе|расскажите о компании|оригинальн|контрафакт|подлинн|кто такие|что за компания|что вы делаете').test(n)) { const c = KB && KB.company; return done(R(c && c.about && c.about.length ? c.about[0] + (c.advantages && c.advantages.length ? '\n\nПреимущества: ' + c.advantages.slice(0, 4).map(a => lower(a.t)).join(', ') + '.' : '') : 'Подробно о компании — на странице «Компания».', {links: [link('company.html', 'О компании')], chips: ['Какие бренды?', 'Как стать партнёром'], intent: 'about'})); }
+      if (W('о компании|про компани|про вашу компани|о вас($|\\s)|про вас($|\\s)|об астре|про астре|о вашей компании|кто вы|чем занимаетесь|занима(?:ет|ете)ся|расскажите о себе|расскажите о компании|оригинальн|контрафакт|подлинн|кто такие|что за компания|что вы делаете').test(n)) { const c = KB && KB.company; const bn = (D.brands || []).map(b => b.name).join(', '); st.pending = G ? {type: 'tour'} : null;
+        const own = V('about.text', st, {brands: bn}); return done(R(own ? own + '\n\n' + V('about.gain', st, {}) : c && c.about && c.about.length ? c.about[0] + (c.advantages && c.advantages.length ? '\n\nПреимущества: ' + c.advantages.slice(0, 4).map(a => lower(a.t)).join(', ') + '.' : '') : 'Подробно о компании — на странице «Компания».', {text2: G ? V('about.follow', st, {}) : '', links: [link('company.html', 'О компании')], chips: ['Какие бренды?', 'Как стать партнёром'], intent: 'about'})); }
 
       /* ---- сущности каталога ---- */
       if (productsInText.length === 1) return done(productAnswer(productsInText[0], st));
-      if (productsInText.length > 1) { const first = showList(st, productsInText.map(p => p.id), {intent: 'products'}); return done(R('Нашёл несколько подходящих товаров:', {cards: first, actions: hasCompare ? [{l: 'Сравнить', act: 'asst-cmp', ids: productsInText.slice(0, 3).map(p => p.id).join(',')}] : [], chips: ['Сравни первые два'], intent: 'products'})); }
+      if (productsInText.length > 1) { const first = showList(st, productsInText.map(p => p.id), {intent: 'products'}); return done(R('Нашла несколько подходящих товаров:', {cards: first, actions: hasCompare ? [{l: 'Сравнить', act: 'asst-cmp', ids: productsInText.slice(0, 3).map(p => p.id).join(',')}] : [], chips: ['Сравни первые два'], intent: 'products'})); }
       if (brandsInText.length === 1) return done(brandAnswer(brandsInText[0], st));
       if (brandsInText.length > 1) return done(R('Подскажу по брендам: ' + brandList(brandsInText.map(b => b.id)) + '. О каком рассказать подробнее?', {links: brandsInText.map(b => link('brands/' + b.id + '.html', b.name)), chips: brandsInText.map(b => 'Расскажите про ' + b.name), intent: 'brands'}));
       if (tasksInText.length) return done(taskAnswer(tasksInText, st, {home: homeF}));
@@ -845,8 +868,8 @@
       const cats = (D.cats || []).filter(c => words(c.name).map(stem).filter(t => !STOP.has(t) && t.length > 3).some(t => tk.indexOf(t) >= 0));
       if (cats.length) { const cps = (D.products || []).filter(p => p.c === cats[0].id); const first = showList(st, cps.map(p => p.id), {intent: 'category'}); return done(R('**' + cats[0].name + '** — ' + cps.length + ' ' + plural(cps.length, 'позиция', 'позиции', 'позиций') + ' в каталоге.', {cards: first, links: [link('catalog.html?cat=' + cats[0].id, 'Открыть категорию')], intent: 'category'})); }
       if (W('подобрать|подбор|посоветуй|порекоменд|что выбрать|что взять|помогите выбрать|что подойд[её]т|помоги выбрать|что бы вы').test(n) && D.sales && D.sales.planner) return done(R('Для этого у меня есть отдельное окно — **Старт со Стеллой**: я задам несколько коротких вопросов, вы ответите кнопками или своими словами, и я соберу план — линейки, товары, ближайшие семинары и условия.', {links: [link(D.sales.planner.path || 'start.html', 'Открыть «Старт со Стеллой»')], chips: ['Ближайшие семинары', 'Какие скидки?'], intent: 'pick'}));
-      if (W('подобрать|подбор|посоветуй|порекоменд|что выбрать|что взять|помогите выбрать|что подойд[её]т|помоги выбрать|что бы вы').test(n)) return done(R('По какой задаче подбираем? Выберите или напишите своими словами — например, «пигментация» или «чувствительная кожа».', {chips: (D.tasks || []).slice(0, 8).map(t => t.label), intent: 'pick'}));
-      if (W('каталог|ассортимент|что у вас есть|что продаёте|что продаете|что есть|продукци|бренд').test(n)) { const cnt = {}; (D.products || []).forEach(p => { cnt[p.c] = (cnt[p.c] || 0) + 1; }); return done(R('В каталоге ' + D.products.length + ' ' + plural(D.products.length, 'позиция', 'позиции', 'позиций') + ' ' + (D.brands || []).length + ' ' + plural((D.brands || []).length, 'бренда', 'брендов', 'брендов') + ': ' + (D.brands || []).map(b => b.name).join(', ') + '. Категории: ' + (D.cats || []).filter(c => cnt[c.id]).map(c => lower(c.name)).join(', ') + '.', {links: [link('catalog.html', 'Каталог'), link('brands.html', 'Бренды')], chips: ['Подобрать средство по задаче'], intent: 'catalog'})); }
+      if (W('подобрать|подбор|посоветуй|порекоменд|что выбрать|что взять|помогите выбрать|что подойд[её]т|помоги выбрать|что бы вы').test(n)) return done(R(V('pick', st, {}) || 'По какой задаче подбираем? Выберите или напишите своими словами — например, «пигментация» или «чувствительная кожа».', {chips: (D.tasks || []).slice(0, 8).map(t => t.label), intent: 'pick'}));
+      if (W('каталог|ассортимент|что у вас есть|что продаёте|что продаете|что есть|продукци|бренд').test(n)) { const cnt = {}; (D.products || []).forEach(p => { cnt[p.c] = (cnt[p.c] || 0) + 1; }); return done(R(V('catalog', st, {n: D.products.length, nword: plural(D.products.length, 'позиция', 'позиции', 'позиций'), m: (D.brands || []).length, mword: plural((D.brands || []).length, 'бренда', 'брендов', 'брендов'), brands: (D.brands || []).map(b => b.name).join(', '), cats: (D.cats || []).filter(c => cnt[c.id]).map(c => lower(c.name)).join(', ')}) || 'В каталоге ' + D.products.length + ' ' + plural(D.products.length, 'позиция', 'позиции', 'позиций') + ' ' + (D.brands || []).length + ' ' + plural((D.brands || []).length, 'бренда', 'брендов', 'брендов') + ': ' + (D.brands || []).map(b => b.name).join(', ') + '. Категории: ' + (D.cats || []).filter(c => cnt[c.id]).map(c => lower(c.name)).join(', ') + '.', {links: [link('catalog.html', 'Каталог'), link('brands.html', 'Бренды')], chips: ['Подобрать средство по задаче'], intent: 'catalog'})); }
 
       /* ---- библиотека реплик: о Стелле, светская беседа, просьбы не по теме (стадия «pre») ---- */
       if (SL) { const rp = slReply('pre', X, st, ctx); if (rp) return done(rp); }
@@ -872,7 +895,15 @@
     const newState = () => ({turns: 0, role: '', city: '', pending: null, last: {}});
     /* когда на вопрос ответил ИИ, движок запоминает показанные им карточки: «ещё», «подробнее про первый», «сравни их» продолжают работать */
     function noteExternal(st, ids, tasks) { ids = (ids || []).filter(id => P[id]); st.last = {intent: ids.length ? 'task' : (st.last || {}).intent, cards: ids.slice(0, 4), all: ids, offset: ids.length, tasks: tasks || (st.last || {}).tasks || [], brand: ''}; }
-    return {reply, newState, starters, knowledge: K, correct, noteExternal, compareTemplates: Object.keys(CMPT), compareText: (ids, tpl) => { const f = K.compareFacts(ids); return f ? (CMPT[tpl || CMP_TPL] || CMPT.sections)(f) : ''; }, library: SL ? {topics: SLT, byId: SLID, raw: SL, find: (stage, text) => slFind(stage, [words(squash(clean(text)))]).map(t => t.id)} : null};
+    /* приветствие панели: по странице (товар, бренд, мероприятие, каталог…) и времени суток; варианты чередуются. Нет пулов — пустая строка, интерфейс берёт запасной текст */
+    function welcomeText(ctx, st, o) {
+      const WV = SL && SL.voice && SL.voice.welcome; if (!WV || !WV.default) return ''; ctx = ctx || {}; o = o || {}; st = st || newState();
+      let key = 'default'; const vars = {hello: hello()};
+      if (ctx.product && P[ctx.product]) { key = 'product'; vars.name = P[ctx.product].name; } else if (ctx.brand && B[ctx.brand]) { key = 'brand'; vars.name = B[ctx.brand].name; } else if (ctx.event && EV[ctx.event]) { key = 'event'; vars.title = EV[ctx.event].title; } else if (Array.isArray(WV[ctx.page])) key = ctx.page;
+      const pool = Array.isArray(WV[key]) && WV[key].length ? WV[key] : WV.default; st.vc = st.vc || {}; const k = 'welcome.' + key, c = st.vc[k] || 0; st.vc[k] = c + 1;
+      return slFill(pool[c % pool.length], st, vars) + (o.nav && WV.nav ? WV.nav : '') + (o.ai && WV.ai ? WV.ai : '');
+    }
+    return {reply, newState, starters, welcome: welcomeText, knowledge: K, correct, noteExternal, compareTemplates: Object.keys(CMPT), compareText: (ids, tpl) => { const f = K.compareFacts(ids); return f ? (CMPT[tpl || CMP_TPL] || CMPT.sections)(f, newState()) : ''; }, say: (key, st, vars) => V(key, st || newState(), vars, ''), pools: () => (SL && SL.voice && SL.voice.pools) || {}, library: SL ? {topics: SLT, byId: SLID, raw: SL, find: (stage, text) => slFind(stage, [words(squash(clean(text)))]).map(t => t.id)} : null};
   }
 
   return {createBrain, createKnowledge};

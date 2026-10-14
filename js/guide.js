@@ -60,6 +60,7 @@
     document.body.appendChild(s); return s;
   }
   const bold = t => esc(t).replace(/\*\*([^*]+)\*\*/g, '<b>$1</b>');
+  const pickV = v => Array.isArray(v) ? v[Math.floor(Math.random() * v.length)] : v;          // реплика может быть списком вариантов: каждый раз берётся один, чтобы не повторяться
   const PAD = 8;
   function place() {
     spotRaf = 0; const s = $('#g-spot'); if (!s || s.hidden || !spotEl) return;
@@ -90,7 +91,7 @@
     const top = Math.max(0, Math.round(scrollY + r.top - Math.max(hdr + 16, Math.min(want, (vh - r.height) / 2))));
     window.scrollTo({top, behavior: 'smooth'});
   }
-  /* прогресс экскурсии: «2 из 4 · этап» и четыре отрезка (пройденные заполнены, текущий — по шагам внутри этапа) */
+  /* прогресс экскурсии: «2 из 6 · этап» и шесть отрезков (пройденные заполнены, текущий — по шагам внутри этапа) */
   function progHTML(p) {
     let seg = ''; for (let k = 0; k < p.gn; k++) seg += '<i style="--p:' + (k < p.g ? 1 : k === p.g ? p.sub : 0) + '"></i>';
     return '<small class="g-st"><b>' + (p.g + 1) + ' из ' + p.gn + '</b>' + (p.label ? ' · ' + esc(p.label) : '') + '</small><span class="g-bar" aria-hidden="true">' + seg + '</span>';
@@ -130,9 +131,9 @@
     o = o || {}; hideNudge(); const t = findTarget(id); if (!t) return false;
     const wait = prepFilters(t);
     const go = () => {
-      const el = resolveEl(t); if (!el) { A.toast && A.toast(t.label + ': на этой странице не нашёл — вот что есть: ' + (targetsOn(pageKey()).slice(0, 3).map(x => x.label).join(', ') || 'меню')); return false; }
+      const el = resolveEl(t); if (!el) { A.toast && A.toast(t.label + ': на этой странице не нашла — вот что есть: ' + (targetsOn(pageKey()).slice(0, 3).map(x => x.label).join(', ') || 'меню')); return false; }
       if (S().close && !o.keepChat) S().close(true);
-      spot(el, {t, text: o.text || t.say || t.label, buttons: [{l: 'Понятно', act: 'g-spot-x', primary: true}, {l: 'Спросить Стеллу', act: 'asst-open'}]});
+      spot(el, {t, text: o.text || pickV(t.say) || t.label, buttons: [{l: 'Понятно', act: 'g-spot-x', primary: true}, {l: 'Спросить Стеллу', act: 'asst-open'}]});
       if (o.pulse !== false) pulse(el);
       return true;
     };
@@ -141,8 +142,8 @@
   function pulse(el) { el.classList.remove('g-pulse'); void el.offsetWidth; el.classList.add('g-pulse'); setTimeout(() => el.classList.remove('g-pulse'), 2600); }
 
   /* ---------- экскурсия «Покажи сайт» ----------
-     Шаги — в data/stella/guide.json → tours[site].steps: {g — номер этапа (их четыре), page — на какой странице шаг, target — id из targets, say — текст Стеллы,
-     do — действие, которое Стелла выполняет на странице сама (brand-open, type-search, pick-task), pre — текст, пока действие идёт,
+     Шаги — в data/stella/guide.json → tours[site].steps: {g — номер этапа (их шесть), page — на какой странице шаг, target — id из targets, say — текст Стеллы,
+     do — действие, которое Стелла выполняет на странице сама (brand-open, type-search, pick-task, calc-demo), pre — текст, пока действие идёт,
      next — {l, click}: кнопка «Далее» с настоящим нажатием на ссылку/карточку (переход на другую страницу), offer — предложение попробовать (только по нажатию посетителя),
      chrome — цель в шапке: шапка закрепляется на виду, на узких экранах сам раскрывается ящик меню; final — финальный шаг с предложением, что делать дальше}.
      Экскурсия НИКОГДА не запускается сама: только по просьбе посетителя («Покажи сайт» в панели Стеллы). Корзину и заявки она не трогает. */
@@ -174,6 +175,16 @@
         demoTimer = setTimeout(() => { const m = /(\d+)\D+(\d+)/.exec(($('#res-count') || {}).textContent || ''); ctx.say({q: word, n: m ? m[1] : '?', total: m ? m[2] : total}); }, 420);          // поиск срабатывает с небольшой задержкой — ждём её в реальном времени
       };
       later(tick, 600);
+    },
+    'calc-demo'(st, el, ctx) {                                                     // подвинуть ползунок калькулятора скидки на порог второй ступени (ориентир, ничего не отправляется)
+      const r = $('#calc-range'); if (!r) return; const was = r.value, tiers = (D.sales && D.sales.discounts) || (D.site && D.site.discounts) || [], step = +r.step || 10000, to = Math.min(+r.max || 500000, +(tiers[1] && tiers[1].from) || 150000);
+      const fire = () => r.dispatchEvent(new Event('input', {bubbles: true})); let cur = +was || 0;
+      undoT.push(() => { r.value = was; fire(); });
+      const tick = () => {
+        if (cur !== to) { cur = cur < to ? Math.min(to, cur + step) : Math.max(to, cur - step); r.value = String(cur); fire(); later(tick, 130); return; }
+        demoTimer = setTimeout(() => { const sum = String(to).replace(/\B(?=(\d{3})+(?!\d))/g, ' ') + ' ₽', tier = (($('#calc-tier') || {}).textContent || '').trim(); ctx.say({sum: sum, tier: tier ? tier.charAt(0).toLowerCase() + tier.slice(1) : ''}); }, 600);          // сумму берём из конечного значения: на экране число «докручивается» плавно
+      };
+      later(tick, 700);
     },
     'pick-task'(st, el, ctx) {                                                     // выбрать назначение в фильтре каталога
       const sel = $('#f-task'); if (!sel) return; const opt = Array.from(sel.options).find(o => o.value === 'pigment') || Array.from(sel.options).find(o => o.value !== 'all'); if (!opt) return;
@@ -224,12 +235,13 @@
       if (!el && !st.final) { if (tries < RETRY) { setTimeout(() => run(tries + 1), Math.round(220 / speed())); return; } return tourStep(T, i + dir, dir); }          // элемент так и не появился или скрыт — безопасно пропускаем шаг
       if (S().close) S().close(true);
       const last = i >= n - 1; saveTour(T.id, i, false);
-      const say = v => { const p = $('#g-spot .g-tx p'); if (p && cur && cur.stepI === i && cur.tour === T.id) p.innerHTML = bold(fill(st.say, v)); };
+      const lead = !st.do && !st.final && dir > 0 && i > 0 && T.bridge && T.bridge.length ? T.bridge[(i - 1) % T.bridge.length] + ' ' : '';          // короткая связка между шагами («Идём дальше.») — разговор, а не слайды
+      const say = v => { const p = $('#g-spot .g-tx p'); if (p && cur && cur.stepI === i && cur.tour === T.id) p.innerHTML = bold(lead + fill(st.say, v)); };
       const buttons = [].concat(i > 0 ? [{l: 'Назад', act: 'g-tour-prev'}] : []);
       if (st.final) buttons.push({l: 'Открыть каталог', act: 'asst-go', d: {href: 'catalog.html'}, primary: true}, (A.planChip && A.planChip.on() ? {l: A.planChip.label, act: 'asst-go', d: {href: A.sales.path}} : {l: 'Подобрать по задаче', act: 'asst-go', d: {href: 'catalog.html', show: 'task-filter'}}), {l: 'Спросить Стеллу', act: 'asst-open'}, {l: 'Закрыть', act: 'g-spot-x'});
       else buttons.push({l: st.next && st.next.l || (last ? 'Готово' : 'Далее'), act: 'g-tour-next', primary: true}, ...(st.offer ? [{l: st.offer.l, act: 'g-tour-offer'}] : []), {l: 'Пропустить', act: 'g-spot-x'});
       if (el && st.view) { const v = $(st.view); if (v) { const top = Math.max(0, Math.round(scrollY + v.getBoundingClientRect().top - 76)); window.scrollTo({top, behavior: 'smooth'}); } }          // «показать с начала»: главная — с первого экрана
-      spot(el || document.body, {t: t || {id: 'free'}, tour: T.id, stepI: i, prog: prog(T, i), text: st.do && st.pre ? st.pre : fill(st.say, {}), buttons, free: !el, noScroll: !!st.view, onClose: () => { runCleanup(true); store.del(KT); }});
+      spot(el || document.body, {t: t || {id: 'free'}, tour: T.id, stepI: i, prog: prog(T, i), text: st.do && st.pre ? st.pre : lead + fill(st.say, {}), buttons, free: !el, noScroll: !!st.view, onClose: () => { runCleanup(true); store.del(KT); }});
       if (el) pulse(el);
       if (st.do && DO[st.do] && el) DO[st.do](st, el, {say});
     };
@@ -341,7 +353,7 @@
     const key = entryKey(), cfg = G.entry && G.entry.pages && G.entry.pages[key]; if (!cfg || $('.g-entry')) return;
     let a = null; try { a = $(cfg.anchor); } catch (e) {} if (!a) return;
     const el = document.createElement('aside'); el.className = 'g-entry'; el.setAttribute('aria-label', 'Помощник Стелла'); el.setAttribute('data-style', (G.entry && G.entry.style) || 'strip');          // strip · slim · card
-    el.innerHTML = '<span class="g-e-pe" aria-hidden="true">' + (A.pearl ? A.pearl('happy', true) : '') + '</span><div class="g-e-t"><b>' + esc(cfg.title) + '</b><p>' + esc(cfg.text) + '</p></div>' +
+    el.innerHTML = '<span class="g-e-pe" aria-hidden="true">' + (A.pearl ? A.pearl('happy', true) : '') + '</span><div class="g-e-t"><b>' + esc(pickV(cfg.title)) + '</b><p>' + esc(pickV(cfg.text)) + '</p></div>' +
       '<div class="g-e-ch">' + chipsHTML(cfg.chips, 4) + '</div>' +
       '<button class="btn btn-fill btn-sm g-e-b" type="button" data-act="asst-open" data-track="guide_entry">Спросить Стеллу</button>';
     const pos = cfg.pos || 'after';
@@ -351,72 +363,70 @@
     requestAnimationFrame(() => el.classList.add('on'));
   }
 
-  /* ---------- проактивная подсказка ---------- */
-  const NU = G.nudge || {}, TR = NU.triggers || {}, MAXN = NU.max || 3, COOL = (NU.cooldownSec || 45) * 1000;
+  /* ---------- приветствие Стеллы (всплывающее окно) ----------
+     Всплывающее окно у кнопки Стеллы есть только на главной (G.nudge.pages) и только одно: «Добро пожаловать» + чем Стелла может помочь.
+     Показывается один раз за сессию, когда посетитель дошёл до самой страницы (вступление с баночкой закончилось), и никогда не перебивает: ни при открытом чате, ни в форме, ни во время экскурсии.
+     На остальных страницах окон нет — там блок «Спросите Стеллу» прямо в странице и сама кнопка. */
+  const NU = G.nudge || {}, WE = NU.welcome || {}, NPAGES = NU.pages || ['home'];
   const nstate = () => store.get(KN) || {n: 0, last: 0, off: 0, seen: {}};
-  let nEl = null, tDwell = 0, tIdle = 0, lastAct = Date.now(), pageAt = Date.now(), scrollDone = false, exitDone = false, cmpT = 0;
+  let nEl = null, tWel = 0, tRot = 0, readyAt = Date.now(), cmpT = 0;
   function nudgeDom() {
-    if (nEl && nEl.isConnected) return nEl; nEl = document.createElement('div'); nEl.id = 'g-nudge'; nEl.className = 'g-nudge'; nEl.hidden = true; nEl.setAttribute('role', 'status'); document.body.appendChild(nEl); return nEl;
+    if (nEl && nEl.isConnected) return nEl; nEl = document.createElement('div'); nEl.id = 'g-nudge'; nEl.className = 'g-nudge'; nEl.hidden = true; nEl.setAttribute('role', 'status'); document.body.appendChild(nEl);
+    nEl.addEventListener('mouseenter', () => { clearTimeout(welcome.t); });          // пока читают — не убираем
+    nEl.addEventListener('mouseleave', () => { if (!nEl.hidden) { clearTimeout(welcome.t); welcome.t = setTimeout(() => hideNudge(), 6000); } });
+    return nEl;
   }
-  function allowed(force) {
-    const pgOff = NU.pages && NU.pages[pageKey()] && NU.pages[pageKey()].off; if (pgOff) return false;          // на странице «Старта со Стеллой» подсказка «Не знаете, что выбрать?» не нужна: человек уже выбирает
-    const st = nstate(), S_ = S(); if (st.off || st.n >= MAXN || (!force && Date.now() - st.last < COOL)) return false;
+  function allowed() {
+    if (NPAGES.indexOf(pageKey()) < 0) return false;          // только главная
+    const st = nstate(), S_ = S(); if (st.off) return false;
     if (document.hidden || (S_.state && (S_.state().open || S_.state().interacted || S_.state().busy))) return false;
     const b = document.body.classList; if (b.contains('x-intro') || b.contains('locked') || b.contains('menu-open') || b.contains('asst-open') || b.contains('g-on')) return false;
     const m = $('#modal'); if (m && m.classList.contains('open')) return false;
     const ae = document.activeElement; if (ae && /^(INPUT|TEXTAREA|SELECT)$/.test(ae.tagName) && ae.id !== 'asst-in') return false;          // человек что-то вводит — не отвлекаем
     return true;
   }
-  function nudgeCfg(reason) {
-    const key = pageKey(), pg = (NU.pages && NU.pages[key]) || {};
-    const base = {text: pg.text || NU.text, chips: pg.chips || []};
-    if (reason === 'compare') { const n = (S().cmpIds ? S().cmpIds() : []).length; return {text: n > 1 ? 'Выбрали ' + n + ' товара? Нажмите плашку «' + ((G.compare && G.compare.plate) || 'Попросить Стеллу рассказать') + '» — расскажу, чем они отличаются.' : 'Добавьте ещё один товар — и я сравню их по данным сайта.', chips: [], pointer: n > 1}; }
-    if (reason === 'empty') return {text: 'Ничего не нашлось? Опишите задачу своими словами — подберу из каталога.', chips: ['Подобрать по задаче', 'Покажи весь каталог']};
-    if (reason === 'exit') return {text: base.text, chips: base.chips};
-    return base;
-  }
-  /* force — для событий, вызванных самим посетителем (выбрал товары, пустой поиск): обычную паузу между подсказками не ждём */
-  const entryVisible = () => { const e = $('.g-entry'); if (!e) return false; const r = e.getBoundingClientRect(); return r.bottom > 40 && r.top < innerHeight - 40; };          // блок «Спросите Стеллу» уже на экране — повторять то же пузырём незачем
-  function nudge(reason, force) {
-    if (!allowed(force) || (!force && entryVisible())) return false; const cfg = nudgeCfg(reason), st = nstate(), key = pageKey() + ':' + reason; if (st.seen && st.seen[key] && !force) return false;
-    const el = nudgeDom(); st.n++; st.last = Date.now(); st.seen = st.seen || {}; st.seen[key] = 1; store.set(KN, st);
-    el.setAttribute('data-layout', NU.layout || 'bubble');          // bubble — пузырь с кнопками-вопросами · pill — одна строка · card — карточка (выбирает арена: tools/arena-stella.js)
-    el.innerHTML = '<span class="g-n-pe" aria-hidden="true">' + (A.pearl ? A.pearl('happy', true) : '') + '</span><div class="g-n-b"><button class="g-n-t" type="button" data-act="asst-open" data-track="guide_nudge_' + esc(reason) + '">' + esc(cfg.text) + '</button>' +
-      ((cfg.chips || []).length ? '<div class="g-n-ch">' + chipsHTML(cfg.chips, 3) + '</div>' : '') + '<button class="btn btn-fill btn-sm g-n-go" type="button" data-act="asst-open" data-track="guide_nudge_go">Спросить Стеллу</button></div>' +
-      '<button class="g-n-x" type="button" data-act="g-nudge-x" aria-label="Скрыть подсказку">' + I.close + '</button>';
+  const entryVisible = () => { const e = $('.g-entry'); if (!e) return false; const r = e.getBoundingClientRect(); return r.bottom > 40 && r.top < innerHeight - 40; };
+  function welcome(force) {
+    if (!WE.title || !allowed()) return false; const st = nstate(); if (st.seen && st.seen.welcome && !force) return false;
+    const fab = $('#asst-fab'); if (!force && fab && (!fab.classList.contains('in') || fab.classList.contains('away'))) return false;          // кнопки Стеллы ещё нет (или она спрятана на вступлении) — приветствие было бы «в воздухе»
+    const can = (WE.can || []).filter(Boolean), el = nudgeDom(); st.n = (st.n || 0) + 1; st.last = Date.now(); st.seen = st.seen || {}; st.seen.welcome = 1; store.set(KN, st);
+    el.setAttribute('data-layout', NU.layout || 'bubble'); el.setAttribute('data-kind', 'welcome');
+    el.innerHTML = '<span class="g-n-pe" aria-hidden="true">' + (A.pearl ? A.pearl('happy', true) : '') + '</span><div class="g-n-b"><b class="g-n-h">' + esc(WE.title) + '</b>' +
+      '<button class="g-n-t" type="button" data-act="asst-open" data-track="guide_welcome" aria-label="' + esc(WE.title + ' ' + (WE.lead || '') + ' ' + can.join(', ') + '. Открыть чат со Стеллой') + '"><span class="g-n-lead">' + esc(WE.lead || '') + '</span>' +
+      (can.length ? '<span class="g-n-rot" aria-hidden="true">' + can.map((t, i) => '<i' + (i ? '' : ' class="on"') + '>' + esc(t) + '</i>').join('') + '</span>' : '') + '</button>' +
+      ((WE.chips || []).length ? '<div class="g-n-ch">' + chipsHTML(WE.chips, 3) + '</div>' : '') + '<button class="btn btn-fill btn-sm g-n-go" type="button" data-act="asst-open" data-track="guide_welcome_go">Спросить Стеллу</button></div>' +
+      '<button class="g-n-x" type="button" data-act="g-nudge-x" aria-label="Скрыть">' + I.close + '</button>';
     el.hidden = false; void el.offsetWidth; el.classList.add('on'); S().hey && S().hey();
-    A.track && A.track('guide_nudge', {reason, page: pageKey()});
-    if (cfg.pointer) { const bar = $('#cmp-bar'); if (bar) { bar.classList.remove('g-ping'); void bar.offsetWidth; bar.classList.add('g-ping'); setTimeout(() => bar.classList.remove('g-ping'), 3200); } }
-    clearTimeout(nudge.t); nudge.t = setTimeout(() => hideNudge(), 14000);
+    A.track && A.track('guide_nudge', {reason: 'welcome', page: pageKey()});
+    rotate(el); clearTimeout(welcome.t); welcome.t = setTimeout(() => hideNudge(), (WE.showSec || 24) * 1000);
     return true;
   }
+  /* строка «могу …» меняется: помочь → подсказать → рассказать → показать (по кругу, пока окно открыто и на него не наведены) */
+  function rotate(el) {
+    clearInterval(tRot); const items = $$('.g-n-rot i', el); if (items.length < 2) return; let k = 0;
+    tRot = setInterval(() => { if (el.hidden || !el.classList.contains('on') || el.matches(':hover')) return; items[k].classList.remove('on'); k = (k + 1) % items.length; items[k].classList.add('on'); }, (WE.rotateSec || 2.8) * 1000);
+  }
   function hideNudge(quick) {
-    const el = nEl; if (!el || el.hidden) return; clearTimeout(nudge.t); el.classList.remove('on'); setTimeout(() => { if (!el.classList.contains('on')) el.hidden = true; }, quick ? 120 : 320);
+    clearInterval(tRot); const el = nEl; if (!el || el.hidden) return; clearTimeout(welcome.t); el.classList.remove('on'); setTimeout(() => { if (!el.classList.contains('on')) el.hidden = true; }, quick ? 120 : 320);
   }
   let armN = 0;
   function arm() {
-    armN++; clearTimeout(tDwell); clearTimeout(tIdle); pageAt = Date.now(); scrollDone = false; exitDone = false;
-    const key = pageKey(); if (key === 'notfound' || key === 'privacy' || key === 'terms') return;
-    tDwell = setTimeout(function again() { const st = nstate(); if (st.off || st.n >= MAXN || (st.seen && st.seen[pageKey() + ':dwell'])) return; if (!nudge('dwell')) tDwell = setTimeout(again, 8000 / speed()); }, (TR.dwellSec || 20) * 1000 / speed());
-    const idleTick = () => { const st = nstate(); if (st.off || st.n >= MAXN || (st.seen && st.seen[pageKey() + ':idle'])) return; if (Date.now() - lastAct >= (TR.idleSec || 14) * 1000 / speed() && Date.now() - pageAt > 8000 / speed()) { if (nudge('idle')) return; } tIdle = setTimeout(idleTick, 4000 / speed()); };
-    tIdle = setTimeout(idleTick, (TR.idleSec || 14) * 1000 / speed());
+    armN++; clearTimeout(tWel); readyAt = Date.now();
+    if (NPAGES.indexOf(pageKey()) < 0 || !WE.title) return;
+    const delay = (WE.delaySec || 3) * 1000 / speed();
+    const tick = () => { const st = nstate(); if (st.off || (st.seen && st.seen.welcome)) return; if (Date.now() - readyAt >= delay && welcome()) return; tWel = setTimeout(tick, Math.max(150, 800 / speed())); };
+    tWel = setTimeout(tick, delay);
   }
-  ['pointermove', 'keydown', 'touchstart', 'wheel'].forEach(ev => addEventListener(ev, () => { lastAct = Date.now(); }, {passive: true}));
-  addEventListener('scroll', () => {
-    lastAct = Date.now(); if (scrollDone) return; const h = document.documentElement.scrollHeight - innerHeight; if (h > 600 && scrollY / h >= (TR.scroll || .45) && Date.now() - pageAt > 6000 / speed()) { scrollDone = true; nudge('scroll'); }
-  }, {passive: true});
-  document.addEventListener('mouseout', e => { if (!TR.exitIntent || exitDone || mobile() || e.relatedTarget || e.clientY > 4) return; if (Date.now() - pageAt < 10000 / speed()) return; exitDone = true; nudge('exit'); });
-  /* выбрали товары для сравнения — через несколько секунд подсказываем плашку */
+  /* срок ожидания считаем от конца вступления: пока идёт баночка, окно не показываем, а если посетитель вернулся наверх — убираем */
+  document.addEventListener('astreya:intro', e => { if (e.detail) hideNudge(true); else readyAt = Date.now(); });
+  /* выбрали товары для сравнения — через несколько секунд слегка «пульсирует» плашка сравнения (без всплывающего окна) */
   document.addEventListener('click', e => {
     const b = e.target.closest && e.target.closest('[data-act="cmp-toggle"], [data-act="qv-cmp"]'); if (!b) return;
-    clearTimeout(cmpT); cmpT = setTimeout(() => { if ((S().cmpIds ? S().cmpIds() : []).length >= 1) nudge('compare', true); }, (TR.compareIdleSec || 4) * 1000 / speed());
+    clearTimeout(cmpT); cmpT = setTimeout(() => { if ((S().cmpIds ? S().cmpIds() : []).length > 1) { const bar = $('#cmp-bar'); if (bar) { bar.classList.remove('g-ping'); void bar.offsetWidth; bar.classList.add('g-ping'); setTimeout(() => bar.classList.remove('g-ping'), 3200); } } }, ((NU.compareIdleSec || 4) * 1000) / speed());
   }, true);
-  function watchEmpty() {
-    const em = $('#cat-empty'); if (!em || em._g) return; em._g = 1; new MutationObserver(() => { if (!em.hidden) setTimeout(() => { if (!em.hidden) nudge('empty', true); }, 1200 / speed()); }).observe(em, {attributes: true, attributeFilter: ['hidden']});
-  }
 
   /* ---------- API и подключение к страницам ---------- */
-  A.guide = {why: () => ({armN, allowed: allowed(), entryVisible: entryVisible(), state: nstate(), body: document.body.className, lastAct: Date.now() - lastAct, sincePage: Date.now() - pageAt}), remount: () => { $$('.g-entry').forEach(e => e.remove()); mountEntry(); }, run, show, tour, go, filter, scroll, stop: () => { store.del(KT); hideSpot(true); }, nudge, hideNudge, targets: () => targetsOn(pageKey()), cleanHref};
-  function init() { mountEntry(); arm(); watchEmpty(); resume(); }
+  A.guide = {why: () => ({armN, allowed: allowed(), entryVisible: entryVisible(), state: nstate(), body: document.body.className, sinceReady: Date.now() - readyAt}), remount: () => { $$('.g-entry').forEach(e => e.remove()); mountEntry(); }, run, show, tour, go, filter, scroll, stop: () => { store.del(KT); hideSpot(true); }, nudge: welcome, welcome, hideNudge, targets: () => targetsOn(pageKey()), cleanHref};
+  function init() { mountEntry(); arm(); resume(); }
   const prev = A.initPage; A.initPage = function () { if (prev) prev.apply(this, arguments); hideSpot(true); hideNudge(true); init(); };
 })();

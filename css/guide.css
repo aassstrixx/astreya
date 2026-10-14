@@ -52,6 +52,12 @@ body.g-hdr .hdr{transform:none!important}
 .g-n-pe{flex:none;width:38px;height:38px}.g-n-pe .pe{width:100%;height:100%}
 .g-n-b{flex:1;min-width:0}
 .g-n-t{display:block;text-align:left;font:600 14.5px/1.4 var(--sans);padding:2px 0}.g-n-t:hover{color:var(--blue-d)}
+/* приветствие на главной: заголовок, «Я Стелла, могу» и строка, которая меняется (помочь → подсказать → рассказать → показать); место под самую длинную фразу занято заранее — окно не «прыгает» */
+.g-n-h{display:block;font:700 15.5px/1.3 var(--sans);color:var(--navy);padding:2px 0 4px}
+.g-n-lead{display:block;font-weight:600;color:var(--slate)}
+.g-n-rot{display:grid;color:var(--blue-d);font-weight:700}
+.g-n-rot i{grid-area:1/1;font-style:normal;opacity:0;transform:translateY(8px);transition:opacity .45s ease,transform .6s cubic-bezier(.2,.8,.2,1);pointer-events:none}
+.g-n-rot i.on{opacity:1;transform:none}
 .g-n-ch{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}.g-n-ch .chip{font-size:12.5px;padding:7px 12px}
 .g-n-x{flex:none;width:30px;height:30px;border-radius:50%;display:grid;place-items:center;color:var(--slate);transition:background-color .2s,color .2s}
 .g-n-x:hover{background:var(--mist);color:var(--navy)}.g-n-x .ic{width:13px;height:13px}

@@ -225,20 +225,26 @@ const J = f => JSON.parse(fs.readFileSync(path.join(ROOT, f), 'utf8'));
   ok(await p.evaluate(() => { const st = JSON.parse(localStorage.getItem('astreya:plan-draft') || 'null'); return !st || !(st.st.tasks || []).length; }), 'непонятный ответ не записывается как выбор: Стелла снова предлагает варианты');
   await p.context().close();
 
-  /* «Сразу подобрать ассортимент»: человек хочет смотреть продукцию — Стелла переводит в каталог по его задаче и лишь советует обучение */
+  /* «Сразу подобрать ассортимент»: план собирается сразу (без вопроса про город), в каталог — по синей кнопке, БЕЗ автоперехода: человек сначала видит сводку */
   p = await mk(); await p.open('start.html?v=planFlow:four'); await comp(p, 'role');
   await p.click('.plan-opt[data-v="salon"]'); await comp(p, 'tasks'); const rt = await p.evaluate(() => document.querySelectorAll('.plan-opt')[1].getAttribute('data-v')); await p.click('.plan-opt[data-v="' + rt + '"]'); await p.click('.plan-next'); await comp(p, 'goal');
-  await p.click('.plan-opt[data-v="range"]'); await comp(p, 'range');
-  ok(await p.evaluate(t => { const a = document.querySelector('[data-pl-go="catalog"]'), tr = document.querySelector('.pchat-comp a[href$="training.html"]'), last = [...document.querySelectorAll('.pchat-log .pc-b:not(.pc-typing) .pc-bub')].pop().textContent; return !!a && new RegExp('catalog\\.html\\?task=' + t).test(a.getAttribute('href')) && !!tr && /каталог/.test(last) && /обучение — лишь совет/i.test(last) && !/удобнее учиться/.test(document.querySelector('.pchat-log').textContent); }, rt), 'цель «ассортимент»: Стелла не спрашивает про город, открывает каталог по задаче и лишь советует обучение (кнопка на расписание рядом)');
+  await p.click('.plan-opt[data-v="range"]'); await comp(p, 'after'); await p.waitForSelector('.plan-res', {timeout: 12000});
+  ok(await p.evaluate(t => { const a = document.querySelector('.pchat-comp [data-pl-go="catalog"]'), last = [...document.querySelectorAll('.pchat-log .pc-b:not(.pc-typing) .pc-bub')].pop().textContent, all = document.querySelector('.pchat-log').textContent; return !!a && a.classList.contains('fill') && new RegExp('catalog\\.html\\?task=' + t).test(a.getAttribute('href')) && /стартов\S* план/i.test(last) && /синюю кнопку/.test(last) && /обучение — лишь совет/i.test(last) && !/удобнее учиться/.test(all); }, rt), 'цель «ассортимент»: Стелла не спрашивает про город, собирает план, намекает «изучите план, потом — синяя кнопка каталога», про обучение лишь советует; кнопка «Открыть каталог» синяя, с фильтром по задаче');
+  ok(await p.evaluate(() => !!document.querySelector('.plan-res .plan-card') && !!document.querySelector('.plan-res a[data-sx="plan-range-card"]') && /Открыть каталог по задаче/.test(document.querySelector('.plan-res a[data-sx="plan-range-card"]').textContent)), 'сводка плана на экране, а в конце плана есть и ссылка «Открыть каталог по задаче»');
+  await wait(6500);
+  ok(await p.evaluate(() => document.body.getAttribute('data-page') === 'start' && !!document.querySelector('.plan-res')), 'автоперехода в каталог нет: спустя несколько секунд человек всё ещё на странице плана и читает сводку');
+  await p.click('.pchat-comp [data-pl-go="catalog"]');
   await p.waitForFunction(() => document.body.getAttribute('data-page') === 'catalog', null, {timeout: 20000}); await wait(700);
-  ok(await p.evaluate(t => new URLSearchParams(location.search).get('task') === t && document.querySelector('#f-task') && document.querySelector('#f-task').value === t, rt), 'после ответа посетитель сам оказывается в каталоге с выставленным фильтром по его задаче');
+  ok(await p.evaluate(t => new URLSearchParams(location.search).get('task') === t && document.querySelector('#f-task') && document.querySelector('#f-task').value === t, rt), 'по нажатию синей кнопки посетитель оказывается в каталоге с выставленным фильтром по его задаче');
   ok(await p.evaluate(() => { const l = JSON.parse(localStorage.getItem('astreya:plan') || 'null'); return !!(l && l.st.goal === 'range' && l.st.tasks.length >= 1); }), 'ответы сохранены: к плану можно вернуться на странице подбора');
   await p.context().close();
-  p = await mk(); await p.open('start.html?v=planFlow:four'); await comp(p, 'role');
-  await p.fill('.pchat-text', 'Хочу сразу посмотреть ассортимент по акне'); await p.press('.pchat-text', 'Enter'); await comp(p, 'range');
-  ok(await p.evaluate(() => /catalog\.html\?task=acne/.test(document.querySelector('[data-pl-go="catalog"]').getAttribute('href'))), 'свободной фразой «хочу посмотреть ассортимент по акне» — тот же перевод в каталог по задаче «Акне»');
-  await p.click('[data-pl="again"]'); await comp(p, 'role'); await wait(700);
-  ok(await p.evaluate(() => document.body.getAttribute('data-page') === 'start'), '«Начать заново» отменяет автоматический перевод в каталог');
+  p = await mk(); await p.open('start.html'); await comp(p, 'tasks');
+  await p.fill('.pchat-text', 'Хочу сразу посмотреть ассортимент по акне'); await p.press('.pchat-text', 'Enter'); await comp(p, 'after');
+  ok(await p.evaluate(() => /catalog\.html\?task=acne/.test(document.querySelector('.pchat-comp [data-pl-go="catalog"]').getAttribute('href')) && !!document.querySelector('.plan-res')), 'свободной фразой «хочу посмотреть ассортимент по акне» — тот же план со сводкой и кнопкой в каталог по задаче «Акне»');
+  await p.click('[data-pl="editstep"][data-v="goal"]'); await comp(p, 'goal'); await p.click('.plan-opt[data-v="train"]'); await comp(p, 'city');
+  ok(await p.evaluate(() => /удобнее учиться/.test(document.querySelector('.pchat-log').textContent) && !document.querySelector('.pchat-comp [data-pl-go="catalog"]')), 'передумал и выбрал обучение — вопрос про город возвращается, кнопка каталога уходит');
+  await p.click('[data-pl="again"]'); await comp(p, 'tasks'); await wait(700);
+  ok(await p.evaluate(() => document.body.getAttribute('data-page') === 'start'), '«Начать заново» остаётся на странице подбора');
   await p.context().close();
 
   /* вариант по умолчанию (выбор арены) и телефон: короткий путь без вопроса о роли */

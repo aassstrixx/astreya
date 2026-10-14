@@ -153,7 +153,7 @@ const cfg = JSON.parse(fs.readFileSync(pth.join(ROOT, 'data/redesign.json'), 'ut
       await p.reload(); await skipSplash(); cb = await cmpBarOn(); ok(cb && cb.n === 3, 'выбор сохраняется после перезагрузки');
       await click('#cmp-bar .cmp-ask'); await p.waitForSelector('#asst-log .asst-disc', {timeout: 25000}).catch(() => {}); await wait(400);
       const said = await p.evaluate(() => ({open: document.body.classList.contains('asst-open'), table: !!document.querySelector('.cmp-t, #modal.open'), txt: (() => { const rows = Array.from(document.querySelectorAll('#asst-log .asst-m.asst-b')), r = rows[rows.length - 1]; return r && r.querySelector('.asst-tx') ? r.querySelector('.asst-tx').textContent : ''; })(), plate: !!document.querySelector('#asst-log .asst-disc')}));
-      ok(said.open && !said.table && /Сравниваю/.test(said.txt) && said.plate, 'плашка открывает чат: Стелла сравнивает выбранные товары по данным сайта, с пометкой «не медицинская рекомендация», без таблицы', said);
+      ok(said.open && !said.table && /Сравниваю|Давайте сравним|Смотрю на/.test(said.txt) && said.plate, 'плашка открывает чат: Стелла сравнивает выбранные товары по данным сайта, с пометкой «не медицинская рекомендация», без таблицы', said);
       await p.keyboard.press('Escape'); await wait(500);
       await click('#cmp-bar .cmp-clr'); await wait(300); ok(await cmpN() === 0 && await cmpBarOn() === null, '«Очистить» на плашке убирает выбор и саму плашку');
     } else {

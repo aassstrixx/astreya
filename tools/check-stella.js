@@ -52,6 +52,32 @@ console.log('1. Данные библиотеки');
   ok((S.words || []).length >= 60, 'словарь для распознавания раскладки', (S.words || []).length);
 }
 
+/* ---------- 1б. «Голос Стеллы» (data/stella/voice.json): реплики своими словами ---------- */
+console.log('1б. Голос Стеллы');
+{
+  const V = S.voice || {}, pools = V.pools || {}, W = V.welcome || {}, bad = [];
+  const PH = new Set(['hello', 'phone', 'hours', 'email', 'company', 'time', 'date', 'weekday', 'nm', ',nm', 'city', 'adv', 'name', 'brand', 'cat', 'kind', 'tasks', 'volume', 'usage', 'actives', 'country', 'tag', 'n', 'nword', 'label', 'brands', 'm', 'mword', 'cats', 'titles', 'ctx', 'days', 'fm', 'title', 'tiers', 'who', 'say', 'names', 'group']);
+  const NEED = ['greet', 'greet.again', 'thanks', 'bye', 'declined', 'role', 'who', 'product.open', 'product.kind', 'product.tasks', 'product.new', 'product.gap', 'product.follow', 'brand.open', 'brand.open.nocountry', 'brand.group', 'brand.profile', 'brand.count', 'brand.follow', 'task.open', 'task.brands', 'task.more', 'task.note', 'task.follow', 'events.list', 'events.next', 'events.none', 'events.free', 'events.follow', 'discount.tiers', 'discount.ask', 'discount.lead', 'discount.note', 'discount.follow', 'contacts.open', 'contacts.follow', 'partner.how', 'partner.gain', 'partner.follow', 'about.text', 'about.gain', 'about.follow', 'news.open', 'info.open', 'info.follow', 'compare.open', 'compare.one', 'compare.follow', 'nav.open', 'nav.show', 'pick', 'catalog', 'price', 'avail', 'yes.partner', 'yes.tour', 'yes.request', 'yes.register', 'yes.callback'];
+  NEED.forEach(k => { if (!(pools[k] && pools[k].length)) bad.push('нет пула ' + k); });
+  const SOLO = new Set(['news.none', 'task.follow.cosmetologist', 'task.follow.salon', 'task.follow.clinic', 'task.follow.shop', 'greet.again']);
+  const check = (where, a) => {
+    if (typeof a !== 'string' || a.trim().length < 6) { bad.push(where + ': пустая реплика'); return; }
+    if (a.length > 700) bad.push(where + ': длинная (' + a.length + ')');
+    (a.match(/\{([^{}]+)\}/g) || []).forEach(p => { if (!PH.has(p.slice(1, -1))) bad.push(where + ': подстановка ' + p); });
+    if (/claude|anthropic|openai|gpt-|sonnet|opus|haiku|gemini|llama/i.test(a)) bad.push(where + ': название модели');
+    if (/(?:лучш(?:ий|ая|ее|ие)|гарантир|только сегодня|успейте|осталось\s+\d+\s+мест|последн(?:ие|яя) штук|все уже купили)/i.test(a)) bad.push(where + ': давление/обещание: ' + a.slice(0, 40));
+    if (/(?:^|[^а-яё])(?:нашёл|нашел|подобрал|показал|посмотрел|искал|рад)(?![а-яё])/i.test(a)) bad.push(where + ': мужской род о себе: ' + a.slice(0, 40));
+    if (/Стелла\s+(?:подбер|расскаж|найд|помож|покаж)/i.test(a)) bad.push(where + ': Стелла говорит о себе в третьем лице');
+  };
+  Object.keys(pools).forEach(k => { const a = pools[k]; if (!Array.isArray(a)) { bad.push(k + ': не список'); return; } if (a.length < 2 && !SOLO.has(k)) bad.push(k + ': меньше двух вариантов'); if (new Set(a).size !== a.length) bad.push(k + ': одинаковые варианты'); a.forEach((x, i) => check(k + '[' + i + ']', x)); });
+  Object.keys(W).forEach(k => { const a = W[k]; if (k === 'nav' || k === 'ai') { check('welcome.' + k, a.trim()); return; } if (!Array.isArray(a) || a.length < 2) bad.push('welcome.' + k + ': меньше двух вариантов'); (a || []).forEach((x, i) => check('welcome.' + k + '[' + i + ']', x)); });
+  ok(!bad.length, 'голос Стеллы: ' + Object.keys(pools).length + ' списков реплик и ' + Object.keys(W).length + ' приветствий — подстановки известны, по два варианта и больше, женский род, без давления и названий моделей', bad.slice(0, 8));
+  ok(['default', 'product', 'brand', 'event', 'catalog', 'training', 'partners'].every(k => Array.isArray(W[k]) && W[k].length >= 2), 'приветствие панели есть для главной, товара, бренда, мероприятия, каталога, обучения и партнёрства');
+  const b = brain(), st = b.newState(); const w = [b.welcome({}, st, {}), b.welcome({}, st, {}), b.welcome({}, st, {})];
+  ok(new Set(w).size === 3 && w.every(x => /^(?:Доброе утро|Добрый день|Добрый вечер|Доброй ночи)/.test(x)), 'приветствие панели чередуется и подстраивается под время суток', w.map(x => x.slice(0, 40)));
+  ok(/Elastense/.test(b.welcome({product: 'dt-elastense'}, b.newState(), {})) && /Dermatime/.test(b.welcome({brand: 'dermatime'}, b.newState(), {})), 'на странице товара и бренда приветствие называет их');
+}
+
 /* ---------- 2. формулировки → темы ---------- */
 console.log('2. Формулировки пользователей → тема');
 const CASES = [];
