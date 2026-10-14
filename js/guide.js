@@ -226,7 +226,7 @@
       const last = i >= n - 1; saveTour(T.id, i, false);
       const say = v => { const p = $('#g-spot .g-tx p'); if (p && cur && cur.stepI === i && cur.tour === T.id) p.innerHTML = bold(fill(st.say, v)); };
       const buttons = [].concat(i > 0 ? [{l: 'Назад', act: 'g-tour-prev'}] : []);
-      if (st.final) buttons.push({l: 'Открыть каталог', act: 'asst-go', d: {href: 'catalog.html'}, primary: true}, {l: 'Подобрать по задаче', act: 'asst-go', d: {href: 'catalog.html', show: 'task-filter'}}, {l: 'Спросить Стеллу', act: 'asst-open'}, {l: 'Закрыть', act: 'g-spot-x'});
+      if (st.final) buttons.push({l: 'Открыть каталог', act: 'asst-go', d: {href: 'catalog.html'}, primary: true}, (A.planChip && A.planChip.on() ? {l: A.planChip.label, act: 'asst-go', d: {href: A.sales.path}} : {l: 'Подобрать по задаче', act: 'asst-go', d: {href: 'catalog.html', show: 'task-filter'}}), {l: 'Спросить Стеллу', act: 'asst-open'}, {l: 'Закрыть', act: 'g-spot-x'});
       else buttons.push({l: st.next && st.next.l || (last ? 'Готово' : 'Далее'), act: 'g-tour-next', primary: true}, ...(st.offer ? [{l: st.offer.l, act: 'g-tour-offer'}] : []), {l: 'Пропустить', act: 'g-spot-x'});
       if (el && st.view) { const v = $(st.view); if (v) { const top = Math.max(0, Math.round(scrollY + v.getBoundingClientRect().top - 76)); window.scrollTo({top, behavior: 'smooth'}); } }          // «показать с начала»: главная — с первого экрана
       spot(el || document.body, {t: t || {id: 'free'}, tour: T.id, stepI: i, prog: prog(T, i), text: st.do && st.pre ? st.pre : fill(st.say, {}), buttons, free: !el, noScroll: !!st.view, onClose: () => { runCleanup(true); store.del(KT); }});
@@ -308,6 +308,8 @@
   A.actions['g-tour-prev'] = () => tourMove(-1);
   A.actions['g-tour-offer'] = () => { const c = store.get(KT), T = c && tourById(c.id), st = T && T.steps[c.i]; if (st && st.offer && OFFER[st.offer.do]) OFFER[st.offer.do](T, c.i, st); };
   A.actions['g-tour-cmp'] = () => { undo = []; undoT = []; store.del(KT); hideSpot(true); if (A.actions['cmp-ask']) A.actions['cmp-ask'](); };          // посетитель сам попросил рассказать об отмеченных товарах — они остаются в сравнении
+  /* подсказки-вопросы: «Старт со Стеллой» (если включён продающий слой) — выделенная кнопка-ссылка на start.html, остальные — вопросы Стелле */
+  const chipsHTML = (list, n) => (A.planChip ? A.planChip.list(list) : (list || [])).slice(0, n).map(c => (A.planChip && A.planChip.html(c)) || '<button class="chip" type="button" data-act="g-chip" data-q="' + esc(c) + '">' + esc(c) + '</button>').join('');
   A.actions['g-chip'] = t => { hideNudge(true); S().ask && S().ask(t.getAttribute('data-q') || ''); };
   A.actions['g-nudge-x'] = () => { hideNudge(true); store.set(KN, Object.assign(nstate(), {off: 1})); };
   document.addEventListener('keydown', e => { if (e.key === 'Escape' && $('#g-spot') && !$('#g-spot').hidden) hideSpot(); });
@@ -340,7 +342,7 @@
     let a = null; try { a = $(cfg.anchor); } catch (e) {} if (!a) return;
     const el = document.createElement('aside'); el.className = 'g-entry'; el.setAttribute('aria-label', 'Помощник Стелла'); el.setAttribute('data-style', (G.entry && G.entry.style) || 'strip');          // strip · slim · card
     el.innerHTML = '<span class="g-e-pe" aria-hidden="true">' + (A.pearl ? A.pearl('happy', true) : '') + '</span><div class="g-e-t"><b>' + esc(cfg.title) + '</b><p>' + esc(cfg.text) + '</p></div>' +
-      '<div class="g-e-ch">' + (cfg.chips || []).slice(0, 4).map(c => '<button class="chip" type="button" data-act="g-chip" data-q="' + esc(c) + '">' + esc(c) + '</button>').join('') + '</div>' +
+      '<div class="g-e-ch">' + chipsHTML(cfg.chips, 4) + '</div>' +
       '<button class="btn btn-fill btn-sm g-e-b" type="button" data-act="asst-open" data-track="guide_entry">Спросить Стеллу</button>';
     const pos = cfg.pos || 'after';
     if (pos === 'after') a.insertAdjacentElement('afterend', el);
@@ -357,7 +359,7 @@
     if (nEl && nEl.isConnected) return nEl; nEl = document.createElement('div'); nEl.id = 'g-nudge'; nEl.className = 'g-nudge'; nEl.hidden = true; nEl.setAttribute('role', 'status'); document.body.appendChild(nEl); return nEl;
   }
   function allowed(force) {
-    const pgOff = NU.pages && NU.pages[pageKey()] && NU.pages[pageKey()].off; if (pgOff) return false;          // на странице стартового подбора подсказка «Не знаете, что выбрать?» не нужна: человек уже выбирает
+    const pgOff = NU.pages && NU.pages[pageKey()] && NU.pages[pageKey()].off; if (pgOff) return false;          // на странице «Старта со Стеллой» подсказка «Не знаете, что выбрать?» не нужна: человек уже выбирает
     const st = nstate(), S_ = S(); if (st.off || st.n >= MAXN || (!force && Date.now() - st.last < COOL)) return false;
     if (document.hidden || (S_.state && (S_.state().open || S_.state().interacted || S_.state().busy))) return false;
     const b = document.body.classList; if (b.contains('x-intro') || b.contains('locked') || b.contains('menu-open') || b.contains('asst-open') || b.contains('g-on')) return false;
@@ -380,7 +382,7 @@
     const el = nudgeDom(); st.n++; st.last = Date.now(); st.seen = st.seen || {}; st.seen[key] = 1; store.set(KN, st);
     el.setAttribute('data-layout', NU.layout || 'bubble');          // bubble — пузырь с кнопками-вопросами · pill — одна строка · card — карточка (выбирает арена: tools/arena-stella.js)
     el.innerHTML = '<span class="g-n-pe" aria-hidden="true">' + (A.pearl ? A.pearl('happy', true) : '') + '</span><div class="g-n-b"><button class="g-n-t" type="button" data-act="asst-open" data-track="guide_nudge_' + esc(reason) + '">' + esc(cfg.text) + '</button>' +
-      ((cfg.chips || []).length ? '<div class="g-n-ch">' + cfg.chips.slice(0, 3).map(c => '<button class="chip" type="button" data-act="g-chip" data-q="' + esc(c) + '">' + esc(c) + '</button>').join('') + '</div>' : '') + '<button class="btn btn-fill btn-sm g-n-go" type="button" data-act="asst-open" data-track="guide_nudge_go">Спросить Стеллу</button></div>' +
+      ((cfg.chips || []).length ? '<div class="g-n-ch">' + chipsHTML(cfg.chips, 3) + '</div>' : '') + '<button class="btn btn-fill btn-sm g-n-go" type="button" data-act="asst-open" data-track="guide_nudge_go">Спросить Стеллу</button></div>' +
       '<button class="g-n-x" type="button" data-act="g-nudge-x" aria-label="Скрыть подсказку">' + I.close + '</button>';
     el.hidden = false; void el.offsetWidth; el.classList.add('on'); S().hey && S().hey();
     A.track && A.track('guide_nudge', {reason, page: pageKey()});

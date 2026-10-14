@@ -68,7 +68,7 @@ console.log('   проверено формулировок: ' + nCase);
 /* ---------- 2б. всё, что есть на сайте, библиотека перехватывать не должна ---------- */
 console.log('2б. Вопросы по данным сайта не перехватываются библиотекой');
 {
-  const bad = [], tried = []; const chk = q => { tried.push(q); const b = brain(), r = b.reply(q, b.newState(), {}); if (r.intent === 'talk') bad.push(q + ' → ' + r.topic); };
+  const bad = [], tried = []; const chk = q => { tried.push(q); const b = brain(), r = b.reply(q, b.newState(), {}); if (r.intent === 'talk' && r.topic !== 'sx_planner') bad.push(q + ' → ' + r.topic); };          // sx_planner — честный ответ про страницу «Старт со Стеллой» (она названа именем самой Стеллы), а не светская реплика
   (D.products || []).forEach(p => { chk(p.name); chk('Расскажите про ' + p.name); chk('Сколько стоит ' + p.name + '?'); });
   (D.brands || []).forEach(x => { chk(x.name); chk('Расскажи о бренде ' + x.name); chk('Что есть у ' + x.name + '?'); chk('что такое ' + x.name); });
   (D.tasks || []).forEach(t => { chk(t.label); chk('Что есть для задачи «' + t.label + '»?'); chk('посоветуй от ' + t.label.toLowerCase()); });

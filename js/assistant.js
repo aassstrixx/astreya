@@ -80,7 +80,7 @@
     const ev = $('[data-event]'); if (ev && page === 'event') c.event = ev.getAttribute('data-event');
     const br = $('[data-brand-page]'); if (br && page === 'brand') c.brand = br.getAttribute('data-brand-page');
     const cm = cmpIds(); if (cm.length) c.cmp = cm;
-    if (A.sales && A.sales.plan) { const pl = A.sales.plan(); if (pl) c.plan = pl; }          // стартовый подбор посетителя (extras.sales): чтобы Стелла говорила о «его плане»
+    if (A.sales && A.sales.plan) { const pl = A.sales.plan(); if (pl) c.plan = pl; }          // «Старт со Стеллой» посетителя (extras.sales): чтобы Стелла говорила о «его плане»
     return c;
   }
 
@@ -238,9 +238,26 @@
   function announce(text) { const s = $('#asst-sr'); if (s) { s.textContent = ''; setTimeout(() => { s.textContent = String(text || '').replace(/\*\*/g, ''); }, 30); } }
   function afterRender() { if (A.rlSync) A.rlSync(); if (A.cmpSync) A.cmpSync(); }
 
+  /* «Старт со Стеллой» (extras.sales). Прежняя кнопка «Подобрать (средство) по задаче» заменена выделенной синей кнопкой: она не пишет в чат, а ведёт на страницу start.html — диалог со Стеллой.
+     Подмена идёт при отрисовке (в данных реплик оставлены прежние подписи), поэтому без продающего слоя всё работает как раньше. */
+  const PLAN_OLD = ['Подобрать средство по задаче', 'Подобрать по задаче'], PLAN_Q = 'Старт со Стеллой', planOn = () => !!(A.sales && A.sales.path);
+  A.planChip = {
+    label: PLAN_Q, on: planOn,
+    list(chips) { if (!planOn()) return chips || []; const out = []; let seen = false; (chips || []).forEach(c => { if (PLAN_OLD.indexOf(c) >= 0 || c === PLAN_Q) { if (!seen) { seen = true; out.push(PLAN_Q); } } else out.push(c); }); return out; },          // на месте прежней кнопки; повторов нет
+    html(c, extra) { return c === PLAN_Q && planOn() ? '<button class="chip chip-plan" type="button"' + (extra || '') + ' data-act="g-plan" data-track="plan_chip">' + esc(c) + ' ' + A.I.arrow + '</button>' : null; },
+    go() {
+      if (!planOn()) return; const path = A.sales.path; A.track && A.track('plan_chip_click', {page: document.body.getAttribute('data-page') || ''});
+      if (isOpen) closeChat(true);
+      if (A.showPage) { A.showPage(path, '', '', true, false); return; }          // автономная сборка: свой роутер
+      let u; try { u = new URL((document.body.getAttribute('data-root') || '') + path, location.href).href; } catch (e) { u = path; }
+      if (A.navigate) A.navigate(u, false); else location.href = u;
+    }
+  };
+  A.actions['g-plan'] = () => A.planChip.go();
   function qrPaint(list) {
-    const q = $('#asst-qr'); if (!q) return; q.innerHTML = (list || []).slice(0, 4).map((t, i) => '<button class="chip" type="button" style="--i:' + i + '" data-act="asst-chip" data-q="' + esc(t) + '">' + esc(t) + '</button>').join('');
+    const q = $('#asst-qr'); if (!q) return; q.innerHTML = A.planChip.list(list).slice(0, 4).map((t, i) => A.planChip.html(t, ' style="--i:' + i + '"') || '<button class="chip" type="button" style="--i:' + i + '" data-act="asst-chip" data-q="' + esc(t) + '">' + esc(t) + '</button>').join('');
   }
+
 
   /* ---------- построение интерфейса ---------- */
   function build() {
@@ -296,7 +313,7 @@
     else if (c.brand && B[c.brand]) parts.push('сейчас на странице бренда: ' + B[c.brand].name + ' (' + c.brand + ')');
     else if (pg) parts.push('сейчас на странице «' + pg.label + '»');
     if (c.cmp && c.cmp.length) parts.push('отметил для сравнения: ' + c.cmp.map(id => P[id].name + ' (' + id + ')').join(', '));
-    if (c.plan && c.plan.summary && c.plan.summary.length) parts.push('собрал стартовый подбор: ' + c.plan.summary.join('; '));
+    if (c.plan && c.plan.summary && c.plan.summary.length) parts.push('собрал «Старт со Стеллой»: ' + c.plan.summary.join('; '));
     if (bst && (bst.city || bst.role)) parts.push('из диалога: ' + [bst.role ? 'роль — ' + bst.role : '', bst.city ? 'город — ' + bst.city : ''].filter(Boolean).join(', '));
     return parts.length ? '[Посетитель ' + parts.join('; ') + ']\n' : '';
   }

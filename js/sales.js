@@ -4,7 +4,7 @@
    выдуманного дефицита, отзывов и стыдящих отказов. Все факты (даты семинаров, скидки, преимущества) берутся из данных сайта.
 
    Что здесь:
-   · стартовый подбор (страница start.html) — 3–5 коротких вопросов → план: линейки, товары, ближайшее обучение, ориентировочные условия → заявка менеджеру;
+   · «Старт со Стеллой» (страница start.html) — 3–5 коротких вопросов → план: линейки, товары, ближайшее обучение, ориентировочные условия → заявка менеджеру;
    · панель следующего шага — плашка в «доке» внизу экрана (телефон — по умолчанию; компьютер — только в варианте проверки barDesktop=pill);
    · ходы по страницам (подборки, маршрут бренда, календарь встреч, ориентир скидки…) — отдельный файл js/sales-pages.js, он подключается к этому ядру (A.sales.kit); даты считаются в браузере — статичная сборка быстро устарела бы;
    · «что дальше» после отправленной заявки;
@@ -140,13 +140,13 @@
     return L;
   }
   function planText(pl) {
-    const L = ['Стартовый подбор с сайта «Астрея»', ''].concat(summaryLines(pl), ['']);
+    const L = ['Стартовый план с сайта «Астрея»', ''].concat(summaryLines(pl), ['']);
     if (pl.brands.length) L.push('Линейки: ' + pl.brands.map(b => B[b].name).join(', '));
     if (pl.products.length) L.push('Товары: ' + pl.products.map(p => p.name).join('; '));
     if (pl.events.length) L.push('Ближайшие мероприятия: ' + pl.events.map(e => dShort(e.date) + ', ' + e.city + ' — ' + e.title).join('; '));
     return L.join('\n');
   }
-  const planRef = pl => ('Стартовый подбор: ' + [pl.st.role ? optLabel('role', pl.st.role) : '', pl.tasks.map(t => T[t].label).join(', ')].filter(Boolean).join(' · ')).slice(0, 280);
+  const planRef = pl => ('Старт со Стеллой: ' + [pl.st.role ? optLabel('role', pl.st.role) : '', pl.tasks.map(t => T[t].label).join(', ')].filter(Boolean).join(' · ')).slice(0, 280);
   const planRel = st => {
     const q = new URLSearchParams(); if (st.role) q.set('r', st.role); if (st.tasks.length) q.set('t', st.tasks.join(',')); if (st.goal) q.set('g', st.goal); if (st.city) q.set('c', st.city); if (st.volume) q.set('v', st.volume); if (st.brand) q.set('b', st.brand);
     const s = q.toString(); return planPath + (s ? '?' + s : '');
@@ -176,13 +176,14 @@
   const answered = name => name === 'tasks' ? UI.st.tasks.length > 0 : !!UI.st[name] || !!UI.skip[name];
   const firstOpen = () => flow().findIndex(n => !answered(n));
   const logEl = () => UI && UI.host ? $('.pchat-log', UI.host) : null;
-  const toEnd = () => { const l = logEl(); if (l) l.scrollTo({top: l.scrollHeight, behavior: 'smooth'}); };
-  const toEndSoon = () => { toEnd(); requestAnimationFrame(toEnd); setTimeout(toEnd, 260); };
+  /* прокрутка окна диалога: новая реплика — вниз, но только если человек не листает историю вверх; своя реплика всегда возвращает вниз; без «плавной» прокрутки (она дёргалась при быстрых репликах) */
+  const nearEnd = l => l.scrollHeight - l.scrollTop - l.clientHeight < 90;
+  const toEnd = force => { const l = logEl(); if (!l) return; if (force) UI.stick = true; if (!UI.stick) return; requestAnimationFrame(() => { l.scrollTop = l.scrollHeight; }); };
   function bubble(r, html, cls) {
     const l = logEl(); if (!l) return null;
     const row = document.createElement('div'); row.className = 'pc-m pc-' + r + (cls ? ' ' + cls : '');
     row.innerHTML = (r === 'b' ? '<span class="pc-av">' + avatar() + '</span>' : '') + '<div class="pc-bub">' + html + '</div>';
-    l.appendChild(row); toEnd(); return row;
+    l.appendChild(row); toEnd(r === 'u'); return row;
   }
   async function say(html, ms) {                 // «Стелла печатает…» → сообщение
     const run = UI.run, l = logEl(); if (!l) return;
@@ -200,7 +201,7 @@
   }
   function paintHead() {
     const h = UI && UI.host ? $('.pchat-prog', UI.host) : null; if (!h) return; const fl = flow();
-    h.innerHTML = UI.result ? '<span class="plan-prog-t">План готов</span>' : progress(Math.min(UI.i + 1, fl.length), fl.length);
+    h.innerHTML = UI.redirect ? '<span class="plan-prog-t">' + esc(CH.redirecting) + '</span>' : UI.result ? '<span class="plan-prog-t">План готов</span>' : progress(Math.min(UI.i + 1, fl.length), fl.length);
   }
   function stepOptions(name) {
     if (name === 'tasks') return (D.tasks || []).map(t => ({id: t.id, label: t.label}));
@@ -213,18 +214,13 @@
   }
   const quick = (act, label, extra) => '<button class="pc-quick' + (extra && extra.fill ? ' fill' : '') + '" type="button" data-pl="' + act + '"' + (extra && extra.v ? ' data-v="' + esc(extra.v) + '"' : '') + '>' + esc(label) + '</button>';
   /* нижняя панель: варианты ответа на текущий вопрос (или быстрые действия) */
-  function fitChat() {                           // окно диалога целиком на экране: варианты ответа и поле ввода внизу не прячутся за краем
-    if (!UI || UI.fitted) return; UI.fitted = true; const c = $('.pchat', UI.host); if (!c) return; const r = c.getBoundingClientRect();
-    if (r.bottom > innerHeight - 6) window.scrollTo({top: Math.max(0, window.scrollY + r.top - 78), behavior: 'smooth'});
-  }
   function setComp(name) {
     const c = UI && UI.host ? $('.pchat-comp', UI.host) : null; if (!c) return;
     if (!name) { c.hidden = true; c.innerHTML = ''; c.removeAttribute('data-step'); return; }
     c.hidden = false; c.setAttribute('data-step', name);
-    toEndSoon();
-    fitChat();
+    toEnd();
     if (name === 'after') {
-      c.innerHTML = '<div class="pc-chips"><span class="pc-chips-l">' + esc(CH.editLabel) + '</span>' + flow().map(n => quick('editstep', (CH.stepNames || {})[n] || n, {v: n})).join('') + quick('again', CH.btnAgain) + '</div>'; return;
+      c.innerHTML = '<div class="pc-chips">' + quick('toplan', CH.btnToPlan, {fill: 1}) + '<span class="pc-chips-l">' + esc(CH.editLabel) + '</span>' + flow().map(n => quick('editstep', (CH.stepNames || {})[n] || n, {v: n})).join('') + quick('again', CH.btnAgain) + '</div>'; return;
     }
     if (name === 'resume') { c.innerHTML = '<div class="pc-chips">' + quick('resume-yes', CH.btnResumeYes, {fill: 1}) + quick('again', CH.btnResumeNo) + '</div>'; return; }
     const S = STEPS[name] || {}, multi = name === 'tasks', st = UI.st, sel = multi ? st.tasks : [st[name]], max = S.max || 3, full = multi && st.tasks.length >= max;
@@ -248,6 +244,43 @@
   const leftLine = open => open <= 0 ? '' : open === 1 ? CH.left.one : fill(open < 5 ? CH.left.few : CH.left.many, {n: open});
   const knownList = st => { const L = []; if (st.role) L.push(optLabel('role', st.role)); if ((st.tasks || []).length) L.push(st.tasks.map(t => (T[t] || {}).label).filter(Boolean).join(', ')); if (st.goal) L.push(optLabel('goal', st.goal)); if (st.city) L.push(st.city); if (st.volume && st.volume !== 'na') L.push(optLabel('volume', st.volume)); return L.filter(Boolean); };
 
+  /* ----- живые реплики: оттенки подтверждений, финал под конкретный план, факты ----- */
+  const rnd = a => a[Math.floor(Math.random() * a.length)];
+  const hashStr = str => { let h = 7; for (let i = 0; i < str.length; i++) h = (h * 31 + str.charCodeAt(i)) >>> 0; return h; };
+  function ackLine(name, v) {
+    const base = rnd((CH.ack || {})[name] || ['']);
+    if (name === 'city' && v && v !== 'Онлайн') { const n = upcoming().filter(e => e.city === v).length; return base + ' ' + (n ? fill((CH.cityNote || {}).some, {n: n}) : (CH.cityNote || {}).none); }
+    return base;
+  }
+  function factsFor(pl) {
+    const FC = PL.facts || {}, seed = hashStr([pl.st.role, pl.tasks.join(), pl.goal, pl.st.city].join('|')), out = [], S = FC.site || {};
+    pl.tasks.slice(0, 3).forEach((t, i) => { const a = (FC.tasks || {})[t]; if (a && a.length) out.push({tag: T[t].label, text: a[(seed + i) % a.length], src: 'g'}); });
+    const rl = (FC.roles || {})[pl.st.role || 'other']; if (rl) out.push({tag: pl.st.role ? optLabel('role', pl.st.role) : 'Для старта', text: rl, src: 'g'});
+    if ((pl.goal === 'train' || pl.goal === 'both') && S.train) out.push({tag: 'Обучение', text: S.train, src: 's'});
+    if (pl.goal === 'train') { if (S.order) out.push({tag: 'Как заказать', text: S.order, src: 's'}); }
+    else if (S.terms && pl.tiers.length) out.push({tag: 'Условия закупки', text: fill(S.terms, {tiers: pl.tiers.map(d => d.pct + '% от ' + rub(d.from)).join(', ')}), src: 's'});
+    return out.slice(0, 6);
+  }
+  function factsHTML(pl) {
+    const FC = PL.facts || {}, list = factsFor(pl); if (!list.length) return '';
+    return '<section class="plan-sec plan-facts"><h3>' + esc(FC.title) + '</h3><ul class="plan-facts-l">' + list.map(f => '<li class="pf-' + f.src + '"><span class="pf-tag">' + esc(f.tag) + '</span><p>' + esc(f.text) + '</p><small>' + esc(f.src === 's' ? FC.tagSite : FC.tagGeneral) + '</small></li>').join('') + '</ul><p class="plan-fine muted">' + esc(FC.note) + '</p></section>';
+  }
+  function finalMessages(pl) {
+    const F = CH.finish || {}, st = pl.st, ev = pl.events[0], n = flow().length;
+    const tasksTxt = pl.tasks.map(t => T[t].label).join(', '), brandsTxt = pl.brands.map(id => B[id].name).join(', '), evTxt = ev ? dShort(ev.date) + ', ' + ev.city : '';
+    const eventLine = ev ? fill(F.eventLine.some, {event: evTxt}) : F.eventLine.none;
+    const productsLine = pl.products.length ? fill(F.productsLine.some, {n: pl.products.length, nword: plural(pl.products.length, 'товар', 'товара', 'товаров'), brands: brandsTxt}) : F.productsLine.none;
+    const stepsTxt = fill(n === 1 ? F.steps.one : n < 5 ? F.steps.few : F.steps.many, {n: n});
+    const openers = (F.openers || []).filter(o => brandsTxt || o.indexOf('{brands}') < 0);
+    const lead = UI.updated ? CH.updated : fill(rnd(openers), {steps: stepsTxt, tasks: tasksTxt, brands: brandsTxt});
+    const body = fill(rnd((F.bodies || {})[pl.goal] || (F.bodies || {}).any || ['']), {event: ev ? ' (' + evTxt + ')' : '', eventLine: eventLine, productsLine: productsLine});
+    const roleLine = (F.roleClosers || {})[st.role || 'other'] || '';
+    const out = ['<p>' + esc(lead + ' ' + body) + '</p><p class="pc-lead">' + esc(roleLine) + '</p><p class="pc-lead">' + esc(F.closer) + '</p>'];
+    const g = factsFor(pl).filter(f => f.src === 'g' && f.tag !== 'Для старта' && !(st.role && f.tag === optLabel('role', st.role)))[0];
+    if (g && !UI.updated) out.push('<p>' + esc(fill(F.factTeaser, {fact: g.text})) + '</p>');
+    return out;
+  }
+
   /* ----- ход диалога ----- */
   async function ask(i, lead) {
     const run = UI.run, fl = flow(), name = fl[i], S = STEPS[name] || {};
@@ -256,27 +289,41 @@
     if (!UI || UI.run !== run) return;
     setComp(name);
   }
+  /* «Сразу подобрать ассортимент»: человек хочет смотреть продукцию — переводим в каталог по его задаче, а про обучение лишь советуем (без вопросов про город и без плана с семинарами) */
+  async function toCatalog(run) {
+    const st = UI.st, t0 = st.tasks[0], path = 'catalog.html?task=' + encodeURIComponent(t0), ev = upcoming()[0];
+    savePlan(st, true); local.del(KD); UI.redirect = true; track('plan_range', {tasks: st.tasks.join(','), task: t0}); paintHead();
+    const lead = esc(fill(CH.rangeGo, {task: labelOf('tasks', t0)})) + (st.tasks.length > 1 ? ' ' + esc(CH.rangeMore) : '');
+    const tip = esc(ev ? fill(CH.rangeTip, {event: dShort(ev.date) + ', ' + ev.city}) : CH.rangeTipNone);
+    await say('<p>' + lead + '</p><p class="pc-lead">' + tip + '</p>'); if (!UI || UI.run !== run) return;
+    const c = $('.pchat-comp', UI.host); if (!c) return; c.hidden = false; c.setAttribute('data-step', 'range');
+    c.innerHTML = '<div class="pc-chips">' + link(path, 'pc-quick fill', esc(CH.btnCatalog) + ' ' + I.arrow, 'plan-range', ' data-pl-go="catalog"') + link('training.html', 'pc-quick', esc(CH.btnTrain), 'plan-range-train') + quick('again', CH.btnAgain) + '</div>'; toEnd();
+    clearTimeout(UI.rangeT); UI.rangeT = setTimeout(() => { const a = $('[data-pl-go="catalog"]', UI.host); if (a && UI && UI.run === run) a.click(); }, Math.round(4200 / speed()));          // сами откроем каталог, если человек не выбрал иное
+  }
   async function advance(run, lead) {
     if (!UI || UI.run !== run) return;
+    if (UI.st.goal === 'range' && UI.st.tasks.length) return toCatalog(run);
     const k = firstOpen(); if (k < 0) return complete(run);
     const open = flow().filter(n => !answered(n)).length, left = leftLine(open);
     await ask(k, [lead, left].filter(Boolean).join(' '));
   }
   async function complete(run) {
-    await say('<p>' + esc(UI.updated ? CH.updated : CH.ready) + '</p>'); if (!UI || UI.run !== run) return;
+    const msgs = finalMessages(compute(UI.st));
+    for (let i = 0; i < msgs.length; i++) { await say(msgs[i], i ? 900 : undefined); if (!UI || UI.run !== run) return; }
     UI.updated = false; finish(); setComp('after');
   }
+
   const stepTrack = (name, v) => { if (!UI.started) { UI.started = true; track('plan_start', {flow: flowName()}); } track('plan_step', {step: name, value: v || '-'}); };
   async function pick(name, v) {
     const run = ++UI.run; UI.st[name] = v; UI.skip[name] = false; stepTrack(name, v);
     bubble('u', esc(labelOf(name, v))); setComp(null);
-    await advance(run, esc((CH.ack || {})[name] || ''));
+    await advance(run, esc(ackLine(name, v)));
   }
   async function pickTasks() {
     const run = ++UI.run, st = UI.st; if (!st.tasks.length) return; stepTrack('tasks', st.tasks.join(','));
     bubble('u', esc(st.tasks.map(t => labelOf('tasks', t)).join(', '))); setComp(null);
     const board = boardHTML(); if (board) { await say(board, 700); if (!UI || UI.run !== run) return; }
-    await advance(run, esc((CH.ack || {}).tasks || ''));
+    await advance(run, esc(ackLine('tasks')));
   }
   async function skip(name) {
     const run = ++UI.run; UI.st[name] = ''; UI.skip[name] = true; stepTrack(name, 'skip'); bubble('u', esc(CH.skipLabel)); setComp(null); await advance(run, '');
@@ -288,6 +335,7 @@
     const i = flow().indexOf(name); if (i < 0) return; const run = ++UI.run; UI.updated = true; bubble('u', esc(CH.editLabel + ' ' + ((CH.stepNames || {})[name] || name).toLowerCase())); setComp(null); await ask(i, esc(CH.editLead));
   }
   function resetAll(msg) {
+    clearTimeout(UI.rangeT); UI.redirect = false;
     local.del(KP); local.del(KD); UI.st = emptySt(); UI.skip = {}; UI.i = 0; UI.result = false; UI.started = false; UI.updated = false; const res = $('[data-plan-result]', UI.host); if (res) res.innerHTML = ''; const l = logEl(); if (l) l.innerHTML = '';
   }
   async function begin(lead) {
@@ -318,6 +366,7 @@
   const fmtBrain = tx => esc(String(tx || '').replace(/\[\[[^\]]*\]\]/g, '').replace(/[`#>]/g, '').trim().slice(0, 700)).replace(/\*\*([^*]+)\*\*/g, '<b>$1</b>').replace(/\n+/g, '<br>');
   async function onText(raw) {
     const text = String(raw || '').trim().slice(0, 400); if (!text || !UI) return;
+    clearTimeout(UI.rangeT); UI.redirect = false;
     const run = ++UI.run, st = UI.st, max = (STEPS.tasks || {}).max || 3; bubble('u', esc(text)); setComp(null);
     let patch = interpret(text), keys = Object.keys(patch);
     if (isQuestion(text) && keys.length === 1 && keys[0] === 'goal') { patch = {}; keys = []; }          // «как проходит доставка заказа?» — это вопрос, а не ответ про цель
@@ -356,7 +405,8 @@
   function renderPlanner(host) {
     const fromQ = stFromQuery(), prev = savedPlan();
     UI = {host: host, st: emptySt(), skip: {}, i: 0, result: false, run: 0, started: false, updated: false};
-    host.innerHTML = shell();
+    host.innerHTML = shell(); UI.stick = true;
+    const lg = logEl(); if (lg) { lg.addEventListener('scroll', () => { UI.stick = nearEnd(lg); }, {passive: true}); if (window.ResizeObserver) new ResizeObserver(() => { if (UI && UI.stick) lg.scrollTop = lg.scrollHeight; }).observe(lg); }          // нижняя панель меняет высоту окна — остаёмся у последней реплики
     let source = 'new';
     if (fromQ) {
       UI.st = Object.assign(emptySt(), fromQ); source = 'link';
@@ -398,7 +448,7 @@
     const tiersH = '<section class="plan-sec"><h3>' + esc(RES.termsTitle) + '</h3><p class="muted">' + esc(RES.termsText) + '</p><div class="plan-tiers">' + pl.tiers.map((d, k) => '<div class="plan-tier' + (pl.tier && pl.tier === d ? ' on' : '') + '"><b>' + d.pct + '%</b><span>от ' + rub(d.from) + '</span></div>').join('') + '</div>' +
       (pl.tier ? '<p class="plan-tn">При закупке от ' + rub(pl.tier.from) + ' — ориентировочно ' + pl.tier.pct + '%. Точные условия подтверждает менеджер.</p>' : st.volume === 'u50' ? '<p class="plan-tn">Скидки по объёму начинаются от ' + rub((pl.tiers[0] || {}).from || 0) + '. Условия первой закупки уточнит менеджер.</p>' : '') + '</section>';
     const order = goal === 'train' ? [evH, brandsH, prodH, tiersH] : goal === 'range' ? [brandsH, prodH, evH, tiersH] : [brandsH, evH, prodH, tiersH];
-    return '<div class="plan-res"><div class="plan-card card"><span class="eyebrow in">' + esc(PL.eyebrow || '') + '</span><h2 id="plan-h" tabindex="-1">' + esc(RES.title) + '</h2><ul class="plan-sum">' + chips + '</ul><p class="plan-fine muted">' + esc(RES.fine) + '</p></div>' +
+    return '<div class="plan-res"><div class="plan-card card"><span class="eyebrow in">' + esc(PL.eyebrow || '') + '</span><h2 id="plan-h" tabindex="-1">' + esc(RES.title) + '</h2><ul class="plan-sum">' + chips + '</ul><p class="plan-fine muted">' + esc(RES.fine) + '</p></div>' + factsHTML(pl) +
       order.join('') +
       '<div class="plan-cta card"><button class="btn btn-fill btn-lg plan-main" type="button" data-pl="main" data-sx="plan-main">' + esc(RES.main) + ' ' + I.arrow + '</button><p class="plan-mainfine muted">' + esc(RES.mainFine) + '</p>' +
       '<div class="plan-sec-actions">' + (X.requestList && pl.products.length ? '<button class="btn btn-ghost" type="button" data-pl="addall">' + esc(RES.addList) + '</button>' : '') +
@@ -409,7 +459,6 @@
     UI.result = true; savePlan(UI.st, true); local.del(KD); const pl = compute(UI.st);
     track('plan_result', {tasks: pl.tasks.join(','), goal: pl.goal, role: UI.st.role, city: UI.st.city, products: pl.products.length, events: pl.events.length, flow: flowName()});
     finishView(); paintHead(); document.dispatchEvent(new CustomEvent('astreya:plan', {detail: {done: true}}));
-    const res = $('[data-plan-result]', UI.host); if (res) setTimeout(() => { const r = res.getBoundingClientRect(); if (r.top > innerHeight * .55) window.scrollTo({top: Math.max(0, window.scrollY + r.top - 96), behavior: 'smooth'}); }, Math.round(450 / speed()));
   }
   function onPlanClick(e) {
     const t = e.target.closest && e.target.closest('[data-pl], .plan-opt'); if (!t || !UI || !UI.host || !UI.host.contains(t)) return;
@@ -428,6 +477,7 @@
     else if (act === 'next') pickTasks();
     else if (act === 'skip') skip(name);
     else if (act === 'editstep') editStep(t.getAttribute('data-v'));
+    else if (act === 'toplan') { const r = $('[data-plan-result]', UI.host); if (r) window.scrollTo({top: Math.max(0, window.scrollY + r.getBoundingClientRect().top - 84), behavior: 'smooth'}); }
     else if (act === 'resume-yes') { const run = ++UI.run; bubble('u', esc(CH.btnResumeYes)); setComp(null); advance(run, ''); }
     else if (act === 'again') { track('plan_restart'); resetAll(); begin(esc(CH.againSay)); }
     else if (act === 'main') { const pl = compute(UI.st); track('plan_cta', {tasks: pl.tasks.join(','), goal: pl.goal}); setVia('plan-main'); A.openForm('plan', planRef(pl)); }

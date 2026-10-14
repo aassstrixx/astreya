@@ -33,7 +33,7 @@ const VIEWS = {m: {width: 390, height: 844, mobile: true}, d: {width: 1280, heig
     return p;
   };
 
-  /* ---------- 1. Стартовый подбор (диалог со Стеллой): число вопросов ---------- */
+  /* ---------- 1. Старт со Стеллой (диалог со Стеллой): число вопросов ---------- */
   async function planner(flow, vk) {
     const p = await mk(VIEWS[vk]); await p.open('start.html?v=planFlow:' + flow);
     const m = {clicks: 0, steps: 0, chars: 0, fold: 0, tapMin: 999, overflow: false, fields: new Set()};
@@ -104,7 +104,7 @@ const VIEWS = {m: {width: 390, height: 844, mobile: true}, d: {width: 1280, heig
   const flowRanks = rank(flowItems, avg, W3);
   out.planFlow = robust(flowRanks, SALES.variants.planFlow);
   const planRows = flows.map(f => { const it = {m: pr['m' + f], d: pr['d' + f]}; return [f, it.m.clicks, it.m.steps, it.m.chars, it.m.fold, Math.round(it.m.tapMin), ...Object.values(W3).map(w => fmt(avg(it, w)))]; });
-  tables.push(['Стартовый подбор в диалоге: число вопросов', ['вариант', 'нажатий', 'шагов', 'знаков', 'нижняя панель > 45 % окна (тел.)', 'мин. кнопка (тел.), px', ...Object.keys(W3).map(k => 'балл: ' + k)], planRows, flowRanks, out.planFlow]);
+  tables.push(['Старт со Стеллой в диалоге: число вопросов', ['вариант', 'нажатий', 'шагов', 'знаков', 'нижняя панель > 45 % окна (тел.)', 'мин. кнопка (тел.), px', ...Object.keys(W3).map(k => 'балл: ' + k)], planRows, flowRanks, out.planFlow]);
 
   const barItems = []; for (const s of ['bottom', 'card']) barItems.push({id: s, m: await bar(s)});
   barItems.push({id: 'pill', m: await bar('pill')});

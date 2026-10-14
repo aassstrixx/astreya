@@ -142,13 +142,14 @@ const wait = ms => new Promise(r => setTimeout(r, ms));
   await T.press('Далее'); await wait(1200); x = await T.snap(); ok(/^4 из 4/.test(x.st) && /Обучение/.test(x.tx) && inView(x) && x.hole.y < 100, 'шаг 9 («4 из 4»): подсвечено меню — «Обучение», «Новости», «Компания»', x);
   await T.press('Далее'); await wait(1200); x = await T.snap(); ok(/Стать партнёром/.test(x.tx) && inView(x) && x.hole.y < 100, 'шаг 10: подсвечена кнопка «Стать партнёром»', x);
   await T.press('Далее'); await wait(1200); x = await T.snap();
-  ok(x && /Это всё/.test(x.tx) && ['Открыть каталог', 'Подобрать по задаче', 'Спросить Стеллу', 'Закрыть'].every(b => x.btns.includes(b)) && /^4 из 4/.test(x.st) && inView(x), 'финал: предложение — открыть каталог, подобрать по задаче или спросить Стеллу', x);
+  ok(x && /Это всё/.test(x.tx) && ['Открыть каталог', 'Старт со Стеллой', 'Спросить Стеллу', 'Закрыть'].every(b => x.btns.includes(b)) && !x.btns.includes('Подобрать по задаче') && /^4 из 4/.test(x.st) && inView(x), 'финал: предложение — открыть каталог, «Старт со Стеллой» (вместо прежнего «Подобрать по задаче») или спросить Стеллу', x);
   await T.press('Назад'); await wait(900); x = await T.snap(); ok(x && /Хотите закупать/.test(x.tx), '«Назад» с последнего шага возвращает к «Стать партнёром»');
   await T.press('Далее'); await wait(900);
-  await T.press('Подобрать по задаче'); await T.until(() => document.body.getAttribute('data-page') === 'catalog' && !document.getElementById('g-spot').hidden, 20000); await wait(900); x = await T.snap();
-  ok(x && /назначени/i.test(x.tx) && x.btns.includes('Понятно') && x.page === 'catalog', 'финальная кнопка «Подобрать по задаче» открывает каталог и показывает фильтр назначения', x);
+  await T.press('Старт со Стеллой'); await T.until(() => document.body.getAttribute('data-page') === 'start' && !!document.querySelector('.pchat'), 20000); await wait(900);
+  ok(await p.evaluate(() => document.body.getAttribute('data-page') === 'start' && !!document.querySelector('.pchat') && document.getElementById('g-spot').hidden), 'финальная кнопка «Старт со Стеллой» открывает страницу подбора — окно диалога со Стеллой');
   await p.keyboard.press('Escape'); await wait(300);
   ok(!(await T.snap()) && !(await p.evaluate(() => sessionStorage.getItem('astreya:g-tour'))), 'после выхода пользователь работает с сайтом как обычно: подсветки и состояния экскурсии нет');
+  await p.open('catalog.html'); await wait(1200);
   ok(await p.evaluate(n => [...document.querySelectorAll('#cat-grid .pcard')].filter(c => !c.hidden).length === n, D.products.length), 'после выхода в каталоге снова видны все ' + D.products.length + ' товаров (фильтры не залипли)');
   ok(!p.errs.length, 'в ходе экскурсии нет ошибок JS и консоли', p.errs); await p.context().close();
 
@@ -251,7 +252,7 @@ const wait = ms => new Promise(r => setTimeout(r, ms));
   for (let k = 0; k < 2; k++) { await mt.press('Далее'); await wait(1500); mx = await mt.snap(); if (mx && mx.menu) drawerSeen++; if (!mOk(mx)) mBad.push(['more' + k, mx]); }
   ok(drawerSeen === 2, 'на телефоне шаги «меню» и «Стать партнёром» — ящик меню раскрыт сам');
   await mt.press('Далее'); await wait(1400); mx = await mt.snap();
-  ok(mx && /Это всё/.test(mx.tx) && mx.btns.includes('Подобрать по задаче') && !mx.menu && mOk(mx), 'на телефоне финал: ящик закрыт, три предложения видны, карточка внутри экрана', mx);
+  ok(mx && /Это всё/.test(mx.tx) && mx.btns.includes('Старт со Стеллой') && !mx.menu && mOk(mx), 'на телефоне финал: ящик закрыт, три предложения видны, карточка внутри экрана', mx);
   ok(!mBad.length, 'на телефоне на всех шагах подсвеченный элемент виден и не закрыт карточкой, карточка не выходит за экран', mBad.slice(0, 2));
   await mt.press('Закрыть'); await wait(400);
   ok(await p.evaluate(() => document.documentElement.scrollWidth <= innerWidth), 'горизонтальной прокрутки нет');

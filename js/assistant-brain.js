@@ -794,7 +794,7 @@
       /* ---- «навигатор»: открыть страницу, показать место, провести по шагам, отфильтровать каталог ---- */
       { const nv = navIntent(text, n, tk, st, ctx, {tasks: tasksInText, brands: brandsInText, products: productsInText}); if (nv) return done(nv); }
 
-      /* ---- продающий слой (extras.sales): «мой план» при сохранённом стартовом подборе; без плана отвечает тема sx_plan_none из data/stella/sales.json ---- */
+      /* ---- продающий слой (extras.sales): «мой план» при сохранённом «Старте со Стеллой»; без плана отвечает тема sx_plan_none из data/stella/sales.json ---- */
       if (ctx.plan && W('мой план|моего плана|моему плану|мой подбор|моего подбора|мой стартовый|покажи план|открой план|что в плане|что в моем плане|что в моём плане|где мой план').test(n)) return done(planAnswer(ctx.plan, st));
 
       /* ---- библиотека реплик: о Стелле, светская беседа, не по теме, чего сайт не знает (стадия «mid») — раньше общих «прямых намерений», чтобы «договорились» не принималось за «договор» ---- */
@@ -844,6 +844,7 @@
       if (refd && P[ctx.product || l.product]) return done(productAnswer(P[ctx.product || l.product], st));
       const cats = (D.cats || []).filter(c => words(c.name).map(stem).filter(t => !STOP.has(t) && t.length > 3).some(t => tk.indexOf(t) >= 0));
       if (cats.length) { const cps = (D.products || []).filter(p => p.c === cats[0].id); const first = showList(st, cps.map(p => p.id), {intent: 'category'}); return done(R('**' + cats[0].name + '** — ' + cps.length + ' ' + plural(cps.length, 'позиция', 'позиции', 'позиций') + ' в каталоге.', {cards: first, links: [link('catalog.html?cat=' + cats[0].id, 'Открыть категорию')], intent: 'category'})); }
+      if (W('подобрать|подбор|посоветуй|порекоменд|что выбрать|что взять|помогите выбрать|что подойд[её]т|помоги выбрать|что бы вы').test(n) && D.sales && D.sales.planner) return done(R('Для этого у меня есть отдельное окно — **Старт со Стеллой**: я задам несколько коротких вопросов, вы ответите кнопками или своими словами, и я соберу план — линейки, товары, ближайшие семинары и условия.', {links: [link(D.sales.planner.path || 'start.html', 'Открыть «Старт со Стеллой»')], chips: ['Ближайшие семинары', 'Какие скидки?'], intent: 'pick'}));
       if (W('подобрать|подбор|посоветуй|порекоменд|что выбрать|что взять|помогите выбрать|что подойд[её]т|помоги выбрать|что бы вы').test(n)) return done(R('По какой задаче подбираем? Выберите или напишите своими словами — например, «пигментация» или «чувствительная кожа».', {chips: (D.tasks || []).slice(0, 8).map(t => t.label), intent: 'pick'}));
       if (W('каталог|ассортимент|что у вас есть|что продаёте|что продаете|что есть|продукци|бренд').test(n)) { const cnt = {}; (D.products || []).forEach(p => { cnt[p.c] = (cnt[p.c] || 0) + 1; }); return done(R('В каталоге ' + D.products.length + ' ' + plural(D.products.length, 'позиция', 'позиции', 'позиций') + ' ' + (D.brands || []).length + ' ' + plural((D.brands || []).length, 'бренда', 'брендов', 'брендов') + ': ' + (D.brands || []).map(b => b.name).join(', ') + '. Категории: ' + (D.cats || []).filter(c => cnt[c.id]).map(c => lower(c.name)).join(', ') + '.', {links: [link('catalog.html', 'Каталог'), link('brands.html', 'Бренды')], chips: ['Подобрать средство по задаче'], intent: 'catalog'})); }
 
