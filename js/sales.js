@@ -449,7 +449,8 @@
   A.sales = {
     plan: () => { const s = savedPlan(); if (!s) return null; const pl = compute(s.st); return {state: s.st, text: planText(pl), summary: summaryLines(pl), brands: pl.brands, products: pl.products.map(p => p.id), events: pl.events.map(e => e.id)}; },
     compute: compute, planText: planText, exp: A.exp, ctaLabel: ctaLabel, path: planPath,
-    excluded: key => EXCL.has(key || pageKey()) || (key || pageKey()) === 'start'
+    excluded: key => EXCL.has(key || pageKey()) || (key || pageKey()) === 'start',
+    state: () => ({armed: armed, shown: shownOnPage, dwell: dwellDone, model: !!model, blocked: barBlocked(), blockers: Object.assign({}, blockers), dismissed: !!sess.get(KB), device: barDevice()})          // для проверок: почему панель показана или скрыта
   };
 
   /* ================= страница ================= */
