@@ -53,6 +53,8 @@
   const DOWN = '<svg class="ic" viewBox="0 0 20 20" aria-hidden="true" focusable="false"><g transform="rotate(180 10 10)"><path d="M7 9v7.5H4V9h3Zm0 0 2.6-5.5c1.2 0 2 .9 1.8 2L11 8h4.2c1 0 1.7.9 1.5 1.9l-1 5.2c-.2.8-.9 1.4-1.7 1.4H7"/></g></svg>';
   const ARROWDOWN = '<svg class="ic" viewBox="0 0 20 20" aria-hidden="true" focusable="false"><path d="M10 3.5v13M5 11.5l5 5 5-5"/></svg>';
   const CARET = '<span class="asst-caret" aria-hidden="true"></span>';
+  /* курсор печати — внутри последнего абзаца (или пункта списка / блока кода), в одну строку с текстом, а не отдельной строкой под ним */
+  const withCaret = h => /<\/(?:p|li)>(?:<\/(?:ul|ol)>)?$/.test(h) ? h.replace(/(<\/(?:p|li)>(?:<\/(?:ul|ol)>)?)$/, CARET + '$1') : /<\/code><\/pre>$/.test(h) ? h.replace(/<\/code><\/pre>$/, CARET + '</code></pre>') : h + CARET;
   const store = {get: () => { try { const v = JSON.parse(sessionStorage.getItem(KEY) || 'null'); return v && Array.isArray(v.msgs) ? v : null; } catch (e) { return null; } }, set: v => { try { sessionStorage.setItem(KEY, JSON.stringify(v)); } catch (e) {} }};
   const brandName = id => (B[id] || {}).name || '';
   const pUrl = p => root() + 'products/' + p.slug + '.html';
@@ -182,7 +184,7 @@
   function typer(tx, row, o) {
     o = o || {}; let buf = '', shown = 0, raf = 0, ended = false, cb = null, stopped = false, last = 0, acc = 0, hold = 0;
     const base0 = (o.cps || 70) / 1000, win = o.win || 0, k = () => speed();
-    const paint = () => { tx.innerHTML = fmt(buf.slice(0, shown)) + (!ended || shown < buf.length ? CARET : ''); follow(row); };
+    const paint = () => { const h = fmt(buf.slice(0, shown)); tx.innerHTML = !ended || shown < buf.length ? withCaret(h) : h; follow(row); };
     const tick = now => {
       raf = 0; const dt = Math.min(64, last ? now - last : 16); last = now;
       if (hold > 0) hold -= dt;

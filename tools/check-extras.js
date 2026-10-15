@@ -252,7 +252,10 @@ const cfg = JSON.parse(fs.readFileSync(pth.join(ROOT, 'data/redesign.json'), 'ut
     await p.evaluate(() => { window.ASTREYA_MOTION_SPEED = 1; });          // ритм «печати» — на реальной скорости
     await p.fill('#asst-in', 'Расскажите о компании'); await p.keyboard.press('Enter'); let caret = false, grow = [];
     for (let i = 0; i < 90 && !caret; i++) { await wait(100); caret = await p.$('#asst-log .asst-caret') !== null; if (caret) grow.push(await p.$eval('#asst-log .asst-m:nth-last-child(2) .asst-tx', e => e.textContent.length)); }
-    ok(caret, 'ответ «печатается» (виден курсор), а не появляется целиком'); await wait(600); grow.push(await p.$eval('#asst-log .asst-m:nth-last-child(2) .asst-tx', e => e.textContent.length));
+    ok(caret, 'ответ «печатается» (виден курсор), а не появляется целиком');
+    { const cp = await p.evaluate(() => { const c = document.querySelector('#asst-log .asst-caret'); if (!c) return null; const par = c.parentElement, r = c.getBoundingClientRect(), pr = par.getBoundingClientRect(); return {tag: par.tagName, inBox: r.top >= pr.top - 2 && r.bottom <= pr.bottom + 2, h: Math.round(pr.height), lh: parseFloat(getComputedStyle(par).lineHeight) || 0}; });
+      ok(cp && /^(P|LI|CODE)$/.test(cp.tag) && cp.inBox, 'курсор печати стоит в одной строке с текстом (внутри абзаца), а не отдельной строкой под ним', cp); }
+    await wait(600); grow.push(await p.$eval('#asst-log .asst-m:nth-last-child(2) .asst-tx', e => e.textContent.length));
     ok(await p.$eval('#asst-send', e => e.classList.contains('stop') && /Остановить/.test(e.getAttribute('aria-label'))), 'во время ответа кнопка отправки превращается в «Остановить»');
     const t0 = Date.now(); await p.click('#asst-send'); await p.waitForFunction(() => !document.getElementById('asst-form').classList.contains('busy'), null, {timeout: 3000}); const stopMs = Date.now() - t0;
     await p.evaluate(() => { window.ASTREYA_MOTION_SPEED = 6; });
