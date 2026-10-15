@@ -158,3 +158,8 @@ body.dock-on .g-nudge{bottom:calc(var(--dock-h,66px) + 22px + 14px + env(safe-ar
 @keyframes gBlink{50%{opacity:0}}
 /* первый кадр экскурсии — без затемнения: видно главную такой, какой её задумали (рамка только вокруг шапки) */
 .g-spot.g-nodim .g-hole{box-shadow:0 0 0 2px rgba(143,168,255,.95),0 0 34px 6px rgba(103,140,255,.45)}
+
+/* приветствие на главной — небольшое окно «от самого маскота»: хвостик показывает на кнопку Стеллы */
+.g-nudge::after{content:"";position:absolute;right:30px;bottom:-7px;width:14px;height:14px;background:#fff;border-radius:0 0 4px 0;transform:rotate(45deg);box-shadow:3px 3px 6px -3px rgba(8,18,40,.25);pointer-events:none}
+.g-nudge[data-layout="pill"]::after{right:24px}
+@media (max-width:640px){.g-nudge::after{right:26px}}
