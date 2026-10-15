@@ -5,7 +5,7 @@
 
    Что здесь:
    · «Старт со Стеллой» (страница start.html) — 3–5 коротких вопросов → план: линейки, товары, ближайшее обучение, ориентировочные условия → заявка менеджеру;
-   · панель следующего шага — плашка в «доке» внизу экрана (телефон — по умолчанию; компьютер — только в варианте проверки barDesktop=pill);
+   · панель следующего шага — плашка в «доке» внизу экрана (сейчас выключена: data/sales.json → bar.enabled = false; если включить — на телефоне по умолчанию, на компьютере только в варианте проверки barDesktop=pill);
    · ходы по страницам (подборки, маршрут бренда, календарь встреч, ориентир скидки…) — отдельный файл js/sales-pages.js, он подключается к этому ядру (A.sales.kit); даты считаются в браузере — статичная сборка быстро устарела бы;
    · «что дальше» после отправленной заявки;
    · метка источника заявки (поле src: страница, элемент, варианты проверок) и события sales_… и plan_… для аналитики;
@@ -503,7 +503,7 @@
   });
 
   /* ================= ДОК-ПАНЕЛЬ «СЛЕДУЮЩИЙ ШАГ» ================= */
-  const BR = SX.bar || {}, BP = BR.pages || {};
+  const BR = SX.bar || {}, BP = BR.pages || {}, BAR_ON = BR.enabled !== false;          // «enabled»: false в data/sales.json — плавающей панели внизу нет нигде
   let bar = null, shownOnPage = false, armed = false, dwellT = 0, io = null, blockers = {footer: false, sec: false, form: false}, rafT = 0, model = null, ctxCache = null;
   const typeOf = k => ({product: 'product', brand: 'brand', event: 'event', training: 'training', partners: 'partners', catalog: 'catalog'}[k] || 'default');
   function ctxOf() {
@@ -634,7 +634,7 @@
     if (EXCL.has(key)) { armed = false; clearTimeout(dwellT); hideBar(); return; }
     const c = ctxOf();
     if (A.salesPages && A.salesPages.mount) { try { A.salesPages.mount(c); } catch (e) { track('sales_error', {page: key, message: String(e && e.message || e)}); } }          // свой ход у каждой страницы (js/sales-pages.js)
-    if (BAR_EXCL.has(key)) { armed = false; clearTimeout(dwellT); hideBar(); }
+    if (BAR_EXCL.has(key) || !BAR_ON) { armed = false; clearTimeout(dwellT); hideBar(); }
     else barArm();
     track('sales_page', {page: key, type: c.type});
   }

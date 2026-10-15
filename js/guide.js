@@ -68,11 +68,11 @@
     spotRaf = 0; const s = $('#g-spot'); if (!s || s.hidden || !spotEl) return;
     const hole = $('.g-hole', s), pop = $('.g-pop', s); pop.classList.toggle('sheet', mobile()); pop.classList.toggle('sheet-top', mobile() && !!(cur && cur.dockTop)); pop.classList.toggle('dock-top', !mobile() && !!(cur && cur.dockTop));
     if (cur && cur.free) { hole.style.width = '0px'; hole.style.height = '0px'; spotRaf = requestAnimationFrame(place); return; }
-    if (s.classList.contains('g-moving')) { spotRaf = requestAnimationFrame(place); return; }          // страница едет — рамку и слова не трогаем
     if (!spotEl.isConnected || !shown(spotEl)) { const t = cur && cur.t, again = t ? resolveEl(t) : null; if (again) spotEl = again; else { if (navPending && Date.now() - navPending < 6000) hideSpot(true); else hideSpot(); return; } }          // цель пропала: если это переход, который начала сама экскурсия, — состояние экскурсии сохраняем
     const r = spotEl.getBoundingClientRect(), vw = innerWidth, vh = innerHeight;
     const x = Math.max(4, r.left - PAD), y = Math.max(4, r.top - PAD), w = Math.min(vw - 8, r.width + PAD * 2);
     let h = r.height + PAD * 2; if (!(cur && (cur.dockTop || cur.fixed))) h = Math.min(h, Math.max(40, popTop() - 10 - y)); else h = Math.min(h, vh - y - 4);          // рамка обходит блок целиком; если он выше свободной зоны — обрезается по краю комментария, а не наоборот
+    hole.classList.toggle('g-sc', LOCK.prog > 0);          // пока страница едет, рамка «приклеена» к блоку, без отставания
     hole.style.transform = 'translate(' + Math.round(x) + 'px,' + Math.round(y) + 'px)'; hole.style.width = Math.round(w) + 'px'; hole.style.height = Math.round(h) + 'px';
     spotRaf = requestAnimationFrame(place);
   }
@@ -109,20 +109,13 @@
   const LOCK = {on: false, y: 0, prog: 0};
   function lockPage(on) { LOCK.on = on; LOCK.y = scrollY; }
   /* плавная прокрутка «с разгоном и торможением»: чем дальше ехать, тем дольше, но без рывков; встроенная плавность браузера на дальних расстояниях слишком резкая */
-  let scrollTok = 0, revealT = 0;
-  const spotMoving = on => { const sp = $('#g-spot'); if (!sp || sp.hidden) return; clearTimeout(revealT); revealT = 0; if (on) { sp.classList.add('g-moving'); return; } revealT = setTimeout(() => { revealT = 0; reveal(); }, Math.round(160 / speed())); };
-  /* страница доехала: сначала появляется рамка, потом (через мгновение) комментарий Стеллы */
-  function reveal() {
-    const sp = $('#g-spot'); if (!sp || sp.hidden || !sp.classList.contains('g-moving')) return; const hole = $('.g-hole', sp), pop = $('.g-pop', sp);
-    hole.classList.add('g-nt'); cancelAnimationFrame(spotRaf); sp.classList.remove('g-moving'); place(); requestAnimationFrame(() => requestAnimationFrame(() => hole.classList.remove('g-nt')));
-    pop.classList.remove('in'); setTimeout(() => { if (!sp.classList.contains('g-moving') && !sp.hidden) { void pop.offsetWidth; pop.classList.add('in'); } }, Math.round(300 / speed()));
-  }
+  let scrollTok = 0;
   function progScroll(top, jumpOver) {
     if (top == null || Math.abs(top - scrollY) < 2) { LOCK.y = scrollY; return Promise.resolve(); }
     const tok = ++scrollTok, y0 = scrollY, dist = top - y0, jump = !!jumpOver && Math.abs(dist) > jumpOver, k = mobile() ? 1.3 : 1, dur = jump ? 40 : Math.max(60, Math.round(Math.min(2000, (480 + Math.sqrt(Math.abs(dist)) * 26) * k) / speed())), t0 = performance.now();          // из начала главной (вступление с баночкой) к первому кадру — сразу: не показываем перемотку всего вступления
-    LOCK.prog++; if (Math.abs(dist) > 50) spotMoving(true);
+    LOCK.prog++;
     return new Promise(res => {
-      const end = () => { LOCK.prog = Math.max(0, LOCK.prog - 1); LOCK.y = scrollY; if (!LOCK.prog) spotMoving(false); res(); };
+      const end = () => { LOCK.prog = Math.max(0, LOCK.prog - 1); LOCK.y = scrollY; res(); };
       const step = now => {
         if (tok !== scrollTok) return end();          // началась другая прокрутка или показ закрыт
         const t = Math.min(1, (now - t0) / dur), e = jump ? 1 : t < .5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
@@ -132,8 +125,6 @@
       requestAnimationFrame(step);
     });
   }
-  /* ждёт, пока страница доехала и всё появилось на экране (рамка, комментарий) */
-  const shownWait = async id => { while ((LOCK.prog > 0 || revealT || ($('#g-spot') || {classList: {contains: () => false}}).classList.contains('g-moving')) && alive(id)) await new Promise(r => setTimeout(r, 40)); await sleep(360); };
   const scrollTo = (el, frac, fit, keep) => progScroll(scrollTarget(el, frac, fit, keep));
   /* пока идёт экскурсия, страница не прокручивается колесом, пальцем, клавишами и ползунком: подсветка и Стелла стоят на месте, листает только сама Стелла */
   const stopScroll = e => { if (!LOCK.on) return; if (e.target && e.target.closest && e.target.closest('#asst')) return; e.preventDefault(); e.stopImmediatePropagation(); };
@@ -152,7 +143,7 @@
     $$('.g-pulse').forEach(e => { if (e !== el) e.classList.remove('g-pulse'); });
     $('.g-tx', s).innerHTML = '<p>' + bold(cfg.text || '') + '</p>' + (cfg.prog ? progHTML(cfg.prog) : '');
     const bt = (cfg.buttons || []).map(b => '<button class="btn ' + (b.primary ? 'btn-fill' : b.act === 'asst-open' || b.act === 'g-spot-x' ? 'btn-lnk' : 'btn-ghost') + ' btn-sm" type="button" data-act="' + esc(b.act) + '"' + (b.d ? ' data-d="' + esc(JSON.stringify(b.d)) + '"' : '') + '>' + esc(b.l) + '</button>').join('');
-    s.classList.toggle('g-nodim', cfg.dim === false); $('.g-ctl', s).innerHTML = bt; s.hidden = false; document.body.classList.add('g-on'); s.classList.remove('g-moving'); clearTimeout(revealT); revealT = 0;
+    s.classList.toggle('g-nodim', cfg.dim === false); $('.g-ctl', s).innerHTML = bt; s.hidden = false; document.body.classList.add('g-on');
     pop.classList.toggle('sheet', mobile()); pop.classList.toggle('sheet-top', mobile() && !!cfg.dockTop); pop.classList.toggle('dock-top', !mobile() && !!cfg.dockTop); pop.style.minHeight = '';
     if (cfg.reserve && cfg.reserve !== cfg.text) { const tx = $('.g-tx p', s), keepH = tx.innerHTML; tx.innerHTML = bold(cfg.reserve); const hh = pop.offsetHeight; tx.innerHTML = keepH; pop.style.minHeight = Math.max(hh, pop.offsetHeight) + 'px'; }          // место под самый длинный из двух текстов шага: комментарий не «растёт» и не наезжает на показ
     pop.classList.remove('in'); void pop.offsetWidth; pop.classList.add('in');
@@ -164,9 +155,9 @@
     A.track && A.track('guide_spot', {target: cfg.t ? cfg.t.id : '', tour: cfg.tour || ''});
   }
   function hideSpot(silent, keep) {
-    if (!keep) { runId++; scrollTok++; clearTimeout(revealT); revealT = 0; lockPage(false); cursorHide(); closeDd(); runCleanup(true); menuRelease(); }
+    if (!keep) { runId++; scrollTok++; lockPage(false); cursorHide(); closeDd(); runCleanup(true); menuRelease(); }
     const s = $('#g-spot'); if (!s || s.hidden) { spotEl = null; return; }
-    s.hidden = true; s.classList.remove('g-moving'); document.body.classList.remove('g-on'); cancelAnimationFrame(spotRaf); spotRaf = 0; spotEl = null; const cb = onClose; onClose = null; cur = null; if (cb && !silent) cb();
+    s.hidden = true; document.body.classList.remove('g-on'); cancelAnimationFrame(spotRaf); spotRaf = 0; spotEl = null; const cb = onClose; onClose = null; cur = null; if (cb && !silent) cb();
   }
   /* экскурсия по меню: шапка всегда на виду (она уходит при прокрутке вниз), на узких экранах ящик меню открывается сам; всё возвращается, когда подсветка закрыта */
   let mUI = {drawer: false, hdr: false};
@@ -205,7 +196,6 @@
   const stepMatches = (st, key) => st.page === 'any' || st.page === key;
   const isStatic = page => PAGES.some(p => p.id === page);
   const fill = (t, v, dflt) => String(t || '').replace(/\{(\w+)\}/g, (m, k) => v && v[k] != null ? v[k] : dflt != null ? dflt : m);
-  const readMs = txt => Math.min(4200, Math.max(1400, 600 + String(txt || '').trim().split(/\s+/).length * 180));          // сколько нужно, чтобы прочитать комментарий (ускоряется только в тестах)
   const targetOf = st => st.sel ? {id: st.id || 'step', sel: mobile() && st.msel ? st.msel : st.sel, label: st.label || ''} : (TARGETS[st.page === 'any' ? '*' : st.page] || []).concat(TARGETS['*'] || []).find(x => x.id === st.target) || findTarget(st.target);          // sel — свой селектор прямо в шаге
   function saveTour(id, i, nav) { store.set(KT, {id, i, t: Date.now(), nav: nav ? 1 : 0}); }
   /* то, что экскурсия временно изменила на странице (набранный запрос, фильтр, раскрытая карточка бренда, отмеченные для сравнения товары), возвращается назад */
@@ -383,7 +373,7 @@
         await sleep(500); const bar = $('#cmp-bar'); if (!alive(id) || !bar || bar.hidden) return;
         spot(bar, {t: {id: 'compare-bar'}, tour: T.id, stepI: i, prog: prog(T, i), text: st.offer.say || 'Готово: два товара отмечены. Нажмите «Попросить Стеллу рассказать» — расскажу, чем они отличаются.',
           buttons: [{l: 'Далее', act: 'g-tour-next', primary: true}, {l: 'Рассказать о товарах', act: 'g-tour-cmp'}, {l: 'Пропустить', act: 'g-spot-x'}], dockTop: true, onClose: () => { runCleanup(true); store.del(KT); }});
-        await shownWait(id); if (!alive(id)) return; const [x, y] = aim(bar); await cursorGo(x, y, id);
+        await settle(id); if (!alive(id)) return; const [x, y] = aim(bar); await cursorGo(x, y, id);
       })();
       return true;
     }
@@ -401,8 +391,8 @@
     let el = null; try { el = pg.nav ? $$(pg.nav).find(shown) : null; } catch (e) {}
     const text = pg.go || 'Идём дальше.', cfg = {t: {id: 'nav-' + pg.id}, tour: T.id, stepI: i - .5, prog: prog(T, i), text, buttons: [{l: 'Пропустить', act: 'g-spot-x'}], onClose: () => { runCleanup(true); store.del(KT); }};
     saveTour(T.id, i, true);
-    if (!el) { spot(document.body, Object.assign(cfg, {free: true})); await shownWait(id); await sleep(readMs(text)); if (alive(id)) go(pg.href, {keepTour: true}); return; }
-    spot(el, cfg); await shownWait(id); if (!alive(id)) return; pulse(el); await sleep(readMs(text)); if (!alive(id)) return;          // сначала слова Стеллы, потом курсор
+    if (!el) { spot(document.body, Object.assign(cfg, {free: true})); await sleep(1600); if (alive(id)) go(pg.href, {keepTour: true}); return; }
+    spot(el, cfg); pulse(el); await settle(id); if (!alive(id)) return;
     const [x, y] = aim(el); await cursorGo(x, y, id); await follow(el, x, y, {id}); await sleep(450); await cursorPress(id); if (!alive(id)) return;
     navPending = Date.now(); saveTour(T.id, i, true); el.click();
     setTimeout(() => { if (alive(id)) go(pg.href, {keepTour: true}); }, 4200);          // нажатие не привело к переходу — переходим сами
@@ -434,11 +424,11 @@
       const shownText = hasSay && st.pre ? st.pre : fill(st.say, {}), keepEl = st.keep ? $(st.keep) : null;
       spot(el || document.body, {t: t || {id: 'free'}, tour: T.id, stepI: i, prog: prog(T, i), text: shownText, reserve: acts.some(a => 'say' in a) ? fill(st.say, {}, '0000000') : '', buttons, free: !el, noScroll: !!st.view, dockTop: !!st.dockTop || !!st.final, dim: st.dim, keep: keepEl, at: st.at, onClose: () => { runCleanup(true); store.del(KT); }});
       if (el && st.view) { const v = $(st.view); if (v) progScroll(Math.max(0, Math.round(scrollY + v.getBoundingClientRect().top - 76)), 1500); }          // «показать с начала»: главная — с первого кадра героя (красиво, без затемнения кнопок)
-      /* порядок: страница доехала → рамка → комментарий Стеллы → пауза, чтобы успеть прочитать → только потом действие */
-      (async () => { await shownWait(id); if (!alive(id)) return;
-        for (let k = 0; k < 2 && el && !st.view && !st.final && alive(id); k++) { const pl = planScroll(el, {fit: true, keep: keepEl, dockTop: !!(cur && cur.dockTop)}); if (pl.to == null) break; if (pl.dockTop && cur && !cur.dockTop) { cur.dockTop = true; const pp = $('#g-spot .g-pop'); pp.classList.toggle('sheet-top', mobile()); pp.classList.toggle('dock-top', !mobile()); } progScroll(pl.to); await shownWait(id); }          // страница могла «поехать» после загрузки (картинки, шрифты) — ставим блок на место ещё раз
-        if (st.clear && alive(id)) { const cl = $(st.clear), over = cl ? cl.getBoundingClientRect().bottom - (popTop() - 14) : 0; if (over > 4) { progScroll(Math.round(scrollY + Math.min(over, 160))); await shownWait(id); } }          // то, что в кадре не подсвечено, но должно остаться видным (кнопки первого экрана), комментарий не закрывает
-        if (!alive(id)) return; if (el) pulse(el); if (acts.length) { await sleep(readMs(shownText)); if (alive(id)) await runActs(acts, ctx); } })();
+      if (el) pulse(el);
+      (async () => { await settle(id); if (!alive(id)) return;
+        for (let k = 0; k < 2 && el && !st.view && !st.final && alive(id); k++) { const pl = planScroll(el, {fit: true, keep: keepEl, dockTop: !!(cur && cur.dockTop)}); if (pl.to == null) break; if (pl.dockTop && cur && !cur.dockTop) { cur.dockTop = true; const pp = $('#g-spot .g-pop'); pp.classList.toggle('sheet-top', mobile()); pp.classList.toggle('dock-top', !mobile()); } progScroll(pl.to); await settle(id); }          // страница могла «поехать» после загрузки (картинки, шрифты) — ставим блок на место ещё раз
+        if (st.clear && alive(id)) { const cl = $(st.clear), over = cl ? cl.getBoundingClientRect().bottom - (popTop() - 14) : 0; if (over > 4) { progScroll(Math.round(scrollY + Math.min(over, 160))); await settle(id); } }          // то, что в кадре не подсвечено, но должно остаться видным (кнопки первого экрана), комментарий не закрывает
+        if (!alive(id)) return; if (acts.length) await runActs(acts, ctx); })();
     };
     if (wait) setTimeout(() => run(0), wait); else run(0); return true;
   }

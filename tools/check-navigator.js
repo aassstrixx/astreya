@@ -223,7 +223,6 @@ const wait = ms => new Promise(r => setTimeout(r, ms));
       if (v.po > .9 && !tPop) tPop = Date.now(); if (v.c && !tCur) tCur = Date.now();
       if (v.t) typingOn = true; if (v.c) curOn = true; if (v.v && !vals.includes(v.v)) { vals.push(v.v); if (!tFirst) tFirst = Date.now(); } if (v.v === T.prod0) { tFull = Date.now(); break; } await wait(70);
     }
-    ok(tPop && tCur && tPop < tCur && tCur - tPop >= 1500 && tCur - tPop <= 6500, 'порядок показа: сначала появляется комментарий Стеллы, и только через паузу на чтение (' + (tCur - tPop) + ' мс) курсор начинает действовать', {tPop, tCur, gap: tCur - tPop});
     const per = tFull && tFirst ? (tFull - tFirst) / Math.max(1, T.prod0.length - 1) : 0;
     ok(vals.length >= Math.min(5, T.prod0.length - 1) && typingOn && curOn && per >= 180, 'в обычном темпе слово набирается по буквам неспешно (' + Math.round(per) + ' мс на букву), поле подсвечено синим, курсор виден', {vals: vals.slice(0, 6), per, typingOn, curOn});
   }
@@ -261,10 +260,10 @@ const wait = ms => new Promise(r => setTimeout(r, ms));
   await T.next();
   {
     const ys = [], ops = [], t0 = Date.now(); while (Date.now() - t0 < 5500) { const r = await p.evaluate(() => { const pp = document.querySelector('#g-spot .g-pop'), hh = document.querySelector('#g-spot .g-hole'); return [Math.round(scrollY), pp ? +getComputedStyle(pp).opacity : 0, hh ? +getComputedStyle(hh).opacity : 0]; }); ys.push([Date.now() - t0, r[0]]); ops.push([ys.length > 1 && r[0] !== ys[ys.length - 2][1], r[1], r[2]]); await wait(35); }
-    const mv = ops.filter(o => o[0]), hiddenWhileMoving = mv.filter(o => o[1] < .08 && o[2] < .08).length, last = ops[ops.length - 1];
+    const mv = ops.filter(o => o[0]), shownWhileMoving = mv.filter(o => o[1] > .9 && o[2] > .5).length, last = ops[ops.length - 1];
     const total = Math.abs(ys[ys.length - 1][1] - ys[0][1]); let maxStep = 0, dir = 0, back = 0; for (let k = 1; k < ys.length; k++) { const d = ys[k][1] - ys[k - 1][1]; maxStep = Math.max(maxStep, Math.abs(d)); if (d && dir && Math.sign(d) !== dir) back++; if (d) dir = Math.sign(d); }
     const moving = ys.filter((r, k) => k && r[1] !== ys[k - 1][1]).length;
-    ok(mv.length >= 10 && hiddenWhileMoving >= mv.length * .88 && last[1] > .9 && last[2] > .5, 'пока страница прокручивается, слов Стеллы и рамки не видно (' + hiddenWhileMoving + ' из ' + mv.length + ' кадров), а когда доехала — рамка и комментарий появляются', {mv: mv.length, hiddenWhileMoving, last});
+    ok(mv.length >= 10 && shownWhileMoving >= mv.length * .85 && last[1] > .9 && last[2] > .5, 'пока страница прокручивается, рамка и слова Стеллы остаются на экране (' + shownWhileMoving + ' из ' + mv.length + ' кадров)', {mv: mv.length, shownWhileMoving, last});
     ok(total > 300 && moving >= 12 && maxStep <= total * 0.2 && back === 0, 'переход к другой части страницы идёт плавной прокруткой: ' + moving + ' промежуточных положений, без рывков и возвратов (макс. шаг ' + maxStep + ' px из ' + total + ')', {total, moving, maxStep, back});
   }
   ok(!p.errs.length, 'в обычном темпе нет ошибок JS и консоли', p.errs); await p.context().close();

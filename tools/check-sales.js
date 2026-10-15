@@ -70,6 +70,7 @@ const J = f => JSON.parse(fs.readFileSync(path.join(ROOT, f), 'utf8'));
     o = o || {}; const ctx = await b.newContext({viewport: o.vw ? {width: o.vw, height: o.vh || 800} : o.mobile ? {width: 390, height: 844} : {width: 1280, height: 860}, isMobile: !!o.mobile, hasTouch: !!o.mobile, locale: 'ru-RU', permissions: ['clipboard-read', 'clipboard-write']});
     await ctx.route(/^https:\/\/fonts\./, r => r.abort()); await ctx.route('**/astreya/**', r => r.continue({url: r.request().url().replace('/astreya/', '/')}));          // 404.html ссылается на ресурсы от корня сайта (/astreya/…)
     await ctx.addInitScript(sp => { window.ASTREYA_MOTION_SPEED = sp; }, o.speed || 8);
+    if (o.bar) await ctx.route('**/js/data.js*', async r => { const res = await r.fetch(); r.fulfill({response: res, body: (await res.text()).replace('"bar":{"enabled":false,', '"bar":{"enabled":true,')}); });          // панель выключена в данных; для проверки её кода включаем только в этой копии
     const p = await ctx.newPage(); p.errs = []; p.on('pageerror', e => p.errs.push(e.message)); p.on('console', m => { if (m.type() === 'error' && !/ERR_FAILED|fonts\.|status of (429|503)|404 \(Not Fo/.test(m.text())) p.errs.push(m.text()); });
     await p.route('**/api/assistant/status', r => r.fulfill({status: 200, contentType: 'application/json', body: '{"ai":false}'}));
     p.open = async url => { await p.goto(base + url); const s = await p.$('#sp-in'); if (s) { try { await s.click({timeout: 1500}); } catch (e) {} } await p.waitForSelector('html.ready', {timeout: 20000}); await wait(500); };
@@ -321,7 +322,7 @@ const J = f => JSON.parse(fs.readFileSync(path.join(ROOT, f), 'utf8'));
   await p.context().close();
 
   /* --- товар --- */
-  p = await mk({mobile: true}); await p.open('products/' + prod.slug + '.html');
+  p = await mk({mobile: true, bar: true}); await p.open('products/' + prod.slug + '.html');
   const pr = await p.evaluate(() => ({hook: !!document.querySelector('.sx-hook'), steps: document.querySelectorAll('.sx-after-steps li').length, gen: document.querySelectorAll('.sx-next, .sx-trust, .sx-sec').length, closing: (document.querySelector('.cta-band h2') || {}).textContent, side: !!document.querySelector('.p-side .sx-after-steps')}));
   ok(pr.hook && pr.steps === 3 && pr.side, 'товар: «Освоить в работе» рядом с кнопкой и «Что будет после запроса» (3 шага) рядом с формой запроса', pr);
   ok(pr.gen === 0 && /Нужны условия по «/.test(pr.closing || '') && /Elastense|[A-Za-zА-Яа-я]/.test(pr.closing), 'товар: завершающий призыв — про этот товар, а не общий «Станьте партнёром»', pr.closing);
@@ -339,7 +340,7 @@ const J = f => JSON.parse(fs.readFileSync(path.join(ROOT, f), 'utf8'));
   await p.goto(base + 'brands/dermatime.html'); await p.waitForSelector('html.ready'); await wait(500); await p.scrollPct(.6); await wait(800);
   ok((await p.barText()) === null, 'закрытая панель не появляется снова на других страницах сессии');
   await p.context().close();
-  p = await mk({mobile: true}); await p.open('products/' + prod.slug + '.html'); await p.scrollPct(.25); await wait(700);
+  p = await mk({mobile: true, bar: true}); await p.open('products/' + prod.slug + '.html'); await p.scrollPct(.25); await wait(700);
   await p.click('#sx-bar .sx-bar-cta'); await p.waitForSelector('#modal.open form[data-form="product"]');
   await submitForm(p, {name: 'Тест Панель', phone: '+7 916 222-33-44', email: 'bar@example.com', city: 'Москва'});
   const l2 = await lastLead();
@@ -443,11 +444,21 @@ const J = f => JSON.parse(fs.readFileSync(path.join(ROOT, f), 'utf8'));
   ok(await p.evaluate(() => !!document.querySelector('#s-out .empty .sx-rescue') && document.querySelectorAll('.sx-rescue-tasks .chip').length >= 3), 'поиск: пустой результат не тупик — подбор, Стелла и задачи');
   await p.context().close();
 
+  /* --- по умолчанию плавающей панели внизу нет нигде (data/sales.json → bar.enabled: false) --- */
+  for (const [tag, o] of [['компьютер', {}], ['телефон', {mobile: true}]]) {
+    p = await mk(o); const seen = [];
+    for (const u of ['products/' + prod.slug + '.html', 'catalog.html', 'training.html', 'brands.html', 'partners.html', 'news.html', 'company.html']) {
+      await p.open(u); for (const f of [.2, .4, .6]) { await p.scrollPct(f); if (await p.barText()) seen.push(u + '@' + f); } await wait(Math.round(13000 / 8)); if (await p.barText()) seen.push(u + '@dwell');
+    }
+    ok(!seen.length && await p.evaluate(() => !document.querySelector('#xdock .sx-bar:not([hidden])')), tag + ': на товаре, каталоге, обучении, брендах, партнёрах, новостях и компании плавающих окон внизу («Не уверены, с чего начать…») нет', seen);
+    await p.context().close();
+  }
+
   /* --- эксперименты: панель на компьютере --- */
-  p = await mk(); await p.open('products/' + prod.slug + '.html?x=barDesktop:off'); await p.scrollPct(.5); await wait(2500);
+  p = await mk({bar: true}); await p.open('products/' + prod.slug + '.html?x=barDesktop:off'); await p.scrollPct(.5); await wait(2500);
   ok((await p.barText()) === null, 'компьютер, вариант проверки «off»: панели нет (контрольная группа)');
   await p.context().close();
-  p = await mk(); await p.open('products/' + prod.slug + '.html?x=barDesktop:pill');
+  p = await mk({bar: true}); await p.open('products/' + prod.slug + '.html?x=barDesktop:pill');
   let dbt = null; for (const f of [.3, .2, .4, .5, .6, .15]) { await p.scrollPct(f); await wait(900); dbt = await p.barText(); if (dbt) break; }       // панель уступает место ходам страницы — ищем просвет между ними
   ok(dbt && /Запросить/.test(dbt) && await p.evaluate(() => /sx-bar--pill/.test(document.getElementById('sx-bar').className)), 'компьютер, вариант «pill»: компактная панель показана', dbt);
   await p.click('#sx-bar .sx-bar-cta'); await p.waitForSelector('#modal.open'); await wait(400);
@@ -456,7 +467,7 @@ const J = f => JSON.parse(fs.readFileSync(path.join(ROOT, f), 'utf8'));
   await p.click('#asst-fab'); await wait(900);
   ok((await p.barText()) === null, 'пока открыт чат Стеллы, панель скрыта');
   await p.context().close();
-  p = await mk(); await p.open('products/' + prod.slug + '.html'); await wait(1800);
+  p = await mk({bar: true}); await p.open('products/' + prod.slug + '.html'); await wait(1800);
   let exps = {}; for (const f of [.3, .2, .4, .5, .6, .15]) { await p.scrollPct(f); await wait(700); exps = await p.evaluate(() => JSON.parse(localStorage.getItem('astreya:exp') || '{}')); if (exps.barDesktop) break; }       // вариант назначается, когда панель могла бы появиться (в просвете между ходами страницы)
   ok(['off', 'pill'].includes(exps.barDesktop), 'вариант проверки назначен случайно один раз и запомнен', exps);
   await p.context().close();
