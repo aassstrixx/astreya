@@ -30,7 +30,7 @@ const wait = ms => new Promise(r => setTimeout(r, ms));
   const base = 'http://127.0.0.1:' + S.port + '/';
   const D = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'js/data.js'), 'utf8').replace(/^[^=]*=\s*/, '').replace(/;\s*$/, ''));
   const mk = async (o) => {
-    o = o || {}; const ctx = await b.newContext({viewport: o.mobile ? {width: 390, height: 844} : {width: 1280, height: 860}, isMobile: !!o.mobile, hasTouch: !!o.mobile, locale: 'ru-RU'});
+    o = o || {}; const ctx = await b.newContext({viewport: o.mobile ? {width: 390, height: 844} : {width: o.w || 1280, height: o.h || 860}, isMobile: !!o.mobile, hasTouch: !!o.mobile, locale: 'ru-RU'});
     await ctx.route(/^https:\/\/fonts\./, r => r.abort()); await ctx.route('**/astreya/**', r => r.continue({url: r.request().url().replace('/astreya/', '/')})); /* страница 404 ссылается на ресурсы с префиксом /astreya/ (адрес сайта на GitHub Pages) */
     await ctx.addInitScript(sp => { window.ASTREYA_MOTION_SPEED = sp; }, o.speed || 8);
     const p = await ctx.newPage(); p.errs = []; p.on('pageerror', e => p.errs.push(e.message)); p.on('console', m => { if (m.type() === 'error' && !/ERR_FAILED|fonts\.|status of (429|503)|404 \(Not Found\)/.test(m.text())) p.errs.push(m.text()); }); p.on('response', r => { if (r.status() >= 400 && !/fonts\./.test(r.url()) && !/\/404\.html$|\/assets\/jar\//.test(r.url())) p.errs.push('HTTP ' + r.status() + ' ' + r.url()); });
@@ -223,7 +223,7 @@ const wait = ms => new Promise(r => setTimeout(r, ms));
       if (v.po > .9 && !tPop) tPop = Date.now(); if (v.c && !tCur) tCur = Date.now();
       if (v.t) typingOn = true; if (v.c) curOn = true; if (v.v && !vals.includes(v.v)) { vals.push(v.v); if (!tFirst) tFirst = Date.now(); } if (v.v === T.prod0) { tFull = Date.now(); break; } await wait(70);
     }
-    ok(tPop && tCur && tPop < tCur && tCur - tPop >= 2200, 'порядок показа: сначала появляется комментарий Стеллы, и только через паузу на чтение (' + (tCur - tPop) + ' мс) курсор начинает действовать', {tPop, tCur, gap: tCur - tPop});
+    ok(tPop && tCur && tPop < tCur && tCur - tPop >= 1500 && tCur - tPop <= 6500, 'порядок показа: сначала появляется комментарий Стеллы, и только через паузу на чтение (' + (tCur - tPop) + ' мс) курсор начинает действовать', {tPop, tCur, gap: tCur - tPop});
     const per = tFull && tFirst ? (tFull - tFirst) / Math.max(1, T.prod0.length - 1) : 0;
     ok(vals.length >= Math.min(5, T.prod0.length - 1) && typingOn && curOn && per >= 180, 'в обычном темпе слово набирается по буквам неспешно (' + Math.round(per) + ' мс на букву), поле подсвечено синим, курсор виден', {vals: vals.slice(0, 6), per, typingOn, curOn});
   }
@@ -346,20 +346,29 @@ const wait = ms => new Promise(r => setTimeout(r, ms));
   ok(!loud.length, 'на 8 страницах (каталог, бренды, обучение, новости, партнёры, компания, контакты, товар) всплывающих окон Стеллы нет, сколько ни листай и ни жди', loud);
   ok(await p.evaluate(() => !JSON.parse(sessionStorage.getItem('astreya:g-nudge') || '{"n":0}').n), 'счётчик подсказок нулевой');
   ok(!p.errs.length, 'на этих страницах нет ошибок JS', p.errs); await p.context().close();
-  p = await mk({speed: 14}); await p.open('index.html'); await wait(2800);
-  ok(await p.evaluate(() => { const n = document.querySelector('#g-nudge'); return !n || n.hidden; }), 'на главной, пока идёт вступление с баночкой, окна нет');
-  await p.evaluate(() => { const h = document.querySelector('.hero'); window.scrollTo({top: h.getBoundingClientRect().top + scrollY + 420, behavior: 'instant'}); });
-  await p.waitForSelector('#g-nudge.on', {timeout: 15000}).catch(() => {}); await wait(700);
-  const wn = await p.evaluate(() => { const n = document.querySelector('#g-nudge'); if (!n || n.hidden) return null; const r = n.getBoundingClientRect(); return {h: n.querySelector('.g-n-h').textContent, lead: n.querySelector('.g-n-lead').textContent, can: [...n.querySelectorAll('.g-n-rot i')].map(i => i.textContent), first: n.querySelector('.g-n-rot i.on').textContent, chips: [...n.querySelectorAll('.chip')].map(c => c.textContent.trim()), r: r.right, b: r.bottom, vw: innerWidth, vh: innerHeight}; });
-  ok(wn && /Добро пожаловать на сайт/.test(wn.h) && /Я Стелла, могу/.test(wn.lead) && wn.can.length >= 4 && /помочь/.test(wn.can[0]) && wn.can.some(x => /подсказать/.test(x)) && wn.can.some(x => /рассказать/.test(x)), 'на главной, когда вступление позади, Стелла здоровается и говорит, что может помочь, подсказать, рассказать', wn);
-  ok(wn && wn.chips.includes('Покажи сайт') && wn.chips.includes('Старт со Стеллой') && wn.r <= wn.vw && wn.b <= wn.vh, 'в окне — кнопки «Старт со Стеллой» и «Покажи сайт», окно целиком на экране', wn && [wn.chips, wn.r, wn.b]);
-  await wait(3400); ok(await p.evaluate(a => document.querySelector('#g-nudge .g-n-rot i.on').textContent !== a, wn ? wn.first : ''), 'строка «могу…» сменилась на следующую фразу');
-  const nst = await p.evaluate(() => JSON.parse(sessionStorage.getItem('astreya:g-nudge') || '{}')); ok(nst.n === 1 && nst.seen && nst.seen.welcome === 1, 'приветствие показано один раз и учтено в сессии', nst);
-  await p.click('#g-nudge .g-n-x'); await wait(600); ok(await p.evaluate(() => document.querySelector('#g-nudge').hidden), 'крестик закрывает окно');
-  await p.goto(base + 'catalog.html'); await wait(800); await p.goto(base + 'index.html'); await wait(900);
-  await p.evaluate(() => { const h = document.querySelector('.hero'); if (h) window.scrollTo({top: h.getBoundingClientRect().top + scrollY + 420, behavior: 'instant'}); }); await wait(4000);
-  ok(await p.evaluate(() => { const n = document.querySelector('#g-nudge'); return !n || n.hidden; }), 'после закрытия приветствие в этой сессии больше не появляется');
-  ok(!p.errs.length, 'на главной нет ошибок JS', p.errs); await p.context().close();
+  const toStrip = () => { const e = document.querySelector('.g-entry'); if (e) window.scrollTo({top: e.getBoundingClientRect().top + scrollY - innerHeight * .55, behavior: 'instant'}); };
+  const helloInfo = () => document.querySelector('.g-hello-w') && (() => { const w = document.querySelector('.g-hello-w'), h = w.querySelector('.g-hello'), r = h.getBoundingClientRect(), s = document.querySelector('.g-entry').getBoundingClientRect(), n = document.querySelector('#g-nudge'); return {side: w.dataset.side, inStrip: w.parentNode.classList.contains('g-entry'), on: w.classList.contains('on'), t: h.querySelector('b').textContent, x: h.querySelector('p').textContent, r: {l: r.left, t: r.top, r: r.right, b: r.bottom}, s: {l: s.left, t: s.top, r: s.right, b: s.bottom}, vw: innerWidth, vh: innerHeight, nudge: !!(n && !n.hidden), tail: getComputedStyle(h, '::after').content !== 'none'}; })();
+  for (const [name, o] of [['широкий экран 1852', {w: 1852, h: 940}], ['ноутбук 1280', {}]]) {
+    p = await mk(Object.assign({speed: 14}, o)); await p.open('index.html'); await wait(2800);
+    ok(await p.evaluate(() => !document.querySelector('.g-hello-w')), name + ': пока идёт вступление с баночкой, приветствия нет');
+    await p.evaluate(() => window.scrollTo({top: 700, behavior: 'instant'})); await wait(2500);
+    ok(await p.evaluate(() => !document.querySelector('.g-hello-w')), name + ': пока листают вступление и плашка Стеллы не показалась на экране, приветствия нет (листание не вызывает слов Стеллы)');
+    await p.evaluate(toStrip); await p.waitForSelector('.g-hello-w.on', {timeout: 15000}).catch(() => {}); await wait(900);
+    const wn = await p.evaluate(helloInfo);
+    ok(wn && /Добро пожаловать/.test(wn.t) && /Чем могу помочь/.test(wn.x), name + ': на плашке Стеллы появляется «Добро пожаловать… Чем могу помочь…»', wn);
+    ok(wn && wn.inStrip && !wn.nudge && wn.tail, name + ': окно — на самой плашке «Не знаете, с чего начать?» (с хвостиком к маскоту), правого нижнего пузыря нет', wn);
+    ok(wn && wn.r.l >= 0 && wn.r.r <= wn.vw && wn.r.t >= 0 && wn.r.b <= wn.vh, name + ': окно целиком на экране', wn && wn.r);
+    ok(wn && (o.w ? wn.side === 'l' && wn.r.r <= wn.s.l + 1 && wn.r.r >= wn.s.l - 30 && wn.r.t <= wn.s.b && wn.r.b >= wn.s.t : wn.side === 't' && wn.r.b <= wn.s.t + 1 && wn.r.b >= wn.s.t - 30 && wn.r.l >= wn.s.l - 2), name + (o.w ? ': слева от маскота, на уровне плашки' : ': над плашкой, у маскота'), wn);
+    const nst = await p.evaluate(() => JSON.parse(sessionStorage.getItem('astreya:g-nudge') || '{}')); ok(nst.seen && nst.seen.hello === 1, name + ': приветствие показано один раз и учтено в сессии', nst);
+    await p.click('.g-hello-x'); await wait(700); ok(await p.evaluate(() => !document.querySelector('.g-hello-w')), name + ': крестик закрывает окно');
+    await p.goto(base + 'catalog.html'); await wait(800); await p.goto(base + 'index.html'); await wait(900); await p.evaluate(toStrip); await wait(3500);
+    ok(await p.evaluate(() => !document.querySelector('.g-hello-w')), name + ': после закрытия в этой сессии приветствие больше не появляется');
+    ok(!p.errs.length, name + ': на главной нет ошибок JS', p.errs); await p.context().close();
+  }
+  p = await mk({speed: 14}); await p.open('index.html'); await wait(2800); await p.evaluate(toStrip); await p.waitForSelector('.g-hello-w.on', {timeout: 15000}).catch(() => {}); await wait(500);
+  await p.evaluate(() => { window.Astreya.guide.tour('site', 0); }); await wait(900);
+  ok(await p.evaluate(() => !document.querySelector('.g-hello-w')), 'при запуске экскурсии приветствие убирается и не мешает показу');
+  await p.keyboard.press('Escape'); await p.context().close();
 
   /* ================= Б. телефон ================= */
   console.log('\n[Б. Телефон 390×844]');

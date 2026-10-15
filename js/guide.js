@@ -115,7 +115,7 @@
   function reveal() {
     const sp = $('#g-spot'); if (!sp || sp.hidden || !sp.classList.contains('g-moving')) return; const hole = $('.g-hole', sp), pop = $('.g-pop', sp);
     hole.classList.add('g-nt'); cancelAnimationFrame(spotRaf); sp.classList.remove('g-moving'); place(); requestAnimationFrame(() => requestAnimationFrame(() => hole.classList.remove('g-nt')));
-    pop.classList.remove('in'); setTimeout(() => { if (!sp.classList.contains('g-moving') && !sp.hidden) { void pop.offsetWidth; pop.classList.add('in'); } }, Math.round(380 / speed()));
+    pop.classList.remove('in'); setTimeout(() => { if (!sp.classList.contains('g-moving') && !sp.hidden) { void pop.offsetWidth; pop.classList.add('in'); } }, Math.round(300 / speed()));
   }
   function progScroll(top, jumpOver) {
     if (top == null || Math.abs(top - scrollY) < 2) { LOCK.y = scrollY; return Promise.resolve(); }
@@ -133,7 +133,7 @@
     });
   }
   /* ждёт, пока страница доехала и всё появилось на экране (рамка, комментарий) */
-  const shownWait = async id => { while ((LOCK.prog > 0 || revealT || ($('#g-spot') || {classList: {contains: () => false}}).classList.contains('g-moving')) && alive(id)) await new Promise(r => setTimeout(r, 40)); await sleep(520); };
+  const shownWait = async id => { while ((LOCK.prog > 0 || revealT || ($('#g-spot') || {classList: {contains: () => false}}).classList.contains('g-moving')) && alive(id)) await new Promise(r => setTimeout(r, 40)); await sleep(360); };
   const scrollTo = (el, frac, fit, keep) => progScroll(scrollTarget(el, frac, fit, keep));
   /* пока идёт экскурсия, страница не прокручивается колесом, пальцем, клавишами и ползунком: подсветка и Стелла стоят на месте, листает только сама Стелла */
   const stopScroll = e => { if (!LOCK.on) return; if (e.target && e.target.closest && e.target.closest('#asst')) return; e.preventDefault(); e.stopImmediatePropagation(); };
@@ -205,7 +205,7 @@
   const stepMatches = (st, key) => st.page === 'any' || st.page === key;
   const isStatic = page => PAGES.some(p => p.id === page);
   const fill = (t, v, dflt) => String(t || '').replace(/\{(\w+)\}/g, (m, k) => v && v[k] != null ? v[k] : dflt != null ? dflt : m);
-  const readMs = txt => Math.min(5600, Math.max(1800, 900 + String(txt || '').trim().split(/\s+/).length * 250));          // сколько нужно, чтобы прочитать комментарий (ускоряется только в тестах)
+  const readMs = txt => Math.min(4200, Math.max(1400, 600 + String(txt || '').trim().split(/\s+/).length * 180));          // сколько нужно, чтобы прочитать комментарий (ускоряется только в тестах)
   const targetOf = st => st.sel ? {id: st.id || 'step', sel: mobile() && st.msel ? st.msel : st.sel, label: st.label || ''} : (TARGETS[st.page === 'any' ? '*' : st.page] || []).concat(TARGETS['*'] || []).find(x => x.id === st.target) || findTarget(st.target);          // sel — свой селектор прямо в шаге
   function saveTour(id, i, nav) { store.set(KT, {id, i, t: Date.now(), nav: nav ? 1 : 0}); }
   /* то, что экскурсия временно изменила на странице (набранный запрос, фильтр, раскрытая карточка бренда, отмеченные для сравнения товары), возвращается назад */
@@ -547,31 +547,37 @@
   function mountEntry() {
     const key = entryKey(), cfg = G.entry && G.entry.pages && G.entry.pages[key]; if (!cfg || $('.g-entry')) return;
     let a = null; try { a = $(cfg.anchor); } catch (e) {} if (!a) return;
-    const wl = !!cfg.welcome, title = pickV(cfg.title), text = pickV(cfg.text);
-    const el = document.createElement('aside'); el.className = 'g-entry' + (wl ? ' g-e-welcome' : ''); el.setAttribute('aria-label', 'Помощник Стелла'); el.setAttribute('data-style', (G.entry && G.entry.style) || 'strip');          // strip · slim · card
-    el.innerHTML = '<span class="g-e-pe" aria-hidden="true">' + (A.pearl ? A.pearl('happy', true) : '') + '</span><div class="g-e-t"><b' + (wl ? ' data-full="' + esc(title) + '"' : '') + '>' + esc(title) + '</b><p' + (wl ? ' data-full="' + esc(text) + '"' : '') + '>' + esc(text) + '</p></div>' +
+    const el = document.createElement('aside'); el.className = 'g-entry'; el.setAttribute('aria-label', 'Помощник Стелла'); el.setAttribute('data-style', (G.entry && G.entry.style) || 'strip');          // strip · slim · card
+    el.innerHTML = '<span class="g-e-pe" aria-hidden="true">' + (A.pearl ? A.pearl('happy', true) : '') + '</span><div class="g-e-t"><b>' + esc(pickV(cfg.title)) + '</b><p>' + esc(pickV(cfg.text)) + '</p></div>' +
       '<div class="g-e-ch">' + chipsHTML(cfg.chips, 4) + '</div>' +
       '<button class="btn btn-fill btn-sm g-e-b" type="button" data-act="asst-open" data-track="guide_entry">Спросить Стеллу</button>';
     const pos = cfg.pos || 'after';
     if (pos === 'after') a.insertAdjacentElement('afterend', el);
     else if (pos === 'beforeSection') { const sec = a.closest('section'); (sec || a).insertAdjacentElement('beforebegin', el); }
     else a.insertAdjacentElement('beforebegin', el);
-    if (!wl) { requestAnimationFrame(() => el.classList.add('on')); return; }
-    /* приветствие на главной: Стелла «пишет» его сама, когда после вступления посетитель чуть прокрутил страницу и блок оказался на экране */
-    const st = nstate(), seen = !!(st.seen && st.seen.strip), go = () => { if (el.dataset.done) return; el.dataset.done = '1'; typeWelcome(el, seen); };
-    if ('IntersectionObserver' in window) { const io = new IntersectionObserver(es => { if (es.some(e => e.isIntersecting)) { io.disconnect(); go(); } }, {threshold: .5}); io.observe(el); } else go();
+    requestAnimationFrame(() => el.classList.add('on'));
+    if (cfg.hello) watchHello(el, cfg.hello);
   }
-  async function typeWelcome(el, instant) {
-    const b = $('.g-e-t b', el), p = $('.g-e-t p', el), full = [b.getAttribute('data-full'), p.getAttribute('data-full')], chips = () => { $$('.g-e-ch .chip', el).forEach((c, i) => { c.style.transitionDelay = Math.round(i * 130 / speed()) + 'ms'; }); el.classList.add('chips-in'); };
-    el.classList.add('on'); const st = nstate(); st.seen = st.seen || {}; st.seen.strip = 1; store.set(KN, st);
-    if (instant) { b.textContent = full[0]; p.textContent = full[1]; chips(); return; }
-    b.textContent = ''; p.textContent = ''; S().hey && S().hey(); await sleep(650);
-    for (const [node, txt, per] of [[b, full[0], 42], [p, full[1], 21]]) {
-      for (let k = 1; k <= txt.length; k++) { if (!el.isConnected) return; node.innerHTML = esc(txt.slice(0, k)) + '<i class="g-caret"></i>'; await sleep(per); }
-      node.textContent = txt; await sleep(260);
-    }
-    chips();
+  /* Приветствие на главной — небольшое окно «от самого маскота» у жемчужинки в основной плашке Стеллы (слева от неё, а если места нет — над плашкой; хвостик указывает на маскота).
+     Появляется, когда после вступления посетитель чуть прокрутил главную и плашка оказалась на экране; один раз за сессию. */
+  let helloEl = null, helloT = 0;
+  function watchHello(strip, h) {
+    const st = nstate(); if (st.off || (st.seen && st.seen.hello)) return;
+    const go = () => { if (strip.dataset.hello) return; strip.dataset.hello = '1'; setTimeout(() => { if (strip.isConnected && allowedHello()) showHello(strip, h); }, Math.round(500 / speed())); };
+    if ('IntersectionObserver' in window) { const io = new IntersectionObserver(es => { if (es.some(e => e.isIntersecting)) { io.disconnect(); go(); } }, {threshold: .6}); io.observe(strip); } else go();
   }
+  const allowedHello = () => { const b = document.body.classList; return !(document.hidden || b.contains('g-on') || b.contains('asst-open') || b.contains('locked') || b.contains('menu-open')); };
+  function showHello(strip, h) {
+    const wrap = document.createElement('div'), title = pickV(h.title), text = pickV(h.text);
+    wrap.className = 'g-hello-w'; wrap.innerHTML = '<div class="g-hello" role="status"><b>' + esc(title) + '</b><p>' + esc(text) + '</p><button class="g-hello-x" type="button" data-act="g-hello-x" aria-label="Скрыть">' + I.close + '</button></div>';
+    strip.appendChild(wrap); helloEl = wrap; wrap.setAttribute('data-side', strip.getBoundingClientRect().left >= 304 && innerWidth > 900 ? 'l' : 't');          // слева от жемчужинки, если слева есть поле, иначе над плашкой
+    requestAnimationFrame(() => requestAnimationFrame(() => { wrap.classList.add('on'); strip.classList.add('hey'); setTimeout(() => strip.classList.remove('hey'), 1600); }));
+    const st = nstate(); st.seen = st.seen || {}; st.seen.hello = 1; store.set(KN, st); A.track && A.track('guide_nudge', {reason: 'hello', page: pageKey()});
+    clearTimeout(helloT); helloT = setTimeout(hideHello, (h.showSec || 20) * 1000);
+  }
+  function hideHello(quick) { clearTimeout(helloT); const w = helloEl; helloEl = null; if (!w) return; w.classList.remove('on'); setTimeout(() => w.remove(), quick ? 80 : 420); }
+  A.actions['g-hello-x'] = () => hideHello();
+  new MutationObserver(() => { if (helloEl && !allowedHello()) hideHello(true); }).observe(document.body, {attributes: true, attributeFilter: ['class']});          // открыли чат, экскурсию или меню — окно убираем
 
   /* ---------- приветствие Стеллы (всплывающее окно) ----------
      Всплывающее окно у кнопки Стеллы есть только на главной (G.nudge.pages) и только одно: «Добро пожаловать» + чем Стелла может помочь.
@@ -617,7 +623,7 @@
     tRot = setInterval(() => { if (el.hidden || !el.classList.contains('on') || el.matches(':hover')) return; items[k].classList.remove('on'); k = (k + 1) % items.length; items[k].classList.add('on'); }, (WE.rotateSec || 2.8) * 1000);
   }
   function hideNudge(quick) {
-    clearInterval(tRot); const el = nEl; if (!el || el.hidden) return; clearTimeout(welcome.t); el.classList.remove('on'); setTimeout(() => { if (!el.classList.contains('on')) el.hidden = true; }, quick ? 120 : 320);
+    hideHello(quick); clearInterval(tRot); const el = nEl; if (!el || el.hidden) return; clearTimeout(welcome.t); el.classList.remove('on'); setTimeout(() => { if (!el.classList.contains('on')) el.hidden = true; }, quick ? 120 : 320);
   }
   let armN = 0;
   function arm() {
