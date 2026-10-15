@@ -28,10 +28,12 @@ module.exports = function partners(ctx, C, P) {
         <p class="fine">Расчёт ориентировочный (пример). Точные условия и пороги скидок подтверждает менеджер.</p>
       </div>
       <div class="calc" data-calc>
+       <div class="calc-main">
         <div class="sum"><small>Сумма закупки</small><span id="calc-sum">${rub(100000)}</span></div>
         <input type="range" id="calc-range" min="0" max="500000" step="10000" value="100000" aria-label="Сумма закупки">
         <div class="tiers">${site.discounts.map((d, i) => `<div class="tier" data-tier="${i}"><b>${d.pct}%</b><span>от ${rub(d.from)}</span></div>`).join('')}</div>
         <div class="save"><span id="calc-tier"></span><b id="calc-save"></b></div>
+       </div>
       </div>
     </div>
   </div></section>

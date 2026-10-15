@@ -4,11 +4,11 @@
 /* ---------- подсветка и подсказка ---------- */
 .g-spot{position:fixed;inset:0;z-index:96;pointer-events:none}
 .g-hole{position:fixed;left:0;top:0;width:0;height:0;border-radius:18px;box-shadow:0 0 0 9999px rgba(8,18,40,.5),0 0 0 2px rgba(143,168,255,.95),0 0 34px 6px rgba(103,140,255,.45);transition:width .5s var(--ease),height .5s var(--ease),transform .5s var(--ease),opacity .3s}
-.g-hole.g-nt{transition:none}
+.g-hole.g-nt,.g-hole.g-sc{transition:none}
 .g-hole::after{content:"";position:absolute;inset:-6px;border-radius:22px;border:2px solid rgba(143,168,255,.7);animation:gRing 1.9s ease-out infinite}
 @keyframes gRing{0%{opacity:.9;transform:scale(.97)}100%{opacity:0;transform:scale(1.07)}}
 .g-pop{position:fixed;z-index:97;width:min(340px,calc(100vw - 24px));display:flex;gap:10px;align-items:flex-start;padding:14px 12px 14px 14px;border-radius:20px;background:#fff;color:var(--navy);pointer-events:auto;
-  box-shadow:0 26px 60px -20px rgba(8,18,40,.7),0 0 0 1px rgba(11,26,51,.08);opacity:0;transform:translateY(8px) scale(.96)}
+  box-shadow:0 26px 60px -20px rgba(8,18,40,.7),0 0 0 1px rgba(11,26,51,.08);opacity:0;transform:translateY(8px) scale(.96);transition:left .5s var(--ease),top .5s var(--ease)}
 .g-pop.in{animation:gPop .55s cubic-bezier(.34,1.56,.64,1) both}
 @keyframes gPop{0%{opacity:0;transform:translateY(10px) scale(.94)}100%{opacity:1;transform:none}}
 .g-pe{flex:none;width:38px;height:38px;margin-top:2px}.g-pe .pe{width:100%;height:100%}

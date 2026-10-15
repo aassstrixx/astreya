@@ -100,10 +100,10 @@ const wait = ms => new Promise(r => setTimeout(r, ms));
     ['catalog', /по слову «.+» из \d+ позиций осталась 1/], ['catalog', /Выбрала «Пигментация» — и в каталоге \d+ позиций из 30/], ['catalog', /вместо 30 позиций осталось \d+/], ['catalog', /Не можете выбрать между двумя/], ['catalog', /Загляните в карточку/],
     ['product', /Тут собраны факты/], ['product', /«В список запроса» копит/], ['product', /главная кнопка карточки/],
     ['brands', /осталось брендов — \d+/], ['brands', /У каждого бренда своя карточка/],
-    ['training', /календарь встреч/], ['training', /Выбрала «.+» и «.+» — осталось встреч: \d+/], ['training', /Вот пример встречи/], ['training', /преподаватели центра/], ['training', /материалы для специалистов/],
+    ['training', /календарь встреч/], ['training', /Выбрала «.+» и «.+» — осталось встреч: \d+/], ['training', /Так выглядит встреча/], ['training', /преподаватели центра/], ['training', /материалы для специалистов/],
     ['news', /Нажала «.+» — и показаны только эти записи: \d+/], ['news', /Вот пример: «.+»/], ['news', /Внизу страницы подписка/],
     ['company', /Тут мы рассказываем о себе/], ['company', /Вот, нажала «.+»/], ['company', /помогает решиться на первый заказ/],
-    ['partners', /Партнёр получает/], ['partners', /При закупке на 150 000 ₽ ваша скидка — 10%\..*ориентир/], ['partners', /Ступени такие: 5% от 50 000 ₽, 10% от 150 000 ₽, 15% от 300 000 ₽/], ['partners', /Оставьте контакты/],
+    ['partners', /Что получает партнёр/], ['partners', /При закупке на 150 000 ₽ ваша скидка — 10%\..*ориентир/], ['partners', /Ступени такие: 5% от 50 000 ₽, 10% от 150 000 ₽, 15% от 300 000 ₽/], ['partners', /Оставьте контакты/],
     ['start', /Здесь мы разговариваем/], ['start', /Можно написать всё одной фразой/],
     ['contacts', /Связаться можно как удобно/], ['contacts', /Не любите звонить/],
     ['contacts', /Вот и всё/]
@@ -135,6 +135,11 @@ const wait = ms => new Promise(r => setTimeout(r, ms));
     prod0: D.products[0].name.split(/\s+/)[0]
   };
   const inView = x => x && x.hole.w > 8 && x.hole.h > 8 && x.hole.x >= 0 && x.hole.y >= 0 && x.hole.x + x.hole.w <= x.vw + 1 && x.hole.y + x.hole.h <= x.vh + 1;
+  /* рамка подсветки обходит блок целиком (не обрезает), лежит в пределах экрана, а карточка Стеллы не наезжает на блок */
+  const fitOf = (pg, i, mob) => pg.evaluate(({i, mob}) => { const G = window.ASTREYA_DATA.guide, t = G.tours.find(x => x.id === 'site'), st = t.steps[i]; let s = mob && st.msel ? st.msel : st.sel; if (!s && st.target) { const tg = ((G.targets[st.page] || []).concat(G.targets['*'] || [])).find(x => x.id === st.target); s = tg && tg.sel; } const sp = document.getElementById('g-spot'); if (!sp || sp.hidden || !s) return null;
+    const el = [...document.querySelectorAll(s)].find(e => { const r = e.getBoundingClientRect(); return r.width > 0 && r.height > 0; }); if (!el) return null; const r = el.getBoundingClientRect(), h = sp.querySelector('.g-hole').getBoundingClientRect(), pp = sp.querySelector('.g-pop').getBoundingClientRect();
+    const ox = Math.max(0, Math.min(h.right, pp.right) - Math.max(h.left, pp.left)), oy = Math.max(0, Math.min(h.bottom, pp.bottom) - Math.max(h.top, pp.top));
+    return {crop: h.bottom < r.bottom - 2 || (h.top > r.top + 1 && r.top > 0) || h.left > r.left + 1 || h.right < r.right - 2, ov: Math.round(ox * oy), out: h.bottom > innerHeight + 1, el: [r.x, r.y, r.width, r.height].map(Math.round), hole: [h.x, h.y, h.width, h.height].map(Math.round)}; }, {i, mob});
   const noOverlap = x => x && (x.pop.x + x.pop.w <= x.hole.x || x.pop.x >= x.hole.x + x.hole.w || x.pop.y + x.pop.h <= x.hole.y || x.pop.y >= x.hole.y + x.hole.h);
   ok(await p.evaluate(() => !document.getElementById('g-spot') || document.getElementById('g-spot').hidden) && !(await p.evaluate(() => sessionStorage.getItem('astreya:g-tour'))), 'экскурсия сама не запускается: после загрузки страницы подсветки и состояния экскурсии нет');
   await p.click('#asst-fab'); await p.waitForSelector('#asst-in', {state: 'visible'}); await wait(700); await p.idle();
@@ -152,12 +157,13 @@ const wait = ms => new Promise(r => setTimeout(r, ms));
     const sn0 = await T.snap(); await p.mouse.move(640, 500); await p.mouse.wheel(0, 900); await wait(250); await p.keyboard.press('PageDown'); await wait(250); await p.evaluate(() => window.scrollTo(0, 0)); await wait(1500); const sn1 = await T.snap();          /* на главной у вступления свои обработчики прокрутки: после рывка к началу страница на мгновение «вздрагивает» и возвращается */
     ok(sn1 && Math.abs(sn1.y - sn0.y) < 3 && Math.abs(sn1.hole.y - sn0.hole.y) < 2 && Math.abs(sn1.pop.x - sn0.pop.x) < 2 && Math.abs(sn1.pop.y - sn0.pop.y) < 2, 'на время экскурсии страница закреплена: колесо мыши, PageDown и прокрутка из кода не сдвигают ни подсветку, ни карточку Стеллы', [sn0 && [sn0.y, sn0.hole.y, sn0.pop.y], sn1 && [sn1.y, sn1.hole.y, sn1.pop.y]]);
   }
-  const badStep = [], seen = [];
+  const badStep = [], badFit = [], seen = [];
   let x2 = null, firstHref = '';
   for (let i = 1; i < STEP.length; i++) {
     const [pg, re] = STEP[i];
     await T.next();
     x2 = await T.at(pg, re); seen.push(x2 && x2.page);
+    if (i < STEP.length - 1) { const fe = await fitOf(p, i, false); if (fe && (fe.crop || fe.out || fe.ov > 1500)) badFit.push([i, fe]); }
     if (i === 5) { /* «Показать на примере» — отметка двух товаров только по нажатию посетителя */
       ok(inView(x2) && /⇄/.test(x2.tx) && x2.btns.includes('Показать на примере') && await p.evaluate(() => (JSON.parse(localStorage.getItem('astreya:cmp') || '[]')).length === 0), 'шаг «Сравнение»: подсвечен значок ⇄ у карточек; без вашего нажатия ничего не отмечено', x2);
       await T.press('Показать на примере'); await T.until(() => (JSON.parse(localStorage.getItem('astreya:cmp') || '[]')).length === 2 && !document.querySelector('#cmp-bar').hidden, 25000); await wait(700); const xo = await T.snap();
@@ -178,12 +184,16 @@ const wait = ms => new Promise(r => setTimeout(r, ms));
     if (i === 26) ok(await p.evaluate(() => !document.querySelector('#modal.open')) && !(await p.evaluate(() => sessionStorage.getItem('astreya:rl') || localStorage.getItem('astreya:rl'))), 'экскурсия не отправляла форм и ничего не добавила в список запроса — заявка и «корзина» не затронуты');
   }
   ok(!badStep.length, 'все ' + STEP.length + ' шагов экскурсии прошли по порядку: нужная страница, окончательная реплика, подсвеченный элемент на экране, «Назад», номер этапа (1–9) и его название', badStep.slice(0, 4));
+  ok(!badFit.length, 'рамка подсветки на каждом шаге обходит блок целиком (не обрезает), помещается на экране, а карточка Стеллы не наезжает на подсвеченное', badFit.slice(0, 3));
   const order = []; seen.forEach(pg => { if (order[order.length - 1] !== pg) order.push(pg); });
   ok(order.join() === 'home,catalog,product,brands,training,news,company,partners,start,contacts', 'разделы шли в логичном порядке: ' + order.join(' → '));
   x = await T.snap();
-  ok(x && /Вот и всё/.test(x.tx) && ['Открыть каталог', 'Старт со Стеллой', 'Спросить Стеллу', 'Закрыть'].every(b => x.btns.includes(b)) && !x.btns.includes('Подобрать по задаче') && /^9 из 9/.test(x.st) && inView(x), 'финал: предложение — открыть каталог, «Старт со Стеллой» или спросить Стеллу', x);
+  ok(x && /Вот и всё/.test(x.tx) && ['Вернуться на главную', 'Старт со Стеллой', 'Спросить Стеллу', 'Закрыть'].every(b => x.btns.includes(b)) && !x.btns.includes('Открыть каталог') && !x.btns.includes('Подобрать по задаче') && /^9 из 9/.test(x.st) && inView(x), 'финал: вместо «Открыть каталог» — «Вернуться на главную», рядом «Старт со Стеллой», «Спросить Стеллу» и «Закрыть»', x);
   await T.press('Назад'); await wait(1500); x = await T.at('contacts', /Не любите звонить/); ok(x && /Не любите звонить/.test(x.tx), '«Назад» с последнего шага возвращает к форме «Контактов»');
   await T.next(); await T.at('contacts', /Вот и всё/);
+  await T.press('Вернуться на главную'); await T.until(() => document.body.getAttribute('data-page') === 'home', 20000); await wait(900);
+  ok(await p.evaluate(() => document.body.getAttribute('data-page') === 'home' && document.getElementById('g-spot').hidden && (!document.getElementById('g-cursor') || document.getElementById('g-cursor').hidden)) && !(await p.evaluate(() => sessionStorage.getItem('astreya:g-tour'))), 'финальная кнопка «Вернуться на главную» открывает главную страницу, показ закрыт, курсор убран');
+  await p.evaluate(() => window.Astreya.guide.tour('site', 31)); await T.at('home', /Вот и всё/, 20000);
   await T.press('Старт со Стеллой'); await T.until(() => document.body.getAttribute('data-page') === 'start' && !!document.querySelector('.pchat'), 20000); await wait(900);
   ok(await p.evaluate(() => document.body.getAttribute('data-page') === 'start' && !!document.querySelector('.pchat') && document.getElementById('g-spot').hidden && (!document.getElementById('g-cursor') || document.getElementById('g-cursor').hidden)), 'финальная кнопка «Старт со Стеллой» открывает страницу подбора — окно диалога со Стеллой; курсор и подсветка убраны');
   await p.keyboard.press('Escape'); await wait(300);
@@ -223,15 +233,27 @@ const wait = ms => new Promise(r => setTimeout(r, ms));
   await p.evaluate(() => window.Astreya.guide.tour('site', 9)); await T.at('product', /главная кнопка карточки/, 20000);
   await T.next();
   {
-    const t0 = Date.now(); let goTxt = false, onNav = false, curMoved = false, c0 = '';
+    const t0 = Date.now(); let goTxt = false, onNav = false, curMoved = false, c0 = '', lastTip = null;
     while (Date.now() - t0 < 30000) {
-      const v = await p.evaluate(() => { const s = document.getElementById('g-spot'), c = document.getElementById('g-cursor'), n = document.querySelector('#nav > a.nl[data-nav="/brands"]'), h = s && !s.hidden ? document.querySelector('.g-hole').getBoundingClientRect() : null; const r = n ? n.getBoundingClientRect() : null; return {page: document.body.getAttribute('data-page'), tx: s && !s.hidden ? s.querySelector('.g-tx p').textContent : '', ct: c && !c.hidden ? c.style.transform : '', near: !!(h && r && Math.abs(h.left + h.width / 2 - (r.left + r.width / 2)) < 40 && h.top < 120)}; });
-      if (/Теперь загляну к брендам/.test(v.tx) && v.page === 'product') { goTxt = true; if (v.near) onNav = true; if (!c0) c0 = v.ct; else if (v.ct !== c0) curMoved = true; }
+      const v = await p.evaluate(() => { const s = document.getElementById('g-spot'), c = document.getElementById('g-cursor'), n = document.querySelector('#nav > a.nl[data-nav="/brands"]'), h = s && !s.hidden ? document.querySelector('.g-hole').getBoundingClientRect() : null; const r = n ? n.getBoundingClientRect() : null; const m = c && !c.hidden ? /translate\(([-\d.]+)px,\s*([-\d.]+)px\)/.exec(c.style.transform) : null; return {page: document.body.getAttribute('data-page'), tx: s && !s.hidden ? s.querySelector('.g-tx p').textContent : '', ct: c && !c.hidden ? c.style.transform : '', tip: m ? [+m[1] + 4, +m[2] + 3] : null, hole: h ? [h.left, h.top, h.width, h.height] : null, near: !!(h && r && Math.abs(h.left + h.width / 2 - (r.left + r.width / 2)) < 40 && h.top < 120)}; });
+      if (/Теперь загляну к брендам/.test(v.tx) && v.page === 'product') { goTxt = true; if (v.near) onNav = true; if (!c0) c0 = v.ct; else if (v.ct !== c0) curMoved = true; if (v.tip && v.hole) lastTip = v; }
       if (v.page === 'brands') break; await wait(70);
     }
+    const tipIn = !!lastTip && lastTip.tip[0] >= lastTip.hole[0] && lastTip.tip[0] <= lastTip.hole[0] + lastTip.hole[2] && lastTip.tip[1] >= lastTip.hole[1] && lastTip.tip[1] <= lastTip.hole[1] + lastTip.hole[3];
+    ok(tipIn, 'перед нажатием кончик курсора стоит точно на подсвеченном пункте меню «Бренды» (не мимо и не под ним)', lastTip);
     ok(goTxt && onNav && curMoved && await dataPage(p) === 'brands', 'переход в «Бренды»: Стелла говорит по дороге, подсвечивает пункт меню «Бренды», курсор плывёт к нему и нажимает — открылась страница брендов', {goTxt, onNav, curMoved, page: await dataPage(p)});
   }
   await T.at('brands', /осталось брендов/, 30000);
+  /* между частями страницы Стелла прокручивает плавно, без рывков */
+  await p.open('training.html'); await wait(900);
+  await p.evaluate(() => window.Astreya.guide.tour('site', 14)); await T.at('training', /Так выглядит встреча/, 40000);
+  await T.next();
+  {
+    const ys = [], t0 = Date.now(); while (Date.now() - t0 < 4500) { ys.push([Date.now() - t0, await p.evaluate(() => Math.round(scrollY))]); await wait(35); }
+    const total = Math.abs(ys[ys.length - 1][1] - ys[0][1]); let maxStep = 0, dir = 0, back = 0; for (let k = 1; k < ys.length; k++) { const d = ys[k][1] - ys[k - 1][1]; maxStep = Math.max(maxStep, Math.abs(d)); if (d && dir && Math.sign(d) !== dir) back++; if (d) dir = Math.sign(d); }
+    const moving = ys.filter((r, k) => k && r[1] !== ys[k - 1][1]).length;
+    ok(total > 300 && moving >= 12 && maxStep <= total * 0.2 && back === 0, 'переход к другой части страницы идёт плавной прокруткой: ' + moving + ' промежуточных положений, без рывков и возвратов (макс. шаг ' + maxStep + ' px из ' + total + ')', {total, moving, maxStep, back});
+  }
   ok(!p.errs.length, 'в обычном темпе нет ошибок JS и консоли', p.errs); await p.context().close();
 
   /* ---------- выход, «Назад» между страницами, откат изменений, отсутствующие элементы ---------- */
@@ -338,13 +360,14 @@ const wait = ms => new Promise(r => setTimeout(r, ms));
   if (!(await p.evaluate(() => document.body.classList.contains('asst-open')))) { await p.click('#asst-fab'); await p.waitForSelector('#asst-in', {state: 'visible'}); await wait(700); }
   await p.click('.asst-ib-tour'); await mt.until(() => document.body.getAttribute('data-page') === 'home' && !document.getElementById('g-spot').hidden, 25000); await wait(1000);
   let mx = await mt.snap(); ok(mx && /^1 из 9/.test(mx.st) && mOk(mx) && !mx.menu, 'на телефоне: экскурсия с каталога перешла на главную, шаг 1, карточка — нижняя «шторка», не перекрывает шапку', mx);
-  const mBad = [], mPages = []; let mFinal = null;
+  const mBad = [], mFit = [], mPages = []; let mFinal = null;
   for (let k = 1; k < STEP.length; k++) {
     const [pg, re] = STEP[k];
     await p.evaluate(() => { const b = document.querySelector('#g-spot .g-ctl .btn-fill'); if (b) b.click(); });
     mx = await stableAt(mt.snap, pg, re, 45000);
     if (!mx) { mBad.push(['пропал на шаге ' + k]); break; }
     if (mPages[mPages.length - 1] !== mx.page) mPages.push(mx.page);
+    if (k < STEP.length - 1) { const fe = await fitOf(p, k, true); if (fe && (fe.crop || fe.out || fe.ov > 1500)) mFit.push([k, fe]); }
     if (!(mx.page === pg && re.test(mx.tx.replace(/\u00a0/g, ' ')))) mBad.push([k + ': нет нужной реплики', mx.page, mx.tx.slice(0, 50)]); else if (!mOk(mx)) mBad.push([k + ':' + mx.page, mx.tx.slice(0, 50), mx.hole, mx.pop]);
     if (k === 2) ok(await p.evaluate(q => document.getElementById('cat-q').value === q, T.prod0), 'на телефоне: каталог открыт нажатием на кнопку первого экрана, в поиске набран запрос', mx);
     if (k === 3) ok(await p.evaluate(() => document.getElementById('f-task').value === 'pigment' && !!document.querySelector('#results.filters-open')), 'на телефоне: панель фильтров раскрылась сама, выбрано назначение «Пигментация»');
@@ -352,6 +375,7 @@ const wait = ms => new Promise(r => setTimeout(r, ms));
   }
   ok(mPages.join() === 'home,catalog,product,brands,training,news,company,partners,start,contacts', 'на телефоне экскурсия прошла все разделы по порядку: ' + mPages.join(' → '));
   ok(mFinal && /Вот и всё/.test(mFinal.tx) && mFinal.btns.includes('Старт со Стеллой') && !mFinal.menu && mOk(mFinal), 'на телефоне финал: три предложения видны, карточка внутри экрана', mFinal);
+  ok(!mFit.length, 'на телефоне рамка подсветки на каждом шаге обходит блок целиком, а «шторка» Стеллы не наезжает на него', mFit.slice(0, 3));
   ok(!mBad.length, 'на телефоне на всех ' + STEP.length + ' шагах нужная реплика, подсвеченный элемент виден и не закрыт карточкой, карточка не выходит за экран', mBad.slice(0, 3));
   await mt.press('Закрыть'); await wait(400);
   ok(await p.evaluate(() => document.documentElement.scrollWidth <= innerWidth), 'горизонтальной прокрутки нет');
