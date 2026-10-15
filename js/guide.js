@@ -76,22 +76,36 @@
       const popTop = vh - ph - 12 - dock; if (!top && y + h > popTop - 6 && y < popTop - 70) hole.style.height = Math.round(popTop - 6 - y) + 'px';          // места нет ни сверху, ни снизу: подсвечиваем только ту часть, что не закрыта карточкой
     }
     else {
-      pop.classList.remove('sheet'); const pw = pop.offsetWidth || 320, ph = pop.offsetHeight || 120; let top, below = y + h + 14, above = y - ph - 14;
-      top = below + ph <= vh - 12 ? below : above >= 12 ? above : Math.max(12, vh - ph - 16);
+      pop.classList.remove('sheet'); const pw = pop.offsetWidth || 320, ph = pop.offsetHeight || 120, prev = pop.getAttribute('data-side'); let top, below = y + h + 14, above = y - ph - 14;
+      const fitB = below + ph <= vh - 12, fitT = above >= 12;          // сторона, с которой карточка встала, не прыгает: меняется, только если там уже не помещается
+      top = cur && cur.above && fitT ? above : prev === 'b' && fitB ? below : prev === 't' && fitT ? above : fitB ? below : fitT ? above : Math.max(12, vh - ph - 16);
       const left = Math.min(Math.max(12, x + w / 2 - pw / 2), vw - pw - 12);
       pop.style.left = Math.round(left) + 'px'; pop.style.top = Math.round(top) + 'px';
       pop.setAttribute('data-side', top === below ? 'b' : top === above ? 't' : 'f');
     }
     spotRaf = requestAnimationFrame(place);
   }
-  function scrollTo(el) {
-    for (let n = el; n && n !== document.body && n.nodeType === 1; n = n.parentElement) { if (n.id === 'hdr' || getComputedStyle(n).position === 'fixed') return; }          // шапка, меню и кнопка Стеллы закреплены на экране — страницу не прокручиваем
+  /* прокрутка к элементу — только та, что делает сама экскурсия: после неё страница снова «закреплена» (см. LOCK ниже) */
+  function scrollTarget(el) {
+    for (let n = el; n && n !== document.body && n.nodeType === 1; n = n.parentElement) { if (n.id === 'hdr' || getComputedStyle(n).position === 'fixed') return null; }          // шапка, меню и кнопка Стеллы закреплены на экране — страницу не прокручиваем
     const r = el.getBoundingClientRect(), vh = innerHeight, want = mobile() ? vh * .3 : vh * .38, hdr = 76;
-    if (r.top >= hdr + 10 && r.bottom <= vh - (mobile() ? 190 : 24) && r.height < vh * .8) return;          // и так на виду
-    const top = Math.max(0, Math.round(scrollY + r.top - Math.max(hdr + 16, Math.min(want, (vh - r.height) / 2))));
-    window.scrollTo({top, behavior: 'smooth'});
+    if (r.top >= hdr + 10 && r.bottom <= vh - (mobile() ? 190 : 24) && r.height < vh * .8) return null;          // и так на виду
+    return Math.max(0, Math.round(scrollY + r.top - Math.max(hdr + 16, Math.min(want, (vh - r.height) / 2))));
   }
-  /* прогресс экскурсии: «2 из 6 · этап» и шесть отрезков (пройденные заполнены, текущий — по шагам внутри этапа) */
+  const LOCK = {on: false, y: 0, prog: 0};
+  function lockPage(on) { LOCK.on = on; LOCK.y = scrollY; }
+  function progScroll(top) {
+    if (top == null || Math.abs(top - scrollY) < 2) { LOCK.y = scrollY; return Promise.resolve(); }
+    LOCK.prog++; window.scrollTo({top, behavior: 'smooth'});
+    return new Promise(res => { let last = -9, same = 0, n = 0; const tick = () => { const y = scrollY; same = Math.abs(y - last) < 1 ? same + 1 : 0; last = y; if (same >= 3 || ++n > 80) { LOCK.prog--; LOCK.y = scrollY; res(); } else setTimeout(tick, 70); }; setTimeout(tick, 90); });
+  }
+  const scrollTo = el => progScroll(scrollTarget(el));
+  /* пока идёт экскурсия, страница не прокручивается колесом, пальцем, клавишами и ползунком: подсветка и Стелла стоят на месте, листает только сама Стелла */
+  const stopScroll = e => { if (!LOCK.on) return; if (e.target && e.target.closest && e.target.closest('#asst')) return; e.preventDefault(); e.stopImmediatePropagation(); };
+  ['wheel', 'touchmove'].forEach(ev => addEventListener(ev, stopScroll, {passive: false, capture: true}));
+  addEventListener('keydown', e => { if (!LOCK.on) return; const tag = (e.target || {}).tagName || ''; if (/^(INPUT|TEXTAREA|SELECT)$/.test(tag) || (e.target && e.target.closest && e.target.closest('#asst'))) return; if (/^(ArrowUp|ArrowDown|PageUp|PageDown|Home|End)$/.test(e.key) || (e.key === ' ' && !/^(BUTTON|A)$/.test(tag))) e.preventDefault(); }, true);
+  addEventListener('scroll', () => { if (!LOCK.on || LOCK.prog) return; const max = Math.max(0, document.documentElement.scrollHeight - innerHeight); if (LOCK.y > max && Math.abs(scrollY - max) <= 2) LOCK.y = max; if (Math.abs(scrollY - LOCK.y) > 2) window.scrollTo(0, LOCK.y); }, {passive: true});          // страница стала короче (фильтр убрал карточки) — «закреплённое» место сдвигается вместе с ней
+  /* прогресс экскурсии: «2 из 9 · этап» и девять отрезков (пройденные заполнены, текущий — по шагам внутри этапа) */
   function progHTML(p) {
     let seg = ''; for (let k = 0; k < p.gn; k++) seg += '<i style="--p:' + (k < p.g ? 1 : k === p.g ? p.sub : 0) + '"></i>';
     return '<small class="g-st"><b>' + (p.g + 1) + ' из ' + p.gn + '</b>' + (p.label ? ' · ' + esc(p.label) : '') + '</small><span class="g-bar" aria-hidden="true">' + seg + '</span>';
@@ -105,12 +119,13 @@
     const bt = (cfg.buttons || []).map(b => '<button class="btn ' + (b.primary ? 'btn-fill' : b.act === 'asst-open' || b.act === 'g-spot-x' ? 'btn-lnk' : 'btn-ghost') + ' btn-sm" type="button" data-act="' + esc(b.act) + '"' + (b.d ? ' data-d="' + esc(JSON.stringify(b.d)) + '"' : '') + '>' + esc(b.l) + '</button>').join('');
     $('.g-ctl', s).innerHTML = bt; s.hidden = false; document.body.classList.add('g-on');
     pop.classList.remove('in'); void pop.offsetWidth; pop.classList.add('in');
+    if (cfg.tour) lockPage(true);
     if (!cfg.noScroll && !cfg.free) scrollTo(el); cancelAnimationFrame(spotRaf); spotRaf = requestAnimationFrame(place); if (fresh) requestAnimationFrame(() => requestAnimationFrame(() => hole.classList.remove('g-nt')));
     const f = $('.g-ctl .btn-fill', s); if (f) { try { f.focus({preventScroll: true}); } catch (e) {} }
     A.track && A.track('guide_spot', {target: cfg.t ? cfg.t.id : '', tour: cfg.tour || ''});
   }
   function hideSpot(silent, keep) {
-    if (!keep) { runCleanup(true); menuRelease(); }
+    if (!keep) { runId++; lockPage(false); cursorHide(); closeDd(); runCleanup(true); menuRelease(); }
     const s = $('#g-spot'); if (!s || s.hidden) { spotEl = null; return; }
     s.hidden = true; document.body.classList.remove('g-on'); cancelAnimationFrame(spotRaf); spotRaf = 0; spotEl = null; const cb = onClose; onClose = null; cur = null; if (cb && !silent) cb();
   }
@@ -151,7 +166,7 @@
   const stepMatches = (st, key) => st.page === 'any' || st.page === key;
   const isStatic = page => PAGES.some(p => p.id === page);
   const fill = (t, v) => String(t || '').replace(/\{(\w+)\}/g, (m, k) => v && v[k] != null ? v[k] : m);
-  const targetOf = st => (TARGETS[st.page === 'any' ? '*' : st.page] || []).concat(TARGETS['*'] || []).find(x => x.id === st.target) || findTarget(st.target);
+  const targetOf = st => st.sel ? {id: st.id || 'step', sel: st.sel, label: st.label || ''} : (TARGETS[st.page === 'any' ? '*' : st.page] || []).concat(TARGETS['*'] || []).find(x => x.id === st.target) || findTarget(st.target);          // sel — свой селектор прямо в шаге
   function saveTour(id, i, nav) { store.set(KT, {id, i, t: Date.now(), nav: nav ? 1 : 0}); }
   /* то, что экскурсия временно изменила на странице (набранный запрос, фильтр, раскрытая карточка бренда, отмеченные для сравнения товары), возвращается назад */
   let undo = [], undoT = [], demoTimer = 0;          // undo — на время шага; undoT — на время всей экскурсии на странице (набранный запрос и фильтр остаются, пока показываем карточки)
@@ -159,54 +174,136 @@
   const later = (fn, ms) => { demoTimer = setTimeout(fn, Math.round(ms / speed())); };
   const prog = (T, i) => { if (!T.groups) return {g: i, gn: T.steps.length, sub: 1, label: ''}; const st = T.steps[i], g = st.g || 0, ids = T.steps.map((x, k) => (x.g || 0) === g ? k : -1).filter(k => k >= 0); return {g, gn: (T.groups || []).length || 1, sub: (ids.indexOf(i) + 1) / ids.length, label: (T.groups || [])[g] || ''}; };
 
-  /* действия, которые Стелла выполняет на странице сама — они безопасны и обратимы (ничего не отправляется, корзина и заявки не затрагиваются) */
-  const DO = {
-    'brand-open'(st, el, ctx) {                                                    // раскрыть карточку первого бренда на главной
-      const c = el.matches && el.matches('.bcard') ? el : $('.bcard[data-act="brand-card"]', el); if (!c || c.classList.contains('is-active')) return;
-      later(() => { c.click(); undo.push(() => { if (A.actions['brand-back']) A.actions['brand-back'](); }); demoTimer = setTimeout(() => scrollTo(c), 800); }, 700);          // карточка при раскрытии сама подъезжает к краю экрана — возвращаем её в удобное место
-    },
-    'type-search'(st, el, ctx) {                                                   // набрать название реального товара в поиске каталога
-      const q = $('#cat-q'), p = (D.products || [])[0]; if (!q || !p) return;
-      const word = String(p.name || '').split(/\s+/)[0], total = (D.products || []).length; let k = 0;
-      q.value = ''; undoT.push(() => { if (A.actions['cat-reset']) A.actions['cat-reset'](); });
-      const tick = () => {
-        q.value = word.slice(0, ++k); q.dispatchEvent(new Event('input', {bubbles: true}));
-        if (k < word.length) { later(tick, 95); return; }
-        demoTimer = setTimeout(() => { const m = /(\d+)\D+(\d+)/.exec(($('#res-count') || {}).textContent || ''); ctx.say({q: word, n: m ? m[1] : '?', total: m ? m[2] : total}); }, 420);          // поиск срабатывает с небольшой задержкой — ждём её в реальном времени
-      };
-      later(tick, 600);
-    },
-    'calc-demo'(st, el, ctx) {                                                     // подвинуть ползунок калькулятора скидки на порог второй ступени (ориентир, ничего не отправляется)
-      const r = $('#calc-range'); if (!r) return; const was = r.value, tiers = (D.sales && D.sales.discounts) || (D.site && D.site.discounts) || [], step = +r.step || 10000, to = Math.min(+r.max || 500000, +(tiers[1] && tiers[1].from) || 150000);
-      const fire = () => r.dispatchEvent(new Event('input', {bubbles: true})); let cur = +was || 0;
-      undoT.push(() => { r.value = was; fire(); });
-      const tick = () => {
-        if (cur !== to) { cur = cur < to ? Math.min(to, cur + step) : Math.max(to, cur - step); r.value = String(cur); fire(); later(tick, 130); return; }
-        demoTimer = setTimeout(() => { const sum = String(to).replace(/\B(?=(\d{3})+(?!\d))/g, ' ') + ' ₽', tier = (($('#calc-tier') || {}).textContent || '').trim(); ctx.say({sum: sum, tier: tier ? tier.charAt(0).toLowerCase() + tier.slice(1) : ''}); }, 600);          // сумму берём из конечного значения: на экране число «докручивается» плавно
-      };
-      later(tick, 700);
-    },
-    'pick-task'(st, el, ctx) {                                                     // выбрать назначение в фильтре каталога
-      const sel = $('#f-task'); if (!sel) return; const opt = Array.from(sel.options).find(o => o.value === 'pigment') || Array.from(sel.options).find(o => o.value !== 'all'); if (!opt) return;
-      if (A.actions['cat-reset']) A.actions['cat-reset'](); undoT.push(() => { if (A.actions['cat-reset']) A.actions['cat-reset'](); });
-      later(() => {
-        sel.value = opt.value; sel.dispatchEvent(new Event('change', {bubbles: true}));
-        demoTimer = setTimeout(() => { const m = /(\d+)\D+(\d+)/.exec(($('#res-count') || {}).textContent || ''); ctx.say({task: opt.textContent.trim(), n: m ? m[1] : '?', total: m ? m[2] : '?'}); }, 380);
-      }, 650);
-    }
+  /* ---------- курсор экскурсии ----------
+     На глазах у посетителя Стелла «берёт мышь»: плывёт по дуге к тому, о чём говорит, нажимает (круги от нажатия), печатает по буквам, раскрывает список и выбирает пункт, тянет ползунок,
+     а к следующему разделу идёт, нажимая пункт меню. Всё идёт в «человеческом» темпе (сама экскурсия никуда не спешит) и обратимо: всё, что изменено на странице, возвращается. */
+  const sleep = ms => new Promise(r => setTimeout(r, Math.max(0, Math.round(ms / speed()))));
+  const pause = ms => new Promise(r => setTimeout(r, ms));          // ожидание отклика самой страницы: от темпа показа не зависит
+  let runId = 0;                                          // номер показа: смена шага, «Пропустить» и выход обрывают всё, что шло под прежним номером
+  const alive = id => id === runId;
+  const fire = (el, type) => el.dispatchEvent(new Event(type, {bubbles: true}));
+  const grp3 = n => String(Math.round(n)).replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
+  let cEl = null, cx = 0, cy = 0, cInit = false;
+  function cursorDom() {
+    if (cEl && cEl.isConnected) return cEl;
+    cEl = document.createElement('div'); cEl.id = 'g-cursor'; cEl.className = 'g-cursor'; cEl.hidden = true; cEl.setAttribute('aria-hidden', 'true');
+    cEl.innerHTML = '<svg viewBox="0 0 28 32" width="30" height="34" focusable="false"><path d="M4 2.5v22.2l5.6-5 3.7 8.6 4-1.8-3.7-8.4h8.1z" fill="#fff" stroke="#0b1a33" stroke-width="1.8" stroke-linejoin="round"/></svg><i class="g-c-rip"></i>';
+    document.body.appendChild(cEl); return cEl;
+  }
+  const cPlace = (x, y) => { cx = x; cy = y; if (cEl) cEl.style.transform = 'translate(' + (x - 4) + 'px,' + (y - 3) + 'px)'; };
+  function cursorShow() {
+    const el = cursorDom(); if (el.hidden) { if (!cInit) { cx = Math.round(innerWidth * .62); cy = Math.round(innerHeight * .7); cInit = true; } cPlace(cx, cy); el.hidden = false; void el.offsetWidth; }
+    el.classList.add('on');
+  }
+  function cursorHide() { if (!cEl) return; const el = cEl; el.classList.remove('on', 'press'); setTimeout(() => { if (!el.classList.contains('on')) el.hidden = true; }, 380); }
+  /* плавный путь: лёгкая дуга, разгон и торможение у цели */
+  function cursorGo(x, y, id, dur) {
+    cursorShow(); const x0 = cx, y0 = cy, dx = x - x0, dy = y - y0, d = Math.hypot(dx, dy); if (d < 2) return Promise.resolve();
+    const time = Math.round((dur || 560 + d * .75) / speed()), nx = -dy / d, ny = dx / d, bow = Math.min(90, d * .16) * (dx > 0 ? -1 : 1), mx = x0 + dx / 2 + nx * bow, my = y0 + dy / 2 + ny * bow, t0 = performance.now();
+    return new Promise(res => {
+      const step = now => { if (!alive(id)) return res(); const t = Math.min(1, (now - t0) / time), e = t < .5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2, u = 1 - e; cPlace(u * u * x0 + 2 * u * e * mx + e * e * x, u * u * y0 + 2 * u * e * my + e * e * y); if (t < 1) requestAnimationFrame(step); else res(); };
+      requestAnimationFrame(step);
+    });
+  }
+  async function cursorPress(id) {
+    if (!cEl) return; cEl.classList.add('press'); const rip = $('.g-c-rip', cEl); rip.classList.remove('go'); void rip.offsetWidth; rip.classList.add('go');
+    await sleep(190); if (!alive(id)) return; cEl.classList.remove('press'); await sleep(320);
+  }
+  function aim(el, at) {          // куда «ткнуть» в элемент: у поля — в начало, у списка — к стрелке, у большого блока — в верхнюю часть
+    const r = el.getBoundingClientRect(); let x = r.left + r.width / 2, y = r.top + r.height / 2;
+    if (at === 'start' || (el.tagName === 'INPUT' && el.type !== 'range')) x = r.left + Math.min(54, r.width * .25); else if (at === 'end') x = r.right - Math.min(40, r.width * .2);
+    if (r.height > 220) y = r.top + Math.min(70, r.height * .25);
+    return [Math.round(Math.max(10, Math.min(innerWidth - 10, x))), Math.round(Math.max(84, Math.min(innerHeight - 60, y)))];
+  }
+  const ensureView = async el => { await progScroll(scrollTarget(el)); };
+  const settle = async id => { while (LOCK.prog && alive(id)) await sleep(70); await sleep(260); };          // сначала прокрутка закончилась и подсветка встала, потом курсор
+
+  /* выпадающий список: настоящий <select> не раскрыть из скрипта, поэтому показываем «меню» рядом с ним — пункты те же, выбор настоящий */
+  let ddEl = null;
+  function ddDom() { if (ddEl && ddEl.isConnected) return ddEl; ddEl = document.createElement('div'); ddEl.id = 'g-dd'; ddEl.className = 'g-dd'; ddEl.hidden = true; ddEl.setAttribute('aria-hidden', 'true'); document.body.appendChild(ddEl); return ddEl; }
+  function closeDd(sel) { if (sel) sel.classList.remove('g-open'); $$('select.g-open').forEach(x => x.classList.remove('g-open')); if (!ddEl) return; const d = ddEl; d.classList.remove('on'); setTimeout(() => { if (!d.classList.contains('on')) d.hidden = true; }, 300); }
+
+  const REPORT = {
+    count(c) { const m = /(\d+)\D+(\d+)/.exec(($('#res-count') || {}).textContent || ''); c.vars.n = m ? m[1] : '?'; c.vars.total = m ? m[2] : String((D.products || []).length); },
+    calc(c) { const sum = grp3(+(($('#calc-range') || {}).value || 0)) + ' ₽', tier = (($('#calc-tier') || {}).textContent || '').trim(); c.vars.sum = sum; c.vars.tier = tier ? tier.charAt(0).toLowerCase() + tier.slice(1) : ''; },
+    tiers(c) { const t = (D.sales && D.sales.discounts) || (D.site && D.site.discounts) || []; c.vars.tiers = t.map(x => x.pct + '% от ' + grp3(x.from) + ' ₽').join(', '); },
+    visible(c, a) { c.vars[a.as || 'n'] = $$(a.sel).filter(e => !e.hidden && shown(e)).length; },
+    text(c, a) { const e = resolveEl({sel: a.sel}); let t = e ? e.textContent.trim().replace(/\s+/g, ' ') : ''; if (a.nd) t = t.replace(/^\d+\s*|\s*\d+$/g, ''); c.vars[a.as || 't'] = t.slice(0, a.max || 80); }
   };
+  async function follow(el, x, y, c) {          // страница могла перестроиться после нажатия (список стал короче): курсор остаётся у элемента, а не висит в пустоте
+    if (!el.isConnected) return; const [x2, y2] = aim(el); if (Math.hypot(x2 - x, y2 - y) > 8) await cursorGo(x2, y2, c.id, 420);
+  }
+  const qsel = (sel, c) => sel === '@target' ? c.el : resolveEl({sel});
+  const resetCat = () => { if (A.actions['cat-reset']) A.actions['cat-reset'](); };
+  const undoOf = (u, c) => { if (u === '@reset') undo.push(resetCat); else if (u) undo.push(() => { const e = qsel(u, c); if (e) e.click(); }); };
+  const ACTS = {
+    async wait(a) { await sleep(a.wait); },
+    async point(a, c) { const el = qsel(a.point, c); if (!el) return; await ensureView(el); if (!alive(c.id)) return; const [x, y] = aim(el, a.at); await cursorGo(x, y, c.id); if (a.hold) await sleep(a.hold); },
+    async click(a, c) {
+      const el = qsel(a.click, c); if (!el) return; await ensureView(el); if (!alive(c.id)) return;
+      const [x, y] = aim(el, a.at); await cursorGo(x, y, c.id); await cursorPress(c.id); if (!alive(c.id)) return;
+      undoOf(a.undo, c); el.click(); await sleep(a.after != null ? a.after : 600); await follow(el, x, y, c);
+    },
+    async type(a, c) {                                                              // печатает по буквам, неспешно; поле и набранное подсвечены синим
+      const el = qsel(a.type, c); if (!el) return; await ensureView(el); if (!alive(c.id)) return;
+      const word = String(a.text || '').replace('@prod', String(((D.products || [])[0] || {}).name || '').split(/\s+/)[0]), [x, y] = aim(el, 'start');
+      await cursorGo(x, y, c.id); await cursorPress(c.id); if (!alive(c.id)) return;
+      try { el.focus({preventScroll: true}); } catch (e) {}
+      el.classList.add('g-typing'); undo.push(() => { el.classList.remove('g-typing'); if ($('#cat-q') === el) resetCat(); else { el.value = ''; fire(el, 'input'); } });
+      el.value = ''; fire(el, 'input'); await sleep(350); cursorGo(x + 210, y + 18, c.id, 700);          // курсор отходит в сторону, чтобы не закрывать набираемые буквы
+      for (let k = 1; k <= word.length; k++) { if (!alive(c.id)) return; el.value = word.slice(0, k); fire(el, 'input'); await sleep(250 + (k % 3) * 55); }
+      c.vars[a.as || 'q'] = word; await sleep(600); await pause(260);          // поиск в каталоге откликается с задержкой — ждём её
+    },
+    async choose(a, c) {                                                            // курсор нажимает на список, меню раскрывается, курсор скользит вниз и выбирает пункт
+      let sel = qsel(a.choose, c);
+      if (!sel) { const tg = $('#results .filters-toggle'); if (tg && shown(tg) && tg.getAttribute('aria-expanded') !== 'true') { await ensureView(tg); const [tx, ty] = aim(tg); await cursorGo(tx, ty, c.id); await cursorPress(c.id); tg.click(); await sleep(700); sel = qsel(a.choose, c); } }
+      if (!sel || !alive(c.id)) return;
+      await ensureView(sel); if (!alive(c.id)) return;
+      if (!mobile()) { const top = sel.getBoundingClientRect().top; if (top < innerHeight * .4) await progScroll(Math.max(0, Math.round(scrollY + top - innerHeight * .46))); if (!alive(c.id)) return; }          // список ставим пониже: над ним остаётся место для карточки Стеллы
+      const opts = Array.from(sel.options), want = opts.find(o => o.value === a.value) || opts.find(o => o.value && o.value !== 'all'); if (!want) return;
+      const [x, y] = aim(sel, 'end'); await cursorGo(x, y, c.id); await cursorPress(c.id); if (!alive(c.id)) return;
+      const dd = ddDom(), r = sel.getBoundingClientRect(), h = Math.min(300, opts.length * 40 + 12), below = r.bottom + 8 + h <= innerHeight - 8;
+      dd.innerHTML = opts.map(o => '<div class="g-dd-o' + (o.selected ? ' cur' : '') + '" data-v="' + esc(o.value) + '">' + esc(o.textContent.trim()) + '</div>').join('');
+      dd.style.cssText = 'left:' + Math.round(r.left) + 'px;width:' + Math.round(Math.max(r.width, 200)) + 'px;max-height:' + h + 'px;top:' + Math.round(below ? r.bottom + 8 : Math.max(8, r.top - 8 - h)) + 'px'; dd.hidden = false; void dd.offsetWidth; dd.classList.add('on'); sel.classList.add('g-open');
+      await sleep(800); if (!alive(c.id)) { closeDd(sel); return; }
+      const rows = $$('.g-dd-o', dd), k = rows.findIndex(o => o.getAttribute('data-v') === want.value);
+      for (let j = 0; j <= k; j++) {
+        if (!alive(c.id)) { closeDd(sel); return; }
+        rows.forEach(o => o.classList.remove('hov')); rows[j].classList.add('hov'); if (rows[j].offsetTop + 44 - dd.scrollTop > dd.clientHeight) dd.scrollTop = rows[j].offsetTop + 50 - dd.clientHeight;
+        const rr = rows[j].getBoundingClientRect(); await cursorGo(rr.left + Math.min(70, rr.width * .3), rr.top + rr.height / 2, c.id, 320); await sleep(j === k ? 650 : 260);
+      }
+      rows[k].classList.add('pick'); await cursorPress(c.id); if (!alive(c.id)) { closeDd(sel); return; }
+      closeDd(sel); sel.value = want.value; fire(sel, 'change'); undo.push(resetCat); c.vars[a.as || 'task'] = want.textContent.trim();
+      await sleep(650); const [bx, by] = aim(sel, 'end'); await cursorGo(bx, by, c.id, 500); await sleep(450);          // курсор возвращается к полю и не закрывает карточку
+    },
+    async drag(a, c) {                                                              // берёт ползунок и неторопливо тянет
+      const r = qsel(a.drag, c); if (!r) return; await ensureView(r); if (!alive(c.id)) return;
+      const min = +r.min || 0, max = +r.max || 100, step = +r.step || 1, from = +r.value || 0, tiers = (D.sales && D.sales.discounts) || (D.site && D.site.discounts) || [], to = Math.min(max, a.to === '@tier1' ? +(tiers[1] && tiers[1].from) || 150000 : +a.to || 0);
+      const box = () => r.getBoundingClientRect(), px = v => box().left + 11 + (box().width - 22) * ((v - min) / (max - min)), py = () => box().top + box().height / 2;
+      await cursorGo(px(from), py(), c.id); await sleep(300); if (!alive(c.id)) return; if (cEl) cEl.classList.add('press'); undo.push(() => { r.value = String(from); fire(r, 'input'); });
+      const n = Math.max(1, Math.round(Math.abs(to - from) / step)), per = Math.max(70, Math.min(190, 3000 / n));
+      for (let k = 1; k <= n; k++) { if (!alive(c.id)) { if (cEl) cEl.classList.remove('press'); return; } r.value = String(Math.round((from + (to - from) * k / n) / step) * step); fire(r, 'input'); cPlace(px(+r.value), py()); await sleep(per); }
+      if (cEl) cEl.classList.remove('press'); await sleep(700);
+    },
+    async report(a, c) { if (REPORT[a.report]) REPORT[a.report](c, a); },
+    async say(a, c) { c.say(c.vars); },
+    async reset() { resetCat(); }
+  };
+  async function runActs(list, c) { for (const a of list) { if (!alive(c.id)) return false; const k = Object.keys(ACTS).find(x => x in a); if (k) { try { await ACTS[k](a, c); } catch (e) {} } } return alive(c.id); }
+
   /* «попробовать» — действие, которое меняет состояние (отметка товаров для сравнения): выполняется только по явному нажатию посетителя и откатывается */
   const OFFER = {
     'cmp-demo'(T, i, st) {
-      const cards = $$('.pcard:not([hidden])').filter(shown).slice(0, 2), ids = cards.map(c => c.getAttribute('data-id')).filter(Boolean); if (ids.length < 2 || !A.actions['cmp-toggle']) return false;
+      const id = runId, cards = $$('.pcard:not([hidden])').filter(shown).slice(0, 2); if (cards.length < 2 || !A.actions['cmp-toggle']) return false;
       let have = []; try { have = JSON.parse(localStorage.getItem('astreya:cmp') || '[]'); } catch (e) {}
-      const added = ids.filter(id => have.indexOf(id) < 0); added.forEach(id => A.actions['cmp-toggle'](null, id));
-      undo.push(() => { let cur = []; try { cur = JSON.parse(localStorage.getItem('astreya:cmp') || '[]'); } catch (e) {} added.forEach(id => { if (cur.indexOf(id) >= 0) A.actions['cmp-toggle'](null, id); }); });
-      later(() => {
-        const bar = $('#cmp-bar'); if (!bar || bar.hidden) return;
-        spot(bar, {t: {id: 'compare-bar'}, tour: T.id, prog: prog(T, i), text: st.offer.say || 'Готово: два товара отмечены. Нажмите «Попросить Стеллу рассказать» — расскажу, чем они отличаются.',
+      undo.push(() => { let cur = []; try { cur = JSON.parse(localStorage.getItem('astreya:cmp') || '[]'); } catch (e) {} cur.filter(x => have.indexOf(x) < 0).forEach(x => A.actions['cmp-toggle'](null, x)); });
+      (async () => {
+        for (const card of cards) { const b = $('.cmp-add', card); if (!b) continue; await ensureView(b); if (!alive(id)) return; const [x, y] = aim(b); await cursorGo(x, y, id); await cursorPress(id); if (!alive(id)) return; b.click(); await sleep(450); }
+        await sleep(500); const bar = $('#cmp-bar'); if (!alive(id) || !bar || bar.hidden) return;
+        spot(bar, {t: {id: 'compare-bar'}, tour: T.id, stepI: i, prog: prog(T, i), text: st.offer.say || 'Готово: два товара отмечены. Нажмите «Попросить Стеллу рассказать» — расскажу, чем они отличаются.',
           buttons: [{l: 'Далее', act: 'g-tour-next', primary: true}, {l: 'Рассказать о товарах', act: 'g-tour-cmp'}, {l: 'Пропустить', act: 'g-spot-x'}], onClose: () => { runCleanup(true); store.del(KT); }});
-      }, 450);
+        await settle(id); const [x, y] = aim(bar); await cursorGo(x, y, id);
+      })();
       return true;
     }
   };
@@ -217,13 +314,25 @@
     return tourStep(T, i, 1);
   }
   const RETRY = 12;          // сколько раз (≈ 0,2 с каждый) ждём, пока нужный элемент появится на странице
+  /* к следующему разделу Стелла идёт сама: нажимает пункт меню (на телефоне — открыв меню), на новой странице экскурсия продолжается */
+  async function travel(T, i, st, pg, id) {
+    const w = menuHold(true); if (w) await new Promise(r => setTimeout(r, w)); if (!alive(id)) return;
+    let el = null; try { el = pg.nav ? $$(pg.nav).find(shown) : null; } catch (e) {}
+    const text = pg.go || 'Идём дальше.', cfg = {t: {id: 'nav-' + pg.id}, tour: T.id, stepI: i - .5, prog: prog(T, i), text, buttons: [{l: 'Пропустить', act: 'g-spot-x'}], onClose: () => { runCleanup(true); store.del(KT); }};
+    saveTour(T.id, i, true);
+    if (!el) { spot(document.body, Object.assign(cfg, {free: true})); await sleep(1600); if (alive(id)) go(pg.href, {keepTour: true}); return; }
+    spot(el, cfg); pulse(el); await settle(id); if (!alive(id)) return;
+    const [x, y] = aim(el); await cursorGo(x, y, id); await sleep(450); await cursorPress(id); if (!alive(id)) return;
+    navPending = Date.now(); saveTour(T.id, i, true); el.click();
+    setTimeout(() => { if (alive(id)) go(pg.href, {keepTour: true}); }, 4200);          // нажатие не привело к переходу — переходим сами
+  }
   function tourStep(T, i, dir) {
     dir = dir || 1; const key = pageKey(), n = T.steps.length;
     if (i >= n) { tourEnd(T, true); return true; } if (i < 0) i = 0;
-    const st = T.steps[i];
+    const st = T.steps[i], id = ++runId;
     if (!stepMatches(st, key)) {                                                       // шаг относится к другой странице — переходим и продолжаем после загрузки
       const pg = PAGES.find(p => p.id === st.page);
-      if (pg) { runCleanup(true); saveTour(T.id, i, true); go(pg.href, {keepTour: true}); return true; }
+      if (pg) { runCleanup(true); saveTour(T.id, i, true); if (dir > 0 && i > 0 && (pg.nav || pg.go)) travel(T, i, st, pg, id); else go(pg.href, {keepTour: true}); return true; }
       saveTour(T.id, i, true); hintWaitPage(T, i, st); return true;                    // страница-«лист» (товар, мероприятие): ждём, пока посетитель её откроет
     }
     runCleanup();
@@ -231,19 +340,20 @@
     if (!t && !st.final) return tourStep(T, i + dir, dir);
     const wait = st.chrome ? menuHold(!!st.drawer) : (menuRelease(), t ? prepFilters(t) : 0);
     const run = tries => {
+      if (!alive(id)) return;
       const el = t ? resolveEl(t) : null;
       if (!el && !st.final) { if (tries < RETRY) { setTimeout(() => run(tries + 1), Math.round(220 / speed())); return; } return tourStep(T, i + dir, dir); }          // элемент так и не появился или скрыт — безопасно пропускаем шаг
       if (S().close) S().close(true);
       const last = i >= n - 1; saveTour(T.id, i, false);
-      const lead = !st.do && !st.final && dir > 0 && i > 0 && T.bridge && T.bridge.length ? T.bridge[(i - 1) % T.bridge.length] + ' ' : '';          // короткая связка между шагами («Идём дальше.») — разговор, а не слайды
-      const say = v => { const p = $('#g-spot .g-tx p'); if (p && cur && cur.stepI === i && cur.tour === T.id) p.innerHTML = bold(lead + fill(st.say, v)); };
+      const acts = st.acts || (el && !st.final ? [{point: '@target'}] : st.final ? [{point: '#asst-fab'}] : []), hasSay = acts.some(a => 'say' in a);
+      const ctx = {id, el, vars: {}, say: v => { const p = $('#g-spot .g-tx p'); if (p && cur && cur.stepI === i && cur.tour === T.id) p.innerHTML = bold(fill(st.say, v)); }};
       const buttons = [].concat(i > 0 ? [{l: 'Назад', act: 'g-tour-prev'}] : []);
       if (st.final) buttons.push({l: 'Открыть каталог', act: 'asst-go', d: {href: 'catalog.html'}, primary: true}, (A.planChip && A.planChip.on() ? {l: A.planChip.label, act: 'asst-go', d: {href: A.sales.path}} : {l: 'Подобрать по задаче', act: 'asst-go', d: {href: 'catalog.html', show: 'task-filter'}}), {l: 'Спросить Стеллу', act: 'asst-open'}, {l: 'Закрыть', act: 'g-spot-x'});
       else buttons.push({l: st.next && st.next.l || (last ? 'Готово' : 'Далее'), act: 'g-tour-next', primary: true}, ...(st.offer ? [{l: st.offer.l, act: 'g-tour-offer'}] : []), {l: 'Пропустить', act: 'g-spot-x'});
-      if (el && st.view) { const v = $(st.view); if (v) { const top = Math.max(0, Math.round(scrollY + v.getBoundingClientRect().top - 76)); window.scrollTo({top, behavior: 'smooth'}); } }          // «показать с начала»: главная — с первого экрана
-      spot(el || document.body, {t: t || {id: 'free'}, tour: T.id, stepI: i, prog: prog(T, i), text: st.do && st.pre ? st.pre : lead + fill(st.say, {}), buttons, free: !el, noScroll: !!st.view, onClose: () => { runCleanup(true); store.del(KT); }});
+      let viewP = null; if (el && st.view) { const v = $(st.view); if (v) { viewP = progScroll(Math.max(0, Math.round(scrollY + v.getBoundingClientRect().top - 76))); } }          // «показать с начала»: главная — с первого экрана
+      spot(el || document.body, {t: t || {id: 'free'}, tour: T.id, stepI: i, prog: prog(T, i), text: hasSay && st.pre ? st.pre : fill(st.say, {}), buttons, free: !el, noScroll: !!st.view, above: acts.some(a => 'choose' in a), onClose: () => { runCleanup(true); store.del(KT); }});
       if (el) pulse(el);
-      if (st.do && DO[st.do] && el) DO[st.do](st, el, {say});
+      (async () => { await (viewP || Promise.resolve()); await settle(id); if (acts.length && alive(id)) await runActs(acts, ctx); })();
     };
     if (wait) setTimeout(() => run(0), wait); else run(0); return true;
   }
@@ -255,15 +365,15 @@
     runCleanup(true); store.del(KT); hideSpot(true);
     if (done && T.id !== 'site') { A.toast && A.toast('Экскурсия окончена. Я рядом — спрашивайте!'); S().hey && S().hey(); }
   }
-  /* «Далее» с настоящим нажатием: Стелла сама нажимает на ссылку меню или на карточку товара — так же, как это сделал бы посетитель */
+  /* «Далее» с настоящим нажатием: Стелла сама подводит курсор к ссылке или карточке и нажимает — так же, как это сделал бы посетитель */
   function realClick(T, i, st) {
     const cs = st.next && st.next.click; if (!cs) return false;
     const t = targetOf(st), el = t ? resolveEl(t) : null; let link = el;
     if (st.next.link) link = $(st.next.link, el) || el;
     if (!link) return false;
-    const before = pageKey(), at = location.href; runCleanup(true); saveTour(T.id, i + 1, true); navPending = Date.now();
-    link.click();
-    setTimeout(() => { const c = store.get(KT); if (pageKey() === before && location.href === at && c && c.i === i + 1 && !(cur && cur.tour === T.id && cur.stepI !== i)) tourStep(T, i + 1, 1); }, 3600);          // нажатие не привело к переходу (ссылки нет или она заблокирована) — продолжаем сами; время не зависит от темпа анимаций
+    const before = pageKey(), at = location.href, id = runId; runCleanup(true); saveTour(T.id, i + 1, true); navPending = Date.now();
+    (async () => { await ensureView(link); if (!alive(id)) return; const [x, y] = aim(link); await cursorGo(x, y, id); await cursorPress(id); if (!alive(id)) return; link.click(); })();
+    setTimeout(() => { const c = store.get(KT); if (pageKey() === before && location.href === at && c && c.i === i + 1 && !(cur && cur.tour === T.id && cur.stepI !== i)) tourStep(T, i + 1, 1); }, 5600);          // нажатие не привело к переходу (ссылки нет или она заблокирована) — продолжаем сами; время не зависит от темпа анимаций
     return true;
   }
   function tourMove(d) {

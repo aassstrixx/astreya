@@ -8,6 +8,8 @@ let pw; for (const p of ['playwright', '/opt/node22/lib/node_modules/playwright'
 if (!pw) { console.log('Playwright не найден — сквозная проверка пропущена.'); process.exit(0); }
 const CHROME = process.env.CHROMIUM || ['/opt/pw-browsers/chromium-1194/chrome-linux/chrome'].find(p => fs.existsSync(p));
 const OUT = process.env.E2E_OUT || path.join(require('os').tmpdir(), 'astreya-e2e'); fs.mkdirSync(OUT, {recursive: true});
+/* запись открыта только на будущие встречи, поэтому берём самую позднюю из расписания (а не конкретную дату, которая со временем «проходит») */
+const lastEvent = (() => { const D = JSON.parse(fs.readFileSync(path.join(__dirname, '..', '..', 'js/data.js'), 'utf8').replace(/^[^=]*=\s*/, '').replace(/;\s*$/, '')); return D.events.map(e => e.slug).sort().pop(); })();
 const PNG = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==', 'base64');
 
 let pass = 0, fail = 0, shotN = 0;
@@ -77,7 +79,7 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
   await f.locator('button[type=submit]').click(); ok(await sent(pub), 'запрос по товару (модальное окно): «Заявка отправлена»');
   const prodCtx = reqs[reqs.length - 1].context; ok(/Elastense/i.test(prodCtx), 'в заявке указан товар', prodCtx);
 
-  await pub.goto(base + '/training/2026-10-14-moskva-dermatime.html'); await pub.click('[data-act=form][data-type=seminar] >> nth=0'); await pub.waitForSelector('.dlg form[data-form=seminar]'); f = pub.locator('.dlg form[data-form=seminar]');
+  await pub.goto(base + '/training/' + lastEvent + '.html'); await pub.click('[data-act=form][data-type=seminar] >> nth=0'); await pub.waitForSelector('.dlg form[data-form=seminar]'); f = pub.locator('.dlg form[data-form=seminar]');
   await f.locator('[name=name]').fill('Игорь Семинар'); await f.locator('[name=phone]').fill('+7 999 444-55-66'); await f.locator('[name=email]').fill('igor@cosmo.ru'); await f.locator('[name=city]').fill('Москва'); await f.locator('[name=agree]').check(); await pub.waitForTimeout(900);
   await f.locator('button[type=submit]').click(); ok(await sent(pub), 'запись на мероприятие: «Заявка отправлена»');
   ok(reqs.length === 4, 'отправлено ровно 4 запроса', reqs.length); ok(pub.__errs.length === 0, 'на страницах сайта нет ошибок JS', pub.__errs);

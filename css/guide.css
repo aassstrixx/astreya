@@ -30,6 +30,23 @@ body.g-on .asst-tip,body.g-on .g-nudge{display:none!important}
 .g-bar i{flex:1;height:3px;border-radius:3px;background:var(--mist);overflow:hidden;position:relative}
 .g-bar i::after{content:"";position:absolute;inset:0;border-radius:3px;background:linear-gradient(90deg,var(--blue),#7b9bff);transform-origin:left;transform:scaleX(var(--p,0));transition:transform .5s var(--ease)}
 
+/* ---------- экскурсия: курсор Стеллы, подсветка набираемого текста, «меню» выпадающего списка ---------- */
+.g-cursor{position:fixed;left:0;top:0;z-index:99;width:30px;height:34px;pointer-events:none;opacity:0;transition:opacity .35s;will-change:transform;filter:drop-shadow(0 6px 9px rgba(8,18,40,.5))}
+.g-cursor.on{opacity:1}
+.g-cursor svg{display:block;transform-origin:4px 3px;transition:transform .16s ease}
+.g-cursor.press svg{transform:scale(.8)}
+.g-c-rip{position:absolute;left:4px;top:3px;width:14px;height:14px;margin:-7px 0 0 -7px;border-radius:50%;border:2px solid #678cff;background:rgba(103,140,255,.3);opacity:0}
+.g-c-rip.go{animation:gRip .75s ease-out}
+@keyframes gRip{0%{opacity:.95;transform:scale(.4)}100%{opacity:0;transform:scale(4.4)}}
+.g-typing{color:var(--blue-d)!important;-webkit-text-fill-color:var(--blue-d)!important;font-weight:700!important;caret-color:var(--blue);border-color:var(--blue)!important;box-shadow:0 0 0 3px rgba(103,140,255,.4),0 0 28px 5px rgba(103,140,255,.4)!important;background-color:#f1f5ff!important}
+.g-dd{position:fixed;z-index:98;box-sizing:border-box;padding:6px;overflow:hidden;border-radius:16px;background:#fff;color:var(--navy);pointer-events:none;box-shadow:0 26px 60px -18px rgba(8,18,40,.65),0 0 0 1px rgba(11,26,51,.1);opacity:0;transform:translateY(-8px) scale(.98);transform-origin:50% 0;transition:opacity .25s,transform .35s var(--ease)}
+.g-dd.on{opacity:1;transform:none}
+.g-dd-o{box-sizing:border-box;height:40px;padding:0 14px;display:flex;align-items:center;border-radius:10px;font:500 14.5px/1.2 var(--sans);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;transition:background-color .16s,color .16s}
+.g-dd-o.cur{font-weight:700}
+.g-dd-o.hov{background:#e6edff;color:var(--blue-d)}
+.g-dd-o.pick{background:var(--blue);color:#fff}
+select.g-open,.g-open>select{border-color:var(--blue)!important;box-shadow:0 0 0 3px rgba(103,140,255,.35)!important}
+
 /* ---------- экскурсия: шапка всегда на виду, пока подсвечиваем меню ---------- */
 body.g-hdr .hdr{transform:none!important}
 

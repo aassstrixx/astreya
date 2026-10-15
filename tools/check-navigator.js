@@ -68,7 +68,8 @@ const wait = ms => new Promise(r => setTimeout(r, ms));
   await p.ask('где фильтры?'); let sp = await p.spot();
   ok(sp && /сужаете выбор/.test(sp.txt) && sp.hole.w > 300 && sp.btns.includes('Понятно') && await p.evaluate(() => !document.body.classList.contains('asst-open')), '«где фильтры?» — чат убирается, фильтры подсвечены с пояснением', sp);
   await p.keyboard.press('Escape'); await wait(200); ok(!(await p.spot()), 'Esc закрывает подсветку');
-  ok(await p.evaluate(() => { const t = window.ASTREYA_DATA.guide.tours.find(x => x.id === 'site'); const pages = new Set(t.steps.map(x => x.page)), tg = new Set(t.steps.map(x => x.target)); return !!t && !t.menu && t.steps.length >= 14 && t.groups.length === 6 && ['home', 'catalog', 'product', 'brands', 'training', 'news', 'start', 'partners', 'company', 'contacts'].every(k => pages.has(k)) && t.steps.every(x => x.say.length <= 170) && !/Начнём с меню|телефон менеджера здесь|Шаг 1 из 4/.test(JSON.stringify(t)); }), 'экскурсия охватывает все разделы (главная, каталог, товар, бренды, обучение, новости, «Старт со Стеллой», партнёры, компания, контакты), 6 этапов, каждая реплика не длиннее 170 знаков; прежнего ознакомления по меню нет');
+  ok(await p.evaluate(() => { const t = window.ASTREYA_DATA.guide.tours.find(x => x.id === 'site'); const pages = new Set(t.steps.map(x => x.page)); return !!t && !t.menu && t.steps.length >= 28 && t.groups.length === 9 && ['home', 'catalog', 'product', 'brands', 'training', 'news', 'start', 'partners', 'company', 'contacts'].every(k => pages.has(k)) && t.steps.every(x => [].concat(x.say).every(s => s.length <= 180)) && !t.steps.some(x => x.bridge) && !/Начнём с меню|телефон менеджера здесь|Шаг 1 из 4/.test(JSON.stringify(t)); }), 'экскурсия охватывает все разделы (главная, каталог, товар, бренды, обучение, новости, «Старт со Стеллой», партнёры, компания, контакты), 9 этапов, у каждого раздела по нескольку шагов, реплика не длиннее 180 знаков; прежнего ознакомления по меню и «мостиков» нет');
+  ok(await p.evaluate(() => { const t = window.ASTREYA_DATA.guide.tours.find(x => x.id === 'site'), pg = window.ASTREYA_DATA.guide.pages, n = {}; t.steps.forEach(x => { const w = [].concat(x.say)[0].split(/[\s,—]+/)[0]; n[w] = (n[w] || 0) + 1; }); const first = t.steps.map(x => [].concat(x.say)[0].split(/[\s,—]+/)[0]); return Math.max(...Object.values(n)) <= 3 && first.every((w, k) => k === 0 || w !== first[k - 1]) && !t.steps.some(x => /^(Идём дальше|Дальше|Теперь сюда|Следующий шаг)/.test([].concat(x.say)[0])) && ['brands', 'training', 'news', 'company', 'partners', 'contacts'].every(id => { const q = pg.find(z => z.id === id); return q && q.nav && q.go; }); }), 'реплики не начинаются одинаково («Идём дальше», «Теперь сюда»…): ни одно первое слово не встречается больше трёх раз и два шага подряд не открываются одним словом; для каждого раздела задано, какой пункт меню нажать и что сказать по дороге');
   await p.ask('отфильтруй по пигментации'); await wait(1500);
   const fl = await p.evaluate(() => ({task: document.querySelector('#f-task').value, count: document.querySelector('#res-count').textContent, shown: [...document.querySelectorAll('.pcard')].filter(c => !c.hidden).length}));
   sp = await p.spot(); ok(fl.task === 'pigment' && fl.shown > 0 && fl.shown < 30 && sp && /Найдено/.test(sp.txt), '«отфильтруй по пигментации» — фильтр выставлен, показано ' + fl.shown + ' из 30, Стелла указывает на результат', {fl, sp});
@@ -93,14 +94,44 @@ const wait = ms => new Promise(r => setTimeout(r, ms));
   ok(!p.errs.length, 'нет ошибок JS и консоли', p.errs);
   await p.context().close();
 
+  /* ---------- экскурсия «Покажи сайт»: что Стелла говорит на каждом из 32 шагов (страница, окончательная реплика) ---------- */
+  const STEP = [
+    ['home', /Вверху всегда под рукой/], ['home', /Отсюда два пути/],
+    ['catalog', /по слову «.+» из \d+ позиций осталась 1/], ['catalog', /Выбрала «Пигментация» — и в каталоге \d+ позиций из 30/], ['catalog', /вместо 30 позиций осталось \d+/], ['catalog', /Не можете выбрать между двумя/], ['catalog', /Загляните в карточку/],
+    ['product', /Тут собраны факты/], ['product', /«В список запроса» копит/], ['product', /главная кнопка карточки/],
+    ['brands', /осталось брендов — \d+/], ['brands', /У каждого бренда своя карточка/],
+    ['training', /календарь встреч/], ['training', /Выбрала «.+» и «.+» — осталось встреч: \d+/], ['training', /Вот пример встречи/], ['training', /преподаватели центра/], ['training', /материалы для специалистов/],
+    ['news', /Нажала «.+» — и показаны только эти записи: \d+/], ['news', /Вот пример: «.+»/], ['news', /Внизу страницы подписка/],
+    ['company', /Тут мы рассказываем о себе/], ['company', /Вот, нажала «.+»/], ['company', /помогает решиться на первый заказ/],
+    ['partners', /Партнёр получает/], ['partners', /При закупке на 150 000 ₽ ваша скидка — 10%\..*ориентир/], ['partners', /Ступени такие: 5% от 50 000 ₽, 10% от 150 000 ₽, 15% от 300 000 ₽/], ['partners', /Оставьте контакты/],
+    ['start', /Здесь мы разговариваем/], ['start', /Можно написать всё одной фразой/],
+    ['contacts', /Связаться можно как удобно/], ['contacts', /Не любите звонить/],
+    ['contacts', /Вот и всё/]
+  ];
+  const GROUP = [0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2, 3, 3, 3, 3, 3, 4, 4, 4, 5, 5, 5, 6, 6, 6, 6, 7, 7, 8, 8, 8];
+  const GNAME = ['Главная', 'Каталог', 'Бренды', 'Обучение', 'Новости', 'Компания', 'Партнёрам', 'Старт со Стеллой', 'Контакты'];
+
   /* ---------- точки входа на всех типах страниц ---------- */
-  console.log('\n[Экскурсия «Покажи сайт»: компьютер, все разделы от главной до финала]');
+  console.log('\n[Экскурсия «Покажи сайт»: компьютер, курсор, все разделы от главной до финала]');
   p = await mk({speed: 14}); await p.open('catalog.html');
+  /* ждём, пока на экране нужная реплика, а подсветка и карточка перестанут двигаться (страница доехала, анимация кончилась) */
+  const same = (a, b) => ['x', 'y', 'w', 'h'].every(k => Math.abs(a.hole[k] - b.hole[k]) < 1) && Math.abs(a.pop.y - b.pop.y) < 1 && Math.abs(a.pop.x - b.pop.x) < 1 && a.y === b.y;
+  const stableAt = async (snap, pg, re, ms) => {
+    let x = null; const t0 = Date.now();
+    while (Date.now() - t0 < (ms || 40000)) {
+      x = await snap();
+      if (x && x.page === pg && re.test(x.tx.replace(/\u00a0/g, ' '))) { let prev = x, cur = x; for (let k = 0; k < 28; k++) { await wait(250); cur = await snap(); if (!cur) return x; if (cur.page === pg && re.test(cur.tx.replace(/\u00a0/g, ' ')) && same(prev, cur)) return cur; prev = cur; } return cur; }
+      await wait(150);
+    }
+    return x;
+  };
   const T = {
-    snap: () => p.evaluate(() => { const s = document.getElementById('g-spot'); if (!s || s.hidden) return null; const h = document.querySelector('.g-hole').getBoundingClientRect(), pp = document.querySelector('.g-pop').getBoundingClientRect();
-      return {page: document.body.getAttribute('data-page'), tx: s.querySelector('.g-tx p').textContent, st: (s.querySelector('.g-st') || {}).textContent || '', btns: [...s.querySelectorAll('.g-ctl button')].map(b => b.textContent.trim()), hole: {x: h.x, y: h.y, w: h.width, h: h.height}, pop: {x: pp.x, y: pp.y, w: pp.width, h: pp.height}, vw: innerWidth, vh: innerHeight, y: scrollY}; }),
+    snap: () => p.evaluate(() => { const s = document.getElementById('g-spot'); if (!s || s.hidden) return null; const h = document.querySelector('.g-hole').getBoundingClientRect(), pp = document.querySelector('.g-pop').getBoundingClientRect(), c = document.getElementById('g-cursor');
+      return {page: document.body.getAttribute('data-page'), tx: s.querySelector('.g-tx p').textContent.replace(/ /g, ' '), st: (s.querySelector('.g-st') || {}).textContent || '', btns: [...s.querySelectorAll('.g-ctl button')].map(b => b.textContent.trim()), hole: {x: h.x, y: h.y, w: h.width, h: h.height}, pop: {x: pp.x, y: pp.y, w: pp.width, h: pp.height}, vw: innerWidth, vh: innerHeight, y: scrollY, cursor: !!c && !c.hidden && c.classList.contains('on')}; }),
     press: async label => { await p.evaluate(l => { const b = [...document.querySelectorAll('#g-spot .g-ctl button')].find(x => x.textContent.trim() === l); if (b) b.click(); }, label); },
+    next: () => p.evaluate(() => { const b = document.querySelector('#g-spot .g-ctl .btn-fill'); if (b) b.click(); }),
     until: async (fn, ms) => { const t0 = Date.now(); while (Date.now() - t0 < (ms || 9000)) { const r = await p.evaluate(fn).catch(() => false); if (r) return true; await wait(150); } return false; },
+    at: (pg, re, ms) => stableAt(T.snap, pg, re, ms),
     prod0: D.products[0].name.split(/\s+/)[0]
   };
   const inView = x => x && x.hole.w > 8 && x.hole.h > 8 && x.hole.x >= 0 && x.hole.y >= 0 && x.hole.x + x.hole.w <= x.vw + 1 && x.hole.y + x.hole.h <= x.vh + 1;
@@ -111,92 +142,134 @@ const wait = ms => new Promise(r => setTimeout(r, ms));
   ok(ch0[0] === 'Покажи сайт' && await p.evaluate(() => !!document.querySelector('.asst-ib-tour[data-act="asst-tour-site"]')), 'в панели Стеллы есть постоянная кнопка-компас «Показать сайт — экскурсия» и первый быстрый ответ «Покажи сайт»', ch0);
   ok(await T.snap() === null, 'открытие панели Стеллы экскурсию не запускает');
   await p.click('.asst-ib-tour'); await T.until(() => { const s = document.getElementById('g-spot'); return s && !s.hidden && document.body.getAttribute('data-page') === 'home'; }, 20000); await wait(900);
-  const tb = await p.lastBot(); ok(tb && /шесть коротких остановок/.test(tb.text) && !tb.btns.length, 'Стелла отвечает «покажу сайт» без кнопки «Начать» — экскурсия идёт сама', tb && [tb.text.slice(0, 60), tb.btns]);
-  let x = await T.snap();
-  ok(x && x.page === 'home' && /^1 из 6/.test(x.st) && /Главная/.test(x.st) && x.btns.join() === 'Далее,Пропустить', 'с каталога экскурсия сама перешла на главную и началась: «1 из 6 · Главная», кнопки «Далее» и «Пропустить»', x);
-  ok(inView(x) && noOverlap(x) && /Вверху всегда под рукой/.test(x.tx) && /проведу вас по сайту/.test(x.tx) && x.hole.y < 120, 'шаг 1: коротко о компании и подсвечена настоящая шапка (меню, поиск, «Стать партнёром»), карточка не перекрывает её', x);
-  await T.press('Далее'); await wait(1300); x = await T.snap();
-  ok(inView(x) && noOverlap(x) && /Отсюда два пути/.test(x.tx) && x.btns.includes('Назад') && x.btns.includes('Открыть каталог') && await p.evaluate(() => { const r = document.querySelector('.hero-copy .row').getBoundingClientRect(); return r.top > 0 && r.bottom < innerHeight; }), 'шаг 2: кнопки первого экрана подсвечены («в каталог» или «стать партнёром»), кнопка «Далее» называется «Открыть каталог»', x);
-  await T.press('Открыть каталог'); const gotCat = await T.until(() => document.body.getAttribute('data-page') === 'catalog' && !document.getElementById('g-spot').hidden && !!document.querySelector('#cat-q').value, 20000); await wait(900); x = await T.snap();
-  const sq = await p.evaluate(() => ({q: document.getElementById('cat-q').value, c: document.getElementById('res-count').textContent}));
-  ok(gotCat && sq.q === T.prod0 && /Найдено: 1 из/.test(sq.c) && new RegExp('«' + T.prod0 + '».*1 из').test(x.tx) && /^2 из 6/.test(x.st), 'шаг 3 («2 из 6 · Каталог»): Стелла нажала «Перейти в каталог» на главной, в поиске набрано «' + T.prod0 + '», на странице реально осталась 1 карточка', [sq, x && x.tx]);
-  await T.press('Далее'); await wait(1500); x = await T.snap();
-  const sf = await p.evaluate(() => ({task: document.getElementById('f-task').value, q: document.getElementById('cat-q').value, c: document.getElementById('res-count').textContent, url: location.search}));
-  ok(sf.task === 'pigment' && sf.q === '' && /Найдено: [2-9]\d* из/.test(sf.c) && /Пигментация/.test(x.tx) && /task=pigment/.test(sf.url), 'шаг 4: запрос очищен, в фильтре «Назначение» выбрана «Пигментация» — каталог реально отфильтрован: ' + sf.c, [sf, x && x.tx]);
-  await T.press('Далее'); await wait(1300); x = await T.snap();
-  ok(inView(x) && /⇄/.test(x.tx) && /Не можете выбрать между двумя/.test(x.tx) && x.btns.includes('Показать на примере') && await p.evaluate(() => (JSON.parse(localStorage.getItem('astreya:cmp') || '[]')).length === 0) && /Найдено: [2-9]\d* из/.test(await p.evaluate(() => document.getElementById('res-count').textContent)), 'шаг 5: подсвечен значок сравнения ⇄; без вашего нажатия ничего не отмечено, фильтр остаётся', x);
-  await T.press('Показать на примере'); await wait(1500); x = await T.snap();
-  const cd = await p.evaluate(() => ({l: JSON.parse(localStorage.getItem('astreya:cmp') || '[]'), bar: !!document.querySelector('#cmp-bar') && !document.querySelector('#cmp-bar').hidden}));
-  ok(cd.l.length === 2 && cd.bar && /отмечены/.test(x.tx) && x.btns.includes('Рассказать о товарах'), 'по явному нажатию «Показать на примере» два товара отмечены для сравнения, видна плашка', [cd, x && x.btns]);
-  await T.press('Далее'); await wait(1300); x = await T.snap();
-  ok(await p.evaluate(() => (JSON.parse(localStorage.getItem('astreya:cmp') || '[]')).length === 0) && x && x.btns.includes('Открыть карточку') && /заглянем в карточку/.test(x.tx), 'шаг 6: после шага отметки товаров, которые поставила экскурсия, сняты — сравнение пустое', x && x.btns);
-  const firstHref = await p.evaluate(() => { const c = [...document.querySelectorAll('.pcard')].find(c => !c.hidden); return new URL(c.querySelector('a.stretch').href).pathname; });
-  await T.press('Открыть карточку'); const gotProd = await T.until(() => document.body.getAttribute('data-page') === 'product' && !document.getElementById('g-spot').hidden, 20000); await wait(900); x = await T.snap();
-  ok(gotProd && await p.evaluate(h => location.pathname === h, firstHref) && /менеджер вернётся/.test(x.tx) && inView(x) && /^2 из 6/.test(x.st), 'шаг 7: Стелла нажала на карточку — открылась страница товара из отфильтрованного списка (' + firstHref + '), подсвечена кнопка «Запросить информацию»', x);
-  ok(await p.evaluate(() => !document.querySelector('#modal.open')) && !(await p.evaluate(() => sessionStorage.getItem('astreya:rl') || localStorage.getItem('astreya:rl'))), 'экскурсия не открыла форму запроса и ничего не добавила в список запроса — заявка и «корзина» не затронуты');
-  /* остальные разделы: Стелла переводит на страницу сама, подсвечивает главное и коротко говорит, что это и как пользоваться */
-  const sect = [
-    ['brands', /^3 из 6 · Бренды и обучение/, /С брендами проще/, 'шаг 8: «Бренды» — выбор по задаче и у каждого бренда своя страница'],
-    ['training', /^3 из 6/, /Здесь мы учим.*календар/, 'шаг 9: «Обучение» — календарь семинаров и вебинаров, ниже расписание, преподаватели и материалы'],
-    ['news', /^4 из 6 · Новости и подбор/, /Тут держим вас в курсе/, 'шаг 10: «Новости» — новинки, обучение, мероприятия; про подписку внизу страницы'],
-    ['start', /^4 из 6/, /моё любимое место.*план/, 'шаг 11: «Старт со Стеллой» — диалог, после которого готов план'],
-    ['partners', /^5 из 6 · Партнёрам/, /При закупке на 150\s000 ₽ ваша скидка — 10%.*ориентир/, 'шаг 12: «Партнёрам» — Стелла сама двигает ползунок калькулятора на порог 10% и напоминает, что это ориентир'],
-    ['partners', /^5 из 6/, /Оставьте контакты/, 'шаг 13: заявка на сотрудничество'],
-    ['company', /^6 из 6 · О компании/, /на чём держится наша работа/, 'шаг 14: «Компания» — блок «Почему «Астрее» можно доверять»'],
-    ['contacts', /^6 из 6/, /Остались вопросы/, 'шаг 15: «Контакты» — написать или заказать звонок']
-  ];
-  const secBad = [];
-  for (const [pg, stRe, txRe, what] of sect) {
-    await T.press('Далее'); await T.until(() => !!document.querySelector('#g-spot:not([hidden]) .g-tx p'), 20000); await wait(pg === 'partners' ? 2600 : 1700); x = await T.snap();
-    const good = x && x.page === pg && stRe.test(x.st) && txRe.test(x.tx.replace(/ /g, ' ')) && inView(x) && x.btns.includes('Назад');
-    ok(good, what, x); if (!good) secBad.push(pg);
-    if (pg === 'partners' && /Скидка растёт/.test(x.tx)) ok(await p.evaluate(() => document.getElementById('calc-range').value === '150000'), 'ползунок калькулятора реально стоит на 150 000 ₽');
+  const tb = await p.lastBot(); ok(tb && /девять остановок/.test(tb.text) && !tb.btns.length, 'Стелла отвечает «покажу сайт» без кнопки «Начать» — экскурсия идёт сама', tb && [tb.text.slice(0, 60), tb.btns]);
+  let x = await T.at('home', STEP[0][1], 20000);
+  ok(x && x.page === 'home' && /^1 из 9/.test(x.st) && /Главная/.test(x.st) && x.btns.join() === 'Далее,Пропустить', 'с каталога экскурсия сама перешла на главную и началась: «1 из 9 · Главная», кнопки «Далее» и «Пропустить»', x);
+  ok(inView(x) && noOverlap(x) && /проведу/.test(x.tx) && x.hole.y < 120, 'шаг 1: коротко о том, что покажет Стелла, и подсвечена настоящая шапка (меню, поиск, «Стать партнёром»), карточка не перекрывает её', x);
+  ok(await T.until(() => { const c = document.getElementById('g-cursor'); return !!c && !c.hidden && c.classList.contains('on'); }, 6000), 'у Стеллы есть курсор: он появился и «ходит» по шапке, о которой она говорит');
+  /* страница закреплена: колесо, клавиши и прокрутка из кода не двигают ни подсветку, ни Стеллу */
+  {
+    const sn0 = await T.snap(); await p.mouse.move(640, 500); await p.mouse.wheel(0, 900); await wait(250); await p.keyboard.press('PageDown'); await wait(250); await p.evaluate(() => window.scrollTo(0, 0)); await wait(1500); const sn1 = await T.snap();          /* на главной у вступления свои обработчики прокрутки: после рывка к началу страница на мгновение «вздрагивает» и возвращается */
+    ok(sn1 && Math.abs(sn1.y - sn0.y) < 3 && Math.abs(sn1.hole.y - sn0.hole.y) < 2 && Math.abs(sn1.pop.x - sn0.pop.x) < 2 && Math.abs(sn1.pop.y - sn0.pop.y) < 2, 'на время экскурсии страница закреплена: колесо мыши, PageDown и прокрутка из кода не сдвигают ни подсветку, ни карточку Стеллы', [sn0 && [sn0.y, sn0.hole.y, sn0.pop.y], sn1 && [sn1.y, sn1.hole.y, sn1.pop.y]]);
   }
-  await T.press('Далее'); await wait(1500); x = await T.snap();
-  ok(x && /Вот и всё/.test(x.tx) && ['Открыть каталог', 'Старт со Стеллой', 'Спросить Стеллу', 'Закрыть'].every(b => x.btns.includes(b)) && !x.btns.includes('Подобрать по задаче') && /^6 из 6/.test(x.st) && inView(x), 'финал: предложение — открыть каталог, «Старт со Стеллой» (вместо прежнего «Подобрать по задаче») или спросить Стеллу', x);
-  await T.press('Назад'); await wait(1500); x = await T.snap(); ok(x && /Остались вопросы/.test(x.tx), '«Назад» с последнего шага возвращает к «Контактам»');
-  await T.press('Далее'); await wait(1200);
+  const badStep = [], seen = [];
+  let x2 = null, firstHref = '';
+  for (let i = 1; i < STEP.length; i++) {
+    const [pg, re] = STEP[i];
+    await T.next();
+    x2 = await T.at(pg, re); seen.push(x2 && x2.page);
+    if (i === 5) { /* «Показать на примере» — отметка двух товаров только по нажатию посетителя */
+      ok(inView(x2) && /⇄/.test(x2.tx) && x2.btns.includes('Показать на примере') && await p.evaluate(() => (JSON.parse(localStorage.getItem('astreya:cmp') || '[]')).length === 0), 'шаг «Сравнение»: подсвечен значок ⇄ у карточек; без вашего нажатия ничего не отмечено', x2);
+      await T.press('Показать на примере'); await T.until(() => (JSON.parse(localStorage.getItem('astreya:cmp') || '[]')).length === 2 && !document.querySelector('#cmp-bar').hidden, 25000); await wait(700); const xo = await T.snap();
+      ok(xo && /два продукта отмечены/.test(xo.tx) && xo.btns.includes('Рассказать о товарах'), 'по явному нажатию «Показать на примере» курсор сам отметил два товара, видна плашка сравнения', xo && [xo.tx, xo.btns]);
+    }
+    const need = GNAME[GROUP[i]]; const good = x2 && x2.page === pg && re.test(x2.tx) && inView(x2) && x2.btns.includes('Назад') && new RegExp('^' + (GROUP[i] + 1) + ' из 9 · ' + need).test(x2.st);
+    if (!good) badStep.push([i, x2 && [x2.page, x2.st, x2.tx.slice(0, 60), inView(x2)]]);
+    if (i === 6) ok(await p.evaluate(() => (JSON.parse(localStorage.getItem('astreya:cmp') || '[]')).length === 0), 'следующий шаг: товары, которые отметила экскурсия, сняты — сравнение пустое');
+    if (i === 6) { firstHref = await p.evaluate(() => { const c = [...document.querySelectorAll('.pcard')].find(c => !c.hidden); return new URL(c.querySelector('a.stretch').href).pathname; }); }
+    if (i === 7) ok(await p.evaluate(h => location.pathname === h, firstHref) && /^products\//.test(firstHref.replace(/^\//, '')), 'курсор нажал на карточку — открылась страница товара из отфильтрованного списка (' + firstHref + ')');
+    if (i === 2) { const sq = await p.evaluate(() => ({q: document.getElementById('cat-q').value, c: document.getElementById('res-count').textContent, t: document.getElementById('cat-q').classList.contains('g-typing')})); ok(sq.q === T.prod0 && /Найдено: 1 из/.test(sq.c) && sq.t && x2.cursor, 'шаг «поиск»: в строке набрано «' + T.prod0 + '» (поле подсвечено синим), в каталоге реально осталась 1 карточка', [sq, x2 && x2.cursor]); }
+    if (i === 3) { const sf = await p.evaluate(() => ({task: document.getElementById('f-task').value, q: document.getElementById('cat-q').value, c: document.getElementById('res-count').textContent, url: location.search, dd: !!document.getElementById('g-dd') && !document.getElementById('g-dd').classList.contains('on')})); ok(sf.task === 'pigment' && sf.q === '' && /Найдено: [2-9]\d* из/.test(sf.c) && /task=pigment/.test(sf.url) && sf.dd, 'шаг «назначение»: запрос очищен, меню закрылось, выбрана «Пигментация» — каталог отфильтрован: ' + sf.c, sf); }
+    if (i === 4) { const sc = await p.evaluate(() => ({task: document.getElementById('f-task').value, c: document.getElementById('res-count').textContent})); ok(sc.task === 'all' && /Найдено: \d+ из 30/.test(sc.c) && new RegExp('осталось ' + sc.c.match(/Найдено: (\d+)/)[1] + '[^\\d]').test(x2.tx), 'шаг «категории»: фильтр назначения сброшен, курсор нажал на плитку категории — число в реплике совпадает со страницей: ' + sc.c, [sc, x2 && x2.tx]); }
+    if (i === 10) ok(await p.evaluate(() => { const v = [...document.querySelectorAll('#br-grid .bl-card')].filter(c => !c.hidden).length; return v > 0 && v < document.querySelectorAll('#br-grid .bl-card').length; }), 'шаг «бренды по задаче»: курсор нажал на задачу — часть брендов скрылась, остальные видны');
+    if (i === 13) ok(await p.evaluate(() => document.querySelector('#city-chips .chip.on').getAttribute('data-id') !== 'all' && document.querySelector('#fmt-chips .chip.on').getAttribute('data-id') !== 'all'), 'шаг «обучение: фильтры»: выбраны город и формат, расписание сузилось');
+    if (i === 17) ok(await p.evaluate(() => { const on = document.querySelector('#news-tabs .chip.on, #news-tabs [aria-pressed="true"]'); return !!on && !/^Все/.test(on.textContent.trim()); }), 'шаг «новости»: курсор нажал на вкладку — показана не вся лента');
+    if (i === 24) ok(await p.evaluate(() => document.getElementById('calc-range').value === '150000'), 'калькулятор: курсор взял ползунок и довёл его до порога 10% (150 000 ₽)');
+    if (i === 26) ok(await p.evaluate(() => !document.querySelector('#modal.open')) && !(await p.evaluate(() => sessionStorage.getItem('astreya:rl') || localStorage.getItem('astreya:rl'))), 'экскурсия не отправляла форм и ничего не добавила в список запроса — заявка и «корзина» не затронуты');
+  }
+  ok(!badStep.length, 'все ' + STEP.length + ' шагов экскурсии прошли по порядку: нужная страница, окончательная реплика, подсвеченный элемент на экране, «Назад», номер этапа (1–9) и его название', badStep.slice(0, 4));
+  const order = []; seen.forEach(pg => { if (order[order.length - 1] !== pg) order.push(pg); });
+  ok(order.join() === 'home,catalog,product,brands,training,news,company,partners,start,contacts', 'разделы шли в логичном порядке: ' + order.join(' → '));
+  x = await T.snap();
+  ok(x && /Вот и всё/.test(x.tx) && ['Открыть каталог', 'Старт со Стеллой', 'Спросить Стеллу', 'Закрыть'].every(b => x.btns.includes(b)) && !x.btns.includes('Подобрать по задаче') && /^9 из 9/.test(x.st) && inView(x), 'финал: предложение — открыть каталог, «Старт со Стеллой» или спросить Стеллу', x);
+  await T.press('Назад'); await wait(1500); x = await T.at('contacts', /Не любите звонить/); ok(x && /Не любите звонить/.test(x.tx), '«Назад» с последнего шага возвращает к форме «Контактов»');
+  await T.next(); await T.at('contacts', /Вот и всё/);
   await T.press('Старт со Стеллой'); await T.until(() => document.body.getAttribute('data-page') === 'start' && !!document.querySelector('.pchat'), 20000); await wait(900);
-  ok(await p.evaluate(() => document.body.getAttribute('data-page') === 'start' && !!document.querySelector('.pchat') && document.getElementById('g-spot').hidden), 'финальная кнопка «Старт со Стеллой» открывает страницу подбора — окно диалога со Стеллой');
+  ok(await p.evaluate(() => document.body.getAttribute('data-page') === 'start' && !!document.querySelector('.pchat') && document.getElementById('g-spot').hidden && (!document.getElementById('g-cursor') || document.getElementById('g-cursor').hidden)), 'финальная кнопка «Старт со Стеллой» открывает страницу подбора — окно диалога со Стеллой; курсор и подсветка убраны');
   await p.keyboard.press('Escape'); await wait(300);
   ok(!(await T.snap()) && !(await p.evaluate(() => sessionStorage.getItem('astreya:g-tour'))), 'после выхода пользователь работает с сайтом как обычно: подсветки и состояния экскурсии нет');
   await p.open('catalog.html'); await wait(1200);
   ok(await p.evaluate(n => [...document.querySelectorAll('#cat-grid .pcard')].filter(c => !c.hidden).length === n, D.products.length), 'после выхода в каталоге снова видны все ' + D.products.length + ' товаров (фильтры не залипли)');
+  ok(await p.evaluate(() => { const s = [...document.querySelectorAll('select')].filter(e => e.classList.contains('g-open')); return !s.length && !document.querySelector('.g-typing'); }), 'после выхода нет следов показа: ни синей подсветки поля, ни раскрытого меню');
   ok(!p.errs.length, 'в ходе экскурсии нет ошибок JS и консоли', p.errs); await p.context().close();
+
+  /* ---------- настоящий темп: набор по буквам, меню, переход нажатием на пункт меню ---------- */
+  console.log('\n[Экскурсия в обычном темпе: неспешный набор, выпадающий список, переход нажатием на меню]');
+  p = await mk({speed: 1}); await p.open('catalog.html');
+  await p.evaluate(() => window.Astreya.guide.tour('site', 2));
+  {
+    const vals = [], t0 = Date.now(); let tFirst = 0, tFull = 0, typingOn = false, curOn = false;
+    while (Date.now() - t0 < 25000) {
+      const v = await p.evaluate(() => { const q = document.getElementById('cat-q'), c = document.getElementById('g-cursor'); return {v: q.value, t: q.classList.contains('g-typing'), c: !!c && !c.hidden}; });
+      if (v.t) typingOn = true; if (v.c) curOn = true; if (v.v && !vals.includes(v.v)) { vals.push(v.v); if (!tFirst) tFirst = Date.now(); } if (v.v === T.prod0) { tFull = Date.now(); break; } await wait(70);
+    }
+    const per = tFull && tFirst ? (tFull - tFirst) / Math.max(1, T.prod0.length - 1) : 0;
+    ok(vals.length >= Math.min(5, T.prod0.length - 1) && typingOn && curOn && per >= 180, 'в обычном темпе слово набирается по буквам неспешно (' + Math.round(per) + ' мс на букву), поле подсвечено синим, курсор виден', {vals: vals.slice(0, 6), per, typingOn, curOn});
+  }
+  await T.at('catalog', /по слову «.+»/, 20000);
+  await T.next();
+  {
+    const t0 = Date.now(); let ddOn = false, selBefore = true, hovs = new Set(), open = false, picked = 0;
+    while (Date.now() - t0 < 30000) {
+      const v = await p.evaluate(() => { const d = document.getElementById('g-dd'), s = document.getElementById('f-task'); return {on: !!d && !d.hidden && d.classList.contains('on'), hov: ((d && d.querySelector('.g-dd-o.hov')) || {}).textContent || '', val: s.value, open: s.classList.contains('g-open')}; });
+      if (v.on) { ddOn = true; if (v.val !== 'all') selBefore = false; if (v.hov) hovs.add(v.hov); } if (v.open) open = true;
+      if (v.val === 'pigment') { picked = Date.now() - t0; break; } await wait(70);
+    }
+    ok(ddOn && open && selBefore && hovs.size >= 2 && picked > 2500, 'шаг «назначение» в обычном темпе: курсор нажимает на список, меню раскрывается, пункты по очереди подсвечиваются (' + [...hovs].slice(0, 3).join(' → ') + '), и только потом выбрана «Пигментация» (' + (picked / 1000).toFixed(1) + ' с)', {ddOn, open, selBefore, hovs: [...hovs], picked});
+  }
+  await T.at('catalog', /Выбрала «Пигментация»/, 15000);
+  /* переход к следующему разделу: курсор нажимает пункт меню */
+  await p.open('products/' + D.products[0].slug + '.html'); await wait(900);
+  await p.evaluate(() => window.Astreya.guide.tour('site', 9)); await T.at('product', /главная кнопка карточки/, 20000);
+  await T.next();
+  {
+    const t0 = Date.now(); let goTxt = false, onNav = false, curMoved = false, c0 = '';
+    while (Date.now() - t0 < 30000) {
+      const v = await p.evaluate(() => { const s = document.getElementById('g-spot'), c = document.getElementById('g-cursor'), n = document.querySelector('#nav > a.nl[data-nav="/brands"]'), h = s && !s.hidden ? document.querySelector('.g-hole').getBoundingClientRect() : null; const r = n ? n.getBoundingClientRect() : null; return {page: document.body.getAttribute('data-page'), tx: s && !s.hidden ? s.querySelector('.g-tx p').textContent : '', ct: c && !c.hidden ? c.style.transform : '', near: !!(h && r && Math.abs(h.left + h.width / 2 - (r.left + r.width / 2)) < 40 && h.top < 120)}; });
+      if (/Теперь загляну к брендам/.test(v.tx) && v.page === 'product') { goTxt = true; if (v.near) onNav = true; if (!c0) c0 = v.ct; else if (v.ct !== c0) curMoved = true; }
+      if (v.page === 'brands') break; await wait(70);
+    }
+    ok(goTxt && onNav && curMoved && await dataPage(p) === 'brands', 'переход в «Бренды»: Стелла говорит по дороге, подсвечивает пункт меню «Бренды», курсор плывёт к нему и нажимает — открылась страница брендов', {goTxt, onNav, curMoved, page: await dataPage(p)});
+  }
+  await T.at('brands', /осталось брендов/, 30000);
+  ok(!p.errs.length, 'в обычном темпе нет ошибок JS и консоли', p.errs); await p.context().close();
 
   /* ---------- выход, «Назад» между страницами, откат изменений, отсутствующие элементы ---------- */
   console.log('\n[Экскурсия: «Пропустить», «Назад» между страницами, откат изменений, отсутствующий элемент]');
   p = await mk({speed: 14}); await p.open('catalog.html');
   const startTour = async () => { await p.evaluate(() => window.Astreya.guide.tour('site')); await T.until(() => { const s = document.getElementById('g-spot'); return s && !s.hidden; }, 20000); await wait(800); };
   await startTour(); await T.until(() => document.body.getAttribute('data-page') === 'home', 15000);
-  await T.press('Далее'); await wait(1100); await T.press('Пропустить'); await wait(500);
+  await T.next(); await wait(1100); await T.press('Пропустить'); await wait(500);
   ok(!(await T.snap()) && await p.evaluate(() => !sessionStorage.getItem('astreya:g-tour') && !document.body.classList.contains('g-on')), '«Пропустить» на главной: подсветка снята, состояние экскурсии очищено');
-  await p.evaluate(() => window.Astreya.guide.tour('site', 2)); await T.until(() => document.body.getAttribute('data-page') === 'catalog' && !document.getElementById('g-spot').hidden, 20000); await wait(1200);
-  await T.press('Далее'); await wait(1500);
+  await p.evaluate(() => window.Astreya.guide.tour('site', 2)); await T.at('catalog', /по слову «.+»/, 25000);
+  await T.next(); x = await T.at('catalog', /Выбрала «Пигментация»/, 25000);
   ok(await p.evaluate(() => document.getElementById('f-task').value === 'pigment'), 'на шаге подбора фильтр «Пигментация» выставлен');
-  await T.press('Пропустить'); await wait(600);
-  const rs = await p.evaluate(() => ({task: document.getElementById('f-task').value, q: document.getElementById('cat-q').value, c: document.getElementById('res-count').textContent, url: location.search, spot: !document.getElementById('g-spot').hidden}));
-  ok(rs.task === 'all' && rs.q === '' && /Найдено: 30 из 30/.test(rs.c) && rs.url === '' && !rs.spot, '«Пропустить» в каталоге: фильтр и запрос возвращены, адрес очищен — каталог как был', rs);
+  await T.press('Пропустить'); await wait(900);
+  const rs = await p.evaluate(() => ({task: document.getElementById('f-task').value, q: document.getElementById('cat-q').value, c: document.getElementById('res-count').textContent, url: location.search, spot: !document.getElementById('g-spot').hidden, cur: !!document.getElementById('g-cursor') && !document.getElementById('g-cursor').hidden && document.getElementById('g-cursor').classList.contains('on'), dd: !!document.querySelector('#g-dd.on'), ty: !!document.querySelector('.g-typing')}));
+  ok(rs.task === 'all' && rs.q === '' && /Найдено: 30 из 30/.test(rs.c) && rs.url === '' && !rs.spot && !rs.cur && !rs.dd && !rs.ty, '«Пропустить» в каталоге: фильтр и запрос возвращены, адрес очищен, курсор убран — каталог как был', rs);
+  /* «Пропустить» в разгар демонстрации: курсор и меню не остаются висеть */
+  await p.evaluate(() => window.Astreya.guide.tour('site', 3)); await wait(650); await T.press('Пропустить'); await wait(1200);
+  ok(await p.evaluate(() => !document.querySelector('#g-dd.on') && !document.querySelector('select.g-open') && document.getElementById('g-spot').hidden && document.getElementById('f-task').value === 'all'), '«Пропустить» посреди показа: меню закрыто, фильтр не применился, ничего не осталось на экране');
   /* «Назад» со страницы товара возвращает в каталог, экскурсия продолжается */
-  await p.evaluate(() => window.Astreya.guide.tour('site', 5)); await T.until(() => !document.getElementById('g-spot').hidden && /Открыть карточку/.test(document.querySelector('#g-spot .g-ctl').textContent), 8000); await wait(700);
-  await T.press('Открыть карточку'); await T.until(() => document.body.getAttribute('data-page') === 'product' && !document.getElementById('g-spot').hidden, 20000); await wait(900);
-  await T.press('Назад'); await T.until(() => document.body.getAttribute('data-page') === 'catalog' && !document.getElementById('g-spot').hidden, 20000); await wait(900); x = await T.snap();
+  await p.evaluate(() => window.Astreya.guide.tour('site', 6)); await T.until(() => !document.getElementById('g-spot').hidden && /Открыть карточку/.test(document.querySelector('#g-spot .g-ctl').textContent), 20000); await wait(700);
+  await T.press('Открыть карточку'); await T.until(() => document.body.getAttribute('data-page') === 'product' && !document.getElementById('g-spot').hidden, 25000); await wait(900);
+  await T.press('Назад'); await T.until(() => document.body.getAttribute('data-page') === 'catalog' && !document.getElementById('g-spot').hidden, 25000); await wait(900); x = await T.snap();
   ok(x && x.page === 'catalog' && x.btns.includes('Открыть карточку') && inView(x), '«Назад» со страницы товара вернул в каталог, шаг с карточкой снова подсвечен', x);
   await p.keyboard.press('Escape'); await wait(300);
   /* целевой элемент отсутствует — шаг безопасно пропускается */
   await p.evaluate(() => { const q = document.getElementById('cat-q'); q.closest('label').remove(); });
-  await p.evaluate(() => window.Astreya.guide.tour('site', 2)); await wait(2500); x = await T.snap();
-  ok(x && /от задачи|Пигментация/.test(x.tx), 'поля поиска нет на странице — шаг пропущен без ошибок, экскурсия продолжилась со следующего', x && x.tx);
+  await p.evaluate(() => window.Astreya.guide.tour('site', 2)); await wait(3500); x = await T.snap();
+  ok(x && /под задачу|Пигментация/.test(x.tx), 'поля поиска нет на странице — шаг пропущен без ошибок, экскурсия продолжилась со следующего', x && x.tx);
   await p.keyboard.press('Escape'); await wait(300);
   /* нажатие на карточку не привело к переходу (ссылки нет) — Стелла просит открыть товар самостоятельно */
   await p.evaluate(() => { document.querySelectorAll('.pcard a.stretch').forEach(a => a.removeAttribute('href')); });
-  await p.evaluate(() => window.Astreya.guide.tour('site', 5)); await wait(1300); await T.press('Открыть карточку'); await wait(4800); x = await T.snap();
+  await p.evaluate(() => window.Astreya.guide.tour('site', 6)); await wait(1500); await T.press('Открыть карточку'); await wait(6600); x = await T.snap();
   ok(x && /Откройте товар/.test(x.tx) && x.btns.includes('Пропустить'), 'если карточку нельзя открыть — Стелла предлагает открыть товар самому и продолжить, без ошибок', x && x.tx);
   await p.keyboard.press('Escape'); await wait(200);
   /* калькулятор скидки: Стелла двигает ползунок сама, но при выходе возвращает как было */
-  await p.evaluate(() => window.Astreya.guide.tour('site', 11)); await T.until(() => document.body.getAttribute('data-page') === 'partners' && !document.getElementById('g-spot').hidden, 20000); await wait(2600);
+  await p.evaluate(() => window.Astreya.guide.tour('site', 24)); await T.until(() => document.body.getAttribute('data-page') === 'partners' && !document.getElementById('g-spot').hidden, 30000); await T.at('partners', /При закупке на 150 000/, 30000);
   ok(await p.evaluate(() => document.getElementById('calc-range').value === '150000'), 'калькулятор: Стелла передвинула ползунок на порог 10% (150 000 ₽)');
-  await T.press('Пропустить'); await wait(600);
+  await T.press('Пропустить'); await wait(800);
   ok(await p.evaluate(() => document.getElementById('calc-range').value === '100000' && document.getElementById('g-spot').hidden), '«Пропустить» на калькуляторе: ползунок вернулся на прежнее значение, подсветка снята');
   ok(!p.errs.length, 'в этих сценариях нет ошибок JS и консоли', p.errs); await p.context().close();
 
@@ -258,26 +331,28 @@ const wait = ms => new Promise(r => setTimeout(r, ms));
   ok(sp && await p.evaluate(() => { const pop = document.querySelector('.g-pop'); const r = pop.getBoundingClientRect(); return pop.classList.contains('sheet') && r.bottom <= innerHeight && r.left >= 0 && r.right <= innerWidth; }) && await p.evaluate(() => !document.body.classList.contains('asst-open')), 'на телефоне подсказка — нижняя «шторка» внутри экрана, чат свёрнут', sp);
   await p.keyboard.press('Escape'); await wait(1200);
   await p.evaluate(() => window.Astreya.actions['cmp-clear'] && window.Astreya.actions['cmp-clear']());
-  const mt = {snap: () => p.evaluate(() => { const s = document.getElementById('g-spot'); if (!s || s.hidden) return null; const h = document.querySelector('.g-hole').getBoundingClientRect(), pp = document.querySelector('.g-pop').getBoundingClientRect(); return {page: document.body.getAttribute('data-page'), tx: s.querySelector('.g-tx p').textContent, st: (s.querySelector('.g-st') || {}).textContent || '', btns: [...s.querySelectorAll('.g-ctl button')].map(b => b.textContent.trim()), hole: {x: h.x, y: h.y, w: h.width, h: h.height}, pop: {x: pp.x, y: pp.y, w: pp.width, h: pp.height}, menu: document.body.classList.contains('menu-open')}; }),
+  const mt = {snap: () => p.evaluate(() => { const s = document.getElementById('g-spot'); if (!s || s.hidden) return null; const h = document.querySelector('.g-hole').getBoundingClientRect(), pp = document.querySelector('.g-pop').getBoundingClientRect(); return {page: document.body.getAttribute('data-page'), tx: s.querySelector('.g-tx p').textContent, st: (s.querySelector('.g-st') || {}).textContent || '', btns: [...s.querySelectorAll('.g-ctl button')].map(b => b.textContent.trim()), hole: {x: h.x, y: h.y, w: h.width, h: h.height}, pop: {x: pp.x, y: pp.y, w: pp.width, h: pp.height}, menu: document.body.classList.contains('menu-open'), y: scrollY}; }),
     press: label => p.evaluate(l => { const b = [...document.querySelectorAll('#g-spot .g-ctl button')].find(x => x.textContent.trim() === l); if (b) b.click(); }, label),
     until: async (fn, ms) => { const t0 = Date.now(); while (Date.now() - t0 < (ms || 9000)) { if (await p.evaluate(fn).catch(() => false)) return true; await wait(150); } return false; }};
   const mOk = x => x && x.hole.w > 8 && x.hole.x >= 0 && x.hole.x + x.hole.w <= 391 && x.pop.x >= 0 && x.pop.x + x.pop.w <= 391 && x.pop.y >= 0 && x.pop.y + x.pop.h <= 845 && (x.pop.y + x.pop.h <= x.hole.y + 1 || x.pop.y >= x.hole.y + x.hole.h - 1);
   if (!(await p.evaluate(() => document.body.classList.contains('asst-open')))) { await p.click('#asst-fab'); await p.waitForSelector('#asst-in', {state: 'visible'}); await wait(700); }
   await p.click('.asst-ib-tour'); await mt.until(() => document.body.getAttribute('data-page') === 'home' && !document.getElementById('g-spot').hidden, 25000); await wait(1000);
-  let mx = await mt.snap(); ok(mx && /^1 из 6/.test(mx.st) && mOk(mx) && !mx.menu, 'на телефоне: экскурсия с каталога перешла на главную, шаг 1, карточка — нижняя «шторка», не перекрывает шапку', mx);
+  let mx = await mt.snap(); ok(mx && /^1 из 9/.test(mx.st) && mOk(mx) && !mx.menu, 'на телефоне: экскурсия с каталога перешла на главную, шаг 1, карточка — нижняя «шторка», не перекрывает шапку', mx);
   const mBad = [], mPages = []; let mFinal = null;
-  for (let k = 0; k < 20; k++) {
-    await mt.press(mx.btns.includes('Открыть карточку') ? 'Открыть карточку' : mx.btns.includes('Открыть каталог') && !mx.btns.includes('Закрыть') ? 'Открыть каталог' : 'Далее');
-    await mt.until(() => !!document.querySelector('#g-spot:not([hidden]) .g-tx p'), 25000); await wait(k === 1 || k === 10 ? 2800 : 1900); mx = await mt.snap();
+  for (let k = 1; k < STEP.length; k++) {
+    const [pg, re] = STEP[k];
+    await p.evaluate(() => { const b = document.querySelector('#g-spot .g-ctl .btn-fill'); if (b) b.click(); });
+    mx = await stableAt(mt.snap, pg, re, 45000);
     if (!mx) { mBad.push(['пропал на шаге ' + k]); break; }
-    if (mPages[mPages.length - 1] !== mx.page) mPages.push(mx.page); if (!mOk(mx)) mBad.push([k + ':' + mx.page, mx.tx.slice(0, 50)]);
-    if (k === 1) ok(/1 из/.test(mx.tx) && mx.page === 'catalog' && !mx.menu, 'на телефоне: каталог открыт нажатием на кнопку первого экрана, в поиске набран запрос', mx);
-    if (k === 2) ok(await p.evaluate(() => document.getElementById('f-task').value === 'pigment' && !!document.querySelector('#results.filters-open')), 'на телефоне: панель фильтров раскрылась сама, выбрано назначение «Пигментация»');
-    if (mx.btns.includes('Закрыть')) { mFinal = mx; break; }
+    if (mPages[mPages.length - 1] !== mx.page) mPages.push(mx.page);
+    if (!(mx.page === pg && re.test(mx.tx.replace(/\u00a0/g, ' ')))) mBad.push([k + ': нет нужной реплики', mx.page, mx.tx.slice(0, 50)]); else if (!mOk(mx)) mBad.push([k + ':' + mx.page, mx.tx.slice(0, 50), mx.hole, mx.pop]);
+    if (k === 2) ok(await p.evaluate(q => document.getElementById('cat-q').value === q, T.prod0), 'на телефоне: каталог открыт нажатием на кнопку первого экрана, в поиске набран запрос', mx);
+    if (k === 3) ok(await p.evaluate(() => document.getElementById('f-task').value === 'pigment' && !!document.querySelector('#results.filters-open')), 'на телефоне: панель фильтров раскрылась сама, выбрано назначение «Пигментация»');
+    if (k === STEP.length - 1) mFinal = mx;
   }
-  ok(mPages.join() === 'home,catalog,product,brands,training,news,start,partners,company,contacts', 'на телефоне экскурсия прошла все разделы по порядку: ' + mPages.join(' → '));
+  ok(mPages.join() === 'home,catalog,product,brands,training,news,company,partners,start,contacts', 'на телефоне экскурсия прошла все разделы по порядку: ' + mPages.join(' → '));
   ok(mFinal && /Вот и всё/.test(mFinal.tx) && mFinal.btns.includes('Старт со Стеллой') && !mFinal.menu && mOk(mFinal), 'на телефоне финал: три предложения видны, карточка внутри экрана', mFinal);
-  ok(!mBad.length, 'на телефоне на всех шагах подсвеченный элемент виден и не закрыт карточкой, карточка не выходит за экран', mBad.slice(0, 3));
+  ok(!mBad.length, 'на телефоне на всех ' + STEP.length + ' шагах нужная реплика, подсвеченный элемент виден и не закрыт карточкой, карточка не выходит за экран', mBad.slice(0, 3));
   await mt.press('Закрыть'); await wait(400);
   ok(await p.evaluate(() => document.documentElement.scrollWidth <= innerWidth), 'горизонтальной прокрутки нет');
   ok(!p.errs.length, 'нет ошибок JS на телефоне', p.errs); await p.context().close();

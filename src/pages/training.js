@@ -37,8 +37,10 @@ function trainingPage(ctx, C, P) {
   <section class="sec" id="sched" style="padding-top:0"><div class="wrap">
     <hr class="dash" style="margin-bottom:clamp(50px,7vw,90px)">
     ${C.secHead('Расписание', 'Ближайшие мероприятия')}
+    <div id="sched-filters">
     <div class="tb-row" style="margin-bottom:12px"><span class="tb-lab">Город</span><div class="chips reveal" id="city-chips">${cityChips}</div></div>
     <div class="tb-row" style="margin-bottom:28px"><span class="tb-lab">Формат</span><div class="chips reveal" id="fmt-chips">${fmtChips}</div></div>
+    </div>
     <div class="sem-list" id="sem-list">${sortedEvents.map(e => C.eventRow(P, e)).join('')}</div>
     <div class="empty" id="sem-empty" hidden><b>Мероприятий не найдено</b>Оставьте заявку — сообщим, когда откроется запись.</div>
     ${C.noteBox(`Расписание ориентировочное: актуальные даты и адреса подтверждает менеджер учебного центра. Полная версия — на <a href="${ext.academy}" target="_blank" rel="noopener" style="border-bottom:1px dashed;font-weight:600">academy.acosm.ru</a>.`)}
