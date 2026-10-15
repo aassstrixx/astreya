@@ -206,13 +206,13 @@ module.exports = function components(ctx) {
     </div>
   </div></section>`;
 
-  /* статья учебного центра (внешний материал на academy.acosm.ru) */
+  /* статья учебного центра: карточка без внешней ссылки */
   const articleCard = a => {
     const b = brandById[a.brand];
-    return `<a class="card hov art-card reveal" href="${site.contacts.ext.academy}" target="_blank" rel="noopener" style="${bstyle(b)}">
+    return `<div class="card art-card reveal" style="${bstyle(b)}">
     <div class="cov"><span>${esc(a.tag)}</span></div>
     <div class="ab"><h3>${esc(a.title)}</h3><div class="meta"><span>${dparts(a.date).full}</span><span>${a.min} мин чтения</span></div></div>
-  </a>`;
+  </div>`;
   };
 
   const noteBox = html => `<div class="note">${I.info}<span>${html}</span></div>`;

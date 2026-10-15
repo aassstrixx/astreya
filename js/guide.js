@@ -70,10 +70,14 @@
     if (cur && cur.free) { hole.style.width = '0px'; hole.style.height = '0px'; spotRaf = requestAnimationFrame(place); return; }
     if (!spotEl.isConnected || !shown(spotEl)) { const t = cur && cur.t, again = t ? resolveEl(t) : null; if (again) spotEl = again; else { if (navPending && Date.now() - navPending < 6000) hideSpot(true); else hideSpot(); return; } }          // цель пропала: если это переход, который начала сама экскурсия, — состояние экскурсии сохраняем
     const r = spotEl.getBoundingClientRect(), vw = innerWidth, vh = innerHeight;
-    const x = Math.max(4, r.left - PAD), y = Math.max(4, r.top - PAD), w = Math.min(vw - 8, r.width + PAD * 2);
-    let h = r.height + PAD * 2; if (!(cur && (cur.dockTop || cur.fixed))) h = Math.min(h, Math.max(40, popTop() - 10 - y)); else h = Math.min(h, vh - y - 4);          // рамка обходит блок целиком; если он выше свободной зоны — обрезается по краю комментария, а не наоборот
-    hole.classList.toggle('g-sc', LOCK.prog > 0);          // пока страница едет, рамка «приклеена» к блоку, без отставания
-    hole.style.transform = 'translate(' + Math.round(x) + 'px,' + Math.round(y) + 'px)'; hole.style.width = Math.round(w) + 'px'; hole.style.height = Math.round(h) + 'px';
+    /* рамка — это сам блок с отступом, обрезанный краем экрана: пока страница едет, она «приклеена» к блоку и въезжает вместе с ним с края экрана; пока блока на экране нет — рамки нет (не «открывается заранее» поверх чужого места) */
+    const scrolling = LOCK.prog > 0, x = Math.max(4, r.left - PAD), w = Math.min(vw - 8, r.width + PAD * 2), yT = r.top - PAD, yB = r.bottom + PAD;
+    let y = Math.max(4, yT), h = Math.min(vh - 4, yB) - y;
+    const gone = h < 2;
+    if (gone) { y = yB <= 4 ? 4 : vh - 4; h = 0; }
+    else if (!scrolling && !(cur && (cur.dockTop || cur.fixed))) h = Math.min(h, Math.max(40, popTop() - 10 - y));          // блок выше свободной зоны — обрезается по краю комментария, а не наоборот
+    hole.classList.toggle('g-sc', scrolling || gone);
+    hole.style.transform = 'translate(' + Math.round(x) + 'px,' + Math.round(y) + 'px)'; hole.style.width = Math.round(gone ? 0 : w) + 'px'; hole.style.height = Math.round(h) + 'px';
     spotRaf = requestAnimationFrame(place);
   }
   /* прокрутка к элементу — только та, что делает сама экскурсия: после неё страница снова «закреплена» (см. LOCK ниже) */
@@ -120,6 +124,7 @@
         if (tok !== scrollTok) return end();          // началась другая прокрутка или показ закрыт
         const t = Math.min(1, (now - t0) / dur), e = jump ? 1 : t < .5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
         window.scrollTo({top: y0 + dist * e, behavior: 'instant'});
+        if (spotRaf && spotEl) { cancelAnimationFrame(spotRaf); place(); }          // рамка встаёт на место в том же кадре, что и страница: без отставания на кадр
         if (t < 1) requestAnimationFrame(step); else end();
       };
       requestAnimationFrame(step);
@@ -299,12 +304,12 @@
     },
     async type(a, c) {                                                              // печатает по буквам, неспешно; поле и набранное подсвечены синим
       const el = qsel(a.type, c); if (!el) return; await ensureView(el); if (!alive(c.id)) return;
-      const word = String(a.text || '').replace('@prod', String(((D.products || [])[0] || {}).name || '').split(/\s+/)[0]), [x, y] = aim(el, 'start');
+      const word = String(a.text || '').replace('@prod', String(((D.products || [])[0] || {}).name || '').split(/\s+/)[0]).replace('@mail', demoData('').email), [x, y] = aim(el, 'start');          // @mail — придуманный адрес (example.com)
       await cursorGo(x, y, c.id); await cursorPress(c.id); if (!alive(c.id)) return;
       try { el.focus({preventScroll: true}); } catch (e) {}
       el.classList.add('g-typing'); undo.push(() => { el.classList.remove('g-typing'); if ($('#cat-q') === el) resetCat(); else { el.value = ''; fire(el, 'input'); } });
       el.value = ''; fire(el, 'input'); await sleep(350); cursorGo(x + 210, y + 18, c.id, 700);          // курсор отходит в сторону, чтобы не закрывать набираемые буквы
-      for (let k = 1; k <= word.length; k++) { if (!alive(c.id)) return; el.value = word.slice(0, k); fire(el, 'input'); await sleep(250 + (k % 3) * 55); }
+      for (let k = 1; k <= word.length; k++) { if (!alive(c.id)) return; el.value = word.slice(0, k); fire(el, 'input'); await sleep((a.per || 250) + (k % 3) * Math.round((a.per || 250) / 4.5)); }
       c.vars[a.as || 'q'] = word; await sleep(600); await pause(260);          // поиск в каталоге откликается с задержкой — ждём её
     },
     async choose(a, c) {                                                            // курсор нажимает на список, меню раскрывается, курсор скользит вниз и выбирает пункт

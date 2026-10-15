@@ -101,7 +101,7 @@ const wait = ms => new Promise(r => setTimeout(r, ms));
     ['product', /Тут собраны факты/], ['product', /«В список запроса» копит/], ['product', /главная кнопка карточки/],
     ['brands', /осталось брендов — \d+/], ['brands', /У каждого бренда своя карточка/],
     ['training', /календарь встреч/], ['training', /Выбрала «.+» и «.+» — осталось встреч: \d+/], ['training', /Так выглядит встреча/], ['training', /преподаватели центра/], ['training', /материалы для специалистов/],
-    ['news', /Нажала «.+» — и показаны только эти записи: \d+/], ['news', /Вот пример: «.+»/], ['news', /Внизу страницы подписка/],
+    ['news', /Нажала «.+» — и показаны только эти записи: \d+/], ['news', /Вот пример: «.+»/], ['news', /Почта введена/],
     ['company', /Тут мы рассказываем о себе/], ['company', /Вот, нажала «.+»/], ['company', /помогает решиться на первый заказ/],
     ['partners', /Что получает партнёр/], ['partners', /При закупке на 150 000 ₽ ваша скидка — 10%\..*ориентир/], ['partners', /Ступени такие: 5% от 50 000 ₽, 10% от 150 000 ₽, 15% от 300 000 ₽/], ['partners', /Готово: заявка заполнена/],
     ['start', /Здесь мы разговариваем/], ['start', /Можно написать всё одной фразой/],
@@ -181,6 +181,7 @@ const wait = ms => new Promise(r => setTimeout(r, ms));
     if (i === 10) ok(await p.evaluate(() => { const v = [...document.querySelectorAll('#br-grid .bl-card')].filter(c => !c.hidden).length; return v > 0 && v < document.querySelectorAll('#br-grid .bl-card').length; }), 'шаг «бренды по задаче»: курсор нажал на задачу — часть брендов скрылась, остальные видны');
     if (i === 13) ok(await p.evaluate(() => document.querySelector('#city-chips .chip.on').getAttribute('data-id') !== 'all' && document.querySelector('#fmt-chips .chip.on').getAttribute('data-id') !== 'all'), 'шаг «обучение: фильтры»: выбраны город и формат, расписание сузилось');
     if (i === 17) ok(await p.evaluate(() => { const on = document.querySelector('#news-tabs .chip.on, #news-tabs [aria-pressed="true"]'); return !!on && !/^Все/.test(on.textContent.trim()); }), 'шаг «новости»: курсор нажал на вкладку — показана не вся лента');
+    if (i === 19) { const sb = await p.evaluate(() => { const e = document.querySelector('.ftr-sub input[type=email]'), c = document.querySelector('.ftr-sub input[type=checkbox]'); return {v: e.value, agree: c ? c.checked : null}; }); ok(/^demo\.[a-z]+\d\d@example\.com$/.test(sb.v) && sb.agree === false && /выдуманн|придума/.test(x2.tx) && /[Сс]огласи/.test(x2.tx) && !leadPosts.length, 'шаг «подписка»: Стелла ввела придуманную почту (' + sb.v + ') в поле подписки; согласие не отмечено, ничего не отправлено', [sb, x2.tx]); }
     if (i === 24) ok(await p.evaluate(() => document.getElementById('calc-range').value === '150000'), 'калькулятор: курсор взял ползунок и довёл его до порога 10% (150 000 ₽)');
     if (i === 26) ok(await p.evaluate(() => !document.querySelector('#modal.open')) && !(await p.evaluate(() => sessionStorage.getItem('astreya:rl') || localStorage.getItem('astreya:rl'))), 'экскурсия не отправляла форм и ничего не добавила в список запроса — заявка и «корзина» не затронуты');
     if (i === 26 || i === 30) {
@@ -259,11 +260,13 @@ const wait = ms => new Promise(r => setTimeout(r, ms));
   await p.evaluate(() => window.Astreya.guide.tour('site', 14)); await T.at('training', /Так выглядит встреча/, 40000);
   await T.next();
   {
-    const ys = [], ops = [], t0 = Date.now(); while (Date.now() - t0 < 5500) { const r = await p.evaluate(() => { const pp = document.querySelector('#g-spot .g-pop'), hh = document.querySelector('#g-spot .g-hole'); return [Math.round(scrollY), pp ? +getComputedStyle(pp).opacity : 0, hh ? +getComputedStyle(hh).opacity : 0]; }); ys.push([Date.now() - t0, r[0]]); ops.push([ys.length > 1 && r[0] !== ys[ys.length - 2][1], r[1], r[2]]); await wait(35); }
+    const ys = [], ops = [], t0 = Date.now(); while (Date.now() - t0 < 5500) { const r = await p.evaluate(() => { const pp = document.querySelector('#g-spot .g-pop'), hh = document.querySelector('#g-spot .g-hole'), tg = document.querySelector('#teachers .rd-head'), hr = hh ? hh.getBoundingClientRect() : null, tr = tg ? tg.getBoundingClientRect() : null; return [Math.round(scrollY), pp ? +getComputedStyle(pp).opacity : 0, hh ? +getComputedStyle(hh).opacity : 0, hr && tr ? [hr.top, hr.bottom, hr.width, tr.top, tr.bottom, innerHeight] : null]; }); ys.push([Date.now() - t0, r[0]]); ops.push([ys.length > 1 && r[0] !== ys[ys.length - 2][1], r[1], r[2], r[3]]); await wait(35); }
     const mv = ops.filter(o => o[0]), shownWhileMoving = mv.filter(o => o[1] > .9 && o[2] > .5).length, last = ops[ops.length - 1];
     const total = Math.abs(ys[ys.length - 1][1] - ys[0][1]); let maxStep = 0, dir = 0, back = 0; for (let k = 1; k < ys.length; k++) { const d = ys[k][1] - ys[k - 1][1]; maxStep = Math.max(maxStep, Math.abs(d)); if (d && dir && Math.sign(d) !== dir) back++; if (d) dir = Math.sign(d); }
     const moving = ys.filter((r, k) => k && r[1] !== ys[k - 1][1]).length;
     ok(mv.length >= 10 && shownWhileMoving >= mv.length * .85 && last[1] > .9 && last[2] > .5, 'пока страница прокручивается, рамка и слова Стеллы остаются на экране (' + shownWhileMoving + ' из ' + mv.length + ' кадров)', {mv: mv.length, shownWhileMoving, last});
+    const misplaced = ops.filter(o => o[3] && o[3][2] > 0 && o[3][1] - o[3][0] > 2 && (o[3][0] < Math.max(4, o[3][3] - 8) - 4 || o[3][0] > Math.max(4, o[3][3] - 8) + 4 || o[3][1] > Math.min(o[3][5] - 4, o[3][4] + 8) + 4)).length, ghost = ops.filter(o => o[3] && o[3][2] > 0 && o[3][1] - o[3][0] > 2 && (o[3][4] + 8 < 0 || o[3][3] - 8 > o[3][5])).length;
+    ok(misplaced === 0 && ghost === 0 && mv.length >= 10, 'рамка не «открывается заранее»: пока блока нет на экране, рамки нет; когда он въезжает — рамка приклеена к нему и обходит его (' + mv.length + ' кадров движения, лишних рамок: ' + (misplaced + ghost) + ')', {misplaced, ghost});
     ok(total > 300 && moving >= 12 && maxStep <= total * 0.2 && back === 0, 'переход к другой части страницы идёт плавной прокруткой: ' + moving + ' промежуточных положений, без рывков и возвратов (макс. шаг ' + maxStep + ' px из ' + total + ')', {total, moving, maxStep, back});
   }
   ok(!p.errs.length, 'в обычном темпе нет ошибок JS и консоли', p.errs); await p.context().close();

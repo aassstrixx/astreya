@@ -47,7 +47,6 @@ function brandPage(ctx, C, P, b) {
       <div class="row reveal" style="margin-top:34px">
         <a class="btn btn-fill" href="${C.u(P, 'catalog.html')}?brand=${b.id}" data-track="catalog_click" data-place="brand-hero">Смотреть ассортимент ${I.arrow}</a>
         ${partnerLink(C, P, 'brand-hero')}
-        <a class="btn btn-lnk" href="${esc(b.site)}" target="_blank" rel="noopener">Каталог на acosm.ru ${I.external}</a>
       </div>
       <div class="b-cols">
         <div class="txt reveal">${b.long.map(p => `<p>${esc(p)}</p>`).join('')}<div class="tasks-line" style="margin-top:24px">${b.tasks.map(t => C.tag(ctx.taskById[t].label, 'blue')).join('')}</div></div>

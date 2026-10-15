@@ -43,7 +43,7 @@ function trainingPage(ctx, C, P) {
     </div>
     <div class="sem-list" id="sem-list">${sortedEvents.map(e => C.eventRow(P, e)).join('')}</div>
     <div class="empty" id="sem-empty" hidden><b>Мероприятий не найдено</b>Оставьте заявку — сообщим, когда откроется запись.</div>
-    ${C.noteBox(`Расписание ориентировочное: актуальные даты и адреса подтверждает менеджер учебного центра. Полная версия — на <a href="${ext.academy}" target="_blank" rel="noopener" style="border-bottom:1px dashed;font-weight:600">academy.acosm.ru</a>.`)}
+    ${C.noteBox(`Расписание ориентировочное: актуальные даты и адреса подтверждает менеджер учебного центра.`)}
   </div></section>
 
   ${ctx.redesign && ctx.redesign.teachers ? '' : `<section class="sec tint"><div class="wrap">
@@ -62,7 +62,7 @@ function trainingPage(ctx, C, P) {
   </div></section>
 
   <section class="sec"${ctx.redesign ? ' id="materials"' : ''} style="padding-top:0"><div class="wrap">
-    ${C.secHead('Статьи', 'Материалы для специалистов', `<a class="lnk" href="${ext.academy}" target="_blank" rel="noopener">academy.acosm.ru ${I.arrow}</a>`)}
+    ${C.secHead('Статьи', 'Материалы для специалистов')}
     <div class="grid g3">${training.articles.slice(0, 3).map(C.articleCard).join('')}</div>
   </div></section>
 
