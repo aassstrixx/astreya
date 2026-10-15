@@ -77,13 +77,9 @@ const cfg = JSON.parse(fs.readFileSync(pth.join(ROOT, 'data/redesign.json'), 'ut
     await p.goto(base + 'company.html'); await skipSplash(); await p.evaluate(() => localStorage.removeItem('astreya:rl'));
     const qc = () => p.evaluate(() => { const e = document.getElementById('qc'); if (!e) return null; const cs = getComputedStyle(e); return {on: e.classList.contains('on'), vis: cs.display !== 'none' && +cs.opacity > 0.5}; });
     if (mobile) {
-      let s = await qc(); ok(s && !s.on && !s.vis, 'вверху страницы кнопка связи не показана');
-      await p.evaluate(() => window.scrollTo({top: 900, behavior: 'instant'})); await wait(900); s = await qc(); ok(s && s.on && s.vis, 'после небольшой прокрутки кнопка появляется');
-      await click('#qc .qc-btn'); const links = await p.$$eval('#qc a.qc-item', e => e.map(a => a.getAttribute('href'))); ok(links.length === 2 && /^tel:\+7/.test(links[0]) && /^https:\/\/wa\.me\//.test(links[1]), 'меню: звонок и WhatsApp из контактов сайта', links);
-      await p.keyboard.press('Escape'); await wait(300); ok(await p.$eval('#qc-menu', e => e.hidden), 'Esc закрывает меню связи');
-      await p.evaluate(() => window.scrollTo({top: document.documentElement.scrollHeight, behavior: 'instant'})); await wait(900); s = await qc(); ok(s && !s.on, 'у подвала кнопка связи прячется');
-      await p.goto(base + 'contacts.html'); await skipSplash(); await p.evaluate(() => window.scrollTo({top: 900, behavior: 'instant'})); await wait(700); s = await qc(); ok(!s || !s.vis, 'на странице «Контакты» кнопки связи нет (контакты и так на экране)');
-      await p.goto(base + 'index.html'); await skipSplash(); await p.evaluate(() => { const j = document.getElementById('jar-story'); window.scrollTo({top: j.offsetTop + j.offsetHeight * 0.4, behavior: 'instant'}); }); await wait(1500); s = await qc(); ok(s && !s.on, 'во время вступления с баночкой кнопка связи не показывается');
+      /* плавающая кнопка «Быстрая связь» (позвонить / WhatsApp / заказать звонок) в правом нижнем углу телефона убрана по просьбе: флаг extras.quickContact выключен */
+      await p.evaluate(() => window.scrollTo({top: 900, behavior: 'instant'})); await wait(900); let s = await qc(); ok(!s, 'на телефоне нет круглой кнопки быстрой связи в правом нижнем углу (после прокрутки тоже)', s);
+      await p.evaluate(() => window.scrollTo({top: document.documentElement.scrollHeight, behavior: 'instant'})); await wait(700); ok(await p.evaluate(() => !document.querySelector('#qc, .qc-btn, .qc-menu')), 'ни кнопки, ни её меню в странице нет');
     } else { const s = await qc(); ok(!s || !s.vis, 'на компьютере кнопки быстрой связи нет'); }
 
     /* ---- печать ---- */
@@ -115,7 +111,6 @@ const cfg = JSON.parse(fs.readFileSync(pth.join(ROOT, 'data/redesign.json'), 'ut
     ok(posted2 && posted2.type === 'callback' && posted2.phone && !posted2.email, 'на сервер ушла заявка типа «callback» (имя + телефон, без e-mail)', posted2 && posted2.type);
     await p.keyboard.press('Escape'); await wait(500); await p.unroute('**/api/lead');
     await p.goto(base + 'products/biretix-gel-protiv-nesovershenstv.html'); await skipSplash(); ok(await p.$$eval('.p-req button[data-type="callback"]', e => e.length) === 1, 'на странице товара в карточке запроса есть «Заказать звонок»');
-    if (mobile) { await p.evaluate(() => window.scrollTo({top: 900, behavior: 'instant'})); await wait(800); await click('#qc .qc-btn'); ok(await p.$$eval('#qc .qc-item', e => e.length) === 3, 'в меню быстрой связи три пункта: звонок, WhatsApp, заказать звонок'); await click('#qc button.qc-item'); ok(await p.$eval('#modal', e => e.classList.contains('open')) && await p.$eval('#qc-menu', e => e.hidden), 'пункт открывает форму и закрывает меню связи'); await p.keyboard.press('Escape'); await wait(500); }
 
     /* ---- быстрый просмотр ---- */
     await p.goto(base + 'catalog.html'); await skipSplash(); await p.evaluate(() => { localStorage.removeItem('astreya:cmp'); localStorage.removeItem('astreya:rl'); });
@@ -283,9 +278,6 @@ const cfg = JSON.parse(fs.readFileSync(pth.join(ROOT, 'data/redesign.json'), 'ut
       D.brands.forEach(b => { const r = A.assistant.answer('Расскажите про ' + b.name); if (!r.links.some(l => l.h === 'brands/' + b.id + '.html') && !r.cards.some(id => (D.products.find(x => x.id === id) || {}).brand === b.id)) bad.push('бренд ' + b.name); });
       D.tasks.forEach(t => { const r = A.assistant.answer(t.label); if (!r.cards.length || !r.links.some(l => /task=/.test(l.h))) bad.push('задача ' + t.label); }); return bad; });
     ok(sweep.length === 0, 'на все товары, бренды и задачи каталога помощник отвечает по существу', sweep);
-    if (mobile) { await p.goto(base + 'company.html'); await skipSplash(); await p.evaluate(() => window.scrollTo({top: 900, behavior: 'instant'})); await wait(900);
-      const ov = await p.evaluate(() => { const a = document.getElementById('asst-fab').getBoundingClientRect(), q = document.getElementById('qc').getBoundingClientRect(); return {fab: [Math.round(a.top), Math.round(a.bottom)], qc: [Math.round(q.top), Math.round(q.bottom)], inter: !(a.right <= q.left || a.left >= q.right || a.bottom <= q.top || a.top >= q.bottom)}; });
-      ok(!ov.inter, 'на телефоне «Помощник» и «Быстрая связь» не накладываются', ov); }
 
     /* ---- поле «Комментарий»: без растяжки, растёт по мере набора ---- */
     await p.goto(base + 'partners.html'); await skipSplash(); await p.locator('main textarea').first().scrollIntoViewIfNeeded();

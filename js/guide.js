@@ -62,65 +62,79 @@
   const bold = t => esc(t).replace(/\*\*([^*]+)\*\*/g, '<b>$1</b>');
   const pickV = v => Array.isArray(v) ? v[Math.floor(Math.random() * v.length)] : v;          // реплика может быть списком вариантов: каждый раз берётся один, чтобы не повторяться
   const PAD = 8;
+  /* Комментарий Стеллы стоит всегда на одном месте и сам ни к чему не «подстраивается»: на компьютере — внизу по центру, на телефоне — нижняя «шторка» (CSS, .g-pop). Подстраивается страница: блок ставится выше комментария (см. scrollTarget), рамка обходит блок целиком. */
+  const popTop = () => { const p = $('#g-spot .g-pop'); return p ? Math.round(p.getBoundingClientRect().top) : innerHeight; };
   function place() {
     spotRaf = 0; const s = $('#g-spot'); if (!s || s.hidden || !spotEl) return;
-    if (cur && cur.free) { const hole = $('.g-hole', s), pop = $('.g-pop', s); hole.style.width = '0px'; hole.style.height = '0px'; if (mobile()) { pop.style.left = ''; pop.style.top = ''; pop.classList.add('sheet'); pop.classList.remove('sheet-top'); } else { pop.classList.remove('sheet'); pop.style.left = Math.round(innerWidth - (pop.offsetWidth || 320) - 24) + 'px'; pop.style.top = Math.round(innerHeight - (pop.offsetHeight || 160) - 96) + 'px'; } spotRaf = requestAnimationFrame(place); return; }
+    const hole = $('.g-hole', s), pop = $('.g-pop', s); pop.classList.toggle('sheet', mobile()); pop.classList.toggle('sheet-top', mobile() && !!(cur && cur.dockTop)); pop.classList.toggle('dock-top', !mobile() && !!(cur && cur.dockTop));
+    if (cur && cur.free) { hole.style.width = '0px'; hole.style.height = '0px'; spotRaf = requestAnimationFrame(place); return; }
+    if (s.classList.contains('g-moving')) { spotRaf = requestAnimationFrame(place); return; }          // страница едет — рамку и слова не трогаем
     if (!spotEl.isConnected || !shown(spotEl)) { const t = cur && cur.t, again = t ? resolveEl(t) : null; if (again) spotEl = again; else { if (navPending && Date.now() - navPending < 6000) hideSpot(true); else hideSpot(); return; } }          // цель пропала: если это переход, который начала сама экскурсия, — состояние экскурсии сохраняем
-    const r = spotEl.getBoundingClientRect(), vw = innerWidth, vh = innerHeight, hole = $('.g-hole', s), pop = $('.g-pop', s);
-    const x = Math.max(4, r.left - PAD), y = Math.max(4, r.top - PAD), w = Math.min(vw - 8, r.width + PAD * 2), h = Math.min(r.height + PAD * 2, vh - y - 4);          // рамка всегда целиком вокруг блока; обрезается только самим краем экрана
-    const scrolling = LOCK.prog > 0; hole.classList.toggle('g-sc', scrolling);          // пока страница едет, рамка «приклеена» к блоку, без отставания
-     hole.style.transform = 'translate(' + Math.round(x) + 'px,' + Math.round(y) + 'px)'; hole.style.width = Math.round(w) + 'px'; hole.style.height = Math.round(h) + 'px';
-    if (mobile()) {
-      pop.style.left = ''; pop.style.top = ''; pop.classList.add('sheet');
-      const dock = document.body.classList.contains('dock-on') ? (parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--dock-h')) || 66) : 0, ph = pop.offsetHeight || 200;
-      const top = vh - (y + h) - dock < ph + 16 && y > ph + 16; pop.classList.toggle('sheet-top', top);          // внизу не хватает места (цель ниже или плашки в доке) — подсказка уходит наверх, цель остаётся видна
-      const popTop = vh - ph - 12 - dock; if (!top && y + h > popTop - 6 && y < popTop - 70) hole.style.height = Math.round(popTop - 6 - y) + 'px';          // места нет ни сверху, ни снизу: подсвечиваем только ту часть, что не закрыта карточкой
-    }
-    else {
-      pop.classList.remove('sheet'); const pw = pop.offsetWidth || 320, ph = pop.offsetHeight || 120, prev = pop.getAttribute('data-side');
-      if (scrolling && prev) { spotRaf = requestAnimationFrame(place); return; }          // пока страница едет, карточка стоит; на новое место встанет плавно, когда прокрутка кончится
-      let top, left, below = y + h + 14, above = y - ph - 14;
-      const fitB = below + ph <= vh - 12, fitT = above >= 12, rx = x + w + 14, lx = x - 14 - pw, fitR = rx + pw <= vw - 12, fitL = lx >= 12, sideTop = Math.min(Math.max(12, y), vh - ph - 12);          // сторона, с которой карточка встала, не прыгает: меняется, только если там уже не помещается
-      let side = cur && cur.above && fitT ? 't' : prev === 'b' && fitB ? 'b' : prev === 't' && fitT ? 't' : prev === 'r' && fitR ? 'r' : prev === 'l' && fitL ? 'l' : fitB ? 'b' : fitT ? 't' : fitR ? 'r' : fitL ? 'l' : 'f';
-      left = Math.min(Math.max(12, x + w / 2 - pw / 2), vw - pw - 12);
-      if (side === 'b') top = below; else if (side === 't') top = above; else if (side === 'r') { top = sideTop; left = rx; } else if (side === 'l') { top = sideTop; left = lx; } else top = Math.max(12, vh - ph - 16);
-      pop.style.left = Math.round(left) + 'px'; pop.style.top = Math.round(top) + 'px'; pop.setAttribute('data-side', side);
-    }
+    const r = spotEl.getBoundingClientRect(), vw = innerWidth, vh = innerHeight;
+    const x = Math.max(4, r.left - PAD), y = Math.max(4, r.top - PAD), w = Math.min(vw - 8, r.width + PAD * 2);
+    let h = r.height + PAD * 2; if (!(cur && (cur.dockTop || cur.fixed))) h = Math.min(h, Math.max(40, popTop() - 10 - y)); else h = Math.min(h, vh - y - 4);          // рамка обходит блок целиком; если он выше свободной зоны — обрезается по краю комментария, а не наоборот
+    hole.style.transform = 'translate(' + Math.round(x) + 'px,' + Math.round(y) + 'px)'; hole.style.width = Math.round(w) + 'px'; hole.style.height = Math.round(h) + 'px';
     spotRaf = requestAnimationFrame(place);
   }
   /* прокрутка к элементу — только та, что делает сама экскурсия: после неё страница снова «закреплена» (см. LOCK ниже) */
-  function scrollTarget(el, frac, fit) {
-    for (let n = el; n && n !== document.body && n.nodeType === 1; n = n.parentElement) { if (n.id === 'hdr' || getComputedStyle(n).position === 'fixed') return null; }          // шапка, меню и кнопка Стеллы закреплены на экране — страницу не прокручиваем
-    const r = el.getBoundingClientRect(), vh = innerHeight, hdr = 76, sp = $('#g-spot'), pop = sp && !sp.hidden ? $('.g-pop', sp) : null, ph = (pop && pop.offsetHeight) || (mobile() ? 230 : 240);
-    if (frac != null) { const to = Math.max(0, Math.round(scrollY + r.top - Math.max(hdr + 16, vh * frac))); return Math.abs(to - scrollY) < 6 ? null : to; }          // шаг сам просит, на какой высоте экрана поставить блок
-    if (!fit) { if (r.top >= hdr + 10 && r.bottom <= vh - (mobile() ? 190 : 24) && r.height < vh * .8) return null; }          // и так на виду
-    /* блок и карточка Стеллы должны поместиться вместе: на компьютере карточка под блоком, на телефоне — «шторка» внизу */
-    let top, fits;
-    if (mobile()) { const dock = document.body.classList.contains('dock-on') ? (parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--dock-h')) || 66) : 0, free = vh - ph - 22 - dock; top = Math.max(hdr + 10, hdr + (free - hdr - r.height) / 2); fits = r.bottom <= free; }
-    else { top = Math.max(hdr + 16, Math.min(vh * .38, (vh - (r.height + 14 + ph)) / 2)); fits = r.bottom + 14 + ph <= vh - 12; }
-    if (fit && fits && r.top >= hdr + 8) return null;          // уже помещается — не двигаем
-    return Math.max(0, Math.round(scrollY + r.top - top));
+  const HDR = 76;
+  /* свободная зона для показа: между шапкой и комментарием Стеллы (внизу) — либо между комментарием (вверху) и низом экрана; высота комментария — по тексту этого шага */
+  function zone(topDock) {
+    const vh = innerHeight, sp = $('#g-spot'), pop = sp && !sp.hidden ? $('.g-pop', sp) : null, ph = (pop && pop.offsetHeight) || (mobile() ? 220 : 170);
+    if (topDock) { const t = (mobile() ? 80 : 88) + ph + 18; return {top: t, bottom: vh - 24}; }
+    const b = mobile() ? 12 : 20;          // нижняя плашка сайта (список запроса, «следующий шаг») на время показа скрыта — комментарий стоит у самого низа
+    return {top: HDR + 14, bottom: vh - b - ph - 14};
   }
+  const isFixedEl = el => { for (let n = el; n && n !== document.body && n.nodeType === 1; n = n.parentElement) { if (n.id === 'hdr' || getComputedStyle(n).position === 'fixed') return true; } return false; };
+  /* куда прокрутить страницу, чтобы блок (и то, что рядом должно быть видно) оказался в свободной зоне; если страница кончается и выше блок не поднять — комментарий уходит наверх */
+  function planScroll(el, o) {
+    o = o || {}; if (isFixedEl(el)) return {to: null, dockTop: !!o.dockTop, fixed: true};
+    let r = el.getBoundingClientRect(); const vh = innerHeight, maxS = Math.max(0, document.documentElement.scrollHeight - innerHeight);
+    if (o.keep) { const k = o.keep.getBoundingClientRect(); r = {top: Math.min(r.top, k.top), bottom: Math.max(r.bottom, k.bottom), height: Math.max(r.bottom, k.bottom) - Math.min(r.top, k.top)}; }
+    if (o.frac != null) { const to = Math.max(0, Math.round(scrollY + r.top - Math.max(HDR + 16, vh * o.frac))); return {to: Math.abs(to - scrollY) < 6 ? null : to, dockTop: !!o.dockTop}; }
+    if (!o.fit) { return {to: (r.top >= HDR + 10 && r.bottom <= vh - (mobile() ? 190 : 24) && r.height < vh * .8) ? null : Math.max(0, Math.round(scrollY + r.top - Math.max(HDR + 16, Math.min(vh * (mobile() ? .3 : .38), (vh - r.height) / 2)))), dockTop: !!o.dockTop}; }          // обычная прокрутка к элементу, когда нужно просто показать
+    let best = null;
+    for (const td of o.dockTop ? [true] : [false, true]) {
+      const z = zone(td), room = z.bottom - z.top - PAD * 2, want = z.top + PAD + Math.max(0, room - r.height) * .4;
+      if (r.top >= z.top + PAD - 4 && r.bottom <= z.bottom - PAD) return {to: null, dockTop: td};          // уже помещается — не двигаем
+      const to = Math.min(maxS, Math.max(0, Math.round(scrollY + r.top - want))), shift = to - scrollY, nt = r.top - shift, nb = r.bottom - shift;
+      const bad = Math.max(0, z.top + PAD - 4 - nt) + Math.max(0, nb - (z.bottom - PAD));          // насколько блок всё равно заходит под комментарий или шапку
+      const res = {to: Math.abs(shift) < 2 ? null : to, dockTop: td};
+      if (!bad) return res; if (!best || bad < best.bad) best = Object.assign(res, {bad});
+    }
+    const res = best;
+    return res;
+  }
+  const scrollTarget = (el, frac, fit, keep) => { const pl = planScroll(el, {frac, fit, keep, dockTop: !!(cur && cur.dockTop)}); return pl.to; };
   const LOCK = {on: false, y: 0, prog: 0};
   function lockPage(on) { LOCK.on = on; LOCK.y = scrollY; }
   /* плавная прокрутка «с разгоном и торможением»: чем дальше ехать, тем дольше, но без рывков; встроенная плавность браузера на дальних расстояниях слишком резкая */
-  let scrollTok = 0;
-  function progScroll(top) {
+  let scrollTok = 0, revealT = 0;
+  const spotMoving = on => { const sp = $('#g-spot'); if (!sp || sp.hidden) return; clearTimeout(revealT); revealT = 0; if (on) { sp.classList.add('g-moving'); return; } revealT = setTimeout(() => { revealT = 0; reveal(); }, Math.round(160 / speed())); };
+  /* страница доехала: сначала появляется рамка, потом (через мгновение) комментарий Стеллы */
+  function reveal() {
+    const sp = $('#g-spot'); if (!sp || sp.hidden || !sp.classList.contains('g-moving')) return; const hole = $('.g-hole', sp), pop = $('.g-pop', sp);
+    hole.classList.add('g-nt'); cancelAnimationFrame(spotRaf); sp.classList.remove('g-moving'); place(); requestAnimationFrame(() => requestAnimationFrame(() => hole.classList.remove('g-nt')));
+    pop.classList.remove('in'); setTimeout(() => { if (!sp.classList.contains('g-moving') && !sp.hidden) { void pop.offsetWidth; pop.classList.add('in'); } }, Math.round(380 / speed()));
+  }
+  function progScroll(top, jumpOver) {
     if (top == null || Math.abs(top - scrollY) < 2) { LOCK.y = scrollY; return Promise.resolve(); }
-    const tok = ++scrollTok, y0 = scrollY, dist = top - y0, dur = Math.max(60, Math.round(Math.min(1700, 460 + Math.sqrt(Math.abs(dist)) * 24) / speed())), t0 = performance.now();
-    LOCK.prog++;
+    const tok = ++scrollTok, y0 = scrollY, dist = top - y0, jump = !!jumpOver && Math.abs(dist) > jumpOver, k = mobile() ? 1.3 : 1, dur = jump ? 40 : Math.max(60, Math.round(Math.min(2000, (480 + Math.sqrt(Math.abs(dist)) * 26) * k) / speed())), t0 = performance.now();          // из начала главной (вступление с баночкой) к первому кадру — сразу: не показываем перемотку всего вступления
+    LOCK.prog++; if (Math.abs(dist) > 50) spotMoving(true);
     return new Promise(res => {
-      const end = () => { LOCK.prog = Math.max(0, LOCK.prog - 1); LOCK.y = scrollY; res(); };
+      const end = () => { LOCK.prog = Math.max(0, LOCK.prog - 1); LOCK.y = scrollY; if (!LOCK.prog) spotMoving(false); res(); };
       const step = now => {
         if (tok !== scrollTok) return end();          // началась другая прокрутка или показ закрыт
-        const t = Math.min(1, (now - t0) / dur), e = t < .5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+        const t = Math.min(1, (now - t0) / dur), e = jump ? 1 : t < .5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
         window.scrollTo({top: y0 + dist * e, behavior: 'instant'});
         if (t < 1) requestAnimationFrame(step); else end();
       };
       requestAnimationFrame(step);
     });
   }
-  const scrollTo = (el, frac, fit) => progScroll(scrollTarget(el, frac, fit));
+  /* ждёт, пока страница доехала и всё появилось на экране (рамка, комментарий) */
+  const shownWait = async id => { while ((LOCK.prog > 0 || revealT || ($('#g-spot') || {classList: {contains: () => false}}).classList.contains('g-moving')) && alive(id)) await new Promise(r => setTimeout(r, 40)); await sleep(520); };
+  const scrollTo = (el, frac, fit, keep) => progScroll(scrollTarget(el, frac, fit, keep));
   /* пока идёт экскурсия, страница не прокручивается колесом, пальцем, клавишами и ползунком: подсветка и Стелла стоят на месте, листает только сама Стелла */
   const stopScroll = e => { if (!LOCK.on) return; if (e.target && e.target.closest && e.target.closest('#asst')) return; e.preventDefault(); e.stopImmediatePropagation(); };
   ['wheel', 'touchmove'].forEach(ev => addEventListener(ev, stopScroll, {passive: false, capture: true}));
@@ -138,17 +152,21 @@
     $$('.g-pulse').forEach(e => { if (e !== el) e.classList.remove('g-pulse'); });
     $('.g-tx', s).innerHTML = '<p>' + bold(cfg.text || '') + '</p>' + (cfg.prog ? progHTML(cfg.prog) : '');
     const bt = (cfg.buttons || []).map(b => '<button class="btn ' + (b.primary ? 'btn-fill' : b.act === 'asst-open' || b.act === 'g-spot-x' ? 'btn-lnk' : 'btn-ghost') + ' btn-sm" type="button" data-act="' + esc(b.act) + '"' + (b.d ? ' data-d="' + esc(JSON.stringify(b.d)) + '"' : '') + '>' + esc(b.l) + '</button>').join('');
-    $('.g-ctl', s).innerHTML = bt; s.hidden = false; document.body.classList.add('g-on');
+    s.classList.toggle('g-nodim', cfg.dim === false); $('.g-ctl', s).innerHTML = bt; s.hidden = false; document.body.classList.add('g-on'); s.classList.remove('g-moving'); clearTimeout(revealT); revealT = 0;
+    pop.classList.toggle('sheet', mobile()); pop.classList.toggle('sheet-top', mobile() && !!cfg.dockTop); pop.classList.toggle('dock-top', !mobile() && !!cfg.dockTop); pop.style.minHeight = '';
+    if (cfg.reserve && cfg.reserve !== cfg.text) { const tx = $('.g-tx p', s), keepH = tx.innerHTML; tx.innerHTML = bold(cfg.reserve); const hh = pop.offsetHeight; tx.innerHTML = keepH; pop.style.minHeight = Math.max(hh, pop.offsetHeight) + 'px'; }          // место под самый длинный из двух текстов шага: комментарий не «растёт» и не наезжает на показ
     pop.classList.remove('in'); void pop.offsetWidth; pop.classList.add('in');
     if (cfg.tour) lockPage(true);
-    if (!cfg.noScroll && !cfg.free) scrollTo(el, cfg.at, !!cfg.tour); cancelAnimationFrame(spotRaf); spotRaf = requestAnimationFrame(place); if (fresh) requestAnimationFrame(() => requestAnimationFrame(() => hole.classList.remove('g-nt')));
+    if (!cfg.noScroll && !cfg.free) { const pl = planScroll(el, {frac: cfg.at, fit: true, keep: cfg.keep, dockTop: cfg.dockTop}); if (pl.dockTop && !cfg.dockTop) { cfg.dockTop = true; pop.classList.toggle('sheet-top', mobile()); pop.classList.toggle('dock-top', !mobile()); } progScroll(pl.to); }
+    cur.fixed = isFixedEl(el); $$('.xdock .g-keep').forEach(e => e.classList.remove('g-keep')); { const dk = el.closest ? el.closest('.xdock > *') : null; if (dk) dk.classList.add('g-keep'); }          // плашка сайта внизу прячется на время показа, кроме той, которую сама показываем
+    cancelAnimationFrame(spotRaf); spotRaf = requestAnimationFrame(place); if (fresh) requestAnimationFrame(() => requestAnimationFrame(() => hole.classList.remove('g-nt')));
     const f = $('.g-ctl .btn-fill', s); if (f) { try { f.focus({preventScroll: true}); } catch (e) {} }
     A.track && A.track('guide_spot', {target: cfg.t ? cfg.t.id : '', tour: cfg.tour || ''});
   }
   function hideSpot(silent, keep) {
-    if (!keep) { runId++; scrollTok++; lockPage(false); cursorHide(); closeDd(); runCleanup(true); menuRelease(); }
+    if (!keep) { runId++; scrollTok++; clearTimeout(revealT); revealT = 0; lockPage(false); cursorHide(); closeDd(); runCleanup(true); menuRelease(); }
     const s = $('#g-spot'); if (!s || s.hidden) { spotEl = null; return; }
-    s.hidden = true; document.body.classList.remove('g-on'); cancelAnimationFrame(spotRaf); spotRaf = 0; spotEl = null; const cb = onClose; onClose = null; cur = null; if (cb && !silent) cb();
+    s.hidden = true; s.classList.remove('g-moving'); document.body.classList.remove('g-on'); cancelAnimationFrame(spotRaf); spotRaf = 0; spotEl = null; const cb = onClose; onClose = null; cur = null; if (cb && !silent) cb();
   }
   /* экскурсия по меню: шапка всегда на виду (она уходит при прокрутке вниз), на узких экранах ящик меню открывается сам; всё возвращается, когда подсветка закрыта */
   let mUI = {drawer: false, hdr: false};
@@ -186,7 +204,8 @@
   const tourById = id => TOURS.find(t => t.id === id) || null;
   const stepMatches = (st, key) => st.page === 'any' || st.page === key;
   const isStatic = page => PAGES.some(p => p.id === page);
-  const fill = (t, v) => String(t || '').replace(/\{(\w+)\}/g, (m, k) => v && v[k] != null ? v[k] : m);
+  const fill = (t, v, dflt) => String(t || '').replace(/\{(\w+)\}/g, (m, k) => v && v[k] != null ? v[k] : dflt != null ? dflt : m);
+  const readMs = txt => Math.min(5600, Math.max(1800, 900 + String(txt || '').trim().split(/\s+/).length * 250));          // сколько нужно, чтобы прочитать комментарий (ускоряется только в тестах)
   const targetOf = st => st.sel ? {id: st.id || 'step', sel: mobile() && st.msel ? st.msel : st.sel, label: st.label || ''} : (TARGETS[st.page === 'any' ? '*' : st.page] || []).concat(TARGETS['*'] || []).find(x => x.id === st.target) || findTarget(st.target);          // sel — свой селектор прямо в шаге
   function saveTour(id, i, nav) { store.set(KT, {id, i, t: Date.now(), nav: nav ? 1 : 0}); }
   /* то, что экскурсия временно изменила на странице (набранный запрос, фильтр, раскрытая карточка бренда, отмеченные для сравнения товары), возвращается назад */
@@ -213,12 +232,14 @@
   }
   const cPlace = (x, y) => { cx = x; cy = y; if (cEl) cEl.style.transform = 'translate(' + (x - 4) + 'px,' + (y - 3) + 'px)'; };
   function cursorShow() {
+    if (mobile()) return;          // на телефоне курсора нет: показываем само действие (набор, выбор, нажатые элементы)
     const el = cursorDom(); if (el.hidden) { if (!cInit) { cx = Math.round(innerWidth * .62); cy = Math.round(innerHeight * .7); cInit = true; } cPlace(cx, cy); el.hidden = false; void el.offsetWidth; }
     el.classList.add('on');
   }
   function cursorHide() { if (!cEl) return; const el = cEl; el.classList.remove('on', 'press'); setTimeout(() => { if (!el.classList.contains('on')) el.hidden = true; }, 380); }
   /* плавный путь: лёгкая дуга, разгон и торможение у цели */
   function cursorGo(x, y, id, dur) {
+    if (mobile()) { cx = x; cy = y; return sleep(Math.min(420, dur || 420)); }
     cursorShow(); const x0 = cx, y0 = cy, dx = x - x0, dy = y - y0, d = Math.hypot(dx, dy); if (d < 2) return Promise.resolve();
     const time = Math.round((dur || 560 + d * .75) / speed()), nx = -dy / d, ny = dx / d, bow = Math.min(90, d * .16) * (dx > 0 ? -1 : 1), mx = x0 + dx / 2 + nx * bow, my = y0 + dy / 2 + ny * bow, t0 = performance.now();
     return new Promise(res => {
@@ -227,6 +248,7 @@
     });
   }
   async function cursorPress(id) {
+    if (mobile()) { await sleep(420); return; }
     if (!cEl) return; cEl.classList.add('press'); const rip = $('.g-c-rip', cEl); rip.classList.remove('go'); void rip.offsetWidth; rip.classList.add('go');
     await sleep(190); if (!alive(id)) return; cEl.classList.remove('press'); await sleep(320);
   }
@@ -282,7 +304,7 @@
        if (!alive(c.id)) return; const [x, y] = aim(el, a.at); await cursorGo(x, y, c.id); if (a.hold) await sleep(a.hold); },
     async click(a, c) {
       const el = qsel(a.click, c); if (!el) return; await ensureView(el); if (!alive(c.id)) return;
-      const [x, y] = aim(el, a.at); await cursorGo(x, y, c.id); await cursorPress(c.id); if (!alive(c.id)) return;
+      const [x, y] = aim(el, a.at); await cursorGo(x, y, c.id); if (mobile()) pulse(el); await cursorPress(c.id); if (!alive(c.id)) return;
       undoOf(a.undo, c); el.click(); await sleep(a.after != null ? a.after : 600); await follow(el, x, y, c);
     },
     async type(a, c) {                                                              // печатает по буквам, неспешно; поле и набранное подсвечены синим
@@ -303,7 +325,7 @@
       if (!mobile() && !a.stay) { const top = sel.getBoundingClientRect().top; if (top < innerHeight * .4) await progScroll(Math.max(0, Math.round(scrollY + top - innerHeight * .46))); if (!alive(c.id)) return; }          // список ставим пониже: над ним остаётся место для карточки Стеллы
       const opts = Array.from(sel.options), want = a.value === '@rand' ? pick(opts.filter(o => o.value)) : opts.find(o => o.value === a.value) || opts.find(o => o.value && o.value !== 'all'); if (!want) return;
       const [x, y] = aim(sel, 'end'); await cursorGo(x, y, c.id); await cursorPress(c.id); if (!alive(c.id)) return;
-      const dd = ddDom(), r = sel.getBoundingClientRect(), h = Math.min(300, opts.length * 40 + 12), below = r.bottom + 8 + h <= innerHeight - 8;
+      const dd = ddDom(), r = sel.getBoundingClientRect(), h = Math.min(300, opts.length * 40 + 12), below = r.bottom + 8 + h <= (cur && cur.dockTop ? innerHeight : popTop()) - 8;
       dd.innerHTML = opts.map(o => '<div class="g-dd-o' + (o.selected ? ' cur' : '') + '" data-v="' + esc(o.value) + '">' + esc(o.textContent.trim()) + '</div>').join('');
       dd.style.cssText = 'left:' + Math.round(r.left) + 'px;width:' + Math.round(Math.max(r.width, 200)) + 'px;max-height:' + h + 'px;top:' + Math.round(below ? r.bottom + 8 : Math.max(8, r.top - 8 - h)) + 'px'; dd.hidden = false; void dd.offsetWidth; dd.classList.add('on'); sel.classList.add('g-open');
       await sleep(a.fast ? 400 : 800); if (!alive(c.id)) { closeDd(sel); return; }
@@ -327,11 +349,11 @@
       if (cEl) cEl.classList.remove('press'); await sleep(700);
     },
     async fill(a, c) {                                                              // заполняет заявку «для примера»: поле за полем, курсор нажимает и печатает придуманные данные; согласие и отправку не трогает
-      const f = qsel(a.fill, c); if (!f) return; const D = demoData(f.getAttribute('data-form') || ''), flds = $$('.fld', f).filter(shown), mob = mobile(), keepSpot = spotEl;
+      const f = qsel(a.fill, c); if (!f) return; const D = demoData(f.getAttribute('data-form') || ''), flds = $$('.fld', f).filter(shown);
       undo.push(() => { $$('input,textarea,select', f).forEach(e => { if (e.type === 'checkbox') return; if (e.value) { e.value = ''; fire(e, e.tagName === 'SELECT' ? 'change' : 'input'); } e.classList.remove('g-typing'); }); f._t0 = 0; $$('.fld.bad', f).forEach(w => w.classList.remove('bad')); });
       for (const w of flds) {
         if (!alive(c.id)) return; const id = w.getAttribute('data-f'), ctl = $('input,textarea,select', w); if (!ctl) continue;
-        if (mob) { spotEl = w; await progScroll(scrollTarget(w, null, true)); } else await ensureView(w); if (!alive(c.id)) return;
+        spotEl = w; await progScroll(scrollTarget(w, null, true)); if (!alive(c.id)) return;          // рамка идёт за полем: на любом экране оно помещается над комментарием Стеллы
         if (ctl.tagName === 'SELECT') { await ACTS.choose({choose: ctl, value: '@rand', stay: true, fast: true}, c); continue; }
         const val = D[id]; if (!val) continue;
         const r = ctl.getBoundingClientRect(), [x, y0] = aim(ctl, 'start'), y = ctl.tagName === 'TEXTAREA' ? Math.round(r.top + 26) : y0;
@@ -342,8 +364,7 @@
         for (let k = 1; k <= val.length; k++) { if (!alive(c.id)) return; ctl.value = val.slice(0, k); fire(ctl, 'input'); await sleep(per + (k % 3) * 25); }
         await sleep(250);
       }
-      $$('.g-typing', f).forEach(e => e.classList.remove('g-typing')); if (mob && alive(c.id)) { /* рамка остаётся на последнем поле */ } else if (keepSpot) spotEl = keepSpot;
-      await sleep(500);
+      $$('.g-typing', f).forEach(e => e.classList.remove('g-typing')); await sleep(500);          // рамка остаётся на последнем поле
     },
     async report(a, c) { if (REPORT[a.report]) REPORT[a.report](c, a); },
     async say(a, c) { c.say(c.vars); },
@@ -361,8 +382,8 @@
         for (const card of cards) { const b = $('.cmp-add', card); if (!b) continue; await ensureView(b); if (!alive(id)) return; const [x, y] = aim(b); await cursorGo(x, y, id); await cursorPress(id); if (!alive(id)) return; b.click(); await sleep(450); }
         await sleep(500); const bar = $('#cmp-bar'); if (!alive(id) || !bar || bar.hidden) return;
         spot(bar, {t: {id: 'compare-bar'}, tour: T.id, stepI: i, prog: prog(T, i), text: st.offer.say || 'Готово: два товара отмечены. Нажмите «Попросить Стеллу рассказать» — расскажу, чем они отличаются.',
-          buttons: [{l: 'Далее', act: 'g-tour-next', primary: true}, {l: 'Рассказать о товарах', act: 'g-tour-cmp'}, {l: 'Пропустить', act: 'g-spot-x'}], onClose: () => { runCleanup(true); store.del(KT); }});
-        await settle(id); const [x, y] = aim(bar); await cursorGo(x, y, id);
+          buttons: [{l: 'Далее', act: 'g-tour-next', primary: true}, {l: 'Рассказать о товарах', act: 'g-tour-cmp'}, {l: 'Пропустить', act: 'g-spot-x'}], dockTop: true, onClose: () => { runCleanup(true); store.del(KT); }});
+        await shownWait(id); if (!alive(id)) return; const [x, y] = aim(bar); await cursorGo(x, y, id);
       })();
       return true;
     }
@@ -380,8 +401,8 @@
     let el = null; try { el = pg.nav ? $$(pg.nav).find(shown) : null; } catch (e) {}
     const text = pg.go || 'Идём дальше.', cfg = {t: {id: 'nav-' + pg.id}, tour: T.id, stepI: i - .5, prog: prog(T, i), text, buttons: [{l: 'Пропустить', act: 'g-spot-x'}], onClose: () => { runCleanup(true); store.del(KT); }};
     saveTour(T.id, i, true);
-    if (!el) { spot(document.body, Object.assign(cfg, {free: true})); await sleep(1600); if (alive(id)) go(pg.href, {keepTour: true}); return; }
-    spot(el, cfg); pulse(el); await settle(id); if (!alive(id)) return;
+    if (!el) { spot(document.body, Object.assign(cfg, {free: true})); await shownWait(id); await sleep(readMs(text)); if (alive(id)) go(pg.href, {keepTour: true}); return; }
+    spot(el, cfg); await shownWait(id); if (!alive(id)) return; pulse(el); await sleep(readMs(text)); if (!alive(id)) return;          // сначала слова Стеллы, потом курсор
     const [x, y] = aim(el); await cursorGo(x, y, id); await follow(el, x, y, {id}); await sleep(450); await cursorPress(id); if (!alive(id)) return;
     navPending = Date.now(); saveTour(T.id, i, true); el.click();
     setTimeout(() => { if (alive(id)) go(pg.href, {keepTour: true}); }, 4200);          // нажатие не привело к переходу — переходим сами
@@ -410,10 +431,14 @@
       const buttons = [].concat(i > 0 ? [{l: 'Назад', act: 'g-tour-prev'}] : []);
       if (st.final) buttons.push({l: 'Вернуться на главную', act: 'asst-go', d: {href: 'index.html'}, primary: true}, (A.planChip && A.planChip.on() ? {l: A.planChip.label, act: 'asst-go', d: {href: A.sales.path}} : {l: 'Подобрать по задаче', act: 'asst-go', d: {href: 'catalog.html', show: 'task-filter'}}), {l: 'Спросить Стеллу', act: 'asst-open'}, {l: 'Закрыть', act: 'g-spot-x'});
       else buttons.push({l: st.next && st.next.l || (last ? 'Готово' : 'Далее'), act: 'g-tour-next', primary: true}, ...(st.offer ? [{l: st.offer.l, act: 'g-tour-offer'}] : []), {l: 'Пропустить', act: 'g-spot-x'});
-      let viewP = null; if (el && st.view) { const v = $(st.view); if (v) { viewP = progScroll(Math.max(0, Math.round(scrollY + v.getBoundingClientRect().top - 76))); } }          // «показать с начала»: главная — с первого экрана
-      spot(el || document.body, {t: t || {id: 'free'}, tour: T.id, stepI: i, prog: prog(T, i), text: hasSay && st.pre ? st.pre : fill(st.say, {}), buttons, free: !el, noScroll: !!st.view, above: !!st.above || acts.some(a => 'choose' in a), at: st.at, onClose: () => { runCleanup(true); store.del(KT); }});
-      if (el) pulse(el);
-      (async () => { await (viewP || Promise.resolve()); await settle(id); if (acts.length && alive(id)) await runActs(acts, ctx); })();
+      const shownText = hasSay && st.pre ? st.pre : fill(st.say, {}), keepEl = st.keep ? $(st.keep) : null;
+      spot(el || document.body, {t: t || {id: 'free'}, tour: T.id, stepI: i, prog: prog(T, i), text: shownText, reserve: acts.some(a => 'say' in a) ? fill(st.say, {}, '0000000') : '', buttons, free: !el, noScroll: !!st.view, dockTop: !!st.dockTop || !!st.final, dim: st.dim, keep: keepEl, at: st.at, onClose: () => { runCleanup(true); store.del(KT); }});
+      if (el && st.view) { const v = $(st.view); if (v) progScroll(Math.max(0, Math.round(scrollY + v.getBoundingClientRect().top - 76)), 1500); }          // «показать с начала»: главная — с первого кадра героя (красиво, без затемнения кнопок)
+      /* порядок: страница доехала → рамка → комментарий Стеллы → пауза, чтобы успеть прочитать → только потом действие */
+      (async () => { await shownWait(id); if (!alive(id)) return;
+        for (let k = 0; k < 2 && el && !st.view && !st.final && alive(id); k++) { const pl = planScroll(el, {fit: true, keep: keepEl, dockTop: !!(cur && cur.dockTop)}); if (pl.to == null) break; if (pl.dockTop && cur && !cur.dockTop) { cur.dockTop = true; const pp = $('#g-spot .g-pop'); pp.classList.toggle('sheet-top', mobile()); pp.classList.toggle('dock-top', !mobile()); } progScroll(pl.to); await shownWait(id); }          // страница могла «поехать» после загрузки (картинки, шрифты) — ставим блок на место ещё раз
+        if (st.clear && alive(id)) { const cl = $(st.clear), over = cl ? cl.getBoundingClientRect().bottom - (popTop() - 14) : 0; if (over > 4) { progScroll(Math.round(scrollY + Math.min(over, 160))); await shownWait(id); } }          // то, что в кадре не подсвечено, но должно остаться видным (кнопки первого экрана), комментарий не закрывает
+        if (!alive(id)) return; if (el) pulse(el); if (acts.length) { await sleep(readMs(shownText)); if (alive(id)) await runActs(acts, ctx); } })();
     };
     if (wait) setTimeout(() => run(0), wait); else run(0); return true;
   }
@@ -522,15 +547,30 @@
   function mountEntry() {
     const key = entryKey(), cfg = G.entry && G.entry.pages && G.entry.pages[key]; if (!cfg || $('.g-entry')) return;
     let a = null; try { a = $(cfg.anchor); } catch (e) {} if (!a) return;
-    const el = document.createElement('aside'); el.className = 'g-entry'; el.setAttribute('aria-label', 'Помощник Стелла'); el.setAttribute('data-style', (G.entry && G.entry.style) || 'strip');          // strip · slim · card
-    el.innerHTML = '<span class="g-e-pe" aria-hidden="true">' + (A.pearl ? A.pearl('happy', true) : '') + '</span><div class="g-e-t"><b>' + esc(pickV(cfg.title)) + '</b><p>' + esc(pickV(cfg.text)) + '</p></div>' +
+    const wl = !!cfg.welcome, title = pickV(cfg.title), text = pickV(cfg.text);
+    const el = document.createElement('aside'); el.className = 'g-entry' + (wl ? ' g-e-welcome' : ''); el.setAttribute('aria-label', 'Помощник Стелла'); el.setAttribute('data-style', (G.entry && G.entry.style) || 'strip');          // strip · slim · card
+    el.innerHTML = '<span class="g-e-pe" aria-hidden="true">' + (A.pearl ? A.pearl('happy', true) : '') + '</span><div class="g-e-t"><b' + (wl ? ' data-full="' + esc(title) + '"' : '') + '>' + esc(title) + '</b><p' + (wl ? ' data-full="' + esc(text) + '"' : '') + '>' + esc(text) + '</p></div>' +
       '<div class="g-e-ch">' + chipsHTML(cfg.chips, 4) + '</div>' +
       '<button class="btn btn-fill btn-sm g-e-b" type="button" data-act="asst-open" data-track="guide_entry">Спросить Стеллу</button>';
     const pos = cfg.pos || 'after';
     if (pos === 'after') a.insertAdjacentElement('afterend', el);
     else if (pos === 'beforeSection') { const sec = a.closest('section'); (sec || a).insertAdjacentElement('beforebegin', el); }
     else a.insertAdjacentElement('beforebegin', el);
-    requestAnimationFrame(() => el.classList.add('on'));
+    if (!wl) { requestAnimationFrame(() => el.classList.add('on')); return; }
+    /* приветствие на главной: Стелла «пишет» его сама, когда после вступления посетитель чуть прокрутил страницу и блок оказался на экране */
+    const st = nstate(), seen = !!(st.seen && st.seen.strip), go = () => { if (el.dataset.done) return; el.dataset.done = '1'; typeWelcome(el, seen); };
+    if ('IntersectionObserver' in window) { const io = new IntersectionObserver(es => { if (es.some(e => e.isIntersecting)) { io.disconnect(); go(); } }, {threshold: .5}); io.observe(el); } else go();
+  }
+  async function typeWelcome(el, instant) {
+    const b = $('.g-e-t b', el), p = $('.g-e-t p', el), full = [b.getAttribute('data-full'), p.getAttribute('data-full')], chips = () => { $$('.g-e-ch .chip', el).forEach((c, i) => { c.style.transitionDelay = Math.round(i * 130 / speed()) + 'ms'; }); el.classList.add('chips-in'); };
+    el.classList.add('on'); const st = nstate(); st.seen = st.seen || {}; st.seen.strip = 1; store.set(KN, st);
+    if (instant) { b.textContent = full[0]; p.textContent = full[1]; chips(); return; }
+    b.textContent = ''; p.textContent = ''; S().hey && S().hey(); await sleep(650);
+    for (const [node, txt, per] of [[b, full[0], 42], [p, full[1], 21]]) {
+      for (let k = 1; k <= txt.length; k++) { if (!el.isConnected) return; node.innerHTML = esc(txt.slice(0, k)) + '<i class="g-caret"></i>'; await sleep(per); }
+      node.textContent = txt; await sleep(260);
+    }
+    chips();
   }
 
   /* ---------- приветствие Стеллы (всплывающее окно) ----------
