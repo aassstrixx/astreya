@@ -103,9 +103,9 @@ const wait = ms => new Promise(r => setTimeout(r, ms));
     ['training', /календарь встреч/], ['training', /Выбрала «.+» и «.+» — осталось встреч: \d+/], ['training', /Так выглядит встреча/], ['training', /преподаватели центра/], ['training', /материалы для специалистов/],
     ['news', /Нажала «.+» — и показаны только эти записи: \d+/], ['news', /Вот пример: «.+»/], ['news', /Внизу страницы подписка/],
     ['company', /Тут мы рассказываем о себе/], ['company', /Вот, нажала «.+»/], ['company', /помогает решиться на первый заказ/],
-    ['partners', /Что получает партнёр/], ['partners', /При закупке на 150 000 ₽ ваша скидка — 10%\..*ориентир/], ['partners', /Ступени такие: 5% от 50 000 ₽, 10% от 150 000 ₽, 15% от 300 000 ₽/], ['partners', /Оставьте контакты/],
+    ['partners', /Что получает партнёр/], ['partners', /При закупке на 150 000 ₽ ваша скидка — 10%\..*ориентир/], ['partners', /Ступени такие: 5% от 50 000 ₽, 10% от 150 000 ₽, 15% от 300 000 ₽/], ['partners', /Готово: заявка заполнена/],
     ['start', /Здесь мы разговариваем/], ['start', /Можно написать всё одной фразой/],
-    ['contacts', /Связаться можно как удобно/], ['contacts', /Не любите звонить/],
+    ['contacts', /Связаться можно как удобно/], ['contacts', /Вопрос написан/],
     ['contacts', /Вот и всё/]
   ];
   const GROUP = [0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2, 3, 3, 3, 3, 3, 4, 4, 4, 5, 5, 5, 6, 6, 6, 6, 7, 7, 8, 8, 8];
@@ -113,7 +113,7 @@ const wait = ms => new Promise(r => setTimeout(r, ms));
 
   /* ---------- точки входа на всех типах страниц ---------- */
   console.log('\n[Экскурсия «Покажи сайт»: компьютер, курсор, все разделы от главной до финала]');
-  p = await mk({speed: 14}); await p.open('catalog.html');
+  p = await mk({speed: 14}); const leadPosts = []; p.on('request', r => { if (r.method() === 'POST' && /\/api\/lead/.test(r.url())) leadPosts.push(r.url()); }); await p.open('catalog.html');
   /* ждём, пока на экране нужная реплика, а подсветка и карточка перестанут двигаться (страница доехала, анимация кончилась) */
   const same = (a, b) => ['x', 'y', 'w', 'h'].every(k => Math.abs(a.hole[k] - b.hole[k]) < 1) && Math.abs(a.pop.y - b.pop.y) < 1 && Math.abs(a.pop.x - b.pop.x) < 1 && a.y === b.y;
   const stableAt = async (snap, pg, re, ms) => {
@@ -182,6 +182,12 @@ const wait = ms => new Promise(r => setTimeout(r, ms));
     if (i === 17) ok(await p.evaluate(() => { const on = document.querySelector('#news-tabs .chip.on, #news-tabs [aria-pressed="true"]'); return !!on && !/^Все/.test(on.textContent.trim()); }), 'шаг «новости»: курсор нажал на вкладку — показана не вся лента');
     if (i === 24) ok(await p.evaluate(() => document.getElementById('calc-range').value === '150000'), 'калькулятор: курсор взял ползунок и довёл его до порога 10% (150 000 ₽)');
     if (i === 26) ok(await p.evaluate(() => !document.querySelector('#modal.open')) && !(await p.evaluate(() => sessionStorage.getItem('astreya:rl') || localStorage.getItem('astreya:rl'))), 'экскурсия не отправляла форм и ничего не добавила в список запроса — заявка и «корзина» не затронуты');
+    if (i === 26 || i === 30) {
+      const fv = await p.evaluate(() => { const f = document.querySelector('.lead-form'), o = {}; [...f.elements].forEach(e => { if (e.name && e.type !== 'hidden' && e.name !== 'company_site') o[e.name] = e.type === 'checkbox' ? e.checked : e.value; }); return o; });
+      const full = i === 26 ? ['name', 'phone', 'email', 'city', 'org', 'spec', 'msg'] : ['name', 'phone', 'email', 'msg'];
+      ok(full.every(k2 => (fv[k2] || '').length > 1) && / /.test(fv.name) && /@example\.com$/.test(fv.email) && /^\+7 \(9\d\d\) 555-01-\d\d$/.test(fv.phone) && fv.msg.length >= 20 && fv.msg.length <= 110 && fv.agree === false, 'шаг «' + (i === 26 ? 'заявка партнёра' : 'вопрос в контактах') + '»: Стелла сама заполнила все поля придуманными данными (имя, телефон, почта на example.com' + (i === 26 ? ', город, организация, специализация' : '') + ') и коротким комментарием; галочку согласия не ставила', fv);
+      ok(/выдуманн|придума/.test(x2.tx) && /согласия|согласие/.test(x2.tx) && !leadPosts.length, 'в реплике честно сказано, что данные придуманы, а согласие и отправка — за посетителем; ни одного запроса на сервер заявок не ушло', [x2.tx, leadPosts]);
+    }
   }
   ok(!badStep.length, 'все ' + STEP.length + ' шагов экскурсии прошли по порядку: нужная страница, окончательная реплика, подсвеченный элемент на экране, «Назад», номер этапа (1–9) и его название', badStep.slice(0, 4));
   ok(!badFit.length, 'рамка подсветки на каждом шаге обходит блок целиком (не обрезает), помещается на экране, а карточка Стеллы не наезжает на подсвеченное', badFit.slice(0, 3));
@@ -189,7 +195,7 @@ const wait = ms => new Promise(r => setTimeout(r, ms));
   ok(order.join() === 'home,catalog,product,brands,training,news,company,partners,start,contacts', 'разделы шли в логичном порядке: ' + order.join(' → '));
   x = await T.snap();
   ok(x && /Вот и всё/.test(x.tx) && ['Вернуться на главную', 'Старт со Стеллой', 'Спросить Стеллу', 'Закрыть'].every(b => x.btns.includes(b)) && !x.btns.includes('Открыть каталог') && !x.btns.includes('Подобрать по задаче') && /^9 из 9/.test(x.st) && inView(x), 'финал: вместо «Открыть каталог» — «Вернуться на главную», рядом «Старт со Стеллой», «Спросить Стеллу» и «Закрыть»', x);
-  await T.press('Назад'); await wait(1500); x = await T.at('contacts', /Не любите звонить/); ok(x && /Не любите звонить/.test(x.tx), '«Назад» с последнего шага возвращает к форме «Контактов»');
+  await T.press('Назад'); await wait(1500); x = await T.at('contacts', /Вопрос написан/); ok(x && /Вопрос написан/.test(x.tx), '«Назад» с последнего шага возвращает к форме «Контактов»');
   await T.next(); await T.at('contacts', /Вот и всё/);
   await T.press('Вернуться на главную'); await T.until(() => document.body.getAttribute('data-page') === 'home', 20000); await wait(900);
   ok(await p.evaluate(() => document.body.getAttribute('data-page') === 'home' && document.getElementById('g-spot').hidden && (!document.getElementById('g-cursor') || document.getElementById('g-cursor').hidden)) && !(await p.evaluate(() => sessionStorage.getItem('astreya:g-tour'))), 'финальная кнопка «Вернуться на главную» открывает главную страницу, показ закрыт, курсор убран');
@@ -293,6 +299,12 @@ const wait = ms => new Promise(r => setTimeout(r, ms));
   ok(await p.evaluate(() => document.getElementById('calc-range').value === '150000'), 'калькулятор: Стелла передвинула ползунок на порог 10% (150 000 ₽)');
   await T.press('Пропустить'); await wait(800);
   ok(await p.evaluate(() => document.getElementById('calc-range').value === '100000' && document.getElementById('g-spot').hidden), '«Пропустить» на калькуляторе: ползунок вернулся на прежнее значение, подсветка снята');
+  /* заявка «для примера»: при «Пропустить» придуманные данные стираются */
+  await p.evaluate(() => window.Astreya.guide.tour('site', 26)); await T.until(() => document.body.getAttribute('data-page') === 'partners' && !document.getElementById('g-spot').hidden, 30000);
+  await T.until(() => { const f = document.querySelector('.lead-form'); return !!f && f.elements.msg.value.length > 20; }, 40000);
+  ok(await p.evaluate(() => { const f = document.querySelector('.lead-form'); return !!f.elements.name.value && !!f.elements.msg.value; }), 'заявка заполнена придуманными данными');
+  await T.press('Пропустить'); await wait(900);
+  ok(await p.evaluate(() => { const f = document.querySelector('.lead-form'); return ['name', 'phone', 'email', 'city', 'org', 'spec', 'msg'].every(k => !f.elements[k].value) && !f.elements.agree.checked && !document.querySelector('.g-typing') && document.getElementById('g-spot').hidden; }), '«Пропустить»: придуманные данные стёрты, поля пустые, подсветка снята');
   ok(!p.errs.length, 'в этих сценариях нет ошибок JS и консоли', p.errs); await p.context().close();
 
   /* ---------- экскурсия никогда не стартует сама ---------- */
@@ -367,7 +379,7 @@ const wait = ms => new Promise(r => setTimeout(r, ms));
     mx = await stableAt(mt.snap, pg, re, 45000);
     if (!mx) { mBad.push(['пропал на шаге ' + k]); break; }
     if (mPages[mPages.length - 1] !== mx.page) mPages.push(mx.page);
-    if (k < STEP.length - 1) { const fe = await fitOf(p, k, true); if (fe && (fe.crop || fe.out || fe.ov > 1500)) mFit.push([k, fe]); }
+    if (k < STEP.length - 1 && k !== 26 && k !== 30) { const fe = await fitOf(p, k, true); if (fe && (fe.crop || fe.out || fe.ov > 1500)) mFit.push([k, fe]); }
     if (!(mx.page === pg && re.test(mx.tx.replace(/\u00a0/g, ' ')))) mBad.push([k + ': нет нужной реплики', mx.page, mx.tx.slice(0, 50)]); else if (!mOk(mx)) mBad.push([k + ':' + mx.page, mx.tx.slice(0, 50), mx.hole, mx.pop]);
     if (k === 2) ok(await p.evaluate(q => document.getElementById('cat-q').value === q, T.prod0), 'на телефоне: каталог открыт нажатием на кнопку первого экрана, в поиске набран запрос', mx);
     if (k === 3) ok(await p.evaluate(() => document.getElementById('f-task').value === 'pigment' && !!document.querySelector('#results.filters-open')), 'на телефоне: панель фильтров раскрылась сама, выбрано назначение «Пигментация»');

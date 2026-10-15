@@ -254,7 +254,26 @@
   async function follow(el, x, y, c) {          // страница могла перестроиться после нажатия (список стал короче): курсор остаётся у элемента, а не висит в пустоте
     if (!el.isConnected) return; const [x2, y2] = aim(el); if (Math.hypot(x2 - x, y2 - y) > 8) await cursorGo(x2, y2, c.id, 420);
   }
-  const qsel = (sel, c) => sel === '@target' ? c.el : resolveEl({sel});
+  const pick = arr => arr[Math.floor(Math.random() * arr.length)];
+  const rnd = (a, b) => a + Math.floor(Math.random() * (b - a + 1));
+  /* «заявка для примера»: Стелла сама придумывает данные (имя, телефон, почту, город, организацию и короткий комментарий); номера и адреса — вымышленные */
+  const DEMO = {
+    first: ['Анна', 'Мария', 'Елена', 'Ольга', 'Наталья', 'Ирина', 'Светлана', 'Екатерина', 'Татьяна', 'Юлия'],
+    last: ['Воронцова', 'Лебедева', 'Орлова', 'Миронова', 'Захарова', 'Крылова', 'Беляева', 'Громова', 'Фролова', 'Соболева'],
+    mail: ['demo.studio', 'demo.salon', 'demo.klinika', 'demo.kabinet', 'demo.beauty'],
+    city: ['Москва', 'Санкт-Петербург', 'Ростов-на-Дону', 'Симферополь', 'Казань', 'Краснодар'],
+    org: ['Студия красоты «Лотос»', 'Клиника эстетики «Мира»', 'Салон «Эльза»', 'Центр ухода «Верба»', 'Кабинет косметолога «Линия»'],
+    msg: {
+      partner: ['Открываем второй кабинет, хотим обсудить поставки Dermatime и обучение для команды.', 'Интересуют условия закупки и ближайшие семинары для косметологов.', 'Работаем с проф. уходом, ищем официального поставщика. Расскажите про пороги скидок.'],
+      question: ['Подскажите, как записаться на ближайший семинар и что взять с собой?', 'Какие бренды лучше подойдут для кабинета с упором на пигментацию?', 'Нужна консультация по выбору линейки для салона. Удобнее по почте.'],
+      def: ['Здравствуйте! Хотим узнать подробности и условия. Спасибо.', 'Подскажите, пожалуйста, по ассортименту и срокам. Спасибо.']
+    }
+  };
+  function demoData(type) {
+    const nm = pick(DEMO.first) + ' ' + pick(DEMO.last), pool = DEMO.msg[type] || DEMO.msg[type === 'contact' ? 'question' : 'def'];
+    return {name: nm, phone: '+7 (9' + rnd(10, 99) + ') 555-01-' + rnd(10, 99), email: pick(DEMO.mail) + rnd(10, 99) + '@example.com', city: pick(DEMO.city), org: pick(DEMO.org), msg: pick(pool)};
+  }
+  const qsel = (sel, c) => sel === '@target' ? c.el : sel && sel.nodeType ? sel : resolveEl({sel});
   const resetCat = () => { if (A.actions['cat-reset']) A.actions['cat-reset'](); };
   const undoOf = (u, c) => { if (u === '@reset') undo.push(resetCat); else if (u) undo.push(() => { const e = qsel(u, c); if (e) e.click(); }); };
   const ACTS = {
@@ -281,22 +300,22 @@
       if (!sel) { const tg = $('#results .filters-toggle'); if (tg && shown(tg) && tg.getAttribute('aria-expanded') !== 'true') { await ensureView(tg); const [tx, ty] = aim(tg); await cursorGo(tx, ty, c.id); await cursorPress(c.id); tg.click(); await sleep(700); sel = qsel(a.choose, c); } }
       if (!sel || !alive(c.id)) return;
       await ensureView(sel); if (!alive(c.id)) return;
-      if (!mobile()) { const top = sel.getBoundingClientRect().top; if (top < innerHeight * .4) await progScroll(Math.max(0, Math.round(scrollY + top - innerHeight * .46))); if (!alive(c.id)) return; }          // список ставим пониже: над ним остаётся место для карточки Стеллы
-      const opts = Array.from(sel.options), want = opts.find(o => o.value === a.value) || opts.find(o => o.value && o.value !== 'all'); if (!want) return;
+      if (!mobile() && !a.stay) { const top = sel.getBoundingClientRect().top; if (top < innerHeight * .4) await progScroll(Math.max(0, Math.round(scrollY + top - innerHeight * .46))); if (!alive(c.id)) return; }          // список ставим пониже: над ним остаётся место для карточки Стеллы
+      const opts = Array.from(sel.options), want = a.value === '@rand' ? pick(opts.filter(o => o.value)) : opts.find(o => o.value === a.value) || opts.find(o => o.value && o.value !== 'all'); if (!want) return;
       const [x, y] = aim(sel, 'end'); await cursorGo(x, y, c.id); await cursorPress(c.id); if (!alive(c.id)) return;
       const dd = ddDom(), r = sel.getBoundingClientRect(), h = Math.min(300, opts.length * 40 + 12), below = r.bottom + 8 + h <= innerHeight - 8;
       dd.innerHTML = opts.map(o => '<div class="g-dd-o' + (o.selected ? ' cur' : '') + '" data-v="' + esc(o.value) + '">' + esc(o.textContent.trim()) + '</div>').join('');
       dd.style.cssText = 'left:' + Math.round(r.left) + 'px;width:' + Math.round(Math.max(r.width, 200)) + 'px;max-height:' + h + 'px;top:' + Math.round(below ? r.bottom + 8 : Math.max(8, r.top - 8 - h)) + 'px'; dd.hidden = false; void dd.offsetWidth; dd.classList.add('on'); sel.classList.add('g-open');
-      await sleep(800); if (!alive(c.id)) { closeDd(sel); return; }
+      await sleep(a.fast ? 400 : 800); if (!alive(c.id)) { closeDd(sel); return; }
       const rows = $$('.g-dd-o', dd), k = rows.findIndex(o => o.getAttribute('data-v') === want.value);
       for (let j = 0; j <= k; j++) {
         if (!alive(c.id)) { closeDd(sel); return; }
         rows.forEach(o => o.classList.remove('hov')); rows[j].classList.add('hov'); if (rows[j].offsetTop + 44 - dd.scrollTop > dd.clientHeight) dd.scrollTop = rows[j].offsetTop + 50 - dd.clientHeight;
-        const rr = rows[j].getBoundingClientRect(); await cursorGo(rr.left + Math.min(70, rr.width * .3), rr.top + rr.height / 2, c.id, 320); await sleep(j === k ? 650 : 260);
+        const rr = rows[j].getBoundingClientRect(); await cursorGo(rr.left + Math.min(70, rr.width * .3), rr.top + rr.height / 2, c.id, a.fast ? 220 : 320); await sleep(j === k ? (a.fast ? 350 : 650) : (a.fast ? 140 : 260));
       }
       rows[k].classList.add('pick'); await cursorPress(c.id); if (!alive(c.id)) { closeDd(sel); return; }
-      closeDd(sel); sel.value = want.value; fire(sel, 'change'); undo.push(resetCat); c.vars[a.as || 'task'] = want.textContent.trim();
-      await sleep(650); const [bx, by] = aim(sel, 'end'); await cursorGo(bx, by, c.id, 500); await sleep(450);          // курсор возвращается к полю и не закрывает карточку
+      const was = sel.value; closeDd(sel); sel.value = want.value; fire(sel, 'change'); undo.push(a.stay ? () => { sel.value = was; fire(sel, 'change'); } : resetCat); c.vars[a.as || 'task'] = want.textContent.trim();
+      await sleep(a.fast ? 350 : 650); const [bx, by] = aim(sel, 'end'); await cursorGo(bx, by, c.id, a.fast ? 350 : 500); await sleep(a.fast ? 200 : 450);          // курсор возвращается к полю и не закрывает карточку
     },
     async drag(a, c) {                                                              // берёт ползунок и неторопливо тянет
       const r = qsel(a.drag, c); if (!r) return; await ensureView(r); if (!alive(c.id)) return;
@@ -306,6 +325,25 @@
       const n = Math.max(1, Math.round(Math.abs(to - from) / step)), per = Math.max(70, Math.min(190, 3000 / n));
       for (let k = 1; k <= n; k++) { if (!alive(c.id)) { if (cEl) cEl.classList.remove('press'); return; } r.value = String(Math.round((from + (to - from) * k / n) / step) * step); fire(r, 'input'); cPlace(px(+r.value), py()); await sleep(per); }
       if (cEl) cEl.classList.remove('press'); await sleep(700);
+    },
+    async fill(a, c) {                                                              // заполняет заявку «для примера»: поле за полем, курсор нажимает и печатает придуманные данные; согласие и отправку не трогает
+      const f = qsel(a.fill, c); if (!f) return; const D = demoData(f.getAttribute('data-form') || ''), flds = $$('.fld', f).filter(shown), mob = mobile(), keepSpot = spotEl;
+      undo.push(() => { $$('input,textarea,select', f).forEach(e => { if (e.type === 'checkbox') return; if (e.value) { e.value = ''; fire(e, e.tagName === 'SELECT' ? 'change' : 'input'); } e.classList.remove('g-typing'); }); f._t0 = 0; $$('.fld.bad', f).forEach(w => w.classList.remove('bad')); });
+      for (const w of flds) {
+        if (!alive(c.id)) return; const id = w.getAttribute('data-f'), ctl = $('input,textarea,select', w); if (!ctl) continue;
+        if (mob) { spotEl = w; await progScroll(scrollTarget(w, null, true)); } else await ensureView(w); if (!alive(c.id)) return;
+        if (ctl.tagName === 'SELECT') { await ACTS.choose({choose: ctl, value: '@rand', stay: true, fast: true}, c); continue; }
+        const val = D[id]; if (!val) continue;
+        const r = ctl.getBoundingClientRect(), [x, y0] = aim(ctl, 'start'), y = ctl.tagName === 'TEXTAREA' ? Math.round(r.top + 26) : y0;
+        await cursorGo(x, y, c.id, 380 + Math.hypot(x - cx, y - cy) * .5); await cursorPress(c.id); if (!alive(c.id)) return;
+        try { ctl.focus({preventScroll: true}); } catch (e) {}
+        $$('.g-typing', f).forEach(e => e.classList.remove('g-typing')); ctl.classList.add('g-typing'); ctl.value = ''; fire(ctl, 'input'); await sleep(220); cursorGo(x + 150, y + 16, c.id, 500);
+        const per = id === 'msg' ? 45 : 75;
+        for (let k = 1; k <= val.length; k++) { if (!alive(c.id)) return; ctl.value = val.slice(0, k); fire(ctl, 'input'); await sleep(per + (k % 3) * 25); }
+        await sleep(250);
+      }
+      $$('.g-typing', f).forEach(e => e.classList.remove('g-typing')); if (mob && alive(c.id)) { /* рамка остаётся на последнем поле */ } else if (keepSpot) spotEl = keepSpot;
+      await sleep(500);
     },
     async report(a, c) { if (REPORT[a.report]) REPORT[a.report](c, a); },
     async say(a, c) { c.say(c.vars); },
