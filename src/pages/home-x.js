@@ -125,7 +125,7 @@ module.exports = function homeRedesign(ctx, C, P, parts, {events, val}) {
   </div></section>`;
 
   /* ---------- 9. Новости ---------- */
-  const news = parts.news.replace('Новости и акции', 'События Астреи').replace('Что нового', 'Новости и события Астреи').replace('class="sec tint"', 'class="rd-sec rd-news"');
+  const news = parts.news.replace('Новости и акции', 'События Астрея').replace('Что нового', 'Новости и события Астрея').replace('class="sec tint"', 'class="rd-sec rd-news"');
 
   /* ---------- 10. Большой блок «Наши бренды» (логотипы в исходных цветах, много воздуха) ---------- */
   const w = rd.wall;

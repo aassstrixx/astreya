@@ -37,7 +37,7 @@ def tracked(d, cx, cy, txt, fnt, track_em, fill=255):
 
 
 def mark_polys():
-    """Знак «Астреи» из HM.D: два подконтура (шеврон и дуга) -> списки точек в единицах логотипа."""
+    """Знак «Астрея» из HM.D: два подконтура (шеврон и дуга) -> списки точек в единицах логотипа."""
     src = open(os.path.join(ROOT, "js", "hero-mark.js"), encoding="utf-8").read()
     d = re.search(r'D:"([^"]+)"', src).group(1)
     polys = []

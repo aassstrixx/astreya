@@ -5,7 +5,7 @@ const {esc, I} = S;
 function brandsPage(ctx, C, P) {
   const {brands, tasks} = ctx;
   return `<div class="wrap" data-brands>
-    ${C.pageHead('Бренды', 'Бренды профессиональной косметики', 'Портфель «Астреи»: испанская профессиональная косметика, линии Cantabria Labs и аппаратное решение EVA.')}
+    ${C.pageHead('Бренды', 'Бренды профессиональной косметики', 'Портфель «Астрея»: испанская профессиональная косметика, линии Cantabria Labs и аппаратное решение EVA.')}
     <div class="toolbar reveal">
       <div class="tb-top"><label class="search"><span class="sr">Поиск по брендам</span>${I.search}<input id="br-q" type="search" placeholder="Название бренда или направление" autocomplete="off"></label></div>
       <div class="tb-row"><span class="tb-lab">Задача</span><div class="chips" id="br-tasks">${C.chip('Любая', 'br-task', 'all', true)}${tasks.map(t => C.chip(esc(t.label), 'br-task', t.id, false)).join('')}</div></div>
@@ -37,7 +37,7 @@ function brandPage(ctx, C, P, b) {
   const icons = ['layers', 'shield', 'book', 'check'];
   const adv = [{icon: 'shield', title: 'Оригинальная продукция', text: `${b.name} поставляется официальным дистрибьютором «Астрея».`},
     ...b.facts.filter(f => !['Страна', 'Концерн', 'Поставка'].includes(f[0])).slice(0, 2).map((f, k) => ({icon: icons[k % icons.length], title: f[0], text: f[1]})),
-    {icon: 'users', title: 'Поддержка специалистов', text: 'Консультации менеджеров и материалы учебного центра «Астреи».'}];
+    {icon: 'users', title: 'Поддержка специалистов', text: 'Консультации менеджеров и материалы учебного центра «Астрея».'}];
   return `<div class="wrap" style="${S.bstyle(b)}" data-brand-page="${b.id}">
     <section class="b-hero">
       ${C.crumbs(P, [['Главная', 'index.html'], ['Бренды', 'brands.html'], [b.name, `brands/${b.id}.html`]])}

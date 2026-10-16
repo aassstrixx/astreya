@@ -53,7 +53,7 @@ const J = f => JSON.parse(fs.readFileSync(path.join(ROOT, f), 'utf8'));
   { let base = ''; for (const ref of ['origin/pre-sales-rollback', 'pre-sales-rollback']) { try { base = cp.execFileSync('git', ['show', ref + ':index.html'], {cwd: ROOT, encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore']}); break; } catch (e) {} }
     if (!base) console.log('  – нет ссылки pre-sales-rollback в git: сравнение главной с прежней версией пропущено');
     else {
-      const norm = h => h.replace(/<a class="rd-next[\s\S]*?<\/section>/, '</section>').replace(/\?v=[0-9a-f]{8}/g, '')          /* блок «ближайшие встречи» зависит от даты сборки — в сравнение не берём */.replace(/ data-v="[0-9a-f]{8}"/g, '').split('\n').filter(l => !/sales(-pages)?\.(css|js)/.test(l)).join('\n');
+      const norm = h => h.replace(/<a class="rd-next[\s\S]*?<\/section>/, '</section>').replace(/\?v=[0-9a-f]{8}/g, '')          /* блок «ближайшие встречи» зависит от даты сборки — в сравнение не берём */.replace(/ data-v="[0-9a-f]{8}"/g, '').replace(/([Аа]стре)(?:и|е|ю|ей)(?![а-яё])/g, '$1я')          /* название компании теперь везде в именительном падеже — прежнюю версию приводим к тому же виду */.split('\n').filter(l => !/sales(-pages)?\.(css|js)/.test(l)).join('\n');
       const old = norm(base), cur = norm(fs.readFileSync(path.join(ROOT, 'index.html'), 'utf8'));
       const oi = old.indexOf('<section class="sec rd-about"'), ci = cur.indexOf('<section class="sec rd-about"');
       ok(ci > 0 && cur.slice(0, ci) === old.slice(0, oi), 'вступление, герой с орбитой брендов и бегущая строка — побайтно как до продающего слоя', {ci, oi});
@@ -427,7 +427,7 @@ const J = f => JSON.parse(fs.readFileSync(path.join(ROOT, f), 'utf8'));
   ok(rg.tel === 'tel:+79214204735', 'компания: у Санкт-Петербурга — свой телефон', rg);
   ok(!!rg.ev, 'компания: рядом — ближайший семинар в этом городе', rg);
   ok(/Познакомимся/.test(await p.evaluate(() => document.querySelector('.cta-band h2').textContent)), 'компания: завершающий призыв — «Познакомимся на практике»');
-  ok(await p.evaluate(() => { const t = document.querySelector('.sx-trust'); return !!t && /можно доверять/.test(t.querySelector('h2').textContent) && t.querySelectorAll('.sx-tl li').length === 4 && !document.querySelector('.sx-next'); }), 'компания: из общих структур остаётся только блок «Почему «Астрее» можно доверять» (4 факта сайта)');
+  ok(await p.evaluate(() => { const t = document.querySelector('.sx-trust'); return !!t && /можно доверять/.test(t.querySelector('h2').textContent) && t.querySelectorAll('.sx-tl li').length === 4 && !document.querySelector('.sx-next'); }), 'компания: из общих структур остаётся только блок «Почему «Астрея» можно доверять» (4 факта сайта)');
   ok(await p.evaluate(() => { const w = [...document.querySelectorAll('.sx-reg-n')].map(b => Math.round(b.getBoundingClientRect().width)), h = [...document.querySelectorAll('.sx-reg-n')].map(b => Math.round(b.getBoundingClientRect().height)); return w.length >= 3 && Math.max(...w) - Math.min(...w) <= 2 && Math.max(...h) - Math.min(...h) <= 1; }), 'компания: ячейки городов одинакового размера');
   await p.click('[data-sx-region-cb]'); await p.waitForSelector('#modal.open form');
   ok(await p.evaluate(() => document.querySelector('#modal form [name=city]') ? document.querySelector('#modal form [name=city]').value === 'Санкт-Петербург' : true), 'компания: «Перезвоните мне» подставляет выбранный город');

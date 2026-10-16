@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-/* Генератор сайта Астреи. Без зависимостей: только Node.js (≥ 16).
+/* Генератор сайта Астрея. Без зависимостей: только Node.js (≥ 16).
    Читает data/*.json и шаблоны src/, пишет готовые HTML-страницы в корень проекта, а также js/data.js, sitemap.xml и robots.txt.
    Запуск: node tools/build.js            — собрать сайт
            node tools/build.js --bundle=out.html — дополнительно собрать один автономный HTML-файл (для предпросмотра/артефакта) */
@@ -69,7 +69,7 @@ page({key: 'privacy', path: 'privacy.html', nav: '', title: seo('privacy').title
 page({key: 'terms', path: 'terms.html', nav: '', title: seo('terms').title, description: seo('terms').description, priority: 0.2, breadcrumbs: [['Главная', 'index.html'], ['Пользовательское соглашение', 'terms.html']]}, P => legalPage(ctx, C, P, 'terms'));
 
 /* ---- 404.html: GitHub Pages показывает его на любом неверном адресе (на любой глубине), поэтому пути в нём — от корня сайта, не «../» ---- */
-page({key: 'notfound', path: '404.html', nav: '', root: new URL(L.base).pathname, title: 'Страница не найдена — ошибка 404 | Астрея', description: 'Такой страницы нет на сайте «Астреи». Воспользуйтесь поиском или перейдите в каталог, к брендам, обучению и новостям.', noindex: true, priority: 0}, P => notFoundPage(ctx, C, P));
+page({key: 'notfound', path: '404.html', nav: '', root: new URL(L.base).pathname, title: 'Страница не найдена — ошибка 404 | Астрея', description: 'Такой страницы нет на сайте «Астрея». Воспользуйтесь поиском или перейдите в каталог, к брендам, обучению и новостям.', noindex: true, priority: 0}, P => notFoundPage(ctx, C, P));
 
 /* ---- бренды ---- */
 ctx.brands.forEach(b => page({key: 'brand', path: `brands/${b.id}.html`, nav: '/brands', ogType: 'website', priority: 0.7,
@@ -80,7 +80,7 @@ ctx.brands.forEach(b => page({key: 'brand', path: `brands/${b.id}.html`, nav: '/
 ctx.products.forEach(p => {
   const b = ctx.brandById[p.brand];
   page({key: 'product', path: `products/${p.slug}.html`, nav: '/catalog', ogType: 'website', priority: 0.6, ...(p.image ? {image: p.image} : {}),
-    title: (S.norm(p.name).includes(S.norm(b.name)) ? `${p.name} — профессиональное решение | Астрея` : `${p.name} — ${b.name} | Астрея`), description: trunc(`${p.desc} Бренд ${b.name}. Запросите информацию у менеджеров «Астреи».`),
+    title: (S.norm(p.name).includes(S.norm(b.name)) ? `${p.name} — профессиональное решение | Астрея` : `${p.name} — ${b.name} | Астрея`), description: trunc(`${p.desc} Бренд ${b.name}. Запросите информацию у менеджеров «Астрея».`),
     breadcrumbs: [['Главная', 'index.html'], ['Каталог', 'catalog.html'], [b.name, `brands/${b.id}.html`], [p.name, `products/${p.slug}.html`]],
     jsonld: structured ? [{'@context': 'https://schema.org', '@type': 'Product', name: p.name, description: p.desc, brand: {'@type': 'Brand', name: b.name}, ...(p.image ? {image: L.absUrl(p.image)} : {}), ...(p.sku ? {sku: p.sku} : {})}] : []}, P => product(ctx, C, P, p));
 });

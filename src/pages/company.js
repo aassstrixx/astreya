@@ -31,14 +31,14 @@ module.exports = function company(ctx, C, P) {
 
     <section class="sec" style="padding-top:0">
       <div class="teaser card card-pad reveal">
-        <div><span class="eyebrow in">Обучение</span><h2>Учебный центр «Астреи»</h2>
+        <div><span class="eyebrow in">Обучение</span><h2>Учебный центр «Астрея»</h2>
           <p class="muted">Семинары, мастер-классы и вебинары для специалистов: очно в четырёх городах и онлайн.${upcoming ? ` Ближайших мероприятий в расписании: ${upcoming}.` : ''}</p></div>
         <div class="row"><a class="btn btn-ghost" href="${C.u(P, 'training.html')}">Расписание ${I.arrow}</a></div>
       </div>
     </section>
 
     <section class="sec" style="padding-top:0">
-      ${C.secHead('Сотрудничество', 'Преимущества работы с Астреей')}
+      ${C.secHead('Сотрудничество', 'Преимущества работы с Астрея')}
       ${C.advantageCards(content.advantages)}
     </section>
 

@@ -84,7 +84,7 @@ module.exports = function home(ctx, C, P) {
   </div></section>`;
 
   parts.advantages = `<section class="sec"><div class="wrap">
-    ${C.secHead('Преимущества', 'Почему специалисты выбирают Астрею')}
+    ${C.secHead('Преимущества', 'Почему специалисты выбирают Астрея')}
     ${C.advantageCards(content.advantages)}
   </div></section>`;
 

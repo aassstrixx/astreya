@@ -12,7 +12,7 @@ module.exports = function contacts(ctx, C, P) {
     {ic: I.pin, t: 'Центральный офис', v: esc(c.address), s: esc(c.addressNote)}
   ];
   return `<div class="wrap">
-    ${C.pageHead('Контакты', 'Свяжитесь с Астреей', 'Центральный офис в Москве и представительства в регионах. Позвоните, напишите или оставьте заявку — ответим в рабочее время.')}
+    ${C.pageHead('Контакты', 'Свяжитесь с Астрея', 'Центральный офис в Москве и представительства в регионах. Позвоните, напишите или оставьте заявку — ответим в рабочее время.')}
     <h2 class="sr">Способы связи</h2>
     <div class="grid g4 contact-cards">${cards.map(k => `<article class="card card-pad ccard reveal"><span class="adv-ic">${k.ic}</span><h3>${k.t}</h3><p class="cv">${k.v}</p><p class="muted small">${k.s}</p></article>`).join('')}</div>
 

@@ -22,7 +22,7 @@ function trainingPage(ctx, C, P) {
   const cityChips = ['all', ...training.cities].map((c, i) => C.chip(c === 'all' ? 'Все города' : esc(c), 'city', c, i === 0)).join('');
   const fmtChips = [['all', 'Любой формат'], ['offline', 'Очно'], ['online', 'Онлайн']].map(([id, l], i) => C.chip(l, 'fmt', id, i === 0)).join('');
   return `<div class="wrap" data-training>
-    ${C.pageHead('Обучение', 'Учебный центр «Астреи»', 'Бесплатные семинары и мастер-классы: теория чередуется с практикой. Базовые семинары проходят с 10:30 до 18:00.')}
+    ${C.pageHead('Обучение', 'Учебный центр «Астрея»', 'Бесплатные семинары и мастер-классы: теория чередуется с практикой. Базовые семинары проходят с 10:30 до 18:00.')}
     ${C.cdSlot()}
     <div class="row reveal"><a class="btn btn-fill" href="#sched" data-act="scroll" data-target="sched">Смотреть расписание ${I.arrow}</a><a class="btn btn-ghost" href="tel:${site.contacts.phoneRaw}" data-track="phone_click">${esc(site.contacts.phone)}</a></div>
   </div>
@@ -98,7 +98,7 @@ function eventPage(ctx, C, P, e) {
           <article class="p-block reveal"><h2>О мероприятии</h2><p>${esc(e.description)}</p>
             <p>${online ? 'Формат — вебинар: ссылку на подключение присылаем после регистрации.' : 'Базовые семинары проходят с 10:30 до 18:00: теоретические блоки чередуются с практическими мастер-классами.'}</p></article>
           <article class="p-block reveal"><h2>Программа</h2><p><span class="tbd">Уточняется — программу пришлёт менеджер учебного центра при подтверждении участия.</span></p></article>
-          <article class="p-block reveal"><h2>Участие</h2><p>Базовые семинары и мастер-классы учебного центра «Астреи» бесплатные. Условия отдельных программ уточняйте у менеджера при регистрации.</p></article>
+          <article class="p-block reveal"><h2>Участие</h2><p>Базовые семинары и мастер-классы учебного центра «Астрея» бесплатные. Условия отдельных программ уточняйте у менеджера при регистрации.</p></article>
           ${t ? `<article class="card tcard card-pad reveal e-teacher"><div class="avatar" aria-hidden="true">${esc(t.mono)}</div><div><span class="eyebrow in">Преподаватель</span><h3>${esc(t.name)}</h3><p>${esc(t.spec)}</p><div class="tasks-line">${t.topics.map(x => C.tag(x)).join('')}</div></div></article>` : ''}
         </div>
         <aside class="e-side reveal">

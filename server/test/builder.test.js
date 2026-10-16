@@ -8,7 +8,7 @@ let S, admin;
 const read = f => fs.readFileSync(path.join(S.root, f), 'utf8');
 const exists = f => fs.existsSync(path.join(S.root, f));
 const clone = v => JSON.parse(JSON.stringify(v));
-const page = (slug, extra) => Object.assign({slug, title: 'Условия сотрудничества', eyebrow: 'Партнёрам', lead: 'Как мы работаем с клиниками и салонами.', description: 'Условия сотрудничества с Астреей: обучение, поддержка, скидки по объёму закупки для кабинетов и клиник.', published: true, noindex: false, nav: false, blocks: [
+const page = (slug, extra) => Object.assign({slug, title: 'Условия сотрудничества', eyebrow: 'Партнёрам', lead: 'Как мы работаем с клиниками и салонами.', description: 'Условия сотрудничества с Астрея: обучение, поддержка, скидки по объёму закупки для кабинетов и клиник.', published: true, noindex: false, nav: false, blocks: [
   {type: 'text', title: 'Как мы работаем', paragraphs: ['Первый абзац про сотрудничество.', 'Второй абзац.']},
   {type: 'list', title: 'Что вы получаете', items: ['Обучение специалистов', 'Поддержка менеджера']},
   {type: 'cta', title: 'Готовы начать?', text: 'Оставьте заявку', label: 'Стать партнёром', href: 'partners.html', tone: 'dark'}]}, extra);

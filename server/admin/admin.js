@@ -1,4 +1,4 @@
-/* Админка «Астреи» — ядро: запросы к серверу, окна, уведомления, вход, каркас и переходы между разделами.
+/* Админка «Астрея» — ядро: запросы к серверу, окна, уведомления, вход, каркас и переходы между разделами.
    Разделы подключаются отдельными файлами (leads.js, content.js, system.js) и регистрируются в AD.views. */
 (function () {
   'use strict';
@@ -101,7 +101,7 @@
   AD.sessionLost = function () { if (AD.loggedOut) return; AD.loggedOut = true; AD.user = null; AD.csrf = ''; clearIntervals(); AD.dirty = false; showLogin('Сессия истекла. Войдите снова.'); };
   function loginScreen(kids) { const app = $('#app'); app.replaceChildren(h('div', {class: 'login-wrap'}, h('div', {class: 'login'}, h('div', {class: 'brand'}, h('span', {class: 'brand-mark'}, 'А'), 'Астрея · админка'), ...kids))); }
   function showLogin(msg) {
-    document.title = 'Вход — Админка Астреи';
+    document.title = 'Вход — Админка Астрея';
     const err = h('div', {hidden: true}), login = h('input', {type: 'text', id: 'f-login', name: 'login', autocomplete: 'username', required: true, autocapitalize: 'none', spellcheck: 'false'}), pw = h('input', {type: 'password', id: 'f-pass', name: 'password', autocomplete: 'current-password', required: true});
     const btn = h('button', {class: 'btn primary', type: 'submit'}, 'Войти');
     const form = h('form', {novalidate: true, onsubmit: async e => {
@@ -127,7 +127,7 @@
     return {form, focus: () => o.focus()};
   }
   function showForcedPassword() {
-    document.title = 'Смена пароля — Админка Астреи';
+    document.title = 'Смена пароля — Админка Астрея';
     const f = passwordForm(true, () => afterLogin());
     loginScreen([h('h1', {}, 'Смена пароля'), f.form, h('button', {class: 'btn ghost sm', type: 'button', style: {marginTop: '10px'}, onclick: () => AD.logout()}, 'Выйти')]); f.focus();
   }

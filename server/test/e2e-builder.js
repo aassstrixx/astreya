@@ -43,7 +43,7 @@ const ok = (c, m, x) => { if (c) { pass++; console.log('  ✓', m); } else { fai
   const textArea = p.locator('#view .blk >> nth=0').locator('textarea').first(); await p.locator('#view .blk').first().evaluate(d => { d.open = true; }); await textArea.fill('Мы работаем с клиниками и салонами по всей России.\n\nОбучаем специалистов бесплатно.');
   await p.click('#pg-save'); await p.waitForSelector('.alert.err'); ok(await p.locator('#view .blk.err').count() === 2 && /Список/.test(await p.locator('#view .blk.err .tp').first().textContent()), 'незаполненные блоки (список и призыв) подсвечены красным и раскрыты', await p.locator('#view .blk.err').count());
   await p.locator('#view .blk').nth(1).locator('textarea').fill('Обучение специалистов\nПоддержка менеджера');
-  await p.locator('.field:has(label:has-text("Описание для поиска")) textarea').fill('Условия сотрудничества с Астреей: обучение специалистов, поддержка менеджера и скидки по объёму закупки для клиник.');
+  await p.locator('.field:has(label:has-text("Описание для поиска")) textarea').fill('Условия сотрудничества с Астрея: обучение специалистов, поддержка менеджера и скидки по объёму закупки для клиник.');
   const ctaBlock = p.locator('#view .blk').nth(2); await ctaBlock.evaluate(d => { d.open = true; }); await ctaBlock.locator('.field:has(label:has-text("Ссылка кнопки")) input').fill('partners.html');
   await p.locator('.switch:has-text("Опубликована") input').check();
   await saved(p, '#pg-save'); ok(exists('pages/usloviya-sotrudnichestva.html'), 'страница собрана сервером'); ok(read('pages/usloviya-sotrudnichestva.html').includes('Обучаем специалистов бесплатно.'), 'текст попал на страницу');

@@ -293,7 +293,7 @@
 /* кнопки слоя — не меньше 44 px (удобно нажимать пальцем) */
 .sx-mod .btn.btn-sm,[data-sx-mod] .btn.btn-sm{min-height:44px}
 
-/* ============ Компания: «Почему «Астрее» можно доверять» (только факты сайта) ============ */
+/* ============ Компания: «Почему «Астрея» можно доверять» (только факты сайта) ============ */
 .sx-trust{padding:clamp(18px,3vw,40px) 0 clamp(30px,4.5vw,60px)}
 .sx-tl{list-style:none;margin:clamp(14px,2vw,22px) 0 0;padding:0;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:clamp(14px,2vw,26px)}
 .sx-tl li{display:flex;gap:12px;align-items:flex-start}

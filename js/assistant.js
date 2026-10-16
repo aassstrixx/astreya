@@ -1,4 +1,4 @@
-/* assistant.js — чат-помощник «Астреи» по имени Стелла (data/redesign.json → extras.assistant): интерфейс, подключение «мозга» и ИИ-режима.
+/* assistant.js — чат-помощник «Астрея» по имени Стелла (data/redesign.json → extras.assistant): интерфейс, подключение «мозга» и ИИ-режима.
 
    Стелла — мини-консультант и талисман сайта: жемчужинка со звёздочкой (SVG, настроения: ждёт, думает, говорит, радуется). Кнопка в углу «оживает» плавно
    (пружинное появление, искры, парение, моргание, глаза следят за курсором, подпись раскрывается и сворачивается). Ответы приходят «как в мессенджере»:
@@ -264,14 +264,14 @@
   /* ---------- построение интерфейса ---------- */
   function build() {
     if (built) return; built = true; document.body.classList.add('has-asst');
-    const fab = document.createElement('button'); fab.type = 'button'; fab.id = 'asst-fab'; fab.className = 'asst-fab'; fab.setAttribute('data-act', 'asst-open'); fab.setAttribute('aria-haspopup', 'dialog'); fab.setAttribute('aria-expanded', 'false'); fab.setAttribute('aria-controls', 'asst'); fab.setAttribute('aria-label', 'Стелла, помощник «Астреи»: задать вопрос');
+    const fab = document.createElement('button'); fab.type = 'button'; fab.id = 'asst-fab'; fab.className = 'asst-fab'; fab.setAttribute('data-act', 'asst-open'); fab.setAttribute('aria-haspopup', 'dialog'); fab.setAttribute('aria-expanded', 'false'); fab.setAttribute('aria-controls', 'asst'); fab.setAttribute('aria-label', 'Стелла, помощник «Астрея»: задать вопрос');
     const sparks = [0, 1, 2, 3, 4, 5, 6, 7].map(k => '<i style="--a:' + (k * 45 + 12) + 'deg;--d:' + (40 + (k % 3) * 9) + 'px;--k:' + k + '"></i>').join('');
     fab.innerHTML = '<span class="asst-fab-glow" aria-hidden="true"></span><span class="asst-fab-sweep" aria-hidden="true"></span><span class="asst-fab-fx" aria-hidden="true">' + sparks + '</span><span class="asst-fab-ring" aria-hidden="true"></span><span class="asst-fab-roll"><span class="asst-fab-i"><span class="asst-fab-pe">' + PEARL('sleep', true) + '</span></span></span><span class="asst-fab-t"><span><b>Спросить Стеллу</b></span></span>';
     document.body.insertAdjacentHTML('beforeend', PEARL_DEFS); document.body.appendChild(fab);
     fab.addEventListener('pointerenter', () => { fab.classList.add('long'); clearTimeout(longT); }); fab.addEventListener('pointerleave', () => { if (!fab.matches(':focus-visible')) longT = setTimeout(() => fab.classList.remove('long'), 450); });
     fab.addEventListener('focus', () => { if (fab.matches(':focus-visible')) { fab.classList.add('long'); clearTimeout(longT); } }); fab.addEventListener('blur', () => { longT = setTimeout(() => fab.classList.remove('long'), 450); });
     const tip = document.createElement('div'); tip.id = 'asst-tip'; tip.className = 'asst-tip'; tip.hidden = true; tip.innerHTML = '<span class="asst-tip-pe" aria-hidden="true">' + PEARL('happy', true) + '</span><button class="asst-tip-b" type="button" data-act="asst-open"></button><button class="asst-tip-x" type="button" data-act="asst-tip-x" aria-label="Скрыть подсказку">' + I.close + '</button>'; document.body.appendChild(tip);
-    const el = document.createElement('section'); el.id = 'asst'; el.className = 'asst'; el.hidden = true; el.setAttribute('role', 'dialog'); el.setAttribute('aria-label', 'Стелла — помощник «Астреи»');
+    const el = document.createElement('section'); el.id = 'asst'; el.className = 'asst'; el.hidden = true; el.setAttribute('role', 'dialog'); el.setAttribute('aria-label', 'Стелла — помощник «Астрея»');
     const SR = window.SpeechRecognition || window.webkitSpeechRecognition, voice = !!SR && (location.protocol === 'https:' || location.hostname === 'localhost' || location.hostname === '127.0.0.1');
     el.innerHTML = '<header class="asst-h"><span class="asst-av" aria-hidden="true">' + PEARL('idle', true, 'look') + '</span><div class="asst-ht"><b>Стелла<span class="asst-n2"> · помощник</span></b><small id="asst-mode"><i class="asst-dot" aria-hidden="true"></i><span>Отвечаю по данным сайта</span></small></div>' +
       (D.guide && D.extras && D.extras.navigator ? '<button class="asst-ib asst-ib-tour" type="button" data-act="asst-tour-site" aria-label="Показать сайт — экскурсия" title="Показать сайт — экскурсия">' + TOURI + '</button>' : '') +
@@ -400,7 +400,7 @@
   function welcome() {
     ensureBrain(); const hr = new Date().getHours(), hi = hr < 5 ? 'Доброй ночи' : hr < 12 ? 'Доброе утро' : hr < 18 ? 'Добрый день' : 'Добрый вечер';
     const own = brain && brain.welcome ? brain.welcome(ctxOf(), bst, {nav: NAVI, ai: !!ai}) : '';          // приветствие «своими словами» (data/stella/voice.json): по странице и времени суток, варианты чередуются
-    return {r: 'b', t: own || hi + '! Я Стелла, мини-консультант «Астреи». Подскажу по каталогу и брендам, обучению, условиям сотрудничества и контактам: подберу продукты по задаче и объясню выбор, сравню товары, посчитаю скидку, найду ближайший семинар.' + (NAVI ? ' Могу и провести по сайту: открою нужный раздел, покажу, где что находится, выставлю фильтры в каталоге и расскажу о товарах, которые вы отметите для сравнения.' : '') + (ai ? ' А ещё с удовольствием отвечу на любые вопросы — не только про сайт.' : '') + ' С чего начнём?'};
+    return {r: 'b', t: own || hi + '! Я Стелла, мини-консультант «Астрея». Подскажу по каталогу и брендам, обучению, условиям сотрудничества и контактам: подберу продукты по задаче и объясню выбор, сравню товары, посчитаю скидку, найду ближайший семинар.' + (NAVI ? ' Могу и провести по сайту: открою нужный раздел, покажу, где что находится, выставлю фильтры в каталоге и расскажу о товарах, которые вы отметите для сравнения.' : '') + (ai ? ' А ещё с удовольствием отвечу на любые вопросы — не только про сайт.' : '') + ' С чего начнём?'};
   }
   /* первое сообщение приходит как живое: Стелла «печатает», затем сообщение отправляется и печатается */
   async function introWelcome() {
@@ -507,10 +507,10 @@
     const run = fn => async args => { try { ensureBrain(); const out = fn(brain.knowledge, args || {}); return {content: [{type: 'text', text: JSON.stringify(out)}]}; } catch (e) { return {content: [{type: 'text', text: JSON.stringify({error: 'Не удалось выполнить запрос'})}], isError: true}; } };
     const ro = {readOnlyHint: true};
     const tools = [
-      {name: 'search_products', description: 'Поиск товаров каталога «Астреи» по задаче, бренду, категории или словам. Цен и наличия на сайте нет.', inputSchema: {type: 'object', properties: {query: {type: 'string'}, task: {type: 'string', enum: (D.tasks || []).map(t => t.id)}, brand: {type: 'string', enum: (D.brands || []).map(b => b.id)}, new_only: {type: 'boolean'}}}, execute: run((K, a) => { const l = K.searchProducts({query: a.query, task: a.task, brand: a.brand, newOnly: a.new_only}); return {total: l.length, products: l.slice(0, 10).map(K.brief)}; })},
-      {name: 'list_events', description: 'Расписание мероприятий учебного центра «Астреи» (будущие), с фильтрами по городу, бренду и формату.', inputSchema: {type: 'object', properties: {city: {type: 'string'}, online: {type: 'boolean'}}}, execute: run((K, a) => ({events: K.listEvents({city: a.city, online: typeof a.online === 'boolean' ? a.online : undefined}).slice(0, 10)}))},
+      {name: 'search_products', description: 'Поиск товаров каталога «Астрея» по задаче, бренду, категории или словам. Цен и наличия на сайте нет.', inputSchema: {type: 'object', properties: {query: {type: 'string'}, task: {type: 'string', enum: (D.tasks || []).map(t => t.id)}, brand: {type: 'string', enum: (D.brands || []).map(b => b.id)}, new_only: {type: 'boolean'}}}, execute: run((K, a) => { const l = K.searchProducts({query: a.query, task: a.task, brand: a.brand, newOnly: a.new_only}); return {total: l.length, products: l.slice(0, 10).map(K.brief)}; })},
+      {name: 'list_events', description: 'Расписание мероприятий учебного центра «Астрея» (будущие), с фильтрами по городу, бренду и формату.', inputSchema: {type: 'object', properties: {city: {type: 'string'}, online: {type: 'boolean'}}}, execute: run((K, a) => ({events: K.listEvents({city: a.city, online: typeof a.online === 'boolean' ? a.online : undefined}).slice(0, 10)}))},
       {name: 'discount_for_amount', description: 'Ориентировочная скидка по сумме закупки в рублях (пороги с сайта; точные условия подтверждает менеджер).', inputSchema: {type: 'object', properties: {amount_rub: {type: 'number', minimum: 0}}, required: ['amount_rub']}, execute: run((K, a) => K.discount(a.amount_rub))},
-      {name: 'get_contacts', description: 'Контакты и представительства «Астреи».', inputSchema: {type: 'object', properties: {city: {type: 'string'}}}, execute: run((K, a) => K.contacts(a.city))}
+      {name: 'get_contacts', description: 'Контакты и представительства «Астрея».', inputSchema: {type: 'object', properties: {city: {type: 'string'}}}, execute: run((K, a) => K.contacts(a.city))}
     ];
     tools.forEach(t => { try { const r = mc.registerTool(Object.assign({annotations: ro}, t)); if (r && r.catch) r.catch(() => {}); } catch (e) {} });
   }
