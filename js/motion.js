@@ -14,14 +14,28 @@
   /* ---------- прогресс чтения ---------- */
   const bar = $('#progress'), hdr = $('#hdr');
   let ticking = false, lastY = 0, scrollNow = 0;
-  function updateProgress() {
-    const max = document.documentElement.scrollHeight - innerHeight;
-    if (bar) bar.style.transform = `scaleX(${max > 0 ? Math.min(1, scrollY / max) : 0})`;
+  /* Максимум прокрутки (scrollHeight − innerHeight) читали в каждом кадре: scrollHeight заставляет браузер синхронно пересчитать стили и вёрстку, а кадр
+     к этому моменту уже «грязный» (баночка, параллакс, полоса чтения пишут стили) — профиль давал на этом чтении ~10 % времени основного потока при
+     прокрутке (maxScroll + updateProgress), отсюда «подлагивание». Теперь значение кэшируется: сбрасывается при изменении размеров страницы
+     (resize, ResizeObserver на html/body) и по таймеру — на случай, если высота поменялась без изменения размеров корневых элементов. */
+  let maxCache = -1, maxAt = 0;
+  const dropMax = () => { maxCache = -1; };
+  const maxScroll = () => {
+    const t = performance.now();
+    if (maxCache < 0 || t - maxAt > 600) { maxCache = Math.max(0, document.documentElement.scrollHeight - innerHeight); maxAt = t; }
+    return maxCache;
+  };
+  addEventListener('resize', dropMax);
+  M.dropMax = dropMax;
+  if (window.ResizeObserver) { const ro = new ResizeObserver(dropMax); ro.observe(html); ro.observe(body); }
+  function updateProgress(y) {
+    const max = maxScroll();
+    if (bar) bar.style.transform = `scaleX(${max > 0 ? Math.min(1, (y === undefined ? scrollY : y) / max) : 0})`;
     ticking = false;
   }
   function onScroll() {
-    updateProgress();
-    const y = scrollY, d = y - lastY;
+    const y = scrollY, d = y - lastY;                              // сначала читаем, потом пишем: чтение после записи стилей снова заставило бы пересчитать вёрстку
+    updateProgress(y);
     scrollNow = y;
     if (hdr && !body.classList.contains('menu-open') && !body.classList.contains('search-open')) {
       if (y > 160 && d > 4) hdr.classList.add('hide');            // шапка уходит при скролле вниз
@@ -31,8 +45,17 @@
     parKick();
     if (sRaf && Math.abs(scrollY - sCur) > 3) { cancelAnimationFrame(sRaf); sRaf = 0; sLast = 0; sVel = 0; }   // внешний скролл (клавиши, якорь) отменяет инерцию
   }
-  addEventListener('scroll', () => { if (!ticking) { ticking = true; requestAnimationFrame(onScroll); } }, {passive: true});
-  addEventListener('resize', updateProgress);
+  /* Пока страница прокручивается, бесконечные декоративные анимации (кольца и орбиты героя, свечение, бегущая строка, кнопка и маскот Стеллы)
+     стоят: html.is-scrolling (css/motion.css) ставит их на паузу, через 220 мс после последнего движения они продолжают с того же места.
+     Часть этих анимаций (box-shadow, SVG, проценты в translate) браузер ведёт в основном потоке — стиль и вёрстка пересчитываются 60 раз в секунду
+     как раз тогда, когда основному потоку нужно успевать вести инерционную прокрутку, баночку и параллакс. */
+  let scrollIdleT = 0;
+  const markScrolling = () => {
+    if (!html.classList.contains('is-scrolling')) html.classList.add('is-scrolling');
+    clearTimeout(scrollIdleT); scrollIdleT = setTimeout(() => html.classList.remove('is-scrolling'), 220);
+  };
+  addEventListener('scroll', () => { markScrolling(); if (!ticking) { ticking = true; requestAnimationFrame(onScroll); } }, {passive: true});
+  addEventListener('resize', () => updateProgress());
 
   /* ---------- инерционное колесо мыши (только точный указатель; тач остаётся нативным) ----------
      Щелчки колеса (по 100 px) без «плавной прокрутки» браузера дают ступеньки, а простая экспонента к цели при каждом щелчке меняет скорость скачком
@@ -41,8 +64,11 @@
      Работает везде одинаково, в том числе на сцене с баночкой: пока сглаживание включали и выключали по зоне, на границе страница «дёргалась» назад. */
   let sTarget = 0, sCur = 0, sVel = 0, sRaf = 0, sLast = 0;
   const S_OMEGA = 10;
-  const maxScroll = () => document.documentElement.scrollHeight - innerHeight;
   const scrollsInside = el => { for (let n = el; n && n !== body && n !== html; n = n.parentElement) { if (/(auto|scroll)/.test(getComputedStyle(n).overflowY) && n.scrollHeight > n.clientHeight + 1) return true; } return false; };
+  /* колесо шлёт события десятки раз в секунду, а getComputedStyle/scrollHeight по цепочке предков каждый раз заставляют пересчитать стили и вёрстку:
+     для того же элемента под курсором ответ запоминаем на 400 мс */
+  let wheelEl = null, wheelRes = false, wheelAt = 0;
+  const scrollsInsideCached = el => { const t = performance.now(); if (el === wheelEl && t - wheelAt < 400) return wheelRes; wheelEl = el; wheelAt = t; return wheelRes = scrollsInside(el); };
   function sStep(t) {
     const dt = sLast ? Math.min(.05, Math.max(.004, (t - sLast) / 1000)) : .0167; sLast = t;
     const e = Math.exp(-S_OMEGA * dt), d = sCur - sTarget, c = sVel + S_OMEGA * d;        // точное решение критически затухающей пружины на шаг dt
@@ -56,8 +82,8 @@
   if (matchMedia('(hover:hover) and (pointer:fine)').matches) {
     addEventListener('wheel', e => {
       if (e.ctrlKey || e.defaultPrevented || Math.abs(e.deltaX) > Math.abs(e.deltaY)) return;
-      if (body.classList.contains('locked') || scrollsInside(e.target)) return;
-      e.preventDefault();
+      if (body.classList.contains('locked') || scrollsInsideCached(e.target)) return;
+      e.preventDefault(); markScrolling();
       let dy = e.deltaY; if (e.deltaMode === 1) dy *= 34; else if (e.deltaMode === 2) dy *= innerHeight;
       if (!sRaf) { sCur = sTarget = scrollY; sVel = 0; }
       if (dy * sVel < 0) sVel = 0;                                  // смена направления: инерцию прежнего движения гасим, иначе страница «проскакивает» вперёд
@@ -168,7 +194,16 @@
     targets.forEach(t => io.observe(t));
   }
   M.scheduleReveal = (root, ms) => { const t = ++revealTok; setTimeout(() => { if (t === revealTok) initReveal(root); }, ms); };
-  M.scan = (root, delay) => { root = root || $('#main'); splitAll(root); collectMotion(root); delay ? M.scheduleReveal(root, delay) : initReveal(root); };
+  /* Герой с кольцами и орбитами и бегущая строка крутятся бесконечно: пока они вне экрана, ставим их на паузу (класс anim-off, css/motion.css) —
+     иначе на всей остальной странице браузер впустую пересчитывает их стили каждый кадр */
+  let animIO = null;
+  function watchAnim(root) {
+    if (!('IntersectionObserver' in window)) return;
+    if (animIO) animIO.disconnect();
+    animIO = new IntersectionObserver(es => es.forEach(e => e.target.classList.toggle('anim-off', !e.isIntersecting)), {rootMargin: '160px 0px'});
+    $$('.hero, .marquee', root).forEach(el => animIO.observe(el));
+  }
+  M.scan = (root, delay) => { root = root || $('#main'); splitAll(root); collectMotion(root); watchAnim(root); delay ? M.scheduleReveal(root, delay) : initReveal(root); };
 
   /* ---------- шторка: переходы между страницами ----------
      Как в прежней версии сайта: страница не перезагружается. Полосы шторки закрываются (820 мс), пока читается титр раздела,
@@ -285,6 +320,7 @@
     M.cancelSmooth();
     const hdr = $('#hdr'); if (hdr) hdr.classList.remove('hide');
     A.initPage(document);
+    dropMax();
     const toHero = isHome(u) && !u.hash && M.heroTop() > 0;           // переход на главную: открываем героя, а не вступление (оно выше)
     if (toHero) window.scrollTo({top: M.heroTop(), left: 0, behavior: 'instant'});
     M.scan($('#main'), quiet ? 40 : 470);
@@ -396,6 +432,7 @@
     M.done = true;
     measurePar();
     A.initPage(document);
+    dropMax();
     M.scan($('#main'), delay || 0);
     parKick();
     updateProgress();
