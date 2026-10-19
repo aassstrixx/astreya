@@ -16,7 +16,7 @@ const wait = ms => new Promise(r => setTimeout(r, ms));
   const redesign = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'data/redesign.json'), 'utf8')).extras || {};
   if (!redesign.enabled || !redesign.assistant) { console.log('Помощник выключен в data/redesign.json — проверка пропущена.'); process.exit(0); }
   process.env.ASSISTANT_MODEL = 'fake-model'; delete process.env.ANTHROPIC_API_KEY;
-  const S = await H.boot({}); const A = require('../server/lib/assistant');
+  const S = await H.boot({}, {fixtures: true}); const A = require('../server/lib/assistant');
   const calls = []; let script = [], round = 0; const set = r => { script = r; round = 0; };
   A.setClientFactory(() => ({messages: {stream(params) {
     calls.push(JSON.parse(JSON.stringify(params))); const h = {}, r = script[Math.min(round++, script.length - 1)];

@@ -20,6 +20,8 @@ function trainingPage(ctx, C, P) {
   const {training, site, sortedEvents} = ctx;
   const ext = site.contacts.ext;
   const cityChips = ['all', ...training.cities].map((c, i) => C.chip(c === 'all' ? 'Все города' : esc(c), 'city', c, i === 0)).join('');
+  const sxT = ctx.sales && ctx.sales.pages && ctx.sales.pages.training;
+  const waitBtn = `<div class="row" style="justify-content:center;margin-top:14px">${sxT && sxT.noneCta ? `<button class="btn btn-fill btn-sm" type="button" data-sx-wait="" data-sx="schedule-wait">${esc(sxT.noneCta)}</button>` : `<button class="btn btn-fill btn-sm" type="button" data-act="form" data-type="question">Задать вопрос</button>`}</div>`;
   const fmtChips = [['all', 'Любой формат'], ['offline', 'Очно'], ['online', 'Онлайн']].map(([id, l], i) => C.chip(l, 'fmt', id, i === 0)).join('');
   return `<div class="wrap" data-training>
     ${C.pageHead('Обучение', 'Учебный центр «Астрея»', 'Бесплатные семинары и мастер-классы: теория чередуется с практикой. Базовые семинары проходят с 10:30 до 18:00.')}
@@ -42,7 +44,7 @@ function trainingPage(ctx, C, P) {
     <div class="tb-row" style="margin-bottom:28px"><span class="tb-lab">Формат</span><div class="chips reveal" id="fmt-chips">${fmtChips}</div></div>
     </div>` : ''}
     <div class="sem-list" id="sem-list">${sortedEvents.map(e => C.eventRow(P, e)).join('')}</div>
-    <div class="empty" id="sem-empty"${sortedEvents.length ? ' hidden' : ''}><b>${sortedEvents.length ? 'Мероприятий не найдено' : 'Расписание формируется'}</b>${sortedEvents.length ? 'Оставьте заявку — сообщим, когда откроется запись.' : 'Даты ближайших семинаров появятся здесь. Оставьте заявку — менеджер учебного центра сообщит, когда откроется запись.'}</div>
+    <div class="empty" id="sem-empty"${sortedEvents.length ? ' hidden' : ''}><b>${sortedEvents.length ? 'Мероприятий не найдено' : 'Расписание формируется'}</b>${sortedEvents.length ? 'Оставьте заявку — сообщим, когда откроется запись.' : 'Даты ближайших семинаров появятся здесь. Оставьте заявку — менеджер учебного центра сообщит, когда откроется запись.'}${sortedEvents.length ? '' : waitBtn}</div>
     ${sortedEvents.length ? C.noteBox(`Расписание ориентировочное: актуальные даты и адреса подтверждает менеджер учебного центра.`) : ''}
   </div></section>
 

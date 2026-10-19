@@ -73,6 +73,8 @@ test('бренд нельзя удалить, пока у него есть то
   r = await admin.put('/api/collections/news', {data: n.data, version: n.version}); assert.equal(r.status, 200, r.text); assert.ok(read('news/proverka-novosti.html').includes('Проверка новости из админки'));
   /* разделы «Мероприятия» и «Новости» в поставке пустые (демо-записей нет): первая запись добавляется через админку */
   let e = (await admin.get('/api/collections/events')).json; assert.deepEqual(e.data, [], 'мероприятий в поставке нет');
+  assert.match(read('training.html'), /Расписание формируется/, 'пустое расписание объяснено посетителю'); assert.match(read('news.html'), /Новости скоро появятся/, 'пустой раздел новостей объяснён');
+  assert.ok(!/<p class="ftr-note">[^<]*[Дд]емонстрац/.test(read('index.html')) && !/"@type": ?"Event"/.test(read('training.html')), 'пометки «демо» на сайте нет, разметки несуществующих событий тоже');
   const brand = rd(S.root, 'data/products.json')[0].brand;
   r = await admin.put('/api/collections/events', {data: [{id: 'e-test', slug: '2026-12-01-moskva-test', date: '2026-12-01', city: 'Москва', fmt: 'Очно', time: '10:30–18:00', brand, title: 'Проверка мероприятия', teacher: '', speaker: 'Ведущий', place: 'Москва', description: 'Описание.', seats: null}], version: e.version}); assert.equal(r.status, 200, r.text);
   assert.ok(read('training/2026-12-01-moskva-test.html').includes('Проверка мероприятия'), 'страница мероприятия собрана');

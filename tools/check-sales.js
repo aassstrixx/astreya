@@ -11,12 +11,13 @@ if (!pw) { console.log('Playwright не найден — проверка про
 const fs = require('fs'), path = require('path'), cp = require('child_process');
 const CHROME = process.env.CHROMIUM || ['/opt/pw-browsers/chromium-1194/chrome-linux/chrome'].find(p => fs.existsSync(p));
 const H = require('../server/test/helpers');
-const ROOT = path.join(__dirname, '..');
+const REPO = path.join(__dirname, '..'); let ROOT = REPO;      // ROOT — копия сайта с тестовыми мероприятиями (в поставке расписание пустое), REPO — сам репозиторий (git)
 let pass = 0, fail = 0; const ok = (c, m, x) => { if (c) { pass++; console.log('  ✓', m); } else { fail++; console.log('  ✗ FAIL:', m, x !== undefined ? JSON.stringify(x).slice(0, 500) : ''); } };
 const wait = ms => new Promise(r => setTimeout(r, ms));
 const J = f => JSON.parse(fs.readFileSync(path.join(ROOT, f), 'utf8'));
 
 (async () => {
+  const S = await H.boot({}, {fixtures: true}); ROOT = S.root;
   const redesign = J('data/redesign.json').extras || {};
   if (!redesign.enabled || !redesign.sales) { console.log('Продающий слой выключен в data/redesign.json — проверка пропущена.'); process.exit(0); }
   const SALES = J('data/sales.json'), SITE = J('data/site.json');
@@ -50,10 +51,10 @@ const J = f => JSON.parse(fs.readFileSync(path.join(ROOT, f), 'utf8'));
   ok(nums.every(n => real.has(n)), 'все суммы и проценты в текстах продающего слоя берутся из data/site.json → discounts', nums.filter(n => !real.has(n)));
 
   /* главная: вступление, герой, орбита и все разделы — прежние; отличается только блок «Для кого» (адресные кнопки) */
-  { let base = ''; for (const ref of ['origin/pre-sales-rollback', 'pre-sales-rollback']) { try { base = cp.execFileSync('git', ['show', ref + ':index.html'], {cwd: ROOT, encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore']}); break; } catch (e) {} }
+  { let base = ''; for (const ref of ['origin/pre-sales-rollback', 'pre-sales-rollback']) { try { base = cp.execFileSync('git', ['show', ref + ':index.html'], {cwd: REPO, encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore']}); break; } catch (e) {} }
     if (!base) console.log('  – нет ссылки pre-sales-rollback в git: сравнение главной с прежней версией пропущено');
     else {
-      const norm = h => h.replace(/<a class="rd-next[\s\S]*?<\/section>/, '</section>').replace(/\?v=[0-9a-f]{8}/g, '')          /* блок «ближайшие встречи» зависит от даты сборки — в сравнение не берём */.replace(/ data-v="[0-9a-f]{8}"/g, '').replace(/([Аа]стре)(?:и|е|ю|ей)(?![а-яё])/g, '$1я')          /* название компании теперь везде в именительном падеже — прежнюю версию приводим к тому же виду */.split('\n').filter(l => !/sales(-pages)?\.(css|js)|js\/consent\.js/.test(l) && l.trim() !== '').join('\n')
+      const norm = h => h.replace(/<a class="rd-next[\s\S]*?<\/section>/, '</section>').replace(/\?v=[0-9a-f]{8}/g, '')          /* блок «ближайшие встречи» зависит от даты сборки — в сравнение не берём */.replace(/ data-v="[0-9a-f]{8}"/g, '').replace(/Запись на семинары открыта|Учебный центр для специалистов/g, 'ПОДПИСЬ')          /* подпись у шара менялась уже после продающего слоя (нельзя обещать запись, когда расписание пустое) */.replace(/([Аа]стре)(?:и|е|ю|ей)(?![а-яё])/g, '$1я')          /* название компании теперь везде в именительном падеже — прежнюю версию приводим к тому же виду */.split('\n').filter(l => !/sales(-pages)?\.(css|js)|js\/consent\.js/.test(l) && l.trim() !== '').join('\n')
           /* слой запуска в РФ (CSP, свои шрифты, согласие на обработку ПДн) меняет только <head>, подпись у рассылки и ссылку на согласие в подвале — их в сравнение не берём */
           .replace(/<span>Согласен\(-на\) получать новости[\s\S]*?<\/span>/, '<span>согласие рассылки</span>').replace(/<a href="consent\.html">Согласие на обработку данных<\/a>/, '');
       const body = h => h.slice(h.indexOf('<body'));
@@ -66,7 +67,7 @@ const J = f => JSON.parse(fs.readFileSync(path.join(ROOT, f), 'utf8'));
     } }
 
   /* ================= браузер ================= */
-  const S = await H.boot({}); const admin = await S.admin();
+  const admin = await S.admin();
   const b = await pw.chromium.launch(CHROME ? {executablePath: CHROME} : {});
   const base = 'http://127.0.0.1:' + S.port + '/';
   const mk = async o => {
