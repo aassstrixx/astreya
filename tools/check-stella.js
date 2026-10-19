@@ -24,7 +24,7 @@ console.log('1. Данные библиотеки');
   const tasks = new Set(D.tasks.map(t => t.id)), cats = new Set(D.cats.map(c => c.id));
   const STAGES = new Set(['early', 'mid', 'pre', 'post', 'en']), GROUPS = new Set(['persona', 'chat', 'fun', 'scope', 'glossary', 'business', 'safety']);
   const ACTS = new Set(['callback', 'partner', 'request', 'ask']), FNS = new Set(['pickval', 'randnum', 'either', 'countdown', 'dayplus', 'nameSet', 'nameGet', 'repeat', 'clarify', 'riddle', 'fact', 'joke', 'social']);
-  const PH = new Set(['hello', 'phone', 'hours', 'email', 'company', 'time', 'date', 'weekday', 'nm', ',nm', 'city', 'adv', 'v', 'a', 'b', 'q', 't', 'what', 'days', 'dword', 'n', 'echo', 'h']);
+  const PH = new Set(['hello', 'phone', 'hours', 'email', 'company', 'time', 'date', 'weekday', 'nm', ',nm', 'city', 'adv', 'v', 'a', 'b', 'q', 't', 'what', 'days', 'dword', 'n', 'echo', 'h', 'messengers']);
   let nTop = 0, nAns = 0, nRules = 0, bad = [];
   S.topics.forEach(t => {
     nTop++; const w = m => bad.push(t.id + ': ' + m);
