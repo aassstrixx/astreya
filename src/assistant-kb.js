@@ -17,7 +17,7 @@ module.exports = function buildKb(ctx) {
       professionals: (co.professionals && co.professionals.text || []).map(s => clip(s, 400)),
       requisites: site.requisites && site.requisites.note ? site.requisites.note : ''
     },
-    contacts: {phone: c.phone, phoneRaw: c.phoneRaw, email: c.email, hours: c.hours, address: c.address, addressNote: c.addressNote || '', whatsapp: c.whatsapp || '', max: c.max || '', telegram: c.telegram || '', ext: c.ext || {}},
+    contacts: {phone: c.phone, phoneRaw: c.phoneRaw, email: c.email, hours: c.hours, address: c.address, addressNote: c.addressNote || '', max: c.max || '', telegram: c.telegram || '', vk: c.vk || '', ext: c.ext || {}},
     offices: (site.offices || []).map(o => ({city: o.city, role: o.role, addr: o.addr, hours: o.hours || '', phones: o.phones || [], emails: o.emails || []})),
     discounts: {tiers: site.discounts || [], note: 'Ориентировочная программа скидок по объёму закупки; точные условия и пороги подтверждает менеджер.'},
     partner: {

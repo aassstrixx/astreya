@@ -3,6 +3,7 @@ const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
 const CSP = require('./csp.js');
+const MSG = require('./messengers.js');
 const S = require('../js/shared.js');
 const backdropsFactory = require('./backdrops.js');
 const {esc, I} = S;
@@ -46,7 +47,7 @@ module.exports = function layout(ctx, C) {
   consentCfg.version = crypto.createHash('md5').update(JSON.stringify([consentCfg, !!MT.webvisor, LG.version || ''])).digest('hex').slice(0, 8);
   const publicIntegrations = {metrika: metrikaOn ? {id: String(MT.id), webvisor: !!MT.webvisor, clickmap: MT.clickmap !== false, trackLinks: MT.trackLinks !== false, accurateTrackBounce: MT.accurateTrackBounce !== false} : null, consent: consentCfg, captcha: (IT.captcha || {}).siteKey ? {siteKey: String(IT.captcha.siteKey)} : null, legalVersion: LG.version || ''};
   const verifyMeta = [['yandex-verification', VR.yandex], ['google-site-verification', VR.google], ['wmail-verification', VR.mailru]].filter(([, v]) => v && /^[\w-]{6,128}$/.test(String(v))).map(([n, v]) => `<meta name="${n}" content="${esc(v)}">`).join('\n');
-  const msgItems = () => [['MAX', c.max], ['Telegram', c.telegram], ['ВКонтакте', c.vk]].filter(([, h]) => h).map(([t, h]) => `<li><a href="${esc(h)}" target="_blank" rel="noopener" data-track="messenger_click" data-place="footer">${t}</a></li>`).join('');
+  const msgItems = () => MSG.cells(c).map(ch => ch.url ? `<li><a href="${esc(ch.url)}" target="_blank" rel="noopener" data-track="messenger_click" data-place="footer">${ch.name}</a></li>` : `<li class="msg-off"><span>${ch.name}</span> <small>скоро</small></li>`).join('');
   const legalLinks = P => `<a href="${u(P, 'privacy.html')}">Политика конфиденциальности</a><a href="${u(P, 'consent.html')}">Согласие на обработку данных</a><a href="${u(P, 'terms.html')}">Пользовательское соглашение</a>${consentOn ? `<button class="ftr-cookie" type="button" data-act="cookie-settings">${esc(consentCfg.settings)}</button>` : ''}`;
 
   const header = P => `<header class="hdr" id="hdr">

@@ -94,7 +94,7 @@
     /* контакты и представительства */
     function contacts(city) {
       const c = KB.contacts || D.site.contacts, offices = KB.offices || [], off = city ? offices.find(o => o.city === city) : null;
-      return {main: {phone: c.phone, phoneRaw: c.phoneRaw, email: c.email, hours: c.hours, address: c.address || '', whatsapp: c.whatsapp || ''}, office: off || null, offices: offices.map(o => ({city: o.city, role: o.role, address: o.addr, phones: o.phones, emails: o.emails}))};
+      return {main: {phone: c.phone, phoneRaw: c.phoneRaw, email: c.email, hours: c.hours, address: c.address || ''}, office: off || null, offices: offices.map(o => ({city: o.city, role: o.role, address: o.addr, phones: o.phones, emails: o.emails}))};
     }
 
     /* поиск по материалам сайта: абзацы базы знаний, стеммы, TF-IDF, ближайшая по смыслу фраза */
@@ -161,6 +161,7 @@
     opts = opts || {};
     const K = createKnowledge(D, KB, opts), {P, B, CAT, TASK, KIND, EV} = K;
     const D_ = D, contactsMain = (KB && KB.contacts) || D.site.contacts;
+    const msgNames = () => [['MAX', contactsMain.max], ['Telegram', contactsMain.telegram], ['ВКонтакте', contactsMain.vk]].filter(m => m[1]).map(m => m[0]);
     const hasCallback = !!(D.extras && D.extras.callback), hasCompare = !!(D.extras && D.extras.compare);
 
     /* словарь для исправления опечаток: названия из данных + ключевые слова + слова материалов сайта */
@@ -459,7 +460,7 @@
       const city = cityOf(n), c = K.contacts(city), L = [V('contacts.open', st, {}) || ''], links = [];
       if (c.office && city !== 'Москва') { L.push('**' + c.office.city + '** (' + lower(c.office.role) + '): ' + c.office.addr + '.'); (c.office.phones || []).forEach(p => L.push(p[1] + ': ' + p[0])); (c.office.emails || []).forEach(e => L.push(e)); }
       else { L.push('Главный офис: ' + (c.main.address || '') + (contactsMain.addressNote ? ' (' + contactsMain.addressNote + ')' : '') + '.'); L.push('Телефон: ' + c.main.phone + ' · e-mail: ' + c.main.email); L.push('Часы работы: ' + c.main.hours + '.'); }
-      links.push({h: 'tel:' + c.main.phoneRaw, l: 'Позвонить ' + c.main.phone}, {h: 'mailto:' + c.main.email, l: c.main.email}); if (contactsMain.max) links.push({h: contactsMain.max, l: 'MAX', ext: true}); if (contactsMain.telegram) links.push({h: contactsMain.telegram, l: 'Telegram', ext: true}); if (c.main.whatsapp) links.push({h: c.main.whatsapp, l: 'WhatsApp', ext: true}); links.push(link('contacts.html', 'Контакты'));
+      links.push({h: 'tel:' + c.main.phoneRaw, l: 'Позвонить ' + c.main.phone}, {h: 'mailto:' + c.main.email, l: c.main.email}); if (contactsMain.max) links.push({h: contactsMain.max, l: 'MAX', ext: true}); if (contactsMain.telegram) links.push({h: contactsMain.telegram, l: 'Telegram', ext: true}); if (contactsMain.vk) links.push({h: contactsMain.vk, l: 'ВКонтакте', ext: true}); links.push(link('contacts.html', 'Контакты'));
       if (!city) L.push('Есть представительства: ' + c.offices.map(o => o.city).join(', ') + '.');
       if (hasCallback) st.pending = {type: 'callback'};
       return R(L.filter(Boolean).join('\n'), {text2: hasCallback ? V('contacts.follow', st, {}) : '', links, actions: compact([act.callback()]), chips: ['Как стать партнёром', 'Ближайшие семинары'], intent: 'contacts', steps: ['Нахожу контакты…']});
@@ -666,7 +667,7 @@
       clarify(t, st) { if (!st.lastText) return {pool: t.a0}; const s = st.lastText.replace(/\s+/g, ' '); const m = /^[\s\S]{40,230}?[.!?](?=\s|$)/.exec(s); return {vars: {t: m ? m[0] : s.slice(0, 200)}, keepLast: true}; },
       riddle(t, st) { const rs = SL.riddles || []; if (!rs.length) return null; const i = (st.riddleN || 0) % rs.length; st.riddleN = (st.riddleN || 0) + 1; st.riddle = {i, tries: 0}; return {vars: {q: rs[i].q}}; },
       fact(t, st) { const fs = SL.facts || []; if (!fs.length) return null; const i = ((st.factN || 0) + hashOf(String(st.turns || 0)) % 3) % fs.length; st.factN = (st.factN || 0) + 1; return {vars: {v: fs[i]}}; },
-      social(t) { return contactsMain.whatsapp ? {} : {pool: t.a0}; },
+      social(t) { const ch = msgNames(); return ch.length ? {vars: {messengers: ch.join(', ')}} : {pool: t.a0}; },
       joke(t, st) { const js = SL.jokes || []; if (!js.length) return null; const i = (st.jokeN || 0) % js.length; st.jokeN = (st.jokeN || 0) + 1; return {vars: {v: js[i]}}; }
     };
     const FNMAP = {pickval: FN.pickval, randnum: FN.randnum, either: FN.either, countdown: FN.countdown, dayplus: FN.dayplus, nameSet: FN.nameSet, nameGet: FN.nameGet, repeat: FN.repeat, clarify: FN.clarify, riddle: FN.riddle, fact: FN.fact, joke: FN.joke, social: FN.social};
@@ -838,7 +839,7 @@
         return done(R(V('avail', st, {}) || 'Этих сведений на сайте нет — чтобы не ошибиться, их подтверждает менеджер: наличие, сроки и условия доставки, документы и сертификаты, состав. ' + MGR() + ' Отправить запрос?', {actions: compact([act.form('product', 'Запросить информацию', ''), act.callback()]), chips: ['Да, отправить запрос'], intent: 'avail'}));
       }
       if (W('где купить|как купить|как заказать|как приобрести|как оформить заказ|физлиц|частн\\S* лиц|для себя|интернет-магазин').test(n)) return done(R('Продукция «Астрея» рассчитана на специалистов — косметологов, салоны и клиники — и поставляется партнёрам. Чтобы начать, оставьте заявку на партнёрство или запрос по товару: менеджер уточнит условия и подскажет, как оформить поставку. Для частных покупателей условия уточняйте у менеджера.', {actions: compact([act.partner(st), act.form('product', 'Запросить информацию', ''), act.callback()]), links: [link('partners.html', 'Условия сотрудничества')], intent: 'buy'}));
-      if ((W('контакт|телефон|позвонить|номер|почт|e-?mail|адрес|как добрат|как найти|офис|график|часы работ|режим работ|когда работа|whatsapp|ватсап|представительств').test(n) && !W('семинар|мероприят|вебинар').test(n)) || (W('где наход').test(n) && W('вы|ваш|офис|компани|склад|представительств|магазин|учебн|центр').test(n) && !W('семинар|мероприят|вебинар').test(n))) return done(contactsAnswer(n, st));
+      if ((W('контакт|телефон|позвонить|номер|почт|e-?mail|адрес|как добрат|как найти|офис|график|часы работ|режим работ|когда работа|мессенджер|представительств').test(n) && !W('семинар|мероприят|вебинар').test(n)) || (W('где наход').test(n) && W('вы|ваш|офис|компани|склад|представительств|магазин|учебн|центр').test(n) && !W('семинар|мероприят|вебинар').test(n))) return done(contactsAnswer(n, st));
       if (W('менеджер|оператор|живой человек|связаться|свяжитесь|консультант|человек').test(n)) return done(R('Менеджер ответит в рабочее время: ' + contactsMain.phone + ' (' + contactsMain.hours + '). Можно заказать звонок или задать вопрос письменно.', {actions: compact([act.callback(), act.ask(text)]), links: [link('contacts.html', 'Контакты')], intent: 'human'}));
       if (W('партн[её]р|сотрудничеств|дилер|дистрибьют|оптом|опт($|\\s)|закупк|условия поставк|договор|стать клиент').test(n)) return done(partnerAnswer(n, st));
       if (W('заявк|оставить запрос|отправить запрос').test(n)) return done(R('Выберите, что оформить:', {actions: compact([act.form('product', 'Запросить информацию', ''), act.partner(st), act.callback()]), intent: 'forms'}));

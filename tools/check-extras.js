@@ -77,7 +77,7 @@ const cfg = JSON.parse(fs.readFileSync(pth.join(ROOT, 'data/redesign.json'), 'ut
     await p.goto(base + 'company.html'); await skipSplash(); await p.evaluate(() => localStorage.removeItem('astreya:rl'));
     const qc = () => p.evaluate(() => { const e = document.getElementById('qc'); if (!e) return null; const cs = getComputedStyle(e); return {on: e.classList.contains('on'), vis: cs.display !== 'none' && +cs.opacity > 0.5}; });
     if (mobile) {
-      /* плавающая кнопка «Быстрая связь» (позвонить / WhatsApp / заказать звонок) в правом нижнем углу телефона убрана по просьбе: флаг extras.quickContact выключен */
+      /* плавающая кнопка «Быстрая связь» (позвонить / мессенджеры / заказать звонок) в правом нижнем углу телефона убрана по просьбе: флаг extras.quickContact выключен */
       await p.evaluate(() => window.scrollTo({top: 900, behavior: 'instant'})); await wait(900); let s = await qc(); ok(!s, 'на телефоне нет круглой кнопки быстрой связи в правом нижнем углу (после прокрутки тоже)', s);
       await p.evaluate(() => window.scrollTo({top: document.documentElement.scrollHeight, behavior: 'instant'})); await wait(700); ok(await p.evaluate(() => !document.querySelector('#qc, .qc-btn, .qc-menu')), 'ни кнопки, ни её меню в странице нет');
     } else { const s = await qc(); ok(!s || !s.vis, 'на компьютере кнопки быстрой связи нет'); }

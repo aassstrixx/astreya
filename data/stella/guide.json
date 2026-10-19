@@ -1214,10 +1214,10 @@
                 "wait": 350
               },
               {
-                "point": ".contact-cards .ccard:nth-child(4)"
+                "point": ".contact-cards .ccard:nth-child(3)"
               }
             ],
-            "say": "Связаться можно как удобно: по телефону, почтой или в WhatsApp, а главный офис найдёте по адресу.",
+            "say": "Связаться можно как удобно: по телефону или почте, а ниже — наши мессенджеры и адрес главного офиса.",
             "msel": ".contact-cards .ccard:first-child"
           },
           {

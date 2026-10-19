@@ -215,6 +215,8 @@
 .ftr-rd .ftr-brand .about{margin-top:18px;max-width:28ch;font:500 clamp(17px,1.6vw,21px)/1.35 var(--serif);color:var(--milk)}
 .ftr-rd-contacts{display:grid;gap:8px;font-size:15px;text-align:left;min-width:min(280px,100%)}
 .ftr-rd-contacts li{margin:0}
+.ftr .msg-off{color:var(--silver);opacity:.8}
+.ftr .msg-off small{font-size:12px;letter-spacing:.04em;text-transform:uppercase;margin-left:4px}
 .ftr-rd-cols{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:clamp(24px,3.4vw,56px);padding-top:clamp(28px,4vw,48px)}
 @media (max-width:760px){.ftr-rd-cols{grid-template-columns:1fr 1fr}}
 @media (max-width:420px){.ftr-rd-cols{grid-template-columns:minmax(0,1fr)}}

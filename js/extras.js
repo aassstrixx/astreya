@@ -5,7 +5,7 @@
       одной заявкой. Список хранится в браузере (localStorage, до 12 позиций), внизу экрана — плашка «В списке: N», по ней открывается
       окно со списком. Отправка идёт через обычную форму «Запросить информацию» (те же поля, согласие, защита от спама, админка заявок):
       тема — «Список запроса (N): названия», полный список — в тексте сообщения. После отправленной заявки список очищается.
-   2) Быстрая связь на телефоне (≤ 900 px) — круглая кнопка внизу справа: «Позвонить» и «WhatsApp» (контакты из data/site.json).
+   2) Быстрая связь на телефоне (≤ 900 px) — круглая кнопка внизу справа: «Позвонить» и мессенджеры MAX / Telegram / ВКонтакте (контакты из data/site.json и «Интеграции»).
       Показывается после небольшой прокрутки, не мешает вступлению на главной, подвалу и открытым окнам.
    3) «Вы недавно смотрели» (extras.recent) — на странице товара запоминаем товар (localStorage, до 8 штук, только id), на странице товара и в каталоге
       показываем до четырёх последних (кроме текущего). Блок можно очистить.
@@ -138,11 +138,11 @@
     let el = $('#qc'), page = document.body.getAttribute('data-page');
     if (!X.quickContact || page === 'contacts' || page === 'notfound') { if (el) el.hidden = true; return; }
     if (!el) {
-      const c = D.site.contacts || {}, wa = c.whatsapp;
+      const c = D.site.contacts || {}, ms = [['MAX', c.max], ['Telegram', c.telegram], ['ВКонтакте', c.vk]].filter(m => m[1]);
       el = document.createElement('div'); el.id = 'qc'; el.className = 'qc'; el.hidden = false;
       el.innerHTML = `<div class="qc-menu" id="qc-menu" hidden>
         <a class="qc-item" href="tel:${esc(c.phoneRaw)}" data-track="phone_click" data-place="quick"><span class="qc-ic">${I.phone}</span><span><b>Позвонить</b><small>${esc(c.phone)}</small></span></a>
-        ${wa ? `<a class="qc-item" href="${esc(wa)}" target="_blank" rel="noopener" data-track="messenger_click" data-place="quick"><span class="qc-ic">${I.chat}</span><span><b>WhatsApp</b><small>Написать сообщение</small></span></a>` : ''}
+        ${ms.map(m => `<a class="qc-item" href="${esc(m[1])}" target="_blank" rel="noopener" data-track="messenger_click" data-place="quick"><span class="qc-ic">${I.chat}</span><span><b>${m[0]}</b><small>Написать сообщение</small></span></a>`).join('')}
         ${X.callback ? `<button class="qc-item" type="button" data-act="form" data-type="callback" data-track="callback_open" data-place="quick"><span class="qc-ic">${I.clock}</span><span><b>Заказать звонок</b><small>Перезвоним в рабочее время</small></span></button>` : ''}
       </div>
       <button class="qc-btn" type="button" aria-expanded="false" aria-controls="qc-menu" aria-label="Связаться с нами">${I.phone}</button>`;

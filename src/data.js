@@ -46,8 +46,8 @@ function load() {
   ctx.stella = loadStella();
   ctx.integrations = readOpt('integrations', {});         // подключения (Метрика, согласие, подтверждение сайта, мессенджеры) — data/integrations.json
   ctx.legal = readOpt('legal', {});                       // данные для юридических страниц — data/legal.json
-  { const ms = ctx.integrations.messengers || {};            // каналы связи: WhatsApp в РФ заблокирован — показывается только по явному флагу; MAX / Telegram / VK — из «Интеграции»
-    ctx.site.contacts = Object.assign({}, site.contacts, {whatsapp: ms.showWhatsapp ? (site.contacts.whatsapp || '') : '', max: ms.max || '', telegram: ms.telegram || '', vk: ms.vk || ''}); }
+  { const ms = ctx.integrations.messengers || {};            // каналы связи MAX / Telegram / ВКонтакте — из «Интеграции → Мессенджеры»; ячейка без ссылки показывается как «скоро», пока не выключен showEmpty
+    ctx.site.contacts = Object.assign({}, site.contacts, {max: ms.max || '', telegram: ms.telegram || '', vk: ms.vk || '', msgShowEmpty: ms.showEmpty !== false}); }
   ctx.menu = readOpt('menu', {nav: DEFAULT_NAV});
   ctx.nav = (ctx.menu.nav && ctx.menu.nav.length ? ctx.menu.nav : DEFAULT_NAV).map(i => ({title: i.title, href: i.href, key: i.key || '/' + String(i.href).replace(/\.html$/, '').replace(/^pages\//, 'p/')}));
   ctx.pagesRaw = readOpt('pages', {items: []}).items || [];

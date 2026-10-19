@@ -83,7 +83,7 @@
     {
       "id": "en_contacts", "g": "business", "stage": "en", "b": false, "act": ["callback"], "links": [["contacts.html", "Contacts"]],
       "q": [
-        "*contact|contacts|phone|email|address|manager|hours|whatsapp|call_you"
+        "*contact|contacts|phone|email|address|manager|hours|messenger|call_you"
       ],
       "a": [
         "Phone: {phone} ({hours}). Email: {email}. The full list of offices is on the Contacts page.",

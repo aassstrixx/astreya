@@ -1,4 +1,4 @@
-/* Раздел «Интеграции»: Яндекс Метрика, уведомление о cookie и согласие, подтверждение сайта в Вебмастере, мессенджеры MAX / Telegram, Яндекс SmartCaptcha, Битрикс24.
+/* Раздел «Интеграции»: Яндекс Метрика, уведомление о cookie и согласие, подтверждение сайта в Вебмастере, мессенджеры MAX / Telegram / ВКонтакте, Яндекс SmartCaptcha, Битрикс24.
    Публичные значения (номер счётчика, тексты, ключи клиента) хранятся в data/integrations.json и попадают на сайт при сборке; секреты (токены, серверные ключи, веб-хуки) — только на сервере. */
 (function () {
   'use strict';
@@ -73,11 +73,22 @@
           h('div', {class: 'row', style: {marginTop: '10px'}}, saveBtn()));
       }
       /* --- Мессенджеры --- */
+      const MSGS = [['max', 'MAX', 'https://max.ru/…', 'Ссылка на ваш профиль или канал в MAX.'], ['telegram', 'Telegram', 'https://t.me/…', 'Ссылка на аккаунт или канал в Telegram.'], ['vk', 'ВКонтакте', 'https://vk.com/…', 'Ссылка на сообщество компании.']];
       function messengersCard() {
-        const m = pub.messengers;
-        return h('div', {class: 'card'}, h('h2', {}, 'Мессенджеры'), h('p', {class: 'muted small'}, 'Кнопки появятся в подвале, на странице «Контакты» и в ответах чат-помощника. WhatsApp в России заблокирован, поэтому по умолчанию не показывается.'),
-          h('div', {class: 'grid3'}, fld('MAX', text(m, 'max', {placeholder: 'https://max.ru/…'}), 'Ссылка на ваш профиль или канал в MAX.'), fld('Telegram', text(m, 'telegram', {placeholder: 'https://t.me/…'}), 'Ссылка на аккаунт или бота.'), fld('ВКонтакте', text(m, 'vk', {placeholder: 'https://vk.com/…'}), 'Сообщество компании.')),
-          h('div', {style: {marginTop: '8px'}}, chk(m, 'showWhatsapp', 'Показывать WhatsApp (ссылка берётся из «Настройки сайта → Контакты»; у большинства посетителей в России не откроется)')),
+        const m = pub.messengers, cells = [];
+        if (m.showEmpty === undefined) m.showEmpty = true;
+        const on = k => !!m[k], where = k => on(k) ? 'На сайте: кнопка со ссылкой.' : (m.showEmpty ? 'На сайте: ячейка «Скоро» без ссылки.' : 'На сайте: не показывается.');
+        const empt = chk(m, 'showEmpty', 'Показывать канал без ссылки ячейкой «Скоро» (если выключить, канал без ссылки на сайте не виден)');
+        const refresh = [];
+        for (const [k, name, ph, help] of MSGS) {
+          const inp = text(m, k, {placeholder: ph, maxlength: '200', spellcheck: 'false'}), st = h('div', {class: 'help'});
+          const upd = () => { st.textContent = where(k); }; upd(); inp.addEventListener('input', upd); refresh.push(upd);
+          cells.push(fld(name, inp, help), st);
+        }
+        empt.querySelector('input').addEventListener('change', () => refresh.forEach(f => f()));
+        return h('div', {class: 'card'}, h('h2', {}, 'Мессенджеры: MAX, Telegram, ВКонтакте'), h('p', {class: 'muted small'}, 'Три ячейки появятся в подвале и на странице «Контакты», а кнопки — в ответах чат-помощника. Вставьте ссылку на ваш профиль, канал или сообщество — ячейка станет рабочей кнопкой. Пока ссылки нет, на сайте показывается ячейка «Скоро».'),
+          h('div', {class: 'grid3'}, ...[0, 2, 4].map(i => h('div', {}, cells[i], cells[i + 1]))),
+          h('div', {style: {marginTop: '8px'}}, empt),
           h('div', {class: 'row', style: {marginTop: '10px'}}, saveBtn()));
       }
       /* --- SmartCaptcha --- */
@@ -100,7 +111,7 @@
       /* --- сводка --- */
       function summaryCard() {
         const n = sum.notify, row = (on, name, where) => h('li', {}, h('span', {class: 'lvl ' + (on ? 'ok' : 'info')}), h('span', {}, name), h('span', {class: 'go muted', style: {fontWeight: 400}}, on ? 'включено' : 'выключено'));
-        return h('div', {class: 'card'}, h('h2', {}, 'Что сейчас подключено'), h('ul', {class: 'hl'}, row(!!sum.metrika.id, 'Яндекс Метрика' + (sum.metrika.id ? ' · ' + sum.metrika.id : '')), row(sum.captcha.enabled, 'SmartCaptcha'), row(sum.bitrix24.enabled, 'Битрикс24'), row(n.telegram, 'Уведомления в Telegram'), row(n.smtp, 'Уведомления по e-mail'), row(n.webhook, 'Веб-хук')),
+        return h('div', {class: 'card'}, h('h2', {}, 'Что сейчас подключено'), h('ul', {class: 'hl'}, row(!!sum.metrika.id, 'Яндекс Метрика' + (sum.metrika.id ? ' · ' + sum.metrika.id : '')), row(sum.captcha.enabled, 'SmartCaptcha'), row(sum.bitrix24.enabled, 'Битрикс24'), row(!!(sum.messengers || {}).max, 'MAX на сайте'), row(!!(sum.messengers || {}).telegram, 'Telegram на сайте'), row(!!(sum.messengers || {}).vk, 'ВКонтакте на сайте'), row(n.telegram, 'Уведомления в Telegram'), row(n.smtp, 'Уведомления по e-mail'), row(n.webhook, 'Веб-хук')),
           h('p', {class: 'muted small', style: {marginTop: '8px'}}, 'Уведомления (Telegram, e-mail, веб-хук) и ИИ-помощник настраиваются в разделе «Настройки и заявки». Что куда передаётся — в разделе «Персональные данные».'));
       }
       root.append(AD.pageHead('Интеграции', 'Подключения для российского рынка. Любая интеграция включается и выключается здесь; секреты хранятся только на сервере.'), msg, box);

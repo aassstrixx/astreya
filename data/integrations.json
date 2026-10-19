@@ -31,6 +31,6 @@
     "settings": "Настройки cookie"
   },
   "verification": {"yandex": "", "google": "", "mailru": ""},
-  "messengers": {"max": "", "telegram": "", "vk": "", "showWhatsapp": false},
+  "messengers": {"max": "", "telegram": "", "vk": "", "showEmpty": true},
   "captcha": {"siteKey": ""}
 }

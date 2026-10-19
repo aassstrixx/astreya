@@ -194,13 +194,20 @@ test('сайт: Метрика, согласие, подтверждение В�
   const c = (await admin.get('/api/collections/integrations')).json, d = c.data;
   const bad = JSON.parse(JSON.stringify(d)); bad.metrika.id = 'abc'; assert.equal((await admin.put('/api/collections/integrations', {data: bad, version: c.version})).status, 422);
   bad.metrika.id = ''; bad.messengers.max = 'http://evil.example/x'; assert.equal((await admin.put('/api/collections/integrations', {data: bad, version: c.version})).status, 422);
-  d.metrika.id = '12345678'; d.metrika.webvisor = true; d.verification.yandex = 'abcdef0123456789'; d.messengers.max = 'https://max.ru/astreya'; d.messengers.telegram = 'https://t.me/astreya_bot';
+  d.metrika.id = '12345678'; d.metrika.webvisor = true; d.verification.yandex = 'abcdef0123456789'; d.messengers.max = 'https://max.ru/astreya';
   const r = await admin.put('/api/collections/integrations', {data: d, version: c.version}); assert.equal(r.status, 200, r.text); assert.ok(r.json.build && r.json.build.ok);
   const idx = fs.readFileSync(path.join(S.root, 'index.html'), 'utf8');
   assert.match(idx, /<meta name="yandex-verification" content="abcdef0123456789">/);
   const csp = idx.match(/http-equiv="Content-Security-Policy" content="([^"]+)"/)[1]; assert.match(csp, /script-src [^;]*https:\/\/mc\.yandex\.ru/); assert.match(csp, /connect-src [^;]*wss:\/\/mc\.yandex\.ru/); assert.ok(!/unsafe-eval/.test(csp));
   assert.match(idx, /href="https:\/\/max\.ru\/astreya"/); assert.match(idx, /data-act="cookie-settings"/); assert.match(idx, /consent\.html/);
-  assert.ok(!/wa\.me/.test(fs.readFileSync(path.join(S.root, 'contacts.html'), 'utf8')), 'WhatsApp скрыт по умолчанию'); assert.match(fs.readFileSync(path.join(S.root, 'contacts.html'), 'utf8'), /Написать в MAX/);
+  { const ct = fs.readFileSync(path.join(S.root, 'contacts.html'), 'utf8');
+    assert.ok(!/whatsapp|wa\.me/i.test(ct + idx), 'WhatsApp на сайте нет нигде');
+    assert.match(ct, /Написать в MAX/); assert.match(ct, /<h3>Telegram<\/h3><p class="cv"><span class="tbd">Скоро<\/span>/); assert.match(ct, /<h3>ВКонтакте<\/h3><p class="cv"><span class="tbd">Скоро<\/span>/);
+    assert.match(idx, /<li class="msg-off"><span>Telegram<\/span> <small>скоро<\/small><\/li>/, 'в подвале канал без ссылки — ячейка «скоро»');
+    d.messengers.showEmpty = false; d.messengers.telegram = 'https://t.me/astreya'; d.messengers.vk = ''; const r2 = await admin.put('/api/collections/integrations', {data: d, version: r.json.version}); assert.equal(r2.status, 200, r2.text);
+    const ct2 = fs.readFileSync(path.join(S.root, 'contacts.html'), 'utf8'), idx2 = fs.readFileSync(path.join(S.root, 'index.html'), 'utf8');
+    assert.match(ct2, /Написать в Telegram/); assert.ok(!/ВКонтакте<\/h3>/.test(ct2) && !/msg-off/.test(idx2), 'при showEmpty=false канал без ссылки не показывается');
+    d.messengers.showEmpty = true; d.messengers.telegram = ''; const r3 = await admin.put('/api/collections/integrations', {data: d, version: r2.json.version}); assert.equal(r3.status, 200, r3.text); r.json.version = r3.json.version; }
   const data = fs.readFileSync(path.join(S.root, 'js', 'data.js'), 'utf8'); assert.match(data, /"integrations":\{"metrika":\{"id":"12345678","webvisor":true/); assert.match(data, /"consent":\{"active":true,"mode":"optin"/); assert.ok(!/"token"|serverKey/.test(data), 'секретов в данных страницы нет');
   const csp2 = (await anon().raw('GET', '/index.html')).headers['content-security-policy']; assert.match(csp2, /mc\.yandex\.ru/);
 });

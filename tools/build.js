@@ -131,7 +131,7 @@ const index = [
   ...ctx.sortedEvents.map(e => ({t: 'event', title: e.title, url: `training/${e.slug}.html`, sub: `${e.fmt} · ${e.city} · ${S.dparts(e.date).full}`, date: e.date, q: S.norm([e.title, e.description, e.city, e.fmt, e.speaker, brandName(e.brand), 'семинар мероприятие обучение запись'].join(' '))}))
 ];
 const data = {
-  site: {name: site.name, contacts: {email: site.contacts.email, phone: site.contacts.phone, phoneRaw: site.contacts.phoneRaw, hours: site.contacts.hours, whatsapp: site.contacts.whatsapp || '', max: site.contacts.max || '', telegram: site.contacts.telegram || '', vk: site.contacts.vk || ''}, formEndpoint: site.formEndpoint || '', discounts: site.discounts},
+  site: {name: site.name, contacts: {email: site.contacts.email, phone: site.contacts.phone, phoneRaw: site.contacts.phoneRaw, hours: site.contacts.hours, max: site.contacts.max || '', telegram: site.contacts.telegram || '', vk: site.contacts.vk || '', showEmpty: site.contacts.msgShowEmpty !== false}, formEndpoint: site.formEndpoint || '', discounts: site.discounts},
   forms: Object.fromEntries(Object.entries(ctx.content.forms || {}).filter(([k]) => S.FORM_TYPES[k]).map(([k, v]) => [k, Object.fromEntries(FORM_KEYS.filter(f => v[f] !== undefined && v[f] !== null && v[f] !== '').map(f => [f, v[f]]))])),
   integrations: L.publicIntegrations,                                                     // что нужно браузеру для Метрики, согласия и капчи (data/integrations.json, data/legal.json); секретов здесь нет
   brands: ctx.brands.map(b => ({id: b.id, name: b.name, logo: b.logo || undefined, logoW: b.logoW, logoH: b.logoH, logoScale: b.logoScale, c1: b.c1, c2: b.c2, ink: b.ink})),

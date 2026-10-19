@@ -1,5 +1,6 @@
 const S = require('../../js/shared.js');
 const {esc, I} = S;
+const MSG = require('../messengers.js');
 
 module.exports = function contacts(ctx, C, P) {
   const {site} = ctx, c = site.contacts, rq = site.requisites;
@@ -8,16 +9,15 @@ module.exports = function contacts(ctx, C, P) {
   const cards = [
     {ic: I.phone, t: 'Телефон', v: `<a href="tel:${c.phoneRaw}" data-track="phone_click">${esc(c.phone)}</a>`, s: esc(c.hours)},
     {ic: I.mail, t: 'Email', v: `<a href="mailto:${c.email}" data-track="email_click">${esc(c.email)}</a>`, s: 'Ответим в рабочее время'},
-    ...(c.max ? [{ic: I.msg, t: 'MAX', v: `<a href="${esc(c.max)}" target="_blank" rel="noopener" data-track="messenger_click" data-place="contacts">Написать в MAX</a>`, s: 'Ответим в рабочее время'}] : []),
-    ...(c.telegram ? [{ic: I.msg, t: 'Telegram', v: `<a href="${esc(c.telegram)}" target="_blank" rel="noopener" data-track="messenger_click" data-place="contacts">Написать в Telegram</a>`, s: 'Ответим в рабочее время'}] : []),
-    ...(c.vk ? [{ic: I.msg, t: 'ВКонтакте', v: `<a href="${esc(c.vk)}" target="_blank" rel="noopener" data-track="messenger_click" data-place="contacts">Сообщество ВКонтакте</a>`, s: 'Новости и анонсы'}] : []),
-    ...(c.whatsapp ? [{ic: I.chat, t: 'WhatsApp', v: `<a href="${esc(c.whatsapp)}" target="_blank" rel="noopener" data-track="messenger_click">Написать в WhatsApp</a>`, s: 'Тот же номер, что и телефон'}] : []),
+    ...MSG.cells(c).map(ch => ch.url
+      ? {ic: I.msg, t: ch.name, v: `<a href="${esc(ch.url)}" target="_blank" rel="noopener" data-track="messenger_click" data-place="contacts">${ch.cta}</a>`, s: ch.sub}
+      : {ic: I.msg, t: ch.name, v: '<span class="tbd">Скоро</span>', s: 'Ссылка появится позже', off: true}),
     {ic: I.pin, t: 'Центральный офис', v: esc(c.address), s: esc(c.addressNote)}
   ];
   return `<div class="wrap">
     ${C.pageHead('Контакты', 'Свяжитесь с Астрея', 'Центральный офис в Москве и представительства в регионах. Позвоните, напишите или оставьте заявку — ответим в рабочее время.')}
     <h2 class="sr">Способы связи</h2>
-    <div class="grid g4 contact-cards">${cards.map(k => `<article class="card card-pad ccard reveal"><span class="adv-ic">${k.ic}</span><h3>${k.t}</h3><p class="cv">${k.v}</p><p class="muted small">${k.s}</p></article>`).join('')}</div>
+    <div class="grid g4 contact-cards">${cards.map(k => `<article class="card card-pad ccard${k.off ? ' ccard-off' : ''} reveal"><span class="adv-ic">${k.ic}</span><h3>${k.t}</h3><p class="cv">${k.v}</p><p class="muted small">${k.s}</p></article>`).join('')}</div>
 
     <section class="sec">
       <div class="map-row">
