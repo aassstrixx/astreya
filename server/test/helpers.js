@@ -24,16 +24,6 @@ function makeSite(dir) {
   }
   return dir;
 }
-/* тестовые мероприятия и новости (server/test/fixtures): в поставке сайта этих записей нет, а проверки расписания, календаря, Стеллы и продающего слоя без них нечего проверять.
-   Даты сдвигаются так, чтобы все мероприятия были в будущем (промежутки между ними сохраняются); затем копия сайта пересобирается */
-function applyFixtures(root, o) {
-  const fx = path.join(__dirname, 'fixtures'), rdj = f => JSON.parse(fs.readFileSync(path.join(fx, f), 'utf8'));
-  const events = rdj('events.json'), news = rdj('news.json'), t0 = Date.parse(events[0].date), now = Date.now();
-  if (!(o && o.keepDates)) events.forEach(e => { const d = new Date(now + 7 * 864e5 + (Date.parse(e.date) - t0)).toISOString().slice(0, 10); e.slug = e.slug.replace(/^\d{4}-\d{2}-\d{2}/, d); e.date = d; });
-  const nj = JSON.parse(fs.readFileSync(path.join(root, 'data', 'news.json'), 'utf8')); nj.items = news.items;
-  fs.writeFileSync(path.join(root, 'data', 'events.json'), JSON.stringify(events, null, 2) + '\n'); fs.writeFileSync(path.join(root, 'data', 'news.json'), JSON.stringify(nj, null, 2) + '\n');
-  require('child_process').execFileSync(process.execPath, [path.join(root, 'tools', 'build.js')], {cwd: root, stdio: 'ignore'});
-}
 const tmp = prefix => fs.mkdtempSync(path.join(process.env.TEST_TMP || os.tmpdir(), prefix));
 
 /* простой HTTP-клиент: возвращает {status, headers, text, json, cookie} */
@@ -75,9 +65,8 @@ function client(port, ip) {
   return c;
 }
 /* запуск сервера внутри процесса теста: свои копия сайта и папка данных, адрес клиента берётся из X-Forwarded-For (TRUST_PROXY=1) */
-async function boot(env, opts) {
+async function boot(env) {
   const root = makeSite(tmp('astreya-site-')), data = tmp('astreya-data-');
-  if (opts && opts.fixtures) applyFixtures(root, opts);
   Object.assign(process.env, {SITE_ROOT: root, DATA_DIR: data, TRUST_PROXY: '1', ADMIN_LOGIN: 'admin', ADMIN_PASSWORD: 'Strong-pass-2026'}, env);
   const app = require('../index'), server = await app.start(0, '127.0.0.1');
   const port = server.address().port;
@@ -85,6 +74,4 @@ async function boot(env, opts) {
     admin: async () => { const c = client(port, '10.9.9.9'); const r = await c.login('admin', 'Strong-pass-2026'); if (r.status !== 200) throw new Error('admin login failed: ' + r.text); return c; }};
 }
 const rd = (root, f) => JSON.parse(fs.readFileSync(path.join(root, f), 'utf8'));
-/* копия сайта с тестовыми мероприятиями и новостями — для проверок, которые сами поднимают сервер или читают файлы сайта */
-const fixtureSite = o => { const root = makeSite(tmp('astreya-fx-')); applyFixtures(root, o); return root; };
-module.exports = {REPO, makeSite, fixtureSite, tmp, request, client, boot, rd};
+module.exports = {REPO, makeSite, tmp, request, client, boot, rd};

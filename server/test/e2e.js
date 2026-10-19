@@ -9,7 +9,7 @@ if (!pw) { console.log('Playwright не найден — сквозная про
 const CHROME = process.env.CHROMIUM || ['/opt/pw-browsers/chromium-1194/chrome-linux/chrome'].find(p => fs.existsSync(p));
 const OUT = process.env.E2E_OUT || path.join(require('os').tmpdir(), 'astreya-e2e'); fs.mkdirSync(OUT, {recursive: true});
 /* запись открыта только на будущие встречи, поэтому берём самую позднюю из расписания (а не конкретную дату, которая со временем «проходит») */
-let lastEvent;      // задаётся после запуска сервера: мероприятия берутся из тестовых данных (в поставке расписание пустое)
+const lastEvent = (() => { const D = JSON.parse(fs.readFileSync(path.join(__dirname, '..', '..', 'js/data.js'), 'utf8').replace(/^[^=]*=\s*/, '').replace(/;\s*$/, '')); return D.events.map(e => e.slug).sort().pop(); })();
 const PNG = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==', 'base64');
 
 let pass = 0, fail = 0, shotN = 0;
@@ -17,8 +17,7 @@ const ok = (c, m, x) => { if (c) { pass++; console.log('  ✓', m); } else { fai
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 
 (async () => {
-  const S = await boot({}, {fixtures: true}), base = 'http://127.0.0.1:' + S.port, adminApi = await S.admin();
-  lastEvent = JSON.parse(fs.readFileSync(path.join(S.root, 'js/data.js'), 'utf8').replace(/^[^=]*=\s*/, '').replace(/;\s*$/, '')).events.map(e => e.slug).sort().pop();
+  const S = await boot({}), base = 'http://127.0.0.1:' + S.port, adminApi = await S.admin();
   { const s = (await adminApi.get('/api/settings')).json; s.rateLimit = {per10min: 200, perDay: 1000}; await adminApi.put('/api/settings', s); }       // все посетители теста — с одного адреса
   const browser = await pw.chromium.launch(CHROME ? {executablePath: CHROME} : {});
   const ctxOpts = {viewport: {width: 1360, height: 900}, locale: 'ru-RU'};

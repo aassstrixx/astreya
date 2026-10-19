@@ -4,8 +4,7 @@
    Запуск: node tools/check-assistant.js [-v]   (с -v печатает ответы). Код возврата ≠ 0, если что-то не так. */
 'use strict';
 const fs = require('fs'), path = require('path');
-const ROOT = require('../server/test/helpers').fixtureSite({keepDates: true}),      // копия сайта с тестовыми мероприятиями (в поставке расписание пустое); даты — как в файле, под «сегодня» ниже
-  VERBOSE = process.argv.includes('-v');
+const ROOT = path.join(__dirname, '..'), VERBOSE = process.argv.includes('-v');
 const load = f => { const t = fs.readFileSync(path.join(ROOT, f), 'utf8'); return JSON.parse(t.slice(t.indexOf('= ') + 2).trim().replace(/;\s*$/, '')); };
 const D = load('js/data.js'); let KB; try { KB = load('js/kb.js'); } catch (e) { console.log('Нет js/kb.js — помощник выключен в data/redesign.json (extras.assistant); проверка пропущена.'); process.exit(0); }
 const {createBrain} = require('../js/assistant-brain.js');

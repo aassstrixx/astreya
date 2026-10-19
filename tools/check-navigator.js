@@ -16,7 +16,7 @@ const wait = ms => new Promise(r => setTimeout(r, ms));
   const redesign = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'data/redesign.json'), 'utf8')).extras || {};
   if (!redesign.enabled || !redesign.assistant || !redesign.navigator) { console.log('Навигатор выключен в data/redesign.json — проверка пропущена.'); process.exit(0); }
   process.env.ASSISTANT_MODEL = 'fake-model'; delete process.env.ANTHROPIC_API_KEY;
-  const S = await H.boot({}, {fixtures: true}); const A = require('../server/lib/assistant');
+  const S = await H.boot({}); const A = require('../server/lib/assistant');
   const calls = []; let script = [], round = 0; const set = r => { script = r; round = 0; };
   A.setClientFactory(() => ({messages: {stream(params) {
     calls.push(JSON.parse(JSON.stringify(params))); const h = {}, r = script[Math.min(round++, script.length - 1)];
@@ -28,7 +28,7 @@ const wait = ms => new Promise(r => setTimeout(r, ms));
   }}}));
   const b = await pw.chromium.launch(CHROME ? {executablePath: CHROME} : {});
   const base = 'http://127.0.0.1:' + S.port + '/';
-  const D = JSON.parse(fs.readFileSync(path.join(S.root, 'js/data.js'), 'utf8').replace(/^[^=]*=\s*/, '').replace(/;\s*$/, ''));
+  const D = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'js/data.js'), 'utf8').replace(/^[^=]*=\s*/, '').replace(/;\s*$/, ''));
   const mk = async (o) => {
     o = o || {}; const ctx = await b.newContext({viewport: o.mobile ? {width: 390, height: 844} : {width: o.w || 1280, height: o.h || 860}, isMobile: !!o.mobile, hasTouch: !!o.mobile, locale: 'ru-RU'});
     await ctx.route(/^https:\/\/fonts\./, r => r.abort()); await ctx.route('**/astreya/**', r => r.continue({url: r.request().url().replace('/astreya/', '/')})); /* страница 404 ссылается на ресурсы с префиксом /astreya/ (адрес сайта на GitHub Pages) */
