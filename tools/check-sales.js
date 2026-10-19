@@ -53,8 +53,11 @@ const J = f => JSON.parse(fs.readFileSync(path.join(ROOT, f), 'utf8'));
   { let base = ''; for (const ref of ['origin/pre-sales-rollback', 'pre-sales-rollback']) { try { base = cp.execFileSync('git', ['show', ref + ':index.html'], {cwd: ROOT, encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore']}); break; } catch (e) {} }
     if (!base) console.log('  – нет ссылки pre-sales-rollback в git: сравнение главной с прежней версией пропущено');
     else {
-      const norm = h => h.replace(/<a class="rd-next[\s\S]*?<\/section>/, '</section>').replace(/\?v=[0-9a-f]{8}/g, '')          /* блок «ближайшие встречи» зависит от даты сборки — в сравнение не берём */.replace(/ data-v="[0-9a-f]{8}"/g, '').replace(/([Аа]стре)(?:и|е|ю|ей)(?![а-яё])/g, '$1я')          /* название компании теперь везде в именительном падеже — прежнюю версию приводим к тому же виду */.split('\n').filter(l => !/sales(-pages)?\.(css|js)/.test(l)).join('\n');
-      const old = norm(base), cur = norm(fs.readFileSync(path.join(ROOT, 'index.html'), 'utf8'));
+      const norm = h => h.replace(/<a class="rd-next[\s\S]*?<\/section>/, '</section>').replace(/\?v=[0-9a-f]{8}/g, '')          /* блок «ближайшие встречи» зависит от даты сборки — в сравнение не берём */.replace(/ data-v="[0-9a-f]{8}"/g, '').replace(/([Аа]стре)(?:и|е|ю|ей)(?![а-яё])/g, '$1я')          /* название компании теперь везде в именительном падеже — прежнюю версию приводим к тому же виду */.split('\n').filter(l => !/sales(-pages)?\.(css|js)|js\/consent\.js/.test(l) && l.trim() !== '').join('\n')
+          /* слой запуска в РФ (CSP, свои шрифты, согласие на обработку ПДн) меняет только <head>, подпись у рассылки и ссылку на согласие в подвале — их в сравнение не берём */
+          .replace(/<span>Согласен\(-на\) получать новости[\s\S]*?<\/span>/, '<span>согласие рассылки</span>').replace(/<a href="consent\.html">Согласие на обработку данных<\/a>/, '');
+      const body = h => h.slice(h.indexOf('<body'));
+      const old = body(norm(base)), cur = body(norm(fs.readFileSync(path.join(ROOT, 'index.html'), 'utf8')));
       const oi = old.indexOf('<section class="sec rd-about"'), ci = cur.indexOf('<section class="sec rd-about"');
       ok(ci > 0 && cur.slice(0, ci) === old.slice(0, oi), 'вступление, герой с орбитой брендов и бегущая строка — побайтно как до продающего слоя', {ci, oi});
       const au = h => h.slice(h.indexOf('<section class="rd-sec rd-clinical rd-aud"'), h.indexOf('<section class="rd-sec rd-news"'));
