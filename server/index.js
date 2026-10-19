@@ -280,6 +280,15 @@ async function handleApi(req, res, url) {
   throw httpErr(404, 'Неизвестный запрос.');
 }
 
+/* кэширование статики: страницы всегда сверяются с сервером; файлы с версией в адресе (?v=хэш: скрипты, стили, картинки) и шрифты с хэшем в имени не меняются — храним год;
+   кадры вступления — неделю; остальное — час */
+function cacheControl(rel, ext, url) {
+  if (ext === '.html' || ext === '.xml' || ext === '.txt') return 'no-cache';
+  if (ext === '.woff2' || (url && url.searchParams.has('v'))) return 'public, max-age=31536000, immutable';
+  if (/^assets\/jar\//.test(rel)) return 'public, max-age=604800';
+  return 'public, max-age=3600';
+}
+
 /* заголовки сайта: политика безопасности страницы (из <meta>, который кладёт сборка) + защита от встраивания на чужие сайты */
 const policyCache = new Map();
 function sitePolicy(file) {
@@ -307,7 +316,7 @@ function createServer() {
         return H.serveStatic(req, res, ADMIN_DIR, url.pathname.slice('/admin/'.length), {allow: r => /^[\w.-]+\.(html|css|js)$/.test(r), noCache: true, headers: (r, ext) => Object.assign({'Cache-Control': 'no-store', 'Cross-Origin-Resource-Policy': 'same-origin'}, ext === '.html' ? {'Content-Security-Policy': ADMIN_CSP, 'X-Frame-Options': 'DENY'} : {}), notFoundFile: null});
       }
       if (url.pathname === '/.well-known/security.txt' && !fs.existsSync(path.join(C.ROOT, '.well-known', 'security.txt'))) return H.send(res, 200, SECURITY_TXT(), {'Content-Type': 'text/plain; charset=utf-8', 'Cache-Control': 'no-cache'});
-      return H.serveStatic(req, res, C.ROOT, url.pathname.slice(1), {allow: SITE_ALLOW, headers: (r, ext, f) => Object.assign({'Cache-Control': ext === '.html' || ext === '.xml' || ext === '.txt' ? 'no-cache' : 'public, max-age=3600', 'X-Frame-Options': 'SAMEORIGIN'}, ext === '.html' && sitePolicy(f) ? {'Content-Security-Policy': sitePolicy(f)} : {}), cleanUrls: true, notFoundFile: path.join(C.ROOT, '404.html')});
+      return H.serveStatic(req, res, C.ROOT, url.pathname.slice(1), {allow: SITE_ALLOW, headers: (r, ext, f) => Object.assign({'Cache-Control': cacheControl(r, ext, url), 'X-Frame-Options': 'SAMEORIGIN'}, ext === '.html' && sitePolicy(f) ? {'Content-Security-Policy': sitePolicy(f)} : {}), cleanUrls: true, notFoundFile: path.join(C.ROOT, '404.html')});
     } catch (e) { console.error(e); try { H.send(res, 500, 'error'); } catch (x) {} }
   });
   srv.headersTimeout = 20000; srv.requestTimeout = 120000; srv.keepAliveTimeout = 5000;            // медленные «висящие» соединения не копятся

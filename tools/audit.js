@@ -113,6 +113,7 @@ async function browserAudit() {
   const b = await chromium.launch({executablePath: CHROME});
   for (const [name, vp, mobile] of [['компьютер', {width: 1440, height: 900}, false], ['телефон', {width: 390, height: 844}, true]]) {
     const ctx = await b.newContext({viewport: vp, isMobile: mobile, hasTouch: mobile, deviceScaleFactor: 1}); await ctx.route(/^https:\/\/(fonts|mc\.yandex|www\.googletagmanager)/, r => r.abort());
+    await ctx.addInitScript({content: axeSrc});                                  // политика безопасности страниц не пускает чужой inline-скрипт; init-скрипт ей не подчиняется
     for (const {key, file} of pickPages()) {
       const errs = [], p = await openPage(ctx, file, errs), where = `${rel(file)} (${name})`;
       if (key === 'home') { const s = await p.$('#sp-in'); if (s) { try { await s.click({timeout: 1500}); } catch (e) {} } await p.waitForTimeout(800); }
@@ -126,7 +127,6 @@ async function browserAudit() {
       const broken = await p.evaluate(() => [...document.images].filter(i => i.complete && i.naturalWidth === 0 && i.currentSrc).map(i => i.currentSrc.slice(-60)));
       broken.forEach(s => add('error', 'img', where, 'картинка не загрузилась: ' + s));
       // axe
-      await p.evaluate(src => { const s = document.createElement('script'); s.textContent = src; document.head.appendChild(s); }, axeSrc);
       const res = await p.evaluate(async () => { const r = await axe.run(document, {runOnly: {type: 'tag', values: ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa', 'best-practice']}, resultTypes: ['violations']}); return r.violations.map(v => ({id: v.id, impact: v.impact, help: v.help, n: v.nodes.length, sample: v.nodes.slice(0, 3).map(n => n.target.join(' ') + ' → ' + (n.failureSummary || '').split('\n')[1])})); });
       for (const v of res) add(v.impact === 'critical' || v.impact === 'serious' ? 'error' : 'warn', 'axe:' + v.id, where, `${v.help} (${v.n}) — ${v.sample[0]}`);
       // размеры кликабельных зон (телефон): ≥ 24×24 CSS-px (WCAG 2.2, 2.5.8) — у встроенных ссылок в тексте допускается меньше
