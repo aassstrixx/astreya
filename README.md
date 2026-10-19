@@ -11,14 +11,17 @@ brands/<бренд>.html      страницы брендов (9)
 products/<товар>.html    страницы товаров (30)
 training/<мероприятие>.html   страницы мероприятий (7)
 news/<новость>.html      страницы новостей (9)
-css/   base · components · pages · responsive · motion · redesign (слой доработок) · backdrops (фоновые вставки)
+css/   fonts · consent (уведомление о cookie) · base · components · pages · responsive · motion · redesign (слой доработок) · backdrops (фоновые вставки)
 js/    shared (общий код для Node и браузера) · data (генерируется) · core · motion · pages · hero-mark · redesign (слой доработок) · backdrops (фоновые вставки)
 assets/ favicon, иконки, og-image; assets/brands/ — логотипы брендов; assets/products/ — фото товаров (ставятся в админке, раздел «Товары по брендам»; пока фото нет, на карточке рисуется иллюстрация упаковки); assets/photos/ — фото для слоя доработок; assets/jar/ — кадры вступления с баночкой (рендер Blender, см. tools/jar-render); assets/bg/ — фоновые текстуры страниц (см. tools/bg-render)
 data/  ВСЕ данные и тексты сайта (см. data/README.md)
 src/   шаблоны страниц (функции, возвращающие HTML)
 tools/ build.js — сборка · check.js — проверка · bundle.js — автономная сборка · redesign.js — включить/выключить слой доработок
 server/ сервер заявок и админка сайта (Node.js без зависимостей) — см. server/README.md
-sitemap.xml robots.txt
+docs/   LAUNCH.md — запуск в РФ: что нужно, что внедрено, что делает владелец, развёртывание
+privacy.html consent.html terms.html   политика, отдельное согласие и соглашение (собираются из реквизитов, src/legal.js)
+assets/fonts/ css/fonts.css   свои шрифты (страницы не обращаются к серверам Google)
+sitemap.xml robots.txt .well-known/security.txt
 ```
 
 HTML-файлы в корне и в `brands/ products/ training/ news/` — **результат сборки**: не правьте их руками, меняйте `data/` или `src/` и запускайте сборку.
@@ -92,8 +95,8 @@ GitHub Pages не выполняет серверный код, поэтому �
 
 ## Аналитика
 
-Реальных идентификаторов нет. Все события уходят в `window.dataLayer` и в DOM-событие `astreya:track`; если на странице подключён `gtag`/`ym`, вызываются и они
-(укажите номера в `js/core.js` → `A.config`). События: `partner_cta` (кнопки «Стать партнёром», с `place`), `form_open`, `form_submit`, `form_error`,
+**Яндекс Метрика** подключается из админки (Интеграции → номер счётчика, `data/integrations.json`): `js/consent.js` загружает счётчик только по правилам выбранного режима согласия (по умолчанию — после «Принять»), цели создаются из списка `metrika.goals`, переходы без перезагрузки считаются просмотрами. Все события уходят в `window.dataLayer` и в DOM-событие `astreya:track`, а при включённой Метрике — в `ym(…, 'reachGoal')`.
+Запуск в РФ (152-ФЗ, согласие, документы, безопасность, развёртывание) описан в [`docs/LAUNCH.md`](docs/LAUNCH.md). События: `partner_cta` (кнопки «Стать партнёром», с `place`), `form_open`, `form_submit`, `form_error`,
 `phone_click`, `email_click`, `messenger_click`, `catalog_click`, `catalog_view`, `catalog_filter`, `product_card_click`, `product_view`, `product_request`,
 `event_register`, `brand_card_click`, `search`, `search_result_click`, `picker_select`. Разметка: атрибуты `data-track="…" data-place="…"`.
 

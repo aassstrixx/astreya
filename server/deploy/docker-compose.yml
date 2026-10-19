@@ -1,0 +1,21 @@
+# Запуск на своём сервере: docker compose -f server/deploy/docker-compose.yml up -d --build   (из корня репозитория)
+# Перед этим: скопируйте server/.env.example в server/.env и заполните (DATA_KEY, PUBLIC_URL, TRUST_PROXY=1, SECURE_COOKIES=1, ADMIN_LOGIN/ADMIN_PASSWORD).
+# Порт открыт только на локальном адресе — наружу сервер смотрит через Caddy или nginx с https (см. Caddyfile / nginx.conf рядом).
+services:
+  astreya:
+    build:
+      context: ../..
+      dockerfile: server/Dockerfile
+    restart: unless-stopped
+    env_file: ../.env
+    ports:
+      - "127.0.0.1:8080:8080"
+    volumes:
+      - astreya-data:/data     # заявки, пользователи, настройки, копии — это нужно сохранять и копировать отдельно
+      - astreya-site:/site     # рабочая копия сайта (если задан SITE_REPO, клонируется при первом запуске)
+    cap_drop: [ALL]
+    security_opt:
+      - no-new-privileges:true
+volumes:
+  astreya-data:
+  astreya-site:

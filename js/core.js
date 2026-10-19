@@ -14,7 +14,7 @@
   /* ---------- конфигурация: сюда подключаются форма и аналитика ---------- */
   A.config = {
     formEndpoint: window.__ASTREYA_BUNDLE ? '' : ((D.site && D.site.formEndpoint) || ''),   // куда уходят заявки (POST JSON): по умолчанию /api/lead — сервер из папки server/, заявки видны в админке; пусто — режим письма mailto. В автономном файле-предпросмотре сервера нет
-    ymId: '',                                              // номер счётчика Яндекс.Метрики (когда появится)
+    ymId: '',                                              // номер счётчика Яндекс.Метрики: подставляет js/consent.js после согласия (настройка — админка → «Интеграции»)
     gtagId: ''                                             // идентификатор Google Analytics (когда появится)
   };
   A.pages = {};                                            // page-инициализаторы: A.pages.catalog = root => {...}
@@ -92,6 +92,7 @@
 
   /* ---------- формы ---------- */
   const FT = A.FORM_TYPES;
+  if (D.forms) Object.keys(D.forms).forEach(k => { if (FT[k]) Object.assign(FT[k], D.forms[k]); });                // тексты форм из админки (data/content.json → forms)
   let mailDraft = '', lastFocus = null;
   const modal = () => $('#modal');
   const dl = iso => A.dparts(iso).full;
@@ -164,7 +165,7 @@
     return !bad && !agBad;
   }
   function payloadOf(form) {
-    const o = {type: form.getAttribute('data-form'), context: form.getAttribute('data-ctx') || form.getAttribute('data-ref') || '', page: location.href, sent_at: new Date().toISOString(), consent: true};
+    const o = {type: form.getAttribute('data-form'), context: form.getAttribute('data-ctx') || form.getAttribute('data-ref') || '', page: location.href, sent_at: new Date().toISOString(), consent: true, consent_version: (D.integrations && D.integrations.legalVersion) || ''};
     ['name', 'phone', 'email', 'city', 'org', 'spec', 'msg'].forEach(k => { const el = form.elements[k]; if (el) o[k] = el.value.trim(); });
     if (form._t0) o.fill_ms = Math.round(performance.now() - form._t0);       // сколько форму заполняли: бот отправляет мгновенно
     if (A.leadSrc) { const src = A.leadSrc(o); if (src) o.src = src; }                // метка «откуда пришла заявка» (extras.sales): страница, шаг пути, вариант проверки; на отправку не влияет
@@ -221,6 +222,7 @@
     form.dataset.busy = '1'; setBusy(form, true); setStatus(form, 'busy', `<i class="spin dark" aria-hidden="true"></i><span>Отправляем заявку…</span>`);
     try {
       if (A.config.formEndpoint) {
+        if (A.captcha) { const t = await A.captcha.token(); if (t) pl.captcha_token = t; }
         // credentials: 'omit' — заявка уходит без cookie; сервер принимает JSON от разрешённых сайтов (CORS)
         const r = await fetch(A.config.formEndpoint, {method: 'POST', credentials: 'omit', headers: {'Content-Type': 'application/json', 'Accept': 'application/json'}, body: JSON.stringify(pl)});
         let j = null; try { j = await r.json(); } catch (e) {}
@@ -254,8 +256,25 @@
         <div class="fs-links">Или свяжитесь с нами: <a href="tel:${c.phoneRaw}">${esc(c.phone)}</a> · <a href="${esc(letter.href)}">написать письмом</a></div></div>`);
     }
   };
+  /* Яндекс SmartCaptcha (невидимая): скрипт подгружается при первой отправке формы, токен уходит вместе с заявкой; не загрузилась — заявка уходит без токена и попадёт в «Спам» (не теряется) */
+  A.captcha = (function () {
+    const cfg = D.integrations && D.integrations.captcha; if (!cfg || !cfg.siteKey || window.__ASTREYA_BUNDLE) return null;
+    let sc = null, loading = null, widget = null, host = null, waiting = null;
+    const load = () => loading || (loading = new Promise(res => {
+      window.__astreyaCaptcha = () => res(window.smartCaptcha || null); setTimeout(() => res(window.smartCaptcha || null), 8000);
+      const s = document.createElement('script'); s.src = 'https://smartcaptcha.yandexcloud.net/captcha.js?render=onload&onload=__astreyaCaptcha'; s.async = true; s.onerror = () => res(null); document.head.appendChild(s);
+    }));
+    return {
+      preload: form => { load(); if (form && !form.querySelector('.cap-note')) { const p = document.createElement('p'); p.className = 'muted small cap-note'; p.textContent = 'Форма защищена сервисом Yandex SmartCaptcha.'; const a = form.querySelector('.form-actions'); if (a) a.before(p); } },      // значок капчи скрыт (внизу экрана ничего не плавает) — вместо него строка в форме
+      token: async () => {
+        sc = sc || await load(); if (!sc) return '';
+        if (widget === null) { host = document.createElement('div'); host.setAttribute('aria-hidden', 'true'); document.body.appendChild(host); widget = sc.render(host, {sitekey: cfg.siteKey, invisible: true, hideShield: true, hl: 'ru', callback: t => { if (waiting) { const w = waiting; waiting = null; w(t || ''); } }}); }
+        return new Promise(res => { waiting = res; setTimeout(() => { if (waiting === res) { waiting = null; res(''); } }, 45000); try { sc.execute(widget); } catch (e) { waiting = null; res(''); } }).then(t => { try { sc.reset(widget); } catch (e) {} return t; });
+      }
+    };
+  })();
   document.addEventListener('submit', e => { const f = e.target; if (f && f.classList && f.classList.contains('lead-form')) { e.preventDefault(); A.submitForm(f); } });
-  document.addEventListener('focusin', e => { const f = e.target && e.target.closest ? e.target.closest('.lead-form') : null; if (f && !f._t0) f._t0 = performance.now(); });
+  document.addEventListener('focusin', e => { const f = e.target && e.target.closest ? e.target.closest('.lead-form') : null; if (f && !f._t0) { f._t0 = performance.now(); if (A.captcha) A.captcha.preload(f); } });
   document.addEventListener('input', e => { const f = e.target && e.target.closest ? e.target.closest('.fld.bad') : null; if (f) { f.classList.remove('bad'); const i = $('input,textarea,select', f); if (i) i.setAttribute('aria-invalid', 'false'); } });
   document.addEventListener('change', e => { const t = e.target; if (t && t.name === 'agree') { const a = t.closest('.agree'); if (a) a.classList.remove('bad'); } });
 

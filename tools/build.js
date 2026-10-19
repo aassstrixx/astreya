@@ -36,6 +36,9 @@ ctx.assetVersion = (() => {
   ['brands', 'photos', 'teachers', 'jar', 'bg'].filter(d => fs.existsSync(path.join(__dirname, '..', 'assets', d))).forEach(d => walk(path.join(__dirname, '..', 'assets', d)));
   return h.digest('hex').slice(0, 8);
 })();
+/* тексты форм из data/content.json → forms (админка: «Тексты и SEO → Тексты форм»): применяются и на страницах, и в браузере (js/data.js → forms); поля и обязательность менять нельзя */
+const FORM_KEYS = ['title', 'subject', 'lead', 'submit', 'ph', 'agree', 'done'];
+for (const [k, v] of Object.entries(ctx.content.forms || {})) if (S.FORM_TYPES[k]) for (const f of FORM_KEYS) if (v[f] !== undefined && v[f] !== null && v[f] !== '') S.FORM_TYPES[k][f] = v[f];
 const C = components(ctx), L = layoutFactory(ctx, C);
 const {site, content} = ctx;
 const BUILD_DATE = new Date().toISOString().slice(0, 10);
@@ -66,6 +69,7 @@ page({key: 'partners', path: 'partners.html', nav: '/partners', title: seo('part
 if (ctx.sales) page({key: 'start', path: ctx.sales.planner.path, nav: '', title: ctx.sales.planner.seoTitle, description: ctx.sales.planner.seoDescription, priority: 0.8, breadcrumbs: [['Главная', 'index.html'], [ctx.sales.planner.eyebrow, ctx.sales.planner.path]]}, P => start(ctx, C, P));
 page({key: 'search', path: 'search.html', nav: '', title: seo('search').title, description: seo('search').description, noindex: true, priority: 0}, P => searchPage(ctx, C, P));
 page({key: 'privacy', path: 'privacy.html', nav: '', title: seo('privacy').title, description: seo('privacy').description, priority: 0.2, breadcrumbs: [['Главная', 'index.html'], ['Политика конфиденциальности', 'privacy.html']]}, P => legalPage(ctx, C, P, 'privacy'));
+page({key: 'consent', path: 'consent.html', nav: '', title: seo('consent').title, description: seo('consent').description, priority: 0.2, breadcrumbs: [['Главная', 'index.html'], ['Согласие на обработку персональных данных', 'consent.html']]}, P => legalPage(ctx, C, P, 'consent'));
 page({key: 'terms', path: 'terms.html', nav: '', title: seo('terms').title, description: seo('terms').description, priority: 0.2, breadcrumbs: [['Главная', 'index.html'], ['Пользовательское соглашение', 'terms.html']]}, P => legalPage(ctx, C, P, 'terms'));
 
 /* ---- 404.html: GitHub Pages показывает его на любом неверном адресе (на любой глубине), поэтому пути в нём — от корня сайта, не «../» ---- */
@@ -127,7 +131,9 @@ const index = [
   ...ctx.sortedEvents.map(e => ({t: 'event', title: e.title, url: `training/${e.slug}.html`, sub: `${e.fmt} · ${e.city} · ${S.dparts(e.date).full}`, date: e.date, q: S.norm([e.title, e.description, e.city, e.fmt, e.speaker, brandName(e.brand), 'семинар мероприятие обучение запись'].join(' '))}))
 ];
 const data = {
-  site: {name: site.name, contacts: {email: site.contacts.email, phone: site.contacts.phone, phoneRaw: site.contacts.phoneRaw, hours: site.contacts.hours, whatsapp: site.contacts.whatsapp || ''}, formEndpoint: site.formEndpoint || '', discounts: site.discounts},
+  site: {name: site.name, contacts: {email: site.contacts.email, phone: site.contacts.phone, phoneRaw: site.contacts.phoneRaw, hours: site.contacts.hours, whatsapp: site.contacts.whatsapp || '', max: site.contacts.max || '', telegram: site.contacts.telegram || '', vk: site.contacts.vk || ''}, formEndpoint: site.formEndpoint || '', discounts: site.discounts},
+  forms: Object.fromEntries(Object.entries(ctx.content.forms || {}).filter(([k]) => S.FORM_TYPES[k]).map(([k, v]) => [k, Object.fromEntries(FORM_KEYS.filter(f => v[f] !== undefined && v[f] !== null && v[f] !== '').map(f => [f, v[f]]))])),
+  integrations: L.publicIntegrations,                                                     // что нужно браузеру для Метрики, согласия и капчи (data/integrations.json, data/legal.json); секретов здесь нет
   brands: ctx.brands.map(b => ({id: b.id, name: b.name, logo: b.logo || undefined, logoW: b.logoW, logoH: b.logoH, logoScale: b.logoScale, c1: b.c1, c2: b.c2, ink: b.ink})),
   cats: ctx.cats, tasks: ctx.tasks.map(t => ({id: t.id, label: t.label})), kinds: ctx.kinds,
   /* products/events: поля для «Быстрого просмотра», сравнения, обратного отсчёта и помощника (d — описание, c — категория, k — вид, ts — задачи, n — новинка, x — только заполненные характеристики) */
@@ -151,7 +157,10 @@ fs.writeFileSync(path.join(ROOT, 'js', 'data.js'), `/* Сгенерирован�
 const base = L.base;
 const urls = pages.filter(p => !p.P.noindex).map(p => `  <url><loc>${L.absUrl(p.path)}</loc><lastmod>${BUILD_DATE}</lastmod><priority>${(p.priority || 0.5).toFixed(1)}</priority></url>`);
 fs.writeFileSync(path.join(ROOT, 'sitemap.xml'), `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${urls.join('\n')}\n</urlset>\n`);
-fs.writeFileSync(path.join(ROOT, 'robots.txt'), `User-agent: *\nAllow: /\nDisallow: /search.html\n\nSitemap: ${base}sitemap.xml\n`);
+fs.writeFileSync(path.join(ROOT, 'robots.txt'), `User-agent: *\nAllow: /\nDisallow: /search.html\nDisallow: /admin/\nDisallow: /api/\n\nSitemap: ${base}sitemap.xml\n`);
+/* security.txt (RFC 9116): куда сообщать об уязвимостях; срок действия — конец следующего года (не меняется от сборки к сборке) */
+fs.mkdirSync(path.join(ROOT, '.well-known'), {recursive: true});
+fs.writeFileSync(path.join(ROOT, '.well-known', 'security.txt'), `Contact: mailto:${site.contacts.email}\nExpires: ${site.year + 1}-12-31T23:59:59.000Z\nPreferred-Languages: ru, en\nCanonical: ${base}.well-known/security.txt\n`);
 
 console.log(`Собрано страниц: ${pages.length} (в sitemap: ${urls.length}); js/data.js: ${(fs.statSync(path.join(ROOT, 'js', 'data.js')).size / 1024).toFixed(1)} КБ`);
 module.exports = {pages, ctx};

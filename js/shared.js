@@ -37,6 +37,7 @@
     doc:     ic('<path d="M5.5 2.5h6l3.5 3.5v11.5H5.5z"/><path d="M11.5 2.5V6H15M8 10h4M8 13h4"/>'),
     chevron: ic('<path d="m5 8 5 5 5-5"/>'),
     external:ic('<path d="M8 4.5H5A1.5 1.5 0 0 0 3.5 6v9A1.5 1.5 0 0 0 5 16.5h9a1.5 1.5 0 0 0 1.5-1.5v-3M11.5 3.5h5v5M16.5 3.5l-7 7"/>'),
+    msg:     ic('<path d="M4.2 3.6h11.6a1.4 1.4 0 0 1 1.4 1.4v7.2a1.4 1.4 0 0 1-1.4 1.4H9.4L5.6 16.6v-3H4.2a1.4 1.4 0 0 1-1.4-1.4V5a1.4 1.4 0 0 1 1.4-1.4Z"/><path d="M6.8 7.4h6.4M6.8 10h4"/>'),
     chat:    ic('<path d="M10 2.8a7.2 7.2 0 0 0-6.2 10.8L3 17.2l3.7-.9A7.2 7.2 0 1 0 10 2.8Z"/><path d="M7.4 7.2c.2 2.2 2.4 4.4 4.6 4.6l1-1-1.7-1-.7.6c-.7-.3-1.4-1-1.7-1.7l.6-.7-1-1.7Z"/>'),
     box:     ic('<path d="M3.5 6.5 10 3l6.5 3.5v7L10 17l-6.5-3.5v-7Z"/><path d="m3.5 6.5 6.5 3.5 6.5-3.5M10 10v7"/>')
   };
@@ -82,7 +83,7 @@
   FORM_TYPES.callback = {title: 'Заказать звонок', subject: 'Просьба перезвонить', lead: 'Оставьте номер — менеджер перезвонит в рабочее время.', submit: 'Перезвоните мне', ph: 'Когда удобно позвонить и что обсудить? (необязательно)',
                fields: [['name', 1], ['phone', 1], ['msg']]};
   FORM_TYPES.subscribe = {title: 'Подписка на новости', subject: 'Подписка на новости и приглашения', lead: 'Новинки каталога и анонсы мероприятий учебного центра — на почту.', submit: 'Подписаться',
-               agree: 'Согласен(-на) получать новости и приглашения на e-mail и на обработку адреса для этой рассылки.', done: ['Спасибо, адрес принят', 'Мы будем присылать новинки каталога и приглашения на мероприятия. Отказаться можно в любой момент — напишите нам на почту.'],
+               agree: 'Согласен(-на) получать новости и приглашения на e-mail и даю {c}согласие на обработку адреса{/c} для этой рассылки;', done: ['Спасибо, адрес принят', 'Мы будем присылать новинки каталога и приглашения на мероприятия. Отказаться можно в любой момент — напишите нам на почту.'],
                phs: {email: 'Ваш e-mail'}, fields: [['email', 1]]};
   /* «Старт со Стеллой» (extras.sales): заявка с готовым планом — задачи, цель и город уже в комментарии, менеджеру остаётся уточнить детали */
   FORM_TYPES.plan = {title: 'Получить подбор от менеджера', subject: 'Старт со Стеллой', lead: 'План уже собран — оставьте контакты, и менеджер уточнит детали, наличие и условия. Заявка ни к чему не обязывает.', submit: 'Отправить план менеджеру', ph: 'Что ещё важно учесть? (необязательно)',
@@ -101,6 +102,8 @@
   function formHTML(type, opts) {
     opts = opts || {};
     const ft = FORM_TYPES[type] || FORM_TYPES.question, uid = opts.uid || 'lf-' + type, root = opts.root || '';
+    const consentLink = t => `<a href="${root}consent.html" target="_blank" rel="noopener">${t}</a>`;          // согласие на обработку ПДн — отдельный документ (ст. 9 152-ФЗ)
+    const agree = ft.agree ? esc(ft.agree).replace(/\{c\}(.*?)\{\/c\}/, (m, t) => consentLink(t)) : 'Я даю ' + consentLink('согласие на обработку персональных данных') + ' для ответа на обращение;';
     const rows = []; let pend = null;
     ft.fields.forEach(([id, req]) => {
       const html = fieldHTML(uid, id, req, ft), wide = id === 'msg';
@@ -111,7 +114,7 @@
     return `<form class="lead-form" data-form="${type}" data-ref="${esc(opts.ref || '')}" novalidate>
       ${rows.join('\n      ')}
       <input class="hp" type="text" name="company_site" tabindex="-1" autocomplete="off" aria-hidden="true">
-      <label class="agree"><input type="checkbox" name="agree" required><span>${ft.agree ? esc(ft.agree) : 'Я согласен(-на) на обработку персональных данных для ответа на обращение.'} <a href="${root}privacy.html" target="_blank" rel="noopener">Политика конфиденциальности</a></span></label>
+      <label class="agree"><input type="checkbox" name="agree" required><span>${agree} ознакомлен(-а) с <a href="${root}privacy.html" target="_blank" rel="noopener">Политикой конфиденциальности</a>.</span></label>
       <div class="form-status" role="status" aria-live="polite" hidden></div>
       <div class="row form-actions"><button class="btn btn-fill" type="submit" data-track="form_submit_click"><span class="lbl">${ft.submit}</span>${I.arrow}<i class="spin" aria-hidden="true"></i></button>${opts.cancel ? '<button class="btn btn-lnk" type="button" data-act="close">Отмена</button>' : ''}</div>
     </form>`;

@@ -1,19 +1,22 @@
 /* Оболочка страницы: <head> (SEO), шапка, подвал, оверлеи, скрипты. Единая для всех страниц. */
 const fs = require('fs');
 const path = require('path');
+const crypto = require('crypto');
+const CSP = require('./csp.js');
 const S = require('../js/shared.js');
 const backdropsFactory = require('./backdrops.js');
 const {esc, I} = S;
 
 const logoDefs = fs.readFileSync(path.join(__dirname, 'partials', 'logo-defs.html'), 'utf8');
-const FONTS = 'https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Playfair+Display:ital,wght@0,500;0,600;1,400;1,500&family=Manrope:wght@400;500;600;700&display=swap';
-const CSS = ['base', 'components', 'pages', 'responsive', 'motion'];
-const JS = ['shared', 'data', 'core', 'motion', 'pages', 'hero-mark'];
+const CSS = ['fonts', 'base', 'components', 'pages', 'responsive', 'motion', 'consent'];
+const JS = ['shared', 'data', 'core', 'consent', 'motion', 'pages', 'hero-mark'];
+/* шрифты лежат на самом сайте (assets/fonts, css/fonts.css) — страницы не обращаются к серверам Google; заранее подгружаем только основные начертания */
+const FONT_PRELOAD = fs.readdirSync(path.join(__dirname, '..', 'assets', 'fonts')).filter(f => /^(manrope-(cyrillic|latin)|playfair-display-(cyrillic|latin))-[0-9a-f]{6}\.woff2$/.test(f));
 
 /* Ранний скрипт: класс js, «уже видели заставку», «пришли с переходом» — до первой отрисовки, чтобы не было мигания */
 /* Совместимость со старыми ссылками одностраничной версии (#/catalog?brand=…, #/brand/keenwell, #/academy…) — только на главной */
 const LEGACY = `(function(l){var m=l.hash.match(/^#\\/(catalog|brands|brand\\/[\\w-]+|academy|news|company)(\\?.*)?$/);if(!m)return;var t=m[1],q=m[2]||'',u=t==='academy'?'training.html':t.indexOf('brand/')===0?'brands/'+t.slice(6)+'.html':t+'.html';l.replace(u+q);})(location);`;
-const EARLY = `(function(d){var h=d.documentElement;h.classList.add('js');if(/[?&]pv=/.test(location.search))h.classList.add('nav-quiet');try{var n=sessionStorage.getItem('astreya:nav');if(n){var o=JSON.parse(n);if(o&&Date.now()-o.t<8000)h.classList.add(o.q?'nav-quiet':'nav-in');else sessionStorage.removeItem('astreya:nav')}}catch(e){}})(document);`;
+const EARLY = `(function(d){var h=d.documentElement;h.classList.add('js');try{if(top!==self){try{void top.location.href}catch(e){h.style.display='none'}}}catch(e){}if(/[?&]pv=/.test(location.search))h.classList.add('nav-quiet');try{var n=sessionStorage.getItem('astreya:nav');if(n){var o=JSON.parse(n);if(o&&Date.now()-o.t<8000)h.classList.add(o.q?'nav-quiet':'nav-in');else sessionStorage.removeItem('astreya:nav')}}catch(e){}})(document);`;
 
 module.exports = function layout(ctx, C) {
   const {site} = ctx, {u} = C;
@@ -35,6 +38,16 @@ module.exports = function layout(ctx, C) {
 
   /* подписка на новости (extras.subscribe): компактная форма в подвале — та же система заявок (тип subscribe), поле только одно: e-mail */
   const subBlock = P => C.xon('subscribe') ? `<div class="ftr-sub"><div class="ftr-sub-t"><h2 class="ftr-h">Новости и приглашения</h2><p>${esc(S.FORM_TYPES.subscribe.lead)}</p></div>${S.formHTML('subscribe', {uid: 'sub-ftr', root: u(P, '')})}</div>` : '';
+
+  /* подключения: что нужно браузеру (js/data.js → integrations) и что выводится в <head> и подвале; секретов здесь нет */
+  const IT = ctx.integrations || {}, MT = IT.metrika || {}, CS = IT.consent || {}, VR = IT.verification || {}, LG = ctx.legal || {};
+  const metrikaOn = /^\d{4,12}$/.test(String(MT.id || '')), consentMode = ['off', 'notice', 'optin'].includes(CS.mode) ? CS.mode : 'optin', consentOn = metrikaOn && consentMode !== 'off';
+  const consentCfg = {active: consentOn, mode: consentMode, title: CS.title || 'Cookie и аналитика', text: CS.text || '', accept: CS.accept || 'Принять', decline: CS.decline || 'Только необходимые', settings: CS.settings || 'Настройки cookie'};
+  consentCfg.version = crypto.createHash('md5').update(JSON.stringify([consentCfg, !!MT.webvisor, LG.version || ''])).digest('hex').slice(0, 8);
+  const publicIntegrations = {metrika: metrikaOn ? {id: String(MT.id), webvisor: !!MT.webvisor, clickmap: MT.clickmap !== false, trackLinks: MT.trackLinks !== false, accurateTrackBounce: MT.accurateTrackBounce !== false} : null, consent: consentCfg, captcha: (IT.captcha || {}).siteKey ? {siteKey: String(IT.captcha.siteKey)} : null, legalVersion: LG.version || ''};
+  const verifyMeta = [['yandex-verification', VR.yandex], ['google-site-verification', VR.google], ['wmail-verification', VR.mailru]].filter(([, v]) => v && /^[\w-]{6,128}$/.test(String(v))).map(([n, v]) => `<meta name="${n}" content="${esc(v)}">`).join('\n');
+  const msgItems = () => [['MAX', c.max], ['Telegram', c.telegram], ['ВКонтакте', c.vk]].filter(([, h]) => h).map(([t, h]) => `<li><a href="${esc(h)}" target="_blank" rel="noopener" data-track="messenger_click" data-place="footer">${t}</a></li>`).join('');
+  const legalLinks = P => `<a href="${u(P, 'privacy.html')}">Политика конфиденциальности</a><a href="${u(P, 'consent.html')}">Согласие на обработку данных</a><a href="${u(P, 'terms.html')}">Пользовательское соглашение</a>${consentOn ? `<button class="ftr-cookie" type="button" data-act="cookie-settings">${esc(consentCfg.settings)}</button>` : ''}`;
 
   const header = P => `<header class="hdr" id="hdr">
   <div class="wrap hdr-in">
@@ -102,6 +115,7 @@ module.exports = function layout(ctx, C) {
         <ul>
           <li><a href="tel:${c.phoneRaw}" data-track="phone_click">${esc(c.phone)}</a></li>
           <li><a href="mailto:${c.email}" data-track="email_click">${esc(c.email)}</a></li>
+          ${msgItems()}
           <li>${esc(c.address)}</li>
           <li class="muted-l">${esc(c.hours)}</li>
           ${C.xon('callback') ? `<li>${C.callbackBtn('ftr-btn', 'footer')}</li>` : ''}
@@ -111,7 +125,7 @@ module.exports = function layout(ctx, C) {
     ${subBlock(P)}
     <div class="ftr-bottom">
       <span>© ${esc(site.name)}, ${site.year}</span>
-      <span class="ftr-legal"><a href="${u(P, 'privacy.html')}">Политика конфиденциальности</a><a href="${u(P, 'terms.html')}">Пользовательское соглашение</a></span>
+      <span class="ftr-legal">${legalLinks(P)}</span>
     </div>
     ${showNote ? `<p class="ftr-note">${esc(site.demoNotice)}</p>` : ''}
   </div>
@@ -129,6 +143,7 @@ module.exports = function layout(ctx, C) {
       <ul class="ftr-rd-contacts">
         <li><a href="tel:${c.phoneRaw}" data-track="phone_click">${esc(c.phone)}</a></li>
         <li><a href="mailto:${c.email}" data-track="email_click">${esc(c.email)}</a></li>
+        ${msgItems()}
         <li>${esc(c.address)}</li>
         <li class="muted-l">${esc(c.hours)}</li>
         ${C.xon('callback') ? `<li>${C.callbackBtn('ftr-btn', 'footer')}</li>` : ''}
@@ -138,7 +153,7 @@ module.exports = function layout(ctx, C) {
     ${subBlock(P)}
     <div class="ftr-bottom">
       <span>© ${esc(site.name)}, ${site.year}</span>
-      <span class="ftr-legal"><a href="${u(P, 'privacy.html')}">Политика конфиденциальности</a><a href="${u(P, 'terms.html')}">Пользовательское соглашение</a></span>
+      <span class="ftr-legal">${legalLinks(P)}</span>
     </div>
     ${showNote ? `<p class="ftr-note">${esc(site.demoNotice)}</p>` : ''}
   </div>
@@ -165,18 +180,22 @@ module.exports = function layout(ctx, C) {
   </div>
 </div>`;
 
+  const sameAs = [c.max, c.telegram, c.vk, ((c.ext || {}).youtube)].filter(x => /^https:\/\//.test(x || ''));            // профили в соцсетях и мессенджерах — для карточки организации в поиске
   const orgLd = {'@context': 'https://schema.org', '@type': 'Organization', name: site.name, alternateName: site.nameLatin, url: base,
     logo: base + 'assets/logo-512.png', email: c.email, telephone: c.phone,
-    address: {'@type': 'PostalAddress', addressLocality: 'Москва', streetAddress: 'проезд Березовой рощи, д. 8', addressCountry: 'RU'}};
+    address: Object.assign({'@type': 'PostalAddress', addressLocality: (site.schemaAddress || {}).locality || 'Москва', streetAddress: (site.schemaAddress || {}).street || c.address, addressCountry: 'RU'}, (site.schemaAddress || {}).postalCode ? {postalCode: site.schemaAddress.postalCode} : {}),
+    ...(sameAs.length ? {sameAs} : {})};
   const siteLd = {'@context': 'https://schema.org', '@type': 'WebSite', name: site.name, url: base,
     potentialAction: {'@type': 'SearchAction', target: base + 'search.html?q={search_term_string}', 'query-input': 'required name=search_term_string'}};
+
+  const inline = P => P.key === 'home' ? [EARLY, LEGACY] : [EARLY];                       // встроенные скрипты страницы — разрешены в политике безопасности по хэшу
 
   /* P: {key, path, depth, root, nav, title, description, ogType, image, noindex, jsonld:[]} */
   /* картинки из assets/ получают ?v=<хэш> (как css/js): после замены файла браузер/CDN не показывают старый кэш */
   const verAssets = html => ver ? html.replace(/(\ssrc=")((?:\.\.\/)*assets\/[^"?#]+)(")/g, '$1$2' + ver + '$3') : html;
   function shell(P, body) {
     body = BD.apply(P, body);
-    const url = absUrl(P.path), img = base + (P.image || 'assets/og-image.png');
+    const url = absUrl(P.path), img = base + (P.image || site.ogImage || 'assets/og-image.png');
     const ld = [...(P.key === 'home' ? [orgLd, siteLd] : []), ...(P.jsonld || [])];
     const bread = P.breadcrumbs && P.breadcrumbs.length ? {'@context': 'https://schema.org', '@type': 'BreadcrumbList',
       itemListElement: P.breadcrumbs.map((b, i) => ({'@type': 'ListItem', position: i + 1, name: b[0], item: absUrl(b[1])}))} : null;
@@ -185,7 +204,9 @@ module.exports = function layout(ctx, C) {
 <html lang="ru">
 <head>
 <meta charset="utf-8">
+<meta http-equiv="Content-Security-Policy" content="${CSP.build(ctx, inline(P))}">
 <meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="referrer" content="strict-origin-when-cross-origin">
 <title>${esc(P.title)}</title>
 <meta name="description" content="${esc(P.description)}">
 ${P.noindex ? '<meta name="robots" content="noindex,follow">\n' : ''}<meta name="theme-color" content="#f5f2ec">
@@ -207,14 +228,9 @@ ${P.noindex ? '<meta name="robots" content="noindex,follow">\n' : ''}<meta name=
 <link rel="icon" href="${u(P, 'assets/favicon.svg')}" type="image/svg+xml">
 <link rel="icon" href="${u(P, 'assets/favicon-32.png')}" type="image/png" sizes="32x32">
 <link rel="apple-touch-icon" href="${u(P, 'assets/apple-touch-icon.png')}">${C.xon('agentReady') ? `\n<link rel="manifest" href="${u(P, 'manifest.webmanifest')}">` : ''}
-<script>${EARLY}</script>
-${P.key === 'home' ? `<script>${LEGACY}</script>\n` : ''}
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<!-- У Fraunces нет кириллицы, поэтому русские заголовки набираются парным по контрасту Playfair Display; латиница и цифры — Fraunces.
-     Шрифты подключаются асинхронно: страница стартует сразу, даже если Google Fonts медленный (у всех гарнитур есть запасные — см. --serif / --sans). -->
-<script>(function(){var l=document.createElement('link');l.rel='stylesheet';l.href='${FONTS}';document.head.appendChild(l);})();</script>
-<noscript><link href="${FONTS}" rel="stylesheet"></noscript>
+${verifyMeta ? verifyMeta + '\n' : ''}<script>${EARLY}</script>
+${P.key === 'home' ? `<script>${LEGACY}</script>\n` : ''}<!-- У Fraunces нет кириллицы, поэтому русские заголовки набираются парным по контрасту Playfair Display; латиница и цифры — Fraunces. Шрифты — свои (css/fonts.css), не с серверов Google. -->
+${FONT_PRELOAD.map(f => `<link rel="preload" href="${u(P, 'assets/fonts/' + f)}" as="font" type="font/woff2" crossorigin>`).join('\n')}
 ${pageCss(P).map(n => `<link rel="stylesheet" href="${u(P, `css/${n}.css`)}${ver}">`).join('\n')}
 ${jarPreload(P)}
 ${ld.map(o => `<script type="application/ld+json">${JSON.stringify(o)}</script>`).join('\n')}
@@ -243,5 +259,5 @@ ${pageJs(P).map(n => `<script src="${u(P, `js/${n}.js`)}${ver}" defer></script>`
 </html>
 `;
   }
-  return {shell: (P, body) => verAssets(shell(P, body)), absUrl, base, nav, extrasOn: EX};
+  return {shell: (P, body) => verAssets(shell(P, body)), absUrl, base, nav, extrasOn: EX, publicIntegrations};
 };

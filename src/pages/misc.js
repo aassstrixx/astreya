@@ -1,5 +1,6 @@
 const S = require('../../js/shared.js');
 const {esc, I} = S;
+const LEG = require('../legal.js');
 
 /* Страница поиска: результаты строит js/pages.js по индексу из js/data.js */
 function searchPage(ctx, C, P) {
@@ -16,14 +17,15 @@ function searchPage(ctx, C, P) {
   </div>`;
 }
 
-/* Юридические страницы-заглушки: без выдуманных документов */
+/* Юридические страницы: полный документ из src/legal.js, когда заполнены реквизиты оператора; до того — заглушка без выдуманных сведений */
 function legalPage(ctx, C, P, kind) {
-  const l = ctx.content.legal[kind];
+  const l = ctx.content.legal[kind], op = LEG.operator(ctx), body = op.ready ? LEG[kind](ctx) : '';
+  const ver = (ctx.legal || {}).version ? LEG.dateRu(ctx.legal.version) : '';
   return `<div class="wrap legal">
     ${C.crumbs(P, [['Главная', 'index.html'], [l.h1, `${kind}.html`]])}
-    <header class="page-head"><span class="eyebrow reveal">Документы</span><h1 class="reveal">${esc(l.h1)}</h1></header>
-    <div class="notice reveal">${I.info}<span>Страница-заглушка: документ будет опубликован здесь.</span></div>
-    <p class="lead reveal" style="margin-top:24px">${esc(l.text)}</p>
+    <header class="page-head"><span class="eyebrow reveal">Документы</span><h1 class="reveal">${esc(l.h1)}</h1>${body && ver ? `<p class="muted reveal">Редакция от ${esc(ver)}</p>` : ''}</header>
+    ${body ? `<div class="legal-body reveal">${body}</div>` : `<div class="notice reveal">${I.info}<span>Страница-заглушка: документ будет опубликован здесь.</span></div>
+    <p class="lead reveal" style="margin-top:24px">${esc(l.text)}</p>`}
     <div class="row reveal" style="margin:28px 0 clamp(60px,8vw,110px)"><a class="btn btn-ghost" href="${C.u(P, 'contacts.html')}">Контакты ${I.arrow}</a><a class="btn btn-lnk" href="${C.u(P, 'index.html')}">На главную</a></div>
   </div>`;
 }

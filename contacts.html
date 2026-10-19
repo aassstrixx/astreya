@@ -2,7 +2,9 @@
 <html lang="ru">
 <head>
 <meta charset="utf-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-0IpCG+7cnUJ37GWe6wHSsw+/3HzCBNKDBqrj9JQs8uA='; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self'; frame-src 'none'; child-src 'none'; worker-src 'self' blob:; media-src 'self'; manifest-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'">
 <meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="referrer" content="strict-origin-when-cross-origin">
 <title>Контакты Астрея — телефон, адрес, представительства</title>
 <meta name="description" content="Контакты Астрея: центральный офис в Москве, представительства в Санкт-Петербурге, Ростове-на-Дону и Крыму, телефон, e-mail, график работы, форма связи.">
 <meta name="theme-color" content="#f5f2ec">
@@ -25,25 +27,25 @@
 <link rel="icon" href="assets/favicon-32.png" type="image/png" sizes="32x32">
 <link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
 <link rel="manifest" href="manifest.webmanifest">
-<script>(function(d){var h=d.documentElement;h.classList.add('js');if(/[?&]pv=/.test(location.search))h.classList.add('nav-quiet');try{var n=sessionStorage.getItem('astreya:nav');if(n){var o=JSON.parse(n);if(o&&Date.now()-o.t<8000)h.classList.add(o.q?'nav-quiet':'nav-in');else sessionStorage.removeItem('astreya:nav')}}catch(e){}})(document);</script>
-
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<!-- У Fraunces нет кириллицы, поэтому русские заголовки набираются парным по контрасту Playfair Display; латиница и цифры — Fraunces.
-     Шрифты подключаются асинхронно: страница стартует сразу, даже если Google Fonts медленный (у всех гарнитур есть запасные — см. --serif / --sans). -->
-<script>(function(){var l=document.createElement('link');l.rel='stylesheet';l.href='https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Playfair+Display:ital,wght@0,500;0,600;1,400;1,500&family=Manrope:wght@400;500;600;700&display=swap';document.head.appendChild(l);})();</script>
-<noscript><link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Playfair+Display:ital,wght@0,500;0,600;1,400;1,500&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet"></noscript>
-<link rel="stylesheet" href="css/base.css?v=4912c691">
-<link rel="stylesheet" href="css/components.css?v=4912c691">
-<link rel="stylesheet" href="css/pages.css?v=4912c691">
-<link rel="stylesheet" href="css/responsive.css?v=4912c691">
-<link rel="stylesheet" href="css/motion.css?v=4912c691">
-<link rel="stylesheet" href="css/redesign.css?v=4912c691">
-<link rel="stylesheet" href="css/backdrops.css?v=4912c691">
-<link rel="stylesheet" href="css/extras.css?v=4912c691">
-<link rel="stylesheet" href="css/guide.css?v=4912c691">
-<link rel="stylesheet" href="css/sales.css?v=4912c691">
-<link rel="stylesheet" href="css/sales-pages.css?v=4912c691">
+<script>(function(d){var h=d.documentElement;h.classList.add('js');try{if(top!==self){try{void top.location.href}catch(e){h.style.display='none'}}}catch(e){}if(/[?&]pv=/.test(location.search))h.classList.add('nav-quiet');try{var n=sessionStorage.getItem('astreya:nav');if(n){var o=JSON.parse(n);if(o&&Date.now()-o.t<8000)h.classList.add(o.q?'nav-quiet':'nav-in');else sessionStorage.removeItem('astreya:nav')}}catch(e){}})(document);</script>
+<!-- У Fraunces нет кириллицы, поэтому русские заголовки набираются парным по контрасту Playfair Display; латиница и цифры — Fraunces. Шрифты — свои (css/fonts.css), не с серверов Google. -->
+<link rel="preload" href="assets/fonts/manrope-cyrillic-e58feb.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="assets/fonts/manrope-latin-938c6e.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="assets/fonts/playfair-display-cyrillic-66a1a9.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="assets/fonts/playfair-display-latin-ef05b3.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="css/fonts.css?v=a763e6e0">
+<link rel="stylesheet" href="css/base.css?v=a763e6e0">
+<link rel="stylesheet" href="css/components.css?v=a763e6e0">
+<link rel="stylesheet" href="css/pages.css?v=a763e6e0">
+<link rel="stylesheet" href="css/responsive.css?v=a763e6e0">
+<link rel="stylesheet" href="css/motion.css?v=a763e6e0">
+<link rel="stylesheet" href="css/consent.css?v=a763e6e0">
+<link rel="stylesheet" href="css/redesign.css?v=a763e6e0">
+<link rel="stylesheet" href="css/backdrops.css?v=a763e6e0">
+<link rel="stylesheet" href="css/extras.css?v=a763e6e0">
+<link rel="stylesheet" href="css/guide.css?v=a763e6e0">
+<link rel="stylesheet" href="css/sales.css?v=a763e6e0">
+<link rel="stylesheet" href="css/sales-pages.css?v=a763e6e0">
 
 <script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Главная","item":"https://aassstrixx.github.io/astreya/"},{"@type":"ListItem","position":2,"name":"Контакты","item":"https://aassstrixx.github.io/astreya/contacts.html"}]}</script>
 </head>
@@ -125,7 +127,7 @@
 <div class="wrap">
     <header class="page-head"><span class="eyebrow reveal">Контакты</span><h1 class="reveal">Свяжитесь с Астрея</h1><p class="lead reveal">Центральный офис в Москве и представительства в регионах. Позвоните, напишите или оставьте заявку — ответим в рабочее время.</p></header>
     <h2 class="sr">Способы связи</h2>
-    <div class="grid g4 contact-cards"><article class="card card-pad ccard reveal"><span class="adv-ic"><svg class="ic" viewBox="0 0 20 20" aria-hidden="true" focusable="false"><path d="M5 3h3l1.4 3.6-1.8 1.2a9 9 0 0 0 4.6 4.6l1.2-1.8L17 12v3a2 2 0 0 1-2 2A12 12 0 0 1 3 5a2 2 0 0 1 2-2Z"/></svg></span><h3>Телефон</h3><p class="cv"><a href="tel:+74959255162" data-track="phone_click">+7 (495) 925-51-62</a></p><p class="muted small">Пн–Пт, 10:00–18:00</p></article><article class="card card-pad ccard reveal"><span class="adv-ic"><svg class="ic" viewBox="0 0 20 20" aria-hidden="true" focusable="false"><rect x="3" y="4.5" width="14" height="11" rx="2"/><path d="m3.5 6 6.5 5 6.5-5"/></svg></span><h3>Email</h3><p class="cv"><a href="mailto:9255162@mail.ru" data-track="email_click">9255162@mail.ru</a></p><p class="muted small">Ответим в рабочее время</p></article><article class="card card-pad ccard reveal"><span class="adv-ic"><svg class="ic" viewBox="0 0 20 20" aria-hidden="true" focusable="false"><path d="M10 2.8a7.2 7.2 0 0 0-6.2 10.8L3 17.2l3.7-.9A7.2 7.2 0 1 0 10 2.8Z"/><path d="M7.4 7.2c.2 2.2 2.4 4.4 4.6 4.6l1-1-1.7-1-.7.6c-.7-.3-1.4-1-1.7-1.7l.6-.7-1-1.7Z"/></svg></span><h3>WhatsApp</h3><p class="cv"><a href="https://wa.me/74959255162" target="_blank" rel="noopener" data-track="messenger_click">Написать в WhatsApp</a></p><p class="muted small">Тот же номер, что и телефон</p></article><article class="card card-pad ccard reveal"><span class="adv-ic"><svg class="ic" viewBox="0 0 20 20" aria-hidden="true" focusable="false"><path d="M10 17.5s5.5-4.7 5.5-9a5.5 5.5 0 0 0-11 0c0 4.3 5.5 9 5.5 9Z"/><circle cx="10" cy="8.5" r="2"/></svg></span><h3>Центральный офис</h3><p class="cv">Москва, проезд Березовой рощи, д. 8, 3-й этаж</p><p class="muted small">м. Полежаевская, Динамо</p></article></div>
+    <div class="grid g4 contact-cards"><article class="card card-pad ccard reveal"><span class="adv-ic"><svg class="ic" viewBox="0 0 20 20" aria-hidden="true" focusable="false"><path d="M5 3h3l1.4 3.6-1.8 1.2a9 9 0 0 0 4.6 4.6l1.2-1.8L17 12v3a2 2 0 0 1-2 2A12 12 0 0 1 3 5a2 2 0 0 1 2-2Z"/></svg></span><h3>Телефон</h3><p class="cv"><a href="tel:+74959255162" data-track="phone_click">+7 (495) 925-51-62</a></p><p class="muted small">Пн–Пт, 10:00–18:00</p></article><article class="card card-pad ccard reveal"><span class="adv-ic"><svg class="ic" viewBox="0 0 20 20" aria-hidden="true" focusable="false"><rect x="3" y="4.5" width="14" height="11" rx="2"/><path d="m3.5 6 6.5 5 6.5-5"/></svg></span><h3>Email</h3><p class="cv"><a href="mailto:9255162@mail.ru" data-track="email_click">9255162@mail.ru</a></p><p class="muted small">Ответим в рабочее время</p></article><article class="card card-pad ccard reveal"><span class="adv-ic"><svg class="ic" viewBox="0 0 20 20" aria-hidden="true" focusable="false"><path d="M10 17.5s5.5-4.7 5.5-9a5.5 5.5 0 0 0-11 0c0 4.3 5.5 9 5.5 9Z"/><circle cx="10" cy="8.5" r="2"/></svg></span><h3>Центральный офис</h3><p class="cv">Москва, проезд Березовой рощи, д. 8, 3-й этаж</p><p class="muted small">м. Полежаевская, Динамо</p></article></div>
 
     <section class="sec">
       <div class="map-row">
@@ -133,7 +135,7 @@
           <div class="map-grid" aria-hidden="true"><i class="map-pin"></i></div>
           <div class="map-cap"><b>Москва, проезд Березовой рощи, д. 8, 3-й этаж</b><span>м. Полежаевская, Динамо</span>
             <div class="row"><a class="btn btn-fill btn-sm" href="https://yandex.ru/maps/?text=%D0%9C%D0%BE%D1%81%D0%BA%D0%B2%D0%B0%2C%20%D0%BF%D1%80%D0%BE%D0%B5%D0%B7%D0%B4%20%D0%91%D0%B5%D1%80%D0%B5%D0%B7%D0%BE%D0%B2%D0%BE%D0%B9%20%D1%80%D0%BE%D1%89%D0%B8%2C%20%D0%B4.%208%2C%203-%D0%B9%20%D1%8D%D1%82%D0%B0%D0%B6" target="_blank" rel="noopener">Яндекс Карты <svg class="ic" viewBox="0 0 20 20" aria-hidden="true" focusable="false"><path d="M8 4.5H5A1.5 1.5 0 0 0 3.5 6v9A1.5 1.5 0 0 0 5 16.5h9a1.5 1.5 0 0 0 1.5-1.5v-3M11.5 3.5h5v5M16.5 3.5l-7 7"/></svg></a>
-              <a class="btn btn-ghost btn-sm" href="https://www.google.com/maps/search/?api=1&query=%D0%9C%D0%BE%D1%81%D0%BA%D0%B2%D0%B0%2C%20%D0%BF%D1%80%D0%BE%D0%B5%D0%B7%D0%B4%20%D0%91%D0%B5%D1%80%D0%B5%D0%B7%D0%BE%D0%B2%D0%BE%D0%B9%20%D1%80%D0%BE%D1%89%D0%B8%2C%20%D0%B4.%208%2C%203-%D0%B9%20%D1%8D%D1%82%D0%B0%D0%B6" target="_blank" rel="noopener">Google Maps <svg class="ic" viewBox="0 0 20 20" aria-hidden="true" focusable="false"><path d="M8 4.5H5A1.5 1.5 0 0 0 3.5 6v9A1.5 1.5 0 0 0 5 16.5h9a1.5 1.5 0 0 0 1.5-1.5v-3M11.5 3.5h5v5M16.5 3.5l-7 7"/></svg></a></div></div>
+              <a class="btn btn-ghost btn-sm" href="https://2gis.ru/search/%D0%9C%D0%BE%D1%81%D0%BA%D0%B2%D0%B0%2C%20%D0%BF%D1%80%D0%BE%D0%B5%D0%B7%D0%B4%20%D0%91%D0%B5%D1%80%D0%B5%D0%B7%D0%BE%D0%B2%D0%BE%D0%B9%20%D1%80%D0%BE%D1%89%D0%B8%2C%20%D0%B4.%208%2C%203-%D0%B9%20%D1%8D%D1%82%D0%B0%D0%B6" target="_blank" rel="noopener">2ГИС <svg class="ic" viewBox="0 0 20 20" aria-hidden="true" focusable="false"><path d="M8 4.5H5A1.5 1.5 0 0 0 3.5 6v9A1.5 1.5 0 0 0 5 16.5h9a1.5 1.5 0 0 0 1.5-1.5v-3M11.5 3.5h5v5M16.5 3.5l-7 7"/></svg></a></div></div>
         </div>
         <div class="form-card stack card reveal" id="support">
           <div><span class="eyebrow in">Обратная связь</span><h2 style="font-size:var(--fs-h2-sm)">Написать нам</h2>
@@ -143,7 +145,7 @@
       <div class="fld" data-f="phone"><label for="ct-phone">Телефон</label><input id="ct-phone" name="phone" type="tel" autocomplete="tel" placeholder="+7" inputmode="tel"><span class="err" id="ct-phone-err">Проверьте номер телефона</span></div>
       <div class="fld" data-f="msg"><label for="ct-msg">Комментарий <span class="req" aria-hidden="true">*</span></label><textarea id="ct-msg" name="msg" required aria-required="true" placeholder="Ваш вопрос…" rows="4"></textarea><span class="err" id="ct-msg-err">Напишите сообщение</span></div>
       <input class="hp" type="text" name="company_site" tabindex="-1" autocomplete="off" aria-hidden="true">
-      <label class="agree"><input type="checkbox" name="agree" required><span>Я согласен(-на) на обработку персональных данных для ответа на обращение. <a href="privacy.html" target="_blank" rel="noopener">Политика конфиденциальности</a></span></label>
+      <label class="agree"><input type="checkbox" name="agree" required><span>Я даю <a href="consent.html" target="_blank" rel="noopener">согласие на обработку персональных данных</a> для ответа на обращение; ознакомлен(-а) с <a href="privacy.html" target="_blank" rel="noopener">Политикой конфиденциальности</a>.</span></label>
       <div class="form-status" role="status" aria-live="polite" hidden></div>
       <div class="row form-actions"><button class="btn btn-fill" type="submit" data-track="form_submit_click"><span class="lbl">Отправить</span><svg class="ic" viewBox="0 0 20 20" aria-hidden="true" focusable="false"><path d="M3.5 10h13M11.5 5l5 5-5 5"/></svg><i class="spin" aria-hidden="true"></i></button></div>
     </form>
@@ -158,7 +160,7 @@
     <h3>Москва</h3>
     <div class="li"><svg class="ic" viewBox="0 0 20 20" aria-hidden="true" focusable="false"><path d="M10 17.5s5.5-4.7 5.5-9a5.5 5.5 0 0 0-11 0c0 4.3 5.5 9 5.5 9Z"/><circle cx="10" cy="8.5" r="2"/></svg><span>проезд Березовой рощи, д. 8, 3-й этаж (м. Полежаевская, Динамо)</span></div>
     <div class="li"><svg class="ic" viewBox="0 0 20 20" aria-hidden="true" focusable="false"><circle cx="10" cy="10" r="7"/><path d="M10 6v4.2l2.8 1.6"/></svg><span>Пн–Пт, 10:00–18:00</span></div>
-    <div class="li"><svg class="ic" viewBox="0 0 20 20" aria-hidden="true" focusable="false"><path d="M5 3h3l1.4 3.6-1.8 1.2a9 9 0 0 0 4.6 4.6l1.2-1.8L17 12v3a2 2 0 0 1-2 2A12 12 0 0 1 3 5a2 2 0 0 1 2-2Z"/></svg><span><a href="tel:+74959255162">+7 (495) 925-51-62</a> · Тел. / WhatsApp</span></div>
+    <div class="li"><svg class="ic" viewBox="0 0 20 20" aria-hidden="true" focusable="false"><path d="M5 3h3l1.4 3.6-1.8 1.2a9 9 0 0 0 4.6 4.6l1.2-1.8L17 12v3a2 2 0 0 1-2 2A12 12 0 0 1 3 5a2 2 0 0 1 2-2Z"/></svg><span><a href="tel:+74959255162">+7 (495) 925-51-62</a> · Тел.</span></div>
     <div class="li"><svg class="ic" viewBox="0 0 20 20" aria-hidden="true" focusable="false"><rect x="3" y="4.5" width="14" height="11" rx="2"/><path d="m3.5 6 6.5 5 6.5-5"/></svg><span><a href="mailto:9255162@mail.ru">9255162@mail.ru</a></span></div>
   </article><article class="card hov city reveal">
     <span class="tag blue" style="align-self:flex-start">Представительство</span>
@@ -210,6 +212,7 @@
       <ul class="ftr-rd-contacts">
         <li><a href="tel:+74959255162" data-track="phone_click">+7 (495) 925-51-62</a></li>
         <li><a href="mailto:9255162@mail.ru" data-track="email_click">9255162@mail.ru</a></li>
+        
         <li>Москва, проезд Березовой рощи, д. 8, 3-й этаж</li>
         <li class="muted-l">Пн–Пт, 10:00–18:00</li>
         <li><button class="ftr-btn" type="button" data-act="form" data-type="callback" data-track="callback_open" data-place="footer">Заказать звонок</button></li>
@@ -219,13 +222,13 @@
     <div class="ftr-sub"><div class="ftr-sub-t"><h2 class="ftr-h">Новости и приглашения</h2><p>Новинки каталога и анонсы мероприятий учебного центра — на почту.</p></div><form class="lead-form" data-form="subscribe" data-ref="" novalidate>
       <div class="fld" data-f="email"><label for="sub-ftr-email">Email <span class="req" aria-hidden="true">*</span></label><input id="sub-ftr-email" name="email" type="email" autocomplete="email" placeholder="Ваш e-mail" required aria-required="true"><span class="err" id="sub-ftr-email-err">Проверьте адрес почты</span></div>
       <input class="hp" type="text" name="company_site" tabindex="-1" autocomplete="off" aria-hidden="true">
-      <label class="agree"><input type="checkbox" name="agree" required><span>Согласен(-на) получать новости и приглашения на e-mail и на обработку адреса для этой рассылки. <a href="privacy.html" target="_blank" rel="noopener">Политика конфиденциальности</a></span></label>
+      <label class="agree"><input type="checkbox" name="agree" required><span>Согласен(-на) получать новости и приглашения на e-mail и даю <a href="consent.html" target="_blank" rel="noopener">согласие на обработку адреса</a> для этой рассылки; ознакомлен(-а) с <a href="privacy.html" target="_blank" rel="noopener">Политикой конфиденциальности</a>.</span></label>
       <div class="form-status" role="status" aria-live="polite" hidden></div>
       <div class="row form-actions"><button class="btn btn-fill" type="submit" data-track="form_submit_click"><span class="lbl">Подписаться</span><svg class="ic" viewBox="0 0 20 20" aria-hidden="true" focusable="false"><path d="M3.5 10h13M11.5 5l5 5-5 5"/></svg><i class="spin" aria-hidden="true"></i></button></div>
     </form></div>
     <div class="ftr-bottom">
       <span>© Астрея, 2026</span>
-      <span class="ftr-legal"><a href="privacy.html">Политика конфиденциальности</a><a href="terms.html">Пользовательское соглашение</a></span>
+      <span class="ftr-legal"><a href="privacy.html">Политика конфиденциальности</a><a href="consent.html">Согласие на обработку данных</a><a href="terms.html">Пользовательское соглашение</a></span>
     </div>
     
   </div>
@@ -245,21 +248,22 @@
 <div id="modal" aria-hidden="true"></div>
 <div id="toast" role="status" aria-live="polite"></div>
 
-<script src="js/shared.js?v=4912c691" defer></script>
-<script src="js/data.js?v=4912c691" defer></script>
-<script src="js/core.js?v=4912c691" defer></script>
-<script src="js/motion.js?v=4912c691" defer></script>
-<script src="js/pages.js?v=4912c691" defer></script>
-<script src="js/hero-mark.js?v=4912c691" defer></script>
-<script src="js/redesign.js?v=4912c691" defer></script>
-<script src="js/backdrops.js?v=4912c691" defer></script>
-<script src="js/extras.js?v=4912c691" defer></script>
-<script src="js/explore.js?v=4912c691" defer></script>
-<script src="js/assistant-brain.js?v=4912c691" defer></script>
-<script src="js/stella-policy.js?v=4912c691" defer></script>
-<script src="js/assistant.js?v=4912c691" defer></script>
-<script src="js/guide.js?v=4912c691" defer></script>
-<script src="js/sales.js?v=4912c691" defer></script>
-<script src="js/sales-pages.js?v=4912c691" defer></script>
+<script src="js/shared.js?v=a763e6e0" defer></script>
+<script src="js/data.js?v=a763e6e0" defer></script>
+<script src="js/core.js?v=a763e6e0" defer></script>
+<script src="js/consent.js?v=a763e6e0" defer></script>
+<script src="js/motion.js?v=a763e6e0" defer></script>
+<script src="js/pages.js?v=a763e6e0" defer></script>
+<script src="js/hero-mark.js?v=a763e6e0" defer></script>
+<script src="js/redesign.js?v=a763e6e0" defer></script>
+<script src="js/backdrops.js?v=a763e6e0" defer></script>
+<script src="js/extras.js?v=a763e6e0" defer></script>
+<script src="js/explore.js?v=a763e6e0" defer></script>
+<script src="js/assistant-brain.js?v=a763e6e0" defer></script>
+<script src="js/stella-policy.js?v=a763e6e0" defer></script>
+<script src="js/assistant.js?v=a763e6e0" defer></script>
+<script src="js/guide.js?v=a763e6e0" defer></script>
+<script src="js/sales.js?v=a763e6e0" defer></script>
+<script src="js/sales-pages.js?v=a763e6e0" defer></script>
 </body>
 </html>

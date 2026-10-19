@@ -11,7 +11,7 @@ const LS = new RegExp(String.fromCharCode(0x2028), 'g'), PS = new RegExp(String.
 const safe = s => s.replace(/<\/(script)/gi, '<\\/$1').replace(LS, '\\u2028').replace(PS, '\\u2029');
 
 const summary = CT.summary(), data = {};
-summary.forEach(c => { data[c.name] = JSON.parse(read('data', c.name + '.json')); });
+summary.forEach(c => { data[c.name] = JSON.parse(read(...CT.COLLECTIONS[c.name].file.split('/'))); });
 
 /* страницы сайта: для выбора ссылок, меню и предпросмотра */
 const GROUPS = [['', 'Основные'], ['pages', 'Свои страницы'], ['brands', 'Бренды'], ['products', 'Товары'], ['training', 'Мероприятия'], ['news', 'Новости']], pages = [];

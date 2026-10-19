@@ -39,6 +39,17 @@ for (const f of files) {
     if (pth && !fs.existsSync(target)) { err(`битая ссылка: ${u}`); continue; }
     if (hash && (target.endsWith('.html'))) { const th = cache.get(target) || fs.readFileSync(target, 'utf8'); if (!idsOf(th).has(hash)) err(`нет якоря #${hash} в ${path.relative(ROOT, target)} (ссылка ${u})`); }
   }
+  // безопасность: у каждой страницы есть политика (CSP); все встроенные скрипты в ней разрешены по хэшу; шрифты и скрипты не с чужих серверов
+  { const m = html.match(/<meta http-equiv="Content-Security-Policy" content="([^"]*)"/);
+    if (!m) err('нет метатега Content-Security-Policy');
+    else {
+      if (/unsafe-eval|script-src[^;]*unsafe-inline/.test(m[1])) err('политика безопасности разрешает unsafe-eval / unsafe-inline для скриптов');
+      for (const s of html.matchAll(/<script(?![^>]*\bsrc=)(?![^>]*type="application\/ld\+json")[^>]*>([\s\S]*?)<\/script>/g)) { const h = "'sha256-" + require('crypto').createHash('sha256').update(s[1], 'utf8').digest('base64') + "'"; if (!m[1].includes(h)) err('встроенный скрипт не разрешён в политике безопасности (хэш не совпадает): ' + s[1].slice(0, 40)); }
+    }
+    if (/fonts\.(googleapis|gstatic)\.com/.test(html)) err('страница обращается к Google Fonts — шрифты должны быть на сайте');
+    for (const t of html.matchAll(/<(?:script|img|iframe)\b[^>]*\ssrc="(https?:\/\/[^"]+)"|<link\b[^>]*rel="stylesheet"[^>]*href="(https?:\/\/[^"]+)"/g)) warns.push(`${rel}: внешний ресурс ${t[1] || t[2]}`);
+    if (/\son[a-z]+\s*=\s*["']/i.test(html.replace(/<script[\s\S]*?<\/script>/gi, ''))) err('встроенный обработчик события (onclick=…) — политика безопасности его заблокирует');
+  }
   // повторяющиеся id внутри страницы
   const all = [...html.matchAll(/\sid="([^"]+)"/g)].map(m => m[1]); const dup = all.filter((x, i) => all.indexOf(x) !== i);
   if (dup.length) err(`повторяющиеся id: ${[...new Set(dup)].join(', ')}`);

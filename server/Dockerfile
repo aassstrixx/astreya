@@ -11,5 +11,6 @@ RUN chmod +x server/docker-entrypoint.sh && mkdir -p /data /site && chown -R nod
 ENV NODE_ENV=production PORT=8080 DATA_DIR=/data SITE_ROOT=/site TRUST_PROXY=1
 VOLUME ["/data", "/site"]
 EXPOSE 8080
+HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=3 CMD node -e "fetch('http://127.0.0.1:'+(process.env.PORT||8080)+'/api/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"
 USER node
 ENTRYPOINT ["server/docker-entrypoint.sh"]

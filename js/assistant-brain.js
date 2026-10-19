@@ -459,7 +459,7 @@
       const city = cityOf(n), c = K.contacts(city), L = [V('contacts.open', st, {}) || ''], links = [];
       if (c.office && city !== 'Москва') { L.push('**' + c.office.city + '** (' + lower(c.office.role) + '): ' + c.office.addr + '.'); (c.office.phones || []).forEach(p => L.push(p[1] + ': ' + p[0])); (c.office.emails || []).forEach(e => L.push(e)); }
       else { L.push('Главный офис: ' + (c.main.address || '') + (contactsMain.addressNote ? ' (' + contactsMain.addressNote + ')' : '') + '.'); L.push('Телефон: ' + c.main.phone + ' · e-mail: ' + c.main.email); L.push('Часы работы: ' + c.main.hours + '.'); }
-      links.push({h: 'tel:' + c.main.phoneRaw, l: 'Позвонить ' + c.main.phone}, {h: 'mailto:' + c.main.email, l: c.main.email}); if (c.main.whatsapp) links.push({h: c.main.whatsapp, l: 'WhatsApp', ext: true}); links.push(link('contacts.html', 'Контакты'));
+      links.push({h: 'tel:' + c.main.phoneRaw, l: 'Позвонить ' + c.main.phone}, {h: 'mailto:' + c.main.email, l: c.main.email}); if (contactsMain.max) links.push({h: contactsMain.max, l: 'MAX', ext: true}); if (contactsMain.telegram) links.push({h: contactsMain.telegram, l: 'Telegram', ext: true}); if (c.main.whatsapp) links.push({h: c.main.whatsapp, l: 'WhatsApp', ext: true}); links.push(link('contacts.html', 'Контакты'));
       if (!city) L.push('Есть представительства: ' + c.offices.map(o => o.city).join(', ') + '.');
       if (hasCallback) st.pending = {type: 'callback'};
       return R(L.filter(Boolean).join('\n'), {text2: hasCallback ? V('contacts.follow', st, {}) : '', links, actions: compact([act.callback()]), chips: ['Как стать партнёром', 'Ближайшие семинары'], intent: 'contacts', steps: ['Нахожу контакты…']});

@@ -34,13 +34,15 @@ function validate(body) {
   if (!f.email && !f.phone) errors.contact = 'Укажите телефон или e-mail.';
   let page = clean(body.page, 500); if (page && !/^https?:\/\//i.test(page)) page = '';
   if (Object.keys(errors).length) return {ok: false, errors};
-  return {ok: true, lead: Object.assign({type}, f, {phone: f.phone, page, fill_ms: Number.isFinite(+body.fill_ms) ? Math.max(0, Math.min(+body.fill_ms, 36e5)) : null, honeypot: clean(body.company_site, 200)})};
+  const consentVersion = clean(body.consent_version, 40);
+  return {ok: true, lead: Object.assign({type}, f, {phone: f.phone, page, consent_version: consentVersion, fill_ms: Number.isFinite(+body.fill_ms) ? Math.max(0, Math.min(+body.fill_ms, 36e5)) : null, honeypot: clean(body.company_site, 200)})};
 }
 
 /* ---- спам-признаки. «Сильные» (скрытое поле, разметка, куча ссылок) — заявка уходит в «Спам» без уведомления.
    «Слабые» (слишком быстрое заполнение — так же выглядит автозаполнение браузера) — заявка остаётся новой, но помечается и приходит с предупреждением: живого клиента терять нельзя. ---- */
-function spamReasons(lead, minFillMs) {
+function spamReasons(lead, minFillMs, captcha) {
   const spam = [], flags = [];
+  if (captcha === 'fail') spam.push('не пройдена проверка SmartCaptcha'); else if (captcha === 'missing') spam.push('нет токена SmartCaptcha'); else if (captcha === 'error') flags.push('проверка SmartCaptcha не отработала (сервис недоступен)');
   if (lead.honeypot) spam.push('заполнено скрытое поле');
   const links = (lead.msg.match(/https?:\/\/|www\./gi) || []).length; if (links > 2) spam.push('много ссылок в сообщении');
   if (/(<\s*script|<\s*a\s+href|\[url=)/i.test([lead.name, lead.msg, lead.org, lead.city].join(' '))) spam.push('разметка в тексте');
@@ -72,7 +74,7 @@ function receive(body, meta, settings) {
     const lead = v.lead, ipH = meta.ipHash, wait = rateCheck(ipH, settings);
     if (wait) throw httpErr(429, 'Слишком много заявок с одного адреса. Попробуйте позже или позвоните нам.', {retry_after: wait});
     rateNote(ipH);
-    const sr = spamReasons(lead, settings.minFillMs || 0), reasons = sr.spam, d = load();
+    const sr = spamReasons(lead, settings.minFillMs || 0, meta.captcha), reasons = sr.spam, d = load();
     // повтор той же заявки за 10 минут (двойной клик, повторная отправка) — не плодим записи
     const t = Date.now(), dup = d.items.find(x => x.type === lead.type && x.phone === lead.phone && x.email === lead.email && x.msg === lead.msg && x.context === lead.context && t - Date.parse(x.created_at) < 600e3);
     if (dup) { dup.duplicates = (dup.duplicates || 0) + 1; save(d); return {id: dup.id, duplicate: true, notify: false, lead: dup}; }
@@ -80,7 +82,7 @@ function receive(body, meta, settings) {
     const rec = {
       id: 'L' + String(d.seq).padStart(5, '0'), n: d.seq, created_at: nowISO(), updated_at: nowISO(), status: reasons.length ? 'spam' : 'new',
       type: lead.type, name: lead.name, phone: lead.phone, email: lead.email, city: lead.city, org: lead.org, spec: lead.spec, msg: lead.msg, context: lead.context, src: lead.src || '', page: lead.page,
-      consent: true, fill_ms: lead.fill_ms, ip: ipH, ua: clean(meta.ua, 200), origin: clean(meta.origin, 200), spam_reasons: reasons, flags: sr.flags, duplicates: 0,
+      consent: true, consent_at: nowISO(), consent_version: lead.consent_version || '', fill_ms: lead.fill_ms, ip: ipH, ua: clean(meta.ua, 200), origin: clean(meta.origin, 200), spam_reasons: reasons, flags: sr.flags, duplicates: 0,
       notes: [], history: [{t: nowISO(), who: 'сайт', action: 'created', detail: reasons.length ? 'отмечена как спам: ' + reasons.join('; ') : sr.flags.length ? 'подозрительная: ' + sr.flags.join('; ') : ''}]
     };
     d.items.push(rec); save(d);
@@ -129,6 +131,20 @@ function purgeOld(days) {                    // срок хранения: уд�
   return mu.run(() => { if (!days) return 0; const d = load(), lim = Date.now() - days * 864e5, n = d.items.length; d.items = d.items.filter(x => !(['done', 'spam', 'archived'].includes(x.status) && Date.parse(x.created_at) < lim)); save(d); return n - d.items.length; });
 }
 
+
+/* ---- персональные данные: поиск по обращению субъекта, выгрузка, удаление (152-ФЗ, ст. 14 и 21) ---- */
+const digitsOf = v => String(v || '').replace(/\D/g, '').replace(/^8(?=\d{10}$)/, '7');
+function findSubject(q) {
+  q = String(q || '').trim(); if (q.length < 3) return [];
+  const email = q.includes('@') ? q.toLowerCase() : '', dq = digitsOf(q), phone = !email && dq.length >= 10 ? dq : '', text = !email && !phone ? q.toLowerCase() : '';
+  return load().items.filter(x => (email && String(x.email || '').toLowerCase() === email) || (phone && digitsOf(x.phone) === phone) || (text && String(x.name || '').toLowerCase().includes(text))).sort((a, b) => b.n - a.n);
+}
+function eraseSubject(ids, who) {
+  return mu.run(() => { const d = load(), set = new Set(ids); const n = d.items.length; d.items = d.items.filter(x => !set.has(x.id)); save(d); return {removed: n - d.items.length, by: who}; });
+}
+/* записей по каждому виду данных — для реестра обработки */
+const inventory = () => { const a = load().items; return {total: a.length, withPhone: a.filter(x => x.phone).length, withEmail: a.filter(x => x.email).length, oldest: a.length ? a.reduce((m, x) => x.created_at < m ? x.created_at : m, a[0].created_at) : null, withConsentVersion: a.filter(x => x.consent_version).length}; };
+
 /* ---- CSV (разделитель «;», UTF-8 с BOM — так открывается в Excel); ячейки, начинающиеся с = + - @, экранируются от «CSV-инъекций» ---- */
 const cell = v => { let s = String(v === undefined || v === null ? '' : v); if (/^[=+\-@\t\r]/.test(s)) s = "'" + s; return /[;"\n\r]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s; };
 function csv(q) {
@@ -137,4 +153,4 @@ function csv(q) {
   const lines = [head.map(cell).join(';')].concat(rows.map(x => [x.id, x.created_at, STATUSES[x.status], TYPE_TITLES[x.type] || x.type, x.name, x.phone, x.email, x.city, x.org, x.spec, x.context, x.msg, x.page, x.src || '', x.notes.map(n => n.who + ': ' + n.text).join(' | ')].map(cell).join(';')));
   return '﻿' + lines.join('\r\n') + '\r\n';
 }
-module.exports = {STATUSES, TYPE_TITLES, validate, receive, list, get, stats, update, remove, purgeOld, csv, ipHash, spamReasons};
+module.exports = {STATUSES, TYPE_TITLES, validate, receive, list, get, stats, update, remove, purgeOld, csv, ipHash, spamReasons, findSubject, eraseSubject, inventory, snapshot: () => JSON.parse(JSON.stringify(load())), replaceAll: (d, who) => mu.run(() => { save(d); return d.items.length; })};

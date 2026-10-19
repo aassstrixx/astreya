@@ -4,7 +4,10 @@
      node server/cli.js create-admin ivan            — создать администратора (пароль спросит или сгенерирует)
      node server/cli.js create-manager anna          — менеджер (только заявки)
      node server/cli.js reset-password admin         — сбросить пароль (потребуется смена при входе)
+     node server/cli.js reset-2fa admin              — снять двухфакторный вход (потерян телефон и коды восстановления)
      node server/cli.js list-users
+     node server/cli.js backup                       — создать резервную копию данных сервера
+     node server/cli.js launch                       — чек-лист готовности к запуску в РФ (то же, что раздел «Запуск» в админке)
      node server/cli.js export-leads [файл.csv]      — выгрузка всех заявок в CSV
      node server/cli.js build                        — пересобрать и проверить сайт
      node server/cli.js check                        — проверить конфигурацию и доступы
@@ -41,6 +44,16 @@ const cmds = {
     const pw = gen(); await A.updateUser(u.id, {password: pw, mustChange: true}, null);
     console.log(`Пароль для ${u.login} сброшен.\nВременный пароль: ${pw}\n(при входе потребуется смена; все сеансы пользователя завершены)`);
   },
+  async 'reset-2fa'(login) {
+    const u = A.listUsers().find(x => x.login.toLowerCase() === String(login || '').toLowerCase()); if (!u) throw new Error('Пользователь не найден: ' + login);
+    await A.totpReset(u.id); console.log(`Двухфакторный вход у ${u.login} снят, сеансы завершены. Включите его снова в админке: Безопасность.`);
+  },
+  async backup() { const r = await require('./lib/backup').create('командная строка', 'manual'); console.log('Копия создана: ' + r.id + ' (' + r.files.length + ' файлов' + (r.encrypted ? ', зашифрована' : '') + ')\nПапка: ' + require('./lib/backup').DIR); },
+  launch() {
+    const r = require('./lib/launch').run({https: /^https:/.test(C.PUBLIC_URL)}), mark = {ok: '✓', fail: '✗', warn: '!', manual: '○', info: 'i'};
+    let g = ''; r.items.forEach(i => { if (i.group !== g) { g = i.group; console.log('\n' + g); } console.log(`  ${mark[i.status] || '?'} ${i.title}${i.blocker ? ' [обязательно]' : ''}${i.status !== 'ok' && i.detail ? '\n      ' + i.detail : ''}`); });
+    console.log(`\n${r.ready ? 'Обязательные пункты выполнены.' : 'Не готово: обязательных пунктов — ' + r.blockers + '.'} Выполнено ${r.ok} из ${r.total}, рекомендаций: ${r.warnings}.`); process.exit(r.ready ? 0 : 1);
+  },
   'list-users'() { A.listUsers().forEach(u => console.log(`${u.login.padEnd(20)} ${A.ROLES[u.role].padEnd(28)} ${u.disabled ? 'отключён' : 'активен'}  вход: ${u.lastLogin || '—'}`)); },
   'export-leads'(file) { const csv = L.csv({status: 'all'}); if (file) { fs.writeFileSync(file, csv); console.log('Записано: ' + file); } else process.stdout.write(csv); },
   async build() { const r = await B.build('командная строка'); console.log(r.build.out); if (r.check) console.log(r.check.out); process.exit(r.ok ? 0 : 1); },
@@ -65,6 +78,10 @@ const cmds = {
     note(true, 'уведомления: ' + ([n.webhookUrl && 'веб-хук', n.telegram && n.telegram.token && 'Telegram', n.smtp && n.smtp.host && 'e-mail'].filter(Boolean).join(', ') || 'не настроены (заявки видны только в админке)'));
     let ep = ''; try { ep = JSON.parse(fs.readFileSync(C.ROOT + '/data/site.json', 'utf8')).formEndpoint || ''; } catch (e) {}
     note(!!ep, 'формы сайта: ' + (ep ? 'отправляют на ' + ep : 'режим «письмо» (formEndpoint пуст)'));
+    const V = require('./lib/vault'), users = A.listUsers().filter(u => u.role === 'admin' && !u.disabled);
+    note(users.every(u => u.totp), 'двухфакторный вход у администраторов: ' + (users.every(u => u.totp) ? 'включён у всех' : 'нет у ' + users.filter(u => !u.totp).map(u => u.login).join(', ')));
+    note(V.enabled(), 'шифрование секретов на диске: ' + (V.enabled() ? 'включено (DATA_KEY)' : 'не включено — задайте DATA_KEY (фраза от 16 символов)'));
+    note(C.secretsState().plain === 0 || !V.enabled(), 'секреты в открытом виде: ' + C.secretsState().plain);
     note(C.SECURE_COOKIES || C.TRUST_PROXY, 'cookie админки: ' + (C.SECURE_COOKIES ? 'Secure' : C.TRUST_PROXY ? 'Secure по X-Forwarded-Proto' : 'без Secure — для публичного сервера включите https и SECURE_COOKIES=1 или TRUST_PROXY=1'));
     process.exit(fail.length ? 1 : 0);
   }

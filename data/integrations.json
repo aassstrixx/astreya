@@ -1,0 +1,36 @@
+{
+  "_comment": "Подключения к сервисам для российского рынка. Редактируется в админке (раздел «Интеграции»); после сохранения сайт пересобирается. Здесь только публичные значения — токены и ключи хранятся на сервере и сюда не попадают.",
+  "metrika": {
+    "id": "",
+    "webvisor": false,
+    "clickmap": true,
+    "trackLinks": true,
+    "accurateTrackBounce": true,
+    "goals": [
+      {"id": "form_submit", "name": "Отправлена заявка с формы", "key": true},
+      {"id": "phone_click", "name": "Нажат телефон", "key": true},
+      {"id": "email_click", "name": "Нажата почта", "key": true},
+      {"id": "partner_cta", "name": "Нажата кнопка «Стать партнёром»", "key": false},
+      {"id": "event_register", "name": "Нажата запись на мероприятие", "key": true},
+      {"id": "rl_send", "name": "Отправлен список запроса менеджеру", "key": true},
+      {"id": "plan_signup", "name": "Оставлена заявка после «Старта со Стеллой»", "key": true},
+      {"id": "assistant_open", "name": "Открыт чат со Стеллой", "key": false},
+      {"id": "assistant_msg", "name": "Вопрос Стелле", "key": false},
+      {"id": "catalog_click", "name": "Переход в каталог", "key": false},
+      {"id": "product_card_click", "name": "Открыта карточка товара", "key": false},
+      {"id": "quick_view", "name": "Быстрый просмотр товара", "key": false},
+      {"id": "search_open", "name": "Открыт поиск", "key": false}
+    ]
+  },
+  "consent": {
+    "mode": "optin",
+    "title": "Cookie и аналитика",
+    "text": "Сайт использует cookie, чтобы работать, и сервис «Яндекс Метрика», чтобы мы понимали, что на нём полезно посетителям. Аналитика включается только с вашего согласия, отказаться можно в любой момент.",
+    "accept": "Принять",
+    "decline": "Только необходимые",
+    "settings": "Настройки cookie"
+  },
+  "verification": {"yandex": "", "google": "", "mailru": ""},
+  "messengers": {"max": "", "telegram": "", "vk": "", "showWhatsapp": false},
+  "captcha": {"siteKey": ""}
+}

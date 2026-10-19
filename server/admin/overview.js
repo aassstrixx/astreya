@@ -2,7 +2,7 @@
 (function () {
   'use strict';
   const {h} = AD;
-  const ACT = {login: 'вход', logout: 'выход', content: 'правка содержимого', restore: 'откат правки', upload: 'загрузка картинки', file_delete: 'удаление картинки', build: 'сборка сайта', publish: 'публикация', settings: 'настройки', lead: 'работа с заявкой', lead_delete: 'удаление заявки', export: 'выгрузка заявок', user_create: 'новый пользователь', user_update: 'правка пользователя', user_delete: 'удаление пользователя', password: 'смена пароля', site_audit: 'проверка сайта', notify_test: 'тест уведомлений', assistant_test: 'проверка ИИ-помощника'};
+  const ACT = {login: 'вход', logout: 'выход', content: 'правка содержимого', restore: 'откат правки', upload: 'загрузка картинки', file_delete: 'удаление картинки', build: 'сборка сайта', publish: 'публикация', settings: 'настройки', lead: 'работа с заявкой', lead_delete: 'удаление заявки', export: 'выгрузка заявок', user_create: 'новый пользователь', user_update: 'правка пользователя', user_delete: 'удаление пользователя', password: 'смена пароля', site_audit: 'проверка сайта', notify_test: 'тест уведомлений', assistant_test: 'проверка ИИ-помощника', login_fail: 'неудачный вход', login_locked: 'блокировка входа', '2fa_on': '2FA включён', security: 'правила безопасности', integration: 'интеграции', launch_confirm: 'чек-лист запуска', privacy_erase: 'удаление данных субъекта', backup: 'резервные копии'};
   const plural = AD.plural;
 
   AD.views.overview = {
@@ -13,7 +13,8 @@
       async function load() {
         const d = await AD.get('/api/overview'), c = d.counts, ls = d.leads, b = d.build;
         const kpi = (cls, href, num, text) => h(href ? 'a' : 'div', {class: 'kpi ' + (cls || ''), href}, h('b', {}, num), h('span', {}, text));
-        const kpis = h('div', {class: 'kpis'},
+        const lc = d.launch, kpis = h('div', {class: 'kpis'},
+          lc ? kpi(lc.ready ? 'ok' : 'err', '#/launch', lc.ready ? 'Готов' : lc.blockers, lc.ready ? 'готовность к запуску · рекомендаций ' + lc.warnings : AD.plural(lc.blockers, 'обязательный пункт', 'обязательных пункта', 'обязательных пунктов') + ' до запуска') : null,
           kpi(ls.new ? 'warn' : 'ok', '#/leads', ls.new, ls.new ? AD.plural(ls.new, 'новая заявка', 'новые заявки', 'новых заявок') + ' · всего ' + ls.total : 'новых заявок нет · всего ' + ls.total),
           kpi('', '#/leads', ls.week, 'заявок за неделю, сегодня ' + ls.today),
           kpi('', '#/content/products', c.products || 0, 'товаров в каталоге · брендов ' + (c.brands || 0)),

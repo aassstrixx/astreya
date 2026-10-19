@@ -320,6 +320,7 @@
     M.cancelSmooth();
     const hdr = $('#hdr'); if (hdr) hdr.classList.remove('hide');
     A.initPage(document);
+    try { document.dispatchEvent(new CustomEvent('astreya:page', {detail: {url: u.href}})); } catch (e) {}          // переход без перезагрузки: аналитика засчитывает просмотр (js/consent.js)
     dropMax();
     const toHero = isHome(u) && !u.hash && M.heroTop() > 0;           // переход на главную: открываем героя, а не вступление (оно выше)
     if (toHero) window.scrollTo({top: M.heroTop(), left: 0, behavior: 'instant'});

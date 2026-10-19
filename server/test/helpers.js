@@ -3,6 +3,7 @@
 const fs = require('fs'), os = require('os'), path = require('path'), http = require('http');
 
 const REPO = path.resolve(__dirname, '..', '..');
+process.env.ALLOW_PRIVATE_NETWORK = process.env.ALLOW_PRIVATE_NETWORK || '1';          // тесты поднимают свои заглушки на 127.0.0.1; защита от обращений во внутреннюю сеть проверяется отдельно (security.test.js)
 
 /* копия сайта без тяжёлых кадров вступления (нужны только первые кадры, на них ссылаются страницы) */
 function makeSite(dir) {

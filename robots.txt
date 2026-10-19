@@ -1,5 +1,7 @@
 User-agent: *
 Allow: /
 Disallow: /search.html
+Disallow: /admin/
+Disallow: /api/
 
 Sitemap: https://aassstrixx.github.io/astreya/sitemap.xml

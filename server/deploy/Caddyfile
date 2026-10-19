@@ -1,0 +1,19 @@
+# Caddy перед сервером «Астрея»: сам выпускает и продлевает сертификат (Let's Encrypt), включает https, HTTP/2 и HTTP/3.
+# Замените astreya.example.ru на свой домен, положите файл как /etc/caddy/Caddyfile и перезапустите Caddy.
+# В настройках сервера: TRUST_PROXY=1, SECURE_COOKIES=1, PUBLIC_URL=https://astreya.example.ru (см. server/.env.example). Порт 8080 наружу не открывайте — только через Caddy.
+astreya.example.ru {
+	encode zstd gzip
+	request_body {
+		max_size 12MB          # картинки из админки (до 6 МБ, в base64 ≈ 8 МБ)
+	}
+	# Caddy сам подставляет настоящий адрес клиента в X-Forwarded-For (чужие значения отбрасывает), поэтому TRUSTED_PROXY_HOPS=1
+	reverse_proxy 127.0.0.1:8080 {
+		flush_interval -1        # ответы чат-помощника идут потоком
+	}
+	log {
+		output file /var/log/caddy/astreya.access.log
+	}
+}
+www.astreya.example.ru {
+	redir https://astreya.example.ru{uri} permanent
+}

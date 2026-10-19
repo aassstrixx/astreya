@@ -8,7 +8,10 @@ module.exports = function contacts(ctx, C, P) {
   const cards = [
     {ic: I.phone, t: 'Телефон', v: `<a href="tel:${c.phoneRaw}" data-track="phone_click">${esc(c.phone)}</a>`, s: esc(c.hours)},
     {ic: I.mail, t: 'Email', v: `<a href="mailto:${c.email}" data-track="email_click">${esc(c.email)}</a>`, s: 'Ответим в рабочее время'},
-    {ic: I.chat, t: 'WhatsApp', v: `<a href="${c.whatsapp}" target="_blank" rel="noopener" data-track="messenger_click">Написать в WhatsApp</a>`, s: 'Тот же номер, что и телефон'},
+    ...(c.max ? [{ic: I.msg, t: 'MAX', v: `<a href="${esc(c.max)}" target="_blank" rel="noopener" data-track="messenger_click" data-place="contacts">Написать в MAX</a>`, s: 'Ответим в рабочее время'}] : []),
+    ...(c.telegram ? [{ic: I.msg, t: 'Telegram', v: `<a href="${esc(c.telegram)}" target="_blank" rel="noopener" data-track="messenger_click" data-place="contacts">Написать в Telegram</a>`, s: 'Ответим в рабочее время'}] : []),
+    ...(c.vk ? [{ic: I.msg, t: 'ВКонтакте', v: `<a href="${esc(c.vk)}" target="_blank" rel="noopener" data-track="messenger_click" data-place="contacts">Сообщество ВКонтакте</a>`, s: 'Новости и анонсы'}] : []),
+    ...(c.whatsapp ? [{ic: I.chat, t: 'WhatsApp', v: `<a href="${esc(c.whatsapp)}" target="_blank" rel="noopener" data-track="messenger_click">Написать в WhatsApp</a>`, s: 'Тот же номер, что и телефон'}] : []),
     {ic: I.pin, t: 'Центральный офис', v: esc(c.address), s: esc(c.addressNote)}
   ];
   return `<div class="wrap">
@@ -22,7 +25,7 @@ module.exports = function contacts(ctx, C, P) {
           <div class="map-grid" aria-hidden="true"><i class="map-pin"></i></div>
           <div class="map-cap"><b>${esc(c.address)}</b><span>${esc(c.addressNote)}</span>
             <div class="row"><a class="btn btn-fill btn-sm" href="https://yandex.ru/maps/?text=${q}" target="_blank" rel="noopener">Яндекс Карты ${I.external}</a>
-              <a class="btn btn-ghost btn-sm" href="https://www.google.com/maps/search/?api=1&query=${q}" target="_blank" rel="noopener">Google Maps ${I.external}</a></div></div>
+              <a class="btn btn-ghost btn-sm" href="https://2gis.ru/search/${q}" target="_blank" rel="noopener">2ГИС ${I.external}</a></div></div>
         </div>
         <div class="form-card stack card reveal" id="support">
           <div><span class="eyebrow in">Обратная связь</span><h2 style="font-size:var(--fs-h2-sm)">Написать нам</h2>

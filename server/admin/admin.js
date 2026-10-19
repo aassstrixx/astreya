@@ -25,7 +25,7 @@
   const ICONS = {
     inbox: 'M3 13l2-8h14l2 8M3 13v6h18v-6M3 13h5l1 3h6l1-3h5', edit: 'M4 20h4L19 9l-4-4L4 16zM14 6l4 4', image: 'M4 5h16v14H4zM4 16l5-5 4 4 3-3 4 4M9 9.5h.01', upload: 'M12 16V4m0 0l-4 4m4-4l4 4M4 16v4h16v-4', gear: 'M12 15a3 3 0 100-6 3 3 0 000 6zM19 12a7 7 0 00-.1-1.2l2-1.5-2-3.4-2.3.9a7 7 0 00-2-1.2L14.2 3h-4l-.4 2.6a7 7 0 00-2 1.2l-2.3-.9-2 3.4 2 1.5A7 7 0 005 12a7 7 0 00.1 1.2l-2 1.5 2 3.4 2.3-.9a7 7 0 002 1.2l.4 2.6h4l.4-2.6a7 7 0 002-1.2l2.3.9 2-3.4-2-1.5c.1-.4.1-.8.1-1.2z',
     users: 'M9 11a3.5 3.5 0 100-7 3.5 3.5 0 000 7zM2.5 20c.5-3.5 3-5.5 6.5-5.5s6 2 6.5 5.5M16 4.3a3.5 3.5 0 010 6.4M17.5 14.7c2.3.5 3.7 2.4 4 5.3', list: 'M8 6h13M8 12h13M8 18h13M3.5 6h.01M3.5 12h.01M3.5 18h.01', globe: 'M12 21a9 9 0 100-18 9 9 0 000 18zM3 12h18M12 3c2.5 2.5 3.8 5.5 3.8 9S14.5 18.5 12 21c-2.5-2.5-3.8-5.5-3.8-9S9.5 5.5 12 3z',
-    dash: 'M4 4h7v9H4zM13 4h7v5h-7zM13 11h7v9h-7zM4 15h7v5H4z', pages: 'M7 3h8l4 4v14H7zM15 3v4h4M10 12h6M10 16h6', palette: 'M12 3a9 9 0 100 18c1.2 0 2-.8 2-1.8 0-.5-.2-.9-.5-1.2-.3-.3-.5-.7-.5-1.2 0-1 .8-1.8 1.8-1.8H17a4 4 0 004-4c0-4-4-8-9-8zM7.5 11h.01M10 7.5h.01M14.5 7.5h.01', eye: 'M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12zM12 15a3 3 0 100-6 3 3 0 000 6z', search: 'M11 18a7 7 0 100-14 7 7 0 000 14zM21 21l-5-5', box: 'M21 8l-9-5-9 5v8l9 5 9-5zM3 8l9 5 9-5M12 13v8'
+    dash: 'M4 4h7v9H4zM13 4h7v5h-7zM13 11h7v9h-7zM4 15h7v5H4z', rocket: 'M12 3c3 2 5 5 5 9l-2 3H9l-2-3c0-4 2-7 5-9zM9 15l-3 4 3-1M15 15l3 4-3-1M12 9.5h.01', shield: 'M12 3l7 3v5c0 5-3 8-7 10-4-2-7-5-7-10V6l7-3zM9 12l2 2 4-4', plug: 'M9 3v5M15 3v5M6 8h12v3a6 6 0 01-12 0V8zM12 17v4', archive: 'M3 4h18v4H3zM5 8v12h14V8M10 12h4', lock: 'M6 11h12v9H6zM8 11V8a4 4 0 018 0v3M12 15v2', pages: 'M7 3h8l4 4v14H7zM15 3v4h4M10 12h6M10 16h6', palette: 'M12 3a9 9 0 100 18c1.2 0 2-.8 2-1.8 0-.5-.2-.9-.5-1.2-.3-.3-.5-.7-.5-1.2 0-1 .8-1.8 1.8-1.8H17a4 4 0 004-4c0-4-4-8-9-8zM7.5 11h.01M10 7.5h.01M14.5 7.5h.01', eye: 'M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12zM12 15a3 3 0 100-6 3 3 0 000 6z', search: 'M11 18a7 7 0 100-14 7 7 0 000 14zM21 21l-5-5', box: 'M21 8l-9-5-9 5v8l9 5 9-5zM3 8l9 5 9-5M12 13v8'
   };
   const ico = n => { const s = document.createElementNS(SVG_NS, 'svg'); s.setAttribute('viewBox', '0 0 24 24'); s.setAttribute('fill', 'none'); s.setAttribute('stroke', 'currentColor'); s.setAttribute('stroke-width', '1.8'); s.setAttribute('stroke-linecap', 'round'); s.setAttribute('stroke-linejoin', 'round'); s.setAttribute('aria-hidden', 'true'); const p = document.createElementNS(SVG_NS, 'path'); p.setAttribute('d', ICONS[n] || ''); s.append(p); return s; };
   /* замена содержимого элемента: принимает узлы, строки, вложенные массивы; null/false пропускаются */
@@ -108,12 +108,34 @@
       e.preventDefault(); err.hidden = true;
       if (!login.value.trim() || !pw.value) { err.replaceChildren(AD.alertBox('err', 'Введите логин и пароль.')); err.hidden = false; return; }
       await AD.busy(btn, async () => {
-        try { const r = await AD.api('POST', '/api/login', {login: login.value.trim(), password: pw.value}); AD.user = r.user; AD.csrf = r.csrf; AD.loggedOut = false; await afterLogin(); }
+        try { const r = await AD.api('POST', '/api/login', {login: login.value.trim(), password: pw.value}); if (r.need2fa) { show2fa(r.ticket); return; } AD.user = r.user; AD.csrf = r.csrf; AD.loggedOut = false; await afterLogin(); }
         catch (x) { err.replaceChildren(AD.alertBox('err', x.message)); err.hidden = false; pw.value = ''; pw.focus(); }
       });
     }}, msg ? AD.alertBox('warn', msg) : null, err, h('div', {class: 'field'}, h('label', {for: 'f-login'}, 'Логин'), login), h('div', {class: 'field'}, h('label', {for: 'f-pass'}, 'Пароль'), pw), btn);
     loginScreen([h('h1', {}, 'Вход'), h('p', {class: 'muted small'}, 'Заявки с сайта, тексты, каталог и новости.'), form]);
     login.focus();
+  }
+  /* второй шаг входа: код из приложения-аутентификатора или код восстановления */
+  function show2fa(ticket) {
+    document.title = 'Код подтверждения — Админка Астрея';
+    const err = h('div', {hidden: true}), code = h('input', {type: 'text', id: 'f-code', name: 'code', autocomplete: 'one-time-code', inputmode: 'text', required: true, autocapitalize: 'none', spellcheck: 'false', maxlength: '12', placeholder: '123 456', style: {fontSize: '22px', letterSpacing: '.18em', textAlign: 'center'}});
+    const btn = h('button', {class: 'btn primary', type: 'submit'}, 'Подтвердить');
+    const form = h('form', {novalidate: true, onsubmit: async e => {
+      e.preventDefault(); err.hidden = true; if (!code.value.trim()) return;
+      await AD.busy(btn, async () => {
+        try { const r = await AD.api('POST', '/api/login/2fa', {ticket, code: code.value.trim()}); AD.user = r.user; AD.csrf = r.csrf; AD.loggedOut = false; await afterLogin(); if (r.usedRecovery) AD.toast('Вы вошли по коду восстановления. Выпустите новые коды в разделе «Безопасность».', 'err', 12000); }
+        catch (x) { err.replaceChildren(AD.alertBox('err', x.message)); err.hidden = false; code.value = ''; code.focus(); if (/истекло|Войдите заново/.test(x.message)) setTimeout(() => showLogin(x.message), 1200); }
+      });
+    }}, err, h('div', {class: 'field'}, h('label', {for: 'f-code'}, 'Код из приложения'), code, h('div', {class: 'help'}, 'Шесть цифр из приложения-аутентификатора. Потеряли телефон — введите один из кодов восстановления (вида abcd-1234).')), btn);
+    loginScreen([h('h1', {}, 'Подтверждение входа'), h('p', {class: 'muted small'}, 'Пароль принят. Остался второй шаг.'), form, h('button', {class: 'btn ghost sm', type: 'button', style: {marginTop: '10px'}, onclick: () => showLogin()}, 'Назад')]);
+    code.focus();
+  }
+  /* политика безопасности требует 2FA от администратора, а он ещё не включён: пока не включит, дальше не пускаем */
+  function showForced2fa() {
+    document.title = 'Двухфакторный вход — Админка Астрея';
+    const holder = h('div', {});
+    loginScreen([h('h1', {}, 'Включите двухфакторный вход'), AD.alertBox('info', 'Политика безопасности сайта требует второй фактор для администраторов: даже украденный пароль не даст доступа к заявкам и сайту.'), holder, h('button', {class: 'btn ghost sm', type: 'button', style: {marginTop: '10px'}, onclick: () => AD.logout()}, 'Выйти')]);
+    AD.twoFaSetup(holder, () => { AD.needs2fa = false; afterLogin(); });
   }
   function passwordForm(forced, done) {
     const o = h('input', {type: 'password', id: 'p-old', autocomplete: 'current-password', required: true}), n = h('input', {type: 'password', id: 'p-new', autocomplete: 'new-password', required: true}), n2 = h('input', {type: 'password', id: 'p-new2', autocomplete: 'new-password', required: true});
@@ -122,7 +144,7 @@
       e.preventDefault(); err.hidden = true; const bad = m => { err.replaceChildren(AD.alertBox('err', m)); err.hidden = false; };
       if (n.value !== n2.value) return bad('Новый пароль и повтор не совпадают.');
       await AD.busy(btn, async () => { try { await AD.post('/api/password', {old: o.value, new: n.value}); AD.toast('Пароль изменён', 'ok'); AD.user.mustChange = false; done(); } catch (x) { bad(x.message); } });
-    }}, forced ? AD.alertBox('info', 'Первый вход: задайте свой пароль. Не короче 10 символов, буквы и цифры.') : h('p', {class: 'muted small'}, 'Не короче 10 символов, буквы и цифры, без логина внутри.'), err,
+    }}, forced ? AD.alertBox('info', 'Первый вход: задайте свой пароль. Не короче 12 символов, буквы и цифры, не из списка популярных.') : h('p', {class: 'muted small'}, 'Не короче 12 символов, буквы и цифры, без логина внутри. Остальные ваши сеансы будут завершены.'), err,
       h('div', {class: 'field'}, h('label', {for: 'p-old'}, forced ? 'Временный пароль' : 'Текущий пароль'), o), h('div', {class: 'field'}, h('label', {for: 'p-new'}, 'Новый пароль'), n), h('div', {class: 'field'}, h('label', {for: 'p-new2'}, 'Повторите новый пароль'), n2), btn);
     return {form, focus: () => o.focus()};
   }
@@ -140,20 +162,23 @@
 
   /* ---------- каркас и разделы ---------- */
   const NAV = [
-    {id: 'overview', title: 'Обзор', icon: 'dash', roles: ['admin']}, {id: 'leads', title: 'Заявки', icon: 'inbox', roles: ['admin', 'manager']}, {id: 'content', title: 'Содержимое сайта', icon: 'edit', roles: ['admin']}, {id: 'brandprods', title: 'Товары по брендам', icon: 'box', roles: ['admin']}, {id: 'pages', title: 'Страницы', icon: 'pages', roles: ['admin']},
+    {id: 'overview', title: 'Обзор', icon: 'dash', roles: ['admin']}, {id: 'launch', title: 'Запуск', icon: 'rocket', roles: ['admin']}, {id: 'leads', title: 'Заявки', icon: 'inbox', roles: ['admin', 'manager']}, {id: 'content', title: 'Содержимое сайта', icon: 'edit', roles: ['admin']}, {id: 'brandprods', title: 'Товары по брендам', icon: 'box', roles: ['admin']}, {id: 'pages', title: 'Страницы', icon: 'pages', roles: ['admin']},
     {id: 'design', title: 'Оформление', icon: 'palette', roles: ['admin']}, {id: 'preview', title: 'Предпросмотр', icon: 'eye', roles: ['admin']}, {id: 'files', title: 'Картинки', icon: 'image', roles: ['admin']},
-    {id: 'publish', title: 'Публикация', icon: 'upload', roles: ['admin']}, {id: 'settings', title: 'Настройки и заявки', icon: 'gear', roles: ['admin']}, {id: 'users', title: 'Пользователи', icon: 'users', roles: ['admin']}, {id: 'audit', title: 'Журнал', icon: 'list', roles: ['admin']}
+    {id: 'publish', title: 'Публикация', icon: 'upload', roles: ['admin']}, {id: 'integrations', title: 'Интеграции', icon: 'plug', roles: ['admin']}, {id: 'settings', title: 'Настройки и заявки', icon: 'gear', roles: ['admin']}, {id: 'privacy', title: 'Персональные данные', icon: 'lock', roles: ['admin']}, {id: 'backups', title: 'Копии', icon: 'archive', roles: ['admin']},
+    {id: 'security', title: 'Безопасность', icon: 'shield', roles: ['admin', 'manager']}, {id: 'users', title: 'Пользователи', icon: 'users', roles: ['admin']}, {id: 'audit', title: 'Журнал', icon: 'list', roles: ['admin']}
   ];
   AD.setBadge = n => { $$('.nav .badge').forEach(b => { b.textContent = n; b.hidden = !n; }); document.title = (n ? '(' + n + ') ' : '') + 'Админка — Астрея'; };
   AD.pollNew = async function () { try { const s = await AD.get('/api/leads/stats'); AD.setBadge(s.new); AD.stats = s; } catch (e) {} };
 
   async function afterLogin() {
+    try { const me = await AD.api('GET', '/api/me'); AD.user = me.user; AD.csrf = me.csrf; AD.needs2fa = !!me.needs2fa; } catch (e) { return showLogin(e.message); }
     if (AD.user.mustChange) return showForcedPassword();
+    if (AD.needs2fa) return showForced2fa();
     try { AD.config = await AD.get('/api/config'); } catch (e) { return showLogin(e.message); }
     mountShell();
   }
   function mountShell() {
-    const items = NAV.filter(n => n.roles.includes(AD.user.role));
+    const items = NAV.filter(n => n.roles.includes(AD.user.role) && AD.views[n.id]);          // разделов, которых нет в этой сборке (демо-файл), в меню нет
     const side = h('nav', {class: 'side', 'aria-label': 'Разделы'}, h('div', {class: 'brand'}, h('span', {class: 'brand-mark'}, 'А'), 'Астрея'),
       h('button', {class: 'nav pal-btn', type: 'button', id: 'pal-open', onclick: () => { document.body.classList.remove('nav-open'); AD.openPalette(); }}, ico('search'), 'Поиск', h('span', {class: 'kbd', 'aria-hidden': 'true'}, 'Ctrl K')),
       items.map(n => h('a', {class: 'nav', href: '#/' + n.id, dataset: {id: n.id}}, ico(n.icon), n.title, n.id === 'leads' ? h('span', {class: 'badge', hidden: true}) : null)),
@@ -171,7 +196,7 @@
   let lastHash = location.hash, reverting = false;
   function route() {
     if (!AD.user || AD.user.mustChange) return;
-    const {id: want, parts} = parseHash(), allowed = NAV.filter(n => n.roles.includes(AD.user.role)).map(n => n.id), id = allowed.includes(want) ? want : home();
+    const {id: want, parts} = parseHash(), allowed = NAV.filter(n => n.roles.includes(AD.user.role) && AD.views[n.id]).map(n => n.id), id = allowed.includes(want) ? want : home();
     if (id !== want) { history.replaceState(null, '', '#/' + id); }
     $$('.side a.nav').forEach(a => a.classList.toggle('on', a.dataset.id === id));
     const root = $('#view'); if (!root) return;
@@ -179,6 +204,7 @@
     if (AD.cur && AD.cur.inst && AD.cur.inst.destroy) AD.cur.inst.destroy();
     AD.dirty = false; root.replaceChildren(); window.scrollTo(0, 0);
     const v = AD.views[id]; AD.cur = {id, inst: null}; const cur = AD.cur;
+    if (!v) { root.replaceChildren(AD.alertBox('info', 'Этот раздел недоступен в данной версии админки.')); return; }
     Promise.resolve(v.mount(root, parts)).then(inst => { cur.inst = inst || null; if (cur === AD.cur && inst && inst.onRoute && parts.length && !inst.initial) inst.onRoute(parts); })
       .catch(e => { if (cur === AD.cur) root.replaceChildren(AD.errBox(e)); });
   }
@@ -190,7 +216,7 @@
   window.addEventListener('beforeunload', e => { if (AD.dirty) { e.preventDefault(); e.returnValue = ''; } });
 
   AD.start = async function () {
-    try { const r = await AD.api('GET', '/api/me'); AD.user = r.user; AD.csrf = r.csrf; await afterLogin(); }
+    try { const r = await AD.api('GET', '/api/me'); AD.user = r.user; AD.csrf = r.csrf; AD.needs2fa = !!r.needs2fa; await afterLogin(); }
     catch (e) { showLogin(e.status === 401 || !e.status ? '' : e.message); }
   };
   AD.go = hash => { location.hash = hash; };

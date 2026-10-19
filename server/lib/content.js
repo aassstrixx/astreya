@@ -19,8 +19,14 @@ const COLLECTIONS = {
   training: {title: 'Преподаватели, FAQ, шаги, видео', group: 'Обучение', file: 'data/training.json', kind: 'object'},
   news:     {title: 'Новости и акции',        group: 'Новости',  file: 'data/news.json',     kind: 'object', list: 'items', label: 'title'},
   pages:    {title: 'Свои страницы',          group: 'Сайт',     file: 'data/pages.json',    kind: 'object', list: 'items', label: 'title'},
-  menu:     {title: 'Меню сайта',             group: 'Сайт',     file: 'data/menu.json',     kind: 'object'}
+  menu:     {title: 'Меню сайта',             group: 'Сайт',     file: 'data/menu.json',     kind: 'object'},
+  integrations: {title: 'Интеграции: Метрика, согласие, мессенджеры', group: 'Сайт', file: 'data/integrations.json', kind: 'object'},
+  legal:    {title: 'Документы (152-ФЗ)',     group: 'Сайт',     file: 'data/legal.json',    kind: 'object'}
 };
+COLLECTIONS.sales = {title: 'Путь к закупке («Старт со Стеллой»)', group: 'Сайт', file: 'data/sales.json', kind: 'object'};
+/* библиотека «живых» реплик помощника: каждый файл data/stella/*.json — отдельный раздел (правка не ломает сайт: он собирается и проверяется, а при ошибке сборки откатывается) */
+const STELLA_TITLES = {config: 'Настройки и общие реплики', chat: 'Разговор', daily: 'Повседневные темы', english: 'Английский язык', glossary: 'Словарь терминов', guide: 'Экскурсия и подсказки', persona: 'Характер', safety: 'Безопасность ответов', sales: 'Продажи', scope: 'Границы тем', voice: 'Голос и приветствия'};
+try { for (const f of fs.readdirSync(path.join(C.ROOT, 'data', 'stella')).filter(x => /^[a-z]+\.json$/.test(x)).sort()) { const b = f.slice(0, -5); COLLECTIONS['stella_' + b] = {title: 'Стелла: ' + (STELLA_TITLES[b] || b), group: 'Помощник Стелла', file: 'data/stella/' + f, kind: 'object'}; } } catch (e) {}
 const BACKUPS = path.join(C.DATA, 'backups');
 const abs = name => path.join(C.ROOT, COLLECTIONS[name].file);
 const version = text => crypto.createHash('sha1').update(text).digest('hex').slice(0, 12);
@@ -38,7 +44,9 @@ function read(name) {
 const isStr = v => typeof v === 'string' && v.trim() !== '';
 const dateOk = v => /^\d{4}-\d{2}-\d{2}$/.test(v) && !isNaN(Date.parse(v + 'T00:00:00Z'));
 const slugOk = v => /^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(v);
+const hasProto = (v, d) => { if (!v || typeof v !== 'object' || (d || 0) > 40) return false; if (Object.prototype.hasOwnProperty.call(v, '__proto__')) return true; return Object.values(v).some(x => hasProto(x, (d || 0) + 1)); };
 function problems(name, data) {
+  if (hasProto(data)) return ['Недопустимое имя поля «__proto__».'];
   const P = [], c = COLLECTIONS[name], other = n => (n === name ? data : readJSON(abs(n)));
   if (c.kind === 'array' && !Array.isArray(data)) return ['Ожидается список.'];
   if (c.kind === 'object' && (typeof data !== 'object' || data === null || Array.isArray(data))) return ['Ожидается объект.'];
@@ -73,6 +81,31 @@ function problems(name, data) {
     const e = data.contacts && data.contacts.email; if (!isStr(e) || !/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(e)) P.push('Контакты: нужен корректный e-mail.');
     if (data.formEndpoint && !/^(https?:\/\/[^\s]+|\/[^\s]*)$/.test(data.formEndpoint)) P.push('Адрес приёма заявок: полный адрес вида https://… или путь /api/lead.');
     if (data.url && !/^https?:\/\/[^\s]+\/$/.test(data.url)) P.push('Адрес сайта (url) — полный, с http(s):// и слэшем на конце.');
+    if (data.ogImage && (!/^assets\/[\w\-./]+\.(png|jpe?g|webp)$/i.test(data.ogImage) || !fs.existsSync(path.join(C.ROOT, data.ogImage)))) P.push('Картинка для соцсетей (ogImage): файл PNG/JPG/WebP из папки assets/, он должен существовать (рекомендуется 1200×630).');
+    const rq = data.requisites || {}, dig = (v, re, what) => { if (v !== null && v !== undefined && v !== '' && !re.test(String(v))) P.push(`Реквизиты: ${what}.`); };
+    dig(rq.inn, /^(\d{10}|\d{12})$/, 'ИНН — 10 цифр (организация) или 12 (ИП)'); dig(rq.kpp, /^\d{9}$/, 'КПП — 9 цифр'); dig(rq.ogrn, /^(\d{13}|\d{15})$/, 'ОГРН — 13 цифр (ОГРНИП — 15)');
+    if (data.contacts && data.contacts.phoneRaw && !/^\+?\d{10,15}$/.test(String(data.contacts.phoneRaw))) P.push('Контакты: «Телефон для ссылки» — только цифры и + (например +74959255162).');
+  } else if (name === 'content') {
+    const KNOWN = ['partner', 'seminar', 'product', 'question', 'callback', 'subscribe', 'plan', 'contact'], f = data.forms;
+    if (f !== undefined) { if (!f || typeof f !== 'object' || Array.isArray(f)) P.push('Тексты форм: ожидается объект.'); else Object.entries(f).forEach(([k, v]) => { const w = `Форма «${k}»`; if (!KNOWN.includes(k)) { P.push(`${w}: неизвестный вид формы.`); return; } if (!v || typeof v !== 'object') { P.push(`${w}: ожидается объект.`); return; }
+      ['title', 'subject', 'lead', 'submit', 'ph', 'agree'].forEach(x => { if (v[x] !== undefined && v[x] !== null && (typeof v[x] !== 'string' || v[x].length > 400)) P.push(`${w}: «${x}» — текст до 400 символов.`); });
+      if (v.agree && !/\{c\}.+\{\/c\}/.test(v.agree)) P.push(`${w}: подпись у согласия должна содержать ссылку на документ — оберните слова в {c}…{/c}, например «даю {c}согласие на обработку данных{/c}».`);
+      if (v.done !== undefined && v.done !== null && (!Array.isArray(v.done) || v.done.length !== 2 || v.done.some(t => typeof t !== 'string' || !t.trim()))) P.push(`${w}: «done» — два текста: заголовок и пояснение после отправки.`); }); }
+  } else if (name === 'integrations') {
+    const m = data.metrika || {}, c = data.consent || {}, v = data.verification || {}, ms = data.messengers || {}, cp = data.captcha || {}, str = (x, n) => typeof x === 'string' && x.length <= n;
+    if (m.id !== undefined && m.id !== '' && !/^\d{4,12}$/.test(String(m.id))) P.push('Метрика: номер счётчика — только цифры (4–12), например 12345678.');
+    if (!['off', 'notice', 'optin'].includes(c.mode)) P.push('Согласие: режим — off, notice или optin.');
+    [['title', 80], ['text', 700], ['accept', 40], ['decline', 40], ['settings', 40]].forEach(([k, n]) => { if (!str(c[k], n) || (k !== 'text' && !c[k].trim())) P.push(`Согласие: поле «${k}» — текст до ${n} символов.`); });
+    [['yandex', 'Яндекс Вебмастер'], ['google', 'Google Search Console'], ['mailru', 'Mail.ru Вебмастер']].forEach(([k, w]) => { if (v[k] && !/^[\w-]{6,128}$/.test(String(v[k]))) P.push(`Подтверждение ${w}: только код (латиница, цифры, - и _), без тега целиком.`); });
+    const url = (x, re, w) => { if (x && !re.test(String(x))) P.push(`${w}: полный адрес вида ${w === 'MAX' ? 'https://max.ru/…' : w === 'Telegram' ? 'https://t.me/…' : 'https://vk.com/…'}.`); };
+    url(ms.max, /^https:\/\/max\.ru\/[\w.\/?=&%+#-]+$/, 'MAX'); url(ms.telegram, /^https:\/\/t\.me\/[\w.\/?=&%+#-]+$/, 'Telegram'); url(ms.vk, /^https:\/\/(vk\.com|vk\.ru)\/[\w.\/?=&%+#-]+$/, 'ВКонтакте');
+    if (cp.siteKey && !/^[\w-]{8,100}$/.test(String(cp.siteKey))) P.push('SmartCaptcha: ключ клиента — латиница, цифры, - и _.');
+    if (m.goals !== undefined) { if (!Array.isArray(m.goals)) P.push('Метрика: «goals» должен быть списком.'); else { const seen = new Set(); m.goals.forEach((g, i) => { const w = `Цель №${i + 1}`; if (!g || !/^[a-z][a-z0-9_]{1,40}$/.test(String(g.id || ''))) P.push(`${w}: идентификатор — латиница, цифры и _, начинается с буквы.`); else if (seen.has(g.id)) P.push(`${w}: повтор идентификатора «${g.id}».`); else seen.add(g.id); if (!isStr(g.name) || g.name.length > 100) P.push(`${w}: название — до 100 символов.`); }); } }
+  } else if (name === 'legal') {
+    if (!dateOk(data.version)) P.push('Документы: дата редакции — формат ГГГГ-ММ-ДД.');
+    if (data.requestEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(data.requestEmail)) P.push('Документы: e-mail для обращений некорректен.');
+    if (!Array.isArray(data.processors)) P.push('Документы: «processors» должен быть списком.'); else data.processors.forEach((p, i) => { if (!p || !isStr(p.name) || String(p.name).length > 160) P.push(`Получатель данных №${i + 1}: укажите название (до 160 символов).`); });
+    ['retentionText', 'aiNotice', 'termsExtra', 'responsible'].forEach(k => { if (data[k] !== undefined && (typeof data[k] !== 'string' || data[k].length > 2000)) P.push(`Документы: «${k}» — текст до 2000 символов.`); });
   } else if (name === 'pages') {
     if (!Array.isArray(data.items)) return ['Нужен список «items».'];
     blocks.pageProblems(data.items).forEach(x => P.push(x));
