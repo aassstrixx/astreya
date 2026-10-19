@@ -71,7 +71,13 @@ test('бренд нельзя удалить, пока у него есть то
   let r = await admin.put('/api/collections/brands', {data: b.data.filter(x => x.id !== used), version: b.version}); assert.equal(r.status, 422);
   const n = (await admin.get('/api/collections/news')).json; n.data.items.unshift({id: 'n-test', slug: 'proverka-novosti', category: 'news', date: '2026-10-01', title: 'Проверка новости из админки', excerpt: 'Кратко.', body: ['Абзац 1.', 'Абзац 2.']});
   r = await admin.put('/api/collections/news', {data: n.data, version: n.version}); assert.equal(r.status, 200, r.text); assert.ok(read('news/proverka-novosti.html').includes('Проверка новости из админки'));
-  const e = (await admin.get('/api/collections/events')).json; e.data[0].title = 'Правка мероприятия'; r = await admin.put('/api/collections/events', {data: e.data, version: e.version}); assert.equal(r.status, 200, r.text);
+  /* разделы «Мероприятия» и «Новости» в поставке пустые (демо-записей нет): первая запись добавляется через админку */
+  let e = (await admin.get('/api/collections/events')).json; assert.deepEqual(e.data, [], 'мероприятий в поставке нет');
+  const brand = rd(S.root, 'data/products.json')[0].brand;
+  r = await admin.put('/api/collections/events', {data: [{id: 'e-test', slug: '2026-12-01-moskva-test', date: '2026-12-01', city: 'Москва', fmt: 'Очно', time: '10:30–18:00', brand, title: 'Проверка мероприятия', teacher: '', speaker: 'Ведущий', place: 'Москва', description: 'Описание.', seats: null}], version: e.version}); assert.equal(r.status, 200, r.text);
+  assert.ok(read('training/2026-12-01-moskva-test.html').includes('Проверка мероприятия'), 'страница мероприятия собрана');
+  assert.ok(!/Расписание формируется/.test(read('training.html')), 'пока есть мероприятие, сообщение «Расписание формируется» не показывается');
+  e = (await admin.get('/api/collections/events')).json; e.data[0].title = 'Правка мероприятия'; r = await admin.put('/api/collections/events', {data: e.data, version: e.version}); assert.equal(r.status, 200, r.text);
   e.data = (await admin.get('/api/collections/events')).json.data; e.data[0].date = '31.12.2026'; r = await admin.put('/api/collections/events', {data: e.data}); assert.equal(r.status, 422);
   const s = (await admin.get('/api/collections/site')).json; s.data.formEndpoint = 'javascript:alert(1)'; r = await admin.put('/api/collections/site', {data: s.data, version: s.version}); assert.equal(r.status, 422);
   s.data.formEndpoint = '/api/lead'; r = await admin.put('/api/collections/site', {data: s.data, version: s.version}); assert.equal(r.status, 200, r.text);
@@ -80,7 +86,8 @@ test('бренд нельзя удалить, пока у него есть то
 
 test('сборка не прошла → изменения откатываются, сайт собирается заново из прежних данных', async () => {
   const n = (await admin.get('/api/collections/news')).json, before = read('data/news.json');
-  const dup = n.data.items[1].title; n.data.items[2].title = dup;                      // два одинаковых заголовка → check.js: «дубль title»
+  n.data.items.push({id: 'n-test-2', slug: 'vtoraya-novost', category: 'news', date: '2026-10-02', title: 'Вторая новость', excerpt: 'Кратко.', body: ['Абзац.']});
+  n.data.items[1].title = n.data.items[0].title;                                      // два одинаковых заголовка → check.js: «дубль title»
   const r = await admin.put('/api/collections/news', {data: n.data, version: n.version});
   assert.equal(r.status, 422, r.text); assert.match(r.json.error, /не собирается|изменения отменены/);
   assert.equal(read('data/news.json'), before, 'data/news.json возвращён');

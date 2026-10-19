@@ -191,7 +191,7 @@
 .srch-form .search{flex:1}
 .srch-form .x{position:static;flex:none}
 .srch-hints{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:18px;font:600 12px/1 var(--sans);letter-spacing:.06em;color:var(--slate)}
-.srch-hints .chip{padding:8px 14px;font-size:13px}
+.srch-hints .chip{padding:8px 14px;font-size:13px;min-height:28px;display:inline-flex;align-items:center}
 .srch-out{margin-top:14px}
 .srch-empty{padding:18px 4px}
 .sr-list{display:grid;gap:4px}

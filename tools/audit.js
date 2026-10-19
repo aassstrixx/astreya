@@ -94,9 +94,10 @@ async function openPage(ctx, file, errs) {
   const p = await ctx.newPage();
   await p.addInitScript(() => { window.__cls = 0; try { new PerformanceObserver(l => { for (const e of l.getEntries()) if (!e.hadRecentInput) window.__cls += e.value; }).observe({type: 'layout-shift', buffered: true}); } catch (e) {} });
   p.on('pageerror', e => errs.push('JS: ' + e.message)); const is404 = path.basename(file) === '404.html';   // сам документ 404.html приходит со статусом 404 — это не ошибка; но битые файлы внутри него ловим по ответам
-  p.on('console', m => { if (m.type() === 'error' && !/fonts\.(googleapis|gstatic)|net::ERR_(FAILED|BLOCKED|INTERNET)/.test(m.text()) && !(is404 && /status of 404/.test(m.text()))) errs.push('консоль: ' + m.text().slice(0, 140)); });
+  const fileFont = t => /file:\/\/\/.*assets\/fonts\//.test(t);   // предзагрузка шрифтов с crossorigin по file:// блокируется самим браузером (на сервере по http всё в порядке)
+  p.on('console', m => { if (m.type() === 'error' && !fileFont(m.text()) && !/fonts\.(googleapis|gstatic)|net::ERR_(FAILED|BLOCKED|INTERNET)/.test(m.text()) && !(is404 && /status of 404/.test(m.text()))) errs.push('консоль: ' + m.text().slice(0, 140)); });
   if (is404) p.on('response', r => { if (r.status() >= 400 && r.request().resourceType() !== 'document') errs.push('ответ ' + r.status() + ': ' + r.url().slice(-80)); });
-  p.on('requestfailed', r => { if (!/fonts\.(googleapis|gstatic)|mc\.yandex|google-analytics|googletagmanager/.test(r.url())) errs.push('запрос не удался: ' + r.url().slice(-80)); });
+  p.on('requestfailed', r => { if (!fileFont(r.url()) && !/fonts\.(googleapis|gstatic)|mc\.yandex|google-analytics|googletagmanager/.test(r.url())) errs.push('запрос не удался: ' + r.url().slice(-80)); });
   await p.goto(path.basename(file) === '404.html' ? await url404() : 'file://' + file); await p.waitForTimeout(900);
   return p;
 }

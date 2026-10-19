@@ -77,7 +77,8 @@ test('справочник без мусора; инструменты отве�
   for (const p of D.products) { const g = run('get_product', {id: p.id}); assert.equal(g.id, p.id); assert.match(g.note, /не указаны|уточняет менеджер/); }
   assert.match(run('get_product', {id: 'нет-такого'}).error, /Нет товара/); assert.match(run('get_brand', {id: 'нет'}).error, /Нет бренда/);
   r = run('get_brand', {id: 'dermatime'}); assert.ok(r.products.length >= 3 && r.url === 'brands/dermatime.html');
-  r = run('list_events', {}); assert.ok(r.events.length >= 1 && r.events.every(e => e.date >= r.today && typeof e.days_until === 'number'), 'только будущие, с days_until');
+  r = run('list_events', {}); assert.ok(r.events.every(e => e.date >= r.today && typeof e.days_until === 'number'), 'только будущие, с days_until');
+  if (!D.events.length) { assert.equal(r.total, 0); assert.match(r.hint, /нет/, 'расписание пустое — помощник честно говорит, что мероприятий нет'); }
   r = run('list_events', {online: true}); assert.ok(r.events.every(e => /Онлайн|Вебинар/i.test(e.city + e.format)));
   r = run('discount_for_amount', {amount_rub: 200000}); assert.equal(r.pct, 10); assert.equal(r.saving, 20000); assert.equal(r.shortfall, 100000);
   r = run('discount_for_amount', {amount_rub: 1000}); assert.equal(r.pct, 0); assert.match(run('discount_for_amount', {amount_rub: 'много'}).error, /число/);
