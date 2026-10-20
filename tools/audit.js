@@ -94,10 +94,9 @@ async function openPage(ctx, file, errs) {
   const p = await ctx.newPage();
   await p.addInitScript(() => { window.__cls = 0; try { new PerformanceObserver(l => { for (const e of l.getEntries()) if (!e.hadRecentInput) window.__cls += e.value; }).observe({type: 'layout-shift', buffered: true}); } catch (e) {} });
   p.on('pageerror', e => errs.push('JS: ' + e.message)); const is404 = path.basename(file) === '404.html';   // сам документ 404.html приходит со статусом 404 — это не ошибка; но битые файлы внутри него ловим по ответам
-  const fileFont = t => /file:\/\/\/.*assets\/fonts\//.test(t);   // предзагрузка шрифтов с crossorigin по file:// блокируется самим браузером (на сервере по http всё в порядке)
-  p.on('console', m => { if (m.type() === 'error' && !fileFont(m.text()) && !/fonts\.(googleapis|gstatic)|net::ERR_(FAILED|BLOCKED|INTERNET)/.test(m.text()) && !(is404 && /status of 404/.test(m.text()))) errs.push('консоль: ' + m.text().slice(0, 140)); });
+  p.on('console', m => { if (m.type() === 'error' && !/fonts\.(googleapis|gstatic)|net::ERR_(FAILED|BLOCKED|INTERNET)/.test(m.text()) && !(is404 && /status of 404/.test(m.text()))) errs.push('консоль: ' + m.text().slice(0, 140)); });
   if (is404) p.on('response', r => { if (r.status() >= 400 && r.request().resourceType() !== 'document') errs.push('ответ ' + r.status() + ': ' + r.url().slice(-80)); });
-  p.on('requestfailed', r => { if (!fileFont(r.url()) && !/fonts\.(googleapis|gstatic)|mc\.yandex|google-analytics|googletagmanager/.test(r.url())) errs.push('запрос не удался: ' + r.url().slice(-80)); });
+  p.on('requestfailed', r => { if (!/fonts\.(googleapis|gstatic)|mc\.yandex|google-analytics|googletagmanager/.test(r.url())) errs.push('запрос не удался: ' + r.url().slice(-80)); });
   await p.goto(path.basename(file) === '404.html' ? await url404() : 'file://' + file); await p.waitForTimeout(900);
   return p;
 }
@@ -114,7 +113,6 @@ async function browserAudit() {
   const b = await chromium.launch({executablePath: CHROME});
   for (const [name, vp, mobile] of [['компьютер', {width: 1440, height: 900}, false], ['телефон', {width: 390, height: 844}, true]]) {
     const ctx = await b.newContext({viewport: vp, isMobile: mobile, hasTouch: mobile, deviceScaleFactor: 1}); await ctx.route(/^https:\/\/(fonts|mc\.yandex|www\.googletagmanager)/, r => r.abort());
-    await ctx.addInitScript({content: axeSrc});                                  // политика безопасности страниц не пускает чужой inline-скрипт; init-скрипт ей не подчиняется
     for (const {key, file} of pickPages()) {
       const errs = [], p = await openPage(ctx, file, errs), where = `${rel(file)} (${name})`;
       if (key === 'home') { const s = await p.$('#sp-in'); if (s) { try { await s.click({timeout: 1500}); } catch (e) {} } await p.waitForTimeout(800); }
@@ -128,6 +126,7 @@ async function browserAudit() {
       const broken = await p.evaluate(() => [...document.images].filter(i => i.complete && i.naturalWidth === 0 && i.currentSrc).map(i => i.currentSrc.slice(-60)));
       broken.forEach(s => add('error', 'img', where, 'картинка не загрузилась: ' + s));
       // axe
+      await p.evaluate(src => { const s = document.createElement('script'); s.textContent = src; document.head.appendChild(s); }, axeSrc);
       const res = await p.evaluate(async () => { const r = await axe.run(document, {runOnly: {type: 'tag', values: ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa', 'best-practice']}, resultTypes: ['violations']}); return r.violations.map(v => ({id: v.id, impact: v.impact, help: v.help, n: v.nodes.length, sample: v.nodes.slice(0, 3).map(n => n.target.join(' ') + ' → ' + (n.failureSummary || '').split('\n')[1])})); });
       for (const v of res) add(v.impact === 'critical' || v.impact === 'serious' ? 'error' : 'warn', 'axe:' + v.id, where, `${v.help} (${v.n}) — ${v.sample[0]}`);
       // размеры кликабельных зон (телефон): ≥ 24×24 CSS-px (WCAG 2.2, 2.5.8) — у встроенных ссылок в тексте допускается меньше

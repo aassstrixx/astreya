@@ -17,10 +17,10 @@ function newsPage(ctx, C, P) {
       </div>
       <div class="fv" aria-hidden="true"><b class="par" data-par="0.07">до ${max}<small>%</small></b></div>
     </article>` : ''}
-    ${news.length ? `<div class="tabs reveal" id="news-tabs" role="group" aria-label="Категории">${tabs.map(([id, l, n], i) => C.chip(esc(l), 'news-cat', id, i === 0, `<small>${n}</small>`)).join('')}</div>` : ''}
+    <div class="tabs reveal" id="news-tabs" role="group" aria-label="Категории">${tabs.map(([id, l, n], i) => C.chip(esc(l), 'news-cat', id, i === 0, `<small>${n}</small>`)).join('')}</div>
     <h2 class="sr">Материалы</h2>
     <div class="grid g3" id="news-grid">${news.map(n => C.newsCard(P, n)).join('')}</div>
-    <div class="empty" id="news-empty"${news.length ? ' hidden' : ''}><b>Новости скоро появятся</b>Пока публикаций нет. Новинки каталога и анонсы мероприятий можно получать на почту — форма подписки внизу страницы.</div>
+    <div class="empty" id="news-empty" hidden><b>Пока пусто</b>Здесь появятся новые материалы.</div>
     <div style="height:clamp(60px,8vw,110px)"></div>
   </div>`;
 }

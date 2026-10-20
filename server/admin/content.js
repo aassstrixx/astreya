@@ -24,7 +24,7 @@
   };
   const ENUMS = {'news.items.cta.type': [['', '— без кнопки —'], ['partner', 'Рассчитать скидку (страница «Стать партнёром»)'], ['training', 'К расписанию'], ['catalog', 'В каталог'], ['product', 'Смотреть товар'], ['brand', 'О бренде'], ['event', 'О мероприятии'], ['contacts', 'Контакты']]};
   const PATH_LABELS = {'news.items.cta': 'Кнопка под статьёй', 'news.items.cta.type': 'Что открывает кнопка', 'news.items.cta.ref': 'id товара / бренда / мероприятия', 'news.items.cta.query': 'Параметры страницы (например task=sun)'};
-  const SAMPLES = {products: {details: [''], indications: [''], actives: [''], usage: '', volume: '', sku: '', docs: [{title: '', url: ''}]}, events: {seats: 0, teacher: '', speaker: '', place: ''}, news: {body: [''], cta: {type: '', ref: '', query: ''}, related: {brands: [''], products: [''], events: ['']}}};
+  const SAMPLES = {products: {details: [''], indications: [''], actives: [''], usage: '', volume: '', sku: '', docs: [{title: '', url: ''}]}, events: {seats: 0}};
   const TEXTAREA_KEYS = new Set(['desc', 'description', 'text', 'excerpt', 'lead', 'usage', 'msg', 'a', 'p', 'note', 'sub', 'demoNotice', 'long', 'body', 'details', 'tag', 'spec', 'alt']);
   const IMAGE_KEYS = /^(logo|src|photo|image|img|poster)$/;
   const IMAGE_VAL = /^assets\/.+\.(png|jpe?g|webp|gif|svg)$/i;
@@ -40,11 +40,9 @@
       order: ['name', 'group', 'country', 'tag', 'desc', 'long', 'facts', 'logo', 'site', 'c1', 'c2', 'ink', 'id'],
       cols: [['Название', x => [h('b', {}, x.name), h('span', {class: 'sub', style: {marginLeft: '8px'}}, x.id)]], ['Группа', x => x.group || ''], ['Страна', x => x.country || ''], ['Цвета', x => [x.c1, x.c2].filter(Boolean).map(c => h('span', {style: {display: 'inline-block', width: '16px', height: '16px', borderRadius: '50%', background: c, border: '1px solid rgba(0,0,0,.15)', marginRight: '4px', verticalAlign: 'middle'}}))]]},
     events: {noun: 'мероприятие', neu: 'Новое', one: 'мероприятия', title: 'Мероприятия', path: null, label: 'title', url: x => 'training/' + x.slug + '.html', slugFrom: x => slugify((x.date || '') + ' ' + (x.city || '') + ' ' + (x.brand || '')), idFrom: x => slugify(x.date + ' ' + x.city),
-      blank: () => ({id: '', slug: '', date: '', city: '', fmt: 'Очно', time: '10:30–18:00', brand: '', title: '', teacher: '', speaker: '', place: '', description: '', seats: null}),
       order: ['title', 'date', 'time', 'city', 'fmt', 'brand', 'teacher', 'speaker', 'place', 'description', 'seats', 'slug', 'id', 'demo'], sort: (a, b) => String(a.date).localeCompare(String(b.date)),
       cols: [['Дата', x => [h('b', {}, x.date || ''), x.time ? h('div', {class: 'sub'}, x.time) : null]], ['Название', x => x.title], ['Город / формат', x => [x.city, x.fmt].filter(Boolean).join(' · ')], ['Бренд', (x, r) => r('events.brand', x.brand)]]},
     news: {noun: 'новость', neu: 'Новая', one: 'новости', title: 'Новости и акции', path: 'items', label: 'title', url: x => 'news/' + x.slug + '.html', slugFrom: x => slugify(x.title), idFrom: x => 'n-' + slugify(x.slug || x.title).slice(0, 30),
-      blank: () => ({id: '', slug: '', category: '', date: '', title: '', excerpt: '', body: [''], cta: {type: ''}, related: {brands: [], products: [], events: []}}),
       order: ['title', 'category', 'date', 'excerpt', 'body', 'cta', 'related', 'slug', 'id', 'demo'],
       cols: [['Дата', x => x.date || ''], ['Заголовок', x => h('b', {}, x.title)], ['Рубрика', (x, r) => r('news.items.category', x.category)]], extra: {categories: 'Рубрики'}}
   };
@@ -264,7 +262,7 @@
       try { await commit(getItems().filter(x => x.id !== it.id), 'Удалено, сайт пересобран'); msg.replaceChildren(); } catch (e) { msg.replaceChildren(e.status === 409 ? AD.alertBox('err', e.message) : AD.errBox(e)); }
     }
     function duplicate(it) { const c = clone(it); c.id = ''; c.slug = ''; if (c.title) c.title += ' (копия)'; if (c.name) c.name += ' (копия)'; openEditor(c, null); }
-    const template = () => { const s = getItems()[0] || {}, t = L.blank && !getItems().length ? L.blank() : blankLike(s); if (name === 'products') { t.brand = s.brand; t.cat = s.cat; t.kind = s.kind; t.type = s.type; } if (t.date !== undefined) t.date = new Date().toISOString().slice(0, 10); if (name === 'news') t.category = ((cur.data.categories || [])[0] || {}).id || ''; if (t.demo !== undefined) t.demo = false; return t; };
+    const template = () => { const s = getItems()[0] || {}, t = blankLike(s); if (name === 'products') { t.brand = s.brand; t.cat = s.cat; t.kind = s.kind; t.type = s.type; } if (t.date !== undefined) t.date = new Date().toISOString().slice(0, 10); if (name === 'news') t.category = ((cur.data.categories || [])[0] || {}).id || ''; if (t.demo !== undefined) t.demo = false; return t; };
     function openEditor(item, id) {
       if (openM) return openM;
       const isNew = id === null, work = clone(item), originalKeys = new Set(Object.keys(item));

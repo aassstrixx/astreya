@@ -24,34 +24,6 @@ test.before(async () => {
 });
 test.after(() => S.close());
 
-/* сырой запрос: тело возвращается без распаковки (helpers.request читает его как текст) */
-const rawGet = (port, url, headers, method) => new Promise((resolve, reject) => {
-  const r = http.request({host: '127.0.0.1', port, method: method || 'GET', path: url, headers: Object.assign({'X-Forwarded-For': '10.7.7.7'}, headers)}, res => { const ch = []; res.on('data', c => ch.push(c)); res.on('end', () => resolve({status: res.statusCode, headers: res.headers, body: Buffer.concat(ch)})); });
-  r.on('error', reject); r.end();
-});
-
-test('раздача сайта: сжатие br/gzip без потери содержимого, Vary, кэш: страницы сверяются, версионированные файлы — год', async () => {
-  const zlib = require('zlib'), css = fs.readdirSync(path.join(S.root, 'css')).find(f => /\.css$/.test(f) && fs.statSync(path.join(S.root, 'css', f)).size > 4096);
-  const orig = fs.readFileSync(path.join(S.root, 'css', css));
-  let r = await rawGet(S.port, '/css/' + css + '?v=abc', {'Accept-Encoding': 'gzip'});
-  assert.equal(r.status, 200); assert.equal(r.headers['content-encoding'], 'gzip'); assert.match(r.headers.vary || '', /Accept-Encoding/i); assert.ok(r.body.length < orig.length / 2, 'стили сжались');
-  assert.deepEqual(zlib.gunzipSync(r.body), orig); assert.equal(+r.headers['content-length'], r.body.length);
-  assert.equal(r.headers['cache-control'], 'public, max-age=31536000, immutable');
-  r = await rawGet(S.port, '/css/' + css + '?v=abc', {'Accept-Encoding': 'gzip, deflate, br'});
-  assert.equal(r.headers['content-encoding'], 'br'); assert.deepEqual(zlib.brotliDecompressSync(r.body), orig);
-  r = await rawGet(S.port, '/css/' + css + '?v=abc', {'Accept-Encoding': 'br;q=0, gzip;q=0'});
-  assert.ok(!r.headers['content-encoding'], 'клиент отказался от сжатия — отдаём как есть'); assert.deepEqual(r.body, orig);
-  r = await rawGet(S.port, '/css/' + css, {}); assert.ok(!r.headers['content-encoding']); assert.equal(r.headers['cache-control'], 'public, max-age=3600', 'без версии в адресе — час'); assert.match(r.headers.vary || '', /Accept-Encoding/i);
-  const head = await rawGet(S.port, '/css/' + css, {'Accept-Encoding': 'gzip'}, 'HEAD'); assert.equal(head.status, 200); assert.equal(head.body.length, 0);
-  const etag = (await rawGet(S.port, '/css/' + css, {'Accept-Encoding': 'gzip'})).headers.etag;
-  if (etag) { const nm = await rawGet(S.port, '/css/' + css, {'Accept-Encoding': 'gzip', 'If-None-Match': etag}); assert.equal(nm.status, 304); }
-  r = await rawGet(S.port, '/index.html', {'Accept-Encoding': 'gzip'});
-  assert.equal(r.headers['content-encoding'], 'gzip'); assert.equal(r.headers['cache-control'], 'no-cache'); assert.match(zlib.gunzipSync(r.body).toString('utf8'), /<meta http-equiv="Content-Security-Policy"/); assert.match(r.headers['content-security-policy'] || '', /default-src 'self'/);
-  const font = fs.readdirSync(path.join(S.root, 'assets', 'fonts')).find(f => /\.woff2$/.test(f));
-  r = await rawGet(S.port, '/assets/fonts/' + font, {'Accept-Encoding': 'gzip, br'}); assert.ok(!r.headers['content-encoding'], 'шрифты уже сжаты'); assert.equal(r.headers['cache-control'], 'public, max-age=31536000, immutable');
-  r = await rawGet(S.port, '/assets/jar/d/000.webp', {'Accept-Encoding': 'gzip'}); assert.equal(r.status, 200); assert.ok(!r.headers['content-encoding']); assert.equal(r.headers['cache-control'], 'public, max-age=604800');
-});
-
 test('заголовки: каждый ответ защищён, у страниц есть политика безопасности без unsafe-inline для скриптов', async () => {
   const c = anon();
   let r = await c.raw('GET', '/api/health');

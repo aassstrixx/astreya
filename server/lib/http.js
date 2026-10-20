@@ -41,30 +41,6 @@ const sessionToken = cookies => cookies['__Host-' + SESSION_COOKIE] || cookies[S
 const cookie = (name, value, o) => `${name}=${encodeURIComponent(value)}; Path=/; HttpOnly; SameSite=Strict${o.secure ? '; Secure' : ''}${o.maxAge !== undefined ? '; Max-Age=' + o.maxAge : ''}`;
 
 /* раздача файлов из baseDir; allow(relPath) решает, что можно отдавать */
-/* Сжатие текстовых файлов сайта (br / gzip): сжатая копия кэшируется в памяти и обновляется при изменении файла. Картинки и шрифты уже сжаты — их не трогаем. */
-const zlib = require('zlib');
-const COMPRESSIBLE = new Set(['.html', '.css', '.js', '.json', '.svg', '.xml', '.txt', '.webmanifest']);
-const zcache = new Map(); let zBytes = 0; const ZMAX = 64 * 1024 * 1024;
-function pickEncoding(accept) {                                                                       // Accept-Encoding с учётом q=0 («не принимаю»); br предпочтительнее gzip
-  const ok = {}; for (const part of String(accept || '').toLowerCase().split(',')) { const m = part.trim().match(/^([a-z*-]+)\s*(?:;\s*q\s*=\s*([0-9.]+))?$/); if (m) ok[m[1]] = m[2] === undefined ? 1 : parseFloat(m[2]) || 0; }
-  const q = e => e in ok ? ok[e] : (ok['*'] || 0);
-  return q('br') > 0 ? 'br' : q('gzip') > 0 ? 'gzip' : '';
-}
-function compressed(file, st, enc, cb) {
-  const key = file + '|' + st.mtimeMs + '|' + st.size + '|' + enc, hit = zcache.get(key);
-  if (hit) { zcache.delete(key); zcache.set(key, hit); return cb(null, hit); }
-  fs.readFile(file, (e, buf) => {
-    if (e) return cb(e);
-    const done = (e2, out) => {
-      if (e2) return cb(e2);
-      zBytes += out.length; zcache.set(key, out);
-      while (zBytes > ZMAX && zcache.size) { const k = zcache.keys().next().value; zBytes -= zcache.get(k).length; zcache.delete(k); }
-      cb(null, out);
-    };
-    if (enc === 'br') zlib.brotliCompress(buf, {params: {[zlib.constants.BROTLI_PARAM_QUALITY]: 5, [zlib.constants.BROTLI_PARAM_SIZE_HINT]: buf.length}}, done);
-    else zlib.gzip(buf, {level: 6}, done);
-  });
-}
 function serveStatic(req, res, baseDir, rel, opts) {
   opts = opts || {};
   let p; try { p = decodeURIComponent(rel); } catch (e) { return send(res, 400, 'bad request'); }
@@ -80,13 +56,6 @@ function serveStatic(req, res, baseDir, rel, opts) {
     file = f;
     const ext = path.extname(file).toLowerCase(), headers = Object.assign({'Content-Type': MIME[ext] || 'application/octet-stream', 'Content-Length': st.size, 'Last-Modified': st.mtime.toUTCString()}, opts.headers && opts.headers(relp, ext, f));
     if (req.headers['if-modified-since'] && Date.parse(req.headers['if-modified-since']) >= Math.floor(st.mtimeMs / 1000) * 1000 && !opts.noCache) { return send(res, 304, '', headers); }
-    if (COMPRESSIBLE.has(ext)) headers.Vary = 'Accept-Encoding';
-    const enc = req.method === 'GET' && COMPRESSIBLE.has(ext) && st.size >= 1024 ? pickEncoding(req.headers['accept-encoding']) : '';
-    if (enc) return compressed(file, st, enc, (e2, out) => {
-      if (e2) return notFound(res, opts);
-      res.writeHead(200, Object.assign({}, SEC, headers, {'Content-Encoding': enc, 'Content-Length': out.length}));
-      res.end(out);
-    });
     res.writeHead(200, Object.assign({}, SEC, headers));
     if (req.method === 'HEAD') return res.end();
     fs.createReadStream(file).on('error', () => res.destroy()).pipe(res);
