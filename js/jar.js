@@ -103,6 +103,7 @@
     const born = performance.now();
     /* уровень по скорости и регулятор нагрузки */
     let lastDraw = null, lastSig = -1, tier = 0, calm = 0, gov = 0, used = -1, wantIdx = 0, restW = 1, xf = null, xlWanted = false;
+    let resScale = 1;          // доля разрешения холста: регулятор нагрузки уменьшает её, когда кадры не укладываются в бюджет
     let dtEma = 16.7, minDt = 16.7, slowRun = 0, fastRun = 0, govLock = 0, lastGov = -1e9, upLocked = false, govChanges = 0;
     const perfRing = new Float32Array(240); let perfN = 0;
 
@@ -202,7 +203,9 @@
     /* ---- размер холста ---- */
     function sizeCanvas() {
       const w = stage.clientWidth || innerWidth, h = stage.clientHeight || innerHeight;
-      const dpr = Math.min(window.devicePixelRatio || 1, 2), s = Math.min(dpr, Math.sqrt(4.4e6 / Math.max(1, w * h)));
+      /* пикселей на холсте — не больше, чем в самом кадре (1920×1080 ≈ 2,1 млн): больше деталей на экране всё равно не появится, а стоимость кадра растёт пропорционально
+         числу пикселей (на экранах Retina прежний потолок 4,4 млн удваивал нагрузку без выигрыша в чёткости); при слабом устройстве регулятор нагрузки снижает ещё (resScale) */
+      const dpr = Math.min(window.devicePixelRatio || 1, 2), s = Math.min(dpr, Math.sqrt(2.1e6 / Math.max(1, w * h))) * resScale;
       const nw = Math.round(w * s), nh = Math.round(h * s);
       if (nw !== W || nh !== H || cv.width !== nw || cv.height !== nh) { W = nw; H = nh; if (cv.width !== W || cv.height !== H) { cv.width = W; cv.height = H; } lastSig = -1; }
       dirty = true;
@@ -367,6 +370,7 @@
       const inView = y + vh > sTop && y < sTop + sH;
       const inOutro = !!outro && y + vh > oTop && y < oTop + oH;
       if (inView) chooseTier(t, dtRaw);
+      { const rs = gov >= 1 ? 0.75 : 1; if (rs !== resScale) { resScale = rs; sizeCanvas(); } }       // слабое устройство: холст меньше (кадры низкого уровня всё равно 960×540), нагрузка ∝ числу пикселей
       if ((inView || !firstDrawn) && (dirty || xf || wantIdx !== paintedWant || Math.abs(cp - paintedP) > 1e-7)) {
         if (paint(t)) { paintedP = cp; paintedWant = wantIdx; dirty = false; } else dirty = true;
       }

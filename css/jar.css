@@ -24,7 +24,7 @@
 /* подсказка «Листайте» и кнопка «Пропустить» */
 .js-cue{position:absolute;left:50%;bottom:clamp(20px,4.4vh,40px);transform:translateX(-50%);display:flex;flex-direction:column;align-items:center;gap:12px;
   color:var(--silver);font:600 11px/1 var(--sans);letter-spacing:.3em;text-transform:uppercase;opacity:var(--cue,1);pointer-events:none}
-.js-cue i{display:block;width:1px;height:40px;background:linear-gradient(var(--silver),transparent);transform-origin:top;animation:jarCue 1.9s ease-in-out infinite}
+.js-cue i{display:block;width:1px;height:40px;background:linear-gradient(var(--silver),transparent);transform-origin:top;animation:jarCue 1.9s ease-in-out 6}
 @keyframes jarCue{0%{transform:scaleY(0);opacity:0}40%{opacity:1}100%{transform:scaleY(1);opacity:0}}
 
 /* финал: экран заливается молочным цветом главной (--m — прогресс) */
