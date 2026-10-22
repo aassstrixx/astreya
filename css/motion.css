@@ -209,3 +209,8 @@ html.is-scrolling .ring,html.is-scrolling .ring .orb,html.is-scrolling .halo,htm
 html.is-scrolling .hm-sway,html.is-scrolling .mq-track,html.is-scrolling .js-cue i,
 html.is-scrolling .asst-fab-ring,html.is-scrolling .asst-fab-i,html.is-scrolling .pe-e,html.is-scrolling .pe-st,
 .anim-off .ring,.anim-off .ring .orb,.anim-off .halo,.anim-off .pearl,.anim-off .pearl::before,.anim-off .hm-sway,.anim-off .mq-track{animation-play-state:paused!important}
+
+/* ============ Лёгкий режим (js/motion.js: html.lite включается, если при прокрутке кадры идут медленно) ============
+   Блоки, заголовки и подписи появляются сразу, без переходов: прозрачность и сдвиг ведёт браузер в основном потоке, и на слабом компьютере это подлагивает. */
+html.lite .reveal,html.lite .reveal *,html.lite .split .w>span,html.lite .eyebrow,html.lite hr.dash{transition:none!important}
+html.lite .eyebrow.in::before,html.lite hr.dash.in{animation-duration:.01ms!important;animation-delay:0s!important}

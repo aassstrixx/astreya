@@ -19,6 +19,10 @@ const PAGES = ['index.html', 'catalog.html', 'brands.html', 'training.html', 'ne
     const r = await p.evaluate(() => { const out = {}; document.querySelectorAll('.reveal:not(.b-title)').forEach(el => { const tp = getComputedStyle(el).transitionProperty; if (!(/opacity|all/.test(tp) && /translate|all/.test(tp))) { const k = el.tagName.toLowerCase() + '.' + [...el.classList].filter(c => c !== 'reveal' && c !== 'in').join('.'); out[k] = (out[k] || 0) + 1; } }); return out; });
     Object.entries(r).forEach(([k, n]) => bad.push(`${pg}: ${k} ×${n}`));
   }
+  /* «Лёгкий режим» (html.lite, включается из js/motion.js при медленных кадрах): проявление блоков без переходов, при этом блок остаётся видимым */
+  { await p.goto(base + '/catalog.html'); await p.waitForTimeout(600); const sp = await p.$('#sp-in'); if (sp) { try { await sp.click({timeout: 1200}); } catch (e) {} } await p.waitForTimeout(900);
+    const r = await p.evaluate(async () => { const el = document.querySelector('.reveal:not(.in):not(.b-title)') || document.querySelector('.reveal'); const before = getComputedStyle(el).transitionDuration; document.documentElement.classList.add('lite'); el.classList.add('in'); await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r))); const cs = getComputedStyle(el); const sw = document.querySelector('.split .w>span'); return {before, after: cs.transitionDuration, op: +cs.opacity, split: sw ? getComputedStyle(sw).transitionDuration : null}; });
+    if (!(r.after.split(',').every(x => parseFloat(x) === 0) && r.op === 1 && (r.split === null || r.split.split(',').every(x => parseFloat(x) === 0)))) bad.push('лёгкий режим: переходов не должно быть, а блок должен быть виден: ' + JSON.stringify(r)); }
   await b.close(); srv.close();
   console.log(bad.length ? 'Элементы .reveal без перехода opacity/translate (появляются рывком):\n  ✗ ' + bad.join('\n  ✗ ') : `Проверено страниц: ${PAGES.length}; у всех .reveal есть проявление.`);
   process.exit(bad.length ? 1 : 0);

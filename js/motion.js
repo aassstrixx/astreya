@@ -51,9 +51,26 @@
      как раз тогда, когда основному потоку нужно успевать вести инерционную прокрутку, баночку и параллакс. */
   let scrollIdleT = 0;
   const markScrolling = () => {
-    if (!html.classList.contains('is-scrolling')) html.classList.add('is-scrolling');
+    if (!html.classList.contains('is-scrolling')) { html.classList.add('is-scrolling'); liteKick(); }
     clearTimeout(scrollIdleT); scrollIdleT = setTimeout(() => html.classList.remove('is-scrolling'), 220);
   };
+  /* «Лёгкий режим» по факту. Проявление блоков и заголовков (transition у .reveal, .split) красиво, но на слабом компьютере при прокрутке его стили
+     и кадры считаются в основном потоке и добавляют подлагивание (в замерах: ~30 % работы потока на каталоге). Пока идёт прокрутка, считаем кадры:
+     если в последних 30 кадрах не меньше 5 дольше 34 мс (≈ ниже 30 к/с), включается html.lite (css/motion.css) — блоки появляются сразу, без переходов.
+     Режим не мигает: включился — остаётся до перезагрузки страницы. Не считаем первые 6 с после загрузки (идёт подгрузка кадров баночки и шрифтов)
+     и участки со сценой с баночкой — там медленные кадры не из-за проявления блоков. На быстрых компьютерах режим не включается и анимация остаётся прежней. */
+  const lite = {on: false, raf: 0, last: 0, win: [], jar: false};
+  function liteFrame(t) {
+    lite.raf = 0;
+    if (lite.on || !html.classList.contains('is-scrolling')) { lite.last = 0; lite.win.length = 0; return; }
+    if (lite.last && !lite.jar && t > 6000) {
+      lite.win.push(t - lite.last > 34 ? 1 : 0); if (lite.win.length > 30) lite.win.shift();
+      if (lite.win.length >= 20 && lite.win.reduce((a, c) => a + c, 0) >= 5) { lite.on = true; html.classList.add('lite'); M.lite = true; return; }
+    }
+    lite.last = t; lite.raf = requestAnimationFrame(liteFrame);
+  }
+  function liteKick() { if (!lite.on && !lite.raf) { lite.last = 0; lite.raf = requestAnimationFrame(liteFrame); } }
+  if (window.IntersectionObserver) { const jio = new IntersectionObserver(es => { es.forEach(e => { e.target._in = e.isIntersecting; }); lite.jar = ['#jar-story', '#jar-outro'].some(q => { const el = document.querySelector(q); return el && el._in; }); }); ['#jar-story', '#jar-outro'].forEach(q => { const el = document.querySelector(q); if (el) jio.observe(el); }); }
   addEventListener('scroll', () => { markScrolling(); if (!ticking) { ticking = true; requestAnimationFrame(onScroll); } }, {passive: true});
   addEventListener('resize', () => updateProgress());
 
