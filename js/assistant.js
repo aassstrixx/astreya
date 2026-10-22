@@ -266,7 +266,7 @@
     if (built) return; built = true; document.body.classList.add('has-asst');
     const fab = document.createElement('button'); fab.type = 'button'; fab.id = 'asst-fab'; fab.className = 'asst-fab'; fab.setAttribute('data-act', 'asst-open'); fab.setAttribute('aria-haspopup', 'dialog'); fab.setAttribute('aria-expanded', 'false'); fab.setAttribute('aria-controls', 'asst'); fab.setAttribute('aria-label', 'Стелла, помощник «Астрея»: задать вопрос');
     const sparks = [0, 1, 2, 3, 4, 5, 6, 7].map(k => '<i style="--a:' + (k * 45 + 12) + 'deg;--d:' + (40 + (k % 3) * 9) + 'px;--k:' + k + '"></i>').join('');
-    fab.innerHTML = '<span class="asst-fab-glow" aria-hidden="true"></span><span class="asst-fab-sweep" aria-hidden="true"></span><span class="asst-fab-fx" aria-hidden="true">' + sparks + '</span><span class="asst-fab-ring" aria-hidden="true"></span><span class="asst-fab-roll"><span class="asst-fab-i"><span class="asst-fab-pe">' + PEARL('sleep', true) + '</span></span></span><span class="asst-fab-t"><span><b>Спросить Стеллу</b></span></span>';
+    fab.innerHTML = '<span class="asst-fab-glow" aria-hidden="true"></span><span class="asst-fab-fx" aria-hidden="true">' + sparks + '</span><span class="asst-fab-ring" aria-hidden="true"></span><span class="asst-fab-roll"><span class="asst-fab-i"><span class="asst-fab-pe">' + PEARL('sleep', true) + '</span></span></span><span class="asst-fab-t"><span><b>Спросить Стеллу</b></span></span>';
     document.body.insertAdjacentHTML('beforeend', PEARL_DEFS); document.body.appendChild(fab);
     fab.addEventListener('pointerenter', () => { fab.classList.add('long'); clearTimeout(longT); }); fab.addEventListener('pointerleave', () => { if (!fab.matches(':focus-visible')) longT = setTimeout(() => fab.classList.remove('long'), 450); });
     fab.addEventListener('focus', () => { if (fab.matches(':focus-visible')) { fab.classList.add('long'); clearTimeout(longT); } }); fab.addEventListener('blur', () => { longT = setTimeout(() => fab.classList.remove('long'), 450); });
@@ -443,14 +443,37 @@
     setTimeout(hideTip, 9000);
   }
   function hideTip() { const tip = $('#asst-tip'); if (!tip || tip.hidden) return; tip.classList.remove('on'); setTimeout(() => { tip.hidden = true; }, 300); }
+  /* Подпись «Спросить Стеллу» раскрывается один раз за открытие страницы: когда человек пролистал страницу и остановился, она остаётся раскрытой 2 секунды и снова сворачивается в круг.
+     Сразу при загрузке она не раскрывается (первые секунды страница и без того занята вступлением); на телефоне подписи нет. */
+  let peekDone = false;
+  function armPeek(f) {
+    if (peekDone || mobile()) return; peekDone = true;
+    const y0 = window.scrollY; let idleT = 0, tries = 0;
+    const stop = () => { window.removeEventListener('scroll', onScroll); clearTimeout(idleT); };
+    const peek = () => {
+      if (isOpen || interacted) return stop();
+      if (Math.abs(window.scrollY - y0) < 120) return;                  // прокрутка закончилась, но страница почти не сдвинулась (например, браузер вернул прежнюю позицию) — ждём настоящей
+      if (!f.classList.contains('settled') || document.body.classList.contains('locked') || document.body.classList.contains('menu-open')) { if (++tries < 40) idleT = setTimeout(peek, 500); else stop(); return; }       // кнопка ещё появляется или закрыта шторкой — подождать
+      stop(); f.classList.add('long'); clearTimeout(longT);
+      longT = setTimeout(() => { if (!f.matches(':hover, :focus-visible')) f.classList.remove('long'); }, T(1000 + 2000));       // ≈ 1 с раскрытие + 2 с открыта
+    };
+    /* в самом обработчике прокрутки ничего не читаем (чтение scrollY посреди прокрутки заставляет браузер пересчитать стили раньше времени — в замерах это было ~0,5 мс на каждое событие):
+       только переставляем таймер «через 0,35 с после последнего движения», а положение читаем один раз, когда прокрутка уже остановилась */
+    const onScroll = () => { clearTimeout(idleT); idleT = setTimeout(peek, 350); };
+    window.addEventListener('scroll', onScroll, {passive: true});
+  }
   function nudge() {
-    const f = $('#asst-fab'); if (!f || isOpen || interacted || nudges >= 3 || !f.classList.contains('in')) return; nudges++; f.classList.remove('nudge'); void f.offsetWidth; f.classList.add('nudge'); heyFab(1500); if (!mobile()) { f.classList.add('long'); clearTimeout(longT); longT = setTimeout(() => { if (!f.matches(':hover, :focus-visible')) f.classList.remove('long'); }, 4200); } nudgeT = setTimeout(nudge, 22000);
+    const f = $('#asst-fab'); if (!f || isOpen || interacted || nudges >= 3 || !f.classList.contains('in')) return; nudges++; f.classList.remove('nudge'); void f.offsetWidth; f.classList.add('nudge'); heyFab(1500); if (!mobile()) { f.classList.add('long'); clearTimeout(longT); longT = setTimeout(() => { if (!f.matches(':hover, :focus-visible')) f.classList.remove('long'); }, T(3000)); } nudgeT = setTimeout(nudge, 22000);
   }
   /* Стелла на кнопке радуется (машет, улыбается) */
   function heyFab(ms) { const f = $('#asst-fab'); if (!f) return; const pe = $('.pe', f); if (pe) pe.setAttribute('data-m', 'happy'); f.classList.remove('hello'); void f.offsetWidth; f.classList.add('hello'); clearTimeout(helloT); helloT = setTimeout(() => { f.classList.remove('hello'); if (pe) pe.setAttribute('data-m', 'idle'); }, ms || 1500); }
   /* кнопка слегка тянется к курсору, глаза Стеллы следят за ним (только мышь; без «уменьшения движения») */
   function magnet() {
     mg.raf = 0; const f = $('#asst-fab'); if (!f || !f.classList.contains('in') || isOpen || document.hidden) return;
+    /* кнопка закреплена в правом нижнем углу, а глаза следят за курсором не дальше ~560 px: пока курсор далеко, читать вёрстку (getBoundingClientRect заставляет браузер
+       пересчитать стили и вёрстку посреди прокрутки) и писать стили незачем — только один раз вернуть кнопку в исходное положение */
+    if (Math.hypot(mg.x - (innerWidth - 110), mg.y - (innerHeight - 50)) > 660) { if (!mg.far) { mg.far = true; mg.ox = mg.oy = 0; ['--mx', '--my', '--ex', '--ey'].forEach(k => f.style.removeProperty(k)); } return; }
+    mg.far = false;
     const r = f.getBoundingClientRect(), cx = r.left + r.width / 2 - mg.ox, cy = r.top + r.height / 2 - mg.oy, dx = mg.x - cx, dy = mg.y - cy, d = Math.hypot(dx, dy) || 1, near = Math.max(0, 1 - d / 190);
     mg.ox = dx / d * 9 * near; mg.oy = dy / d * 9 * near; const eye = Math.max(0, 1 - d / 560);
     f.style.setProperty('--mx', mg.ox.toFixed(1) + 'px'); f.style.setProperty('--my', mg.oy.toFixed(1) + 'px'); f.style.setProperty('--ex', (dx / d * 1.9 * eye).toFixed(2) + 'px'); f.style.setProperty('--ey', (dy / d * 1.9 * eye).toFixed(2) + 'px');
@@ -517,13 +540,12 @@
 
   function init() {
     build(); ensureBrain(); if (isOpen && msgs.length === 1) { msgs.chips = brain.starters(ctxOf(), bst); qrPaint(msgs.chips); }
-    const f = $('#asst-fab');
-    if (f && !f.classList.contains('in')) setTimeout(() => {          // появление как сцена (≈ 6 с): круг проявляется → искры слетаются и вспыхивают → Стелла «просыпается» → машет → подпись раскрывается, по ней пробегает блик
+    const f = $('#asst-fab'); if (f) armPeek(f);
+    if (f && !f.classList.contains('in')) setTimeout(() => {          // появление как сцена (≈ 3,5 с): круг проявляется → искры слетаются и вспыхивают → Стелла «просыпается» → машет; подпись раскрывается позже — после первой прокрутки (armPeek)
       f.classList.add('in'); const fx = $('.asst-fab-fx', f); if (fx) { fx.classList.remove('go'); void fx.offsetWidth; fx.classList.add('go'); }
       const pe = $('.pe', f);
       setTimeout(() => { if (pe) { pe.classList.add('waking'); pe.setAttribute('data-m', 'idle'); setTimeout(() => pe.classList.remove('waking'), 800); } }, T(2100));
       setTimeout(() => f.classList.add('settled'), T(2300)); setTimeout(() => heyFab(1900), T(2900));
-      if (!mobile()) { setTimeout(() => { f.classList.add('long'); setTimeout(() => { f.classList.remove('sweep'); void f.offsetWidth; f.classList.add('sweep'); }, T(900)); longT = setTimeout(() => { if (!f.matches(':hover, :focus-visible')) f.classList.remove('long'); }, T(8000)); }, T(4100)); }
     }, T(1200));
     clearTimeout(tipT); tipT = setTimeout(maybeTip, Math.round(15500 / speed())); if (!nudgeT) nudgeT = setTimeout(nudge, Math.round(26000 / speed()));
     registerWebMCP();

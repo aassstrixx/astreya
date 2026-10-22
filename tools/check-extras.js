@@ -213,7 +213,11 @@ const cfg = JSON.parse(fs.readFileSync(pth.join(ROOT, 'data/redesign.json'), 'ut
     ok(fabI.pe === 1 && fabI.label === 'Спросить Стеллу' && /Стелла/.test(fabI.aria) && fabI.sparks >= 6 && fabI.defs, 'кнопка: жемчужинка Стелла, подпись «Спросить Стеллу», доступное имя, искры и градиент на месте', fabI);
     if (!mobile) {
       ok(fabI.burst, 'при появлении кнопки запускается россыпь искр');
-      await p.waitForFunction(() => { const f = document.getElementById('asst-fab'); return f.classList.contains('long') && f.offsetWidth > 150; }, null, {timeout: 16000}).catch(() => {}); const w1 = await p.$eval('#asst-fab', e => ({long: e.classList.contains('long'), w: e.offsetWidth})); ok(w1.long && w1.w > 150, 'в первые секунды подпись раскрыта (кнопка-«таблетка»), ширина ' + w1.w, w1);
+      await p.waitForFunction(() => { const f = document.getElementById('asst-fab'); return f.classList.contains('settled'); }, null, {timeout: 16000}).catch(() => {}); await wait(600);
+      const w0 = await p.$eval('#asst-fab', e => ({long: e.classList.contains('long'), w: e.offsetWidth, sweep: !!e.querySelector('.asst-fab-sweep')})); ok(!w0.long && w0.w < 70 && !w0.sweep, 'сразу после появления кнопка — круг: подпись сама не раскрывается, блика нет', w0);
+      await p.mouse.move(700, 300); for (let i = 0; i < 12; i++) { await p.mouse.wheel(0, 100); await wait(30); }       // человек пролистал страницу — после остановки подпись раскрывается на пару секунд
+      await p.waitForFunction(() => { const f = document.getElementById('asst-fab'); return f.classList.contains('long') && f.offsetWidth > 150; }, null, {timeout: 6000}).catch(() => {}); const w1 = await p.$eval('#asst-fab', e => ({long: e.classList.contains('long'), w: e.offsetWidth})); ok(w1.long && w1.w > 150, 'после прокрутки подпись раскрыта (кнопка-«таблетка»), ширина ' + w1.w, w1);
+      await wait(4200); const w2 = await p.$eval('#asst-fab', e => ({long: e.classList.contains('long'), w: e.offsetWidth})); ok(!w2.long && w2.w < 70, 'через пару секунд подпись снова свёрнута в круг', w2);
       await p.mouse.move(700, 300); await wait(150); const far = await p.$eval('#asst-fab', e => e.style.getPropertyValue('--ex'));
       const bx = await p.$eval('#asst-fab', e => { const r = e.getBoundingClientRect(); return {x: r.left + r.width / 2, y: r.top + r.height / 2}; });
       await p.mouse.move(bx.x - 90, bx.y - 20); await wait(200); const near = await p.$eval('#asst-fab', e => ({ex: e.style.getPropertyValue('--ex'), mx: e.style.getPropertyValue('--mx')}));
