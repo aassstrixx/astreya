@@ -66,6 +66,7 @@
       def: (a, b) => a.dataset.idx - b.dataset.idx
     };
     function apply(push) {
+      const gal = push && A.gallery ? A.gallery.begin(grid, cards) : null;      // витрина (js/gallery.js): запоминает положения карточек до смены фильтра — и плавно переставляет их после
       const toks = A.tokens(S.q);
       let n = 0;
       cards.forEach(c => {
@@ -87,6 +88,7 @@
       af.innerHTML = active.map(k => { const name = k === 'brand' ? brandName(S[k]) : k === 'cat' ? catName(S[k]) : k === 'task' ? taskName(S[k]) : kindName(S[k]);
         return `<button type="button" class="chip on" data-act="cat-clear" data-id="${k}" aria-label="Убрать фильтр: ${esc(name)}">${esc(name)} ${I.close}</button>`; }).join('');
       if (push) { const p = new URLSearchParams(); ['brand', 'cat', 'task', 'kind'].forEach(k => { if (S[k] !== 'all') p.set(k, S[k]); }); if (S.sort !== 'def') p.set('sort', S.sort); if (S.q.trim()) p.set('q', S.q.trim()); writeUrl(p); }
+      if (gal) gal.end();
     }
     Object.keys(el).forEach(k => el[k].addEventListener('change', () => { S[k] = el[k].value; apply(true); A.track('catalog_filter', {filter: k, value: S[k]}); }));
     qEl.value = S.q;

@@ -456,13 +456,13 @@
     }
   },
   "extras": {
-    "_note": "Дополнения интерфейса (css/extras.css, js/extras.js, js/explore.js, js/assistant.js). enabled=false выключает все сразу; по отдельности: requestList — «Список запроса» (несколько товаров одной заявкой), quickContact — кнопка связи на телефоне, recent — «Вы недавно смотрели», callback — «Заказать звонок», quickView — «Быстрый просмотр» на карточках, compare — сравнение до трёх товаров, countdown — отсчёт до ближайшего мероприятия, subscribe — подписка на новости в подвале, agentReady — файлы для ИИ-агентов и установки (llms.txt, manifest.webmanifest) и инструменты WebMCP, assistant — чат-помощник «Астрея» (встроенные ответы + необязательный ИИ-режим через сервер), sales — продающий слой «Путь к закупке» («Старт со Стеллой» start.html, панель следующего шага, свой ход на каждой странице; тексты и приёмы — data/sales.json, подробно — data/sales/README.md; героя, вступление и орбиту брендов на главной не затрагивает). Чтобы вернуть прежний вид, достаточно enabled=false и пересборки.",
+    "_note": "Дополнения интерфейса (css/extras.css, js/extras.js, js/explore.js, js/assistant.js). enabled=false выключает все сразу; по отдельности: requestList — «Список запроса» (несколько товаров одной заявкой), quickContact — кнопка связи на телефоне, recent — «Вы недавно смотрели», callback — «Заказать звонок», quickView — «Быстрый просмотр» на карточках, gallery — «Витрина каталога» (css/gallery.css, js/gallery.js: появление и наведение карточек, анимация фильтров, перелёт товара в окно просмотра, «Помочь с подбором»; только каталог, без gallery прежний вид), compare — сравнение до трёх товаров, countdown — отсчёт до ближайшего мероприятия, subscribe — подписка на новости в подвале, agentReady — файлы для ИИ-агентов и установки (llms.txt, manifest.webmanifest) и инструменты WebMCP, assistant — чат-помощник «Астрея» (встроенные ответы + необязательный ИИ-режим через сервер), sales — продающий слой «Путь к закупке» («Старт со Стеллой» start.html, панель следующего шага, свой ход на каждой странице; тексты и приёмы — data/sales.json, подробно — data/sales/README.md; героя, вступление и орбиту брендов на главной не затрагивает). Чтобы вернуть прежний вид, достаточно enabled=false и пересборки.",
     "enabled": true,
     "requestList": true,
     "quickContact": false,
     "recent": true,
     "callback": true,
-    "quickView": true,
+    "quickView": true, "gallery": true,
     "compare": true,
     "countdown": true,
     "subscribe": true,

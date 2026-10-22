@@ -1,0 +1,97 @@
+/* ============ Витрина каталога (data/redesign.json → extras.gallery; js/gallery.js) ============
+   «Astreya Interactive Beauty Gallery»: вход карточек, подъём и свет при наведении, перестановка карточек при смене фильтров, перелёт упаковки в окно просмотра.
+   Правила привязаны к каталогу ([data-catalog]), к окну просмотра на каталоге (.qv-dlg.gal) и к служебным классам (.pc-ghost, .gal-*): другие страницы не затрагиваются.
+   Всё движение — только opacity и transform (у перелёта — размер одного небольшого элемента); «лёгкий режим» (html.lite) и prefers-reduced-motion убирают пространственное движение.
+   Вернуть прежний вид: extras.gallery = false в data/redesign.json и node tools/build.js. */
+
+/* --- 0. основа: сетка — точка отсчёта для призраков уходящих карточек --- */
+[data-catalog] #cat-grid{position:relative}
+
+/* --- 1. вход каталога: короткий каскад (заголовок и вводная проявляются штатным .reveal) --- */
+html.js [data-catalog] #cat-grid .pcard.reveal{translate:0 24px;scale:.985;
+  transition:opacity .7s var(--ease-out) calc(var(--rd,0ms) * .55),translate .85s var(--ease-out) calc(var(--rd,0ms) * .55),scale .85s var(--ease-out) calc(var(--rd,0ms) * .55),transform .45s var(--ease-out),box-shadow .45s var(--ease),background-color .3s,border-color .3s,color .3s}
+html.js [data-catalog] #cat-grid .pcard.reveal.in{translate:0 0;scale:1}
+html.js [data-catalog] #cat-grid .pcard.reveal .art{scale:1.07;transition:scale 1.1s var(--ease-out) calc(var(--rd,0ms) * .55)}
+html.js [data-catalog] #cat-grid .pcard.reveal.in .art{scale:1}
+[data-catalog] .cat-tile:hover{transform:translateY(-3px)}
+[data-catalog] .cat-tile.on{box-shadow:0 18px 34px -22px rgba(11,26,51,.55)}
+
+/* --- 2. наведение: подъём карточки, мягкий масштаб упаковки, свет за курсором ---
+   Состояние .is-hov ставит js/gallery.js по координатам курсора в раскладке сетки (а не по :hover): приподнятая карточка уходит из-под курсора на нижней кромке,
+   и CSS-:hover «дребезжал» бы. С клавиатуры — :has(:focus-visible) (не :focus-within: после клика мышью по кнопке карточка не должна оставаться приподнятой). */
+[data-catalog] #cat-grid .pcard .art::after{content:"";position:absolute;inset:0;z-index:0;pointer-events:none;opacity:0;transition:opacity .45s var(--ease);
+  background:radial-gradient(ellipse 62% 56% at var(--mx,50%) var(--my,34%),rgba(255,255,255,.66),rgba(255,255,255,0) 72%)}
+[data-catalog] #cat-grid .pcard .art .pk{z-index:1}
+[data-catalog] #cat-grid .pcard .pf .lnk svg{transition:transform .35s var(--ease)}
+@media (hover:hover) and (pointer:fine){
+  [data-catalog] #cat-grid .pcard.is-hov,[data-catalog] #cat-grid .pcard:has(:focus-visible){transform:translateY(-6px);
+    box-shadow:0 1px 2px rgba(11,26,51,.06),0 30px 46px -26px rgba(11,26,51,.42),0 0 0 1px color-mix(in srgb,var(--c1,#2f5bd6) 42%,transparent)}
+  [data-catalog] #cat-grid .pcard.is-hov .pk,[data-catalog] #cat-grid .pcard:has(:focus-visible) .pk{transform:translateY(-6px) scale(1.07)}
+  [data-catalog] #cat-grid .pcard.is-hov .art-photo img,[data-catalog] #cat-grid .pcard:has(:focus-visible) .art-photo img{transform:scale(1.06)}
+  [data-catalog] #cat-grid .pcard.is-hov .art::after,[data-catalog] #cat-grid .pcard:has(:focus-visible) .art::after{opacity:1}
+  [data-catalog] #cat-grid .pcard.is-hov .pf .lnk svg{transform:translateX(3px)}
+  [data-catalog] #cat-grid .pcard .art-photo img{transition:transform .6s var(--ease)}
+}
+@media (hover:hover) and (min-width:901px){
+  [data-catalog] #cat-grid .pcard.is-hov .qv-btn{opacity:1;translate:-50% 0}                       /* «Быстрый просмотр» появляется и по состоянию .is-hov (абсолютный элемент: вёрстка не прыгает) */
+}
+
+/* --- 3. смена фильтров: уходящие карточки — «призраки» поверх сетки (положение и размер задаёт js) --- */
+.pc-ghost{position:absolute;margin:0;z-index:5;pointer-events:none;display:flex;flex-direction:column;will-change:opacity,transform}
+.pc-ghost .pb{padding:20px 22px 22px;display:flex;flex-direction:column;gap:9px;flex:1}
+.pc-ghost .bl{display:flex;align-items:flex-start;gap:8px;font:700 10.5px/1.4 var(--sans);letter-spacing:.16em;text-transform:uppercase;color:var(--slate)}
+.pc-ghost .bl i{flex:none;margin-top:3px;width:8px;height:8px;border-radius:50%;background:linear-gradient(135deg,var(--c1),var(--c2))}
+.pc-ghost h3{font-size:19px;line-height:1.2}
+.pc-ghost h3 a{color:inherit}
+.pc-ghost p{font-size:13.5px;line-height:1.55;color:var(--muted);display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+.pc-ghost .pf{margin-top:auto;padding-top:14px;display:flex;align-items:center;justify-content:space-between;gap:8px}
+.pc-ghost .qv-btn,.pc-ghost .cmp-add{display:none}
+#cat-empty:not([hidden]){animation:galEmpty .45s var(--ease-out) both}
+@keyframes galEmpty{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+.res-line .gal-help{margin-left:auto;white-space:nowrap}
+.res-line .gal-help+.lnk{margin-left:0}
+@media (max-width:560px){.res-line{flex-wrap:wrap;row-gap:10px}.res-line .gal-help{margin-left:0}}
+
+/* --- 4. окно просмотра товара на каталоге --- */
+.qv-dlg.gal{animation:none}
+.qv-dlg.gal.gal-open{animation:galDlgIn .36s var(--ease-out) both}
+@keyframes galDlgIn{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
+.qv-dlg.gal.gal-swap .qv-art,.qv-dlg.gal.gal-swap .qv-info{animation:galSwap .34s var(--ease-out) both}
+.qv-dlg.gal.gal-swap .qv-info{animation-delay:.04s}
+@keyframes galSwap{from{opacity:0;transform:translateX(calc(var(--dir,1) * 16px))}to{opacity:1;transform:none}}
+.qv-dlg.gal .qv-art .art .pk{scale:1.9;z-index:1}
+.qv-dlg.gal .qv-art .art::after{content:"";position:absolute;inset:0;z-index:0;pointer-events:none;background:radial-gradient(ellipse 70% 60% at 30% 22%,rgba(255,255,255,.72),rgba(255,255,255,0) 66%)}
+.qv-dlg.gal .qv-art .art-photo img{padding:22px}
+@media (max-width:1119px){.qv-dlg.gal .qv-art .art .pk{scale:1.5}}
+@media (max-width:899px){.qv-dlg.gal .qv-art .art .pk{scale:1.25}}
+@media (max-width:760px){.qv-dlg.gal .qv-art .art{height:260px}}
+.gal-fly{position:fixed!important;z-index:190;margin:0;pointer-events:none;overflow:hidden;will-change:left,top,width,height}
+.gal-fly .pk{z-index:1}
+.gal-fly::after{content:"";position:absolute;inset:0;z-index:0;pointer-events:none;opacity:0;animation:galGlint .5s ease forwards;background:radial-gradient(ellipse 70% 60% at 30% 22%,rgba(255,255,255,.72),rgba(255,255,255,0) 66%)}
+.gal-fly.rev::after{opacity:1;animation:galGlintOut .3s ease forwards}
+@keyframes galGlint{to{opacity:1}}
+@keyframes galGlintOut{to{opacity:0}}
+.qv-rel{display:grid;gap:8px;margin-top:2px}
+.qv-rel-t{font:700 10.5px/1.4 var(--sans);letter-spacing:.14em;text-transform:uppercase;color:var(--slate)}
+.qv-rel-l{display:flex;flex-wrap:wrap;gap:8px}
+.qv-rel .chip{padding:8px 14px;font-size:13px}
+
+/* --- 5. спокойное движение: без пространственных сдвигов, только мягкая прозрачность --- */
+@media (prefers-reduced-motion:reduce){
+  html.js [data-catalog] #cat-grid .pcard.reveal{translate:0 0;scale:1;transition:opacity .4s ease calc(var(--rd,0ms) * .25),box-shadow .3s,background-color .3s,border-color .3s,color .3s}
+  html.js [data-catalog] #cat-grid .pcard.reveal .art{scale:1;transition:none}
+  [data-catalog] .cat-tile:hover{transform:none}
+  [data-catalog] #cat-grid .pcard.is-hov,[data-catalog] #cat-grid .pcard:has(:focus-visible){transform:none}
+  [data-catalog] #cat-grid .pcard.is-hov .pk,[data-catalog] #cat-grid .pcard:has(:focus-visible) .pk{transform:none}
+  [data-catalog] #cat-grid .pcard.is-hov .art-photo img,[data-catalog] #cat-grid .pcard:has(:focus-visible) .art-photo img{transform:none}
+  [data-catalog] #cat-grid .pcard.is-hov .pf .lnk svg{transform:none}
+  .qv-dlg.gal.gal-open{animation:galFade .25s ease both}
+  .qv-dlg.gal.gal-swap .qv-art,.qv-dlg.gal.gal-swap .qv-info{animation:galFade .2s ease both}
+  #cat-empty:not([hidden]){animation:galFade .3s ease both}
+  @keyframes galFade{from{opacity:0}to{opacity:1}}
+}
+/* «лёгкий режим» (js/motion.js): медленные кадры — без перелётов и каскада; переходы .reveal он уже выключает */
+html.lite [data-catalog] #cat-grid .pcard.is-hov,html.lite [data-catalog] #cat-grid .pcard:has(:focus-visible){transform:none}
+html.lite [data-catalog] #cat-grid .pcard .art::after{display:none}
+html.lite .qv-dlg.gal.gal-open,html.lite .qv-dlg.gal.gal-swap .qv-art,html.lite .qv-dlg.gal.gal-swap .qv-info,html.lite #cat-empty:not([hidden]){animation:none}
+@media print{.pc-ghost,.gal-fly,.res-line .gal-help,.qv-rel{display:none!important}}

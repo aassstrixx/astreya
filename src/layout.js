@@ -28,7 +28,9 @@ module.exports = function layout(ctx, C) {
   const cssList = rd ? [...CSS, 'redesign', ...(BD.on ? ['backdrops'] : []), ...(EX ? ['extras', ...(ctx.redesign.extras.assistant && ctx.redesign.extras.navigator ? ['guide'] : []), ...(SX ? ['sales', 'sales-pages'] : [])] : [])] : CSS, jsList = rd ? [...JS, 'redesign', ...(BD.on ? ['backdrops'] : []), ...(EX ? ['extras', 'explore', ...(ctx.redesign.extras.assistant ? ['assistant-brain', 'stella-policy', 'assistant', ...(ctx.redesign.extras.navigator ? ['guide'] : [])] : []), ...(SX ? ['sales', 'sales-pages'] : [])] : [])] : JS;   // слой доработок включается одним флагом site.redesign; фоновые вставки — backdrops.enabled в data/redesign.json
   const ver = ctx.assetVersion ? '?v=' + ctx.assetVersion : '';
   const jarCfg = rd && ctx.redesign && ctx.redesign.jar && ctx.redesign.jar.enabled ? ctx.redesign.jar : null;     // вступление с баночкой: css/jar.css + js/jar.js — только на главной и только пока jar.enabled
-  const pageCss = P => jarCfg && P.key === 'home' ? [...cssList, 'jar'] : cssList, pageJs = P => jarCfg && P.key === 'home' ? [...jsList, 'jar'] : jsList;
+  const GAL = !!(EX && ctx.redesign.extras.gallery);                                                   // витрина каталога (css/gallery.css, js/gallery.js): extras.gallery — подключается только странице каталога
+  const withGal = (list, P, after) => GAL && P.key === 'catalog' && list.indexOf(after) >= 0 ? [...list.slice(0, list.indexOf(after) + 1), 'gallery', ...list.slice(list.indexOf(after) + 1)] : list;
+  const pageCss = P => withGal(jarCfg && P.key === 'home' ? [...cssList, 'jar'] : cssList, P, 'extras'), pageJs = P => withGal(jarCfg && P.key === 'home' ? [...jsList, 'jar'] : jsList, P, 'explore');
   /* первый кадр вступления грузим сразу (до скриптов): иначе после заставки баночка появится с задержкой */
   const jarPreload = P => jarCfg && P.key === 'home' ? ['(min-aspect-ratio: 11/10)', '(max-aspect-ratio: 11/10)'].map((m, i) => `<link rel="preload" as="image" href="${u(P, (i ? jarCfg.mobile : jarCfg.desktop) + '000.' + jarCfg.ext)}${ver}" media="${m}">`).join('\n') : '';
   const base = site.url.replace(/\/?$/, '/');
