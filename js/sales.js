@@ -34,6 +34,8 @@
   });
   const local = mkStore('localStorage'), sess = mkStore('sessionStorage');
   const KP = 'astreya:plan', KD = 'astreya:plan-draft', KC = 'astreya:city', KX = 'astreya:exp', KV = 'astreya:sx-via', KB = 'astreya:sx-bar-x';
+  /* «Старт со Стеллой» начинается заново при каждом новом заходе на сайт: план и черновик живут в sessionStorage (пока открыта вкладка), а не в localStorage; прежние сохранения убираем */
+  local.del(KP); local.del(KD);
   const track = (n, p) => { try { A.track(n, p || {}); } catch (e) {} };
   const fill = (s, v) => String(s == null ? '' : s).replace(/\{(\w+)\}/g, (m, k) => v && v[k] != null ? v[k] : m);
   const plural = A.plural || ((n, a, b, c) => { const m = Math.abs(n) % 100, k = m % 10; return m > 10 && m < 20 ? c : k > 1 && k < 5 ? b : k === 1 ? a : c; });
@@ -101,12 +103,12 @@
   const flow = () => PL.flows[flowName()].slice();
   const emptySt = () => ({role: '', tasks: [], goal: '', city: '', volume: '', brand: '', note: ''});
   function savedPlan() {
-    const s = local.get(KP);
+    const s = sess.get(KP);
     if (!s || !s.st || !s.done || Date.now() - (s.t || 0) > 60 * 24 * 3600 * 1000) return null;
     return s;
   }
-  const savePlan = (st, done) => local.set(KP, {v: 1, st: st, done: !!done, t: Date.now()});
-  const saveDraft = () => { if (UI && !UI.result && (UI.st.tasks || []).length) local.set(KD, {st: UI.st, i: UI.i, t: Date.now()}); };
+  const savePlan = (st, done) => sess.set(KP, {v: 1, st: st, done: !!done, t: Date.now()});
+  const saveDraft = () => { if (UI && !UI.result && (UI.st.tasks || []).length) sess.set(KD, {st: UI.st, i: UI.i, t: Date.now()}); };
   const optLabel = (step, id) => { const o = ((STEPS[step] || {}).options || []).find(x => x.id === id); return o ? o.label : ''; };
   const roleSpec = id => { const i = ((STEPS.role || {}).options || []).findIndex(o => o.id === id); return i >= 0 && A.SPECS ? A.SPECS[i] || '' : ''; };
 
@@ -335,7 +337,7 @@
     const i = flow().indexOf(name); if (i < 0) return; const run = ++UI.run; UI.updated = true; bubble('u', esc(CH.editLabel + ' ' + ((CH.stepNames || {})[name] || name).toLowerCase())); setComp(null); await ask(i, esc(CH.editLead));
   }
   function resetAll(msg) {
-    local.del(KP); local.del(KD); UI.st = emptySt(); UI.skip = {}; UI.auto = null; UI.i = 0; UI.result = false; UI.started = false; UI.updated = false; const res = $('[data-plan-result]', UI.host); if (res) res.innerHTML = ''; const l = logEl(); if (l) l.innerHTML = '';
+    sess.del(KP); sess.del(KD); UI.st = emptySt(); UI.skip = {}; UI.auto = null; UI.i = 0; UI.result = false; UI.started = false; UI.updated = false; const res = $('[data-plan-result]', UI.host); if (res) res.innerHTML = ''; const l = logEl(); if (l) l.innerHTML = '';
   }
   async function begin(lead) {
     const run = ++UI.run; paintHead(); setComp(null);
@@ -415,7 +417,7 @@
     } else if (prev) {
       UI.st = Object.assign(emptySt(), prev.st); UI.result = true; source = 'saved'; paintHead(); finishView(); bubble('b', '<p>' + esc(CH.saved) + '</p>'); setComp('after');
     } else {
-      const dr = local.get(KD);
+      const dr = sess.get(KD);
       if (dr && dr.st && Date.now() - (dr.t || 0) < 7 * 24 * 3600 * 1000 && (dr.st.tasks || []).length) {
         UI.st = Object.assign(emptySt(), dr.st); UI.i = Math.min(+dr.i || 0, flow().length - 1); source = 'draft'; paintHead();
         bubble('b', '<p>' + esc(CH.resume) + '</p><p class="pc-lead">' + esc(knownList(UI.st).join('; ')) + '</p>'); setComp('resume');
@@ -454,7 +456,7 @@
       '<button class="btn btn-lnk" type="button" data-pl="again">' + esc(RES.restart) + '</button></div></div></div>';
   }
   function finish() {
-    UI.result = true; savePlan(UI.st, true); local.del(KD); const pl = compute(UI.st);
+    UI.result = true; savePlan(UI.st, true); sess.del(KD); const pl = compute(UI.st);
     track('plan_result', {tasks: pl.tasks.join(','), goal: pl.goal, role: UI.st.role, city: UI.st.city, products: pl.products.length, events: pl.events.length, flow: flowName()});
     finishView(); paintHead(); document.dispatchEvent(new CustomEvent('astreya:plan', {detail: {done: true}}));
   }

@@ -55,7 +55,7 @@ const J = f => JSON.parse(fs.readFileSync(path.join(ROOT, f), 'utf8'));
     else {
       const norm = h => h.replace(/<a class="rd-next[\s\S]*?<\/section>/, '</section>').replace(/\?v=[0-9a-f]{8}/g, '')          /* блок «ближайшие встречи» зависит от даты сборки — в сравнение не берём */.replace(/ data-v="[0-9a-f]{8}"/g, '').replace(/([Аа]стре)(?:и|е|ю|ей)(?![а-яё])/g, '$1я')          /* название компании теперь везде в именительном падеже — прежнюю версию приводим к тому же виду */.split('\n').filter(l => !/sales(-pages)?\.(css|js)|js\/consent\.js/.test(l) && l.trim() !== '').join('\n')
           /* слой запуска в РФ (CSP, свои шрифты, согласие на обработку ПДн) меняет только <head>, подпись у рассылки и ссылку на согласие в подвале — их в сравнение не берём */
-          .replace(/<span>Согласен\(-на\) получать новости[\s\S]*?<\/span>/, '<span>согласие рассылки</span>').replace(/<a href="consent\.html">Согласие на обработку данных<\/a>/, '');
+          .replace(/<span>Согласен\(-на\) получать новости[\s\S]*?<\/span>/, '<span>согласие рассылки</span>').replace(/<a href="consent\.html">Согласие на обработку данных<\/a>/, '').replace(/\s*<li class="msg-off">[\s\S]*?<\/li>/g, '')          /* ячейки мессенджеров в подвале («скоро») добавил слой запуска в РФ */;
       const body = h => h.slice(h.indexOf('<body'));
       const old = body(norm(base)), cur = body(norm(fs.readFileSync(path.join(ROOT, 'index.html'), 'utf8')));
       const oi = old.indexOf('<section class="sec rd-about"'), ci = cur.indexOf('<section class="sec rd-about"');
@@ -145,7 +145,7 @@ const J = f => JSON.parse(fs.readFileSync(path.join(ROOT, f), 'utf8'));
   ok((await p.textContent('.plan-prog-t')).includes('Шаг 1 из 4'), 'кнопка «Назад» возвращает к предыдущему вопросу');
   ok(await p.evaluate(() => document.querySelector('.plan-opt[data-v="salon"]').getAttribute('aria-checked') === 'true'), 'ответ при возврате сохранён');
   await p.click('.plan-opt[data-v="salon"]'); await comp(p, 'goal');
-  ok(await p.evaluate(() => { const d = JSON.parse(localStorage.getItem('astreya:plan-draft') || 'null'); return !!d && d.st.tasks.length === 3 && d.st.role === 'salon'; }), 'выбранные задачи сохранились: Стелла не переспрашивает отвеченное, а идёт к первому неотвеченному вопросу');
+  ok(await p.evaluate(() => { const d = JSON.parse(sessionStorage.getItem('astreya:plan-draft') || 'null'); return !!d && d.st.tasks.length === 3 && d.st.role === 'salon'; }), 'выбранные задачи сохранились: Стелла не переспрашивает отвеченное, а идёт к первому неотвеченному вопросу');
   await p.click('.plan-back'); await comp(p, 'tasks');
   ok(await p.evaluate(() => document.querySelectorAll('.plan-opt[aria-checked="true"]').length === 3), 'при возврате к задачам выбранные отмечены');
   await p.click('.plan-next'); await comp(p, 'goal');
@@ -155,7 +155,8 @@ const J = f => JSON.parse(fs.readFileSync(path.join(ROOT, f), 'utf8'));
   await p.fill('.pchat-text', 'Хочу и обучиться, и закупить, я из Москвы'); await p.press('.pchat-text', 'Enter');
   await p.waitForSelector('.plan-res', {timeout: 12000}); await comp(p, 'after');
   ok(await p.evaluate(() => [...document.querySelectorAll('.pchat-log .pc-b .pc-bub')].some(b => /Поняла/.test(b.textContent) && /Москва/.test(b.textContent))) || true, 'Стелла разбирает свободный ответ и пересказывает, что поняла');
-  ok(await p.evaluate(() => { const l = JSON.parse(localStorage.getItem('astreya:plan') || 'null'); return !!(l && l.done && l.st.goal === 'both' && l.st.city === 'Москва' && l.st.tasks.length === 3); }), 'свободная фраза разобрана: цель «и то и другое» и город «Москва» записаны в план');
+  ok(await p.evaluate(() => { const l = JSON.parse(sessionStorage.getItem('astreya:plan') || 'null'); return !!(l && l.done && l.st.goal === 'both' && l.st.city === 'Москва' && l.st.tasks.length === 3); }), 'свободная фраза разобрана: цель «и то и другое» и город «Москва» записаны в план');
+  ok(await p.evaluate(() => localStorage.getItem('astreya:plan') === null && localStorage.getItem('astreya:plan-draft') === null), '«Старт со Стеллой»: план живёт только на время захода (в постоянном хранилище браузера его нет)');
   ok(await p.evaluate(() => !!document.querySelector('.plan-res') && /Ваш стартовый план/.test(document.querySelector('.plan-res h2').textContent)), 'показан результат: «Ваш стартовый план» (под диалогом)');
   ok(await p.evaluate(() => { const f = [...document.querySelectorAll('.plan-facts li')], note = (document.querySelector('.plan-facts .plan-fine') || {}).textContent || ''; return f.length >= 3 && f.some(x => /справочно/.test(x.textContent)) && f.some(x => /по данным сайта/.test(x.textContent)) && /не медицинская рекомендация/.test(note) && f.every(x => x.querySelector('.pf-tag') && x.querySelector('p').textContent.length > 40); }), 'в плане есть блок «Коротко по делу»: краткие факты по задачам, помечены «справочно» и «по данным сайта», с оговоркой «не медицинская рекомендация»');
   ok(await p.evaluate(() => { const b = [...document.querySelectorAll('.pchat-log .pc-b:not(.pc-typing) .pc-bub')].map(x => x.textContent); const fin = b.filter(t => /линейк|план/i.test(t)).pop() || '', fact = b.find(t => /маленький факт/.test(t)); return fin.length > 120 && !!fact; }), 'финал диалога — не просто «готово»: живая реплика под этот план (линейки, ближайшая встреча, совет по роли) и «маленький факт»');
@@ -171,14 +172,14 @@ const J = f => JSON.parse(fs.readFileSync(path.join(ROOT, f), 'utf8'));
   ok(await p.evaluate(() => { const r = document.querySelector('.plan-res').getBoundingClientRect(); return r.top >= 0 && r.top < innerHeight * .5; }), 'кнопка «Показать план» прокручивает страницу к плану (сама страница при ответах не прыгает)');
   await p.evaluate(() => window.scrollTo(0, 0)); await wait(400);
   await p.click('[data-pl="editstep"][data-v="city"]'); await comp(p, 'city');
-  await p.click('.plan-opt[data-v="Санкт-Петербург"]'); await p.waitForFunction(() => { const l = JSON.parse(localStorage.getItem('astreya:plan') || 'null'); return l && l.st.city === 'Санкт-Петербург'; }, null, {timeout: 12000}); await comp(p, 'after');
+  await p.click('.plan-opt[data-v="Санкт-Петербург"]'); await p.waitForFunction(() => { const l = JSON.parse(sessionStorage.getItem('astreya:plan') || 'null'); return l && l.st.city === 'Санкт-Петербург'; }, null, {timeout: 12000}); await comp(p, 'after');
   ok(await p.evaluate(() => [...document.querySelectorAll('.plan-sum li')].some(l => /Санкт-Петербург/.test(l.textContent))), 'смена города через диалог обновляет план без повторного прохождения всех вопросов');
   await p.fill('.pchat-text', 'Сколько стоит доставка и как быстро ответит менеджер?'); await p.press('.pchat-text', 'Enter'); await comp(p, 'after');
   ok(await p.evaluate(() => { const b = [...document.querySelectorAll('.pchat-log .pc-b:not(.pc-typing) .pc-bub')].pop(); return !!b && b.textContent.trim().length > 20; }), 'на вопрос по существу Стелла отвечает прямо в окне (встроенный «мозг» сайта), а не молчит');
   await p.fill('.pchat-text', 'У нас небольшой кабинет, три мастера, хотим начать осенью'); await p.press('.pchat-text', 'Enter'); await comp(p, 'after');
-  ok(await p.evaluate(() => { const l = JSON.parse(localStorage.getItem('astreya:plan') || 'null'); return !!(l && /небольшой кабинет/.test(l.st.note || '')); }), 'непонятную, но полезную фразу Стелла записывает как комментарий для менеджера');
+  ok(await p.evaluate(() => { const l = JSON.parse(sessionStorage.getItem('astreya:plan') || 'null'); return !!(l && /небольшой кабинет/.test(l.st.note || '')); }), 'непонятную, но полезную фразу Стелла записывает как комментарий для менеджера');
   ok(await p.evaluate(() => [...document.querySelectorAll('.plan-sum li')].some(l => /Комментарий/.test(l.textContent))), 'комментарий виден в сводке плана — человек видит, что его услышали');
-  ok(await p.evaluate(() => (JSON.parse(localStorage.getItem('astreya:plan') || 'null') || {}).st.city === 'Санкт-Петербург'), 'комментарий не ломает остальные ответы');
+  ok(await p.evaluate(() => (JSON.parse(sessionStorage.getItem('astreya:plan') || 'null') || {}).st.city === 'Санкт-Петербург'), 'комментарий не ломает остальные ответы');
   /* добавить товары в список запроса — только по нажатию */
   ok(await p.evaluate(() => (JSON.parse(localStorage.getItem('astreya:rl') || '[]')).length === 0), 'до нажатия «Добавить товары…» список запроса пуст (ничего не добавляется само)');
   await p.click('[data-pl="addall"]'); await wait(400);
@@ -212,21 +213,24 @@ const J = f => JSON.parse(fs.readFileSync(path.join(ROOT, f), 'utf8'));
   /* начать заново */
   await p.keyboard.press('Escape'); await wait(500);
   await p.click('.pchat-re'); await comp(p, 'role');
-  ok(await p.evaluate(() => !localStorage.getItem('astreya:plan') && !!document.querySelector('.plan-opt[data-v="salon"]') && !document.querySelector('.plan-res')), '«Начать заново» стирает сохранённый план и возвращает к первому вопросу');
+  ok(await p.evaluate(() => !sessionStorage.getItem('astreya:plan') && !!document.querySelector('.plan-opt[data-v="salon"]') && !document.querySelector('.plan-res')), '«Начать заново» стирает сохранённый план и возвращает к первому вопросу');
+  { const q = await mk(); await q.context().addInitScript(() => { try { localStorage.setItem('astreya:plan', JSON.stringify({v: 1, st: {role: 'salon', tasks: ['acne'], goal: 'both', city: 'Москва', volume: '', brand: '', note: ''}, done: true, t: Date.now()})); localStorage.setItem('astreya:plan-draft', JSON.stringify({st: {role: 'salon', tasks: ['acne']}, i: 1, t: Date.now()})); } catch (e) {} });
+    await q.open('start.html'); await wait(1500);
+    ok(await q.evaluate(() => !document.querySelector('.plan-res') && !!document.querySelector('.plan-opt[data-v="acne"]') && localStorage.getItem('astreya:plan') === null && localStorage.getItem('astreya:plan-draft') === null), 'новый заход: прежний план и черновик из постоянного хранилища не подхватываются, «Старт со Стеллой» начинается заново'); await q.context().close(); }
   await p.context().close();
 
   /* свободный текст с самого начала: одна фраза — сразу весь план; потом вопрос, который не про подбор */
   p = await mk(); await p.open('start.html?v=planFlow:four'); await comp(p, 'role');
   await p.fill('.pchat-text', 'Я косметолог из Питера, хочу акне и пигментацию, сначала обучиться'); await p.press('.pchat-text', 'Enter');
   await p.waitForSelector('.plan-res', {timeout: 12000});
-  ok(await p.evaluate(() => { const l = JSON.parse(localStorage.getItem('astreya:plan') || 'null'); return !!(l && l.st.role === 'cosmetologist' && l.st.city === 'Санкт-Петербург' && l.st.goal === 'train' && l.st.tasks.join() === 'acne,pigment'); }), 'одной фразой разобраны роль, город, цель и две задачи — план собран сразу', await p.evaluate(() => localStorage.getItem('astreya:plan')));
+  ok(await p.evaluate(() => { const l = JSON.parse(sessionStorage.getItem('astreya:plan') || 'null'); return !!(l && l.st.role === 'cosmetologist' && l.st.city === 'Санкт-Петербург' && l.st.goal === 'train' && l.st.tasks.join() === 'acne,pigment'); }), 'одной фразой разобраны роль, город, цель и две задачи — план собран сразу', await p.evaluate(() => sessionStorage.getItem('astreya:plan')));
   await p.context().close();
   p = await mk(); await p.open('start.html?v=planFlow:four'); await comp(p, 'role');
   const nb = await botN(p);
   await p.fill('.pchat-text', 'Как проходит доставка заказа?'); await p.press('.pchat-text', 'Enter'); await comp(p, 'role');
   ok((await botN(p)) >= nb + 2 && await p.evaluate(() => !document.querySelector('.plan-res') && /Кто вы/.test(document.querySelector('.pchat-log').lastElementChild.textContent)), 'вопрос не по теме: Стелла отвечает и возвращает к текущему вопросу подбора (подбор не сбивается)');
   await p.fill('.pchat-text', 'не знаю'); await p.press('.pchat-text', 'Enter'); await comp(p, 'role');
-  ok(await p.evaluate(() => { const st = JSON.parse(localStorage.getItem('astreya:plan-draft') || 'null'); return !st || !(st.st.tasks || []).length; }), 'непонятный ответ не записывается как выбор: Стелла снова предлагает варианты');
+  ok(await p.evaluate(() => { const st = JSON.parse(sessionStorage.getItem('astreya:plan-draft') || 'null'); return !st || !(st.st.tasks || []).length; }), 'непонятный ответ не записывается как выбор: Стелла снова предлагает варианты');
   await p.context().close();
 
   /* «Сразу подобрать ассортимент»: план собирается сразу (без вопроса про город), в каталог — по синей кнопке, БЕЗ автоперехода: человек сначала видит сводку */
@@ -240,7 +244,7 @@ const J = f => JSON.parse(fs.readFileSync(path.join(ROOT, f), 'utf8'));
   await p.click('.pchat-comp [data-pl-go="catalog"]');
   await p.waitForFunction(() => document.body.getAttribute('data-page') === 'catalog', null, {timeout: 20000}); await wait(700);
   ok(await p.evaluate(t => new URLSearchParams(location.search).get('task') === t && document.querySelector('#f-task') && document.querySelector('#f-task').value === t, rt), 'по нажатию синей кнопки посетитель оказывается в каталоге с выставленным фильтром по его задаче');
-  ok(await p.evaluate(() => { const l = JSON.parse(localStorage.getItem('astreya:plan') || 'null'); return !!(l && l.st.goal === 'range' && l.st.tasks.length >= 1); }), 'ответы сохранены: к плану можно вернуться на странице подбора');
+  ok(await p.evaluate(() => { const l = JSON.parse(sessionStorage.getItem('astreya:plan') || 'null'); return !!(l && l.st.goal === 'range' && l.st.tasks.length >= 1); }), 'ответы сохранены: к плану можно вернуться на странице подбора');
   await p.context().close();
   p = await mk(); await p.open('start.html'); await comp(p, 'tasks');
   await p.fill('.pchat-text', 'Хочу сразу посмотреть ассортимент по акне'); await p.press('.pchat-text', 'Enter'); await comp(p, 'after');
@@ -288,7 +292,14 @@ const J = f => JSON.parse(fs.readFileSync(path.join(ROOT, f), 'utf8'));
   ok(await p.evaluate(() => { const k = [...document.querySelectorAll('.sx-kit')], act = document.querySelectorAll('.sx-kit.is-active'); return act.length === 1 && k.indexOf(act[0]) === 1 && document.querySelectorAll('[data-kit-go]').length === k.length; }), 'каталог: подборки — карусель: вперёд выходит вторая карточка, по бокам видны соседние, внизу точки');
   ok(await p.evaluate(() => { const k = [...document.querySelectorAll('.sx-kit')], a = k[1], l = k[0], g = e => +getComputedStyle(e).getPropertyValue('--s'); return g(a) > g(l) && g(l) < 1 && +getComputedStyle(l).getPropertyValue('--o') < 1; }), 'каталог: соседние карточки меньше и бледнее — «на заднем фоне»');
   ok(await p.evaluate(() => { const r = document.querySelector('.sx-kit-row').getBoundingClientRect(), c = document.querySelector('.sx-kit.is-active').getBoundingClientRect(); return Math.abs((c.left + c.width / 2) - (r.left + r.width / 2)) < 12 && c.height + 80 < innerHeight; }), 'каталог: активная карточка по центру, весь блок помещается в экран');
-  await p.click('[data-kit-nav="1"]'); await wait(900);
+  { /* плавность переключения: движение карусели по кадрам — без рывков, с разгоном и мягким торможением, 0,45–1 с */
+    const rec = await p.evaluate(() => new Promise(res => { const row = document.querySelector('.sx-kit-row'), out = [], t0 = performance.now(); document.querySelector('[data-kit-nav="1"]').click(); const f = t => { out.push([t - t0, row.scrollLeft]); if (t - t0 < 1400) requestAnimationFrame(f); else res(out); }; requestAnimationFrame(f); }));
+    const x0 = rec[0][1], x1 = rec[rec.length - 1][1], dist = x1 - x0, sgn = Math.sign(dist) || 1;
+    const t1 = (rec.find(r => Math.abs(r[1] - x0) > Math.abs(dist) * .02) || [0])[0], t2 = (rec.find(r => Math.abs(r[1] - x1) <= 1) || [0])[0];
+    let maxStep = 0, back = 0; const avg = Math.abs(dist) / Math.max(1, t2 - t1); for (let i = 1; i < rec.length; i++) { const d = (rec[i][1] - rec[i - 1][1]) * sgn, dt = rec[i][0] - rec[i - 1][0]; if (dt > 0 && d > 0) maxStep = Math.max(maxStep, (d / dt) / avg); if (d < -1) back++; }   /* скорость относительно средней: от медленных кадров тест не зависит */
+    ok(Math.abs(dist) > 150, 'каталог: стрелка сдвигает карусель на соседнюю подборку (' + Math.round(dist) + ' px)', dist);
+    ok(t2 - t1 >= 450 && t2 - t1 <= 1000, 'каталог: переключение идёт плавно — ' + Math.round(t2 - t1) + ' мс (0,45–1 с), а не рывком', {t1, t2});
+    ok(back === 0 && maxStep < 2.2, 'каталог: движение без откатов и скачков (пик скорости — в ' + maxStep.toFixed(1) + ' раза выше средней; у мягкой кривой ≈1,6, у резкой — 3 и больше)', {back, maxStep}); await wait(250); }
   ok(await p.evaluate(() => [...document.querySelectorAll('.sx-kit')].indexOf(document.querySelector('.sx-kit.is-active')) === 2), 'каталог: стрелка «вперёд» выводит следующую подборку');
   await p.click('[data-kit-go="0"]'); await wait(900);
   ok(await p.evaluate(() => [...document.querySelectorAll('.sx-kit')].indexOf(document.querySelector('.sx-kit.is-active')) === 0 && document.querySelector('[data-kit-nav="-1"]').disabled), 'каталог: точка переводит к нужной подборке, на первой стрелка «назад» неактивна');
@@ -428,7 +439,8 @@ const J = f => JSON.parse(fs.readFileSync(path.join(ROOT, f), 'utf8'));
   await p.click('[data-sx-reg="Санкт-Петербург"]'); await wait(300);
   const rg = await p.evaluate(() => ({h: document.querySelector('.sx-reg-card h3').textContent, tel: document.querySelector('.sx-reg-card a[href^="tel:"]').getAttribute('href'), ev: (document.querySelector('.sx-reg-ev h3') || {}).textContent}));
   ok(rg.tel === 'tel:+79214204735', 'компания: у Санкт-Петербурга — свой телефон', rg);
-  ok(!!rg.ev, 'компания: рядом — ближайший семинар в этом городе', rg);
+  { const todayIso = new Date().toISOString().slice(0, 10), want = await p.evaluate(t => (ASTREYA_DATA.events || []).some(e => e.date >= t && e.city === 'Санкт-Петербург'), todayIso);      // семинар показывается, пока он ещё впереди (от даты проверки зависит)
+    ok(!!rg.ev === want, 'компания: рядом — ближайший семинар в этом городе' + (want ? '' : ' (в этом городе впереди встреч нет — блок без семинара)'), rg); }
   ok(/Познакомимся/.test(await p.evaluate(() => document.querySelector('.cta-band h2').textContent)), 'компания: завершающий призыв — «Познакомимся на практике»');
   ok(await p.evaluate(() => { const t = document.querySelector('.sx-trust'); return !!t && /можно доверять/.test(t.querySelector('h2').textContent) && t.querySelectorAll('.sx-tl li').length === 4 && !document.querySelector('.sx-next'); }), 'компания: из общих структур остаётся только блок «Почему «Астрея» можно доверять» (4 факта сайта)');
   ok(await p.evaluate(() => { const w = [...document.querySelectorAll('.sx-reg-n')].map(b => Math.round(b.getBoundingClientRect().width)), h = [...document.querySelectorAll('.sx-reg-n')].map(b => Math.round(b.getBoundingClientRect().height)); return w.length >= 3 && Math.max(...w) - Math.min(...w) <= 2 && Math.max(...h) - Math.min(...h) <= 1; }), 'компания: ячейки городов одинакового размера');

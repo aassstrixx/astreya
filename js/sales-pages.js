@@ -69,24 +69,44 @@
     const ids = (card.getAttribute('data-ids') || '').split(','), all = ids.length && ids.every(id => A.rlHas && A.rlHas(id)), btn = $('[data-kit-add]', card), cfg = PG.catalog || {};
     card.classList.toggle('on', !!all); if (btn) { btn.setAttribute('aria-pressed', all ? 'true' : 'false'); $('.lbl', btn).textContent = all ? cfg.added : cfg.add; }
   }
-  /* карусель: одна подборка крупно спереди, две соседние — позади, меньше и бледнее; листается пальцем, стрелками, точками и клавишами */
+  /* карусель: одна подборка крупно спереди, две соседние — позади, меньше и бледнее; листается пальцем, стрелками, точками и клавишами.
+     Плавность: размеры и положения карточек измеряются один раз (раньше каждый кадр читали вёрстку между записями стилей — шесть принудительных пересчётов за кадр),
+     в кадре сначала всё читаем, потом всё пишем; переключение стрелками, точками и клавишами ведём сами — не стандартной быстрой прокруткой браузера,
+     а плавной кривой 0,65–0,9 с (ускорение, длинное мягкое замедление), карточки при этом меняют размер, прозрачность и сдвиг в такт движению. */
   function kitsCarousel(sec) {
     const row = $('.sx-kit-row', sec), cards = $$('.sx-kit', sec), dots = $$('[data-kit-go]', sec); if (!row || !cards.length) return;
-    let raf = 0, cur = 0;
+    let raf = 0, cur = 0, anim = 0, geo = [], rowW = 0;
+    const measure = () => { rowW = row.clientWidth; geo = cards.map(c => ({l: c.offsetLeft, w: c.offsetWidth})); };
     const layout = () => {
-      raf = 0; const mid = row.clientWidth / 2; let best = 0, bd = 1e9;
+      raf = 0; if (!rowW || geo.length !== cards.length) measure();
+      const sl = row.scrollLeft, mid = rowW / 2; let best = 0, bd = 1e9; const v = [];
+      geo.forEach((g, i) => { const d = (g.l + g.w / 2 - sl - mid) / (g.w * .82), ad = Math.abs(d); v.push([d, ad]); if (ad < bd) { bd = ad; best = i; } });
       cards.forEach((c, i) => {
-        const d = (c.offsetLeft + c.offsetWidth / 2 - row.scrollLeft - mid) / (c.offsetWidth * .82), ad = Math.abs(d);
-        c.style.setProperty('--s', (1 - Math.min(ad, 2) * .12).toFixed(3)); c.style.setProperty('--o', ad <= 1 ? (1 - ad * .4).toFixed(3) : Math.max(0, .6 - (ad - 1) * .6).toFixed(3));
-        c.style.setProperty('--z', String(20 - Math.round(ad * 6))); c.style.setProperty('--tx', (-d * c.offsetWidth * .03).toFixed(1) + 'px');
-        if (ad < bd) { bd = ad; best = i; }
+        const d = v[i][0], ad = v[i][1], st = c.style;
+        st.setProperty('--s', (1 - Math.min(ad, 2) * .12).toFixed(3)); st.setProperty('--o', ad <= 1 ? (1 - ad * .4).toFixed(3) : Math.max(0, .6 - (ad - 1) * .6).toFixed(3));
+        st.setProperty('--z', String(20 - Math.round(ad * 6))); st.setProperty('--tx', (-d * geo[i].w * .03).toFixed(1) + 'px');
       });
       if (best !== cur || !cards[best].classList.contains('is-active')) { cur = best; cards.forEach((c, i) => { c.classList.toggle('is-active', i === best); c.setAttribute('aria-current', i === best ? 'true' : 'false'); }); dots.forEach((d, i) => { d.classList.toggle('on', i === best); d.setAttribute('aria-current', i === best ? 'true' : 'false'); }); }
       const pv = $('[data-kit-nav="-1"]', sec), nx = $('[data-kit-nav="1"]', sec); if (pv) pv.disabled = best === 0; if (nx) nx.disabled = best === cards.length - 1;
     };
-    const sched = () => { if (!raf) raf = requestAnimationFrame(layout); };
-    const go = i => { i = Math.max(0, Math.min(cards.length - 1, i)); const c = cards[i]; row.scrollTo({left: c.offsetLeft - (row.clientWidth - c.offsetWidth) / 2, behavior: 'smooth'}); };
-    row.addEventListener('scroll', sched, {passive: true}); window.addEventListener('resize', sched);
+    const sched = () => { if (!raf && !anim) raf = requestAnimationFrame(layout); };
+    const remeasure = () => { measure(); sched(); };
+    const stopAnim = () => { if (anim) { cancelAnimationFrame(anim); anim = 0; row.style.scrollSnapType = ''; } };
+    const go = i => {
+      i = Math.max(0, Math.min(cards.length - 1, i)); if (!rowW) measure();
+      const to = Math.round(geo[i].l - (rowW - geo[i].w) / 2); stopAnim();
+      const from = row.scrollLeft, dist = to - from; if (Math.abs(dist) < 2) { sched(); return; }
+      const dur = Math.min(960, 720 + 90 * Math.max(0, Math.abs(i - cur) - 1)), t0 = performance.now();
+      row.style.scrollSnapType = 'none';                                       // пока едем сами, «прилипание» браузера не мешает; в конце возвращаем — позиция уже на карточке
+      const step = now => {
+        const p = Math.min(1, (now - t0) / dur), e = (1 - Math.cos(Math.PI * p)) / 2;                    // синусоида: пик скорости всего в ≈1,6 раза выше средней (у кубической кривой — в 3), разгон и торможение мягкие
+        row.scrollLeft = from + dist * e; layout();
+        if (p < 1) anim = requestAnimationFrame(step); else { anim = 0; row.scrollLeft = to; row.style.scrollSnapType = ''; layout(); }
+      };
+      anim = requestAnimationFrame(step);
+    };
+    row.addEventListener('scroll', sched, {passive: true}); window.addEventListener('resize', remeasure); if (window.ResizeObserver) new ResizeObserver(remeasure).observe(row);
+    ['pointerdown', 'touchstart', 'wheel'].forEach(ev => row.addEventListener(ev, stopAnim, {passive: true}));      // рука на карусели — наша анимация уступает
     sec.addEventListener('click', e => { const n = e.target.closest('[data-kit-nav]'); if (n) { go(cur + (+n.getAttribute('data-kit-nav'))); track('sales_kit_nav'); return; } const d = e.target.closest('[data-kit-go]'); if (d) go(+d.getAttribute('data-kit-go')); });
     /* карточка «на фоне» сначала выходит вперёд, и только потом её кнопки работают */
     row.addEventListener('click', e => { const c = e.target.closest('.sx-kit'); if (c && !c.classList.contains('is-active')) { e.preventDefault(); e.stopPropagation(); go(cards.indexOf(c)); } }, true);
@@ -94,7 +114,7 @@
     row.addEventListener('keydown', e => { if (e.key === 'ArrowRight') { e.preventDefault(); go(cur + 1); } else if (e.key === 'ArrowLeft') { e.preventDefault(); go(cur - 1); } });
     const mid = cards.length > 2 ? 1 : 0, c0 = cards[mid];          // начинаем со второй подборки: справа и слева видно по соседней — «одна вперёд, две позади»
     row.scrollLeft = c0.offsetLeft - (row.clientWidth - c0.offsetWidth) / 2;
-    layout(); setTimeout(() => { row.scrollLeft = c0.offsetLeft - (row.clientWidth - c0.offsetWidth) / 2; layout(); }, 350); setTimeout(layout, 1200);
+    measure(); layout(); setTimeout(() => { if (anim) return; measure(); row.scrollLeft = c0.offsetLeft - (row.clientWidth - c0.offsetWidth) / 2; layout(); }, 350); setTimeout(() => { measure(); layout(); }, 1200);
   }
   function catalog(c, main) {
     const wrap = $('[data-catalog]', main), tb = $('#results', main); if (!wrap || !tb || mod('kits', wrap)) return;
