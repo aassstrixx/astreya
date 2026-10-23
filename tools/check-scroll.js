@@ -23,7 +23,7 @@ async function open(b, pg, o, y) {
   const ctx = await b.newContext(Object.assign({deviceScaleFactor: 1, locale: 'ru-RU', viewport: {width: 1440, height: 900}}, o || {})); await ctx.route(/^https:\/\/fonts\.|mc\.yandex|yastatic/, r => r.abort());
   await ctx.addInitScript(() => { try { localStorage.setItem('astreya:consent', JSON.stringify({v: 1, a: false, t: Date.now()})); } catch (e) {} });
   const p = await ctx.newPage(); p.ctx = ctx; p.errs = []; p.on('pageerror', e => p.errs.push(String(e.message || e).slice(0, 200)));
-  await p.goto(base + pg); const s = await p.$('#sp-in'); if (s) { try { await s.click({timeout: 1500}); } catch (e) {} }
+  await p.goto(base + pg); await p.evaluate(() => { const s = document.getElementById('sp-in'); if (s) s.click(); });                         // «пропустить» изнутри страницы: клик средствами Playwright на время ставит свои слушатели на window
   await p.waitForSelector('html.ready', {timeout: 25000}).catch(() => {}); await wait(5500);
   if (y) { await p.evaluate(yy => { document.documentElement.style.scrollBehavior = 'auto'; window.scrollTo(0, yy); }, y); await wait(2500); }
   return p;
@@ -46,12 +46,12 @@ const median = a => { const b = a.slice().sort((x, y) => x - y); return b[Math.f
 
   console.log('\n[блокирующие слушатели прокрутки]');
   for (const [name, o, pg] of [['компьютер', {}, 'catalog.html'], ['телефон', {viewport: {width: 390, height: 844}, isMobile: true, hasTouch: true, deviceScaleFactor: 2}, 'catalog.html'], ['компьютер, главная', {}, 'index.html']]) {
-    const p = await open(b, pg, o, 0); const cdp = await p.ctx.newCDPSession(p);
+    const p = await open(b, pg, o, 0); const cdp = await p.ctx.newCDPSession(p); const urls = {}; cdp.on('Debugger.scriptParsed', e => { urls[e.scriptId] = e.url; }); await cdp.send('Debugger.enable');
     const lis = [];
     for (const expr of ['window', 'document', 'document.documentElement', 'document.body']) {
       const ro = (await cdp.send('Runtime.evaluate', {expression: expr})).result; if (!ro.objectId) continue;
       const {listeners} = await cdp.send('DOMDebugger.getEventListeners', {objectId: ro.objectId});
-      listeners.forEach(l => { if (/^(wheel|mousewheel|touchstart|touchmove)$/.test(l.type) && l.passive === false) lis.push(expr + ':' + l.type + ':' + String(l.scriptId ? '' : '') + (l.lineNumber || '')); });
+      listeners.forEach(l => { if (/^(wheel|mousewheel|touchstart|touchmove)$/.test(l.type) && l.passive === false && /\/js\//.test(urls[l.scriptId] || '')) lis.push(expr + ':' + l.type + ':' + String(urls[l.scriptId]).split('/').pop().split('?')[0] + ':' + l.lineNumber); });          // только скрипты сайта
     }
     const touch = lis.filter(x => /touch/.test(x)), wheel = lis.filter(x => /wheel/.test(x));
     ok(touch.length === 0, name + ' (' + pg + '): блокирующих слушателей touchstart/touchmove нет', touch);
@@ -91,9 +91,24 @@ const median = a => { const b = a.slice().sort((x, y) => x - y); return b[Math.f
     const n = await p.evaluate(() => window.__why), y = await p.evaluate(() => scrollY), top = await p.evaluate(() => { const l = document.querySelector('.rd-why-list'); const r = l.getBoundingClientRect(); window.__why = 0; return {t: r.top, b: r.bottom, h: innerHeight}; });
     ok(top.b < 0 || top.t > top.h, 'на y=' + Math.round(y) + ' список «Почему Астрея» вне экрана', top);
     ok(n === 0, 'пока список вне экрана, в кадрах прокрутки его геометрия не читается (чтений: ' + n + ')', n);
-    await p.evaluate(() => { document.querySelector('.rd-why-list').scrollIntoView({block: 'center'}); }); await wait(1500);
+    await wait(1500); await p.evaluate(() => { document.querySelector('.rd-why-list').scrollIntoView({block: 'center'}); }); await wait(1500);
     const lit = await p.evaluate(() => document.querySelectorAll('.rd-why-item.lit').length);
     ok(lit === 1, 'когда список на экране, подсвечен ровно один пункт (' + lit + ')', lit); await p.ctx.close(); }
+
+  console.log('\n[инерция колеса на компьютере]');
+  { const p = await open(b, 'catalog.html', null, 600); await p.mouse.move(700, 400);
+    await p.evaluate(() => { window.__ys = []; window.__stopY = false; const t0 = performance.now(), f = t => { window.__ys.push([t - t0, scrollY]); if (!window.__stopY) requestAnimationFrame(f); }; requestAnimationFrame(f); });
+    const y0 = await p.evaluate(() => scrollY); for (let i = 0; i < 6; i++) { await p.mouse.wheel(0, 100); await wait(35); } await wait(1800);
+    const ys = await p.evaluate(() => { window.__stopY = true; return window.__ys; }); const y1 = ys[ys.length - 1][1];
+    let mono = true, maxStep = 0; for (let i = 1; i < ys.length; i++) { const d = ys[i][1] - ys[i - 1][1]; if (d < -1) mono = false; maxStep = Math.max(maxStep, d); }
+    ok(Math.abs(y1 - y0 - 600) <= 2, 'шесть щелчков колеса по 100 px приводят ровно к цели: сдвиг ' + Math.round(y1 - y0) + ' px', y1 - y0);
+    ok(mono && maxStep < 70, 'движение плавное: без откатов, самый большой шаг кадра ' + maxStep.toFixed(0) + ' px (без сглаживания было бы 100 px за кадр)', {mono, maxStep});
+    /* программный прыжок (якорь, scrollIntoView, клавиши) во время инерции: страница остаётся там, куда прыгнули, а не отскакивает к прежней цели */
+    for (let i = 0; i < 8; i++) { await p.mouse.wheel(0, 100); await wait(30); } await wait(120);
+    await p.evaluate(() => { document.documentElement.style.scrollBehavior = 'auto'; window.scrollTo(0, 300); }); await wait(1500);
+    const yj = await p.evaluate(() => scrollY); ok(Math.abs(yj - 300) <= 3, 'прыжок во время инерции колеса не откатывается к старой цели: y = ' + Math.round(yj) + ' (ожидалось 300)', yj);
+    await p.mouse.wheel(0, 100); await wait(900); const yn = await p.evaluate(() => scrollY); ok(yn > 380 && yn <= 405, 'после прыжка колесо снова работает от нового места (y = ' + Math.round(yn) + ')', yn);
+    ok(p.errs.length === 0, 'без ошибок JavaScript', p.errs); await p.ctx.close(); }
 
   await b.close(); srv.close();
   console.log('\nИтого: ✓ ' + pass + '  ✗ ' + fail); process.exit(fail ? 1 : 0);

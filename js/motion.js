@@ -92,23 +92,27 @@
      для того же элемента под курсором ответ запоминаем на 400 мс */
   let wheelEl = null, wheelRes = false, wheelAt = 0;
   const scrollsInsideCached = el => { const t = performance.now(); if (el === wheelEl && t - wheelAt < 400) return wheelRes; wheelEl = el; wheelAt = t; return wheelRes = scrollsInside(el); };
+  let sSet = -1;                                                                                // позиция, которую инерция записала в прошлом кадре
   function sStep(t) {
+    /* страницу сдвинул кто-то другой (якорь, клавиши, scrollIntoView) — инерцию не продолжаем: иначе этот шаг успевал записать старую позицию раньше обработчика прокрутки,
+       и страница «отскакивала» обратно к прежней цели (клик по пункту меню сразу после прокрутки колесом) */
+    if (sSet >= 0 && Math.abs(window.scrollY - sSet) > 3) { cancelAnimationFrame(sRaf); sRaf = 0; sLast = 0; sVel = 0; sSet = -1; return; }
     const dt = sLast ? Math.min(.05, Math.max(.004, (t - sLast) / 1000)) : .0167; sLast = t;
     const e = Math.exp(-S_OMEGA * dt), d = sCur - sTarget, c = sVel + S_OMEGA * d;        // точное решение критически затухающей пружины на шаг dt
     sCur = sTarget + (d + c * dt) * e; sVel = (sVel - S_OMEGA * c * dt) * e;
     const mx = maxScroll();
     if (sCur < 0) { sCur = 0; sVel = 0; } else if (sCur > mx) { sCur = mx; sVel = 0; }      // у краёв страницы скорость гасим
     if (Math.abs(sTarget - sCur) < .5 && Math.abs(sVel) < 6) { sCur = sTarget; sVel = 0; sRaf = 0; sLast = 0; } else sRaf = requestAnimationFrame(sStep);
-    window.scrollTo({top: sCur, behavior: 'instant'});
+    window.scrollTo({top: sCur, behavior: 'instant'}); sSet = sRaf ? sCur : -1;
   }
-  M.cancelSmooth = () => { cancelAnimationFrame(sRaf); sRaf = 0; sLast = 0; sVel = 0; sTarget = sCur = scrollY; };
+  M.cancelSmooth = () => { cancelAnimationFrame(sRaf); sRaf = 0; sLast = 0; sVel = 0; sSet = -1; sTarget = sCur = scrollY; };
   if (matchMedia('(hover:hover) and (pointer:fine)').matches) {
     addEventListener('wheel', e => {
       if (e.ctrlKey || e.defaultPrevented || Math.abs(e.deltaX) > Math.abs(e.deltaY)) return;
       if (body.classList.contains('locked') || scrollsInsideCached(e.target)) return;
       e.preventDefault(); markScrolling();
       let dy = e.deltaY; if (e.deltaMode === 1) dy *= 34; else if (e.deltaMode === 2) dy *= innerHeight;
-      if (!sRaf) { sCur = sTarget = scrollY; sVel = 0; }
+      if (!sRaf) { sCur = sTarget = scrollY; sVel = 0; sSet = -1; }
       if (dy * sVel < 0) sVel = 0;                                  // смена направления: инерцию прежнего движения гасим, иначе страница «проскакивает» вперёд
       sTarget = Math.max(0, Math.min(maxScroll(), sTarget + dy));
       if (!sRaf) sRaf = requestAnimationFrame(sStep);
