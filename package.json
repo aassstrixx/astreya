@@ -31,7 +31,8 @@
     "audit": "node tools/audit.js",
     "audit:static": "node tools/audit.js --static",
     "audit:matrix": "node tools/audit.js --matrix",
-    "check:stella": "node tools/check-stella.js"
+    "check:stella": "node tools/check-stella.js",
+    "check:scroll": "node tools/check-scroll.js"
   },
   "optionalDependencies": {
     "@anthropic-ai/sdk": "^0.133.0"

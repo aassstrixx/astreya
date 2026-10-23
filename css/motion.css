@@ -1,7 +1,7 @@
 /* motion.css — заставка, шторка, появление, кинематографический слой
    Источник: нарезано из прежнего index.html без изменения порядка правил. */
 /* ============ Progress / curtain / splash ============ */
-#progress{position:fixed;left:0;top:0;height:3px;width:100%;background:var(--blue);transform:scaleX(0);transform-origin:left;z-index:120;pointer-events:none;transition:transform .12s linear}
+#progress{position:fixed;left:0;top:0;height:3px;width:100%;background:var(--blue);transform:scaleX(0);transform-origin:left;z-index:120;pointer-events:none;transition:transform .3s linear}
 
 
 #splash{position:fixed;inset:0;overflow:hidden;z-index:200;background:var(--navy);color:var(--milk);display:grid;place-items:center;transition:opacity .45s ease,visibility .45s}
@@ -212,5 +212,7 @@ html.is-scrolling .asst-fab-ring,html.is-scrolling .asst-fab-i,html.is-scrolling
 
 /* ============ Лёгкий режим (js/motion.js: html.lite включается, если при прокрутке кадры идут медленно) ============
    Блоки, заголовки и подписи появляются сразу, без переходов: прозрачность и сдвиг ведёт браузер в основном потоке, и на слабом компьютере это подлагивает. */
-html.lite .reveal,html.lite .reveal *,html.lite .split .w>span,html.lite .eyebrow,html.lite hr.dash{transition:none!important}
+/* Селекторы перечисляют только те элементы, у которых есть переходы появления. Раньше здесь стояло «html.lite .reveal *» — любой потомок блока: включение режима заставляло браузер
+   пересчитать стили у всех потомков всех блоков разом (разовая заминка именно тогда, когда устройство и так не успевает). */
+html.lite .reveal,html.lite .reveal .band,html.lite .reveal .cov,html.lite .reveal .th,html.lite .reveal .art,html.lite .pearl-wrap .pearl,html.lite .pearl-wrap .ring,html.lite .pearl-wrap .halo,html.lite .pearl-wrap .hero-chip,html.lite .pearl-wrap .hero-card,html.lite .split .w>span,html.lite .eyebrow,html.lite hr.dash{transition:none!important}
 html.lite .eyebrow.in::before,html.lite hr.dash.in{animation-duration:.01ms!important;animation-delay:0s!important}
