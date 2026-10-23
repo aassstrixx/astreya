@@ -111,7 +111,12 @@
   }
   const scrollTarget = (el, frac, fit, keep) => { const pl = planScroll(el, {frac, fit, keep, dockTop: !!(cur && cur.dockTop)}); return pl.to; };
   const LOCK = {on: false, y: 0, prog: 0};
-  function lockPage(on) { LOCK.on = on; LOCK.y = scrollY; }
+  /* Блокирующие (passive:false) слушатели колеса и касаний висят на странице ТОЛЬКО пока идёт экскурсия. Раньше они стояли всегда: браузер не может прокручивать страницу
+     без ожидания главного потока, пока на window есть такой слушатель (на телефоне — на каждый touchmove), и любая заминка главного потока превращалась в микрофриз прокрутки. */
+  function lockPage(on) {
+    LOCK.on = on; LOCK.y = scrollY;
+    ['wheel', 'touchmove'].forEach(ev => { if (on) addEventListener(ev, stopScroll, {passive: false, capture: true}); else removeEventListener(ev, stopScroll, {capture: true}); });
+  }
   /* плавная прокрутка «с разгоном и торможением»: чем дальше ехать, тем дольше, но без рывков; встроенная плавность браузера на дальних расстояниях слишком резкая */
   let scrollTok = 0;
   function progScroll(top, jumpOver) {
@@ -133,7 +138,6 @@
   const scrollTo = (el, frac, fit, keep) => progScroll(scrollTarget(el, frac, fit, keep));
   /* пока идёт экскурсия, страница не прокручивается колесом, пальцем, клавишами и ползунком: подсветка и Стелла стоят на месте, листает только сама Стелла */
   const stopScroll = e => { if (!LOCK.on) return; if (e.target && e.target.closest && e.target.closest('#asst')) return; e.preventDefault(); e.stopImmediatePropagation(); };
-  ['wheel', 'touchmove'].forEach(ev => addEventListener(ev, stopScroll, {passive: false, capture: true}));
   addEventListener('keydown', e => { if (!LOCK.on) return; const tag = (e.target || {}).tagName || ''; if (/^(INPUT|TEXTAREA|SELECT)$/.test(tag) || (e.target && e.target.closest && e.target.closest('#asst'))) return; if (/^(ArrowUp|ArrowDown|PageUp|PageDown|Home|End)$/.test(e.key) || (e.key === ' ' && !/^(BUTTON|A)$/.test(tag))) e.preventDefault(); }, true);
   addEventListener('scroll', () => { if (!LOCK.on || LOCK.prog) return; const max = Math.max(0, document.documentElement.scrollHeight - innerHeight); if (LOCK.y > max && Math.abs(scrollY - max) <= 2) LOCK.y = max; if (Math.abs(scrollY - LOCK.y) > 2) window.scrollTo({top: LOCK.y, behavior: 'instant'}); }, {passive: true});          // страница стала короче (фильтр убрал карточки) — «закреплённое» место сдвигается вместе с ней
   /* прогресс экскурсии: «2 из 9 · этап» и девять отрезков (пройденные заполнены, текущий — по шагам внутри этапа) */

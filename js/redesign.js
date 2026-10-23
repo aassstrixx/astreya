@@ -41,21 +41,31 @@
   });
 
 
-  /* «Почему Астрея»: подсветка цифр при скролле — светится номер пункта, ближайшего к центру экрана, пока список на экране */
-  let raf = 0;
+  /* «Почему Астрея»: подсветка цифр при скролле — светится номер пункта, ближайшего к центру экрана, пока список на экране.
+     Список отслеживает IntersectionObserver: пока он вне экрана (почти всегда), в кадре прокрутки не читается вёрстка и не пишутся стили — раньше getBoundingClientRect
+     вызывался в каждом кадре на любой странице и заставлял браузер пересчитывать стили посреди прокрутки. */
+  let raf = 0, whyEl, whyVis = false, whyIO = null;
+  function whyFind() {
+    const list = document.querySelector('.rd-why-list'); if (whyIO) { whyIO.disconnect(); whyIO = null; }
+    whyEl = list || null; whyVis = false; if (!list) return;
+    if (!('IntersectionObserver' in window)) { whyVis = true; return; }
+    whyIO = new IntersectionObserver(function (es) { whyVis = es[es.length - 1].isIntersecting; if (whyVis) schedule(); }, {threshold: 0});
+    whyIO.observe(list);
+  }
   function whyLit() {
-    const list = document.querySelector('.rd-why-list'); if (!list) return;
+    if (whyEl === undefined || (whyEl && !whyEl.isConnected)) whyFind();
+    const list = whyEl; if (!list || !whyVis) return;
     const items = Array.prototype.slice.call(list.querySelectorAll('.rd-why-item')), vh = window.innerHeight, lr = list.getBoundingClientRect();
     let best = null, bd = 1e9;
     if (lr.bottom > 0 && lr.top < vh) items.forEach(function (it) { const r = it.getBoundingClientRect(), d = Math.abs(r.top + r.height / 2 - vh * 0.5); if (d < bd) { bd = d; best = it; } });
     items.forEach(function (it) { it.classList.toggle('lit', it === best); });
   }
-  function schedule() { if (!raf) raf = requestAnimationFrame(function () { raf = 0; whyLit(); }); }
+  function schedule() { if (raf || whyEl === null || (whyEl && !whyVis)) return; raf = requestAnimationFrame(function () { raf = 0; whyLit(); }); }          // нет списка или он вне экрана — кадр не заказываем вовсе
   addEventListener('scroll', schedule, {passive: true});
   addEventListener('resize', schedule);
   addEventListener('load', schedule);
   document.addEventListener('DOMContentLoaded', schedule);
   const mainEl = document.getElementById('main');
-  if (mainEl && window.MutationObserver) new MutationObserver(schedule).observe(mainEl, {childList: true});
+  if (mainEl && window.MutationObserver) new MutationObserver(function () { whyEl = undefined; schedule(); }).observe(mainEl, {childList: true});
   schedule();
 })();

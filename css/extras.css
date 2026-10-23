@@ -3,8 +3,10 @@
 
 /* ============ Список запроса ============ */
 .pcard{position:relative}
+/* Размытия фона (backdrop-filter) у круглых кнопок и «Быстрого просмотра» нет сознательно: на каталоге это ≈90 отдельных слоёв (по три на карточку), и браузер заново размывал то, что под
+   ними, в каждом кадре прокрутки. Фон кнопок сделан плотнее (.94) — на светлой иллюстрации упаковки разницы не видно, а слоёв стало вдвое меньше. */
 .rl-add{position:absolute;z-index:4;top:14px;right:14px;width:38px;height:38px;border-radius:50%;display:grid;place-items:center;color:var(--navy);
-  background:rgba(250,248,244,.88);border:1px solid rgba(11,26,51,.14);box-shadow:0 6px 16px -8px rgba(11,26,51,.35);-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);
+  background:rgba(250,248,244,.94);border:1px solid rgba(11,26,51,.14);box-shadow:0 6px 16px -8px rgba(11,26,51,.35);
   transition:background-color .25s,color .25s,border-color .25s,transform .35s var(--ease),box-shadow .3s}
 .rl-add:hover{background:var(--navy);border-color:var(--navy);color:var(--milk);transform:scale(1.06)}
 .rl-add .i-ck,.rl-tog .i-ck{display:none}
@@ -88,14 +90,14 @@ button.qc-item{width:100%;text-align:left}
 
 /* ============ Быстрый просмотр и сравнение на карточках ============ */
 .qv-btn{position:absolute;z-index:4;left:50%;top:148px;translate:-50% 8px;opacity:0;display:inline-flex;align-items:center;gap:8px;padding:10px 16px;border-radius:var(--pill);background:rgba(250,248,244,.94);color:var(--navy);
-  border:1px solid rgba(11,26,51,.14);box-shadow:0 10px 24px -12px rgba(11,26,51,.45);font:700 11px/1 var(--sans);letter-spacing:.12em;text-transform:uppercase;white-space:nowrap;-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);
+  border:1px solid rgba(11,26,51,.14);box-shadow:0 10px 24px -12px rgba(11,26,51,.45);font:700 11px/1 var(--sans);letter-spacing:.12em;text-transform:uppercase;white-space:nowrap;
   transition:opacity .3s,translate .4s var(--ease),background-color .25s,color .25s,border-color .25s}
 .qv-btn .ic{width:16px;height:16px}
 .qv-btn:hover,.qv-btn:focus-visible{background:var(--navy);border-color:var(--navy);color:var(--milk)}
 .pcard:hover .qv-btn,.pcard:focus-within .qv-btn,.qv-btn:focus-visible{opacity:1;translate:-50% 0}
 @media (hover:none),(max-width:900px){.qv-btn,.pcard:hover .qv-btn,.pcard:focus-within .qv-btn{opacity:1;left:12px;top:154px;translate:0 0;padding:8px 12px;font-size:10px;letter-spacing:.1em}}
-.cmp-add{position:absolute;z-index:4;top:60px;right:14px;width:38px;height:38px;border-radius:50%;display:grid;place-items:center;color:var(--navy);background:rgba(250,248,244,.88);border:1px solid rgba(11,26,51,.14);
-  box-shadow:0 6px 16px -8px rgba(11,26,51,.35);-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);transition:background-color .25s,color .25s,border-color .25s,transform .35s var(--ease)}
+.cmp-add{position:absolute;z-index:4;top:60px;right:14px;width:38px;height:38px;border-radius:50%;display:grid;place-items:center;color:var(--navy);background:rgba(250,248,244,.94);border:1px solid rgba(11,26,51,.14);
+  box-shadow:0 6px 16px -8px rgba(11,26,51,.35);transition:background-color .25s,color .25s,border-color .25s,transform .35s var(--ease)}
 .cmp-add .ic{width:18px;height:18px}
 .cmp-add:hover{background:var(--navy);border-color:var(--navy);color:var(--milk);transform:scale(1.06)}
 .cmp-add[aria-pressed="true"]{background:var(--navy);border-color:var(--navy);color:var(--milk)}

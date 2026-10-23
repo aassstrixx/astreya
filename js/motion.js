@@ -28,10 +28,16 @@
   addEventListener('resize', dropMax);
   M.dropMax = dropMax;
   if (window.ResizeObserver) { const ro = new ResizeObserver(dropMax); ro.observe(html); ro.observe(body); }
+  /* Полоса чтения: запись transform в каждом кадре прокрутки заставляла браузер заново собирать слои страницы (PaintArtifactCompositor::Update — до 40 % работы основного
+     потока на кадр в замерах; без полосы нагрузка падала на ~9 %). Полоса тонкая (3 px), поэтому её значение пишется не чаще раза в 90 мс, а плавность между записями даёт
+     CSS-переход (css/motion.css, 120 мс, идёт на компоновщике); по окончании прокрутки значение дописывается точным. */
+  let barAt = 0, barT = 0;
+  const barWrite = y => { const max = maxScroll(); if (bar) bar.style.transform = `scaleX(${max > 0 ? Math.min(1, y / max) : 0})`; barAt = performance.now(); };
   function updateProgress(y) {
-    const max = maxScroll();
-    if (bar) bar.style.transform = `scaleX(${max > 0 ? Math.min(1, (y === undefined ? scrollY : y) / max) : 0})`;
-    ticking = false;
+    ticking = false; if (!bar) return;
+    if (y === undefined) { barWrite(scrollY); return; }
+    if (performance.now() - barAt >= 90) { barWrite(y); return; }
+    if (!barT) barT = setTimeout(() => { barT = 0; barWrite(scrollY); }, 100);
   }
   function onScroll() {
     const y = scrollY, d = y - lastY;                              // сначала читаем, потом пишем: чтение после записи стилей снова заставило бы пересчитать вёрстку

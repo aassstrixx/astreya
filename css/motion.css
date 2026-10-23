@@ -1,7 +1,7 @@
 /* motion.css — заставка, шторка, появление, кинематографический слой
    Источник: нарезано из прежнего index.html без изменения порядка правил. */
 /* ============ Progress / curtain / splash ============ */
-#progress{position:fixed;left:0;top:0;height:3px;width:100%;background:var(--blue);transform:scaleX(0);transform-origin:left;z-index:120;pointer-events:none}
+#progress{position:fixed;left:0;top:0;height:3px;width:100%;background:var(--blue);transform:scaleX(0);transform-origin:left;z-index:120;pointer-events:none;transition:transform .12s linear}
 
 
 #splash{position:fixed;inset:0;overflow:hidden;z-index:200;background:var(--navy);color:var(--milk);display:grid;place-items:center;transition:opacity .45s ease,visibility .45s}
