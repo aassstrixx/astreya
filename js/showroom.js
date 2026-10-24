@@ -53,17 +53,24 @@
   const REF = [[452, 262, 40, 1, 1.00], [585, 176, 78, 0, .95], [738, 230, 100, 1, 1.08], [880, 214, 52, 0, 1.06], [1008, 168, 76, 1, 1.00], [1130, 236, 42, 0, 1.00], [1292, 264, 38, 1, 1.04]];
   const HV = [[1, 1, 1, 1, 1, 1, 1], [1.7, 1.0, .75, 1.6, .9, 1.8, 1.9], [.9, 1.5, 1.15, .75, 1.7, .8, 1.4]];      // высоты подиумов по категории: «композиций» три, архитектура одна
   const BASE = [654, 686], CAP_RATIO = (D.showroom && D.showroom.pod && D.showroom.pod.capRatio) || .1026;
+  /* у каждого товара свой подиум: подиумы стоят рядом, не перекрывая друг друга, а упаковка занимает не больше FIT его ширины — ни один товар не заходит на чужой подиум и не закрывает соседа.
+     Ширина подиума = max(ширина упаковки / FIT, прежний диаметр по макету × 0.7, 124); если все вместе не умещаются в полосу SPAN, подиумы сужаются, а упаковка уменьшается вместе с ними; если места больше — промежутки растут (до 46 px). */
+  const SPAN = [330, 1424], GAP = 14, FIT = .82, NICHE_W = 66;
   function compose(prods, s) {
     const n = Math.min(prods.length, MAIN_MAX), slots = [], v = s.variant;
     const idx = n === 1 ? [2] : Array.from({length: n}, (_, i) => Math.round(i * 6 / (n - 1)));
-    for (let i = 0; i < n; i++) {
-      const p = prods[i], [cx, diam, h0, row, sc] = REF[idx[i]], hero = idx[i] === 2 || (n <= 3 && i === Math.floor((n - 1) / 2));
-      const hh = Math.max(30, Math.min(124, h0 * HV[v][idx[i]])), im = imgOf(p), th = thOf(p) * sc, bw = th * im.ar, bh = th;
-      const pw = Math.max(diam, bw * 1.5), e = pw * CAP_RATIO, topFace = BASE[row] - hh;                 // y центра верхней грани подиума — здесь стоит упаковка
-      slots.push({group: 'main', i, p, im, hero, row, pod: {l: cx - pw / 2, t: topFace - e / 2, w: pw, e, b: hh}, it: {l: cx - bw / 2, t: topFace + e * .08 - bh, w: bw, h: bh, cx, z: 5 + row * 2 + (hero ? 1 : 0)}});
-    }
+    const cells = idx.map((k, i) => { const [, diam, h0, row, sc] = REF[k], p = prods[i], im = imgOf(p), th = thOf(p) * sc, bw = th * im.ar; return {k, p, im, h0, row, th, bw, pw: Math.max(bw / FIT, diam * .7, 124), hero: k === 2 || (n <= 3 && i === Math.floor((n - 1) / 2))}; });
+    const avail = SPAN[1] - SPAN[0], sum = cells.reduce((a, c) => a + c.pw, 0), gaps = (n - 1) * GAP, f = Math.min(1, (avail - gaps) / sum);
+    const extra = n > 1 ? Math.min(46, Math.max(0, avail - gaps - sum * f) / (n - 1)) : 0, used = sum * f + (gaps + extra * (n - 1));
+    let x = SPAN[0] + (avail - used) / 2;
+    cells.forEach((c, i) => {
+      const pw = c.pw * f, cx = x + pw / 2, k = Math.min(1, pw * FIT / c.bw), th = c.th * k, bw = c.bw * k, hh = Math.max(30, Math.min(124, c.h0 * HV[v][c.k]));
+      const e = pw * CAP_RATIO, topFace = BASE[c.row] - hh;                                             // y центра верхней грани подиума — здесь стоит упаковка
+      x += pw + GAP + extra;
+      slots.push({group: 'main', i, p: c.p, im: c.im, hero: c.hero, row: c.row, pod: {l: cx - pw / 2, t: topFace - e / 2, w: pw, e, b: hh}, it: {l: cx - bw / 2, t: topFace + e * .08 - th, w: bw, h: th, cx, z: 5 + c.row * 2 + (c.hero ? 1 : 0)}});
+    });
     prods.slice(MAIN_MAX, MAIN_MAX + NICHE.length).forEach((p, k) => {
-      const im = imgOf(p), th = thOf(p) * .5, bw = th * im.ar, [cx, y] = NICHE[k];
+      const im = imgOf(p), [cx, y] = NICHE[k]; let th = thOf(p) * .5, bw = th * im.ar; if (bw > NICHE_W) { th *= NICHE_W / bw; bw = NICHE_W; }          // на полке товары не шире ячейки: соседи не перекрываются
       slots.push({group: 'niche', i: MAIN_MAX + k, p, im, hero: false, row: 0, pod: null, it: {l: cx - bw / 2, t: y + 2 - th, w: bw, h: th, cx, z: 3}});
     });
     return slots;

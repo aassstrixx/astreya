@@ -1,100 +1,100 @@
 {
  "pack-tube": {
   "file": "assets/showroom/pack-tube.webp",
-  "w": 159,
-  "h": 560,
+  "w": 234,
+  "h": 840,
   "label": [
-   0.0568,
-   0.2465,
-   0.8863,
-   0.4154
+   0.0438,
+   0.2447,
+   0.9124,
+   0.4184
   ]
  },
  "pack-bottle": {
   "file": "assets/showroom/pack-bottle.webp",
-  "w": 174,
-  "h": 560,
+  "w": 258,
+  "h": 840,
   "label": [
-   0.0281,
-   0.3939,
-   0.9438,
-   0.3931
+   0.0173,
+   0.3926,
+   0.9655,
+   0.3959
   ]
  },
  "pack-bottle-noir": {
   "file": "assets/showroom/pack-bottle-noir.webp",
-  "w": 174,
-  "h": 560,
+  "w": 258,
+  "h": 840,
   "label": [
-   0.0281,
-   0.3939,
-   0.9438,
-   0.3931
+   0.0173,
+   0.3926,
+   0.9655,
+   0.3959
   ]
  },
  "pack-jar": {
   "file": "assets/showroom/pack-jar.webp",
-  "w": 667,
-  "h": 560,
+  "w": 1001,
+  "h": 840,
   "label": [
-   0.0305,
-   0.4769,
-   0.9391,
-   0.4107
+   0.0268,
+   0.4765,
+   0.9463,
+   0.4138
   ]
  },
  "pack-pump": {
   "file": "assets/showroom/pack-pump.webp",
-  "w": 186,
-  "h": 560,
+  "w": 274,
+  "h": 840,
   "label": [
-   0.029,
-   0.4359,
-   0.942,
-   0.3782
+   0.0172,
+   0.4358,
+   0.9655,
+   0.3812
   ]
  },
  "pack-pump-noir": {
   "file": "assets/showroom/pack-pump-noir.webp",
-  "w": 186,
-  "h": 560,
+  "w": 274,
+  "h": 840,
   "label": [
-   0.029,
-   0.4359,
-   0.942,
-   0.3782
+   0.0172,
+   0.4358,
+   0.9655,
+   0.3812
   ]
  },
  "pack-dropper": {
   "file": "assets/showroom/pack-dropper.webp",
-  "w": 169,
-  "h": 560,
+  "w": 248,
+  "h": 840,
   "label": [
-   0.0314,
-   0.5703,
-   0.9372,
-   0.2955
+   0.0184,
+   0.5709,
+   0.9632,
+   0.2978
   ]
  },
  "pack-dropper-noir": {
   "file": "assets/showroom/pack-dropper-noir.webp",
-  "w": 169,
-  "h": 560,
+  "w": 248,
+  "h": 840,
   "label": [
-   0.0314,
-   0.5703,
-   0.9372,
-   0.2955
+   0.0184,
+   0.5709,
+   0.9632,
+   0.2978
   ]
  },
  "pack-box": {
   "file": "assets/showroom/pack-box.webp",
-  "w": 791,
-  "h": 560
+  "w": 1187,
+  "h": 840
  },
  "pack-device": {
   "file": "assets/showroom/pack-device.webp",
-  "w": 171,
-  "h": 560
+  "w": 252,
+  "h": 840
  }
 }

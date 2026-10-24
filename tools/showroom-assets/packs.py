@@ -13,7 +13,7 @@ from PIL import Image
 OUT = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..', 'assets', 'showroom')
 os.makedirs(OUT, exist_ok=True)
 CM = 0.01
-RES = int(os.environ.get('PACK_RES', 900)); SAMPLES = int(os.environ.get('PACK_SAMPLES', 64)); TARGET_H = 560
+RES = int(os.environ.get('PACK_RES', 1500)); SAMPLES = int(os.environ.get('PACK_SAMPLES', 96)); TARGET_H = int(os.environ.get('PACK_H', 840))
 
 def reset():
     bpy.ops.wm.read_factory_settings(use_empty=True)
@@ -21,7 +21,7 @@ def reset():
     sc = bpy.context.scene; sc.render.engine = 'CYCLES'
     cy = sc.cycles; cy.device = 'CPU'; cy.samples = SAMPLES; cy.use_denoising = True; cy.denoiser = 'OPENIMAGEDENOISE'; cy.max_bounces = 10; cy.transmission_bounces = 8; cy.glossy_bounces = 6; cy.caustics_reflective = False; cy.caustics_refractive = False
     sc.render.film_transparent = True; sc.render.resolution_x = RES; sc.render.resolution_y = RES; sc.render.resolution_percentage = 100
-    sc.view_settings.view_transform = 'AgX'; sc.view_settings.look = 'AgX - Base Contrast'; sc.view_settings.exposure = float(os.environ.get('PACK_EXP', -0.15))
+    sc.view_settings.view_transform = 'AgX'; sc.view_settings.look = os.environ.get('PACK_LOOK', 'AgX - Medium High Contrast'); sc.view_settings.exposure = float(os.environ.get('PACK_EXP', -0.25))
     sc.render.image_settings.file_format = 'PNG'; sc.render.image_settings.color_mode = 'RGBA'; sc.render.image_settings.color_depth = '16'
     return sc
 
@@ -183,7 +183,7 @@ def setup_scene(sc, m):
     ramp.color_ramp.elements[0].position = 0.0; ramp.color_ramp.elements[0].color = (0.62, 0.50, 0.37, 1)
     ramp.color_ramp.elements.new(0.55); ramp.color_ramp.elements[1].color = (0.80, 0.74, 0.66, 1)
     ramp.color_ramp.elements[2].position = 1.0; ramp.color_ramp.elements[2].color = (1.6, 1.5, 1.38, 1)
-    nt.links.new(ramp.outputs['Color'], em.inputs['Color']); em.inputs['Strength'].default_value = float(os.environ.get('PACK_DOME', 0.42)); nt.links.new(em.outputs[0], out.inputs[0])
+    nt.links.new(ramp.outputs['Color'], em.inputs['Color']); em.inputs['Strength'].default_value = float(os.environ.get('PACK_DOME', 0.30)); nt.links.new(em.outputs[0], out.inputs[0])
     dome.data.materials.append(dm); dome.visible_camera = False; dome.visible_shadow = False
     # мягкие источники
     def area(name, loc, size, energy, color=(1, 0.96, 0.9), shape='RECTANGLE', size_y=None):
@@ -194,7 +194,7 @@ def setup_scene(sc, m):
     area('key', (-0.55, -0.7, 0.55), 0.55, float(os.environ.get('PACK_KEY', 34)), (1.0, 0.95, 0.88))
     area('rim', (0.7, 0.35, 0.35), 0.18, float(os.environ.get('PACK_RIM', 14)), (1.0, 0.98, 0.95), size_y=0.7)
     area('bounce', (0.0, -0.6, -0.25), 0.7, float(os.environ.get('PACK_BOUNCE', 9)), (1.0, 0.9, 0.72))
-    area('fill', (0.5, -0.9, 0.15), 0.8, float(os.environ.get('PACK_FILL', 1.6)), (1.0, 0.97, 0.92))
+    area('fill', (0.5, -0.9, 0.15), 0.8, float(os.environ.get('PACK_FILL', 1.0)), (1.0, 0.97, 0.92))
     cam_d = bpy.data.cameras.new('cam'); cam_d.type = 'ORTHO'; cam = bpy.data.objects.new('cam', cam_d); bpy.context.collection.objects.link(cam)
     el = math.radians(7.0); dist = 2.0
     cam.location = (0, -dist * math.cos(el), 0.09 + dist * math.sin(el)); cam.rotation_euler = (math.radians(90) - el, 0, 0)
@@ -224,11 +224,13 @@ def finish(png, boxes, name):
     pad = 6; x0 = max(0, x0 - pad); y0 = max(0, y0 - pad); x1 = min(W, x1 + pad); y1 = min(Hh, y1 + pad)
     c = im.crop((x0, y0, x1, y1)); s = TARGET_H / c.height
     c = c.resize((max(1, round(c.width * s)), TARGET_H), Image.LANCZOS)
+    from PIL import ImageFilter                                                                 # лёгкая резкость только по цвету: края и блики чётче, альфа-канал не трогаем
+    r, g, b, al = c.split(); rgb = Image.merge('RGB', (r, g, b)).filter(ImageFilter.UnsharpMask(radius=1.1, percent=int(os.environ.get('PACK_SHARP', 70)), threshold=2)); c = Image.merge('RGBA', (*rgb.split(), al))
     info = {'file': 'assets/showroom/%s.webp' % name, 'w': c.width, 'h': c.height}
     if boxes:
         bx = boxes[0]; px = lambda u: (u * W - x0) / (x1 - x0); py = lambda v: (v * Hh - y0) / (y1 - y0)
         info['label'] = [round(px(bx[0]), 4), round(py(bx[1]), 4), round(px(bx[2]) - px(bx[0]), 4), round(py(bx[3]) - py(bx[1]), 4)]
-    c.save(os.path.join(OUT, name + '.webp'), 'WEBP', quality=90, method=6, alpha_quality=96)
+    c.save(os.path.join(OUT, name + '.webp'), 'WEBP', quality=92, method=6, alpha_quality=98)
     return info
 
 if __name__ == '__main__':
