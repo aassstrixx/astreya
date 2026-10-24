@@ -32,7 +32,7 @@
   function art(p) {
     const b = B[p.brand] || {}, st = A.bstyle ? A.bstyle(b) : '';
     /* на странице-витрине (extras.showroom) окно просмотра и сравнение показывают тот же 3D-макет упаковки, что и сцена */
-    if (D.extras.showroom && !(p.im && D.showroom && D.showroom.photos) && A.packOf && document.querySelector('[data-showroom]')) return '<div class="art art-render" role="img" aria-label="' + esc(b.name + ' — ' + p.name + ': иллюстрация упаковки') + '" style="' + esc(st) + '"><img src="' + esc(root() + A.packOf(p)) + '" alt="" style="--ph:' + ((A.packH ? A.packH(p) : 97) / 100) + '" decoding="async"></div>';
+    if (D.extras.showroom && !(p.im && D.showroom && D.showroom.photos) && A.packOf && document.querySelector('[data-showroom]')) return '<div class="art art-render" role="img" aria-label="' + esc(b.name + ' — ' + p.name + ': иллюстрация упаковки') + '" style="' + esc(st) + '"><img src="' + esc(A.assetUrl ? A.assetUrl(A.packOf(p)) : root() + A.packOf(p)) + '" alt="" style="--ph:' + ((A.packH ? A.packH(p) : 97) / 100) + '" decoding="async"></div>';
     if (p.im) return '<div class="art art-photo" style="' + esc(st) + '"><img src="' + esc(root() + p.im) + '" alt="' + esc(b.name + ' — ' + p.name) + '" loading="lazy" decoding="async"></div>';
     return '<div class="art" role="img" aria-label="' + esc(b.name + ' — ' + p.name + ': иллюстрация упаковки') + '" style="' + esc(st) + '"><div class="pk pk-' + esc(p.t || 'bottle') + '"><i class="sh"></i><i class="hd"></i><i class="cap"></i><i class="body"><b class="lbl"></b></i></div></div>';
   }

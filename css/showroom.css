@@ -1,13 +1,13 @@
 /* ============ Каталог-шоурум (data/redesign.json → extras.showroom; js/showroom.js; разметка — src/pages/showroom.js) ============
-   Центральная витрина — «элевация» бутика 1536×1024 из отдельных слоёв, а не картинка и не сетка карточек:
-     задний план  — стена со штукатуркой, свет из окна, левая арка (кольцо из камня и сатинового стекла), правая арка с глубокой нишей и стеклянными полками, растение (SVG-слои в src/partials/showroom/);
-     средний план — ступени и широкая платформа из травертина (HTML/CSS + текстура);
-     передний план — подиумы и товары (js/showroom.js): настоящее фото товара либо условный макет упаковки.
-   Интерфейс (панель фильтров, заголовок, категории, карточка товара, «Рекомендуем», преимущества) лежит поверх сцены.
-   На компьютере всё рисуется в «проектных» пикселях холста 1536×1024 и масштабируется целиком (--s задаёт js); на узких экранах холст превращается в окно-кадр сцены, а интерфейс идёт обычным потоком.
+   Центральная витрина — «элевация» бутика 1536×1024 из отдельных слоёв, а не одна картинка и не сетка карточек:
+     задний план  — стена и пол с окном и мягкими тенями, левая арка, правая арка с глубокой нишей, стеклянными полками и тёплой LED-подсветкой, растение (3D-рендеры слоёв: tools/showroom-assets/scene.py → assets/showroom/layer-*.webp);
+     средний план — платформа и ступени из травертина (слой dais того же рендера);
+     передний план — подиумы (спрайты травертинового цилиндра, тянутся под любой размер) и товары (js/showroom.js): 3D-макеты упаковки без текста либо, при extras.showroomPhotos, настоящие фото.
+   Интерфейс (панель фильтров, заголовок, категории, карточка товара, «Рекомендуем», преимущества) — стеклянные панели поверх сцены.
+   На компьютере всё рисуется в «проектных» пикселях холста 1536×1024 и масштабируется целиком (--s задаёт js); на узких экранах та же сцена показывается крупно с боковым сдвигом, интерфейс идёт обычным потоком.
    Двигаются только opacity и transform; никаких backdrop-filter, blend-режимов и тяжёлых фильтров на повторяющихся элементах. Вернуть прежний вид: extras.showroom = false в data/redesign.json и node tools/build.js. */
 
-[data-showroom]{--shw-glass:rgba(249,244,234,.82);--shw-glass2:rgba(244,236,222,.74);--shw-rim:rgba(255,255,255,.7);--shw-line:rgba(86,60,30,.14);--shw-ease:cubic-bezier(.16,1,.3,1);--shw-ink:var(--navy)}
+[data-showroom]{--shw-glass:rgba(249,244,234,.7);--shw-glass2:rgba(244,236,222,.6);--shw-rim:rgba(255,255,255,.7);--shw-line:rgba(86,60,30,.14);--shw-ease:cubic-bezier(.16,1,.3,1);--shw-ink:var(--navy)}
 .shw-wrap{max-width:none;padding:0}
 .shw-rest{max-width:var(--maxw);margin:0 auto;padding:0 var(--gut)}
 .shw{position:relative}
@@ -128,7 +128,7 @@
 .shw.has-sel .shw-head{opacity:0;visibility:hidden;pointer-events:none;transition:opacity .35s var(--ease),visibility 0s .35s}
 
 /* карточка товара: компактная панель; в покое — «акцент» справа вверху, при выборе приезжает к выбранному товару и раскрывается */
-.shw-card{position:absolute;left:1252px;top:142px;width:236px;z-index:30;padding:16px 18px 18px;border-radius:20px;background:linear-gradient(180deg,rgba(252,248,240,.9),rgba(246,239,226,.84));border:1px solid var(--shw-rim);box-shadow:0 1px 2px rgba(86,60,30,.08),0 24px 44px -26px rgba(86,60,30,.55);transform:translate(var(--cx,0px),var(--cy,0px));transition:transform .7s var(--shw-ease)}
+.shw-card{position:absolute;left:1252px;top:142px;width:236px;z-index:30;padding:16px 18px 18px;border-radius:20px;background:linear-gradient(180deg,rgba(252,248,240,.82),rgba(246,239,226,.74));border:1px solid var(--shw-rim);box-shadow:0 1px 2px rgba(86,60,30,.08),0 24px 44px -26px rgba(86,60,30,.55);transform:translate(var(--cx,0px),var(--cy,0px));transition:transform .7s var(--shw-ease)}
 .shw-card[hidden]{display:none}
 .shw-card .c-in{transition:opacity .22s ease,transform .3s var(--ease)}
 .shw-card.swap .c-in{opacity:0;transform:translateY(5px)}
@@ -187,7 +187,7 @@
 .shw-pop-w .shw-nav.prev{left:-46px}
 .shw-pop-w .shw-nav.next{right:-46px}
 .shw-pop-w .shw-nav.prev .ic{transform:scaleX(-1)}
-.shw-pc{position:relative;flex:0 0 172px;height:212px;scroll-snap-align:start;display:flex;flex-direction:column;border-radius:18px;background:linear-gradient(180deg,rgba(252,248,240,.9),rgba(246,239,226,.86));border:1px solid var(--shw-rim);box-shadow:0 1px 2px rgba(86,60,30,.07),0 20px 34px -26px rgba(86,60,30,.5);overflow:hidden;transition:box-shadow .35s var(--ease),transform .35s var(--ease)}
+.shw-pc{position:relative;flex:0 0 172px;height:206px;scroll-snap-align:start;display:flex;flex-direction:column;border-radius:18px;background:linear-gradient(180deg,rgba(252,248,240,.78),rgba(246,239,226,.7));border:1px solid var(--shw-rim);box-shadow:0 1px 2px rgba(86,60,30,.07),0 20px 34px -26px rgba(86,60,30,.5);overflow:hidden;transition:box-shadow .35s var(--ease),transform .35s var(--ease)}
 @media (hover:hover) and (pointer:fine){.shw-pc:hover{transform:translateY(-4px);box-shadow:0 1px 2px rgba(86,60,30,.08),0 26px 40px -24px rgba(86,60,30,.55)}}
 .shw-pc-art{position:relative;height:96px;display:grid;place-items:end center;padding:10px 0 0;background:linear-gradient(180deg,rgba(255,252,246,.65),rgba(236,224,204,.5))}
 .shw-pc-art::after{content:"";position:absolute;left:18%;right:18%;bottom:6px;height:8px;border-radius:50%;background:radial-gradient(closest-side,rgba(66,44,20,.34),rgba(66,44,20,0))}
@@ -285,8 +285,10 @@
   .shw-ph,.shw-sh,.shw-gl,.shw-nm,.shw-card,.shw-gh .ic,.shw-go,.shw-pc,.shw-help,.shw-reset .ic{transition:none!important}
   .shw-it:hover .shw-ph,.shw-it.is-sel .shw-ph,.shw-it:focus-visible .shw-ph{--ly:0px;--zm:1}
   .shw-pc:hover{transform:none}
+  [data-catalog] #cat-grid .pcard.is-hov .art-render img,[data-catalog] #cat-grid .pcard:has(:focus-visible) .art-render img{transform:translateX(-50%)}
   .shw-it,.shw-pd,.shw-spot,.shw-head,.shw-link{transition:opacity .25s ease!important}
 }
 html.lite .shw-ph{transition:none}
+html.lite [data-catalog] #cat-grid .pcard.is-hov .art-render img,html.lite [data-catalog] #cat-grid .pcard:has(:focus-visible) .art-render img{transform:translateX(-50%)}
 html:not(.js) .shw{display:none}
 @media print{.shw,.shw-adv,.shw-aside{display:none!important}}

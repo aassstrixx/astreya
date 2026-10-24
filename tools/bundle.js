@@ -16,7 +16,7 @@ module.exports = function bundle({pages, ctx, layout, root, out}) {
     .replace(/<link rel="stylesheet"[^>]*>\n?/g, '');
   /* картинки логотипов: в одном файле нет обычных путей, поэтому кладём их в отдельный JSON (data: URI, по одному разу) и подставляем роутером */
   const assets = {};
-  const inline = html => html.replace(/src="(?:\.\.\/)*(assets\/(?:brands|photos|teachers)\/[\w.-]+)(?:\?v=\w+)?"/g, (m, f) => {
+  const inline = html => html.replace(/src="(?:\.\.\/)*(assets\/(?:brands|photos|teachers|showroom)\/[\w.-]+)(?:\?v=\w+)?"/g, (m, f) => {
     if (!assets[f]) assets[f] = 'data:image/' + (f.endsWith('.svg') ? 'svg+xml' : f.split('.').pop()) + ';base64,' + fs.readFileSync(path.join(root, f)).toString('base64');
     return `data-asset="${f}"`;
   });
@@ -29,6 +29,9 @@ module.exports = function bundle({pages, ctx, layout, root, out}) {
   }
   /* фоновые вставки: текстуры (десктоп и телефон) кладём в тот же JSON с data:-адресами; js/backdrops.js берёт их из Astreya.assets */
   if (bdOn) for (const n of Object.keys(bd.textures)) for (const sfx of ['', '-m']) { const f = `assets/bg/${n}${sfx}.webp`; if (fs.existsSync(path.join(root, f))) assets[f] = 'data:image/webp;base64,' + fs.readFileSync(path.join(root, f)).toString('base64'); }
+  /* шоурум каталога: слои сцены, подиумы и макеты упаковки — в тот же JSON (js/showroom.js берёт их через Astreya.assetUrl); картинки из css (подиумы) — data:-адресами прямо в стилях */
+  const shwDir = path.join(root, 'assets/showroom'), shwOn = !!(rd && ctx.redesign.extras && ctx.redesign.extras.enabled && ctx.redesign.extras.gallery && ctx.redesign.extras.showroom);
+  if (shwOn && fs.existsSync(shwDir)) fs.readdirSync(shwDir).filter(f => /\.webp$/.test(f)).forEach(f => { assets['assets/showroom/' + f] = 'data:image/webp;base64,' + fs.readFileSync(path.join(shwDir, f)).toString('base64'); });
   const dataPages = {};
   for (const p of pages) {
     const m = p.html.match(/<main id="main"[^>]*>\n([\s\S]*?)\n<\/main>/);
@@ -36,6 +39,7 @@ module.exports = function bundle({pages, ctx, layout, root, out}) {
     dataPages[p.path] = {key: p.P.key, nav: p.P.nav || '', title: t.replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&#39;/g, "'"), main: inline(m[1])};
   }
   const css = ['base', 'components', 'pages', 'responsive', 'motion', ...(rd ? ['redesign'] : []), ...(bdOn ? ['backdrops'] : []), ...(exOn ? ['extras', ...(ctx.redesign.extras.gallery ? ['gallery'] : []), ...(ctx.redesign.extras.gallery && ctx.redesign.extras.showroom ? ['showroom'] : []), ...(kbOn && ctx.redesign.extras.navigator ? ['guide'] : []), ...(sxOn ? ['sales', 'sales-pages'] : [])] : []), ...(rd && ctx.redesign.jar && ctx.redesign.jar.enabled ? ['jar'] : [])].map(n => read(`css/${n}.css`)).join('\n');
+  const cssFull = css.replace(/url\(\.\.\/assets\/showroom\/([\w.-]+)\)/g, (m, f) => 'url(' + (assets['assets/showroom/' + f] || '') + ')');
   const js = 'window.__ASTREYA_BUNDLE = true;\ndocument.body.setAttribute(\'data-page\', \'home\');   /* тег <body> в автономной сборке не сохраняется: главной нужен свой data-page (от него зависят подсказки Стеллы, точки входа и т. п.); дальше его ведёт роутер */\n' + (rd ? "document.body.classList.add('rd');   /* тег <body> в автономной сборке не сохраняется, а правила слоя доработок привязаны к body.rd */\n" : '') + ['shared', 'data', ...(kbOn ? ['kb'] : []), 'core', 'motion', 'pages', 'hero-mark', ...(rd ? ['redesign'] : []), ...(bdOn ? ['backdrops'] : []), ...(exOn ? ['extras', 'explore', ...(ctx.redesign.extras.gallery ? ['gallery'] : []), ...(ctx.redesign.extras.gallery && ctx.redesign.extras.showroom ? ['showroom'] : []), ...(kbOn ? ['assistant-brain', 'stella-policy', 'assistant', ...(ctx.redesign.extras.navigator ? ['guide'] : [])] : []), ...(sxOn ? ['sales', 'sales-pages'] : [])] : []), ...(rd && ctx.redesign.jar && ctx.redesign.jar.enabled ? ['jar'] : [])].map(n => read(`js/${n}.js`)).join('\n;\n') + '\n;\n' + read('src/bundle-router.js');
   /* шрифты вшиваются в файл (base64): автономный файл не должен ни к кому обращаться */
   const fonts = '<style>\n' + read('css/fonts.css').replace(/url\(\.\.\/assets\/fonts\/([\w.-]+\.woff2)\)/g, (m, f) => 'url(data:font/woff2;base64,' + fs.readFileSync(path.join(root, 'assets', 'fonts', f)).toString('base64') + ')') + '\n</style>';
@@ -43,7 +47,7 @@ module.exports = function bundle({pages, ctx, layout, root, out}) {
   const json = JSON.stringify(dataPages).replace(/</g, '\\u003c').replace(/\u2028/g, '\\u2028').replace(/\u2029/g, '\\u2029');
   chrome = chrome.replace(/(<p class="ftr-note">)[^<]*(<\/p>)/, '$1Прототип сайта. Ассортимент, расписание, новости и пороги скидок — демонстрационные данные (placeholder); не является официальным сайтом ООО «Астрея».$2');
   const assetsJson = JSON.stringify(assets).replace(/</g, '\\u003c');
-  const html = `<title>Астрея</title>\n${early}\n${fonts}\n<style>\n${css}\n</style>\n${chrome}\n<script id="astreya-pages" type="application/json">${json}</script>\n<script id="astreya-assets" type="application/json">${assetsJson}</script>\n<script>\n${js.replace(/<\/script>/g, '<\\/script>')}\n</script>\n`;
+  const html = `<title>Астрея</title>\n${early}\n${fonts}\n<style>\n${cssFull}\n</style>\n${chrome}\n<script id="astreya-pages" type="application/json">${json}</script>\n<script id="astreya-assets" type="application/json">${assetsJson}</script>\n<script>\n${js.replace(/<\/script>/g, '<\\/script>')}\n</script>\n`;
   fs.writeFileSync(out, html);
   console.log(`Автономная сборка: ${out} (${(Buffer.byteLength(html) / 1024).toFixed(0)} КБ, страниц: ${pages.length})`);
 };
