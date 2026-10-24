@@ -293,27 +293,54 @@ def pod_sprites(sc, cam, f, meta):
     meta['pod'] = {'cap': 'assets/showroom/pod-cap.webp', 'body': 'assets/showroom/pod-body.webp', 'capRatio': round(cap.height / cap.width, 4), 'bodyRatio': round(body.height / body.width, 4), 'capW': cap.width, 'bodyH': body.height}
     print('pod', meta['pod'], flush=True)
 
+def fix_sliver(plate, px):
+    """тонкая светлая «щель» (≈9×70 px холста) на стыке вырезов стены и задней панели — лечим интерполяцией между соседними столбцами; px — пикселей картинки на пиксель холста"""
+    x0, x1, y0, y1 = int(1038.4 * px), int(1051.2 * px), int(102.4 * px), int(169.6 * px)
+    a, b = plate[y0:y1, x0 - 2], plate[y0:y1, x1 + 2]
+    t = np.linspace(0, 1, x1 - x0)[None, :, None]
+    plate[y0:y1, x0:x1] = a[:, None, :] * (1 - t) + b[:, None, :] * t
+    return plate
+
 def render_layers(sc, cam0, names):
-    cam = cam0
-    objs = [o for o in bpy.data.objects if 'grp' in o.keys() and o['grp'] != 'gobo' and o.type in ('MESH', 'CURVE')]
-    sc.render.film_transparent = True; meta = {}
-    mp = os.path.join(OUT, 'layers.json'); old = json.load(open(mp)) if os.path.exists(mp) else {}
-    for L in names:
-        for o in objs:
-            o.visible_camera = (o['grp'] == L); o.hide_render = (o['grp'] == 'pod' and L != 'pod')          # подиум-образец виден и отбрасывает тень только в своём проходе
-        if L == 'pod':                                                       # подиум снимается чуть сверху, чтобы верхняя грань читалась эллипсом (≈1:10)
-            cam2 = set_cam(sc, (0.0, -12.0, 1.52), pitch=11.0); cam = cam2
-        f = '/tmp/layer_%s.png' % L; sc.render.filepath = f; bpy.ops.render.render(write_still=True)
-        if L == 'pod': pod_sprites(sc, cam, f, meta); sc.camera = cam0; cam = cam0; continue
-        im = Image.open(f).convert('RGBA'); a = np.asarray(im.getchannel('A')); ys, xs = np.where(a > 3)
-        if not len(xs): print('layer', L, 'empty'); continue
-        x0, x1, y0, y1 = xs.min(), xs.max() + 1, ys.min(), ys.max() + 1; k = CANVAS[0] / im.width
-        if L == 'shell': x0, y0, x1, y1 = 0, 0, im.width, im.height
-        c = im.crop((x0, y0, x1, y1)); name = 'layer-%s.webp' % L
-        c.save(os.path.join(OUT, name), 'WEBP', quality=int(os.environ.get('SCENE_Q', 84)), method=6, alpha_quality=92)
-        old[L] = {'file': 'assets/showroom/' + name, 'x': round(x0 * k, 2), 'y': round(y0 * k, 2), 'w': round((x1 - x0) * k, 2), 'h': round((y1 - y0) * k, 2)}
-        print('layer', L, old[L], os.path.getsize(os.path.join(OUT, name)) // 1024, 'КБ', flush=True)
-    old['anchors'] = anchors(sc, cam); json.dump(old, open(mp, 'w'), indent=1, ensure_ascii=False)
+    """Слои из ОДНОЙ полной отрисовки R2 (все объекты, общий свет и тени) + чистая «подложка» R1 (только стена, пол и задник — без остальных объектов) + маски объектов по группам:
+       • слой группы = пиксели R2 с альфой-маской этой группы (объекты видны в своём слое, тени и отражения — настоящие);
+       • подложка = R2 вне объектов и R1 под ними (под любым слоем есть «что-то», швов и дыр нет)."""
+    objs = [o for o in bpy.data.objects if 'grp' in o.keys() and o['grp'] != 'gobo' and o.name not in ('cut1', 'cut2', 'clipb', 'stepl', 'stepr') and o.type in ('MESH', 'CURVE')]      # «резаки» булевых операций остаются скрытыми всегда
+    groups = ['niche', 'ring', 'dais', 'plant']; mp = os.path.join(OUT, 'layers.json'); old = json.load(open(mp)) if os.path.exists(mp) else {}
+    def show(gs):
+        for o in objs: o.hide_render = o['grp'] not in gs; o.visible_camera = True
+    sc.camera = cam0; sc.render.film_transparent = False
+    if 'shell' in names or any(g in names for g in groups):
+        show(['shell', 'niche', 'ring', 'dais', 'plant']); sc.render.filepath = '/tmp/R2.png'; bpy.ops.render.render(write_still=True)                      # полная сцена
+        show(['shell']); sc.render.filepath = '/tmp/R1.png'; bpy.ops.render.render(write_still=True)                                                          # подложка
+        ov = bpy.data.materials.new('mask'); ov.use_nodes = True; nt = ov.node_tree; nt.nodes.clear(); em = nt.nodes.new('ShaderNodeEmission'); em.inputs['Strength'].default_value = 1.0; out = nt.nodes.new('ShaderNodeOutputMaterial'); nt.links.new(em.outputs[0], out.inputs[0])
+        vl = bpy.context.view_layer; vl.material_override = ov; vt = sc.view_settings.view_transform; ex = sc.view_settings.exposure; sc.view_settings.view_transform = 'Standard'; sc.view_settings.exposure = 0; sc.view_settings.look = 'None'
+        bgn = sc.world.node_tree.nodes['Background']; w0 = bgn.inputs['Strength'].default_value; bgn.inputs['Strength'].default_value = 0.0; spp0 = sc.cycles.samples; sc.cycles.samples = 16; sc.cycles.use_denoising = False
+        for g in groups:
+            show([g]); sc.render.filepath = '/tmp/M_%s.png' % g; bpy.ops.render.render(write_still=True)
+        vl.material_override = None; sc.view_settings.view_transform = vt; sc.view_settings.exposure = ex; bgn.inputs['Strength'].default_value = w0; sc.cycles.samples = spp0; sc.cycles.use_denoising = True
+        R2 = np.asarray(Image.open('/tmp/R2.png').convert('RGB')).astype(np.float32); R1 = np.asarray(Image.open('/tmp/R1.png').convert('RGB')).astype(np.float32)
+        M = {g: np.asarray(Image.open('/tmp/M_%s.png' % g).convert('L')).astype(np.float32) / 255.0 for g in groups}
+        from scipy import ndimage as ndi
+        allm = np.maximum.reduce(list(M.values())); dil = ndi.maximum_filter(allm, size=2 * round(R2.shape[1] / 768) + 1); dil = ndi.gaussian_filter(dil, .8); dil = np.clip(dil * 1.6, 0, 1)
+        plate = R2 * (1 - dil[..., None]) + R1 * dil[..., None]
+        plate = fix_sliver(plate, R2.shape[1] / CANVAS[0])
+        k = CANVAS[0] / R2.shape[1]; q = int(os.environ.get('SCENE_Q', 84))
+        Image.fromarray(np.clip(plate, 0, 255).astype(np.uint8)).save(os.path.join(OUT, 'layer-shell.webp'), 'WEBP', quality=q, method=6)
+        old['shell'] = {'file': 'assets/showroom/layer-shell.webp', 'x': 0.0, 'y': 0.0, 'w': float(CANVAS[0]), 'h': float(CANVAS[1])}; print('layer shell', os.path.getsize(os.path.join(OUT, 'layer-shell.webp')) // 1024, 'КБ', flush=True)
+        for g in groups:
+            m = M[g]; ys, xs = np.where(m > .01)
+            if not len(xs): continue
+            x0, x1, y0, y1 = xs.min(), xs.max() + 1, ys.min(), ys.max() + 1
+            rgba = np.dstack([R2, m * 255.0])[y0:y1, x0:x1]; name = 'layer-%s.webp' % g
+            Image.fromarray(np.clip(rgba, 0, 255).astype(np.uint8), 'RGBA').save(os.path.join(OUT, name), 'WEBP', quality=q, method=6, alpha_quality=92)
+            old[g] = {'file': 'assets/showroom/' + name, 'x': round(x0 * k, 2), 'y': round(y0 * k, 2), 'w': round((x1 - x0) * k, 2), 'h': round((y1 - y0) * k, 2)}
+            print('layer', g, old[g], os.path.getsize(os.path.join(OUT, name)) // 1024, 'КБ', flush=True)
+    if 'pod' in names:
+        for o in objs: o.hide_render = o['grp'] != 'pod'; o.visible_camera = True
+        sc.render.film_transparent = True; cam2 = set_cam(sc, (0.0, -12.0, 1.52), pitch=11.0)                         # подиум снимается чуть сверху: верхняя грань читается эллипсом ≈1:10
+        sc.render.filepath = '/tmp/layer_pod.png'; bpy.ops.render.render(write_still=True); pod_sprites(sc, cam2, '/tmp/layer_pod.png', old); sc.camera = cam0
+    old['anchors'] = anchors(sc, cam0); json.dump(old, open(mp, 'w'), indent=1, ensure_ascii=False)
 
 def main():
     mode = sys.argv[1] if len(sys.argv) > 1 else 'all'

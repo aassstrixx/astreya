@@ -96,8 +96,8 @@
   }
 
   /* ---------- анимации (WAAPI; только opacity и transform) ---------- */
-  function run(el, kf, opt) { const a = el.animate(kf, opt); S.anims.add(a); a.onfinish = a.oncancel = () => S.anims.delete(a); return a; }
-  function stopAnims() { S.anims.forEach(a => { try { a.cancel(); } catch (e) {} }); S.anims.clear(); }
+  function run(el, kf, opt) { const a = el.animate(kf, opt); S.anims.add(a); a.onfinish = a.oncancel = () => { S && S.anims.delete(a); }; return a; }
+  function stopAnims() { if (!S) return; S.anims.forEach(a => { try { a.cancel(); } catch (e) {} }); S.anims.clear(); }
   const rel = el => { const r = el.getBoundingClientRect(), sr = S.rect, k = S.s || 1; return {l: (r.left - sr.left) / k, t: (r.top - sr.top) / k, w: r.width / k, h: r.height / k}; };
 
   function render(kind, dir) {
@@ -180,15 +180,15 @@
       '<button class="c-x" type="button" data-act="shw-close" aria-label="Закрыть карточку товара">' + (I.close || '×') + '</button>';
   }
   function paintCard(id, open) {
-    const c = S.card; if (!id || !P[id]) { c.hidden = true; c._id = null; return; }
+    const c = S.card; if (!id || !P[id]) { clearTimeout(c._t); c.classList.remove('swap'); c.hidden = true; c._id = null; return; }
     c.hidden = false; c.classList.toggle('is-open', !!open);
     if (c._id === id) return;
     const first = !c._id; clearTimeout(c._t);
-    if (first || mode() === 'off') { c.innerHTML = cardHTML(P[id]); c._id = id; return; }
+    if (first || mode() === 'off') { c.classList.remove('swap'); c.innerHTML = cardHTML(P[id]); c._id = id; return; }
     c.classList.add('swap'); c._id = id; c._t = setTimeout(() => { c.innerHTML = cardHTML(P[id]); c.classList.remove('swap'); }, 150);
   }
   function preview(id) { if (!S) return; clearTimeout(S.hovT); S.hov = id; if (!S.sel) paintCard(id, false); const rec = S.items.get(id), pd = rec && S.pods.find(q => q.g === rec.g); if (pd) pd.el.classList.add('is-lit'); }
-  function unpreview() { if (!S) return; clearTimeout(S.hovT); S.hovT = setTimeout(() => { S.hov = null; S.pods.forEach(q => q.el.classList.remove('is-lit')); if (!S.sel) paintCard(S.defId, false); }, 170); }
+  function unpreview() { if (!S) return; clearTimeout(S.hovT); S.hovT = setTimeout(() => { if (!S) return; S.hov = null; S.pods.forEach(q => q.el.classList.remove('is-lit')); if (!S.sel) paintCard(S.defId, false); }, 170); }
 
   /* ---------- выбор ---------- */
   function positionSel() {
@@ -196,7 +196,7 @@
     S.spot.style.transform = 'translate(' + it.cx.toFixed(1) + 'px,' + (it.t + it.h * .55).toFixed(1) + 'px)';
     if (S.stack) { S.card.style.setProperty('--cx', '0px'); S.card.style.setProperty('--cy', '0px'); if (S.panOn) S.view.scrollTo({left: Math.max(0, it.cx * S.s - S.view.clientWidth / 2), behavior: mode() === 'full' ? 'smooth' : 'auto'}); return; }
     /* карточка приезжает к товару: справа от него, а если места нет — слева; выноска идёт от края карточки к упаковке */
-    const cw = 270, right = it.l + it.w + 46 + cw < W0 - 18, x = right ? it.l + it.w + 46 : it.l - 46 - cw, y = Math.max(132, Math.min(470, it.t - 8));
+    const cw = 270, right = it.l + it.w + 46 + cw < W0 - 18, x = right ? it.l + it.w + 46 : it.l - 46 - cw, y = Math.max(132, Math.min(262, it.t - 8));                                    /* раскрытая карточка ≈470 px высотой: её низ не заходит на ряд «Рекомендуем» (с 743) */
     S.card.style.setProperty('--cx', (x - 1252).toFixed(1) + 'px'); S.card.style.setProperty('--cy', (y - 142).toFixed(1) + 'px');
     const x1 = right ? x : x + cw, y1 = y + 54, x2 = right ? it.l + it.w * .86 : it.l + it.w * .14, y2 = it.t + it.h * .34, len = Math.hypot(x2 - x1, y2 - y1), ang = Math.atan2(y2 - y1, x2 - x1) * 180 / Math.PI;
     S.link.style.width = len.toFixed(1) + 'px'; S.link.style.transform = 'translate(' + x1.toFixed(1) + 'px,' + y1.toFixed(1) + 'px) rotate(' + ang.toFixed(2) + 'deg)';
@@ -207,7 +207,7 @@
     S.items.forEach((rec, k) => { const on = k === id; rec.el.classList.toggle('is-sel', on); rec.el.setAttribute('aria-pressed', String(on)); });
     S.sel = id; S.root.classList.add('has-sel'); positionSel(); paintCard(id, true);
     track('showroom_select', {product: id});
-    if (S.stack && mode() !== 'off') setTimeout(() => { const r = S.card.getBoundingClientRect(); if (r.bottom > innerHeight - 8 || r.top < 70) S.card.scrollIntoView({behavior: 'smooth', block: 'nearest'}); }, 260);
+    if (S.stack && mode() !== 'off') setTimeout(() => { if (!S) return; const r = S.card.getBoundingClientRect(); if (r.bottom > innerHeight - 8 || r.top < 70) S.card.scrollIntoView({behavior: 'smooth', block: 'nearest'}); }, 260);
   }
   function clearSel(quiet) {
     if (!S) return; const was = S.sel; S.sel = null; S.root.classList.remove('has-sel');
@@ -289,12 +289,12 @@
     if (window.IntersectionObserver) { S.io = new IntersectionObserver(es => es.forEach(e => html.classList.toggle('shw-top', e.isIntersecting)), {rootMargin: '-84px 0px 0px 0px'}); S.io.observe(S.sent); } else html.classList.add('shw-top');
     S.link = document.createElement('i'); S.link.className = 'shw-link'; S.link.setAttribute('aria-hidden', 'true'); $('.shw-canvas', rootEl).appendChild(S.link);
     S.root.addEventListener('click', e => { if (S.sel && e.target.closest && !e.target.closest('.shw-it') && !e.target.closest('.shw-card') && e.target.closest('.shw-view')) clearSel(); });
-    S.view.addEventListener('scroll', () => { if (S.stack && !S.panRaf) S.panRaf = requestAnimationFrame(() => { S.panRaf = 0; updatePan(); }); }, {passive: true});
+    S.view.addEventListener('scroll', () => { if (S.stack && !S.panRaf) S.panRaf = requestAnimationFrame(() => { if (!S) return; S.panRaf = 0; updatePan(); }); }, {passive: true});
     S.stage.addEventListener('keydown', e => {
       if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return; const its = $$('.shw-it:not(.is-gone)', S.stage), i = its.indexOf(document.activeElement); if (i < 0) return;
       e.preventDefault(); const nx = its[i + (e.key === 'ArrowRight' ? 1 : -1)]; if (nx) nx.focus();
     });
-    S.ro = window.ResizeObserver ? new ResizeObserver(() => { if (S.rz) return; S.rz = requestAnimationFrame(() => { S.rz = 0; layout(); }); }) : null;
+    S.ro = window.ResizeObserver ? new ResizeObserver(() => { if (!S || S.rz) return; S.rz = requestAnimationFrame(() => { if (!S) return; S.rz = 0; layout(); }); }) : null;
     if (S.ro) S.ro.observe(S.room); else addEventListener('resize', () => layout());
     S.ids = visibleIds(); S.variant = variantOf();
     popInit();

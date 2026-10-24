@@ -97,7 +97,7 @@ const cfg = JSON.parse(fs.readFileSync(pth.join(ROOT, 'data/redesign.json'), 'ut
     const rvc = await p.$$eval('#recent .mini-p', e => e.map(a => a.getAttribute('data-product'))); ok(rvc.join() === 'br-clean,br-gel' && !rvc.includes('br-cream'), 'на странице товара показаны предыдущие, текущий — нет', rvc);
     ok(await p.$eval('#recent', e => { const m = document.querySelector('.cta-band'); return !m || e.compareDocumentPosition(m) & Node.DOCUMENT_POSITION_FOLLOWING; }), 'блок стоит перед завершающим призывом');
     ok(await p.$$eval('#recent .mini-p .art', e => e.length) === 2 && await p.$$eval('#recent .mini-p .t', e => e.every(t => t.textContent.trim().length > 3)), 'карточки с иллюстрацией, брендом и названием');
-    await p.goto(base + 'catalog.html'); await skipSplash(); ok(await p.$$eval('#recent .mini-p', e => e.length) === 3 && await p.$eval('#recent', e => e.compareDocumentPosition(document.getElementById('results')) & Node.DOCUMENT_POSITION_FOLLOWING), 'в каталоге — три просмотренных, над фильтрами');
+    await p.goto(base + 'catalog.html'); await skipSplash(); ok(await p.$$eval('#recent .mini-p', e => e.length) === 3 && await p.$eval('#recent', e => document.querySelector('[data-shw]') ? !!(e.compareDocumentPosition(document.querySelector('[data-shw]')) & Node.DOCUMENT_POSITION_PRECEDING) : !!(e.compareDocumentPosition(document.getElementById('results')) & Node.DOCUMENT_POSITION_FOLLOWING)), 'в каталоге — три просмотренных: над фильтрами (в шоуруме — сразу под сценой)');
     await click('#recent [data-act="rv-clear"]'); ok(await p.$('#recent') === null && (await rv()).length === 0, '«Очистить» убирает блок и стирает список');
 
     /* ---- «Заказать звонок» ---- */

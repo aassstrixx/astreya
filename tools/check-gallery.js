@@ -37,7 +37,7 @@ async function open(b, o, hooks) {
 }
 const vis = p => p.evaluate(sel => [...document.querySelectorAll(sel)].filter(c => !c.hidden).length, CARD);
 const names = p => p.evaluate(sel => [...document.querySelectorAll(sel)].filter(c => !c.hidden).map(c => c.getAttribute('data-name')), CARD);
-const toResults = async p => { await p.evaluate(() => document.querySelector('#results').scrollIntoView({block: 'start'})); await wait(1500); };
+const toResults = async p => { await p.evaluate(() => document.querySelector(document.querySelector('.shw') ? '#cat-grid' : '#results').scrollIntoView({block: 'start'})); await wait(1500); };
 const setSel = (p, id, v) => p.evaluate(([i, val]) => { const s = document.getElementById(i); s.value = val; s.dispatchEvent(new Event('change', {bubbles: true})); }, [id, v]);
 const overflowX = p => p.evaluate(() => document.documentElement.scrollWidth - innerWidth);
 const settled = p => p.evaluate(sel => [...document.querySelectorAll(sel)].filter(c => { if (c.hidden) return false; const r = c.getBoundingClientRect(); return r.bottom > 0 && r.top < innerHeight; }).every(c => { const cs = getComputedStyle(c); return c.classList.contains('in') && cs.opacity === '1' && (cs.transform === 'none' || cs.transform === 'matrix(1, 0, 0, 1, 0, 0)'); }), CARD);   // карточки в зоне видимости; ниже экрана их проявит прокрутка
@@ -58,7 +58,7 @@ let base = '';
   ok(L.pos === 'relative', 'сетка — точка отсчёта для перелётов и призраков (position:relative)');
   const other = await (async () => { const pp = await b.newPage(); await pp.route(/^https:\/\/fonts\./, r => r.abort()); await pp.goto(base + 'brands.html'); const r = await pp.evaluate(() => ({css: [...document.styleSheets].some(s => /gallery\.css/.test(s.href || '')), js: !!(window.Astreya && window.Astreya.gallery), scripts: [...document.scripts].some(s => /gallery\.js/.test(s.src))})); await pp.close(); return r; })();
   ok(!other.css && !other.js && !other.scripts, 'на других страницах (Бренды) файлы витрины не подключены', other);
-  await p.evaluate(() => document.querySelector('#results').scrollIntoView({block: 'start'}));
+  await p.evaluate(() => document.querySelector(document.querySelector('.shw') ? '#cat-grid' : '#results').scrollIntoView({block: 'start'}));
   for (let i = 0; i < 50 && !(await p.evaluate(sel => document.querySelectorAll(sel)[7].style.getPropertyValue('--rd') !== '', CARD)); i++) await wait(60);       // страница прокручивается плавно: задержки назначаются, когда карточки входят в экран
   const dl = await p.evaluate(sel => [...document.querySelectorAll(sel)].slice(0, 4).map(c => parseFloat(getComputedStyle(c).transitionDelay.split(',')[0]) || 0), CARD);
   ok(dl.every((d, i) => i === 0 || d >= dl[i - 1]) && dl[dl.length - 1] > dl[0] && dl[dl.length - 1] <= 0.5, 'каскад первой строки: задержки растут от карточки к карточке, но не дольше 0,5 с (' + dl.map(d => d.toFixed(2)).join(' · ') + ')', dl);
@@ -194,7 +194,7 @@ let base = '';
   const g3 = await p.evaluate(sel => { const c = document.querySelectorAll(sel)[3], g = document.querySelector('#cat-grid').getBoundingClientRect(); return {x: g.left + c.offsetLeft + c.offsetWidth / 2, y: g.top + c.offsetTop + 90, id: c.getAttribute('data-id')}; }, CARD);
   await p.mouse.move(g3.x - 30, g3.y); await p.mouse.move(g3.x, g3.y, {steps: 4}); await wait(500); await p.click(CARD + '.is-hov .qv-btn'); await wait(1000);
   const pName = await p.evaluate(() => document.querySelector('.qv-dlg h2').textContent), pBrand = await p.evaluate(() => document.querySelector('.qv-dlg .eyebrow').textContent.trim());
-  await p.click('[data-act="qv-stella"]'); const rep2 = await stellaReply(p, 20000); const um2 = await userMsgs(p);
+  await p.click('.qv-dlg [data-act="qv-stella"]'); const rep2 = await stellaReply(p, 20000); const um2 = await userMsgs(p);
   const last2 = um2[um2.length - 1] || '';
   ok(last2.indexOf(pName) >= 0 && last2.toLowerCase().indexOf(pBrand.toLowerCase()) >= 0 && /категория|назначение/.test(last2), 'от товара Стелле переданы название, бренд и данные о нём («' + last2.slice(0, 120) + '…»)', um2);
   ok(rep2.indexOf(pName) >= 0 && !/^Сочетания зависят/.test(rep2), 'Стелла рассказала именно об этом товаре по данным сайта («' + rep2.slice(0, 80) + '…»)', rep2.slice(0, 200));
