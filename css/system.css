@@ -202,12 +202,11 @@ html.js .shw-list .pcard.ax.reveal.in .pb>:nth-child(n+3){animation-delay:calc(v
 
 /* декор страницы под витриной: тени листьев и «чистая вода» (assets/bg) в тёплых тонах; у большого каталога — по краям, по обе стороны от колонки */
 body[data-page="catalog"] #main{overflow-x:clip}                       /* растения и вода заходят до краёв экрана: лишнего горизонтального скролла быть не должно */
-/* знак «Астреи» — основной векторный логотип без букв (гора, дуга, жемчужина; assets/bg/astreya-mark-bg.svg — те же контуры, только прозрачнее), тёмно-синий, крупно на заднем фоне за блоками «Выберите направление…» (справа) и «Бренды…» (слева); края мягко растворяются */
+/* знак «Астреи» — основной векторный логотип без букв (гора, дуга, жемчужина; assets/bg/astreya-mark-bg.svg — те же контуры, только прозрачнее), тёмно-синий, крупно на заднем фоне только за блоком «Выберите направление…» (справа); края мягко растворяются */
 .shw-dirs,.shw-brands,.shw-list{position:relative}
-.shw-dirs::after,.shw-brands::after{content:"";position:absolute;z-index:-1;width:min(1060px,66vw);aspect-ratio:412/396;background:url(../assets/bg/astreya-mark-bg.svg) 0 0/100% 100% no-repeat;pointer-events:none;-webkit-mask-image:radial-gradient(closest-side,#000 62%,transparent 100%);mask-image:radial-gradient(closest-side,#000 62%,transparent 100%)}
+.shw-dirs::after{content:"";position:absolute;z-index:-1;width:min(1060px,66vw);aspect-ratio:412/396;background:url(../assets/bg/astreya-mark-bg.svg) 0 0/100% 100% no-repeat;pointer-events:none;-webkit-mask-image:radial-gradient(closest-side,#000 62%,transparent 100%);mask-image:radial-gradient(closest-side,#000 62%,transparent 100%)}
 .shw-dirs::after{right:calc(50% - 50vw - 180px);top:-170px}
-.shw-brands::after{left:calc(50% - 50vw - 40px);bottom:-210px;width:min(900px,60vw)}
 /* большой список: за колонкой, по краям экрана, друг за другом идут разные текстуры (крем, плёнки, мазок, капля, вода…): у каждой мягкие края (маска в css/backdrops.css), соседние перекрываются, так что обрывов нет */
 .shw-list>.shw-list-bg{position:absolute;inset:0;z-index:-1;margin:0;pointer-events:none;clip-path:inset(0 -100vw)}
 .shw-list-bg>i[data-bd]{position:absolute;left:0;right:0;top:calc(var(--i) * 620px);height:960px}
-@media (max-width:700px){.shw-dirs::after,.shw-brands::after,.shw-list>.shw-list-bg{display:none}}
+@media (max-width:700px){.shw-dirs::after,.shw-list>.shw-list-bg{display:none}}
