@@ -1,20 +1,18 @@
 /* Каталог в виде шоурума (data/redesign.json → extras.showroom; стили — css/showroom.css, поведение — js/showroom.js).
-   Здесь — только разметка: панель фильтров слева, сцена (SVG-архитектура, подиумы и товары рисует js/showroom.js), «Рекомендуем», полоса преимуществ и — ниже — прежний полный список карточек.
+   Здесь — только разметка. Центральная витрина — это «элевация» бутика 1536×1024 из отдельных слоёв: задний план (стена, свет, арки, ниша с полками, растение), средний план (ступени, платформа),
+   передний план (подиумы и товары — их ставит js/showroom.js) и интерфейс поверх сцены (панель фильтров, заголовок, карточка товара, «Рекомендуем», преимущества).
    Всё, на что опирается остальной сайт (#results, #f-brand/#f-cat/#f-task/#f-kind/#f-sort, #cat-q, .cat-tile, #cat-grid .pcard, #res-count, #cat-reset, #cat-empty), остаётся на месте. */
 const fs = require('fs');
 const path = require('path');
 const S = require('../../js/shared.js');
 const {esc, I} = S;
 
-/* ---------- архитектура сцены: один SVG (холст 1000×680), только фон — подиумы и товары лежат поверх обычным HTML ----------
-   Исходник — src/partials/showroom-arch.svg (редактируется в любом векторном редакторе); сборка встраивает его в страницу каталога и добавляет служебные атрибуты. */
-const ARCH = fs.readFileSync(path.join(__dirname, '..', 'partials', 'showroom-arch.svg'), 'utf8');
-const arch = () => ARCH.replace(/^<\?xml[^>]*\?>\s*/, '').replace(/<!--[\s\S]*?-->\s*/g, '').trim()
-  .replace(/<svg\b([^>]*)>/, (m, a) => `<svg class="shw-arch" aria-hidden="true" focusable="false"${a.replace(/\sxmlns="[^"]*"/, '')}>`);
+
+/* карточки полного списка на этой странице показывают тот же 3D-макет упаковки, что и сцена (вместо CSS-иллюстрации); есть настоящее фото и включён extras.showroomPhotos — остаётся фото */
+const PK_TAIL = /<div class="art" role="img"([^>]*)><div class="pk[^"]*"><i class="sh"><\/i><i class="hd"><\/i><i class="cap"><\/i><i class="body"><b class="lbl"><\/b><\/i><\/div><\/div>/;
 
 module.exports = function showroom(ctx, C, P) {
   const {cats, tasks, kinds, brands, products, content} = ctx;
-  const site = ctx.site || {};
   const cnt = {brand: {}, cat: {}, task: {}, kind: {}};
   products.forEach(p => { cnt.brand[p.brand] = (cnt.brand[p.brand] || 0) + 1; cnt.cat[p.cat] = (cnt.cat[p.cat] || 0) + 1; cnt.kind[p.kind] = (cnt.kind[p.kind] || 0) + 1; p.tasks.forEach(t => { cnt.task[t] = (cnt.task[t] || 0) + 1; }); });
   const assistant = C.xon('assistant');
@@ -24,7 +22,7 @@ module.exports = function showroom(ctx, C, P) {
     ['task', 'Назначение', 'f-task', 'Любое назначение', tasks.map(t => [t.id, t.label])],
     ['kind', 'Тип продукта', 'f-kind', 'Все типы', kinds.map(k => [k.id, k.name])]
   ];
-  const LIM = 6;
+  const LIM = 5;
   const group = ([key, label, id, all, opts], i) => {
     const open = i < 2;
     return `<div class="shw-grp${open ? ' is-open' : ''}" data-key="${key}">
@@ -38,6 +36,8 @@ module.exports = function showroom(ctx, C, P) {
   };
   const sort = `<div class="fld shw-sort"><label for="f-sort">Сортировка</label><div class="sel"><select id="f-sort">${[['def', 'По умолчанию'], ['new', 'Сначала новинки'], ['az', 'По названию А–Я'], ['brand', 'По бренду']].map(([v, t]) => `<option value="${v}">${esc(t)}</option>`).join('')}</select>${I.chevron}</div></div>`;
   const reset = `<svg class="ic" viewBox="0 0 20 20" aria-hidden="true" focusable="false"><path d="M3.8 10a6.2 6.2 0 1 0 1.9-4.4M3.5 3.6v3.2h3.2"/></svg>`;
+
+  const renderArt = (html, p) => (p.image && C.xon('showroomPhotos')) ? html : html.replace(PK_TAIL, (m, a) => `<div class="art art-render" role="img"${a}><img src="${esc(C.u(P, S.packOf(p)))}" alt="" style="--ph:${S.packH(p) / 100}" loading="lazy" decoding="async"></div>`);
 
   const aside = `<aside class="shw-aside" aria-label="Фильтры каталога">
     <div class="toolbar shw-panel" id="results">
@@ -54,13 +54,17 @@ module.exports = function showroom(ctx, C, P) {
     </div>
   </aside>`;
 
+  /* картинка товара для сцены и ряда «Рекомендуем»: настоящее фото (поле image) либо — пока его нет — условный макет упаковки без текста */
+  const imgSrc = p => C.u(P, p.image && C.xon('showroomPhotos') ? p.image : S.packOf(p));
+  const imgTag = (p, cls) => `<img class="${cls}${p.image && C.xon('showroomPhotos') ? '' : ' is-mock'}" src="${esc(imgSrc(p))}" alt="" loading="lazy" decoding="async">`;
+
   /* «Рекомендуем» — товары с отметкой «В подборке» (featured) из админки; новинки — первыми */
   const feat = products.filter(p => p.featured).sort((a, b) => (b.isNew ? 1 : 0) - (a.isNew ? 1 : 0));
   const popCard = p => {
     const b = ctx.brandById[p.brand], k = ctx.kindById[p.kind];
     return `<article class="shw-pc" role="listitem" style="${S.bstyle(b)}" data-id="${p.id}">
       ${p.isNew ? '<span class="shw-pc-tag">Новинка</span>' : ''}
-      ${C.art(P, p)}
+      <div class="shw-pc-art" aria-hidden="true">${imgTag(p, 'shw-pc-img')}</div>
       <div class="shw-pc-b">
         <span class="shw-pc-br">${esc(b.name)}</span>
         <h3><a class="stretch" href="${C.purl(P, p)}" data-track="product_card_click" data-place="showroom_pop" data-product="${p.id}">${esc(p.name)}</a></h3>
@@ -70,7 +74,7 @@ module.exports = function showroom(ctx, C, P) {
     </article>`;
   };
   const pop = feat.length ? `<section class="shw-pop" aria-labelledby="shw-pop-t">
-      <div class="shw-pop-h"><h2 id="shw-pop-t">Рекомендуем</h2><a class="lnk" href="#shw-all" data-act="shw-all">Смотреть весь список ${I.arrow}</a></div>
+      <div class="shw-pop-h"><h2 id="shw-pop-t">Рекомендуем</h2><a class="lnk" href="#shw-all">Смотреть весь список ${I.arrow}</a></div>
       <div class="shw-pop-w">
         <button class="shw-nav prev" type="button" data-act="shw-pop-nav" data-dir="-1" aria-label="Назад" disabled>${I.arrow}</button>
         <div class="shw-pop-t" role="list" tabindex="0" aria-label="Рекомендуем">${feat.map(popCard).join('')}</div>
@@ -94,42 +98,52 @@ module.exports = function showroom(ctx, C, P) {
       }).join('')}
     </div>`;
 
+  /* слои сзади вперёд: стена и пол (с окном и тенями) → ниша со стеклянными полками и LED-подсветкой → арка → платформа и ступени из травертина → растение → (подиумы и товары: js/showroom.js) → интерфейс.
+     Каждый слой — отдельный 3D-рендер одной сцены с одной камеры (tools/showroom-assets/scene.py): тень и отражённый свет каждого объекта попадают во все слои, но сам объект виден только в своём. */
+  let LY = {}; try { LY = JSON.parse(fs.readFileSync(path.join(__dirname, '..', '..', 'assets', 'showroom', 'layers.json'), 'utf8')); } catch (e) {}
+  const layer = (k, extra = '') => LY[k] ? `<img class="shw-ly shw-ly-${k}" src="${C.u(P, LY[k].file)}" alt="" width="${Math.round(LY[k].w)}" height="${Math.round(LY[k].h)}" style="left:${LY[k].x}px;top:${LY[k].y}px;width:${LY[k].w}px;height:${LY[k].h}px" decoding="async"${extra}>` : '';
+  const world = `<div class="shw-plane shw-world" aria-hidden="true" data-shw-world>
+        ${layer('shell', ' fetchpriority="high"')}${layer('niche')}${layer('ring')}${layer('dais')}${layer('plant')}
+      </div>`;
+
   const scene = `<section class="shw" data-shw aria-label="Витрина каталога">
-      <div class="shw-room">
-        <div class="shw-top">
+      <div class="shw-room" data-shw-room>
+        <div class="shw-canvas">
+          <div class="shw-vw">
+            <div class="shw-view" data-shw-view>
+              ${world}
+              <div class="shw-plane shw-stage" data-shw-stage role="group" aria-label="Товары в экспозиции">
+                  <div class="shw-empty" data-shw-empty hidden><b>Ничего не нашлось</b><span>Измените запрос или сбросьте фильтры.</span><button class="btn btn-ghost btn-sm" type="button" data-act="cat-reset">Сбросить фильтры</button></div>
+              </div>
+            </div>
+            <button class="shw-pan prev" type="button" data-act="shw-pan" data-dir="-1" aria-label="Сдвинуть сцену влево" hidden>${I.arrow}</button>
+            <button class="shw-pan next" type="button" data-act="shw-pan" data-dir="1" aria-label="Сдвинуть сцену вправо" hidden>${I.arrow}</button>
+          </div>
+          ${aside}
           <div class="shw-head">${head}${pills}</div>
           <aside class="shw-card" data-shw-card aria-live="polite" aria-label="Выбранный товар"></aside>
-        </div>
-        <div class="shw-stage" data-shw-stage role="group" aria-label="Товары на подиумах">
-          ${arch()}
-          <div class="shw-base" aria-hidden="true"></div>
-          <div class="shw-empty" data-shw-empty hidden><b>Ничего не нашлось</b><span>Измените запрос или сбросите фильтры.</span><button class="btn btn-ghost btn-sm" type="button" data-act="cat-reset">Сбросить фильтры</button></div>
-        </div>
-        <div class="shw-pager" data-shw-pager hidden>
-          <button class="shw-nav prev" type="button" data-act="shw-page" data-dir="-1" aria-label="Предыдущие товары">${I.arrow}</button>
-          <span class="shw-pg" data-shw-pg aria-live="polite"></span>
-          <button class="shw-nav next" type="button" data-act="shw-page" data-dir="1" aria-label="Следующие товары">${I.arrow}</button>
+          <div class="shw-pager" data-shw-pager hidden>
+            <button class="shw-nav prev" type="button" data-act="shw-page" data-dir="-1" aria-label="Предыдущие товары">${I.arrow}</button>
+            <span class="shw-pg" data-shw-pg aria-live="polite"></span>
+            <button class="shw-nav next" type="button" data-act="shw-page" data-dir="1" aria-label="Следующие товары">${I.arrow}</button>
+          </div>
+          ${pop}
+          ${adv}
         </div>
       </div>
     </section>`;
 
   return `<div class="wrap shw-wrap" data-catalog data-showroom>
-    <div class="shw-layout">
-      ${aside}
-      <div class="shw-main">
-        ${scene}
-        ${pop}
-        ${adv}
-      </div>
-    </div>
-
+    ${scene}
+    <div class="shw-rest">
     <div data-kits-anchor></div>
     <div class="shw-all-h" id="shw-all"><span class="eyebrow">Полный список</span><h2>Весь ассортимент</h2></div>
     <div class="res-line"><span id="res-count" aria-live="polite">Найдено: ${products.length} из ${products.length}</span><button class="lnk" type="button" data-act="cat-reset" id="cat-reset" hidden>Сбросить фильтры</button></div>
     <h2 class="sr">Товары каталога</h2>
-    <div class="grid g4" id="cat-grid">${products.map((p, i) => C.productCard(P, p, i)).join('')}</div>
+    <div class="grid g4" id="cat-grid">${products.map((p, i) => renderArt(C.productCard(P, p, i), p)).join('')}</div>
     <div class="empty" id="cat-empty" hidden><b>Ничего не нашлось</b>Измените запрос или сбросьте фильтры.</div>
     ${C.noteBox(`${ctx.redesign && ctx.redesign.ui && ctx.redesign.ui.showDemoNotices === false ? '' : 'Ассортимент на этой странице демонстрационный (placeholder). '}Полный каталог, описания и документы пришлёт менеджер — оставьте заявку или спросите Стеллу.`)}
     <div style="height:clamp(60px,8vw,110px)"></div>
+    </div>
   </div>`;
 };

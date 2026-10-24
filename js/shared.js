@@ -55,6 +55,11 @@
   const tokens = s => norm(s).split(/[^a-zа-я0-9]+/).filter(Boolean).map(stem);
 
   /* ---------- стили бренда (переменные CSS) ---------- */
+  /* условное изображение упаковки для витрины-шоурума, пока у товара нет настоящего фото: 3D-рендер нейтральной упаковки без текста (tools/showroom-assets/packs.py) */
+  const PACKS = {tube: 'pack-tube', bottle: 'pack-bottle', pump: 'pack-pump', dropper: 'pack-dropper', jar: 'pack-jar', box: 'pack-box', device: 'pack-device'}, NOIR = {bottle: 1, pump: 1, dropper: 1};
+  const packOf = p => { const t = p.type || p.t || 'bottle', k = PACKS[t] || PACKS.bottle; let h = 7; for (let i = 0; i < p.id.length; i++) h = (h * 31 + p.id.charCodeAt(i)) >>> 0; return 'assets/showroom/' + k + (NOIR[t] && h % 3 === 0 ? '-noir' : '') + '.webp'; };
+  const PACK_H = {bottle: 97, pump: 100, dropper: 83, tube: 87, jar: 49, box: 50, device: 97};                 // высота макета в рамке карточки/окна просмотра, % (jar и box — низкие)
+  const packH = p => PACK_H[p.type || p.t] || 97;
   const bstyle = b => `--c1:${b.c1};--c2:${b.c2};--ink:${b.ink};--cc:${b.c1};--cs:color-mix(in srgb,${b.c1} 58%,transparent)`;
 
   /* ---------- шаблон формы (модальное окно и встроенные формы на страницах) ---------- */
@@ -120,5 +125,5 @@
     </form>`;
   }
 
-  return {esc, I, MON_S, MON_G, dparts, rub, plural, norm, stem, tokens, bstyle, SPECS, FIELDS, FORM_TYPES, formHTML};
+  return {esc, I, MON_S, MON_G, dparts, rub, plural, norm, stem, tokens, bstyle, packOf, packH, SPECS, FIELDS, FORM_TYPES, formHTML};
 });

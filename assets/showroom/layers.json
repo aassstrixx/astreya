@@ -1,0 +1,78 @@
+{
+ "shell": {
+  "file": "assets/showroom/layer-shell.webp",
+  "x": 0.0,
+  "y": 0.0,
+  "w": 1536.0,
+  "h": 1024.0
+ },
+ "niche": {
+  "file": "assets/showroom/layer-niche.webp",
+  "x": 1042.0,
+  "y": 0.0,
+  "w": 494.0,
+  "h": 676.0
+ },
+ "ring": {
+  "file": "assets/showroom/layer-ring.webp",
+  "x": 282.0,
+  "y": 0.0,
+  "w": 310.0,
+  "h": 682.0
+ },
+ "plant": {
+  "file": "assets/showroom/layer-plant.webp",
+  "x": 246.0,
+  "y": 156.0,
+  "w": 1290.0,
+  "h": 462.0
+ },
+ "dais": {
+  "file": "assets/showroom/layer-dais.webp",
+  "x": 100.0,
+  "y": 568.0,
+  "w": 1436.0,
+  "h": 240.0
+ },
+ "anchors": {
+  "dais": {
+   "cx": 1003.2,
+   "cy": 660.5,
+   "rx": 740.5,
+   "ry": 48.5
+  },
+  "stepl": {
+   "cx": 402.5,
+   "cy": 579.3,
+   "rx": 299.4,
+   "ry": 9.2
+  },
+  "stepr": {
+   "cx": 1585.2,
+   "cy": 607.7,
+   "rx": 439.1,
+   "ry": 18.1
+  },
+  "shelves": [
+   {
+    "y": 549.1,
+    "x0": 1100.4,
+    "x1": 1540.9
+   },
+   {
+    "y": 425.4,
+    "x0": 1100.4,
+    "x1": 1540.9
+   },
+   {
+    "y": 301.8,
+    "x0": 1100.4,
+    "x1": 1540.9
+   }
+  ],
+  "vase": {
+   "x": 409.3,
+   "y": 578.1
+  }
+ }
+}

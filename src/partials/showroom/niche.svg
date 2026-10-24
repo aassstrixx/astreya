@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Слой «правая арка с нишей»: глубокая ниша со стеклянными полками, подсветкой и мягким фокусом (холст 1536×1024). Товары на полки ставит сайт (js/showroom.js, координаты полок: y=335, 475, 612). -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1536 1024" preserveAspectRatio="none">
+<defs>
+  <clipPath id="nvIn"><path d="M1138 1024V700A192 637 0 0 1 1522 700V1024Z"/></clipPath>
+  <linearGradient id="nvBack" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#fbf4e7"/><stop offset=".55" stop-color="#f0e4cf"/><stop offset="1" stop-color="#e2d2b8"/></linearGradient>
+  <linearGradient id="nvRecess" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#d9c6a6"/><stop offset=".25" stop-color="#efe3cc"/><stop offset="1" stop-color="#e9dcc4"/></linearGradient>
+  <linearGradient id="nvLeftShade" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#6e4f26" stop-opacity=".38"/><stop offset="1" stop-color="#6e4f26" stop-opacity="0"/></linearGradient>
+  <linearGradient id="nvTopShade" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#6e4f26" stop-opacity=".34"/><stop offset="1" stop-color="#6e4f26" stop-opacity="0"/></linearGradient>
+  <linearGradient id="nvShelf" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fffdf6" stop-opacity=".95"/><stop offset=".5" stop-color="#f5ead6" stop-opacity=".8"/><stop offset="1" stop-color="#d9c8a8" stop-opacity=".85"/></linearGradient>
+  <linearGradient id="nvLed" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#fff3d2" stop-opacity=".2"/><stop offset=".3" stop-color="#fff6dc" stop-opacity=".95"/><stop offset="1" stop-color="#fff3d2" stop-opacity=".85"/></linearGradient>
+  <linearGradient id="nvBand" gradientUnits="userSpaceOnUse" x1="1090" y1="40" x2="1500" y2="700"><stop offset="0" stop-color="#fffaf0" stop-opacity=".95"/><stop offset=".45" stop-color="#f1e6d1" stop-opacity=".82"/><stop offset="1" stop-color="#d6c19c" stop-opacity=".95"/></linearGradient>
+  <linearGradient id="nvSheen" gradientUnits="userSpaceOnUse" x1="1100" y1="260" x2="1420" y2="60"><stop offset="0" stop-color="#fff" stop-opacity="0"/><stop offset=".5" stop-color="#fff" stop-opacity=".6"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></linearGradient>
+  <linearGradient id="nvFade" gradientUnits="userSpaceOnUse" x1="0" y1="610" x2="0" y2="700"><stop offset="0" stop-color="#fff"/><stop offset="1" stop-color="#000"/></linearGradient>
+  <mask id="nvBandMask"><rect width="1536" height="610" fill="#fff"/><rect y="610" width="1536" height="90" fill="url(#nvFade)"/></mask>
+  <linearGradient id="nvGlow" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffdd9c" stop-opacity=".8"/><stop offset=".45" stop-color="#ffe7bc" stop-opacity=".32"/><stop offset="1" stop-color="#ffe9c4" stop-opacity="0"/></linearGradient>
+  <filter id="nvBlur" x="-10%" y="-10%" width="120%" height="120%"><feGaussianBlur stdDeviation="2.4"/></filter>
+  <filter id="nvBlur2" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="7"/></filter>
+  <filter id="nvBlur3" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="14"/></filter>
+</defs>
+<g clip-path="url(#nvIn)">
+  <rect x="1100" y="0" width="460" height="1024" fill="url(#nvBack)"/>
+  <!-- вторая, более глубокая ниша -->
+  <path d="M1190 1024V690A150 560 0 0 1 1490 690V1024Z" fill="url(#nvRecess)" opacity=".9"/>
+  <path d="M1190 1024V690A150 560 0 0 1 1490 690" fill="none" stroke="#ffe0a0" stroke-opacity=".85" stroke-width="7" filter="url(#nvBlur)"/>
+  <path d="M1190 1024V690A150 560 0 0 1 1490 690" fill="none" stroke="#fff6dc" stroke-opacity=".95" stroke-width="2"/>
+  <path d="M1182 1024V690A158 568 0 0 1 1498 690" fill="none" stroke="#8b6c40" stroke-opacity=".22" stroke-width="8" filter="url(#nvBlur)"/>
+  <!-- дальний план: безымянные сосуды в мягком фокусе -->
+  <g filter="url(#nvBlur2)" opacity=".85">
+    <rect x="1236" y="236" width="40" height="99" rx="10" fill="#fffaf0" fill-opacity=".85"/>
+    <rect x="1304" y="270" width="64" height="65" rx="12" fill="#f4e9d6"/>
+    <rect x="1420" y="238" width="34" height="97" rx="10" fill="#fffaf0" fill-opacity=".8"/>
+    <rect x="1392" y="372" width="44" height="103" rx="12" fill="#3a3025" fill-opacity=".8"/>
+    <rect x="1230" y="404" width="58" height="71" rx="10" fill="#fffdf6" fill-opacity=".8"/>
+    <rect x="1316" y="528" width="70" height="84" rx="12" fill="#fffaf0" fill-opacity=".85"/>
+  </g>
+  <!-- тени откосов -->
+  <rect x="1138" y="0" width="90" height="1024" fill="url(#nvLeftShade)"/>
+  <rect x="1138" y="0" width="400" height="190" fill="url(#nvTopShade)"/>
+  <!-- стеклянные полки с тёплой подсветкой: свет ленты стекает по задней стене -->
+  <g>
+    <rect x="1150" y="344" width="390" height="104" fill="url(#nvGlow)"/>
+    <rect x="1160" y="344" width="380" height="16" fill="#6e4f26" fill-opacity=".2" filter="url(#nvBlur2)"/>
+    <rect x="1150" y="335" width="390" height="9" fill="url(#nvShelf)"/>
+    <rect x="1150" y="335" width="390" height="1.6" fill="#fff"/>
+    <rect x="1160" y="344" width="380" height="5" fill="#ffd98f" fill-opacity=".9" filter="url(#nvBlur)"/>
+    <rect x="1160" y="344" width="380" height="2" fill="#fff6dc"/>
+  </g>
+  <g>
+    <rect x="1150" y="484" width="390" height="104" fill="url(#nvGlow)"/>
+    <rect x="1160" y="484" width="380" height="16" fill="#6e4f26" fill-opacity=".2" filter="url(#nvBlur2)"/>
+    <rect x="1150" y="475" width="390" height="9" fill="url(#nvShelf)"/>
+    <rect x="1150" y="475" width="390" height="1.6" fill="#fff"/>
+    <rect x="1160" y="484" width="380" height="5" fill="#ffd98f" fill-opacity=".9" filter="url(#nvBlur)"/>
+    <rect x="1160" y="484" width="380" height="2" fill="#fff6dc"/>
+  </g>
+  <g>
+    <rect x="1150" y="621" width="390" height="104" fill="url(#nvGlow)"/>
+    <rect x="1160" y="621" width="380" height="16" fill="#6e4f26" fill-opacity=".2" filter="url(#nvBlur2)"/>
+    <rect x="1150" y="612" width="390" height="10" fill="url(#nvShelf)"/>
+    <rect x="1150" y="612" width="390" height="1.6" fill="#fff"/>
+    <rect x="1160" y="622" width="380" height="5" fill="#ffd98f" fill-opacity=".9" filter="url(#nvBlur)"/>
+    <rect x="1160" y="622" width="380" height="2" fill="#fff6dc"/>
+  </g>
+  <!-- свет из ниши на пол -->
+  <ellipse cx="1330" cy="700" rx="190" ry="40" fill="#fff8e6" opacity=".5" filter="url(#nvBlur3)"/>
+</g>
+<!-- кольцо арки -->
+<g mask="url(#nvBandMask)">
+  <path d="M1130 700A215 660 0 0 1 1545 700" transform="translate(30 16)" fill="none" stroke="#7a5a30" stroke-opacity=".3" stroke-width="54" filter="url(#nvBlur3)"/>
+  <path d="M1115 1024V700A215 660 0 0 1 1545 700" fill="none" stroke="url(#nvBand)" stroke-width="46"/>
+  <path d="M1115 1024V700A215 660 0 0 1 1545 700" fill="none" stroke="url(#nvSheen)" stroke-width="46"/>
+  <path d="M1092 1024V700A238 683 0 0 1 1545 677" fill="none" stroke="#fff" stroke-opacity=".7" stroke-width="2.4"/>
+  <path d="M1138 1024V700A192 637 0 0 1 1530 700" fill="none" stroke="#8b6c40" stroke-opacity=".34" stroke-width="3"/>
+  <path d="M1133 1024V700A197 642 0 0 1 1530 690" fill="none" stroke="#fff" stroke-opacity=".5" stroke-width="1.4"/>
+</g>
+</svg>
