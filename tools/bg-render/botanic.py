@@ -1,7 +1,7 @@
 """Фоновая текстура «чистая вода»: водные блики-каустики на тёплой песочной глади (тени растения — в plant.py).
 Чистый numpy + Pillow (секунды, Blender не нужен). Рисуются на белом: страница накладывает их умножением (mix-blend-mode:multiply), поэтому белое фон не меняет,
 а блики ложатся тёплым песочным тоном в палитре сайта.
-Запуск: python3 botanic.py [out=../../assets/bg] [seed=7]  → water.webp (+ water-m.webp для телефона) и water-a.webp (с прозрачностью)"""
+Запуск: python3 botanic.py [out=../../assets/bg] [seed=7]  → water.webp (+ water-m.webp для телефона)"""
 import math, os, random, sys
 import numpy as np
 from PIL import Image, ImageDraw, ImageFilter
@@ -15,12 +15,6 @@ for a in sys.argv[1:]:
 rnd = random.Random(SEED); nrng = np.random.default_rng(SEED)
 
 def smooth(t): t = np.clip(t, 0, 1); return t * t * (3 - 2 * t)
-def save_alpha(name, rgb, alpha):
-    """Версия с прозрачностью для блоков, где нельзя полагаться на multiply (большой каталог): цвет + альфа, лёгкий WebP."""
-    a = np.clip(alpha, 0, 1)[..., None]; col = np.where(a > 0, rgb, 255)
-    im = Image.fromarray(np.dstack([np.clip(col, 0, 255), a * 255]).astype(np.uint8), 'RGBA').resize((1200, 825), Image.LANCZOS)
-    im.save(os.path.join(OUT, name + '.webp'), quality=80, method=6, alpha_quality=55)
-    print(name, os.path.getsize(os.path.join(OUT, name + '.webp')) // 1024, 'КБ')
 def save(name, rgb, focus):
     im = Image.fromarray(np.clip(rgb, 0, 255).astype(np.uint8), 'RGB')
     im.save(os.path.join(OUT, name + '.webp'), quality=92, method=6)
@@ -45,12 +39,11 @@ def water():
     big = vnoise(3, 3, SEED + 99)
     depth = .55 + .45 * big
     base = np.array([226, 216, 198], float)
-    side = smooth(xx / W * 1.15 - .08) * smooth((1.04 - yy / H) / .6)
+    side = smooth(xx / W * 1.5 - .1) * smooth((1.04 - yy / H) / .6) * smooth(yy / (.3 * H))      # края плавно растворяются (справа картинка уходит за край экрана)
     f = np.clip(side[..., None] * depth[..., None], 0, 1)
     field = 255 - (255 - base) * f
     rgb = field + (255 - field) * (web[..., None] * .96)
     save('water', rgb, (.7, .5))
-    save_alpha('water-a', np.broadcast_to(base, (H, W, 3)), f[..., 0] * (1 - web * .96))
 
 if __name__ == '__main__':
     os.makedirs(OUT, exist_ok=True)

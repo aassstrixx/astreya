@@ -67,6 +67,7 @@
   }
   function begin(grid, cards) {
     const m = mode(), g0 = grid.getBoundingClientRect(), first = new Map();
+    cards.forEach(c => c.classList.add('rv-done'));                                       // входная анимация больших карточек (css/system.css) — только при первом показе при прокрутке, не при смене фильтров
     cards.forEach(c => { c.classList.remove('is-hov'); if (c.hidden) return; const r = c.getBoundingClientRect(); first.set(c, {x: r.left - g0.left, y: r.top - g0.top, w: r.width, h: r.height, vis: near(r)}); });   // положения — вместе с незаконченными анимациями
     stopAll();
     return {

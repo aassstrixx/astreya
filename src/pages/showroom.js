@@ -191,6 +191,7 @@ module.exports = function showroom(ctx, C, P) {
     ${brandsBlock}
     <details class="shw-list" id="shw-all" data-shw-list>
       <summary><span class="shw-list-t"><span class="eyebrow">Полный список</span><b>Весь ассортимент списком</b></span><em class="shw-list-n" id="shw-list-n">${products.length}</em><span class="shw-list-i" aria-hidden="true">${I.chevron}</span></summary>
+      <div class="shw-list-bg" aria-hidden="true"><i data-bd="cream" data-bd-pos="r" data-bd-o="9" style="--i:0"></i><i data-bd="film" data-bd-pos="l" data-bd-o="9" style="--i:1"></i><i data-bd="smear" data-bd-pos="r" data-bd-o="8" style="--i:2"></i><i data-bd="pipette" data-bd-pos="l" data-bd-o="8" style="--i:3"></i><i data-bd="swatch" data-bd-pos="r" data-bd-o="8" style="--i:4"></i><i data-bd="water" data-bd-pos="l" data-bd-o="8" style="--i:5"></i><i data-bd="molecules" data-bd-pos="r" data-bd-o="7" style="--i:6"></i><i data-bd="ribbon" data-bd-pos="l" data-bd-o="9" style="--i:7"></i><i data-bd="cream" data-bd-pos="r" data-bd-o="9" style="--i:8"></i></div>
       <div class="res-line"><span id="res-count" aria-live="polite">Найдено: ${products.length} из ${products.length}</span><button class="lnk" type="button" data-act="cat-reset" id="cat-reset" hidden>Сбросить фильтры</button></div>
       <h2 class="sr">Товары каталога</h2>
       <div class="grid g4" id="cat-grid">${products.map((p, i) => C.productCardX(P, p, i)).join('')}</div>
