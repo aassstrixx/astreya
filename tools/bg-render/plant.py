@@ -91,6 +91,9 @@ if __name__ == '__main__':
     os.makedirs(os.path.dirname(os.path.abspath(RAW)) or '.', exist_ok=True)
     build(); A = render(RAW)
     ap = A[..., 3]; cp = A[..., :3] * 255
+    yy, xx = np.mgrid[0:H, 0:W]                                                    # кадр режет ветки сверху, снизу и слева: края мягко растворяются (справа ветки уходят за край экрана)
+    sm = lambda t: (lambda u: u * u * (3 - 2 * u))(np.clip(t, 0, 1))
+    ap = ap * sm(xx / (.2 * W)) * sm(yy / (.16 * H)) * sm((H - 1 - yy) / (.16 * H))
     g = cp.mean(-1, keepdims=True); cp = g + (cp - g) * .82                      # чуть приглушить: листья в палитре витрины (тёплая дымка)
     cp = cp * .94 + np.array([222, 210, 190]) * .06
     rgba = np.dstack([np.clip(cp, 0, 255), np.clip(ap * 255, 0, 255)]).astype(np.uint8)
