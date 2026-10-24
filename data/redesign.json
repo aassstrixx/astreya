@@ -431,7 +431,7 @@
         {"sel": "section.rd-wall", "tex": "cream", "pos": "c", "o": 8},
         {"sel": "section.rd-final", "tex": "smear", "pos": "c", "o": 8}
       ]},
-      "catalog": {"top": {"tex": "cream", "pos": "tr"}, "mid": [{"sel": "section.shw-tasks", "tex": "water", "pos": "l", "o": 8}, {"sel": "section.shw-brands", "tex": "silk", "pos": "l", "o": 6}], "end": {"tex": "silk", "pos": "br"}},
+      "catalog": {"top": {"tex": "cream", "pos": "tr"}, "mid": [{"sel": "section.shw-tasks", "tex": "ribbon", "pos": "c", "o": 10}, {"sel": "section.shw-brands", "tex": "silk", "pos": "l", "o": 6}], "end": {"tex": "silk", "pos": "br"}},
       "brands": {"top": {"tex": "smear", "pos": "tr"}, "end": {"tex": "film", "pos": "br"}},
       "brand": {"variants": [
         {"top": {"tex": "smear", "pos": "tr"}, "mid": [{"sel": "section.sec", "n": 2, "tex": "silk", "pos": "l", "o": 6}], "end": {"tex": "cream", "pos": "b"}},
