@@ -64,6 +64,14 @@ module.exports = function components(ctx) {
   </article>`;
   };
 
+  /* единая дизайн-система (extras.showroom): карточка и крупная витрина товара — «экспозиция» вместо голубого полукруга. Своего фото нет (или фото не включены) — 3D-макет упаковки без текста; есть фото — остаётся как есть */
+  const PK_TAIL = /<div class="art" role="img"([^>]*)><div class="pk[^"]*"><i class="sh"><\/i><i class="hd"><\/i><i class="cap"><\/i><i class="body"><b class="lbl"><\/b><\/i><\/div><\/div>/;
+  const unesc = x => x.replace(/&amp;/g, '&').replace(/&quot;/g, '"').replace(/&#39;/g, "'");
+  const mockOn = p => xon('showroom') && !(p.image && xon('showroomPhotos'));
+  const stageOf = (P, p, o) => art(P, p).replace(PK_TAIL, (m, a) => S.stageArt(p, u(P, S.packOf(p)), Object.assign({aria: unesc((/aria-label="([^"]*)"/.exec(a) || [])[1] || ''), style: unesc((/style="([^"]*)"/.exec(a) || [])[1] || '')}, o)));
+  const productCardX = (P, p, i = 0) => { const html = productCard(P, p, i); return mockOn(p) ? html.replace(PK_TAIL, (m, a) => S.stageArt(p, u(P, S.packOf(p)), {aria: unesc((/aria-label="([^"]*)"/.exec(a) || [])[1] || ''), style: unesc((/style="([^"]*)"/.exec(a) || [])[1] || '')})).replace('class="card hov pcard reveal"', 'class="card hov pcard ax reveal"') : html; };
+  const heroArt = (P, p) => mockOn(p) ? stageOf(P, p, {pod: true, eager: true, cls: 'ax-hero', scale: .72}) : art(P, p);
+
   /* ---------------- мероприятие ---------------- */
   const eventCard = (P, e) => {
     const b = brandById[e.brand], d = dparts(e.date);
@@ -217,6 +225,6 @@ module.exports = function components(ctx) {
 
   const noteBox = html => `<div class="note">${I.info}<span>${html}</span></div>`;
 
-  return {xon, closingCfg, cdSlot, callbackBtn, u, purl, burl, eurl, nurl, art, tag, tasksLine, timeTag, chip, crumbs, pageHead, secHead, lnk, partnerBtn, productCard, eventCard, eventRow,
+  return {xon, closingCfg, cdSlot, callbackBtn, u, purl, burl, eurl, nurl, art, tag, tasksLine, timeTag, chip, crumbs, pageHead, secHead, lnk, partnerBtn, productCard, productCardX, heroArt, eventCard, eventRow,
     newsCard, newsStyle, articleCard, logoMark, heroLogo, marqueeLogo, slotLogo, sibLogo, brandCardHome, brandCardList, advantageCards, officeCard, ctaLogo, ctaBand, noteBox, FMT_KEY};
 };

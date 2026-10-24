@@ -29,10 +29,10 @@
   const plural = A.plural || ((n, a, b, c) => c);
 
   /* иллюстрация товара — та же разметка, что у карточек на сервере (src/components.js → art) */
-  function art(p) {
+  function art(p, big) {
     const b = B[p.brand] || {}, st = A.bstyle ? A.bstyle(b) : '';
     /* на странице-витрине (extras.showroom) окно просмотра и сравнение показывают тот же 3D-макет упаковки, что и сцена */
-    if (D.extras.showroom && !(p.im && D.showroom && D.showroom.photos) && A.packOf && document.querySelector('[data-showroom]')) return '<div class="art art-render" role="img" aria-label="' + esc(b.name + ' — ' + p.name + ': иллюстрация упаковки') + '" style="' + esc(st) + '"><img src="' + esc(A.assetUrl ? A.assetUrl(A.packOf(p)) : root() + A.packOf(p)) + '" alt="" style="--ph:' + ((A.packH ? A.packH(p) : 97) / 100) + '" decoding="async"></div>';
+    if (D.extras.showroom && !(p.im && D.showroom && D.showroom.photos) && A.packOf && A.stageArt && document.querySelector('[data-showroom]')) return A.stageArt({id: p.id, t: p.t}, A.assetUrl ? A.assetUrl(A.packOf(p)) : root() + A.packOf(p), {aria: b.name + ' — ' + p.name + ': иллюстрация упаковки', style: st, pod: big ? true : undefined, eager: true});
     if (p.im) return '<div class="art art-photo" style="' + esc(st) + '"><img src="' + esc(root() + p.im) + '" alt="' + esc(b.name + ' — ' + p.name) + '" loading="lazy" decoding="async"></div>';
     return '<div class="art" role="img" aria-label="' + esc(b.name + ' — ' + p.name + ': иллюстрация упаковки') + '" style="' + esc(st) + '"><div class="pk pk-' + esc(p.t || 'bottle') + '"><i class="sh"></i><i class="hd"></i><i class="cap"></i><i class="body"><b class="lbl"></b></i></div></div>';
   }
@@ -47,7 +47,7 @@
     if (x.volume) rows.push(['Объём', esc(x.volume)]); if (x.sku) rows.push(['Артикул', esc(x.sku)]);
     if (x.actives) rows.push(['Активные компоненты', esc(x.actives.join(', '))]); if (x.indications) rows.push(['Показания', esc(x.indications.join(', '))]); if (x.usage) rows.push(['Способ применения', esc(x.usage)]);
     const inList = X.requestList && rlHas(id), inCmp = X.compare && cmpGet().indexOf(id) >= 0, many = qvIds.length > 1;
-    return '<div class="qv-art">' + (p.n ? '<span class="newtag">Новинка</span>' : '') + art(p) + '</div><div class="qv-info">' +
+    return '<div class="qv-art">' + (p.n ? '<span class="newtag">Новинка</span>' : '') + art(p, true) + '</div><div class="qv-info">' +
       '<span class="eyebrow in">' + esc(brandName(id)) + '</span><h2 id="m-title">' + esc(p.name) + '</h2><p class="qv-d">' + esc(p.d || '') + '</p>' +
       '<div class="tasks-line">' + (p.ts || []).map(t => '<span class="tag blue">' + esc(TASK[t] || t) + '</span>').join('') + '</div>' +
       '<dl class="qv-spec">' + rows.filter(r => r[1]).map(r => '<div><dt>' + r[0] + '</dt><dd>' + r[1] + '</dd></div>').join('') + '</dl>' +

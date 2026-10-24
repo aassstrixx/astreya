@@ -70,7 +70,7 @@ const J = f => JSON.parse(fs.readFileSync(path.join(ROOT, f), 'utf8'));
   const b = await pw.chromium.launch(CHROME ? {executablePath: CHROME} : {});
   const base = 'http://127.0.0.1:' + S.port + '/';
   const mk = async o => {
-    o = o || {}; const ctx = await b.newContext({viewport: o.vw ? {width: o.vw, height: o.vh || 800} : o.mobile ? {width: 390, height: 844} : {width: 1280, height: 860}, isMobile: !!o.mobile, hasTouch: !!o.mobile, locale: 'ru-RU', permissions: ['clipboard-read', 'clipboard-write']});
+    o = o || {}; const ctx = await b.newContext({viewport: o.vw ? {width: o.vw, height: o.vh || 800} : o.mobile ? {width: 390, height: 844} : {width: 1280, height: 860}, isMobile: !!o.mobile, hasTouch: !!o.mobile, locale: 'ru-RU', permissions: ['clipboard-read', 'clipboard-write']}); await ctx.addInitScript(() => { document.addEventListener('DOMContentLoaded', () => { const d = document.querySelector('[data-shw-list]'); if (d) d.open = true; }); });
     await ctx.route(/^https:\/\/fonts\./, r => r.abort()); await ctx.route('**/astreya/**', r => r.continue({url: r.request().url().replace('/astreya/', '/')}));          // 404.html ссылается на ресурсы от корня сайта (/astreya/…)
     await ctx.addInitScript(sp => { window.ASTREYA_MOTION_SPEED = sp; }, o.speed || 8);
     if (o.bar) await ctx.route('**/js/data.js*', async r => { const res = await r.fetch(); r.fulfill({response: res, body: (await res.text()).replace('"bar":{"enabled":false,', '"bar":{"enabled":true,')}); });          // панель выключена в данных; для проверки её кода включаем только в этой копии

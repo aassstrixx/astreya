@@ -8,31 +8,31 @@
  },
  "niche": {
   "file": "assets/showroom/layer-niche.webp",
-  "x": 1043.2,
+  "x": 1043.43,
   "y": 0.0,
-  "w": 492.8,
-  "h": 674.4
+  "w": 492.57,
+  "h": 673.71
  },
  "ring": {
   "file": "assets/showroom/layer-ring.webp",
-  "x": 284.0,
+  "x": 284.57,
   "y": 0.0,
-  "w": 306.4,
-  "h": 680.8
+  "w": 305.71,
+  "h": 680.57
  },
  "plant": {
   "file": "assets/showroom/layer-plant.webp",
-  "x": 247.2,
-  "y": 155.2,
-  "w": 1288.8,
-  "h": 461.6
+  "x": 246.29,
+  "y": 154.86,
+  "w": 1289.71,
+  "h": 461.71
  },
  "dais": {
   "file": "assets/showroom/layer-dais.webp",
-  "x": 101.6,
-  "y": 569.6,
-  "w": 1434.4,
-  "h": 237.6
+  "x": 101.71,
+  "y": 569.14,
+  "w": 1434.29,
+  "h": 237.71
  },
  "anchors": {
   "dais": {
@@ -78,9 +78,9 @@
  "pod": {
   "cap": "assets/showroom/pod-cap.webp",
   "body": "assets/showroom/pod-body.webp",
-  "capRatio": 0.1024,
-  "bodyRatio": 0.506,
-  "capW": 1045,
-  "bodyH": 510
+  "capRatio": 0.1018,
+  "bodyRatio": 0.5064,
+  "capW": 1463,
+  "bodyH": 714
  }
 }

@@ -21,7 +21,7 @@ module.exports = function product(ctx, C, P, p) {
     <section class="p-top">
       ${C.crumbs(P, [['Главная', 'index.html'], ['Каталог', 'catalog.html'], [b.name, `brands/${b.id}.html`], [p.name, `products/${p.slug}.html`]])}
       <div class="p-hero">
-        <div class="p-visual reveal">${p.isNew ? '<span class="newtag">Новинка</span>' : ''}${C.art(P, p)}</div>
+        <div class="p-visual reveal">${p.isNew ? '<span class="newtag">Новинка</span>' : ''}${C.heroArt(P, p)}</div>
         <div class="p-info">
           <div class="tasks-line reveal">${C.tag(b.name, 'blue')}${C.tag(c.name)}${k ? C.tag(k.name) : ''}</div>
           <h1 class="reveal">${esc(p.name)}</h1>
@@ -63,7 +63,7 @@ module.exports = function product(ctx, C, P, p) {
 
     ${related.length ? `<section class="sec tint"><div class="wrap">
       ${C.secHead('Сопутствующие товары', 'С этим продуктом смотрят', C.lnk(`${C.u(P, 'catalog.html')}?brand=${b.id}`, `Все ${esc(b.name)}`))}
-      <div class="grid g4">${related.map((q, i) => C.productCard(P, q, i)).join('')}</div>
+      <div class="grid g4">${related.map((q, i) => C.productCardX(P, q, i)).join('')}</div>
     </div></section>` : ''}
 
     ${C.ctaBand(P, 'product-cta', C.closingCfg('product') && Object.assign({}, C.closingCfg('product'), {vars: {product: p.name, ref: p.id}}))}`;

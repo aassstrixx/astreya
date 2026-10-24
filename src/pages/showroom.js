@@ -37,7 +37,7 @@ module.exports = function showroom(ctx, C, P) {
   const sort = `<div class="fld shw-sort"><label for="f-sort">Сортировка</label><div class="sel"><select id="f-sort">${[['def', 'По умолчанию'], ['new', 'Сначала новинки'], ['az', 'По названию А–Я'], ['brand', 'По бренду']].map(([v, t]) => `<option value="${v}">${esc(t)}</option>`).join('')}</select>${I.chevron}</div></div>`;
   const reset = `<svg class="ic" viewBox="0 0 20 20" aria-hidden="true" focusable="false"><path d="M3.8 10a6.2 6.2 0 1 0 1.9-4.4M3.5 3.6v3.2h3.2"/></svg>`;
 
-  const renderArt = (html, p) => (p.image && C.xon('showroomPhotos')) ? html : html.replace(PK_TAIL, (m, a) => `<div class="art art-render" role="img"${a}><img src="${esc(C.u(P, S.packOf(p)))}" alt="" style="--ph:${S.packH(p) / 100}" loading="lazy" decoding="async"></div>`);
+  const renderArt = (html, p) => html;                                                                        // карточки полного списка собирает C.productCardX (src/components.js): мини-экспозиция вместо голубого полукруга
 
   const aside = `<aside class="shw-aside" aria-label="Фильтры каталога">
     <div class="toolbar shw-panel" id="results">
@@ -128,20 +128,70 @@ module.exports = function showroom(ctx, C, P) {
             <button class="shw-nav next" type="button" data-act="shw-page" data-dir="1" aria-label="Следующие товары">${I.arrow}</button>
           </div>
           ${pop}
-          ${adv}
         </div>
       </div>
+    </section>`;
+
+  /* «Выберите направление ухода»: по плитке-экспозиции на каждую существующую категорию — стена и пол той же сцены, до трёх товаров категории на подиумах разной высоты (новинки и рекомендованные первыми).
+     Клик включает категорию и возвращает к главной экспозиции, которая перестраивается под неё. Категории и товары — из данных каталога, ничего не придумано. */
+  const dirTile = (c, ci) => {
+    const list = products.filter(p => p.cat === c.id).sort((x, y) => (y.featured ? 2 : 0) + (y.isNew ? 1 : 0) - ((x.featured ? 2 : 0) + (x.isNew ? 1 : 0))).slice(0, 3);
+    const n = products.filter(p => p.cat === c.id).length, bs = [...new Set(products.filter(p => p.cat === c.id).map(p => (ctx.brandById[p.brand] || {}).name).filter(Boolean))];
+    const lay = list.length === 1 ? [[50, 22, 1]] : list.length === 2 ? [[30, 18, .88], [70, 22, 1]] : [[17, 14, .8], [50, 21, 1], [83, 16, .86]];
+    const body = list.map((p, i) => { const [x, ph, k] = lay[i], B0 = 9, pk = Math.round((B0 + ph * .79) * 10) / 10, th = Math.round(S.packH(p) * .5 * k * 10) / 10;
+      return `<i class="ax-pod" style="--pr:.42;left:${x}%;bottom:${B0}%;height:${ph}%" aria-hidden="true"></i><img src="${esc(C.u(P, S.packOf(p)))}" alt="" style="left:${x}%;bottom:${pk}%;height:${th}%" loading="lazy" decoding="async">`; }).join('');
+    return `<button class="shw-dir reveal" type="button" data-act="shw-to" data-key="cat" data-id="${c.id}" aria-pressed="false" aria-label="${esc(c.name)}: ${n} ${S.plural(n, 'позиция', 'позиции', 'позиций')}">
+      <span class="ax-stage shw-dir-st" data-w="${(ci * 5 + 1) % 6}" aria-hidden="true">${body}</span>
+      <span class="shw-dir-cap"><b>${esc(c.name)}</b><em>${n} ${S.plural(n, 'позиция', 'позиции', 'позиций')}${bs.length ? ' · ' + esc(bs.slice(0, 3).join(', ')) : ''}</em></span>
+    </button>`;
+  };
+  /* «Подбор по задаче» — восемь задач из каталога с их пояснениями (data/catalog.json → tasks[].note) и числом товаров; клик перестраивает витрину под задачу */
+  const taskTile = t => {
+    const n = cnt.task[t.id] || 0, bs = (t.brands || []).map(id => ctx.brandById[id]).filter(Boolean).slice(0, 4);
+    return `<button class="shw-task reveal" type="button" data-act="shw-to" data-key="task" data-id="${t.id}" aria-pressed="false">
+      <span class="shw-task-n">${n} ${S.plural(n, 'товар', 'товара', 'товаров')}</span>
+      <b>${esc(t.label)}</b>
+      <span class="shw-task-d">${esc(t.note || '')}</span>
+      <span class="shw-task-f"><span class="shw-task-b">${bs.map(b => `<i style="background:${esc(b.c1)}" title="${esc(b.name)}"></i>`).join('')}</span><span class="shw-task-go">Показать в витрине ${I.arrow}</span></span>
+    </button>`;
+  };
+  const tasksBlock = `<section class="shw-tasks" aria-labelledby="shw-tasks-h">
+      <div class="shw-all-h"><span class="eyebrow">Подбор</span><h2 id="shw-tasks-h">Подберите по задаче</h2><p class="shw-dirs-lead">Выберите задачу кабинета или домашнего ухода — витрина выше соберёт подходящие продукты.</p></div>
+      <div class="shw-task-grid">${tasks.map(taskTile).join('')}</div>
+    </section>`;
+  /* «Бренды в галерее» — логотипы, страна и направления из данных брендов */
+  const brandTile = b => {
+    const n = cnt.brand[b.id] || 0;
+    return `<button class="shw-brand reveal" type="button" data-act="shw-to" data-key="brand" data-id="${b.id}" aria-pressed="false" style="${S.bstyle(b)}">
+      <span class="shw-brand-l">${b.logo ? `<img src="${esc(C.u(P, b.logo))}" alt="" loading="lazy" decoding="async">` : `<b>${esc(b.name)}</b>`}</span>
+      <span class="shw-brand-c">${esc(b.group || '')} · ${n} ${S.plural(n, 'товар', 'товара', 'товаров')}</span>
+      <span class="shw-brand-t">${esc(b.tag || '')}</span>
+    </button>`;
+  };
+  const brandsBlock = `<section class="shw-brands" aria-labelledby="shw-brands-h">
+      <div class="shw-all-h"><span class="eyebrow">Партнёры</span><h2 id="shw-brands-h">Бренды в галерее</h2></div>
+      <div class="shw-brand-grid">${brands.map(brandTile).join('')}</div>
+    </section>`;
+  const dirs = `<section class="shw-dirs" id="shw-dirs" aria-labelledby="shw-dirs-h">
+      <div class="shw-all-h"><span class="eyebrow">Коллекции</span><h2 id="shw-dirs-h">Выберите направление ухода</h2><p class="shw-dirs-lead">Каждая коллекция — отдельная экспозиция в той же галерее. Нажмите, и главная витрина переставится под выбранное направление.</p></div>
+      <div class="shw-dir-grid" role="group" aria-label="Направления ухода">${cats.map(dirTile).join('')}</div>
     </section>`;
 
   return `<div class="wrap shw-wrap" data-catalog data-showroom>
     ${scene}
     <div class="shw-rest">
+    ${adv}
     <div data-kits-anchor></div>
-    <div class="shw-all-h" id="shw-all"><span class="eyebrow">Полный список</span><h2>Весь ассортимент</h2></div>
-    <div class="res-line"><span id="res-count" aria-live="polite">Найдено: ${products.length} из ${products.length}</span><button class="lnk" type="button" data-act="cat-reset" id="cat-reset" hidden>Сбросить фильтры</button></div>
-    <h2 class="sr">Товары каталога</h2>
-    <div class="grid g4" id="cat-grid">${products.map((p, i) => renderArt(C.productCard(P, p, i), p)).join('')}</div>
-    <div class="empty" id="cat-empty" hidden><b>Ничего не нашлось</b>Измените запрос или сбросьте фильтры.</div>
+    ${tasksBlock}
+    ${dirs}
+    ${brandsBlock}
+    <details class="shw-list" id="shw-all" data-shw-list>
+      <summary><span class="shw-list-t"><span class="eyebrow">Полный список</span><b>Весь ассортимент списком</b></span><em class="shw-list-n" id="shw-list-n">${products.length}</em><span class="shw-list-i" aria-hidden="true">${I.chevron}</span></summary>
+      <div class="res-line"><span id="res-count" aria-live="polite">Найдено: ${products.length} из ${products.length}</span><button class="lnk" type="button" data-act="cat-reset" id="cat-reset" hidden>Сбросить фильтры</button></div>
+      <h2 class="sr">Товары каталога</h2>
+      <div class="grid g4" id="cat-grid">${products.map((p, i) => C.productCardX(P, p, i)).join('')}</div>
+      <div class="empty" id="cat-empty" hidden><b>Ничего не нашлось</b>Измените запрос или сбросьте фильтры.</div>
+    </details>
     ${C.noteBox(`${ctx.redesign && ctx.redesign.ui && ctx.redesign.ui.showDemoNotices === false ? '' : 'Ассортимент на этой странице демонстрационный (placeholder). '}Полный каталог, описания и документы пришлёт менеджер — оставьте заявку или спросите Стеллу.`)}
     <div style="height:clamp(60px,8vw,110px)"></div>
     </div>

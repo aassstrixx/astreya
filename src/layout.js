@@ -31,7 +31,8 @@ module.exports = function layout(ctx, C) {
   const SHR = !!(EX && ctx.redesign.extras.showroom);                                                  // «Витрина-шоурум» (css/showroom.css, js/showroom.js): extras.showroom — только каталог; требует витрину-галерею (extras.gallery)
   const GAL = !!(EX && ctx.redesign.extras.gallery);                                                   // витрина каталога (css/gallery.css, js/gallery.js): extras.gallery — подключается только странице каталога
   const withGal = (list, P, after) => GAL && P.key === 'catalog' && list.indexOf(after) >= 0 ? [...list.slice(0, list.indexOf(after) + 1), 'gallery', ...(SHR ? ['showroom'] : []), ...list.slice(list.indexOf(after) + 1)] : list;
-  const pageCss = P => withGal(jarCfg && P.key === 'home' ? [...cssList, 'jar'] : cssList, P, 'extras'), pageJs = P => withGal(jarCfg && P.key === 'home' ? [...jsList, 'jar'] : jsList, P, 'explore');
+  const withSys = (list, P) => SHR && (P.key === 'catalog' || P.key === 'product') ? [...list, 'system'] : list;                // единая дизайн-система (css/system.css): каталог и страницы товаров
+  const pageCss = P => withSys(withGal(jarCfg && P.key === 'home' ? [...cssList, 'jar'] : cssList, P, 'extras'), P), pageJs = P => withGal(jarCfg && P.key === 'home' ? [...jsList, 'jar'] : jsList, P, 'explore');
   /* первый кадр вступления грузим сразу (до скриптов): иначе после заставки баночка появится с задержкой */
   const jarPreload = P => jarCfg && P.key === 'home' ? ['(min-aspect-ratio: 11/10)', '(max-aspect-ratio: 11/10)'].map((m, i) => `<link rel="preload" as="image" href="${u(P, (i ? jarCfg.mobile : jarCfg.desktop) + '000.' + jarCfg.ext)}${ver}" media="${m}">`).join('\n') : '';
   const base = site.url.replace(/\/?$/, '/');

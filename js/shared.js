@@ -60,6 +60,17 @@
   const packOf = p => { const t = p.type || p.t || 'bottle', k = PACKS[t] || PACKS.bottle; let h = 7; for (let i = 0; i < p.id.length; i++) h = (h * 31 + p.id.charCodeAt(i)) >>> 0; return 'assets/showroom/' + k + (NOIR[t] && h % 3 === 0 ? '-noir' : '') + '.webp'; };
   const PACK_H = {bottle: 97, pump: 100, dropper: 83, tube: 87, jar: 49, box: 50, device: 97};                 // высота макета в рамке карточки/окна просмотра, % (jar и box — низкие)
   const packH = p => PACK_H[p.type || p.t] || 97;
+  /* «витрина-миниатюра» (единая система ASTREYA, css/system.css): упаковка — 3D-макет либо настоящее фото — стоит на стене и полу той же сцены, что и главная экспозиция.
+     Подиум (травертиновый цилиндр) — только у низких и мелких форм (баночка, коробка, пипетка), где он собирает композицию; высокие флаконы и тубы стоят на каменном полу с контактной тенью.
+     Все размеры — в долях высоты кадра, поэтому один и тот же узел работает в карточке, плитке категории, окне просмотра и на странице товара. */
+  const POD_TYPES = {jar: 1, box: 1, dropper: 1};
+  const PACK_AR = {tube: .279, bottle: .307, pump: .326, dropper: .295, jar: 1.19, box: 1.413, device: .3};          // ширина/высота макета (assets/showroom/packs.json)
+  const wallOf = p => { let h = 11; for (let i = 0; i < p.id.length; i++) h = (h * 33 + p.id.charCodeAt(i)) >>> 0; return h % 6; };
+  const stageArt = (p, src, o) => {
+    o = o || {}; const t = p.type || p.t || 'bottle', pod = o.pod != null ? !!o.pod : !!POD_TYPES[t], ph = packH(p) / 100, th = Math.round(ph * (o.scale || .62) * 1000) / 10, pk = pod ? 23.4 : 16, sr = Math.max(2.4, Math.round(th * (PACK_AR[t] || .3) * .95 / 6.5 * 10) / 10);
+    return '<div class="art art-render ax-stage' + (pod ? ' has-pod' : '') + (o.cls ? ' ' + o.cls : '') + '" data-w="' + wallOf(p) + '" role="img" aria-label="' + esc(o.aria || '') + '"' + (o.style ? ' style="' + esc(o.style) + '"' : '') + '>' +
+      (pod ? '<i class="ax-pod" aria-hidden="true"></i>' : '') + '<i class="ax-sh" aria-hidden="true"></i><img src="' + esc(src) + '" alt="" style="--ph:' + ph + ';--th:' + th + '%;--pk:' + pk + '%;--sr:' + sr + '"' + (o.eager ? '' : ' loading="lazy"') + ' decoding="async"></div>';
+  };
   const bstyle = b => `--c1:${b.c1};--c2:${b.c2};--ink:${b.ink};--cc:${b.c1};--cs:color-mix(in srgb,${b.c1} 58%,transparent)`;
 
   /* ---------- шаблон формы (модальное окно и встроенные формы на страницах) ---------- */
@@ -125,5 +136,5 @@
     </form>`;
   }
 
-  return {esc, I, MON_S, MON_G, dparts, rub, plural, norm, stem, tokens, bstyle, packOf, packH, SPECS, FIELDS, FORM_TYPES, formHTML};
+  return {esc, I, MON_S, MON_G, dparts, rub, plural, norm, stem, tokens, bstyle, packOf, packH, stageArt, SPECS, FIELDS, FORM_TYPES, formHTML};
 });

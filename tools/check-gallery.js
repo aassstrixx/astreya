@@ -28,7 +28,7 @@ const EXP = {all: PR.length, sun: count(p => p.cat === 'sun'), heliocare: count(
 
 async function open(b, o, hooks) {
   const ctx = await b.newContext(Object.assign({deviceScaleFactor: 1, locale: 'ru-RU'}, o)); await ctx.route(/^https:\/\/fonts\./, r => r.abort());
-  await ctx.addInitScript(() => { try { localStorage.setItem('astreya:consent', JSON.stringify({v: 1, a: false, t: Date.now()})); } catch (e) {} });
+  await ctx.addInitScript(() => { try { localStorage.setItem('astreya:consent', JSON.stringify({v: 1, a: false, t: Date.now()})); } catch (e) {} }); await ctx.addInitScript(() => { document.addEventListener('DOMContentLoaded', () => { const d = document.querySelector('[data-shw-list]'); if (d) d.open = true; }); });                // на странице-витрине полный список свёрнут: сетка нужна этим проверкам
   const p = await ctx.newPage(); p.errs = []; p.on('pageerror', e => p.errs.push(String(e.message || e).slice(0, 200))); p.on('console', m => { if (m.type() === 'error') p.errs.push('console: ' + m.text().slice(0, 160)); });
   await p.route('**/api/assistant/status', r => r.fulfill({status: 200, contentType: 'application/json', body: '{"ai":false}'}));
   if (hooks && hooks.before) await hooks.before(p, ctx);
@@ -75,7 +75,7 @@ let base = '';
   ok(H && H.n === 1, 'наведение: подсвечена ровно одна карточка', H);
   ok(H && H.ty < -4.5 && H.ty > -7, 'карточка приподнимается примерно на 6 px (' + (H && H.ty.toFixed(1)) + ')', H);
   ok(H && H.pk > 1.05 && H.pk < 1.1, 'упаковка плавно увеличивается (×' + (H && H.pk.toFixed(2)) + ')', H);
-  ok(H && /rgba?\(11, 26, 51, 0\.4/.test(H.sh) && H.glow === '1' && H.qv === '1' && /%/.test(H.mx), 'тень глубже, на фоне упаковки появляется свет за курсором, «Быстрый просмотр» проявляется', H);
+  ok(H && /rgba?\((11, 26, 51|86, 60, 30), 0\.(4|5)/.test(H.sh) && H.glow === '1' && H.qv === '1' && /%/.test(H.mx), 'тень глубже, на фоне упаковки появляется свет за курсором, «Быстрый просмотр» проявляется', H);
   ok(await overflowX(p) <= 1, 'при наведении горизонтальной прокрутки нет');
   await p.mouse.move(geo.x, geo.bottom - 2); await wait(300);                              // нижняя кромка: приподнятая карточка уходит из-под курсора — в обычном :hover это даёт «дребезг»
   const tops = []; let hovOn = 0; for (let i = 0; i < 24; i++) { const r = await p.evaluate(sel => { const c = document.querySelectorAll(sel)[1]; return [c.classList.contains('is-hov'), c.getBoundingClientRect().top]; }, CARD); hovOn += r[0] ? 1 : 0; tops.push(r[1]); await wait(50); }

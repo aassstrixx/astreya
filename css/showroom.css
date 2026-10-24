@@ -11,11 +11,11 @@
 .shw-wrap{max-width:none;padding:0}
 .shw-rest{max-width:var(--maxw);margin:0 auto;padding:0 var(--gut)}
 .shw{position:relative}
-.shw-room{position:relative;width:100%;max-width:1760px;margin:0 auto;aspect-ratio:1536/1024;overflow:hidden;background:#e8dbc5;--s:.9}
+.shw-room{position:relative;width:100%;max-width:2400px;margin:0 auto;aspect-ratio:1536/1024;overflow:hidden;background:#e8dbc5;--s:.9}
 .shw-canvas{position:absolute;left:0;top:0;width:1536px;height:1024px;transform-origin:0 0;transform:scale(var(--s))}
 .shw-vw{position:absolute;inset:0}
 .shw-view{position:absolute;inset:0;overflow:hidden;background:#e4d6bf}
-@media (min-width:1801px){.shw-vw::before,.shw-vw::after{content:"";position:absolute;top:0;bottom:0;z-index:6;width:90px;pointer-events:none}.shw-vw::before{left:0;background:linear-gradient(90deg,var(--milk),rgba(245,242,236,0))}.shw-vw::after{right:0;background:linear-gradient(270deg,var(--milk),rgba(245,242,236,0))}}      /* шире 1760 px сцена не растёт: края плавно уходят в фон страницы */
+@media (min-width:2401px){.shw-vw::before,.shw-vw::after{content:"";position:absolute;top:0;bottom:0;z-index:6;width:90px;pointer-events:none}.shw-vw::before{left:0;background:linear-gradient(90deg,var(--milk),rgba(245,242,236,0))}.shw-vw::after{right:0;background:linear-gradient(270deg,var(--milk),rgba(245,242,236,0))}}      /* шире 2400 px сцена не растёт: края плавно уходят в фон страницы */
 .shw-pan{display:none}
 .shw-plane{position:absolute;left:0;top:0;width:1536px;height:1024px;transform-origin:0 0}
 .shw-stage{pointer-events:none;contain:layout}
@@ -69,7 +69,8 @@
 
 /* --- 4. интерфейс поверх сцены: стеклянные панели --- */
 .shw-aside{position:absolute;left:47px;top:113px;width:233px;max-height:842px;z-index:20}
-.shw-panel.toolbar{margin:0;padding:14px 16px 12px;gap:6px;max-height:842px;overflow-y:auto;overscroll-behavior:contain;scrollbar-width:thin;scrollbar-color:rgba(86,60,30,.28) transparent;background:linear-gradient(180deg,var(--shw-glass),var(--shw-glass2));border:1px solid var(--shw-rim);border-radius:22px;box-shadow:0 1px 2px rgba(86,60,30,.08),0 28px 50px -30px rgba(86,60,30,.5)}
+.shw-panel.toolbar{margin:0;padding:14px 16px 12px;gap:6px;max-height:842px;overflow-y:auto;overscroll-behavior:contain;scrollbar-width:thin;scrollbar-color:rgba(86,60,30,.28) transparent;border-radius:22px;background:linear-gradient(135deg,rgba(255,255,255,.46),rgba(255,255,255,.1) 46%,rgba(255,255,255,.26)),url(../assets/showroom/glass.webp) -47px -113px/1536px 1024px,var(--ax-sand,#e9dcc5);border:1px solid rgba(255,255,255,.8);box-shadow:inset 0 1px 0 rgba(255,255,255,.95),inset 0 0 0 1px rgba(255,255,255,.25),inset 0 -22px 34px -26px rgba(255,255,255,.7),0 1px 2px rgba(86,60,30,.08),0 30px 52px -30px rgba(86,60,30,.55)}
+.shw-aside::after{content:"";position:absolute;inset:0;border-radius:22px;pointer-events:none;background:linear-gradient(112deg,rgba(255,255,255,.55) 0,rgba(255,255,255,.12) 22%,rgba(255,255,255,0) 40%),linear-gradient(180deg,rgba(255,255,255,.5),rgba(255,255,255,0) 7%)}
 .shw-panel .tb-top{flex-direction:column;align-items:stretch;gap:8px}
 .shw-panel .search{min-width:0}
 .shw-panel .search input{padding:12px 16px 12px 44px;font-size:14px;background:rgba(255,255,255,.62);border-color:rgba(86,60,30,.1)}
@@ -118,7 +119,7 @@
 .shw-head .eyebrow{font-size:12px;color:#7c6a52;letter-spacing:.18em}
 .shw-head .eyebrow::before{border-top-color:#7c6a52}
 .shw-head h1{margin:10px 0 8px;font-size:42px;line-height:1.06;text-wrap:balance;white-space:nowrap}
-.shw-head .lead{margin:0;font-size:16px;line-height:1.5;max-width:700px;color:#5b5648}
+.shw-head .lead{margin:0;font-size:16px;line-height:1.5;max-width:700px;color:#3d372b;font-weight:500}
 .shw-pills{display:flex;flex-wrap:wrap;gap:8px;margin-top:16px;max-width:790px}
 .shw .cat-tile,.shw .shw-all{position:relative;display:inline-flex;flex-direction:row;align-items:center;gap:7px;min-height:0;padding:8px 16px;border-radius:999px;border:1px solid rgba(86,60,30,.14);background:rgba(250,245,235,.78);text-align:left;font:600 13px/1 var(--sans);color:var(--navy);transition:background-color .25s,color .25s,border-color .25s,box-shadow .3s}
 .shw .cat-tile b,.shw .shw-all b{font:600 13px/1 var(--sans);letter-spacing:0;overflow-wrap:normal;white-space:nowrap}
@@ -177,7 +178,8 @@
 .shw-nav:disabled{opacity:.36;cursor:default}
 
 /* --- 5. «Рекомендуем» --- */
-.shw-pop{position:absolute;left:341px;top:696px;width:1108px;z-index:16}
+.shw-pop{position:absolute;left:316px;top:706px;width:1136px;height:308px;box-sizing:border-box;padding:16px 26px 0;z-index:16;border-radius:26px;overflow:hidden;background:linear-gradient(135deg,rgba(255,255,255,.46),rgba(255,255,255,.1) 46%,rgba(255,255,255,.26)),url(../assets/showroom/glass.webp) -316px -706px/1536px 1024px,var(--ax-sand,#e9dcc5);border:1px solid rgba(255,255,255,.8);box-shadow:inset 0 1px 0 rgba(255,255,255,.95),inset 0 0 0 1px rgba(255,255,255,.25),inset 0 -22px 34px -26px rgba(255,255,255,.7),0 1px 2px rgba(86,60,30,.08),0 30px 52px -30px rgba(86,60,30,.55)}
+.shw-pop::after{content:"";position:absolute;inset:0;border-radius:26px;pointer-events:none;background:linear-gradient(112deg,rgba(255,255,255,.5) 0,rgba(255,255,255,.1) 18%,rgba(255,255,255,0) 34%),linear-gradient(180deg,rgba(255,255,255,.5),rgba(255,255,255,0) 6%)}
 .shw-pop-h{display:flex;align-items:baseline;justify-content:space-between;gap:14px;margin-bottom:12px}
 .shw-pop-h h2{font:500 22px/1.2 var(--serif)}
 .shw-pop-h .lnk{font-size:13px}
@@ -185,10 +187,10 @@
 .shw-pop-t{display:flex;gap:14px;overflow-x:auto;overscroll-behavior-x:contain;scroll-snap-type:x mandatory;scrollbar-width:none;padding:2px 2px 6px;margin:0 -2px}
 .shw-pop-t::-webkit-scrollbar{display:none}
 .shw-pop-w .shw-nav{position:absolute;top:96px;z-index:3;width:38px;height:38px;box-shadow:0 10px 20px -12px rgba(86,60,30,.5)}
-.shw-pop-w .shw-nav.prev{left:-46px}
-.shw-pop-w .shw-nav.next{right:-46px}
+.shw-pop-w .shw-nav.prev{left:-22px}
+.shw-pop-w .shw-nav.next{right:-22px}
 .shw-pop-w .shw-nav.prev .ic{transform:scaleX(-1)}
-.shw-pc{position:relative;flex:0 0 172px;height:210px;scroll-snap-align:start;display:flex;flex-direction:column;border-radius:18px;background:linear-gradient(180deg,rgba(252,248,240,.78),rgba(246,239,226,.7));border:1px solid var(--shw-rim);box-shadow:0 1px 2px rgba(86,60,30,.07),0 20px 34px -26px rgba(86,60,30,.5);overflow:hidden;transition:box-shadow .35s var(--ease),transform .35s var(--ease)}
+.shw-pc{position:relative;flex:0 0 172px;height:210px;scroll-snap-align:start;display:flex;flex-direction:column;border-radius:18px;background:linear-gradient(180deg,rgba(255,252,246,.78),rgba(250,244,232,.6));border:1px solid rgba(255,255,255,.85);box-shadow:inset 0 1px 0 rgba(255,255,255,.9),0 1px 2px rgba(86,60,30,.07),0 18px 30px -24px rgba(86,60,30,.55);overflow:hidden;transition:box-shadow .35s var(--ease),transform .35s var(--ease)}
 @media (hover:hover) and (pointer:fine){.shw-pc:hover{transform:translateY(-4px);box-shadow:0 1px 2px rgba(86,60,30,.08),0 26px 40px -24px rgba(86,60,30,.55)}}
 .shw-pc-art{position:relative;height:88px;display:grid;place-items:end center;padding:10px 0 0;background:linear-gradient(180deg,rgba(255,252,246,.65),rgba(236,224,204,.5))}
 .shw-pc-art::after{content:"";position:absolute;left:18%;right:18%;bottom:6px;height:8px;border-radius:50%;background:radial-gradient(closest-side,rgba(66,44,20,.34),rgba(66,44,20,0))}
@@ -206,7 +208,7 @@
 @media (hover:hover){.shw-ask:hover{background:var(--navy-2)}.shw-ask:hover .ic{transform:translateX(3px)}}
 
 /* --- 6. полоса преимуществ --- */
-.shw-adv{position:absolute;left:316px;top:960px;width:1128px;height:62px;z-index:16;display:flex;align-items:center;gap:30px;padding:0 10px 0 28px;border-radius:31px;background:linear-gradient(180deg,rgba(250,245,235,.78),rgba(244,236,222,.72));border:1px solid var(--shw-rim);box-shadow:0 18px 34px -26px rgba(86,60,30,.5)}
+.shw-adv{position:relative;margin-top:var(--ax-sp-3,22px);min-height:62px;z-index:1;display:flex;align-items:center;gap:30px;padding:10px 12px 10px 28px;border-radius:31px;background:linear-gradient(180deg,rgba(250,245,235,.78),rgba(244,236,222,.72));border:1px solid var(--shw-rim);box-shadow:0 18px 34px -26px rgba(86,60,30,.5)}
 .shw-av{display:flex;align-items:center;gap:12px;flex:1 1 0;min-width:0}
 .shw-av-i{flex:none;display:grid;place-items:center;width:40px;height:40px;border-radius:50%;border:1px solid var(--shw-line);background:rgba(255,255,255,.62);color:var(--navy)}
 .shw-av-i .ic{width:19px;height:19px}
@@ -268,7 +270,8 @@
   .shw-pager .shw-pg{order:2}.shw-pager .prev{order:1}.shw-pager .next{order:3}
   .shw-pager .shw-nav.prev .ic,.shw-pager .shw-nav.next .ic{transform:none}
   .shw-pager .shw-nav.prev .ic{transform:scaleX(-1)}
-  .shw-pop{position:static;order:6;width:auto}
+  .shw-pop{position:static;order:6;width:auto;height:auto;padding:16px 18px 18px;background:linear-gradient(135deg,rgba(255,255,255,.7),rgba(250,244,232,.55)),var(--ax-sand,#e9dcc5)}
+  .shw-panel.toolbar{background:linear-gradient(135deg,rgba(255,255,255,.75),rgba(250,244,232,.6)),var(--ax-sand,#e9dcc5)}
   .shw-pop-w .shw-nav{display:none}
   .shw-pc{flex-basis:calc((100% - 28px) / 3);height:auto;min-width:168px}
   .shw-adv{position:static;order:7;width:auto;height:auto;flex-wrap:wrap;gap:14px;padding:16px;border-radius:var(--r-lg)}

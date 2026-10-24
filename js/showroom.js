@@ -42,36 +42,32 @@
   /* ---------- состав и режимы ---------- */
   const visibleIds = () => $$('.pcard', S.grid).filter(c => !c.hidden).map(c => c.getAttribute('data-id'));
   const inView = () => { const r = S.view.getBoundingClientRect(); return r.bottom > -80 && r.top < innerHeight + 80; };
-  const MAIN_MAX = 7, NICHE = [[1352, 425], [1436, 425], [1352, 549], [1436, 549]];
-  const perFor = () => MAIN_MAX + NICHE.length;
+  const MAIN_MAX = 10;                                                  // всё на переднем плане: на странице десять товаров, каждый на своём подиуме; на заднем плане (ниша, полки) предметов нет
+  const perFor = () => MAIN_MAX;
   /* на узких экранах показывается та же сцена, что на компьютере: полоса холста [WX0…1536]×[WY0…WY0+WH]; если по ширине она не умещается при читаемом масштабе, сцену можно сдвигать пальцем или стрелками */
   const WX0 = 270, WY0 = 128, WW = 1266, WH = 612, MIN_VIEW_H = 330, PAN_S = .8;
 
-  /* расстановка по макету 1536×1024: семь подиумов передней группы стоят террасой (главный товар — на самом высоком подиуме посередине, остальные ниже и разной ширины, подиумы перекрывают друг друга),
-     ещё четыре товара — на двух стеклянных полках ниши справа (мельче, в мягком фокусе). Размеры — проектные пиксели холста.
-     REF: [x центра, диаметр подиума, высота, ряд (0 — дальний, 1 — передний), масштаб товара] */
-  const REF = [[452, 262, 40, 1, 1.00], [585, 176, 78, 0, .95], [738, 230, 100, 1, 1.08], [880, 214, 52, 0, 1.06], [1008, 168, 76, 1, 1.00], [1130, 236, 42, 0, 1.00], [1292, 264, 38, 1, 1.04]];
-  const HV = [[1, 1, 1, 1, 1, 1, 1], [1.7, 1.0, .75, 1.6, .9, 1.8, 1.9], [.9, 1.5, 1.15, .75, 1.7, .8, 1.4]];      // высоты подиумов по категории: «композиций» три, архитектура одна
-  const BASE = [654, 686], CAP_RATIO = (D.showroom && D.showroom.pod && D.showroom.pod.capRatio) || .1026;
-  /* у каждого товара свой подиум: подиумы стоят рядом, не перекрывая друг друга, а упаковка занимает не больше FIT его ширины — ни один товар не заходит на чужой подиум и не закрывает соседа.
-     Ширина подиума = max(ширина упаковки / FIT, прежний диаметр по макету × 0.7, 124); если все вместе не умещаются в полосу SPAN, подиумы сужаются, а упаковка уменьшается вместе с ними; если места больше — промежутки растут (до 46 px). */
-  const SPAN = [330, 1424], GAP = 14, FIT = .82, NICHE_W = 66;
+  /* расстановка по макету 1536×1024: десять подиумов в одну линию на переднем плане — высота разная, ряд чередуется (дальний/передний: ±32 px по вертикали), главный товар — на самом высоком подиуме и крупнее.
+     Подиумы не перекрывают друг друга, упаковка занимает не больше FIT ширины своего подиума — ни один товар не заходит на чужой подиум и не закрывает соседа. Размеры — проектные пиксели холста.
+     REF: [высота подиума, ряд (0 — дальний, 1 — передний), масштаб товара] */
+  const REF = [[44, 1, 1.00], [82, 0, .96], [104, 1, 1.08], [56, 0, 1.04], [92, 1, 1.00], [40, 0, 1.02], [76, 1, .98], [100, 0, 1.06], [50, 1, 1.00], [70, 0, 1.03]];
+  const HV = [[1, 1, 1, 1, 1, 1, 1, 1, 1, 1], [1.7, 1.0, .75, 1.6, .9, 1.8, 1.2, .8, 1.5, .9], [.9, 1.5, 1.15, .75, 1.7, .8, 1.4, 1.1, .7, 1.6]];      // высоты подиумов по категории: «композиций» три, архитектура одна
+  const BASE = [654, 686], CAP_RATIO = (D.showroom && D.showroom.pod && D.showroom.pod.capRatio) || .1026, TOP_MIN = 322;
+  const SPAN = [322, 1448], GAP = 10, FIT = .82, PW_MIN = 96;
   function compose(prods, s) {
     const n = Math.min(prods.length, MAIN_MAX), slots = [], v = s.variant;
-    const idx = n === 1 ? [2] : Array.from({length: n}, (_, i) => Math.round(i * 6 / (n - 1)));
-    const cells = idx.map((k, i) => { const [, diam, h0, row, sc] = REF[k], p = prods[i], im = imgOf(p), th = thOf(p) * sc, bw = th * im.ar; return {k, p, im, h0, row, th, bw, pw: Math.max(bw / FIT, diam * .7, 124), hero: k === 2 || (n <= 3 && i === Math.floor((n - 1) / 2))}; });
+    const idx = n === 1 ? [2] : Array.from({length: n}, (_, i) => Math.round(i * (MAIN_MAX - 1) / (n - 1)));
+    const cells = idx.map((k, i) => { const [h0, row, sc] = REF[k], p = prods[i], im = imgOf(p), th = thOf(p) * sc, bw = th * im.ar; return {k, p, im, h0, row, th, bw, pw: Math.max(bw / FIT, PW_MIN), hero: k === 2 || (n <= 3 && i === Math.floor((n - 1) / 2))}; });
     const avail = SPAN[1] - SPAN[0], sum = cells.reduce((a, c) => a + c.pw, 0), gaps = (n - 1) * GAP, f = Math.min(1, (avail - gaps) / sum);
     const extra = n > 1 ? Math.min(46, Math.max(0, avail - gaps - sum * f) / (n - 1)) : 0, used = sum * f + (gaps + extra * (n - 1));
     let x = SPAN[0] + (avail - used) / 2;
     cells.forEach((c, i) => {
-      const pw = c.pw * f, cx = x + pw / 2, k = Math.min(1, pw * FIT / c.bw), th = c.th * k, bw = c.bw * k, hh = Math.max(30, Math.min(124, c.h0 * HV[v][c.k]));
+      const pw = c.pw * f, cx = x + pw / 2, k = Math.min(1, pw * FIT / c.bw), th = c.th * k, bw = c.bw * k;
+      const tmin = cx + bw / 2 > 1240 ? 404 : TOP_MIN;                                                    // справа сверху — акцентная карточка: товар под ней не заходит на неё
+      const hh = Math.max(30, Math.min(124, c.h0 * HV[v][c.k], BASE[c.row] - th - tmin));         // верх упаковки не заходит под заголовок, категории и карточку
       const e = pw * CAP_RATIO, topFace = BASE[c.row] - hh;                                             // y центра верхней грани подиума — здесь стоит упаковка
       x += pw + GAP + extra;
       slots.push({group: 'main', i, p: c.p, im: c.im, hero: c.hero, row: c.row, pod: {l: cx - pw / 2, t: topFace - e / 2, w: pw, e, b: hh}, it: {l: cx - bw / 2, t: topFace + e * .08 - th, w: bw, h: th, cx, z: 5 + c.row * 2 + (c.hero ? 1 : 0)}});
-    });
-    prods.slice(MAIN_MAX, MAIN_MAX + NICHE.length).forEach((p, k) => {
-      const im = imgOf(p), [cx, y] = NICHE[k]; let th = thOf(p) * .5, bw = th * im.ar; if (bw > NICHE_W) { th *= NICHE_W / bw; bw = NICHE_W; }          // на полке товары не шире ячейки: соседи не перекрываются
-      slots.push({group: 'niche', i: MAIN_MAX + k, p, im, hero: false, row: 0, pod: null, it: {l: cx - bw / 2, t: y + 2 - th, w: bw, h: th, cx, z: 3}});
     });
     return slots;
   }
@@ -244,6 +240,7 @@
   function syncUI() {
     const s = S, cards = $$('.pcard', s.grid), qEl = $('#cat-q'), toks = A.tokens ? A.tokens(qEl ? qEl.value : '') : [];
     const cur = {}; KEYS.forEach(k => { cur[k] = val(k); });
+    $$('[data-act="shw-to"]').forEach(d => d.setAttribute('aria-pressed', String(cur[d.getAttribute('data-key')] === d.getAttribute('data-id'))));
     const match = (c, skip) => KEYS.every(k => {
       if (k === skip || cur[k] === 'all') return true;
       return k === 'task' ? c.dataset.tasks.split(' ').indexOf(cur[k]) !== -1 : c.dataset[k] === cur[k];
@@ -262,6 +259,7 @@
     const all = $('.shw-all', s.root); if (all) { const on = cur.cat === 'all'; all.classList.toggle('on', on); all.setAttribute('aria-pressed', String(on)); }
     const m = /(\d+)\D+(\d+)/.exec(($('#res-count') || {}).textContent || ''), cnt = $('[data-shw-count]', s.aside);
     if (cnt && m) cnt.textContent = m[1] + ' из ' + m[2];
+    const ln = $('#shw-list-n'); if (ln && m) ln.textContent = m[1] === m[2] ? m[2] : m[1] + ' из ' + m[2];
     const rs = $('[data-shw-reset]', s.aside), rb = $('#cat-reset'); if (rs && rb) rs.hidden = rb.hidden;
   }
 
@@ -290,7 +288,7 @@
     if (S && S.ro) S.ro.disconnect(); if (S && S.io) S.io.disconnect();
     const rootEl = $('[data-shw]'); if (!rootEl) { S = null; html.classList.remove('shw-top'); return null; }
     S = {root: rootEl, room: $('[data-shw-room]', rootEl), vw: $('.shw-vw', rootEl), view: $('[data-shw-view]', rootEl), stage: $('[data-shw-stage]', rootEl), card: $('[data-shw-card]', rootEl), pager: $('[data-shw-pager]', rootEl), pgText: $('[data-shw-pg]', rootEl), empty: $('[data-shw-empty]', rootEl),
-      aside: $('.shw-aside', rootEl), grid: $('#cat-grid'), ids: [], pageIds: [], page: 0, per: 11, W: 0, H: 0, s: 1, stack: false, panOn: false, centered: false, variant: 0, items: new Map(), pods: [], anims: new Set(), sel: null, hov: null, defId: null, rendered: false, rz: 0, rect: null};
+      aside: $('.shw-aside', rootEl), grid: $('#cat-grid'), ids: [], pageIds: [], page: 0, per: 10, W: 0, H: 0, s: 1, stack: false, panOn: false, centered: false, variant: 0, items: new Map(), pods: [], anims: new Set(), sel: null, hov: null, defId: null, rendered: false, rz: 0, rect: null};
     S.spot = document.createElement('i'); S.spot.className = 'shw-spot'; S.spot.setAttribute('aria-hidden', 'true'); S.stage.appendChild(S.spot);
     S.sent = document.createElement('i'); S.sent.className = 'shw-sent'; S.sent.setAttribute('aria-hidden', 'true'); S.room.appendChild(S.sent);
     if (window.IntersectionObserver) { S.io = new IntersectionObserver(es => es.forEach(e => html.classList.toggle('shw-top', e.isIntersecting)), {rootMargin: '-84px 0px 0px 0px'}); S.io.observe(S.sent); } else html.classList.add('shw-top');
@@ -336,6 +334,12 @@
   A.actions['shw-pan'] = t => { if (!S) return; S.view.scrollBy({left: +t.getAttribute('data-dir') * S.view.clientWidth * .7, behavior: mode() === 'full' ? 'smooth' : 'auto'}); };
   A.actions['shw-pick'] = (t, id) => select(id || t.getAttribute('data-id'));
   A.actions['shw-close'] = () => clearSel();
+  /* плитки под витриной («Подбор по задаче», «Коллекции», «Бренды»): включают нужное значение фильтра и возвращают к главной экспозиции, которая перестраивается под него; повторный клик по выбранной плитке только возвращает к витрине */
+  A.actions['shw-to'] = t => {
+    const k = t.getAttribute('data-key') || 'cat', v = t.getAttribute('data-id'), sel = selOf(k);
+    if (sel && sel.value !== v) { sel.value = v; sel.dispatchEvent(new Event('change', {bubbles: true})); }
+    const room = S && S.room; if (room) window.scrollTo({top: Math.max(0, room.getBoundingClientRect().top + window.scrollY), behavior: mode() === 'full' ? 'smooth' : 'auto'});
+  };
   A.actions['shw-page'] = t => go(+t.getAttribute('data-dir'));
   A.actions['shw-opt'] = t => {
     const k = t.getAttribute('data-key'), v = t.getAttribute('data-v'), sel = selOf(k); if (!sel) return;
@@ -344,6 +348,10 @@
   A.actions['shw-grp'] = t => { const g = t.closest('.shw-grp'), open = g.classList.toggle('is-open'); t.setAttribute('aria-expanded', String(open)); };
   A.actions['shw-more'] = t => { const go = t.closest('.shw-go'), on = go.classList.toggle('more'), n = $$('.shw-o.xtra', go).length; t.setAttribute('aria-expanded', String(on)); t.textContent = on ? 'Свернуть' : 'Ещё ' + n; };
   A.actions['shw-pop-nav'] = t => { const tr = $('.shw-pop-t'); if (tr) tr.scrollBy({left: +t.getAttribute('data-dir') * tr.clientWidth * .92, behavior: mode() === 'full' ? 'smooth' : 'auto'}); };
+  /* «Смотреть весь список» (и адрес #shw-all) раскрывает свёрнутый нижний список и приводит к нему */
+  const openList = go => { const d = $('[data-shw-list]'); if (!d) return; d.open = true; if (go) d.scrollIntoView({behavior: mode() === 'full' ? 'smooth' : 'auto', block: 'start'}); };
+  document.addEventListener('click', e => { const a = e.target.closest && e.target.closest('a[href="#shw-all"]'); if (a && $('[data-shw-list]')) { e.preventDefault(); openList(true); } });
+  window.addEventListener('hashchange', () => { if (location.hash === '#shw-all') openList(true); });
   document.addEventListener('keydown', e => {
     if (e.key !== 'Escape' || !S || !S.sel || !S.root.isConnected) return;
     const m = $('#modal'); if (m && m.classList.contains('open')) return;
@@ -352,7 +360,7 @@
   A.showroom = {
     sync,
     select: id => select(id), close: () => clearSel(), page: dir => go(dir),
-    state: () => S && ({ids: S.ids.slice(), pageIds: (S.pageIds || []).slice(), page: S.page, per: S.per, sel: S.sel, stack: S.stack, pan: S.panOn, W: S.W, H: S.H, s: S.s, rendered: S.rendered, pods: S.pods.length}),
+    openList, state: () => S && ({ids: S.ids.slice(), pageIds: (S.pageIds || []).slice(), page: S.page, per: S.per, sel: S.sel, stack: S.stack, pan: S.panOn, W: S.W, H: S.H, s: S.s, rendered: S.rendered, pods: S.pods.length}),
     /* для перелёта в окно просмотра (gallery.js): упаковка товара на сцене и её рамка */
     flightSrc: id => { if (!S || !S.root.isConnected) return null; const rec = S.items.get(id); if (!rec || rec.el.classList.contains('is-gone')) return null; const el = rec.el.querySelector('.shw-ph'); return el ? {el, img: rec.el.querySelector('.shw-img'), rect: el.getBoundingClientRect()} : null; }
   };

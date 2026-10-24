@@ -131,7 +131,7 @@ def arch_frame(name, mat, cx, rx, zs, t, y0, y1, grp, n=96, z0=0.0):
 
 def set_cam(sc, loc=None, lens=None, pitch=0.0):
     cd = bpy.data.cameras.new('cam'); cd.lens = lens or CAM['lens']; cd.sensor_width = 36; cd.sensor_fit = 'HORIZONTAL'; cam = bpy.data.objects.new('cam', cd); bpy.context.collection.objects.link(cam)
-    cam.location = loc or CAM['loc']; cam.rotation_euler = (math.radians(90 - pitch), 0, 0); sc.camera = cam; return cam
+    cam.location = loc or CAM['loc']; cam.rotation_euler = (math.radians(90 - pitch), 0, 0); sc.camera = cam; bpy.context.view_layer.update(); return cam
 
 def build(sc):
     M = {'plaster': mat_plaster('plaster', (.89, .79, .65)), 'plaster2': mat_plaster('plaster2', (.94, .87, .76), .7), 'trav': mat_travertine('trav', (1.02, .94, .82)), 'trav2': mat_travertine('trav2', (1.04, .97, .86), 1.4, .7), 'floor': mat_floor(),
@@ -150,6 +150,11 @@ def build(sc):
     # светлая панель за левой аркой и задняя стена ниши
     back1 = box('back1', M['back'], -4.5, 7.5, 1.15, 1.6, 0.0, 6.0, 'shell')
     bm1 = back1.modifiers.new('cut', 'BOOLEAN'); bm1.operation = 'DIFFERENCE'; bm1.object = cut2; bm1.solver = 'EXACT'
+    # цоколь из травертина вдоль стены (с теми же вырезами) и рифлёная каменная пилястра между аркой и нишей — второй материал и вертикальный ритм на фоне
+    plinth = box('plinth', M['trav2'], -9, 9, -0.05, 0.0, 0.0, 0.46, 'shell', bev=0.012)
+    for c in (cut1, cut2):
+        bmp = plinth.modifiers.new('cut', 'BOOLEAN'); bmp.operation = 'DIFFERENCE'; bmp.object = c; bmp.solver = 'EXACT'
+    for i in range(9): cylinder('reed%d' % i, M['trav2'], 1.32 + i * .062, -0.03, .028, 0.0, float(os.environ.get('REED_H', 5.6)), 'shell', seg=24, bev=0)
     back2 = box('back2', M['back'], NI['cx'] - NI['rx'] - .1, NI['cx'] + NI['rx'] + .1, 2.6, 3.05, 0.0, 5.0, 'niche')
     # --- левая арка-рама (толстая, матовое стекло / камень), выступает вперёд
     ring = arch_frame('ring', M['ring'], LA['cx'], LA['rx'], LA['zs'], .34, -0.55, 0.02, 'ring')
@@ -226,10 +231,18 @@ def plant(M):
     branch(base, [(0, 0, 0), (.1, 0, .3), (.3, .03, .62), (.5, .03, 1.08)], 16, 1.4)
     # ветка в нише (справа внизу)
     branch((5.0, 1.5, 0.0), [(0, 0, 0), (0, 0, .5), (-.06, 0, 1.05), (-.2, 0, 1.55)], 20, 1.2, 'plant')
+    # тени листьев на стене: ветки висят вне кадра на пути солнечного луча и невидимы камере, но отбрасывают чёткие тени
+    d = Vector((.62, .72, -.55)).normalized()
+    for (tx, tz, rot, k) in ((0.4, 2.0, 0.0, 1.0), (-1.9, 3.1, 0.7, .85), (3.3, 4.6, -0.5, .9)):
+        tgt = Vector((tx, 0.0, tz)); loc = tgt - d * 7.5
+        ex = d.cross(Vector((0, 0, 1))).normalized(); ey = ex.cross(d).normalized()
+        mk_pts = lambda pts: [tuple(ex * (p[0] * math.cos(rot) - p[2] * math.sin(rot)) * 1.0 + ey * (p[0] * math.sin(rot) + p[2] * math.cos(rot)) + d * p[1]) for p in pts]
+        branch(tuple(loc), mk_pts([(0, 0, 0), (-.1 * 2.2, 0, .5 * 2.2), (-.3 * 2.2, .02, 1.0 * 2.2), (-.6 * 2.2, .04, 1.45 * 2.2)]), 24, 3.0 * k, 'gobo')
+        branch(tuple(loc), mk_pts([(0, 0, 0), (.14 * 2.2, 0, .4 * 2.2), (.46 * 2.2, -.02, .72 * 2.2), (.9 * 2.2, -.05, .9 * 2.2)]), 22, 2.8 * k, 'gobo')
 
 def lights(sc):
     # окно: солнце сквозь переплёт (переплёт невидим для камеры, но отбрасывает тень)
-    sun = bpy.data.lights.new('sun', 'SUN'); sun.energy = float(os.environ.get('SUN', 4.0)); sun.angle = math.radians(1.6); sun.color = (1.0, .93, .80)
+    sun = bpy.data.lights.new('sun', 'SUN'); sun.energy = float(os.environ.get('SUN', 4.0)); sun.angle = math.radians(float(os.environ.get('SUN_ANGLE', 0.35))); sun.color = (1.0, .93, .80)
     so = bpy.data.objects.new('sun', sun); bpy.context.collection.objects.link(so)
     direction = Vector((.62, .72, -.55)).normalized(); so.rotation_euler = direction.to_track_quat('-Z', 'Y').to_euler(); so.location = (-6, -9, 7)
     mat = mat_simple('frame', (.1, .1, .1))
@@ -286,12 +299,24 @@ def pod_sprites(sc, cam, f, meta):
     y_a = (cy0 + cy1) / 2; y_b = (min(by) + max(by)) / 2
     body = im.crop((int(cx0), int(y_a), int(cx1) + 1, int(y_b))).convert('RGB')
     from PIL import ImageEnhance
-    g = lambda im_: ImageEnhance.Brightness(im_).enhance(float(os.environ.get('POD_GAIN', 1.16)))
+    def g(im_):
+        im_ = ImageEnhance.Brightness(im_).enhance(float(os.environ.get('POD_GAIN', 1.16)))
+        return Image.fromarray(grade(np.asarray(im_)).astype(np.uint8)) if os.environ.get('GRADE', '1') == '1' else im_             # подиумы — в той же палитре, что и фон
     w_ = body.width; body = body.crop((int(w_ * .018), 0, int(w_ * .982), body.height))                       # без тёмной кромки силуэта
     cap_rgb = g(cap.convert('RGB')); cap = Image.merge('RGBA', (*cap_rgb.split(), cap.getchannel('A'))); body = g(body)
     cap.save(os.path.join(OUT, 'pod-cap.webp'), 'WEBP', quality=90, method=6, alpha_quality=95); body.save(os.path.join(OUT, 'pod-body.webp'), 'WEBP', quality=88, method=6)
     meta['pod'] = {'cap': 'assets/showroom/pod-cap.webp', 'body': 'assets/showroom/pod-body.webp', 'capRatio': round(cap.height / cap.width, 4), 'bodyRatio': round(body.height / body.width, 4), 'capW': cap.width, 'bodyH': body.height}
     print('pod', meta['pod'], flush=True)
+
+def grade(a, sat=None, lift=None, cool=None, gamma=None):
+    """цветокоррекция слоёв под палитру сайта: чуть приглушаем тёплую «коричневу», добавляем молочную дымку (ivory/milk) и уводим глубокие тени в холодный тёмно-синий — цвет бренда. Применяется ко всем слоям одинаково."""
+    sat = float(os.environ.get('GRADE_SAT', .86)) if sat is None else sat; lift = float(os.environ.get('GRADE_LIFT', .09)) if lift is None else lift
+    cool = float(os.environ.get('GRADE_COOL', 1.4)) if cool is None else cool; gamma = float(os.environ.get('GRADE_GAMMA', .95)) if gamma is None else gamma
+    a = a.astype(np.float32); L = ((a @ np.array([.299, .587, .114], np.float32)) / 255.0)[..., None]
+    a = a * sat + (L * 255.0) * (1 - sat)
+    k = lift * (.35 + .65 * L); a = a * (1 - k) + np.array([250, 246, 237], np.float32) * k
+    a = a + ((1 - L) ** 2.2) * np.array([-9, -4, 12], np.float32) * cool
+    return np.clip(255.0 * np.power(np.clip(a, 0, 255) / 255.0, gamma), 0, 255)
 
 def fix_sliver(plate, px):
     """тонкая светлая «щель» (≈9×70 px холста) на стыке вырезов стены и задней панели — лечим интерполяцией между соседними столбцами; px — пикселей картинки на пиксель холста"""
@@ -309,22 +334,25 @@ def render_layers(sc, cam0, names):
     groups = ['niche', 'ring', 'dais', 'plant']; mp = os.path.join(OUT, 'layers.json'); old = json.load(open(mp)) if os.path.exists(mp) else {}
     def show(gs):
         for o in objs: o.hide_render = o['grp'] not in gs; o.visible_camera = True
-    sc.camera = cam0; sc.render.film_transparent = False
+    sc.camera = cam0; sc.render.film_transparent = False; ONLY = os.environ.get('SCENE_COMPOSE_ONLY') == '1'                      # SCENE_COMPOSE_ONLY=1: без рендера — только сборка слоёв из готовых /tmp/R1.png, R2.png, M_*.png (цветокоррекция, подбор параметров)
+    def shoot(path):
+        if not ONLY: sc.render.filepath = path; bpy.ops.render.render(write_still=True)
     if 'shell' in names or any(g in names for g in groups):
-        show(['shell', 'niche', 'ring', 'dais', 'plant']); sc.render.filepath = '/tmp/R2.png'; bpy.ops.render.render(write_still=True)                      # полная сцена
-        show(['shell']); sc.render.filepath = '/tmp/R1.png'; bpy.ops.render.render(write_still=True)                                                          # подложка
+        show(['shell', 'niche', 'ring', 'dais', 'plant']); shoot('/tmp/R2.png')                      # полная сцена
+        show(['shell']); shoot('/tmp/R1.png')                                                          # подложка
         ov = bpy.data.materials.new('mask'); ov.use_nodes = True; nt = ov.node_tree; nt.nodes.clear(); em = nt.nodes.new('ShaderNodeEmission'); em.inputs['Strength'].default_value = 1.0; out = nt.nodes.new('ShaderNodeOutputMaterial'); nt.links.new(em.outputs[0], out.inputs[0])
         vl = bpy.context.view_layer; vl.material_override = ov; vt = sc.view_settings.view_transform; ex = sc.view_settings.exposure; sc.view_settings.view_transform = 'Standard'; sc.view_settings.exposure = 0; sc.view_settings.look = 'None'
         bgn = sc.world.node_tree.nodes['Background']; w0 = bgn.inputs['Strength'].default_value; bgn.inputs['Strength'].default_value = 0.0; spp0 = sc.cycles.samples; sc.cycles.samples = 16; sc.cycles.use_denoising = False
         for g in groups:
-            show([g]); sc.render.filepath = '/tmp/M_%s.png' % g; bpy.ops.render.render(write_still=True)
+            show([g]); shoot('/tmp/M_%s.png' % g)
         vl.material_override = None; sc.view_settings.view_transform = vt; sc.view_settings.exposure = ex; bgn.inputs['Strength'].default_value = w0; sc.cycles.samples = spp0; sc.cycles.use_denoising = True
         R2 = np.asarray(Image.open('/tmp/R2.png').convert('RGB')).astype(np.float32); R1 = np.asarray(Image.open('/tmp/R1.png').convert('RGB')).astype(np.float32)
         M = {g: np.asarray(Image.open('/tmp/M_%s.png' % g).convert('L')).astype(np.float32) / 255.0 for g in groups}
         from scipy import ndimage as ndi
         allm = np.maximum.reduce(list(M.values())); dil = ndi.maximum_filter(allm, size=2 * round(R2.shape[1] / 768) + 1); dil = ndi.gaussian_filter(dil, .8); dil = np.clip(dil * 1.6, 0, 1)
         plate = R2 * (1 - dil[..., None]) + R1 * dil[..., None]
-        plate = fix_sliver(plate, R2.shape[1] / CANVAS[0])
+        if os.environ.get('GRADE', '1') == '1': plate = grade(plate); R2 = grade(R2)
+        if os.environ.get('FIX_SLIVER') == '1': plate = fix_sliver(plate, R2.shape[1] / CANVAS[0])
         k = CANVAS[0] / R2.shape[1]; q = int(os.environ.get('SCENE_Q', 84))
         Image.fromarray(np.clip(plate, 0, 255).astype(np.uint8)).save(os.path.join(OUT, 'layer-shell.webp'), 'WEBP', quality=q, method=6)
         old['shell'] = {'file': 'assets/showroom/layer-shell.webp', 'x': 0.0, 'y': 0.0, 'w': float(CANVAS[0]), 'h': float(CANVAS[1])}; print('layer shell', os.path.getsize(os.path.join(OUT, 'layer-shell.webp')) // 1024, 'КБ', flush=True)
@@ -339,7 +367,7 @@ def render_layers(sc, cam0, names):
     if 'pod' in names:
         for o in objs: o.hide_render = o['grp'] != 'pod'; o.visible_camera = True
         sc.render.film_transparent = True; cam2 = set_cam(sc, (0.0, -12.0, 1.52), pitch=11.0)                         # подиум снимается чуть сверху: верхняя грань читается эллипсом ≈1:10
-        sc.render.filepath = '/tmp/layer_pod.png'; bpy.ops.render.render(write_still=True); pod_sprites(sc, cam2, '/tmp/layer_pod.png', old); sc.camera = cam0
+        shoot('/tmp/layer_pod.png'); pod_sprites(sc, cam2, '/tmp/layer_pod.png', old); sc.camera = cam0
     old['anchors'] = anchors(sc, cam0); json.dump(old, open(mp, 'w'), indent=1, ensure_ascii=False)
 
 def main():

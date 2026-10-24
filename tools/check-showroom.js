@@ -18,8 +18,8 @@ const srv = http.createServer((q, r) => { let p = decodeURIComponent(q.url.split
 let pass = 0, fail = 0; const ok = (c, m, x) => { if (c) { pass++; console.log('  ✓', m); } else { fail++; console.log('  ✗ FAIL:', m, x !== undefined ? JSON.stringify(x).slice(0, 320) : ''); } };
 const wait = ms => new Promise(r => setTimeout(r, ms));
 const count = f => PR.filter(f).length;
-const EXP = {all: PR.length, sun: count(p => p.cat === 'sun'), face: count(p => p.cat === 'face'), heliocare: count(p => p.brand === 'heliocare'), acne: count(p => p.tasks.includes('acne')), cream: count(p => p.kind === 'cream'), feat: count(p => p.featured)};
-const PAGE = 11;
+const EXP = {all: PR.length, sun: count(p => p.cat === 'sun'), face: count(p => p.cat === 'face'), heliocare: count(p => p.brand === 'heliocare'), acne: count(p => p.tasks.includes('acne')), cream: count(p => p.kind === 'cream'), feat: count(p => p.featured), pigment: count(p => p.tasks.includes('pigment'))};
+const PAGE = 10;
 let base = '';
 
 async function open(b, o, hooks) {
@@ -52,7 +52,7 @@ const userMsgs = p => p.evaluate(() => [...document.querySelectorAll('.asst-u .a
   ok(L.h1 === 'Каталог профессиональной косметики' && L.grid === EXP.all, 'заголовок страницы и полный список (' + L.grid + ' карточек) на месте', L);
   ok(L.bg === 'none', 'сцена не одна картинка-фон: у контейнера нет background-image', L.bg);
   const it0 = await items(p);
-  ok(it0.length === Math.min(PAGE, EXP.all) && S0.pods === 7, 'на сцене ' + it0.length + ' товаров (7 на подиумах + полки ниши), подиумов ' + S0.pods, {it0, pods: S0.pods});
+  ok(it0.length === Math.min(PAGE, EXP.all) && S0.pods === 10, 'на сцене ' + it0.length + ' товаров, все на переднем плане (по одному на подиуме), подиумов ' + S0.pods, {it0, pods: S0.pods});
   const IMG = await p.evaluate(() => [...document.querySelectorAll('.shw-it .shw-img')].map(i => ({ok: i.complete && i.naturalWidth > 0, src: i.getAttribute('src'), h: Math.round(i.getBoundingClientRect().height)})));
   ok(IMG.length === it0.length && IMG.every(i => i.ok && /assets\/showroom\/pack-[a-z-]+\.webp$/.test(i.src) && i.h > 40), '3D-макеты упаковки загружены у всех товаров сцены (' + IMG.length + ')', IMG.filter(i => !i.ok));
   const ST = await p.evaluate(() => { const r = e => e.getBoundingClientRect(); const pods = [...document.querySelectorAll('.shw-pd')].map(r); const its = [...document.querySelectorAll('.shw-it:not(.is-bg)')].map(r); return {pods: pods.length, standing: its.every((it, i) => { const pd = pods[i]; return pd && it.bottom > pd.top - 2 && it.bottom < pd.top + pd.height * .5 && it.left > pd.left - 30 && it.right < pd.right + 30; }), tops: Math.min(...its.map(i => i.top)), pills: r(document.querySelector('.shw-pills')).bottom}; });
@@ -60,7 +60,7 @@ const userMsgs = p => p.evaluate(() => [...document.querySelectorAll('.asst-u .a
   const OV = p => p.evaluate(() => { const r = e => e.getBoundingClientRect(), hit = (a, b) => Math.min(a.right, b.right) - Math.max(a.left, b.left) > 1.5 && Math.min(a.bottom, b.bottom) - Math.max(a.top, b.top) > 1.5; const pods = [...document.querySelectorAll('.shw-pd')].map(r), its = [...document.querySelectorAll('.shw-it:not(.is-bg):not(.is-gone)')].map(r), bad = [];
     its.forEach((it, i) => { if (it.left < pods[i].left - 1 || it.right > pods[i].right + 1) bad.push('товар ' + i + ' шире своего подиума'); its.forEach((o, j) => { if (j > i && hit(it, o)) bad.push('товары ' + i + ' и ' + j + ' перекрываются'); }); pods.forEach((pd, j) => { if (j !== i && it.left < pd.right - 1.5 && it.right > pd.left + 1.5 && it.bottom > pd.top + 4) bad.push('товар ' + i + ' заходит на подиум ' + j); }); });
     pods.forEach((a, i) => pods.forEach((b2, j) => { if (j > i && hit(a, b2)) bad.push('подиумы ' + i + ' и ' + j + ' перекрываются'); })); return {n: its.length, bad}; });
-  const OV0 = await OV(p); ok(OV0.n >= 7 && OV0.bad.length === 0, 'на ПК каждый товар стоит строго на своём подиуме: не шире него, не перекрывает соседей и чужие подиумы, подиумы не перекрываются', OV0);
+  const OV0 = await OV(p); ok(OV0.n === 10 && OV0.bad.length === 0, 'на ПК каждый товар стоит строго на своём подиуме: не шире него, не перекрывает соседей и чужие подиумы, подиумы не перекрываются', OV0);
   ok(ST.tops > ST.pills, 'упаковки не заезжают под заголовок и категории (верх упаковки ' + Math.round(ST.tops) + ' > низ «пилюль» ' + Math.round(ST.pills) + ')', ST);
   const tx = await p.evaluate(() => { const hdr = document.querySelector('.hdr'), cs = getComputedStyle(hdr); return {top: document.documentElement.classList.contains('shw-top'), bg: cs.backgroundColor, room: document.querySelector('.shw-room').getBoundingClientRect().top}; });
   ok(tx.top && /rgba\(0, 0, 0, 0\)|transparent/.test(tx.bg) && tx.room < 5, 'шапка над сценой прозрачная (' + tx.bg + '), сцена начинается у верхнего края', tx);
@@ -81,7 +81,7 @@ const userMsgs = p => p.evaluate(() => [...document.querySelectorAll('.asst-u .a
   ok(await vis(p) === EXP.all && (await items(p)).length === PAGE, 'повторный клик снимает фильтр: снова все товары, на сцене ' + PAGE);
   await p.click('.cat-tile[data-id="sun"]'); await wait(1600);
   const SS = await st(p);
-  ok(await vis(p) === EXP.sun && SS.pageIds.length === EXP.sun && SS.pods === Math.min(7, EXP.sun) && await p.evaluate(() => document.querySelector('.cat-tile[data-id="sun"]').getAttribute('aria-pressed')) === 'true', 'категория «Фотозащита»: ' + EXP.sun + ' товара, подиумов ' + SS.pods + ', пилюля нажата', SS);
+  ok(await vis(p) === EXP.sun && SS.pageIds.length === EXP.sun && SS.pods === Math.min(10, EXP.sun) && await p.evaluate(() => document.querySelector('.cat-tile[data-id="sun"]').getAttribute('aria-pressed')) === 'true', 'категория «Фотозащита»: ' + EXP.sun + ' товара, подиумов ' + SS.pods + ', пилюля нажата', SS);
   ok(await p.evaluate(() => document.querySelector('.shw-all').getAttribute('aria-pressed')) === 'false', 'пилюля «Все» снята');
   const hh1 = await p.evaluate(() => [...document.querySelectorAll('.shw-pd')].map(e => Math.round(parseFloat(getComputedStyle(e).getPropertyValue('--b')))).join());
   await p.click('.cat-tile[data-id="face"]'); await wait(1600);
@@ -100,7 +100,7 @@ const userMsgs = p => p.evaluate(() => [...document.querySelectorAll('.asst-u .a
   await p.click('.shw-empty [data-act="cat-reset"]'); await wait(1500);
   ok(await vis(p) === EXP.all && (await items(p)).length === PAGE && await p.evaluate(() => document.getElementById('cat-q').value) === '', 'сброс возвращает каталог и пустое поле поиска');
   await setSel(p, 'f-sort', 'az'); await wait(1400);
-  const az = await st(p), names = await p.evaluate(() => [...document.querySelectorAll('#cat-grid .pcard:not([hidden])')].slice(0, 11).map(c => c.getAttribute('data-id')));
+  const az = await st(p), names = await p.evaluate(() => [...document.querySelectorAll('#cat-grid .pcard:not([hidden])')].slice(0, 10).map(c => c.getAttribute('data-id')));
   ok(JSON.stringify(az.pageIds) === JSON.stringify(names), 'сортировка «А–Я»: порядок на сцене совпадает с порядком в списке', az.pageIds);
   await setSel(p, 'f-sort', 'def'); await wait(900);
 
@@ -148,6 +148,18 @@ const userMsgs = p => p.evaluate(() => [...document.querySelectorAll('.asst-u .a
   const pops = await p.evaluate(() => { const t = document.querySelector('.shw-pop-t'); return {n: t.children.length, scroll: t.scrollWidth > t.clientWidth, imgs: [...t.querySelectorAll('img')].every(i => i.complete ? i.naturalWidth > 0 : true), links: [...t.querySelectorAll('h3 a')].every(a => /products\/.+\.html$/.test(a.getAttribute('href'))), ask: t.querySelectorAll('[data-act="form"]').length}; });
   ok(pops.n === EXP.feat && pops.links && pops.ask === EXP.feat, '«Рекомендуем»: ' + pops.n + ' карточек, ссылки на страницы товаров и «Запросить»', pops);
   if (pops.scroll) { await p.click('.shw-pop-w .next'); await wait(900); ok(await p.evaluate(() => document.querySelector('.shw-pop-t').scrollLeft > 50 && !document.querySelector('.shw-pop-w .prev').disabled), 'стрелка «вперёд» прокручивает ряд, «назад» оживает'); }
+  const FOC = await p.evaluate(() => { const d = document.querySelector('[data-shw-list]'), r = e => e.getBoundingClientRect(); return {closed: !!d && !d.open, hid: r(document.querySelector('#cat-grid')).height === 0, glass: ['.shw-aside .shw-panel', '.shw-pop'].map(s => /glass\.webp/.test(getComputedStyle(document.querySelector(s)).backgroundImage)), bg: document.querySelectorAll('.shw-it.is-bg').length, adv: !!document.querySelector('.shw-rest .shw-adv'), tasks: document.querySelectorAll('.shw-task').length, dirs: document.querySelectorAll('.shw-dir').length, brands: document.querySelectorAll('.shw-brand').length}; });
+  ok(FOC.closed, 'нижний каталог убран: «Весь ассортимент списком» свёрнут, фокус на витрине', FOC);
+  ok(FOC.glass.every(Boolean) && FOC.bg === 0 && FOC.adv, 'левая панель и «Рекомендуем» — матовое стекло (размытая копия сцены), на заднем плане предметов нет, полоса преимуществ — под витриной', FOC);
+  ok(FOC.tasks === CT.tasks.length && FOC.dirs === CT.cats.length && FOC.brands === JSON.parse(fs.readFileSync(path.join(ROOT, 'data/brands.json'), 'utf8')).length, 'под витриной: «Подберите по задаче» (' + FOC.tasks + '), «Коллекции» (' + FOC.dirs + '), «Бренды» (' + FOC.brands + ') — из данных каталога', FOC);
+  await p.click('.shw-task[data-id="pigment"]'); await wait(1700);
+  const TK = await p.evaluate(() => ({sel: document.getElementById('f-task').value, pressed: document.querySelector('.shw-task[data-id="pigment"]').getAttribute('aria-pressed'), n: document.querySelectorAll('.shw-it:not(.is-gone)').length, y: Math.round(window.scrollY)}));
+  ok(TK.sel === 'pigment' && TK.pressed === 'true' && TK.n === EXP.pigment && TK.y < 400, 'плитка «Пигментация» включила задачу, витрина перестроилась (' + TK.n + ' товара) и страница вернулась к ней', TK);
+  await p.click('.shw-dir[data-id="sun"]'); await wait(1700);
+  ok(await p.evaluate(() => document.getElementById('f-cat').value === 'sun' && document.querySelector('.shw-dir[data-id="sun"]').getAttribute('aria-pressed') === 'true'), 'плитка коллекции «Фотозащита» включила категорию');
+  await p.click('.shw-brand[data-id="heliocare"]'); await wait(1700);
+  ok(await p.evaluate(() => document.getElementById('f-brand').value === 'heliocare'), 'плитка бренда включила фильтр по бренду'); await p.click('[data-act="cat-reset"][data-shw-reset]').catch(() => {}); await wait(1200);
+  await p.evaluate(() => { document.querySelector('[data-shw-list]').open = true; }); await wait(400);
   const GL = await p.evaluate(() => ({cards: document.querySelectorAll('#cat-grid .pcard').length, rn: document.querySelectorAll('#cat-grid .pcard .art-render img').length, ask: document.querySelectorAll('#cat-grid .pcard [data-act="form"]').length, qv: document.querySelectorAll('#cat-grid .pcard .qv-btn').length, kits: !!document.querySelector('.sx-kits'), anchor: document.querySelector('[data-kits-anchor]').previousElementSibling && document.querySelector('[data-kits-anchor]').previousElementSibling.className}));
   ok(GL.cards === EXP.all && GL.rn === EXP.all && GL.ask === EXP.all && GL.qv === EXP.all, 'полный список: все ' + GL.cards + ' карточек с макетом, «Запросить» и «Быстрым просмотром»', GL);
   ok(p.errs.length === 0, 'без ошибок JavaScript', p.errs); await p.ctx.close();
@@ -161,7 +173,7 @@ const userMsgs = p => p.evaluate(() => [...document.querySelectorAll('.asst-u .a
   const M = await st(p);
   ok(M.stack && M.pageIds.length === PAGE && await overflowX(p) <= 1, 'телефон: сцена та же, что на ПК (' + M.pageIds.length + ' товаров), без горизонтальной прокрутки страницы', M);
   const MV = await p.evaluate(() => { const v = document.querySelector('.shw-view'), vr = v.getBoundingClientRect(), pods = document.querySelectorAll('.shw-pd').length, pan = document.querySelector('.shw-pan'); return {w: Math.round(vr.width), pano: v.scrollWidth > v.clientWidth + 40, pods, pan: !!pan && getComputedStyle(pan).display !== 'none', filt: getComputedStyle(document.querySelector('.shw-aside .shw-groups') || document.querySelector('.shw-aside')).display, tog: getComputedStyle(document.querySelector('.filters-toggle')).display, h: Math.round(vr.height)}; });
-  ok(MV.pano && MV.pan && MV.pods === 7 && MV.tog !== 'none', 'телефон: панорама сцены прокручивается, есть стрелки, 7 подиумов, кнопка «Фильтры»', MV);
+  ok(MV.pano && MV.pan && MV.pods === 10 && MV.tog !== 'none', 'телефон: панорама сцены прокручивается, есть стрелки, 10 подиумов, кнопка «Фильтры»', MV);
   const PX0 = await p.evaluate(() => document.querySelector('.shw-view').scrollLeft); await p.evaluate(() => document.querySelector('[data-act="shw-pan"][data-dir="1"], .shw-pan.next, .shw-pan:last-of-type').click()); await wait(900);
   const PX1 = await p.evaluate(() => document.querySelector('.shw-view').scrollLeft); ok(PX1 > PX0 + 20, 'телефон: стрелка панорамы сдвигает сцену', [PX0, PX1]);
   await p.evaluate(() => document.querySelector('.shw-it:not(.is-gone)').click()); await wait(1100);
