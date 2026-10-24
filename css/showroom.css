@@ -65,8 +65,8 @@ html.lite .shw-motes{display:none}
 .shw-it.is-sel .shw-ph,.shw-it.is-sel .shw-sh,.shw-it.is-sel .shw-gl{transition-duration:1.15s}
 .shw-it.is-sel .shw-img{filter:none}
 .shw-it.is-gone{pointer-events:none}
-/* выбор: вся сцена притемняется тонкой вуалью, а выбранный товар выходит вперёд над ней (вуаль — один слой; прозрачные соседи просвечивали бы фон) */
-.shw-veil{position:absolute;z-index:30;left:0;top:0;width:100%;height:100%;background:rgba(230,217,193,.55);opacity:0;pointer-events:none;transition:opacity .5s var(--ease)}
+/* выбор: вся сцена слегка затемняется тёплой вуалью, а выбранный товар выходит вперёд над ней (вуаль — один слой; прозрачные соседи просвечивали бы фон) */
+.shw-veil{position:absolute;z-index:30;left:0;top:0;width:100%;height:100%;background:rgba(48,34,18,.27);opacity:0;pointer-events:none;transition:opacity .5s var(--ease)}
 .shw.has-sel .shw-veil{opacity:1}
 .shw-spot{position:absolute;z-index:3;left:0;top:0;width:560px;height:560px;margin:-280px 0 0 -280px;background:radial-gradient(closest-side,rgba(255,250,236,.95),rgba(255,248,228,.42) 55%,rgba(255,248,228,0));opacity:0;pointer-events:none;transition:opacity .6s var(--ease)}
 .shw.has-sel .shw-spot{opacity:1}
@@ -170,8 +170,6 @@ html.lite .shw-motes{display:none}
 .shw-card.is-open .c-bd{margin-right:34px}
 .shw-card.is-open{width:270px}
 /* выноска от карточки к выбранному товару */
-.shw-link{position:absolute;z-index:29;left:0;top:0;height:1px;background:linear-gradient(90deg,rgba(255,255,255,.9),rgba(255,255,255,.4));box-shadow:0 0 0 .5px rgba(86,60,30,.12);transform-origin:0 50%;opacity:0;transition:opacity .45s var(--ease)}
-.shw.has-sel .shw-link{opacity:1}
 
 /* листание: вертикальная пара кнопок у правого края (как в макете) */
 .shw-pager{position:absolute;z-index:14;right:34px;top:512px;display:grid;justify-items:center;gap:8px}
@@ -302,7 +300,6 @@ html.shw-top .hdr{background:transparent;border-bottom-color:transparent}
   .shw-card .c-more,.shw-card .c-bd{display:none}                                       /* на узком экране плашка не растёт: подробности — в «Быстром просмотре» и на странице товара */
   .shw-card .c-act{margin-top:10px}
   .shw-card .c-extra{margin-top:8px}
-  .shw-link{display:none}
   .shw-pager{position:absolute;left:12px;right:84px;top:auto;bottom:16px;width:auto;height:48px;z-index:9;display:flex;flex-direction:row;align-items:center;justify-content:center;gap:16px;padding:0 10px;border-radius:24px;background:var(--ax-hero-glass),var(--ax-sand,#e9dcc5);border:1px solid rgba(255,255,255,.85);box-shadow:inset 0 1px 0 #fff,0 14px 28px -20px rgba(86,60,30,.55)}
   .shw-pager[hidden]{display:none}
   .shw-pager .shw-pg{order:2;min-width:56px;text-align:center}.shw-pager .prev{order:1}.shw-pager .next{order:3}
