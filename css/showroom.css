@@ -231,53 +231,88 @@
 
 /* шапка сайта на странице-витрине — прозрачная над сценой, пока страница вверху; при прокрутке возвращается привычная молочная (класс html.shw-top ставит js/showroom.js) */
 .shw-sent{position:absolute;left:0;top:0;width:1px;height:150px;pointer-events:none}
-@media (min-width:1101px){
-  body[data-page="catalog"] .shw-room{margin-top:calc(var(--hdr) * -1)}
-  .hdr{transition:background-color .35s var(--ease),border-color .35s var(--ease)}
-  html.shw-top .hdr{background:transparent;border-bottom-color:transparent}
-}
+body[data-page="catalog"] .shw-room{margin-top:calc(var(--hdr) * -1)}
+.hdr{transition:background-color .35s var(--ease),border-color .35s var(--ease)}
+html.shw-top .hdr{background:transparent;border-bottom-color:transparent}
+.shw-hero,.shw-drop{display:contents}
 
-/* --- 8. планшет и телефон: та же сцена (7 подиумов, ниша с полками, арки, диск, растение), показанная крупно; если не помещается по ширине — сдвигается пальцем или стрелками.
-       Интерфейс — те же стеклянные панели, только идут обычным потоком: фильтры (те же галочки), заголовок, сцена, карточка, листание, «Рекомендуем», преимущества --- */
+/* --- 8. планшет и телефон: та же витрина, тот же образ. Первый экран — «герой» на всю ширину и высоту: сцена (10 подиумов сдвигаются пальцем или стрелками), поверх неё заголовок и категории, вверху стеклянная полоса «поиск + фильтры» (фильтры раскрываются стеклянной панелью),
+       внизу стеклянная плашка товара и стеклянный «док» листания. Дальше — «Рекомендуем» и остальные блоки. Масштаб сцены считает js/showroom.js по свободной высоте (--s, --oy). --- */
 @media (max-width:1100px){
-  .shw-room{aspect-ratio:auto;max-width:none;overflow:visible;background:none;display:block;padding:0 var(--gut)}
-  .shw-canvas{position:static;width:auto;height:auto;transform:none;display:flex;flex-direction:column;gap:14px}
-  .shw-vw{position:relative;inset:auto;order:3;border-radius:var(--r-xl);overflow:hidden;background:#e8dbc5;box-shadow:0 1px 2px rgba(86,60,30,.08),0 30px 56px -34px rgba(86,60,30,.5);isolation:isolate}
-  .shw-view{position:relative;inset:auto;height:calc(var(--wh,612) * var(--s) * 1px);overflow-x:auto;overflow-y:hidden;scrollbar-width:none;-webkit-overflow-scrolling:touch;overscroll-behavior-x:contain;touch-action:pan-x pan-y}
-  .shw-view::-webkit-scrollbar{display:none}
-  .shw-plane{transform:translateY(calc(var(--wy,0) * var(--s) * -1px)) scale(var(--s))}
-  .shw-pan:not([hidden]){position:absolute;z-index:10;top:50%;display:grid;place-items:center;width:40px;height:40px;margin-top:-20px;border-radius:50%;border:1px solid rgba(86,60,30,.2);background:rgba(250,245,235,.82);color:var(--navy);box-shadow:0 10px 20px -12px rgba(86,60,30,.5)}
+  .shw-room{aspect-ratio:auto;max-width:none;width:100%;height:auto;overflow:visible;background:none;display:block;padding:0}
+  .shw-canvas{position:relative;left:auto;top:auto;width:100%;height:auto;transform:none}
+  .shw-hero{display:block;position:relative;height:clamp(600px,100svh,960px);overflow:hidden;isolation:isolate;background:#e4d6bf;padding:calc(var(--hdr) + 10px) 12px 0;box-sizing:border-box;display:flex;flex-direction:column;gap:8px;--ax-hero-glass:linear-gradient(135deg,rgba(255,255,255,.62),rgba(250,244,232,.4))}
+  .shw-hero::before{content:"";position:absolute;left:0;right:0;top:0;height:var(--st,260px);z-index:2;pointer-events:none;background:linear-gradient(180deg,rgba(244,238,226,.95) 0,rgba(244,238,226,.82) 58%,rgba(244,238,226,0))}
+  .shw-hero::after{content:"";position:absolute;left:0;right:0;bottom:0;height:var(--sb,230px);z-index:2;pointer-events:none;background:linear-gradient(0deg,rgba(244,238,226,.92) 0,rgba(244,238,226,.7) 55%,rgba(244,238,226,0))}
+  .shw-vw{position:absolute;inset:0;z-index:0;border-radius:0;overflow:hidden;background:#e4d6bf}
+  .shw-view{position:absolute;inset:0;height:auto;overflow:hidden}
+  .shw-plane{transform:translate(calc(var(--ox,0) * 1px),calc(var(--oy,0) * 1px)) scale(var(--s))}
+  .shw-stage.is-rows2::after{content:"";position:absolute;left:var(--ledx);top:var(--ledy);width:var(--ledw);height:14px;z-index:1;border-radius:50%/7px;background:linear-gradient(180deg,#f1e6d1,#d7c4a1);box-shadow:inset 0 1px 0 rgba(255,255,255,.8),0 12px 16px -8px rgba(78,54,26,.55);pointer-events:none}
+  .shw-pan:not([hidden]){position:absolute;z-index:6;top:var(--pan-y,48%);display:grid;place-items:center;width:40px;height:40px;margin-top:-20px;border-radius:50%;border:1px solid rgba(255,255,255,.8);background:rgba(250,245,235,.78);color:var(--navy);box-shadow:inset 0 1px 0 #fff,0 10px 20px -12px rgba(86,60,30,.5)}
   .shw-pan.prev{left:8px}.shw-pan.next{right:8px}
   .shw-pan.prev .ic{transform:scaleX(-1)}
   .shw-pan .ic{width:17px;height:17px}
   .shw-pan:disabled{opacity:.3}
-  .shw-aside{position:static;order:1;width:auto;max-height:none}
-  .shw-panel.toolbar{max-height:none;overflow:visible}
-  .shw-panel .filters-toggle{display:inline-flex;align-self:flex-start}
-  .shw-filters{display:none}
-  .filters-open .shw-filters{display:block}
-  .shw-head{position:static;order:2;width:auto;padding:4px 2px 0}
-  .shw-head h1{font-size:clamp(26px,5.6vw,40px);white-space:normal}
-  .shw-head .lead{font-size:15px;max-width:none}
-  .shw-pills{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;margin:12px 0 0;padding:2px 0 4px;max-width:none;scroll-snap-type:x proximity}
+
+  /* верхняя стеклянная полоса: поиск и «Фильтры» в одной строке; сами фильтры — стеклянная панель поверх сцены */
+  .shw-aside{position:relative;left:auto;top:auto;width:auto;max-height:none;z-index:8;flex:none}
+  .shw-aside::after{display:none}
+  .shw-panel.toolbar{position:relative;max-height:none;overflow:visible;padding:7px 8px;gap:0;border-radius:24px;background:var(--ax-hero-glass),var(--ax-sand,#e9dcc5);border:1px solid rgba(255,255,255,.85);box-shadow:inset 0 1px 0 #fff,0 14px 28px -20px rgba(86,60,30,.55)}
+  .shw-panel .tb-top{flex-direction:row;align-items:center;gap:8px}
+  .shw-panel .search{flex:1;min-width:0}
+  .shw-panel .search input{padding:11px 14px 11px 40px;font-size:15px}
+  .shw-panel .search .ic{left:14px}
+  .shw-panel .filters-toggle{display:inline-flex;flex:none;align-self:center;border-radius:999px;background:rgba(255,255,255,.7)}
+  .shw-drop{display:none;position:absolute;left:0;right:0;top:calc(100% + 8px);z-index:14;max-height:min(62svh,560px);overflow-y:auto;overscroll-behavior:contain;padding:14px 16px 12px;border-radius:24px;background:linear-gradient(135deg,rgba(255,255,255,.86),rgba(250,244,232,.78)),var(--ax-sand,#e9dcc5);border:1px solid rgba(255,255,255,.9);box-shadow:inset 0 1px 0 #fff,0 30px 50px -26px rgba(86,60,30,.6)}
+  .filters-open .shw-drop{display:block}
+  .shw-filters{display:block}
+
+  /* заголовок и категории — поверх сцены, как на компьютере */
+  .shw-head{position:relative;left:auto;top:auto;width:auto;z-index:7;padding:2px 6px 0;flex:none;transition:none}
+  .shw-head .eyebrow{font-size:11px}
+  .shw-head h1{margin:4px 0 4px;font-size:clamp(22px,6.1vw,44px);line-height:1.1;white-space:normal}
+  .shw-head .lead{display:none;font-size:15px;max-width:620px}
+  .shw-pills{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;margin:8px -12px 0;padding:2px 12px 4px;max-width:none;scroll-snap-type:x proximity}
   .shw-pills::-webkit-scrollbar{display:none}
   .shw .cat-tile,.shw .shw-all{flex:none}
   .shw.has-sel .shw-head{opacity:1;visibility:visible;pointer-events:auto}
-  .shw-card{position:static;order:4;width:auto;transform:none!important}
+
+  /* стеклянная плашка товара внизу сцены и «док» листания */
+  .shw-card{position:absolute;left:12px;right:12px;top:auto;bottom:80px;width:auto;z-index:9;transform:none!important;padding:14px 16px 14px;border-radius:24px;background:linear-gradient(135deg,rgba(255,255,255,.78),rgba(250,244,232,.62)),var(--ax-sand,#e9dcc5);border:1px solid rgba(255,255,255,.9);box-shadow:inset 0 1px 0 #fff,0 26px 44px -26px rgba(86,60,30,.6)}
   .shw-card.is-open{width:auto}
-  .shw-link{display:none}
-  .shw-pager{position:static;order:5;grid-auto-flow:column;align-items:center;justify-self:center;gap:10px}
-  .shw-pager .shw-pg{order:2}.shw-pager .prev{order:1}.shw-pager .next{order:3}
+  .shw-card .c-t{font-size:20px}
+  .shw-card .c-d{-webkit-line-clamp:1}
+  .shw-card.is-open .c-d{-webkit-line-clamp:1}
+  .shw-card .c-more,.shw-card .c-bd{display:none}                                       /* на узком экране плашка не растёт: подробности — в «Быстром просмотре» и на странице товара */
+  .shw-card .c-act{margin-top:10px}
+  .shw-card .c-extra{margin-top:8px}
+  .shw-link,.shw-nm{display:none}
+  .shw-pager{position:absolute;left:12px;right:84px;top:auto;bottom:16px;width:auto;height:48px;z-index:9;display:flex;flex-direction:row;align-items:center;justify-content:center;gap:16px;padding:0 10px;border-radius:24px;background:var(--ax-hero-glass),var(--ax-sand,#e9dcc5);border:1px solid rgba(255,255,255,.85);box-shadow:inset 0 1px 0 #fff,0 14px 28px -20px rgba(86,60,30,.55)}
+  .shw-pager[hidden]{display:none}
+  .shw-pager .shw-pg{order:2;min-width:56px;text-align:center}.shw-pager .prev{order:1}.shw-pager .next{order:3}
+  .shw-pager .shw-nav{width:36px;height:36px}
   .shw-pager .shw-nav.prev .ic,.shw-pager .shw-nav.next .ic{transform:none}
   .shw-pager .shw-nav.prev .ic{transform:scaleX(-1)}
-  .shw-pop{position:static;order:6;width:auto;height:auto;padding:16px 18px 18px;background:linear-gradient(135deg,rgba(255,255,255,.7),rgba(250,244,232,.55)),var(--ax-sand,#e9dcc5)}
-  .shw-panel.toolbar{background:linear-gradient(135deg,rgba(255,255,255,.75),rgba(250,244,232,.6)),var(--ax-sand,#e9dcc5)}
+  .shw-empty{left:50%}
+
+  /* ниже первого экрана: «Рекомендуем» (стекло без картинки сцены) и остальные блоки */
+  .shw-pop{position:relative;left:auto;top:auto;order:6;width:auto;height:auto;margin:14px 12px 0;padding:16px 18px 18px;background:linear-gradient(135deg,rgba(255,255,255,.7),rgba(250,244,232,.55)),var(--ax-sand,#e9dcc5)}
   .shw-pop-w .shw-nav{display:none}
   .shw-pc{flex-basis:calc((100% - 28px) / 3);height:auto;min-width:168px}
-  .shw-adv{position:static;order:7;width:auto;height:auto;flex-wrap:wrap;gap:14px;padding:16px;border-radius:var(--r-lg)}
+  .shw-adv{position:relative;flex-wrap:wrap;gap:14px;padding:16px;border-radius:var(--r-lg)}
   .shw-av{flex:1 1 220px}
   .shw-help{width:100%;justify-content:center;margin-left:0}
-  .shw-empty{left:872px}
+}
+@media (min-width:700px) and (max-width:1100px) and (min-height:900px){
+  .shw-head .lead{display:block}
+}
+@media (min-width:700px) and (max-width:1100px){
+  .shw-head h1{font-size:clamp(34px,5vw,48px)}
+  .shw-hero{padding-left:24px;padding-right:24px}
+  .shw-pills{margin-left:-24px;margin-right:-24px;padding-left:24px;padding-right:24px}
+  .shw-card{left:24px;right:auto;width:min(520px,calc(100% - 48px))}
+  .shw-pager{left:auto;right:96px;width:240px}
+  .shw-pop{margin-left:24px;margin-right:24px}
 }
 @media (max-width:640px){
   .shw-pc{flex-basis:62%}
@@ -296,3 +331,9 @@ html.lite .shw-ph{transition:none}
 html.lite [data-catalog] #cat-grid .pcard.is-hov .art-render img,html.lite [data-catalog] #cat-grid .pcard:has(:focus-visible) .art-render img{transform:translateX(-50%)}
 html:not(.js) .shw{display:none}
 @media print{.shw,.shw-adv,.shw-aside{display:none!important}}
+
+/* низкие экраны (маленький телефон, альбомная ориентация): заголовок прячем, остаются категории — сцене нужна высота */
+@media (max-width:1100px) and (max-height:720px){
+  .shw-head .eyebrow,.shw-head h1,.shw-head .lead{display:none}
+  .shw-card .c-d{display:none}
+}

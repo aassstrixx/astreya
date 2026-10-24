@@ -45,12 +45,14 @@ module.exports = function showroom(ctx, C, P) {
         <label class="search"><span class="sr">Поиск по каталогу</span>${I.search}<input id="cat-q" type="search" placeholder="Поиск по каталогу…" autocomplete="off"></label>
         <button class="btn btn-ghost btn-sm filters-toggle" type="button" data-act="filters" aria-expanded="false" aria-controls="filters">${I.filter} Фильтры <span class="badge" id="f-badge" hidden>0</span></button>
       </div>
+      <div class="shw-drop">
       <div class="filters shw-filters" id="filters">
         ${GROUPS.map(group).join('')}
         ${sort}
       </div>
       <div class="active-filters" id="active-filters" hidden></div>
       <div class="shw-aside-foot"><span class="shw-count" data-shw-count>${products.length} из ${products.length}</span><button class="shw-reset" type="button" data-act="cat-reset" data-shw-reset hidden>${reset}Сбросить фильтры</button></div>
+      </div>
     </div>
   </aside>`;
 
@@ -109,6 +111,7 @@ module.exports = function showroom(ctx, C, P) {
   const scene = `<section class="shw" data-shw aria-label="Витрина каталога">
       <div class="shw-room" data-shw-room>
         <div class="shw-canvas">
+          <div class="shw-hero">
           <div class="shw-vw">
             <div class="shw-view" data-shw-view>
               ${world}
@@ -126,6 +129,7 @@ module.exports = function showroom(ctx, C, P) {
             <button class="shw-nav prev" type="button" data-act="shw-page" data-dir="-1" aria-label="Предыдущие товары">${I.arrow}</button>
             <span class="shw-pg" data-shw-pg aria-live="polite"></span>
             <button class="shw-nav next" type="button" data-act="shw-page" data-dir="1" aria-label="Следующие товары">${I.arrow}</button>
+          </div>
           </div>
           ${pop}
         </div>

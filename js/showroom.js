@@ -45,7 +45,7 @@
   const MAIN_MAX = 10;                                                  // всё на переднем плане: на странице десять товаров, каждый на своём подиуме; на заднем плане (ниша, полки) предметов нет
   const perFor = () => MAIN_MAX;
   /* на узких экранах показывается та же сцена, что на компьютере: полоса холста [WX0…1536]×[WY0…WY0+WH]; если по ширине она не умещается при читаемом масштабе, сцену можно сдвигать пальцем или стрелками */
-  const WX0 = 270, WY0 = 128, WW = 1266, WH = 612, MIN_VIEW_H = 330, PAN_S = .8;
+  const COMPACT_TOP = 318, COMPACT_EXT = 392;                          // по вертикали холста показываем от верха самой высокой упаковки (y≈318) до оснований подиумов (y≈710)
 
   /* расстановка по макету 1536×1024: десять подиумов в одну линию на переднем плане — высота разная, ряд чередуется (дальний/передний: ±32 px по вертикали), главный товар — на самом высоком подиуме и крупнее.
      Подиумы не перекрывают друг друга, упаковка занимает не больше FIT ширины своего подиума — ни один товар не заходит на чужой подиум и не закрывает соседа. Размеры — проектные пиксели холста.
@@ -54,7 +54,9 @@
   const HV = [[1, 1, 1, 1, 1, 1, 1, 1, 1, 1], [1.7, 1.0, .75, 1.6, .9, 1.8, 1.2, .8, 1.5, .9], [.9, 1.5, 1.15, .75, 1.7, .8, 1.4, 1.1, .7, 1.6]];      // высоты подиумов по категории: «композиций» три, архитектура одна
   const BASE = [654, 686], CAP_RATIO = (D.showroom && D.showroom.pod && D.showroom.pod.capRatio) || .1026, TOP_MIN = 322;
   const SPAN = [322, 1448], GAP = 10, FIT = .82, PW_MIN = 96;
-  function compose(prods, s) {
+  function compose(prods, s) { return s.rows2 ? composeRows(prods, s) : composeLine(prods, s); }
+  function composeLine(prods, s) {
+    s.stage.classList.remove('is-rows2');
     const n = Math.min(prods.length, MAIN_MAX), slots = [], v = s.variant;
     const idx = n === 1 ? [2] : Array.from({length: n}, (_, i) => Math.round(i * (MAIN_MAX - 1) / (n - 1)));
     const cells = idx.map((k, i) => { const [h0, row, sc] = REF[k], p = prods[i], im = imgOf(p), th = thOf(p) * sc, bw = th * im.ar; return {k, p, im, h0, row, th, bw, pw: Math.max(bw / FIT, PW_MIN), hero: k === 2 || (n <= 3 && i === Math.floor((n - 1) / 2))}; });
@@ -69,6 +71,25 @@
       x += pw + GAP + extra;
       slots.push({group: 'main', i, p: c.p, im: c.im, hero: c.hero, row: c.row, pod: {l: cx - pw / 2, t: topFace - e / 2, w: pw, e, b: hh}, it: {l: cx - bw / 2, t: topFace + e * .08 - th, w: bw, h: th, cx, z: 5 + c.row * 2 + (c.hero ? 1 : 0)}});
     });
+    return slots;
+  }
+
+  /* узкий экран (телефон): та же экспозиция, но «в две полки» — до пяти подиумов в ряд, оба ряда на одном экране без сдвига; задний ряд стоит на каменной полке, передний — на платформе.
+     Масштаб подбирается так, чтобы всё поместилось по ширине и по высоте (measure). Размеры — те же проектные пиксели холста. */
+  const R2 = {Yf: 700, R: 236, cs: .72, cols: 5, slot: 104, topC: 246, ext: 462, cap: 214};
+  function composeRows(prods, s) {
+    const n = Math.min(prods.length, MAIN_MAX), slots = [], v = s.variant, wc = s.wc, vx0 = s.vx0, m = 12 / s.s, slotW = (wc - 2 * m) / R2.cols, Yb = R2.Yf - R2.R;
+    const back = n > R2.cols ? Math.ceil(n / 2) : 0, rows = [prods.slice(0, back).map((p, j) => [p, j]), prods.slice(back).map((p, j) => [p, back + j])];
+    rows.forEach((list, r) => {
+      const c = list.length, x0 = vx0 + wc / 2 - c * slotW / 2 + slotW / 2, base = r ? R2.Yf : Yb;
+      list.forEach(([p, i], j) => {
+        const hero = i === 2, im = imgOf(p), th0 = thOf(p) * (hero ? 1.06 : 1) * R2.cs, bw0 = th0 * im.ar, pw = Math.min(slotW - 8, Math.max(bw0 / FIT, 60)), k = Math.min(1, pw * FIT / bw0), th = th0 * k, bw = bw0 * k, cx = x0 + j * slotW;
+        const hh = Math.max(18, Math.min(REF[i][0] * .42 * HV[v][i], R2.cap - th)), e = pw * CAP_RATIO, topFace = base - hh;
+        slots.push({group: 'main', i, p, im, hero, row: r, pod: {l: cx - pw / 2, t: topFace - e / 2, w: pw, e, b: hh}, it: {l: cx - bw / 2, t: topFace + e * .08 - th, w: bw, h: th, cx, z: 5 + r * 2 + (hero ? 1 : 0)}});
+      });
+    });
+    const st = s.stage.style; s.stage.classList.toggle('is-rows2', back > 0);
+    st.setProperty('--ledx', (vx0 + m * .4).toFixed(1) + 'px'); st.setProperty('--ledw', (wc - m * .8).toFixed(1) + 'px'); st.setProperty('--ledy', (Yb - 6).toFixed(1) + 'px');
     return slots;
   }
 
@@ -265,21 +286,25 @@
 
   /* ---------- размеры и запуск ---------- */
   function measure() {
-    const s = S, stack = smq.matches; let W, H, k;
+    const s = S, stack = smq.matches; let W, H, k, oy = 0, ox = 0, st = 0, sb = 0, rows2 = false, wc = 0, vx0 = 0;
     if (stack) {
-      W = s.vw.clientWidth; const fit = W / WW;
-      k = fit * WH >= MIN_VIEW_H ? fit : PAN_S; H = WH * k;                       // помещается целиком — масштаб по ширине; иначе — крупнее, со сдвигом
+      /* планшет и телефон: сцена — фон «героя» на весь первый экран; всё помещается без сдвига: считаем масштаб по ширине и по свободной высоте между заголовком (сверху) и плашкой товара с доком (снизу).
+         Одна линия из десяти подиумов (планшет) или две полки по пять (телефон) — берём то, что даёт крупнее. */
+      const hr = s.hero.getBoundingClientRect(); W = s.hero.clientWidth; H = s.hero.clientHeight;
+      if (!s.sel && s.card && !s.card.hidden) s.cardTop = s.card.getBoundingClientRect().top - hr.top;          // свёрнутая плашка товара: сцена должна кончаться над ней
+      const top = s.head.getBoundingClientRect().bottom - hr.top + 6, bot = (s.cardTop || H - 218) - 34, avail = Math.max(120, bot - top), Wa = W - 24;
+      const k1 = Math.min(Wa / (SPAN[1] - SPAN[0]), avail / COMPACT_EXT), k2 = Math.min(Wa / (R2.cols * R2.slot), avail / R2.ext);
+      rows2 = k2 > k1 * 1.12; k = Math.max(.42, W / W0, Math.min(1.45, rows2 ? k2 : k1));            // сцена не уже окна: справа и слева всегда стена, а не пустота
+      oy = top - (rows2 ? R2.topC : COMPACT_TOP) * k; wc = W / k; vx0 = Math.max(0, Math.min(W0 - wc, 885 - wc / 2)); ox = -vx0 * k;
+      st = Math.round(top + 18); sb = H - bot + 30;
     } else { W = s.room.clientWidth; H = s.room.clientHeight; k = W / W0; }
     if (!W || !H) return false;
-    const ch = stack !== s.stack || Math.abs(k - s.s) > 1e-4 || !s.W;
-    s.W = W; s.H = H; s.s = k; s.stack = stack;
-    const st = s.room.style; st.setProperty('--s', k.toFixed(5));
-    if (stack) { st.setProperty('--wy', WY0); st.setProperty('--wh', WH); }
-    else { ['--wy', '--wh'].forEach(n => st.removeProperty(n)); }
-    const pan = stack && W0 * k > W + 2; s.panOn = pan;
-    $$('.shw-pan', s.root).forEach(b => { b.hidden = !pan; });
-    if (stack && !s.centered && W) { s.view.scrollLeft = Math.max(0, 872 * k - W / 2); s.centered = true; }
-    if (!stack) s.centered = false;
+    const ch = stack !== s.stack || rows2 !== s.rows2 || Math.abs(k - s.s) > 1e-4 || Math.abs(oy - (s.oy || 0)) > .5 || !s.W;
+    s.W = W; s.H = H; s.s = k; s.oy = oy; s.stack = stack; s.rows2 = rows2; s.wc = wc; s.vx0 = vx0;
+    const rs = s.room.style; rs.setProperty('--s', k.toFixed(5));
+    if (stack) { rs.setProperty('--oy', oy.toFixed(1)); rs.setProperty('--ox', ox.toFixed(1)); rs.setProperty('--st', st + 'px'); rs.setProperty('--sb', sb + 'px'); }
+    else { ['--oy', '--ox', '--st', '--sb'].forEach(n => rs.removeProperty(n)); }
+    s.panOn = false; $$('.shw-pan', s.root).forEach(b => { b.hidden = true; });
     return ch;
   }
   function variantOf() { const c = val('cat'); return c === 'all' ? 0 : ((D.cats || []).findIndex(x => x.id === c) + 1) % 3; }
@@ -288,7 +313,7 @@
     if (S && S.ro) S.ro.disconnect(); if (S && S.io) S.io.disconnect();
     const rootEl = $('[data-shw]'); if (!rootEl) { S = null; html.classList.remove('shw-top'); return null; }
     S = {root: rootEl, room: $('[data-shw-room]', rootEl), vw: $('.shw-vw', rootEl), view: $('[data-shw-view]', rootEl), stage: $('[data-shw-stage]', rootEl), card: $('[data-shw-card]', rootEl), pager: $('[data-shw-pager]', rootEl), pgText: $('[data-shw-pg]', rootEl), empty: $('[data-shw-empty]', rootEl),
-      aside: $('.shw-aside', rootEl), grid: $('#cat-grid'), ids: [], pageIds: [], page: 0, per: 10, W: 0, H: 0, s: 1, stack: false, panOn: false, centered: false, variant: 0, items: new Map(), pods: [], anims: new Set(), sel: null, hov: null, defId: null, rendered: false, rz: 0, rect: null};
+      hero: $('.shw-hero', rootEl), head: $('.shw-head', rootEl), aside: $('.shw-aside', rootEl), grid: $('#cat-grid'), ids: [], pageIds: [], page: 0, per: 10, W: 0, H: 0, s: 1, stack: false, panOn: false, centered: false, variant: 0, items: new Map(), pods: [], anims: new Set(), sel: null, hov: null, defId: null, rendered: false, rz: 0, rect: null};
     S.spot = document.createElement('i'); S.spot.className = 'shw-spot'; S.spot.setAttribute('aria-hidden', 'true'); S.stage.appendChild(S.spot);
     S.sent = document.createElement('i'); S.sent.className = 'shw-sent'; S.sent.setAttribute('aria-hidden', 'true'); S.room.appendChild(S.sent);
     if (window.IntersectionObserver) { S.io = new IntersectionObserver(es => es.forEach(e => html.classList.toggle('shw-top', e.isIntersecting)), {rootMargin: '-84px 0px 0px 0px'}); S.io.observe(S.sent); } else html.classList.add('shw-top');
@@ -300,7 +325,7 @@
       e.preventDefault(); const nx = its[i + (e.key === 'ArrowRight' ? 1 : -1)]; if (nx) nx.focus();
     });
     S.ro = window.ResizeObserver ? new ResizeObserver(() => { if (!S || S.rz) return; S.rz = requestAnimationFrame(() => { if (!S) return; S.rz = 0; layout(); }); }) : null;
-    if (S.ro) S.ro.observe(S.room); else addEventListener('resize', () => layout());
+    if (S.ro) { S.ro.observe(S.room); S.ro.observe(S.hero); S.ro.observe(S.head); } else addEventListener('resize', () => layout());
     S.ids = visibleIds(); S.variant = variantOf();
     popInit();
     return S;

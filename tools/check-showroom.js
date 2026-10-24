@@ -3,7 +3,7 @@
    Компьютер 1440×900: сцена из слоёв (арки, ниша, платформа, подиумы), товары на подиумах и полках ниши (3D-макеты упаковки, картинки загружены), прозрачная шапка над сценой и возврат к привычной при прокрутке,
    панель фильтров слева (галочки ↔ настоящие select, счётчики, сброс), категории-«пилюли», поиск, сортировка, «ничего не нашлось», листание, наведение, выбор товара (приглушение остальных, карточка с «Подробнее»,
    «Запросить», «Быстрый просмотр», «Помочь с подбором» → Стелла, Esc), «Рекомендуем», полоса преимуществ, полный список ниже (с тем же макетом), отсутствие горизонтальной прокрутки и ошибок JavaScript.
-   Отдельно: планшет 900 и телефон 390 (окно-кадр сцены, меньше товаров, карточка под сценой), prefers-reduced-motion (без пространственных анимаций), «лёгкий режим».
+   Отдельно: планшет и телефон (та же витрина «героем» на весь первый экран: все 10 подиумов без сдвига, стеклянные поиск/фильтры, плашка товара внизу сцены), prefers-reduced-motion (без пространственных анимаций), «лёгкий режим».
    Нужны Playwright и Chromium. Запуск: node tools/check-showroom.js  (после node tools/build.js). Код возврата ≠ 0, если что-то не так. */
 'use strict';
 let pw; for (const p of ['playwright', '/opt/node22/lib/node_modules/playwright']) { try { pw = require(p); break; } catch (e) {} }
@@ -58,7 +58,7 @@ const userMsgs = p => p.evaluate(() => [...document.querySelectorAll('.asst-u .a
   const ST = await p.evaluate(() => { const r = e => e.getBoundingClientRect(); const pods = [...document.querySelectorAll('.shw-pd')].map(r); const its = [...document.querySelectorAll('.shw-it:not(.is-bg)')].map(r); return {pods: pods.length, standing: its.every((it, i) => { const pd = pods[i]; return pd && it.bottom > pd.top - 2 && it.bottom < pd.top + pd.height * .5 && it.left > pd.left - 30 && it.right < pd.right + 30; }), tops: Math.min(...its.map(i => i.top)), pills: r(document.querySelector('.shw-pills')).bottom}; });
   ok(ST.standing, 'каждый главный товар стоит на своём подиуме (контакт по нижней кромке)', ST);
   const OV = p => p.evaluate(() => { const r = e => e.getBoundingClientRect(), hit = (a, b) => Math.min(a.right, b.right) - Math.max(a.left, b.left) > 1.5 && Math.min(a.bottom, b.bottom) - Math.max(a.top, b.top) > 1.5; const pods = [...document.querySelectorAll('.shw-pd')].map(r), its = [...document.querySelectorAll('.shw-it:not(.is-bg):not(.is-gone)')].map(r), bad = [];
-    its.forEach((it, i) => { if (it.left < pods[i].left - 1 || it.right > pods[i].right + 1) bad.push('товар ' + i + ' шире своего подиума'); its.forEach((o, j) => { if (j > i && hit(it, o)) bad.push('товары ' + i + ' и ' + j + ' перекрываются'); }); pods.forEach((pd, j) => { if (j !== i && it.left < pd.right - 1.5 && it.right > pd.left + 1.5 && it.bottom > pd.top + 4) bad.push('товар ' + i + ' заходит на подиум ' + j); }); });
+    its.forEach((it, i) => { if (it.left < pods[i].left - 1 || it.right > pods[i].right + 1) bad.push('товар ' + i + ' шире своего подиума'); its.forEach((o, j) => { if (j > i && hit(it, o)) bad.push('товары ' + i + ' и ' + j + ' перекрываются'); }); pods.forEach((pd, j) => { if (j !== i && hit(it, pd)) bad.push('товар ' + i + ' заходит на подиум ' + j); }); });
     pods.forEach((a, i) => pods.forEach((b2, j) => { if (j > i && hit(a, b2)) bad.push('подиумы ' + i + ' и ' + j + ' перекрываются'); })); return {n: its.length, bad}; });
   const OV0 = await OV(p); ok(OV0.n === 10 && OV0.bad.length === 0, 'на ПК каждый товар стоит строго на своём подиуме: не шире него, не перекрывает соседей и чужие подиумы, подиумы не перекрываются', OV0);
   ok(ST.tops > ST.pills, 'упаковки не заезжают под заголовок и категории (верх упаковки ' + Math.round(ST.tops) + ' > низ «пилюль» ' + Math.round(ST.pills) + ')', ST);
@@ -164,23 +164,27 @@ const userMsgs = p => p.evaluate(() => [...document.querySelectorAll('.asst-u .a
   ok(GL.cards === EXP.all && GL.rn === EXP.all && GL.ask === EXP.all && GL.qv === EXP.all, 'полный список: все ' + GL.cards + ' карточек с макетом, «Запросить» и «Быстрым просмотром»', GL);
   ok(p.errs.length === 0, 'без ошибок JavaScript', p.errs); await p.ctx.close();
 
-  console.log('\n[планшет 900 и телефон 390]');
-  p = await open(b, {viewport: {width: 900, height: 1000}});
-  const T = await st(p);
-  ok(T.stack && T.pageIds.length === PAGE && await overflowX(p) <= 1, 'планшет: сцена та же, что на ПК (' + T.pageIds.length + ' товаров), без горизонтальной прокрутки страницы', T);
+  console.log('\n[планшет и телефон: та же витрина, всё на одном экране]');
+  const FIT = p => p.evaluate(() => { const h = document.querySelector('.shw-hero').getBoundingClientRect(), its = [...document.querySelectorAll('.shw-it:not(.is-gone)')].map(e => e.getBoundingClientRect()), head = document.querySelector('.shw-head').getBoundingClientRect(), card = document.querySelector('.shw-card').getBoundingClientRect();
+    return {n: its.length, inside: its.every(r => r.left >= h.left - 1 && r.right <= h.right + 1 && r.top >= head.bottom - 4 && r.bottom <= card.top + 40), hero: [Math.round(h.width), Math.round(h.height)], rows2: !!document.querySelector('.shw-stage.is-rows2'), pan: [...document.querySelectorAll('.shw-pan')].every(b => b.hidden), pods: document.querySelectorAll('.shw-pd').length, vw: innerWidth, sw: document.documentElement.scrollWidth, blur: /rgba/.test(getComputedStyle(document.querySelector('.shw-panel')).backgroundImage), tog: getComputedStyle(document.querySelector('.filters-toggle')).display}; });
+  p = await open(b, {viewport: {width: 820, height: 1180}});
+  const T = await st(p), TF = await FIT(p), TO = await OV(p);
+  ok(T.stack && T.pageIds.length === PAGE && TF.sw <= TF.vw + 1, 'планшет: те же 10 товаров, без горизонтальной прокрутки страницы', {T: T.pageIds.length, TF});
+  ok(TF.inside && TF.pan && TF.pods === 10 && TO.bad.length === 0, 'планшет: вся экспозиция на одном экране — все подиумы внутри «героя», между заголовком и плашкой товара, наложений нет', {TF, TO});
   await p.close(); await p.ctx.close();
   p = await open(b, {viewport: {width: 390, height: 844}, isMobile: true, hasTouch: true});
-  const M = await st(p);
-  ok(M.stack && M.pageIds.length === PAGE && await overflowX(p) <= 1, 'телефон: сцена та же, что на ПК (' + M.pageIds.length + ' товаров), без горизонтальной прокрутки страницы', M);
-  const MV = await p.evaluate(() => { const v = document.querySelector('.shw-view'), vr = v.getBoundingClientRect(), pods = document.querySelectorAll('.shw-pd').length, pan = document.querySelector('.shw-pan'); return {w: Math.round(vr.width), pano: v.scrollWidth > v.clientWidth + 40, pods, pan: !!pan && getComputedStyle(pan).display !== 'none', filt: getComputedStyle(document.querySelector('.shw-aside .shw-groups') || document.querySelector('.shw-aside')).display, tog: getComputedStyle(document.querySelector('.filters-toggle')).display, h: Math.round(vr.height)}; });
-  ok(MV.pano && MV.pan && MV.pods === 10 && MV.tog !== 'none', 'телефон: панорама сцены прокручивается, есть стрелки, 10 подиумов, кнопка «Фильтры»', MV);
-  const PX0 = await p.evaluate(() => document.querySelector('.shw-view').scrollLeft); await p.evaluate(() => document.querySelector('[data-act="shw-pan"][data-dir="1"], .shw-pan.next, .shw-pan:last-of-type').click()); await wait(900);
-  const PX1 = await p.evaluate(() => document.querySelector('.shw-view').scrollLeft); ok(PX1 > PX0 + 20, 'телефон: стрелка панорамы сдвигает сцену', [PX0, PX1]);
+  const M = await st(p), MF = await FIT(p), MO = await OV(p);
+  ok(M.stack && M.pageIds.length === PAGE && MF.sw <= MF.vw + 1, 'телефон: те же 10 товаров, без горизонтальной прокрутки страницы', {M: M.pageIds.length, MF});
+  ok(MF.inside && MF.rows2 && MF.pan && MF.pods === 10 && MF.tog !== 'none', 'телефон: все 10 подиумов на одном экране без сдвига (две полки по пять), внутри «героя», кнопка «Фильтры» есть', MF);
+  ok(MO.bad.length === 0, 'телефон: каждый товар на своём подиуме, соседей и чужих подиумов не закрывает', MO);
   await p.evaluate(() => document.querySelector('.shw-it:not(.is-gone)').click()); await wait(1100);
-  const MS = await p.evaluate(() => ({open: document.querySelector('.shw-card').classList.contains('is-open'), pos: getComputedStyle(document.querySelector('.shw-card')).position, below: document.querySelector('.shw-card').getBoundingClientRect().top >= document.querySelector('.shw-view').getBoundingClientRect().bottom - 2}));
-  ok(MS.open && MS.pos === 'static' && MS.below, 'телефон: выбор раскрывает карточку под сценой', MS);
+  const MS = await p.evaluate(() => { const c = document.querySelector('.shw-card'), h = document.querySelector('.shw-hero').getBoundingClientRect(), r = c.getBoundingClientRect(), it = document.querySelector('.shw-it.is-sel'); return {open: c.classList.contains('is-open'), pos: getComputedStyle(c).position, inside: r.top > h.top && r.bottom <= h.bottom + 1, sel: !!it, itemVisible: it ? it.getBoundingClientRect().top < r.top : false}; });
+  ok(MS.open && MS.pos === 'absolute' && MS.inside && MS.sel && MS.itemVisible, 'телефон: выбор раскрывает стеклянную плашку внизу сцены, выбранный товар остаётся виден', MS);
+  await p.keyboard.press('Escape'); await wait(700);
   await p.click('.shw-pager .next', {force: true}); await wait(1200); ok((await st(p)).page === 1, 'телефон: листание работает');
-  await p.click('.filters-toggle'); await wait(500); await setSel(p, 'f-cat', 'sun'); await wait(1400);
+  await p.click('.filters-toggle'); await wait(500);
+  ok(await p.evaluate(() => { const d = document.querySelector('.shw-drop'), r = d.getBoundingClientRect(); return getComputedStyle(d).display !== 'none' && r.width > 300 && r.bottom < innerHeight; }), 'телефон: «Фильтры» раскрывают стеклянную панель поверх сцены');
+  await setSel(p, 'f-cat', 'sun'); await wait(1400);
   ok(await vis(p) === EXP.sun && (await items(p)).length === EXP.sun, 'телефон: фильтр через «Фильтры» обновляет сцену (' + EXP.sun + ')');
   ok(p.errs.length === 0, 'без ошибок JavaScript', p.errs); await p.ctx.close();
 
