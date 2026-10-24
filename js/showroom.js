@@ -45,7 +45,7 @@
   const MAIN_MAX = 10;                                                  // всё на переднем плане: на странице десять товаров, каждый на своём подиуме; на заднем плане (ниша, полки) предметов нет
   const perFor = () => MAIN_MAX;
   /* на узких экранах показывается та же сцена, что на компьютере: полоса холста [WX0…1536]×[WY0…WY0+WH]; если по ширине она не умещается при читаемом масштабе, сцену можно сдвигать пальцем или стрелками */
-  const COMPACT_TOP = 318, COMPACT_EXT = 392;                          // по вертикали холста показываем от верха самой высокой упаковки (y≈318) до оснований подиумов (y≈710)
+  const ASIDE_TOP = 100, COMPACT_TOP = 318, COMPACT_EXT = 392;                          // по вертикали холста показываем от верха самой высокой упаковки (y≈318) до оснований подиумов (y≈710)
 
   /* расстановка по макету 1536×1024: десять подиумов в одну линию на переднем плане — высота разная, ряд чередуется (дальний/передний: ±32 px по вертикали), главный товар — на самом высоком подиуме и крупнее.
      Подиумы не перекрывают друг друга, упаковка занимает не больше FIT ширины своего подиума — ни один товар не заходит на чужой подиум и не закрывает соседа. Размеры — проектные пиксели холста.
@@ -98,7 +98,7 @@
     const p = g.p, b = B[p.brand] || {}, im = g.im, el = document.createElement('button');
     el.type = 'button'; el.className = 'shw-it' + (g.group === 'niche' ? ' is-bg' : ''); el.setAttribute('data-act', 'shw-pick'); el.setAttribute('data-id', p.id); el.setAttribute('aria-pressed', 'false');
     el.setAttribute('aria-label', (b.name ? b.name + ' — ' : '') + p.name); el.setAttribute('style', bstyle(b));
-    el.innerHTML = '<i class="shw-gl"></i><i class="shw-sh"></i><span class="shw-ph"><img class="shw-img' + (im.mock || p.ia ? '' : ' opq') + '" src="' + esc(im.src) + '" alt="" decoding="async" draggable="false"></span><span class="shw-nm"><small>' + esc(b.name || '') + '</small>' + esc(p.name) + '</span>';
+    el.innerHTML = '<i class="shw-gl"></i><i class="shw-sh"></i><span class="shw-ph"><img class="shw-img' + (im.mock || p.ia ? '' : ' opq') + '" src="' + esc(im.src) + '" alt="" decoding="async" draggable="false"></span>';
     el.addEventListener('pointerenter', e => { if (e.pointerType !== 'touch') preview(p.id); });
     el.addEventListener('pointerleave', e => { if (e.pointerType !== 'touch') unpreview(); });
     el.addEventListener('focus', () => preview(p.id));
@@ -211,8 +211,8 @@
     if (first || mode() === 'off') { c.classList.remove('swap'); c.innerHTML = cardHTML(P[id]); c._id = id; return; }
     c.classList.add('swap'); c._id = id; c._t = setTimeout(() => { c.innerHTML = cardHTML(P[id]); c.classList.remove('swap'); }, 150);
   }
-  function preview(id) { if (!S) return; clearTimeout(S.hovT); S.hov = id; if (!S.sel) paintCard(id, false); const rec = S.items.get(id), pd = rec && S.pods.find(q => q.g === rec.g); if (pd) pd.el.classList.add('is-lit'); }
-  function unpreview() { if (!S) return; clearTimeout(S.hovT); S.hovT = setTimeout(() => { if (!S) return; S.hov = null; S.pods.forEach(q => q.el.classList.remove('is-lit')); if (!S.sel) paintCard(S.defId, false); }, 170); }
+  function preview(id) { if (!S) return; clearTimeout(S.hovT); S.hov = id; S.root.classList.add('has-hov'); S.items.forEach((r, k) => r.el.classList.toggle('is-hov', k === id)); if (!S.sel) paintCard(id, false); const rec = S.items.get(id), pd = rec && S.pods.find(q => q.g === rec.g); if (pd) pd.el.classList.add('is-lit'); }
+  function unpreview() { if (!S) return; clearTimeout(S.hovT); S.hovT = setTimeout(() => { if (!S) return; S.hov = null; S.root.classList.remove('has-hov'); S.items.forEach(r => r.el.classList.remove('is-hov')); S.pods.forEach(q => q.el.classList.remove('is-lit')); if (!S.sel) paintCard(S.defId, false); }, 170); }
 
   /* ---------- выбор ---------- */
   function positionSel() {
@@ -304,6 +304,9 @@
     const rs = s.room.style; rs.setProperty('--s', k.toFixed(5));
     if (stack) { rs.setProperty('--oy', oy.toFixed(1)); rs.setProperty('--ox', ox.toFixed(1)); rs.setProperty('--st', st + 'px'); rs.setProperty('--sb', sb + 'px'); }
     else { ['--oy', '--ox', '--st', '--sb'].forEach(n => rs.removeProperty(n)); }
+    /* панель фильтров слева: сцена масштабируется по ширине, а окно может быть низким — ужимаем панель по высоте, чтобы при заходе она была видна целиком */
+    let ak = 1; if (!stack && s.panel) { const need = s.panel.scrollHeight; ak = need ? Math.max(.7, Math.min(1, ((innerHeight - 16) / k - ASIDE_TOP) / need)) : 1; }
+    rs.setProperty('--ak', ak.toFixed(3));
     s.panOn = false; $$('.shw-pan', s.root).forEach(b => { b.hidden = true; });
     return ch;
   }
@@ -313,7 +316,7 @@
     if (S && S.ro) S.ro.disconnect(); if (S && S.io) S.io.disconnect();
     const rootEl = $('[data-shw]'); if (!rootEl) { S = null; html.classList.remove('shw-top'); return null; }
     S = {root: rootEl, room: $('[data-shw-room]', rootEl), vw: $('.shw-vw', rootEl), view: $('[data-shw-view]', rootEl), stage: $('[data-shw-stage]', rootEl), card: $('[data-shw-card]', rootEl), pager: $('[data-shw-pager]', rootEl), pgText: $('[data-shw-pg]', rootEl), empty: $('[data-shw-empty]', rootEl),
-      hero: $('.shw-hero', rootEl), head: $('.shw-head', rootEl), aside: $('.shw-aside', rootEl), grid: $('#cat-grid'), ids: [], pageIds: [], page: 0, per: 10, W: 0, H: 0, s: 1, stack: false, panOn: false, centered: false, variant: 0, items: new Map(), pods: [], anims: new Set(), sel: null, hov: null, defId: null, rendered: false, rz: 0, rect: null};
+      panel: $('.shw-aside .shw-panel', rootEl), hero: $('.shw-hero', rootEl), head: $('.shw-head', rootEl), aside: $('.shw-aside', rootEl), grid: $('#cat-grid'), ids: [], pageIds: [], page: 0, per: 10, W: 0, H: 0, s: 1, stack: false, panOn: false, centered: false, variant: 0, items: new Map(), pods: [], anims: new Set(), sel: null, hov: null, defId: null, rendered: false, rz: 0, rect: null};
     S.spot = document.createElement('i'); S.spot.className = 'shw-spot'; S.spot.setAttribute('aria-hidden', 'true'); S.stage.appendChild(S.spot);
     S.sent = document.createElement('i'); S.sent.className = 'shw-sent'; S.sent.setAttribute('aria-hidden', 'true'); S.room.appendChild(S.sent);
     if (window.IntersectionObserver) { S.io = new IntersectionObserver(es => es.forEach(e => html.classList.toggle('shw-top', e.isIntersecting)), {rootMargin: '-84px 0px 0px 0px'}); S.io.observe(S.sent); } else html.classList.add('shw-top');
@@ -325,13 +328,21 @@
       e.preventDefault(); const nx = its[i + (e.key === 'ArrowRight' ? 1 : -1)]; if (nx) nx.focus();
     });
     S.ro = window.ResizeObserver ? new ResizeObserver(() => { if (!S || S.rz) return; S.rz = requestAnimationFrame(() => { if (!S) return; S.rz = 0; layout(); }); }) : null;
+    if (!window.__shwResize) { window.__shwResize = true; let rq = 0; addEventListener('resize', () => { if (rq) return; rq = requestAnimationFrame(() => { rq = 0; if (S && S.root.isConnected) layout(); }); }); }
     if (S.ro) { S.ro.observe(S.room); S.ro.observe(S.hero); S.ro.observe(S.head); } else addEventListener('resize', () => layout());
     S.ids = visibleIds(); S.variant = variantOf();
     popInit();
     return S;
   }
+  /* цвет низа сцены = цвет фона страницы в этой точке. Фон <html> — вертикальный градиент: молочный → жемчужно-голубой (620 px) → молочный (1240 px); см. css/base.css.
+     Если низ сцены растворять в чистый --milk, остаётся еле заметный шов. */
+  function seam() {
+    const s = S, el = smq.matches ? s.hero : s.room; if (!el) return;
+    const y = el.getBoundingClientRect().bottom + (window.pageYOffset || 0), w = y <= 0 ? 0 : y <= 620 ? y / 620 : y < 1240 ? (1240 - y) / 620 : 0, m = [245, 242, 236], c = [238, 242, 249];
+    s.root.style.setProperty('--shw-end', m.map((v, i) => Math.round(v + (c[i] - v) * w)).join(','));
+  }
   function layout() {
-    if (!S) return; const ch = measure(); if (!S.W) return;
+    if (!S) return; const ch = measure(); if (!S.W) return; seam();
     if (!S.rendered) { render('enter'); return; }
     if (ch) { const first = S.page * S.per; S.per = perFor(S); S.page = Math.floor(first / S.per); render(null); }
     if (S.stack && S.panOn) updatePan();
@@ -370,8 +381,9 @@
     const k = t.getAttribute('data-key'), v = t.getAttribute('data-v'), sel = selOf(k); if (!sel) return;
     sel.value = sel.value === v ? 'all' : v; sel.dispatchEvent(new Event('change', {bubbles: true}));
   };
-  A.actions['shw-grp'] = t => { const g = t.closest('.shw-grp'), open = g.classList.toggle('is-open'); t.setAttribute('aria-expanded', String(open)); };
-  A.actions['shw-more'] = t => { const go = t.closest('.shw-go'), on = go.classList.toggle('more'), n = $$('.shw-o.xtra', go).length; t.setAttribute('aria-expanded', String(on)); t.textContent = on ? 'Свернуть' : 'Ещё ' + n; };
+  const refit = () => setTimeout(() => { if (S) layout(); }, 380);                                  /* после раскрытия/сворачивания групп панель снова подгоняется по высоте окна */
+  A.actions['shw-grp'] = t => { const g = t.closest('.shw-grp'), open = g.classList.toggle('is-open'); t.setAttribute('aria-expanded', String(open)); refit(); };
+  A.actions['shw-more'] = t => { const go = t.closest('.shw-go'), on = go.classList.toggle('more'), n = $$('.shw-o.xtra', go).length; t.setAttribute('aria-expanded', String(on)); t.textContent = on ? 'Свернуть' : 'Ещё ' + n; refit(); };
   A.actions['shw-pop-nav'] = t => { const tr = $('.shw-pop-t'); if (tr) tr.scrollBy({left: +t.getAttribute('data-dir') * tr.clientWidth * .92, behavior: mode() === 'full' ? 'smooth' : 'auto'}); };
   /* «Смотреть весь список» (и адрес #shw-all) раскрывает свёрнутый нижний список и приводит к нему */
   const openList = go => { const d = $('[data-shw-list]'); if (!d) return; d.open = true; if (go) d.scrollIntoView({behavior: mode() === 'full' ? 'smooth' : 'auto', block: 'start'}); };

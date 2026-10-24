@@ -28,7 +28,7 @@
 .shw-slab::before{content:"";position:absolute;left:0;right:0;top:calc(var(--e) / 2);bottom:0;border-radius:0 0 50% 50%/0 0 calc(var(--e) / 2) calc(var(--e) / 2);background:
   linear-gradient(180deg,rgba(255,255,255,0) 62%,rgba(86,58,30,.22)),url(../assets/showroom/pod-body.webp) 0 0/100% 100%;box-shadow:0 calc(var(--b) * .5) calc(var(--b) * .9) calc(var(--b) * -.45) rgba(78,54,26,.5)}
 .shw-slab::after{content:"";position:absolute;left:0;right:0;top:0;height:var(--e);background:url(../assets/showroom/pod-cap.webp) 0 0/100% 100%}
-.shw-pd{transition:opacity .5s var(--ease)}
+.shw-pd{transition:opacity .5s var(--ease),transform .5s var(--ease)}
 
 /* --- 3. товары на сцене (js/showroom.js) --- */
 .shw-it{position:absolute;display:block;padding:0;margin:0;border:0;background:none;cursor:pointer;text-align:left;touch-action:manipulation;-webkit-tap-highlight-color:transparent;z-index:var(--z,5);transition:opacity .5s var(--shw-ease)}
@@ -39,25 +39,27 @@
 .shw-img.opq{mix-blend-mode:multiply}
 .shw-sh{position:absolute;left:50%;bottom:-7px;width:112%;height:calc(var(--bw) * .16 + 8px);transform:translateX(-50%) scale(var(--ss,1),var(--ss,1));background:radial-gradient(closest-side,rgba(66,44,20,.5),rgba(66,44,20,.2) 56%,rgba(66,44,20,0));opacity:var(--so,1);transition:transform .6s var(--shw-ease),opacity .6s var(--shw-ease);pointer-events:none}
 .shw-gl{position:absolute;left:50%;bottom:-24px;width:190%;height:70%;transform:translateX(-50%);background:radial-gradient(ellipse 50% 56% at 50% 78%,rgba(255,250,232,.95),rgba(255,247,226,.4) 50%,rgba(255,247,226,0) 74%);opacity:0;transition:opacity .6s var(--shw-ease);pointer-events:none}
-.shw-nm{position:absolute;left:50%;top:calc(100% + 6px);transform:translate(-50%,6px);max-width:260px;padding:6px 12px;border-radius:999px;background:rgba(251,247,240,.95);border:1px solid var(--shw-rim);box-shadow:0 8px 16px -10px rgba(60,40,16,.5);font:600 12px/1.15 var(--sans);color:var(--navy);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;opacity:0;pointer-events:none;transition:opacity .35s var(--ease),transform .5s var(--shw-ease)}
-.shw-nm small{font:700 9.5px/1 var(--sans);letter-spacing:.12em;text-transform:uppercase;color:var(--slate);margin-right:7px}
 .shw-it.is-bg .shw-img{filter:blur(.35px)}
+/* наведение «прожектор»: товар приподнимается и увеличивается (растёт вверх от основания), под ним вспыхивает свет, подиум светлеет и чуть поднимается, остальные товары и подиумы мягко отступают; подпись не всплывает — сведения о товаре показывает карточка справа */
 @media (hover:hover) and (pointer:fine){
   .shw-it:hover{z-index:60}
-  .shw-it:hover .shw-ph{--ly:-12px;--zm:1.05}
-  .shw-it:hover .shw-sh{--ss:.86;--so:.7}
-  .shw-it:hover .shw-gl{opacity:1}
-  .shw-it:hover .shw-nm{opacity:1;transform:translate(-50%,0)}
+  .shw-it:hover .shw-ph{--ly:-14px;--zm:1.18}
+  .shw-it:hover .shw-sh{--ss:.8;--so:.55}
+  .shw-it:hover .shw-gl{opacity:1;transform:translateX(-50%) scale(1.12)}
   .shw-it.is-bg:hover .shw-img{filter:none}
 }
-.shw-it:focus-visible .shw-ph{--ly:-12px;--zm:1.05}
-.shw-it:focus-visible .shw-gl,.shw-it:focus-visible .shw-nm{opacity:1}
-.shw-it:focus-visible .shw-nm{transform:translate(-50%,0)}
+.shw-it.is-hov{z-index:60}
+.shw-it.is-hov .shw-ph,.shw-it:focus-visible .shw-ph{--ly:-14px;--zm:1.18}
+.shw-it.is-hov .shw-sh,.shw-it:focus-visible .shw-sh{--ss:.8;--so:.55}
+.shw-it.is-hov .shw-gl,.shw-it:focus-visible .shw-gl{opacity:1;transform:translateX(-50%) scale(1.12)}
+.shw.has-hov:not(.has-sel) .shw-it:not(.is-hov){opacity:.7}
+.shw.has-hov:not(.has-sel) .shw-pd{opacity:.82}
+.shw-pd.is-lit{opacity:1!important;transform:translateY(-3px)}
+.shw-pd.is-lit::before{box-shadow:0 0 0 1px rgba(255,255,255,.6),0 calc(var(--b) * .5) calc(var(--b) * .9) calc(var(--b) * -.45) rgba(78,54,26,.5),0 -4px 24px rgba(255,248,226,.65)}
 .shw-it.is-sel{z-index:70}
-.shw-it.is-sel .shw-ph{--ly:-24px;--zm:1.14}
-.shw-it.is-sel .shw-sh{--ss:.78;--so:.55}
+.shw-it.is-sel .shw-ph{--ly:-28px;--zm:1.26}
+.shw-it.is-sel .shw-sh{--ss:.72;--so:.5}
 .shw-it.is-sel .shw-gl{opacity:1}
-.shw-it.is-sel .shw-nm{opacity:1;transform:translate(-50%,0)}
 .shw-it.is-sel .shw-img{filter:none}
 .shw-it.is-gone{pointer-events:none}
 .shw.has-sel .shw-it:not(.is-sel){opacity:.3}
@@ -68,8 +70,8 @@
 .shw-empty b{font:500 28px/1.2 var(--serif);color:var(--navy)}
 
 /* --- 4. интерфейс поверх сцены: стеклянные панели --- */
-.shw-aside{position:absolute;left:47px;top:113px;width:233px;max-height:842px;z-index:20}
-.shw-panel.toolbar{margin:0;padding:14px 16px 12px;gap:6px;max-height:842px;overflow-y:auto;overscroll-behavior:contain;scrollbar-width:thin;scrollbar-color:rgba(86,60,30,.28) transparent;border-radius:22px;background:linear-gradient(135deg,rgba(255,255,255,.46),rgba(255,255,255,.1) 46%,rgba(255,255,255,.26)),url(../assets/showroom/glass.webp) -47px -113px/1536px 1024px,var(--ax-sand,#e9dcc5);border:1px solid rgba(255,255,255,.8);box-shadow:inset 0 1px 0 rgba(255,255,255,.95),inset 0 0 0 1px rgba(255,255,255,.25),inset 0 -22px 34px -26px rgba(255,255,255,.7),0 1px 2px rgba(86,60,30,.08),0 30px 52px -30px rgba(86,60,30,.55)}
+.shw-aside{position:absolute;left:47px;top:100px;width:233px;max-height:842px;z-index:20;transform:scale(var(--ak,1));transform-origin:0 0}
+.shw-panel.toolbar{margin:0;padding:12px 16px 10px;gap:4px;max-height:842px;overflow-y:auto;overscroll-behavior:contain;scrollbar-width:thin;scrollbar-color:rgba(86,60,30,.28) transparent;border-radius:22px;background:linear-gradient(135deg,rgba(255,255,255,.46),rgba(255,255,255,.1) 46%,rgba(255,255,255,.26)),url(../assets/showroom/glass.webp) -47px -100px/1536px 1024px,var(--ax-sand,#e9dcc5);border:1px solid rgba(255,255,255,.8);box-shadow:inset 0 1px 0 rgba(255,255,255,.95),inset 0 0 0 1px rgba(255,255,255,.25),inset 0 -22px 34px -26px rgba(255,255,255,.7),0 1px 2px rgba(86,60,30,.08),0 30px 52px -30px rgba(86,60,30,.55)}
 .shw-aside::after{content:"";position:absolute;inset:0;border-radius:22px;pointer-events:none;background:linear-gradient(112deg,rgba(255,255,255,.55) 0,rgba(255,255,255,.12) 22%,rgba(255,255,255,0) 40%),linear-gradient(180deg,rgba(255,255,255,.5),rgba(255,255,255,0) 7%)}
 .shw-panel .tb-top{flex-direction:column;align-items:stretch;gap:8px}
 .shw-panel .search{min-width:0}
@@ -79,15 +81,15 @@
 .shw-filters{display:block}
 .shw-grp{position:relative;border-top:1px solid var(--shw-line)}
 .shw-grp:first-child{border-top:0}
-.shw-gh{display:flex;width:100%;align-items:center;justify-content:space-between;gap:10px;padding:14px 2px 11px;text-align:left;font:500 16px/1.2 var(--serif);color:var(--navy)}
+.shw-gh{display:flex;width:100%;align-items:center;justify-content:space-between;gap:10px;padding:10px 2px 7px;text-align:left;font:500 16px/1.2 var(--serif);color:var(--navy)}
 .shw-gh .ic{width:16px;height:16px;color:var(--slate);transition:transform .3s var(--ease)}
 .shw-grp.is-open .shw-gh .ic{transform:rotate(180deg)}
 .shw-gh:hover{color:var(--blue-d)}
 .shw-go{display:grid;grid-template-rows:0fr;transition:grid-template-rows .32s var(--ease)}
 .shw-grp.is-open .shw-go{grid-template-rows:1fr}
 .shw-gi{min-height:0;overflow:hidden;visibility:hidden;display:grid;gap:1px;transition:visibility 0s .32s}
-.shw-grp.is-open .shw-gi{visibility:visible;transition-delay:0s;padding-bottom:8px}
-.shw-o{display:flex;align-items:center;gap:10px;width:100%;padding:6px 2px;text-align:left;font:500 13.5px/1.25 var(--sans);color:var(--muted);border-radius:8px;transition:color .2s}
+.shw-grp.is-open .shw-gi{visibility:visible;transition-delay:0s;padding-bottom:4px}
+.shw-o{display:flex;align-items:center;gap:10px;width:100%;padding:4px 2px;text-align:left;font:500 13.5px/1.25 var(--sans);color:var(--muted);border-radius:8px;transition:color .2s}
 .shw-o.xtra{display:none}
 .shw-go.more .shw-o.xtra,.shw-o.xtra.keep{display:flex}
 .shw-o:hover{color:var(--navy)}
@@ -99,12 +101,12 @@
 .shw-o:hover .shw-ck{border-color:var(--navy)}
 .shw-o[aria-pressed="true"]{color:var(--navy);font-weight:600}
 .shw-o[aria-pressed="true"] .shw-ck{background:var(--navy);border-color:var(--navy);color:var(--milk);transform:scale(1.04)}
-.shw-more{margin:4px 0 2px 29px;justify-self:start;padding:3px 0;font:600 12px/1 var(--sans);color:var(--blue-d);text-decoration:underline;text-underline-offset:3px;text-decoration-color:rgba(35,71,176,.35)}
-.shw-sort{margin-top:8px;padding-top:12px;border-top:1px solid var(--shw-line)}
+.shw-more{margin:2px 0 0 29px;justify-self:start;padding:3px 0;font:600 12px/1 var(--sans);color:var(--blue-d);text-decoration:underline;text-underline-offset:3px;text-decoration-color:rgba(35,71,176,.35)}
+.shw-sort{margin-top:4px;padding-top:9px;border-top:1px solid var(--shw-line)}
 .shw-sort label{color:var(--slate)}
-.shw-sort select{padding:11px 40px 11px 14px;font-size:14px;background:rgba(255,255,255,.62)}
+.shw-sort select{padding:8px 40px 8px 14px;font-size:14px;background:rgba(255,255,255,.62)}
 .active-filters:not([hidden]){margin-top:2px}
-.shw-aside-foot{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:6px;padding-top:12px;border-top:1px solid var(--shw-line);font:600 12.5px/1 var(--sans);color:var(--muted)}
+.shw-aside-foot{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:2px;padding-top:9px;border-top:1px solid var(--shw-line);font:600 12.5px/1 var(--sans);color:var(--muted)}
 .shw-reset{display:inline-flex;align-items:center;gap:8px;padding:6px 0;font:600 13px/1 var(--sans);color:var(--navy)}
 .shw-reset .ic{width:16px;height:16px;color:var(--slate);transition:transform .5s var(--ease)}
 .shw-reset:hover .ic{transform:rotate(-200deg)}
@@ -178,7 +180,7 @@
 .shw-nav:disabled{opacity:.36;cursor:default}
 
 /* --- 5. «Рекомендуем» --- */
-.shw-pop{position:absolute;left:316px;top:706px;width:1136px;height:308px;box-sizing:border-box;padding:16px 26px 0;z-index:16;border-radius:26px;overflow:hidden;background:linear-gradient(135deg,rgba(255,255,255,.46),rgba(255,255,255,.1) 46%,rgba(255,255,255,.26)),url(../assets/showroom/glass.webp) -316px -706px/1536px 1024px,var(--ax-sand,#e9dcc5);border:1px solid rgba(255,255,255,.8);box-shadow:inset 0 1px 0 rgba(255,255,255,.95),inset 0 0 0 1px rgba(255,255,255,.25),inset 0 -22px 34px -26px rgba(255,255,255,.7),0 1px 2px rgba(86,60,30,.08),0 30px 52px -30px rgba(86,60,30,.55)}
+.shw-pop{position:absolute;left:316px;top:706px;width:1136px;height:308px;box-sizing:border-box;padding:16px 26px 0;z-index:16;border-radius:26px;overflow:hidden;background:linear-gradient(135deg,rgba(255,255,255,.46),rgba(255,255,255,.1) 46%,rgba(255,255,255,.26)),url(../assets/showroom/glass.webp) -316px -706px/1536px 1024px,var(--ax-sand,#e9dcc5);border:1px solid rgba(255,255,255,.8);box-shadow:inset 0 1px 0 rgba(255,255,255,.95),inset 0 0 0 1px rgba(255,255,255,.25),inset 0 -22px 34px -26px rgba(255,255,255,.7),0 1px 2px rgba(86,60,30,.08),0 8px 12px -9px rgba(86,60,30,.5)}
 .shw-pop::after{content:"";position:absolute;inset:0;border-radius:26px;pointer-events:none;background:linear-gradient(112deg,rgba(255,255,255,.5) 0,rgba(255,255,255,.1) 18%,rgba(255,255,255,0) 34%),linear-gradient(180deg,rgba(255,255,255,.5),rgba(255,255,255,0) 6%)}
 .shw-pop-h{display:flex;align-items:baseline;justify-content:space-between;gap:14px;margin-bottom:12px}
 .shw-pop-h h2{font:500 22px/1.2 var(--serif)}
@@ -235,6 +237,8 @@ body[data-page="catalog"] .shw-room{margin-top:calc(var(--hdr) * -1)}
 .hdr{transition:background-color .35s var(--ease),border-color .35s var(--ease)}
 html.shw-top .hdr{background:transparent;border-bottom-color:transparent}
 .shw-hero,.shw-drop{display:contents}
+/* низ сцены плавно уходит в фон страницы: без жёсткой линии между сценой и блоками под ней (на компьютере; на телефоне то же делает нижний скрим «героя») */
+.shw-hero::after{content:"";position:absolute;left:0;right:0;bottom:0;height:300px;z-index:3;pointer-events:none;background:linear-gradient(180deg,rgba(var(--shw-end,245,242,236),0) 0,rgba(var(--shw-end,245,242,236),.35) 38%,rgba(var(--shw-end,245,242,236),.82) 74%,rgb(var(--shw-end,245,242,236)) 100%)}
 
 /* --- 8. планшет и телефон: та же витрина, тот же образ. Первый экран — «герой» на всю ширину и высоту: сцена (10 подиумов сдвигаются пальцем или стрелками), поверх неё заголовок и категории, вверху стеклянная полоса «поиск + фильтры» (фильтры раскрываются стеклянной панелью),
        внизу стеклянная плашка товара и стеклянный «док» листания. Дальше — «Рекомендуем» и остальные блоки. Масштаб сцены считает js/showroom.js по свободной высоте (--s, --oy). --- */
@@ -243,7 +247,7 @@ html.shw-top .hdr{background:transparent;border-bottom-color:transparent}
   .shw-canvas{position:relative;left:auto;top:auto;width:100%;height:auto;transform:none}
   .shw-hero{display:block;position:relative;height:clamp(600px,100svh,960px);overflow:hidden;isolation:isolate;background:#e4d6bf;padding:calc(var(--hdr) + 10px) 12px 0;box-sizing:border-box;display:flex;flex-direction:column;gap:8px;--ax-hero-glass:linear-gradient(135deg,rgba(255,255,255,.62),rgba(250,244,232,.4))}
   .shw-hero::before{content:"";position:absolute;left:0;right:0;top:0;height:var(--st,260px);z-index:2;pointer-events:none;background:linear-gradient(180deg,rgba(244,238,226,.95) 0,rgba(244,238,226,.82) 58%,rgba(244,238,226,0))}
-  .shw-hero::after{content:"";position:absolute;left:0;right:0;bottom:0;height:var(--sb,230px);z-index:2;pointer-events:none;background:linear-gradient(0deg,rgba(244,238,226,.92) 0,rgba(244,238,226,.7) 55%,rgba(244,238,226,0))}
+  .shw-hero::after{content:"";position:absolute;left:0;right:0;bottom:0;height:var(--sb,230px);z-index:2;pointer-events:none;background:linear-gradient(0deg,rgb(var(--shw-end,245,242,236)) 0,rgba(var(--shw-end,245,242,236),.78) 45%,rgba(var(--shw-end,245,242,236),0))}
   .shw-vw{position:absolute;inset:0;z-index:0;border-radius:0;overflow:hidden;background:#e4d6bf}
   .shw-view{position:absolute;inset:0;height:auto;overflow:hidden}
   .shw-plane{transform:translate(calc(var(--ox,0) * 1px),calc(var(--oy,0) * 1px)) scale(var(--s))}
@@ -255,7 +259,7 @@ html.shw-top .hdr{background:transparent;border-bottom-color:transparent}
   .shw-pan:disabled{opacity:.3}
 
   /* верхняя стеклянная полоса: поиск и «Фильтры» в одной строке; сами фильтры — стеклянная панель поверх сцены */
-  .shw-aside{position:relative;left:auto;top:auto;width:auto;max-height:none;z-index:8;flex:none}
+  .shw-aside{position:relative;left:auto;top:auto;width:auto;max-height:none;z-index:8;flex:none;transform:none}
   .shw-aside::after{display:none}
   .shw-panel.toolbar{position:relative;max-height:none;overflow:visible;padding:7px 8px;gap:0;border-radius:24px;background:var(--ax-hero-glass),var(--ax-sand,#e9dcc5);border:1px solid rgba(255,255,255,.85);box-shadow:inset 0 1px 0 #fff,0 14px 28px -20px rgba(86,60,30,.55)}
   .shw-panel .tb-top{flex-direction:row;align-items:center;gap:8px}
@@ -286,7 +290,7 @@ html.shw-top .hdr{background:transparent;border-bottom-color:transparent}
   .shw-card .c-more,.shw-card .c-bd{display:none}                                       /* на узком экране плашка не растёт: подробности — в «Быстром просмотре» и на странице товара */
   .shw-card .c-act{margin-top:10px}
   .shw-card .c-extra{margin-top:8px}
-  .shw-link,.shw-nm{display:none}
+  .shw-link{display:none}
   .shw-pager{position:absolute;left:12px;right:84px;top:auto;bottom:16px;width:auto;height:48px;z-index:9;display:flex;flex-direction:row;align-items:center;justify-content:center;gap:16px;padding:0 10px;border-radius:24px;background:var(--ax-hero-glass),var(--ax-sand,#e9dcc5);border:1px solid rgba(255,255,255,.85);box-shadow:inset 0 1px 0 #fff,0 14px 28px -20px rgba(86,60,30,.55)}
   .shw-pager[hidden]{display:none}
   .shw-pager .shw-pg{order:2;min-width:56px;text-align:center}.shw-pager .prev{order:1}.shw-pager .next{order:3}

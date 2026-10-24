@@ -190,6 +190,7 @@
     const page = document.body.getAttribute('data-page'), cur = page === 'product' ? (($('.p-page[data-product]') || {getAttribute: () => ''}).getAttribute('data-product')) : '';
     let l = rvLoad();
     if (cur && P[cur]) { l = [cur].concat(l.filter(x => x !== cur)).slice(0, RVMAX); rvSave(l); }
+    if (page === 'catalog' && $('[data-showroom]')) return;                              // на странице-витрине (extras.showroom) блока «Недавно просмотренные» нет: фокус на экспозиции
     const show = l.filter(id => id !== cur).slice(0, RVSHOW); if (!show.length || (page !== 'product' && page !== 'catalog')) return;
     const sec = document.createElement('section'); sec.className = 'sec rv-sec'; sec.id = 'recent'; sec.setAttribute('aria-labelledby', 'rv-h');
     sec.innerHTML = '<div class="wrap"><div class="sec-head"><div><span class="eyebrow">Вы смотрели</span><h2 id="rv-h">Недавно просмотренные</h2></div><button class="lnk" type="button" data-act="rv-clear">Очистить ' + I.close + '</button></div>' +

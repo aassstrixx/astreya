@@ -9,6 +9,7 @@
 let pw; for (const p of ['playwright', '/opt/node22/lib/node_modules/playwright']) { try { pw = require(p); break; } catch (e) {} }
 if (!pw) { console.log('Playwright не найден — проверка пропущена.'); process.exit(0); }
 const fs = require('fs'), path = require('path'), cp = require('child_process');
+const SHWC = !!((JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'data/redesign.json'), 'utf8')).extras || {}).showroom);      // на странице-витрине (extras.showroom) «Подборок по задачам» нет — фокус на экспозиции
 const CHROME = process.env.CHROMIUM || ['/opt/pw-browsers/chromium-1194/chrome-linux/chrome'].find(p => fs.existsSync(p));
 const H = require('../server/test/helpers');
 const ROOT = path.join(__dirname, '..');
@@ -285,6 +286,7 @@ const J = f => JSON.parse(fs.readFileSync(path.join(ROOT, f), 'utf8'));
 
   /* --- каталог: подборки по задачам --- */
   await p.open('catalog.html');
+  if (SHWC) { ok(await p.evaluate(() => document.querySelectorAll('.sx-kits, .sx-kit').length === 0 && !!document.querySelector('[data-showroom]')), 'каталог-витрина: блока «Подборки по задачам» нет — фокус на экспозиции'); await p.context().close(); } else {
   const kits = await p.evaluate(() => ({n: document.querySelectorAll('.sx-kit').length, packs: document.querySelectorAll('.sx-kit .pk').length, gen: document.querySelectorAll('.sx-next, .sx-trust, .sx-sec').length, empty: !!document.querySelector('#cat-empty .sx-rescue')}));
   ok(kits.n >= 4 && kits.packs >= kits.n * 2, 'каталог: подборки по задачам — карточки с «наборами» из упаковок', kits);
   ok(kits.gen === 0, 'каталог: общих блоков «Что дальше / Доверие» нет');
@@ -315,6 +317,7 @@ const J = f => JSON.parse(fs.readFileSync(path.join(ROOT, f), 'utf8'));
   await p.click('.sx-kit.is-active [data-kit-show]'); await wait(800);
   ok(await p.evaluate(t => document.querySelector('#f-task').value === t && document.querySelectorAll('#cat-grid .pcard:not([hidden])').length > 0, task0), 'каталог: «Показать в каталоге» выставляет фильтр по задаче');
   await p.context().close();
+  }
 
   /* --- бренды и бренд --- */
   p = await mk(); await p.open('brands.html');
@@ -494,7 +497,7 @@ const J = f => JSON.parse(fs.readFileSync(path.join(ROOT, f), 'utf8'));
   await nav('training');
   ok(await p.evaluate(() => document.querySelectorAll('.sx-tl-sec').length === 1 && document.querySelectorAll('.sx-kits').length === 0), 'из каталога в «Обучение»: подборки ушли, лента дат одна');
   await nav('catalog');
-  ok(await p.evaluate(() => document.querySelectorAll('.sx-kits').length === 1 && document.querySelectorAll('.sx-tl-sec').length === 0), 'обратно в каталог: подборки одни, без дублей');
+  ok(await p.evaluate(n => document.querySelectorAll('.sx-kits').length === n && document.querySelectorAll('.sx-tl-sec').length === 0, SHWC ? 0 : 1), 'обратно в каталог: подборки ' + (SHWC ? 'не появляются (витрина)' : 'одни, без дублей'));
   await nav('company');
   ok(await p.evaluate(() => document.querySelectorAll('.sx-region').length === 1), 'в «Компанию»: «Ваш регион» один');
   await p.evaluate(() => document.querySelector('a.logo').click()); await p.waitForFunction(() => document.body.getAttribute('data-page') === 'home', null, {timeout: 15000}); await wait(1500);

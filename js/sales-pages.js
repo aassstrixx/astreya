@@ -117,6 +117,7 @@
     measure(); layout(); setTimeout(() => { if (anim) return; measure(); row.scrollLeft = c0.offsetLeft - (row.clientWidth - c0.offsetWidth) / 2; layout(); }, 350); setTimeout(() => { measure(); layout(); }, 1200);
   }
   function catalog(c, main) {
+    if ($('[data-showroom]', main)) return;                                              // на странице-витрине (extras.showroom) «Подборок по задачам» нет: фокус на экспозиции
     const wrap = $('[data-catalog]', main), tb = $('[data-kits-anchor]', main) || $('#results', main); if (!wrap || !tb || mod('kits', wrap)) return;
     const cfg = PG.catalog || {}, kits = kitsFor(); if (!kits.length) return;
     const sec = el('section', 'sx-mod sx-kits', '<header class="sx-head"><span class="eyebrow">' + esc(cfg.eyebrow) + '</span><h2>' + esc(cfg.title) + '</h2><p class="lead">' + esc(cfg.lead) + '</p></header>' +

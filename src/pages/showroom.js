@@ -153,6 +153,7 @@ module.exports = function showroom(ctx, C, P) {
   const taskTile = t => {
     const n = cnt.task[t.id] || 0, bs = (t.brands || []).map(id => ctx.brandById[id]).filter(Boolean).slice(0, 4);
     return `<button class="shw-task reveal" type="button" data-act="shw-to" data-key="task" data-id="${t.id}" aria-pressed="false">
+      <svg class="shw-task-logo" viewBox="46 338 836 436" aria-hidden="true" focusable="false"><use href="#logo-art"/></svg>
       <span class="shw-task-n">${n} ${S.plural(n, 'товар', 'товара', 'товаров')}</span>
       <b>${esc(t.label)}</b>
       <span class="shw-task-d">${esc(t.note || '')}</span>
@@ -185,7 +186,6 @@ module.exports = function showroom(ctx, C, P) {
     ${scene}
     <div class="shw-rest">
     ${adv}
-    <div data-kits-anchor></div>
     ${tasksBlock}
     ${dirs}
     ${brandsBlock}

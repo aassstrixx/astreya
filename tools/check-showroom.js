@@ -116,8 +116,8 @@ const userMsgs = p => p.evaluate(() => [...document.querySelectorAll('.asst-u .a
   await p.click('.shw-pager .prev'); await p.click('.shw-pager .prev'); await wait(1400);
   const hid = (await st(p)).pageIds[2], sel = '.shw-it[data-id="' + hid + '"]';
   await p.hover(sel); await wait(900);
-  const H = await p.evaluate(s => { const e = document.querySelector(s), ph = e.querySelector('.shw-ph'), cs = getComputedStyle(ph), nm = getComputedStyle(e.querySelector('.shw-nm')), gl = getComputedStyle(e.querySelector('.shw-gl')); return {tr: cs.transform, nm: nm.opacity, gl: gl.opacity, card: document.querySelector('.shw-card .c-t') && document.querySelector('.shw-card .c-t').textContent}; }, sel);
-  ok(H.tr !== 'none' && +H.nm > .9 && +H.gl > .9, 'наведение: упаковка приподнялась, проявилось название, включился свет', H);
+  const H = await p.evaluate(s => { const e = document.querySelector(s), ph = e.querySelector('.shw-ph'), cs = getComputedStyle(ph), gl = getComputedStyle(e.querySelector('.shw-gl')), m = /matrix\(([-\d.]+)/.exec(cs.transform), others = [...document.querySelectorAll('.shw-it:not(.is-gone)')].filter(x => x !== e).map(x => +getComputedStyle(x).opacity); return {tr: cs.transform, zoom: m ? +m[1] : 1, gl: gl.opacity, dim: Math.max(...others), pods: document.querySelectorAll('.shw-pd.is-lit').length, label: !!e.querySelector('.shw-nm'), card: document.querySelector('.shw-card .c-t') && document.querySelector('.shw-card .c-t').textContent}; }, sel);
+  ok(H.zoom > 1.12 && +H.gl > .9 && H.pods === 1 && H.dim < .85 && !H.label, 'наведение «прожектор»: товар приподнялся и увеличился (×' + H.zoom.toFixed(2) + '), под ним включился свет, подиум подсвечен, остальные товары отступили; всплывающей подписи нет', H);
   const pname = PR.find(x => x.id === hid).name; ok(H.card === pname, 'карточка справа показывает наведённый товар «' + pname + '»', H.card);
   await p.mouse.move(2, 2); await wait(900);
   await p.click(sel); await wait(1500);
@@ -160,7 +160,10 @@ const userMsgs = p => p.evaluate(() => [...document.querySelectorAll('.asst-u .a
   await p.click('.shw-brand[data-id="heliocare"]'); await wait(1700);
   ok(await p.evaluate(() => document.getElementById('f-brand').value === 'heliocare'), 'плитка бренда включила фильтр по бренду'); await p.click('[data-act="cat-reset"][data-shw-reset]').catch(() => {}); await wait(1200);
   await p.evaluate(() => { document.querySelector('[data-shw-list]').open = true; }); await wait(400);
-  const GL = await p.evaluate(() => ({cards: document.querySelectorAll('#cat-grid .pcard').length, rn: document.querySelectorAll('#cat-grid .pcard .art-render img').length, ask: document.querySelectorAll('#cat-grid .pcard [data-act="form"]').length, qv: document.querySelectorAll('#cat-grid .pcard .qv-btn').length, kits: !!document.querySelector('.sx-kits'), anchor: document.querySelector('[data-kits-anchor]').previousElementSibling && document.querySelector('[data-kits-anchor]').previousElementSibling.className}));
+  { const q = await open(b, {viewport: {width: 1854, height: 900}}); const F = await q.evaluate(() => { const a = document.querySelector('.shw-aside .shw-panel').getBoundingClientRect(); return {bottom: Math.round(a.bottom), vh: innerHeight, scroll: document.querySelector('.shw-aside .shw-panel').scrollHeight - document.querySelector('.shw-aside .shw-panel').clientHeight}; });
+    ok(F.bottom <= F.vh && F.scroll <= 2, 'панель фильтров слева при заходе видна целиком (низ ' + F.bottom + ' из ' + F.vh + ' px), без внутренней прокрутки', F); await q.close(); await q.ctx.close(); }
+  const GL = await p.evaluate(() => ({cards: document.querySelectorAll('#cat-grid .pcard').length, rn: document.querySelectorAll('#cat-grid .pcard .art-render img').length, ask: document.querySelectorAll('#cat-grid .pcard [data-act="form"]').length, qv: document.querySelectorAll('#cat-grid .pcard .qv-btn').length, kits: document.querySelectorAll('.sx-kits, .sx-kit').length, recent: document.querySelectorAll('#recent, .rv-sec').length}));
+  ok(GL.kits === 0 && GL.recent === 0, 'блоки «Подборки по задачам» и «Недавно просмотренные» с каталога убраны полностью', GL);
   ok(GL.cards === EXP.all && GL.rn === EXP.all && GL.ask === EXP.all && GL.qv === EXP.all, 'полный список: все ' + GL.cards + ' карточек с макетом, «Запросить» и «Быстрым просмотром»', GL);
   ok(p.errs.length === 0, 'без ошибок JavaScript', p.errs); await p.ctx.close();
 
