@@ -112,9 +112,9 @@
   background:linear-gradient(145deg,rgba(255,255,255,.8),rgba(250,244,232,.58) 55%,rgba(240,229,208,.62));border:1px solid rgba(255,255,255,.92);box-shadow:inset 0 1px 0 #fff,var(--ax-sh-1);
   transition:box-shadow var(--ax-t) var(--ax-ease),transform var(--ax-t) var(--ax-ease)}
 .shw-task{gap:10px;padding:22px;min-height:236px}
-.shw-task-logo{position:absolute;z-index:0;right:16px;bottom:50px;width:150px;height:auto;aspect-ratio:836/436;opacity:.11;pointer-events:none;transition:opacity var(--ax-t) var(--ax-ease),transform .8s var(--ax-ease)}
+.shw-task-logo{position:absolute;z-index:0;right:16px;top:12px;width:62px;height:auto;aspect-ratio:836/436;opacity:.72;pointer-events:none;transform-origin:100% 0;transition:opacity var(--ax-t) var(--ax-ease),transform .8s var(--ax-ease)}
 .shw-task>:not(.shw-task-logo){position:relative;z-index:1}
-.shw-task:hover .shw-task-logo{opacity:.18;transform:translateX(-6px) scale(1.04)}
+.shw-task:hover .shw-task-logo{opacity:1;transform:scale(1.08)}
 .shw-task::before{content:"";position:absolute;right:-34px;top:-40px;width:136px;height:172px;border-radius:68px 68px 0 0;border:1px solid rgba(176,142,78,.3);pointer-events:none}
 .shw-task::after{content:"";position:absolute;right:-12px;top:-18px;width:92px;height:118px;border-radius:46px 46px 0 0;border:1px solid rgba(176,142,78,.22);pointer-events:none}
 .shw-task-n{font:700 10.5px/1 var(--sans);letter-spacing:.14em;text-transform:uppercase;color:var(--ax-muted)}
