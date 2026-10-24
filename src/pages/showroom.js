@@ -125,7 +125,7 @@ module.exports = function showroom(ctx, C, P) {
           </div>
           ${aside}
           <div class="shw-head">${head}${pills}</div>
-          <aside class="shw-card" data-shw-card aria-live="polite" aria-label="Выбранный товар"></aside>
+          <aside class="shw-card" data-shw-card hidden aria-live="polite" aria-label="Выбранный товар"></aside>
           <div class="shw-pager" data-shw-pager hidden>
             <button class="shw-nav prev" type="button" data-act="shw-page" data-dir="-1" aria-label="Предыдущие товары">${I.arrow}</button>
             <span class="shw-pg" data-shw-pg aria-live="polite"></span>

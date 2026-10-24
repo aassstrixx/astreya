@@ -136,7 +136,8 @@ html.lite .shw-motes{display:none}
 .shw.has-sel .shw-head{opacity:0;visibility:hidden;pointer-events:none;transition:opacity .35s var(--ease),visibility 0s .35s}
 
 /* карточка товара: компактная панель; в покое — «акцент» справа вверху, при выборе приезжает к выбранному товару и раскрывается */
-.shw-card{position:absolute;left:1252px;top:142px;width:236px;z-index:30;padding:16px 18px 18px;border-radius:20px;background:linear-gradient(180deg,rgba(252,248,240,.82),rgba(246,239,226,.74));border:1px solid var(--shw-rim);box-shadow:0 1px 2px rgba(86,60,30,.08),0 24px 44px -26px rgba(86,60,30,.55);transform:translate(var(--cx,0px),var(--cy,0px));transition:transform .7s var(--shw-ease)}
+.shw-card{position:absolute;left:1252px;top:142px;width:236px;z-index:30;padding:16px 18px 18px;border-radius:20px;background:linear-gradient(180deg,rgba(252,248,240,.82),rgba(246,239,226,.74));border:1px solid var(--shw-rim);box-shadow:0 1px 2px rgba(86,60,30,.08),0 24px 44px -26px rgba(86,60,30,.55);transform:translate(var(--cx,0px),var(--cy,0px));transition:transform .7s var(--shw-ease),opacity .45s var(--shw-grow),translate .45s var(--shw-grow)}
+.shw-card.is-idle{opacity:0;translate:0 10px;pointer-events:none}
 .shw-card[hidden]{display:none}
 .shw-card .c-in{transition:opacity .22s ease,transform .3s var(--ease)}
 .shw-card.swap .c-in{opacity:0;transform:translateY(5px)}

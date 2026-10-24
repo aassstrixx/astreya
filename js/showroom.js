@@ -190,7 +190,7 @@
     else if (s.sel) positionSel();
     const hero = slots.find(g => g.hero) || slots[0];
     s.defId = (slots.find(g => g.group === 'main' && (g.p.f || g.p.n)) || hero || {p: {}}).p.id || null;
-    if (!s.sel && !s.hov) paintCard(s.defId, false);
+    if (!s.sel && !s.hov) paintCard(idleId(), false);
     paintPager(pages);
     s.empty.hidden = s.ids.length > 0;
     s.rendered = true;
@@ -211,16 +211,19 @@
       (NAVI ? '<button class="btn btn-ghost" type="button" data-act="qv-stella" data-id="' + esc(p.id) + '">Помочь с подбором</button>' : '') + '</div></div>' +
       '<button class="c-x" type="button" data-act="shw-close" aria-label="Закрыть карточку товара">' + (I.close || '×') + '</button>';
   }
+  /* на компьютере плашка товара показывается только при наведении на предмет и при выборе; на планшете и телефоне (наведения нет) в покое стоит плашка товара по умолчанию */
+  const idleId = () => S && S.stack ? S.defId : null;
   function paintCard(id, open) {
-    const c = S.card; if (!id || !P[id]) { clearTimeout(c._t); c.classList.remove('swap'); c.hidden = true; c._id = null; return; }
-    c.hidden = false; c.classList.toggle('is-open', !!open);
+    const c = S.card; if (!id || !P[id]) { clearTimeout(c._t); c.classList.remove('swap', 'is-open'); c._id = null; if (!c.hidden && !c.classList.contains('is-idle')) { c.classList.add('is-idle'); clearTimeout(c._h); c._h = setTimeout(() => { if (c.classList.contains('is-idle')) c.hidden = true; }, 420); } return; }
+    clearTimeout(c._h); if (c.hidden || c.classList.contains('is-idle')) { c.hidden = false; void c.offsetWidth; c.classList.remove('is-idle'); }
+    c.classList.toggle('is-open', !!open);
     if (c._id === id) return;
     const first = !c._id; clearTimeout(c._t);
     if (first || mode() === 'off') { c.classList.remove('swap'); c.innerHTML = cardHTML(P[id]); c._id = id; return; }
     c.classList.add('swap'); c._id = id; c._t = setTimeout(() => { c.innerHTML = cardHTML(P[id]); c.classList.remove('swap'); }, 150);
   }
-  function preview(id) { if (!S || S.sel) return; clearTimeout(S.hovT); S.hov = id; S.root.classList.add('has-hov'); S.items.forEach((r, k) => r.el.classList.toggle('is-hov', k === id)); if (!S.sel) paintCard(id, false); const rec = S.items.get(id), pd = rec && S.pods.find(q => q.g === rec.g); if (pd) pd.el.classList.add('is-lit'); }
-  function unpreview() { if (!S) return; clearTimeout(S.hovT); S.hovT = setTimeout(() => { if (!S) return; S.hov = null; S.root.classList.remove('has-hov'); S.items.forEach(r => r.el.classList.remove('is-hov')); S.pods.forEach(q => q.el.classList.remove('is-lit')); if (!S.sel) paintCard(S.defId, false); }, 170); }
+  function preview(id) { if (!S || S.sel) return; clearTimeout(S.hovT); clearTimeout(S.cardT); S.hov = id; S.root.classList.add('has-hov'); S.items.forEach((r, k) => r.el.classList.toggle('is-hov', k === id)); if (!S.sel) paintCard(id, false); const rec = S.items.get(id), pd = rec && S.pods.find(q => q.g === rec.g); if (pd) pd.el.classList.add('is-lit'); }
+  function unpreview() { if (!S) return; clearTimeout(S.hovT); S.hovT = setTimeout(() => { if (!S) return; S.hov = null; S.root.classList.remove('has-hov'); S.items.forEach(r => r.el.classList.remove('is-hov')); S.pods.forEach(q => q.el.classList.remove('is-lit')); if (S.stack && !S.sel) paintCard(S.defId, false); }, 170); if (!S.stack) S.cardT = setTimeout(() => { if (S && !S.sel && !S.hov && !S.cardHover) paintCard(null); }, 520); }
 
   /* ---------- выбор ---------- */
   function positionSel() {
@@ -246,7 +249,7 @@
     if (!S) return; const was = S.sel; S.sel = null; S.root.classList.remove('has-sel');
     S.items.forEach(rec => { rec.el.classList.remove('is-sel'); rec.el.setAttribute('aria-pressed', 'false'); });
     S.card.style.setProperty('--cx', '0px'); S.card.style.setProperty('--cy', '0px');
-    paintCard(S.hov || S.defId, false);
+    paintCard(S.hov || idleId(), false);
     if (was && !quiet) { const rec = S.items.get(was); if (rec && document.activeElement === document.body) { try { rec.el.focus({preventScroll: true}); } catch (e) {} } }
   }
 
@@ -326,6 +329,8 @@
     const rootEl = $('[data-shw]'); if (!rootEl) { S = null; html.classList.remove('shw-top'); return null; }
     S = {root: rootEl, room: $('[data-shw-room]', rootEl), vw: $('.shw-vw', rootEl), view: $('[data-shw-view]', rootEl), stage: $('[data-shw-stage]', rootEl), card: $('[data-shw-card]', rootEl), pager: $('[data-shw-pager]', rootEl), pgText: $('[data-shw-pg]', rootEl), empty: $('[data-shw-empty]', rootEl),
       panel: $('.shw-aside .shw-panel', rootEl), hero: $('.shw-hero', rootEl), head: $('.shw-head', rootEl), aside: $('.shw-aside', rootEl), grid: $('#cat-grid'), ids: [], pageIds: [], page: 0, per: 10, W: 0, H: 0, s: 1, stack: false, panOn: false, centered: false, variant: 0, items: new Map(), pods: [], anims: new Set(), sel: null, hov: null, defId: null, rendered: false, rz: 0, rect: null};
+    S.card.addEventListener('pointerenter', e => { if (e.pointerType === 'touch') return; S.cardHover = true; clearTimeout(S.cardT); });
+    S.card.addEventListener('pointerleave', e => { if (e.pointerType === 'touch') return; S.cardHover = false; clearTimeout(S.cardT); S.cardT = setTimeout(() => { if (S && !S.stack && !S.sel && !S.hov && !S.cardHover) paintCard(null); }, 380); });
     S.spot = document.createElement('i'); S.spot.className = 'shw-spot'; S.spot.setAttribute('aria-hidden', 'true'); S.stage.appendChild(S.spot); S.veil = document.createElement('i'); S.veil.className = 'shw-veil'; S.veil.setAttribute('aria-hidden', 'true'); S.stage.appendChild(S.veil);
     S.sent = document.createElement('i'); S.sent.className = 'shw-sent'; S.sent.setAttribute('aria-hidden', 'true'); S.room.appendChild(S.sent);
     if (window.IntersectionObserver) { S.io = new IntersectionObserver(es => es.forEach(e => html.classList.toggle('shw-top', e.isIntersecting)), {rootMargin: '-84px 0px 0px 0px'}); S.io.observe(S.sent); } else html.classList.add('shw-top');
