@@ -187,18 +187,18 @@ body[data-page="catalog"] .qv-info h2,[data-page="product"] .p-info h1{font-fami
 [data-showroom] .sx-kit-dots button.on::before{background:var(--ax-ink)}
 
 /* на странице-витрине вместо синего акцента сайта — тёмно-синий, как у кнопок «Подробнее» и метки «Новинка»: логотип и меню в шапке, «Стать партнёром», фокус, полоса прокрутки */
-body[data-page="catalog"]{--blue:#101f37;--blue-d:#1a2e52}       /* цвет — как у подвала сайта (тёмно-синий с зерном: на экране ≈ rgb(16,31,55)) */
+:is(body[data-page="catalog"],body[data-page="product"]){--blue:#101f37;--blue-d:#1a2e52}       /* на каталоге (витрина и страницы товаров) — цвет подвала сайта (тёмно-синий с зерном: на экране ≈ rgb(16,31,55)) */
 /* то, что в основном стиле сайта жёстко задано ярко-синим (кнопка Стеллы, её аватар, кольца и блики, тени кнопок) — на каталоге в том же тёмно-синем */
-body[data-page="catalog"] .asst-fab-i{background:radial-gradient(circle at 50% 30%,#41588a,#101f37 75%)}
-body[data-page="catalog"] .asst-fab-glow{background:radial-gradient(closest-side,rgba(98,122,170,.8),rgba(98,122,170,.28) 55%,transparent 74%)}
-body[data-page="catalog"] .asst-fab-ring{background:rgb(70,92,138)}
-body[data-page="catalog"] .asst-fab.nudge .asst-fab-ring{background:#101f37}
-body[data-page="catalog"] .asst-av{background:radial-gradient(circle at 50% 32%,rgba(98,122,170,.6),rgba(16,31,55,.4) 80%)}
-body[data-page="catalog"] .asst-av::before{border-color:rgba(98,122,170,.6)}
-body[data-page="catalog"] .qc-btn{box-shadow:0 16px 32px -12px rgba(16,31,55,.7),0 2px 6px rgba(11,26,51,.18)}
-body[data-page="catalog"] .chip.chip-plan{box-shadow:0 10px 20px -12px rgba(16,31,55,.9)}
-body[data-page="catalog"] .tag.blue,body[data-page="catalog"] .dlg .ctx,body[data-page="catalog"] .adv-ic{background:rgba(16,31,55,.08)}
-body[data-page="catalog"] .hdr .logo{--lm:var(--navy)}
+:is(body[data-page="catalog"],body[data-page="product"]) .asst-fab-i{background:radial-gradient(circle at 50% 30%,#41588a,#101f37 75%)}
+:is(body[data-page="catalog"],body[data-page="product"]) .asst-fab-glow{background:radial-gradient(closest-side,rgba(98,122,170,.8),rgba(98,122,170,.28) 55%,transparent 74%)}
+:is(body[data-page="catalog"],body[data-page="product"]) .asst-fab-ring{background:rgb(70,92,138)}
+:is(body[data-page="catalog"],body[data-page="product"]) .asst-fab.nudge .asst-fab-ring{background:#101f37}
+:is(body[data-page="catalog"],body[data-page="product"]) .asst-av{background:radial-gradient(circle at 50% 32%,rgba(98,122,170,.6),rgba(16,31,55,.4) 80%)}
+:is(body[data-page="catalog"],body[data-page="product"]) .asst-av::before{border-color:rgba(98,122,170,.6)}
+:is(body[data-page="catalog"],body[data-page="product"]) .qc-btn{box-shadow:0 16px 32px -12px rgba(16,31,55,.7),0 2px 6px rgba(11,26,51,.18)}
+:is(body[data-page="catalog"],body[data-page="product"]) .chip.chip-plan{box-shadow:0 10px 20px -12px rgba(16,31,55,.9)}
+:is(body[data-page="catalog"],body[data-page="product"]) .tag.blue,:is(body[data-page="catalog"],body[data-page="product"]) .dlg .ctx,:is(body[data-page="catalog"],body[data-page="product"]) .adv-ic{background:rgba(16,31,55,.08)}
+:is(body[data-page="catalog"],body[data-page="product"]) .hdr .logo{--lm:#101f37}
 
 /* большой каталог: карточка выезжает, затем в ней поднимаются подиум и упаковка, проявляются подписи; при раскрытии списка всё содержимое мягко всплывает */
 html.js .shw-list .pcard.ax.reveal:not(.in) .ax-stage>*,html.js .shw-list .pcard.ax.reveal:not(.in) .pb>*{opacity:0}
