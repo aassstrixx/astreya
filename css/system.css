@@ -150,7 +150,7 @@ html.js .shw-dir.reveal.in,html.js .shw-brand.reveal.in,html.js .shw-task.reveal
 .shw-list .pcard.ax.reveal{--rdl:min(var(--rd,0ms),360ms)}
 html.js .shw-list .pcard.ax.reveal.in{opacity:1;translate:0 0;scale:1;animation:axTile .95s var(--ax-ease) var(--rdl,0ms) backwards}
 /* карточки, которые появились из-за смены фильтров (js/gallery.js ставит .rv-done), входной анимации не получают: у фильтров своя (FLIP) */
-html.js .shw-list .pcard.ax.reveal.rv-done,html.js .shw-list .pcard.ax.reveal.rv-done .ax-stage>*,html.js .shw-list .pcard.ax.reveal.rv-done .pb>*{animation:none}
+html.js .shw-list .pcard.ax.reveal.rv-done,html.js .shw-list .pcard.ax.reveal.rv-done.in,html.js .shw-list .pcard.ax.reveal.rv-done.in .ax-stage>.ax-pod,html.js .shw-list .pcard.ax.reveal.rv-done.in .ax-stage>img,html.js .shw-list .pcard.ax.reveal.rv-done.in .ax-stage>.ax-sh,html.js .shw-list .pcard.ax.reveal.rv-done.in .pb>*{animation:none}
 html.js .shw-list .pcard.ax.reveal.rv-done:not(.in) .ax-stage>*,html.js .shw-list .pcard.ax.reveal.rv-done:not(.in) .pb>*{opacity:1}
 .shw-dir-st>:nth-child(-n+2){--k:0}.shw-dir-st>:nth-child(n+3):nth-child(-n+4){--k:1}.shw-dir-st>:nth-child(n+5){--k:2}
 html.js .shw-dir.reveal:not(.in) .shw-dir-st>*,html.js .shw-dir.reveal:not(.in) .shw-dir-cap>*{opacity:0}

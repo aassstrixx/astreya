@@ -64,7 +64,8 @@ let base = '';
   ok(dl.every((d, i) => i === 0 || d >= dl[i - 1]) && dl[dl.length - 1] > dl[0] && dl[dl.length - 1] <= 0.5, 'каскад первой строки: задержки растут от карточки к карточке, но не дольше 0,5 с (' + dl.map(d => d.toFixed(2)).join(' · ') + ')', dl);
   const t0 = Date.now(); let doneAt = 0; while (Date.now() - t0 < 4000) { const f = await p.evaluate(sel => [...document.querySelectorAll(sel)].slice(0, 4).every(c => { const cs = getComputedStyle(c); return c.classList.contains('in') && cs.opacity === '1' && getComputedStyle(c).translate === 'none' || (c.classList.contains('in') && cs.opacity === '1' && /^0(px)?( 0(px)?)?$/.test(cs.translate)); }), CARD); if (f) { doneAt = Date.now() - t0; break; } await wait(60); }
   ok(doneAt > 0 && doneAt < 2300, 'первая строка карточек полностью проявилась за ' + doneAt + ' мс (короткий вход, < 2,3 с с задержками)', doneAt);
-  ok(await settled(p), 'после входа карточки на месте: прозрачность 1, без смещения');
+  let st0 = false; for (let i = 0; i < 40 && !st0; i++) { st0 = await settled(p); if (!st0) await wait(100); }          // вторая строка проявляется чуть позже первой
+  ok(st0, 'после входа карточки на месте: прозрачность 1, без смещения');
   ok(await overflowX(p) <= 1, 'горизонтальной прокрутки страницы нет');
 
   console.log('\n[компьютер: наведение]');
