@@ -6,7 +6,7 @@
   --milk:#f5f2ec; --milk-2:#faf8f4;
   --mist:#e5ebf5; --mist-2:#eef2f9;   /* третий фон: холодный жемчужно-голубой — сочетается с молочным и тёмно-синим */
   --silver:#b9c2d0; --slate:#66758f; --muted:#56647d;
-  --blue:#2f5bd6; --blue-d:#2347b0;
+  --blue:#101f37; --blue-d:#1a2e52;
   --line:rgba(11,26,51,.16); --line-soft:rgba(11,26,51,.09);
   --serif:'Fraunces','Playfair Display',Georgia,'Times New Roman',serif;
   --sans:'Manrope',system-ui,-apple-system,'Segoe UI',Roboto,Arial,sans-serif;
@@ -43,7 +43,7 @@ ul,ol{padding:0;list-style:none}
 .small{font-size:var(--fs-sm)}
 .sec{padding:clamp(60px,8.5vw,120px) 0}
 [id]{scroll-margin-top:calc(var(--hdr) + 24px)}
-.sec.tint{background:var(--mist);border-block:1px solid rgba(47,91,214,.09)}
+.sec.tint{background:var(--mist);border-block:1px solid rgba(16,31,55,.09)}
 .dash{border:0;border-top:1px dashed var(--line);margin:0}
 
 /* ============ Typography ============ */
@@ -57,7 +57,7 @@ h3{font-size:clamp(20px,1.8vw,24px);line-height:1.22}
 .eyebrow::before{content:"";width:30px;border-top:1px dashed var(--slate)}
 .muted{color:var(--muted)}
 .tag{display:inline-flex;align-items:center;gap:6px;padding:5px 11px;border-radius:var(--pill);border:1px solid var(--line);font:600 11px/1 var(--sans);letter-spacing:.08em;text-transform:uppercase;color:var(--muted);background:transparent}
-.tag.blue{border-color:transparent;background:rgba(47,91,214,.1);color:var(--blue-d)}
+.tag.blue{border-color:transparent;background:rgba(16,31,55,.1);color:var(--blue-d)}
 .ic{width:18px;height:18px;flex:none;fill:none;stroke:currentColor;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
 
 /* ============ Buttons ============ */
@@ -93,7 +93,7 @@ h3{font-size:clamp(20px,1.8vw,24px);line-height:1.22}
 .chip .ic{width:14px;height:14px;margin-left:6px;vertical-align:-2px}
 a.tag{transition:border-color .2s,color .2s,background-color .2s}
 a.tag:hover{border-color:var(--blue);color:var(--blue-d)}
-.notice{display:flex;gap:12px;align-items:flex-start;padding:14px 18px;border-radius:var(--r);background:rgba(47,91,214,.07);color:var(--blue-d);font:600 14px/1.5 var(--sans)}
+.notice{display:flex;gap:12px;align-items:flex-start;padding:14px 18px;border-radius:var(--r);background:rgba(16,31,55,.07);color:var(--blue-d);font:600 14px/1.5 var(--sans)}
 .notice .ic{margin-top:2px;flex:none}
 .notice a{border-bottom:1px dashed currentColor}
 .notice.past{background:rgba(102,117,143,.12);color:var(--muted);margin:18px 0}

@@ -26,12 +26,12 @@
 .sx-fork-head h2{margin:14px 0 10px}
 .sx-doors{display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);align-items:stretch;border:1px solid var(--sx-line);border-radius:14px;overflow:hidden;background:#fff;box-shadow:var(--sh)}
 .sx-door{position:relative;display:grid;grid-template-columns:minmax(128px,.44fr) minmax(0,1fr);gap:clamp(18px,2.4vw,34px);align-items:start;padding:clamp(26px,3vw,44px);transition:background-color .4s}
-.sx-door::before{content:"";position:absolute;left:0;right:0;top:0;height:5px;background:var(--c1,#2f5bd6)}
+.sx-door::before{content:"";position:absolute;left:0;right:0;top:0;height:5px;background:var(--c1,#101f37)}
 .sx-door-learn{background:#fff;color:var(--navy)}
 .sx-door-buy{background:var(--navy);color:var(--milk)}
 .sx-door-buy::before{background:linear-gradient(90deg,var(--blue),#8ea8f0)}
 .sx-big{display:flex;flex-direction:column;align-items:flex-start;gap:6px;min-height:100%;padding-right:clamp(14px,2vw,28px);border-right:1px dashed var(--sx-line)}
-.sx-big-k{padding:5px 8px;border-radius:4px;background:color-mix(in srgb,var(--c1,#2f5bd6) 11%,#fff);color:var(--c1,var(--blue-d));font:700 11px/1 var(--sans);letter-spacing:.14em;text-transform:uppercase}
+.sx-big-k{padding:5px 8px;border-radius:4px;background:color-mix(in srgb,var(--c1,#101f37) 11%,#fff);color:var(--c1,var(--blue-d));font:700 11px/1 var(--sans);letter-spacing:.14em;text-transform:uppercase}
 .sx-big-k:empty{display:none}
 .sx-big b{font:500 clamp(76px,9.4vw,132px)/.84 var(--serif);letter-spacing:-.045em}
 .sx-big small{margin-top:12px;font:700 12px/1.2 var(--sans);letter-spacing:.2em;text-transform:uppercase;color:var(--slate)}
@@ -114,7 +114,7 @@
 .sx-rescue-tasks .chip{border-radius:8px}
 
 /* ============ Бренды: ближайший семинар на карточке ============ */
-.sx-bchip{position:relative;z-index:3;display:inline-flex;align-items:stretch;align-self:flex-start;margin-top:4px;overflow:hidden;border:1px solid color-mix(in srgb,var(--c1,#2f5bd6) 38%,var(--sx-line));border-radius:8px;background:#fff;color:var(--navy);font:700 12.5px/1.25 var(--sans);transition:border-color .25s,transform .3s var(--ease),box-shadow .3s}
+.sx-bchip{position:relative;z-index:3;display:inline-flex;align-items:stretch;align-self:flex-start;margin-top:4px;overflow:hidden;border:1px solid color-mix(in srgb,var(--c1,#101f37) 38%,var(--sx-line));border-radius:8px;background:#fff;color:var(--navy);font:700 12.5px/1.25 var(--sans);transition:border-color .25s,transform .3s var(--ease),box-shadow .3s}
 .sx-bchip:hover{transform:translateY(-2px);border-color:var(--c1,var(--blue));box-shadow:0 10px 18px -12px rgba(11,26,51,.5)}
 .sx-bchip .sx-bt{width:42px;border-radius:0;background:var(--c1,var(--navy));color:var(--ink,#fff)}
 .sx-bchip .sx-bt b{font-size:17px}
@@ -125,10 +125,10 @@
 .sx-route-sec{padding:clamp(4px,1.4vw,18px) 0 clamp(26px,4vw,50px)}
 .sx-route{--g:clamp(12px,1.8vw,22px);list-style:none;margin:20px 0 0;padding:0;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:var(--g)}
 .sx-station{position:relative;display:flex;flex-direction:column;border:1px solid var(--line-soft);border-top:4px solid var(--sx-line);border-radius:var(--sx-r);background:#fff;animation:sxIn .6s var(--ease) both;animation-delay:calc(var(--i,0)*120ms)}
-.sx-station.first{border-top-color:var(--c1,#2f5bd6);box-shadow:var(--sh)}
+.sx-station.first{border-top-color:var(--c1,#101f37);box-shadow:var(--sh)}
 .sx-station:not(:last-child)::after{content:"→";position:absolute;z-index:2;right:calc(var(--g) / -2 - 12px);top:34px;width:24px;height:24px;display:grid;place-items:center;border:1px solid var(--sx-line);border-radius:6px;background:var(--milk-2);font:700 13px/1 var(--sans);color:var(--slate)}
 .sx-st-top{display:flex;align-items:center;gap:12px;padding:14px 20px 0}
-.sx-num{font:500 clamp(44px,4.6vw,60px)/.86 var(--serif);letter-spacing:-.03em;color:color-mix(in srgb,var(--c1,#2f5bd6) 28%,#fff)}
+.sx-num{font:500 clamp(44px,4.6vw,60px)/.86 var(--serif);letter-spacing:-.03em;color:color-mix(in srgb,var(--c1,#101f37) 28%,#fff)}
 .sx-station.first .sx-num{color:var(--c1,var(--blue))}
 .sx-st-k{font:700 11px/1 var(--sans);letter-spacing:.16em;text-transform:uppercase;color:var(--slate)}
 .sx-st-top em{margin-left:auto;padding:5px 8px;border-radius:4px;background:var(--c1,var(--blue));color:var(--ink,#fff);font:700 10.5px/1 var(--sans);font-style:normal;letter-spacing:.06em;text-transform:uppercase}

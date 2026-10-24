@@ -102,7 +102,7 @@ body.dock-on .g-nudge{bottom:calc(var(--dock-h,66px) + 22px + 14px + env(safe-ar
 .cmp-clr{flex:none;width:34px;height:34px;border-radius:50%;display:grid;place-items:center;color:var(--slate);transition:background-color .2s,color .2s}
 .cmp-clr:hover{background:var(--mist);color:var(--navy)}.cmp-clr .ic{width:14px;height:14px}
 .cmp-bar.g-ping .cmp-ask{animation:gAsk 1.1s ease-out 3}
-@keyframes gAsk{0%{box-shadow:0 0 0 0 rgba(47,91,214,.6)}100%{box-shadow:0 0 0 16px rgba(47,91,214,0)}}
+@keyframes gAsk{0%{box-shadow:0 0 0 0 rgba(16,31,55,.6)}100%{box-shadow:0 0 0 16px rgba(16,31,55,0)}}
 @media (max-width:640px){
   .cmp-bar.cmp-stella{width:100%;max-width:none;padding:8px 8px 8px 10px;gap:8px}
   .cmp-stella .cmp-pe{width:34px;height:34px}.cmp-ask{padding:11px 14px;font-size:13px}.cmp-ask .ic{display:none}.cmp-stella .cmp-names li{max-width:140px}
@@ -111,7 +111,7 @@ body.dock-on .g-nudge{bottom:calc(var(--dock-h,66px) + 22px + 14px + env(safe-ar
 /* ---------- ответ-сравнение и плашка «не медицинская рекомендация» в чате ---------- */
 .asst-k-cmp .asst-tx p{padding:8px 0 8px 12px;margin:6px 0 0;border-left:3px solid var(--mist)}
 .asst-k-cmp .asst-tx p:first-child{padding:0;border:0;margin:0}
-.asst-k-cmp .asst-tx p:nth-child(2){border-left-color:#7fa0f0}.asst-k-cmp .asst-tx p:nth-child(3){border-left-color:#4f78e0}.asst-k-cmp .asst-tx p:nth-child(4){border-left-color:#2347b0}.asst-k-cmp .asst-tx p:nth-child(5){border-left-color:var(--silver)}
+.asst-k-cmp .asst-tx p:nth-child(2){border-left-color:#6f86b3}.asst-k-cmp .asst-tx p:nth-child(3){border-left-color:#3b5588}.asst-k-cmp .asst-tx p:nth-child(4){border-left-color:#1a2e52}.asst-k-cmp .asst-tx p:nth-child(5){border-left-color:var(--silver)}
 .asst-k-cmp .asst-tx p>b:first-child{color:var(--blue-d)}
 .asst-pl{color:var(--blue-d);font-weight:700;text-decoration:underline;text-decoration-color:rgba(35,71,176,.35);text-underline-offset:2px;transition:text-decoration-color .2s}
 .asst-pl:hover{text-decoration-color:currentColor}

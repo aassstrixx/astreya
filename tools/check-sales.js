@@ -531,7 +531,7 @@ const J = f => JSON.parse(fs.readFileSync(path.join(ROOT, f), 'utf8'));
   p = await mk(); await p.open('catalog.html');
   const eq = await p.evaluate(() => { const ch = [...document.querySelectorAll('.g-entry .chip')], pl = document.querySelector('.g-entry .chip-plan'); return {n: ch.length, first: ch[0] && ch[0].textContent.trim(), plan: !!pl, old: ch.some(c => /Подобрать (средство )?по задаче/.test(c.textContent)), bg: pl ? getComputedStyle(pl).backgroundColor : ''}; });
   ok(eq.plan && /^Старт со Стеллой/.test(eq.first) && !eq.old, 'блок «Не знаете, что выбрать?»: первой стоит кнопка «Старт со Стеллой», прежней «Подобрать по задаче» нет', eq);
-  ok(await p.evaluate(bg => { const m = /rgba?\((\d+), (\d+), (\d+)/.exec(bg); if (!m) return false; if (document.querySelector('[data-showroom]')) return +m[3] > +m[1] && +m[3] >= 40 && +m[1] < 40; return +m[3] > +m[1] + 60 && +m[3] > +m[2] + 40; }, eq.bg), 'кнопка «Старт со Стеллой» выделена цветом акцента (на странице-витрине акцент тёмно-синий, на остальных — синий)', eq.bg);
+  ok(await p.evaluate(bg => { const m = /rgba?\((\d+), (\d+), (\d+)/.exec(bg); if (!m) return false; return +m[3] > +m[1] && +m[3] >= 40 && +m[1] < 40; }, eq.bg), 'кнопка «Старт со Стеллой» выделена цветом акцента сайта (тёмно-синий, как подвал)', eq.bg);
   await p.click('.g-entry .chip-plan'); await p.waitForFunction(() => document.body.getAttribute('data-page') === 'start' && !!document.querySelector('.pchat'), null, {timeout: 15000});
   ok(await p.evaluate(() => !document.body.classList.contains('asst-open')), 'кнопка ведёт на страницу подбора со Стеллой, а не открывает основной чат');
   await p.context().close();

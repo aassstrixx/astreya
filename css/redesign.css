@@ -13,7 +13,7 @@
 .rd-head .lead{margin-top:16px;max-width:54ch}
 .rd-head-row{max-width:none;display:flex;align-items:flex-end;justify-content:space-between;gap:24px;flex-wrap:wrap}
 .rd-head-row h2{max-width:22ch}
-.rd-no{font:500 clamp(54px,7vw,104px)/.9 var(--serif);letter-spacing:-.03em;color:rgba(47,91,214,.24);transition:color .45s var(--ease)}
+.rd-no{font:500 clamp(54px,7vw,104px)/.9 var(--serif);letter-spacing:-.03em;color:rgba(16,31,55,.24);transition:color .45s var(--ease)}
 .rd-ph{display:inline-block;margin-left:8px;padding:2px 8px;border-radius:var(--pill);border:1px dashed var(--slate);font:600 10px/1.6 var(--sans);letter-spacing:.12em;text-transform:uppercase;font-style:normal;color:var(--slate);vertical-align:middle}
 
 /* крупный логотип «Астрея» на заднем плане (5–6 %): строго по центру секции (по горизонтали и вертикали), без сдвигов и анимации;
@@ -171,7 +171,7 @@
 
 /* ---------- Финальный призыв (ACCENT) ---------- */
 .rd-final{padding-top:0}
-.rd-final-band{position:relative;overflow:hidden;display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,.7fr);gap:clamp(28px,5vw,80px);align-items:center;padding:clamp(34px,6.4vw,96px);border-radius:var(--r-xl);color:#fff;background:linear-gradient(118deg,#0b1a33 0%,#13306b 52%,#2f5bd6 135%)}
+.rd-final-band{position:relative;overflow:hidden;display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,.7fr);gap:clamp(28px,5vw,80px);align-items:center;padding:clamp(34px,6.4vw,96px);border-radius:var(--r-xl);color:#fff;background:linear-gradient(118deg,#0b1a33 0%,#13306b 52%,#101f37 135%)}
 .rd-final-band::after{content:"";position:absolute;right:-12%;top:-40%;width:62%;aspect-ratio:1;border-radius:50%;border:1px dashed rgba(255,255,255,.22);pointer-events:none}
 .rd-final-band .eyebrow{color:rgba(255,255,255,.72)}
 .rd-final-band .eyebrow::before{border-color:rgba(255,255,255,.55)}

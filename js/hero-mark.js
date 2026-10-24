@@ -66,13 +66,13 @@ function heroMarkStart(wrap, opt){
       off = document.createElement('canvas'); off.width = W; off.height = H;
       const oc = off.getContext('2d'), g = oc.createLinearGradient(443, 342, 52, 719);
       oc.setTransform(tf[0], 0, 0, tf[1], tf[2], tf[3]);
-      g.addColorStop(0, 'rgba(185,194,208,.46)'); g.addColorStop(.55, 'rgba(142,166,216,.30)'); g.addColorStop(1, 'rgba(47,91,214,.20)');
+      g.addColorStop(0, 'rgba(185,194,208,.46)'); g.addColorStop(.55, 'rgba(142,166,216,.30)'); g.addColorStop(1, 'rgba(16,31,55,.20)');
       oc.fillStyle = g; oc.fill(new Path2D(D));
       TRp = hmPos(HM.TR); RTp = hmPos(HM.RT); LFp = hmPos(HM.LF); WGp = hmPos(HM.WG);
       if (clean) { ARCp = new Path2D(D.slice(D.indexOf('Z') + 1)); /* знак режется по прямой «правая нога — внутренняя вершина — левый внешний край»: правая палка с вершиной — цельный треугольник без угла сбоку, левая — узкий клин (с запасом 1,5 ед. внахлёст, чтобы не было шва) */
         RTt = hmPos([[184.6, 326.1], [443.1, 653.7], [154.6, 413.6]]); LFt = hmPos([[155.6, 412.4], [211.6, 459.0], [49.8, 718.9]]); LFl = hmPos([[184.6, 326.1], [210.6, 460.2], [49.8, 718.9]]); }
       bead = document.createElement('i');            // светящаяся точка — маленький слой, двигается только через transform
-      bead.style.cssText = 'position:absolute;left:0;top:0;width:64px;height:64px;margin:-32px 0 0 -32px;border-radius:50%;pointer-events:none;opacity:0;background:radial-gradient(circle closest-side,#fff 0,rgba(228,236,255,.95) 26%,rgba(125,156,240,.42) 55%,rgba(47,91,214,0) 100%)';
+      bead.style.cssText = 'position:absolute;left:0;top:0;width:64px;height:64px;margin:-32px 0 0 -32px;border-radius:50%;pointer-events:none;opacity:0;background:radial-gradient(circle closest-side,#fff 0,rgba(228,236,255,.95) 26%,rgba(125,156,240,.42) 55%,rgba(16,31,55,0) 100%)';
       bx0 = r.left - sb.left; by0 = r.top - sb.top;
       vb = [hr.left - sb.left, hr.top - sb.top, hr.right - sb.left, hr.bottom - sb.top];     // видимая область (hero) в координатах слоя: блик не должен выезжать за кадр
       sw.insertBefore(cv, svg); sw.appendChild(bead); svg.style.visibility = 'hidden';

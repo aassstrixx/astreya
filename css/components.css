@@ -3,7 +3,7 @@
 /* ============ Header ============ */
 .hdr{position:sticky;top:env(safe-area-inset-top,0px);z-index:60;background:var(--milk);border-bottom:1px solid var(--line-soft)}
 .hdr-in{height:var(--hdr);display:flex;align-items:center;justify-content:space-between;gap:24px}
-.logo{display:inline-flex;align-items:center;line-height:1;--lm:#2764ac}
+.logo{display:inline-flex;align-items:center;line-height:1;--lm:#101f37}
 .lgo{display:block;height:58px;width:auto;aspect-ratio:836/436;overflow:visible}
 .logo.inv{--lm:var(--milk)}
 .logo.big .lgo{height:112px}
@@ -34,7 +34,7 @@
 .g4{grid-template-columns:repeat(4,1fr)}
 .card{position:relative;background:#fff;border-radius:var(--r-lg);box-shadow:var(--sh);overflow:hidden}
 .card.hov{transition:box-shadow .25s ease}
-.card.hov:hover{box-shadow:var(--sh),0 0 0 1px color-mix(in srgb,var(--cc,#2f5bd6) 60%,transparent)}
+.card.hov:hover{box-shadow:var(--sh),0 0 0 1px color-mix(in srgb,var(--cc,#101f37) 60%,transparent)}
 .card-pad{padding:clamp(20px,2.2vw,28px)}
 
 /* ---- Seminar card ---- */
@@ -152,7 +152,7 @@
 .dlg{position:relative;width:100%;max-width:580px;max-height:calc(100vh - 40px);overflow:auto;background:var(--milk-2);border-radius:var(--r-xl);padding:clamp(24px,4vw,42px);box-shadow:0 40px 80px -30px rgba(11,26,51,.6);animation:dlgIn .45s var(--ease)}
 @keyframes dlgIn{from{opacity:0;transform:translateY(24px) scale(.97)}to{opacity:1;transform:none}}
 .dlg h2{font-size:clamp(26px,3vw,34px);margin:14px 0 8px}
-.dlg .ctx{display:inline-block;margin:6px 0 4px;padding:8px 14px;border-radius:12px;background:rgba(47,91,214,.09);color:var(--blue-d);font:600 13px/1.4 var(--sans)}
+.dlg .ctx{display:inline-block;margin:6px 0 4px;padding:8px 14px;border-radius:12px;background:rgba(16,31,55,.09);color:var(--blue-d);font:600 13px/1.4 var(--sans)}
 .x{position:absolute;right:16px;top:16px;width:40px;height:40px;border-radius:50%;border:1px solid var(--line);display:grid;place-items:center;transition:background-color .25s,color .25s,transform .3s var(--ease)}
 .x:hover{background:var(--navy);color:var(--milk)}
 .two{display:grid;grid-template-columns:1fr 1fr;gap:14px}
@@ -168,7 +168,7 @@
 .agree input{width:24px;height:24px;margin:1px 0 0;accent-color:var(--blue);flex:none}
 .agree.bad{color:#b03024}
 .ok{text-align:center;padding:20px 0 6px}
-.ok .tick{width:64px;height:64px;border-radius:50%;background:rgba(47,91,214,.1);color:var(--blue);display:grid;place-items:center;margin:0 auto 18px}
+.ok .tick{width:64px;height:64px;border-radius:50%;background:rgba(16,31,55,.1);color:var(--blue);display:grid;place-items:center;margin:0 auto 18px}
 .ok .tick .ic{width:28px;height:28px;stroke-width:2}
 .ok p{color:var(--muted);margin-top:10px}
 .copy-box{margin:18px 0 4px;padding:16px 18px;border-radius:14px;border:1px dashed var(--line);background:#fff;text-align:left;font:500 13px/1.6 var(--sans);color:var(--navy);white-space:pre-wrap;overflow-wrap:anywhere;max-height:200px;overflow:auto;user-select:all;-webkit-user-select:all}
@@ -226,7 +226,7 @@ a.tag{min-height:24px}
 .newscard .meta{align-items:center}
 .newscard .meta .lnk{font-size:11px}
 .adv{display:flex;flex-direction:column;gap:10px}
-.adv-ic{display:grid;place-items:center;width:46px;height:46px;border-radius:14px;background:rgba(47,91,214,.09);color:var(--blue);margin-bottom:6px}
+.adv-ic{display:grid;place-items:center;width:46px;height:46px;border-radius:14px;background:rgba(16,31,55,.09);color:var(--blue);margin-bottom:6px}
 .adv-ic .ic{width:22px;height:22px}
 .adv h3{font-size:20px}
 .adv p{font-size:14.5px;color:var(--muted);line-height:1.6}
@@ -269,7 +269,7 @@ img.blogo{height:46px;width:auto;max-width:120px;object-fit:contain}
 .form-status{display:flex;gap:12px;align-items:flex-start;padding:14px 16px;border-radius:var(--r);font:500 14px/1.5 var(--sans)}
 .form-status .ic{flex:none;margin-top:2px}
 .form-status.err{background:var(--err-bg);color:var(--err)}
-.form-status.busy{background:rgba(47,91,214,.07);color:var(--blue-d);align-items:center}
+.form-status.busy{background:rgba(16,31,55,.07);color:var(--blue-d);align-items:center}
 .fs-links{margin-top:6px;font-weight:500;color:var(--navy)}
 .fs-links a{border-bottom:1px dashed;font-weight:600}
 .form-actions{margin-top:6px}
