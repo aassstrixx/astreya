@@ -214,13 +214,13 @@
   /* на компьютере плашка товара показывается только при наведении на предмет и при выборе; на планшете и телефоне (наведения нет) в покое стоит плашка товара по умолчанию */
   const idleId = () => S && S.stack ? S.defId : null;
   function paintCard(id, open) {
-    const c = S.card; if (!id || !P[id]) { clearTimeout(c._t); c.classList.remove('swap', 'is-open'); c._id = null; if (!c.hidden && !c.classList.contains('is-idle')) { c.classList.add('is-idle'); clearTimeout(c._h); c._h = setTimeout(() => { if (c.classList.contains('is-idle')) c.hidden = true; }, 420); } return; }
+    const c = S.card; if (!id || !P[id]) { clearTimeout(c._t); c.classList.remove('swap', 'is-open'); c._id = null; if (!c.hidden && !c.classList.contains('is-idle')) { c.classList.add('is-idle'); clearTimeout(c._h); c._h = setTimeout(() => { if (c.classList.contains('is-idle')) c.hidden = true; }, 780); } return; }
     clearTimeout(c._h); if (c.hidden || c.classList.contains('is-idle')) { c.hidden = false; void c.offsetWidth; c.classList.remove('is-idle'); }
     c.classList.toggle('is-open', !!open);
     if (c._id === id) return;
     const first = !c._id; clearTimeout(c._t);
-    if (first || mode() === 'off') { c.classList.remove('swap'); c.innerHTML = cardHTML(P[id]); c._id = id; return; }
-    c.classList.add('swap'); c._id = id; c._t = setTimeout(() => { c.innerHTML = cardHTML(P[id]); c.classList.remove('swap'); }, 150);
+    if (first) { c.classList.remove('swap'); c.innerHTML = cardHTML(P[id]); c._id = id; return; }
+    c.classList.add('swap'); c._id = id; c._t = setTimeout(() => { c.innerHTML = cardHTML(P[id]); c.classList.remove('swap'); }, 230);
   }
   function preview(id) { if (!S || S.sel) return; clearTimeout(S.hovT); clearTimeout(S.cardT); S.hov = id; S.root.classList.add('has-hov'); S.items.forEach((r, k) => r.el.classList.toggle('is-hov', k === id)); if (!S.sel) paintCard(id, false); const rec = S.items.get(id), pd = rec && S.pods.find(q => q.g === rec.g); if (pd) pd.el.classList.add('is-lit'); }
   function unpreview() { if (!S) return; clearTimeout(S.hovT); S.hovT = setTimeout(() => { if (!S) return; S.hov = null; S.root.classList.remove('has-hov'); S.items.forEach(r => r.el.classList.remove('is-hov')); S.pods.forEach(q => q.el.classList.remove('is-lit')); if (S.stack && !S.sel) paintCard(S.defId, false); }, 170); if (!S.stack) S.cardT = setTimeout(() => { if (S && !S.sel && !S.hov && !S.cardHover) paintCard(null); }, 520); }

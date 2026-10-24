@@ -220,6 +220,16 @@ const userMsgs = p => p.evaluate(() => [...document.querySelectorAll('.asst-u .a
   await p.evaluate(() => document.documentElement.classList.add('lite')); await p.click('.cat-tile[data-id="sun"]'); await wait(200);
   ok(await p.evaluate(() => document.querySelector('.shw-stage').getAnimations({subtree: true}).length) === 0 && (await items(p)).length === EXP.sun, '«лёгкий режим»: смена категории мгновенная, без анимаций'); ok(p.errs.length === 0, 'без ошибок JavaScript', p.errs); await p.ctx.close();
 
+  /* наведение и плашка товара плавные и в «лёгком режиме», и при «уменьшить движение» (на этом сайте анимации работают всегда) */
+  p = await open(b, {viewport: {width: 1440, height: 900}, reducedMotion: 'reduce'}); await p.evaluate(() => document.documentElement.classList.add('lite')); await wait(400);
+  const xy = await p.evaluate(() => { const e = document.querySelectorAll('.shw-it')[3].getBoundingClientRect(); return {x: e.x + e.width / 2, y: e.y + e.height * .55}; });
+  await p.mouse.move(xy.x - 60, xy.y - 40); await p.mouse.move(xy.x, xy.y, {steps: 3});
+  const GR = []; for (let i = 0; i < 14; i++) { GR.push(await p.evaluate(() => { const ph = document.querySelector('.shw-it.is-hov .shw-ph'), c = document.querySelector('.shw-card'), m = ph && /matrix\(([-\d.]+)/.exec(getComputedStyle(ph).transform); return {z: m ? +m[1] : 1, o: c.hidden ? 0 : +getComputedStyle(c).opacity}; })); await wait(70); }
+  const mid = a => new Set(a.filter(v => v > 1.02 && v < 1.14).map(v => v.toFixed(2))).size, midO = new Set(GR.map(g => g.o).filter(v => v > .05 && v < .95).map(v => v.toFixed(2))).size;
+  ok(mid(GR.map(g => g.z)) >= 4 && GR[GR.length - 1].z > 1.14, 'в «лёгком режиме» и при «уменьшить движение» рост товара при наведении плавный: ' + mid(GR.map(g => g.z)) + ' промежуточных кадров, итог ×' + GR[GR.length - 1].z.toFixed(2), GR);
+  ok(midO >= 3 && GR[GR.length - 1].o > .95, 'плашка товара появляется плавно (' + midO + ' промежуточных значений прозрачности)', GR.map(g => g.o));
+  await p.ctx.close();
+
   await b.close(); srv.close();
   console.log('\nИтого: ✓ ' + pass + '  ✗ ' + fail); process.exit(fail ? 1 : 0);
 })().catch(e => { console.error('FATAL', e); process.exit(1); });

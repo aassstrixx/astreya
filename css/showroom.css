@@ -38,7 +38,7 @@ html.lite .shw-motes{display:none}
 .shw-it{position:absolute;display:block;padding:0;margin:0;border:0;background:none;cursor:pointer;text-align:left;touch-action:manipulation;-webkit-tap-highlight-color:transparent;z-index:var(--z,5);transition:opacity .5s var(--shw-ease)}
 .shw-it:focus{outline:none}
 .shw-it:focus-visible .shw-img{outline:2px solid var(--blue);outline-offset:6px;border-radius:12px}
-.shw-ph{position:absolute;left:0;top:0;width:100%;height:100%;transform-origin:50% 100%;transform:translateY(var(--ly,0px)) scale(var(--zm,1));transition:transform .95s var(--shw-grow)}
+.shw-ph{position:absolute;left:0;top:0;width:100%;height:100%;transform-origin:50% 100%;transform:translateY(var(--ly,0px)) scale(var(--zm,1));transition:transform .95s var(--shw-grow);will-change:transform}
 .shw-img{position:absolute;left:0;top:0;width:100%;height:100%;display:block;object-fit:contain;max-width:none;user-select:none;-webkit-user-drag:none;pointer-events:none}
 .shw-img.opq{mix-blend-mode:multiply}
 .shw-sh{position:absolute;left:50%;bottom:-7px;width:112%;height:calc(var(--bw) * .16 + 8px);transform:translateX(-50%) scale(var(--ss,1),var(--ss,1));background:radial-gradient(closest-side,rgba(66,44,20,.5),rgba(66,44,20,.2) 56%,rgba(66,44,20,0));opacity:var(--so,1);transition:transform .95s var(--shw-grow),opacity .95s var(--shw-grow);pointer-events:none}
@@ -136,10 +136,10 @@ html.lite .shw-motes{display:none}
 .shw.has-sel .shw-head{opacity:0;visibility:hidden;pointer-events:none;transition:opacity .35s var(--ease),visibility 0s .35s}
 
 /* карточка товара: компактная панель; в покое — «акцент» справа вверху, при выборе приезжает к выбранному товару и раскрывается */
-.shw-card{position:absolute;left:1252px;top:142px;width:236px;z-index:30;padding:16px 18px 18px;border-radius:20px;background:linear-gradient(180deg,rgba(252,248,240,.82),rgba(246,239,226,.74));border:1px solid var(--shw-rim);box-shadow:0 1px 2px rgba(86,60,30,.08),0 24px 44px -26px rgba(86,60,30,.55);transform:translate(var(--cx,0px),var(--cy,0px));transition:transform .7s var(--shw-ease),opacity .45s var(--shw-grow),translate .45s var(--shw-grow)}
-.shw-card.is-idle{opacity:0;translate:0 10px;pointer-events:none}
+.shw-card{position:absolute;left:1252px;top:142px;width:236px;z-index:30;padding:16px 18px 18px;border-radius:20px;background:linear-gradient(180deg,rgba(252,248,240,.82),rgba(246,239,226,.74));border:1px solid var(--shw-rim);box-shadow:0 1px 2px rgba(86,60,30,.08),0 24px 44px -26px rgba(86,60,30,.55);transform:translate(var(--cx,0px),var(--cy,0px));transition:transform .7s var(--shw-ease),opacity .7s var(--shw-grow),translate .8s var(--shw-grow),scale .8s var(--shw-grow);will-change:opacity}
+.shw-card.is-idle{opacity:0;translate:0 16px;scale:.97;pointer-events:none}
 .shw-card[hidden]{display:none}
-.shw-card .c-in{transition:opacity .22s ease,transform .3s var(--ease)}
+.shw-card .c-in{transition:opacity .32s ease,transform .42s var(--shw-grow)}
 .shw-card.swap .c-in{opacity:0;transform:translateY(5px)}
 .shw-card .c-bd{display:inline-block;margin-bottom:9px;padding:4px 10px;border-radius:999px;background:rgba(86,60,30,.09);font:700 9.5px/1 var(--sans);letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
 .shw-card .c-bd.is-new{background:var(--navy);color:var(--milk)}
@@ -336,14 +336,7 @@ html.shw-top .hdr{background:transparent;border-bottom-color:transparent}
 }
 
 /* --- 9. спокойное движение и «лёгкий режим» --- */
-@media (prefers-reduced-motion:reduce){
-  .shw-ph,.shw-sh,.shw-gl,.shw-nm,.shw-card,.shw-gh .ic,.shw-go,.shw-pc,.shw-help,.shw-reset .ic{transition:none!important}
-  .shw-it:hover .shw-ph,.shw-it.is-sel .shw-ph,.shw-it:focus-visible .shw-ph{--ly:0px;--zm:1}
-  .shw-pc:hover{transform:none}
-  [data-catalog] #cat-grid .pcard.is-hov .art-render img,[data-catalog] #cat-grid .pcard:has(:focus-visible) .art-render img{transform:translateX(-50%)}
-  .shw-it,.shw-pd,.shw-spot,.shw-head,.shw-link{transition:opacity .25s ease!important}
-}
-html.lite .shw-ph{transition:none}
+/* наведение, выбор и плашка товара анимируются всегда: «лёгкий режим» (html.lite) и системное «уменьшить движение» их не гасят — это несколько небольших элементов, нагрузки от них нет, а без плавности рост товара выглядит рывком (так решено для всего сайта: анимации работают всегда). Гасятся только дорогие вещи — перестройка сцены при смене фильтров (js/showroom.js, mode()) и «пылинки». */
 html.lite [data-catalog] #cat-grid .pcard.is-hov .art-render img,html.lite [data-catalog] #cat-grid .pcard:has(:focus-visible) .art-render img{transform:translateX(-50%)}
 html:not(.js) .shw{display:none}
 @media print{.shw,.shw-adv,.shw-aside{display:none!important}}
