@@ -118,8 +118,9 @@ const MEASURE = async ({b64, rects}) => {
       await p.evaluate(() => window.scrollTo({top: document.documentElement.scrollHeight, behavior: 'instant'}));
       await p.waitForFunction(() => document.querySelectorAll('[data-bd]:not(.bd-on)').length === 0, null, {timeout: 15000}).catch(() => {});
       await p.evaluate(() => window.scrollTo({top: 0, behavior: 'instant'}));
-      const st = await p.evaluate(() => ({fills: document.querySelectorAll('.bd-fill').length, hosts: document.querySelectorAll('[data-bd]').length, on: document.querySelectorAll('[data-bd].bd-on').length,
-        imgs: Array.from(document.querySelectorAll('[data-bd]')).filter(e => /url\(/.test(e.style.getPropertyValue('--bd-img'))).length, ovf: document.documentElement.scrollWidth - innerWidth, muted: getComputedStyle(document.getElementById('main')).getPropertyValue('--muted').trim()}));
+      const st = await p.evaluate(() => { const shown = () => Array.from(document.querySelectorAll('[data-bd]')).filter(e => !e.closest('details:not([open])'));   /* полосы за свёрнутым списком подгрузятся, когда его раскроют */
+      return ({fills: document.querySelectorAll('.bd-fill').length, hosts: shown().length, on: shown().filter(e => e.classList.contains('bd-on')).length,
+        imgs: shown().filter(e => /url\(/.test(e.style.getPropertyValue('--bd-img'))).length, ovf: document.documentElement.scrollWidth - innerWidth, muted: getComputedStyle(document.getElementById('main')).getPropertyValue('--muted').trim()}); });
       if (home) {
         const free = await p.evaluate(() => ['.hero', '.jar-story', '.jar-outro', '.marquee'].map(q => { const e = document.querySelector(q); return e ? (!e.closest('[data-bd]') && !e.querySelector('[data-bd]')) : true; }));
         ok(free.every(Boolean), `${rel}: герой, вступление с баночкой и бегущая строка без вставок`, free);
