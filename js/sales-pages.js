@@ -117,7 +117,7 @@
     measure(); layout(); setTimeout(() => { if (anim) return; measure(); row.scrollLeft = c0.offsetLeft - (row.clientWidth - c0.offsetWidth) / 2; layout(); }, 350); setTimeout(() => { measure(); layout(); }, 1200);
   }
   function catalog(c, main) {
-    const wrap = $('[data-catalog]', main), tb = $('#results', main); if (!wrap || !tb || mod('kits', wrap)) return;
+    const wrap = $('[data-catalog]', main), tb = $('[data-kits-anchor]', main) || $('#results', main); if (!wrap || !tb || mod('kits', wrap)) return;
     const cfg = PG.catalog || {}, kits = kitsFor(); if (!kits.length) return;
     const sec = el('section', 'sx-mod sx-kits', '<header class="sx-head"><span class="eyebrow">' + esc(cfg.eyebrow) + '</span><h2>' + esc(cfg.title) + '</h2><p class="lead">' + esc(cfg.lead) + '</p></header>' +
       '<div class="sx-kit-stage"><button class="sx-kit-nav prev" type="button" data-kit-nav="-1" aria-label="' + esc(cfg.prev) + '">' + I.arrow + '</button>' +
@@ -148,7 +148,7 @@
       $$('.sx-kit').forEach(kitState); const sec = card.closest('.sx-kits'); if (sec) metaKits(sec);
     }
     if (show) {
-      const card = show.closest('.sx-kit'), sel = $('#f-task'), tb = $('#results'); track('sales_kit_show', {task: card.getAttribute('data-task')});
+      const card = show.closest('.sx-kit'), sel = $('#f-task'), tb = $('[data-shw]') || $('#results'); track('sales_kit_show', {task: card.getAttribute('data-task')});
       if (sel) { sel.value = card.getAttribute('data-task'); sel.dispatchEvent(new Event('change', {bubbles: true})); }
       if (tb) tb.scrollIntoView({behavior: 'smooth', block: 'start'});
     }

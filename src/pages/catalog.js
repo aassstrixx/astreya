@@ -3,6 +3,7 @@ const {esc, I} = S;
 
 module.exports = function catalog(ctx, C, P) {
   const {cats, tasks, kinds, brands, products, site} = ctx;
+  if (C.xon('gallery') && C.xon('showroom')) return require('./showroom.js')(ctx, C, P);          // шоурум (extras.showroom): другая раскладка тех же элементов; выключен — прежний каталог ниже
   const sel = (id, label, opts) => `<div class="fld"><label for="${id}">${label}</label><div class="sel"><select id="${id}">${opts.map(([v, t]) => `<option value="${v}">${esc(t)}</option>`).join('')}</select>${I.chevron}</div></div>`;
   return `<div class="wrap" data-catalog>
     ${C.pageHead('Каталог', 'Каталог профессиональной косметики', 'Направления, бренды и задачи — фильтруйте ассортимент так, как думает специалист.')}

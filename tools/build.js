@@ -26,6 +26,21 @@ const buildKb = require('../src/assistant-kb.js');
 const agentFiles = require('../src/agent-files.js');
 
 const ROOT = path.join(__dirname, '..');
+/* Размеры и наличие прозрачности у изображения по заголовку файла (PNG, WebP, JPEG) — без зависимостей. Нет файла или формат неизвестен — null */
+function imageInfo(rel) {
+  try {
+    const b = fs.readFileSync(path.join(ROOT, rel));
+    if (b.length > 24 && b.toString('latin1', 1, 4) === 'PNG') { const ct = b[25]; return {w: b.readUInt32BE(16), h: b.readUInt32BE(20), alpha: ct === 4 || ct === 6 || b.indexOf('tRNS') > 0}; }
+    if (b.toString('latin1', 0, 4) === 'RIFF' && b.toString('latin1', 8, 12) === 'WEBP') {
+      const t = b.toString('latin1', 12, 16);
+      if (t === 'VP8X') return {w: 1 + b.readUIntLE(24, 3), h: 1 + b.readUIntLE(27, 3), alpha: !!(b[20] & 0x10)};
+      if (t === 'VP8L') { const v = b.readUInt32LE(21); return {w: 1 + (v & 0x3fff), h: 1 + ((v >> 14) & 0x3fff), alpha: !!((v >> 28) & 1)}; }
+      if (t === 'VP8 ') return {w: b.readUInt16LE(26) & 0x3fff, h: b.readUInt16LE(28) & 0x3fff, alpha: false};
+    }
+    if (b[0] === 0xff && b[1] === 0xd8) { for (let i = 2; i + 9 < b.length;) { if (b[i] !== 0xff) { i++; continue; } const m = b[i + 1]; if (m >= 0xc0 && m <= 0xcf && m !== 0xc4 && m !== 0xc8 && m !== 0xcc) return {w: b.readUInt16BE(i + 7), h: b.readUInt16BE(i + 5), alpha: false}; i += 2 + b.readUInt16BE(i + 2); } }
+  } catch (e) {}
+  return null;
+}
 const ctx = load();
 /* версия ресурсов (?v=…) в ссылках на CSS/JS: меняется при любой правке стилей, скриптов или данных — браузер и CDN не показывают устаревшие файлы */
 ctx.assetVersion = (() => {
@@ -138,12 +153,13 @@ const data = {
   cats: ctx.cats, tasks: ctx.tasks.map(t => ({id: t.id, label: t.label})), kinds: ctx.kinds,
   /* products/events: поля для «Быстрого просмотра», сравнения, обратного отсчёта и помощника (d — описание, c — категория, k — вид, ts — задачи, n — новинка, x — только заполненные характеристики) */
   products: ctx.products.map(p => { const x = {}; if (p.volume) x.volume = p.volume; if (p.sku) x.sku = p.sku; if (p.usage) x.usage = p.usage; if (p.indications && p.indications.length) x.indications = p.indications; if (p.actives && p.actives.length) x.actives = p.actives;
-    return {id: p.id, slug: p.slug, name: p.name, brand: p.brand, t: p.type, im: p.image || undefined, d: p.desc, c: p.cat, k: p.kind, ts: p.tasks, n: p.isNew ? 1 : undefined, x: Object.keys(x).length ? x : undefined}; }),
+    const ii = p.image ? imageInfo(p.image) : null;      // размеры и прозрачность фото: витрина ставит снимок с прозрачным фоном на подиум как есть, а со сплошным фоном — «вплавляет» умножением
+    return {id: p.id, slug: p.slug, name: p.name, brand: p.brand, t: p.type, im: p.image || undefined, iw: ii ? ii.w : undefined, ih: ii ? ii.h : undefined, ia: ii && ii.alpha ? 1 : undefined, d: p.desc, c: p.cat, k: p.kind, ts: p.tasks, n: p.isNew ? 1 : undefined, f: p.featured ? 1 : undefined, x: Object.keys(x).length ? x : undefined}; }),
   events: ctx.sortedEvents.map(e => ({id: e.id, slug: e.slug, title: e.title, date: e.date, city: e.city, tm: e.time, fm: e.fmt, pl: e.place, b: e.brand, sp: e.speaker})),
   index,
   sales: ctx.sales ? Object.assign({}, ctx.sales, {_comment: undefined}) : undefined,                                    // продающий слой «Путь к закупке»: тексты и настройки (data/sales.json) + факты сайта
   guide: C.xon('assistant') && C.xon('navigator') && ctx.stella && ctx.stella.guide ? (ctx.sales ? ctx.stella.guide : Object.assign({}, ctx.stella.guide, {pages: ctx.stella.guide.pages.filter(p => p.id !== 'start')})) : undefined,       // «навигатор» Стеллы: цели подсветки, экскурсии, подсказки (data/stella/guide.json)
-  extras: site.redesign && ctx.redesign && ctx.redesign.extras && ctx.redesign.extras.enabled ? {requestList: C.xon('requestList'), quickContact: C.xon('quickContact'), recent: C.xon('recent'), callback: C.xon('callback'), quickView: C.xon('quickView'), gallery: C.xon('gallery'), compare: C.xon('compare'), countdown: C.xon('countdown'), subscribe: C.xon('subscribe'), assistant: C.xon('assistant'), navigator: C.xon('assistant') && C.xon('navigator'), sales: !!ctx.sales, agentReady: C.xon('agentReady'), kb: C.xon('assistant') ? 'js/kb.js' + (ctx.assetVersion ? '?v=' + ctx.assetVersion : '') : undefined} : null
+  extras: site.redesign && ctx.redesign && ctx.redesign.extras && ctx.redesign.extras.enabled ? {requestList: C.xon('requestList'), quickContact: C.xon('quickContact'), recent: C.xon('recent'), callback: C.xon('callback'), quickView: C.xon('quickView'), gallery: C.xon('gallery'), showroom: C.xon('showroom'), compare: C.xon('compare'), countdown: C.xon('countdown'), subscribe: C.xon('subscribe'), assistant: C.xon('assistant'), navigator: C.xon('assistant') && C.xon('navigator'), sales: !!ctx.sales, agentReady: C.xon('agentReady'), kb: C.xon('assistant') ? 'js/kb.js' + (ctx.assetVersion ? '?v=' + ctx.assetVersion : '') : undefined} : null
 };
 /* «агент-ready» (extras.agentReady): llms.txt и manifest.webmanifest; флаг выключен — файлов нет */
 for (const f of ['llms.txt', 'manifest.webmanifest']) if (!C.xon('agentReady')) fs.rmSync(path.join(ROOT, f), {force: true});

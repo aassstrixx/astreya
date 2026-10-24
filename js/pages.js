@@ -88,12 +88,13 @@
       af.innerHTML = active.map(k => { const name = k === 'brand' ? brandName(S[k]) : k === 'cat' ? catName(S[k]) : k === 'task' ? taskName(S[k]) : kindName(S[k]);
         return `<button type="button" class="chip on" data-act="cat-clear" data-id="${k}" aria-label="Убрать фильтр: ${esc(name)}">${esc(name)} ${I.close}</button>`; }).join('');
       if (push) { const p = new URLSearchParams(); ['brand', 'cat', 'task', 'kind'].forEach(k => { if (S[k] !== 'all') p.set(k, S[k]); }); if (S.sort !== 'def') p.set('sort', S.sort); if (S.q.trim()) p.set('q', S.q.trim()); writeUrl(p); }
+      if (A.showroom) A.showroom.sync(!!push);                                  // шоурум (js/showroom.js): сцена с подиумами и панель фильтров слева читают то же состояние
       if (gal) gal.end();
     }
     Object.keys(el).forEach(k => el[k].addEventListener('change', () => { S[k] = el[k].value; apply(true); A.track('catalog_filter', {filter: k, value: S[k]}); }));
     qEl.value = S.q;
     qEl.addEventListener('input', debounce(() => { S.q = qEl.value; apply(true); }, 140));
-    A.actions['cat-tile'] = (t, id) => { S.cat = S.cat === id ? 'all' : id; apply(true); const r = $('#results'); if (r) r.scrollIntoView({behavior: 'smooth', block: 'start'}); };
+    A.actions['cat-tile'] = (t, id) => { S.cat = S.cat === id ? 'all' : id; apply(true); const r = $('#results'); if (r && !r.closest('.shw-aside')) r.scrollIntoView({behavior: 'smooth', block: 'start'}); };
     A.actions['cat-clear'] = (t, id) => { S[id] = 'all'; apply(true); };
     A.actions['cat-reset'] = () => { S.brand = S.cat = S.task = S.kind = 'all'; S.q = ''; qEl.value = ''; apply(true); };
     A.actions.filters = t => { const tb = t.closest('.toolbar'), open = tb.classList.toggle('filters-open'); t.setAttribute('aria-expanded', String(open)); };

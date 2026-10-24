@@ -195,7 +195,7 @@
     sec.innerHTML = '<div class="wrap"><div class="sec-head"><div><span class="eyebrow">Вы смотрели</span><h2 id="rv-h">Недавно просмотренные</h2></div><button class="lnk" type="button" data-act="rv-clear">Очистить ' + I.close + '</button></div>' +
       '<div class="rv-grid">' + show.map(id => { const p = P[id]; return '<a class="mini-p" href="' + esc(root() + 'products/' + p.slug + '.html') + '" data-track="recent_click" data-product="' + esc(id) + '">' + rvArt(p) + '<div class="t"><small>' + esc(brandOf(id)) + '</small>' + esc(p.name) + '</div></a>'; }).join('') + '</div></div>';
     const main = $('#main'); if (!main) return;
-    const anchor = page === 'catalog' ? $('#results', main) : $('.cta-band', main) || null;
+    const anchor = page === 'catalog' ? $('[data-kits-anchor]', main) || $('#results', main) : $('.cta-band', main) || null;
     if (page === 'catalog' && anchor) anchor.parentNode.insertBefore(sec, anchor); else if (anchor) { const host = anchor.closest('section') || anchor; host.parentNode.insertBefore(sec, host); } else main.appendChild(sec);
   }
 
