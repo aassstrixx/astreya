@@ -105,7 +105,15 @@
     el.addEventListener('blur', () => unpreview());
     return el;
   }
-  function podEl() { const el = document.createElement('i'); el.className = 'shw-slab shw-pd'; el.setAttribute('aria-hidden', 'true'); return el; }
+  /* подиум работает как продолжение товара на нём: наведение и нажатие по камню — то же, что по упаковке (так курсор не «соскакивает» при переходе от товара к подиуму) */
+  function podEl() {
+    const el = document.createElement('i'); el.className = 'shw-slab shw-pd'; el.setAttribute('aria-hidden', 'true');
+    const id = () => { const q = S && S.pods.find(r => r.el === el); return q && q.g && q.g.p ? q.g.p.id : null; };
+    el.addEventListener('pointerenter', e => { const i = id(); if (i && e.pointerType !== 'touch') preview(i); });
+    el.addEventListener('pointerleave', e => { if (e.pointerType !== 'touch') unpreview(); });
+    el.addEventListener('click', () => { const i = id(); if (i) select(i); });
+    return el;
+  }
   function placeItem(rec, g) {
     const el = rec.el, it = g.it, st = el.style;
     st.left = it.l.toFixed(1) + 'px'; st.top = it.t.toFixed(1) + 'px'; st.width = it.w.toFixed(1) + 'px'; st.height = it.h.toFixed(1) + 'px';
@@ -211,7 +219,7 @@
     if (first || mode() === 'off') { c.classList.remove('swap'); c.innerHTML = cardHTML(P[id]); c._id = id; return; }
     c.classList.add('swap'); c._id = id; c._t = setTimeout(() => { c.innerHTML = cardHTML(P[id]); c.classList.remove('swap'); }, 150);
   }
-  function preview(id) { if (!S) return; clearTimeout(S.hovT); S.hov = id; S.root.classList.add('has-hov'); S.items.forEach((r, k) => r.el.classList.toggle('is-hov', k === id)); if (!S.sel) paintCard(id, false); const rec = S.items.get(id), pd = rec && S.pods.find(q => q.g === rec.g); if (pd) pd.el.classList.add('is-lit'); }
+  function preview(id) { if (!S || S.sel) return; clearTimeout(S.hovT); S.hov = id; S.root.classList.add('has-hov'); S.items.forEach((r, k) => r.el.classList.toggle('is-hov', k === id)); if (!S.sel) paintCard(id, false); const rec = S.items.get(id), pd = rec && S.pods.find(q => q.g === rec.g); if (pd) pd.el.classList.add('is-lit'); }
   function unpreview() { if (!S) return; clearTimeout(S.hovT); S.hovT = setTimeout(() => { if (!S) return; S.hov = null; S.root.classList.remove('has-hov'); S.items.forEach(r => r.el.classList.remove('is-hov')); S.pods.forEach(q => q.el.classList.remove('is-lit')); if (!S.sel) paintCard(S.defId, false); }, 170); }
 
   /* ---------- выбор ---------- */
@@ -228,7 +236,8 @@
   function select(id) {
     if (!S || !S.items.has(id)) return;
     if (S.sel === id) { clearSel(); return; }
-    S.items.forEach((rec, k) => { const on = k === id; rec.el.classList.toggle('is-sel', on); rec.el.setAttribute('aria-pressed', String(on)); });
+    S.items.forEach((rec, k) => { const on = k === id; rec.el.classList.toggle('is-sel', on); rec.el.classList.remove('is-hov'); rec.el.setAttribute('aria-pressed', String(on)); });
+    clearTimeout(S.hovT); S.hov = null; S.root.classList.remove('has-hov'); S.pods.forEach(q => q.el.classList.remove('is-lit'));
     S.sel = id; S.root.classList.add('has-sel'); positionSel(); paintCard(id, true);
     track('showroom_select', {product: id});
     if (S.stack && mode() !== 'off') setTimeout(() => { if (!S) return; const r = S.card.getBoundingClientRect(); if (r.bottom > innerHeight - 8 || r.top < 70) S.card.scrollIntoView({behavior: 'smooth', block: 'nearest'}); }, 260);
@@ -317,11 +326,11 @@
     const rootEl = $('[data-shw]'); if (!rootEl) { S = null; html.classList.remove('shw-top'); return null; }
     S = {root: rootEl, room: $('[data-shw-room]', rootEl), vw: $('.shw-vw', rootEl), view: $('[data-shw-view]', rootEl), stage: $('[data-shw-stage]', rootEl), card: $('[data-shw-card]', rootEl), pager: $('[data-shw-pager]', rootEl), pgText: $('[data-shw-pg]', rootEl), empty: $('[data-shw-empty]', rootEl),
       panel: $('.shw-aside .shw-panel', rootEl), hero: $('.shw-hero', rootEl), head: $('.shw-head', rootEl), aside: $('.shw-aside', rootEl), grid: $('#cat-grid'), ids: [], pageIds: [], page: 0, per: 10, W: 0, H: 0, s: 1, stack: false, panOn: false, centered: false, variant: 0, items: new Map(), pods: [], anims: new Set(), sel: null, hov: null, defId: null, rendered: false, rz: 0, rect: null};
-    S.spot = document.createElement('i'); S.spot.className = 'shw-spot'; S.spot.setAttribute('aria-hidden', 'true'); S.stage.appendChild(S.spot);
+    S.spot = document.createElement('i'); S.spot.className = 'shw-spot'; S.spot.setAttribute('aria-hidden', 'true'); S.stage.appendChild(S.spot); S.veil = document.createElement('i'); S.veil.className = 'shw-veil'; S.veil.setAttribute('aria-hidden', 'true'); S.stage.appendChild(S.veil);
     S.sent = document.createElement('i'); S.sent.className = 'shw-sent'; S.sent.setAttribute('aria-hidden', 'true'); S.room.appendChild(S.sent);
     if (window.IntersectionObserver) { S.io = new IntersectionObserver(es => es.forEach(e => html.classList.toggle('shw-top', e.isIntersecting)), {rootMargin: '-84px 0px 0px 0px'}); S.io.observe(S.sent); } else html.classList.add('shw-top');
     S.link = document.createElement('i'); S.link.className = 'shw-link'; S.link.setAttribute('aria-hidden', 'true'); $('.shw-canvas', rootEl).appendChild(S.link);
-    S.root.addEventListener('click', e => { if (S.sel && e.target.closest && !e.target.closest('.shw-it') && !e.target.closest('.shw-card') && e.target.closest('.shw-view')) clearSel(); });
+    S.root.addEventListener('click', e => { if (S.sel && e.target.closest && !e.target.closest('.shw-it') && !e.target.closest('.shw-pd') && !e.target.closest('.shw-card') && e.target.closest('.shw-view')) clearSel(); });
     S.view.addEventListener('scroll', () => { if (S.stack && !S.panRaf) S.panRaf = requestAnimationFrame(() => { if (!S) return; S.panRaf = 0; updatePan(); }); }, {passive: true});
     S.stage.addEventListener('keydown', e => {
       if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return; const its = $$('.shw-it:not(.is-gone)', S.stage), i = its.indexOf(document.activeElement); if (i < 0) return;

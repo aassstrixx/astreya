@@ -192,7 +192,7 @@
   };
   function helpInit() {
     const line = $('.res-line'); if (!line || !X.assistant || $('.gal-help', line)) return;
-    const b = document.createElement('button'); b.type = 'button'; b.className = 'lnk gal-help'; b.setAttribute('data-act', 'gal-help'); b.innerHTML = 'Помочь с подбором ' + (A.I && A.I.arrow || '');
+    const b = document.createElement('button'); b.type = 'button'; b.className = 'lnk gal-help'; b.setAttribute('data-act', 'gal-help'); b.innerHTML = 'Спросить Стеллу ' + (A.I && A.I.arrow || '');
     line.insertBefore(b, $('#cat-reset', line) || null);
   }
 
