@@ -2,7 +2,7 @@
   "_comment": "Демонстрационные материалы (demo:true) — замените на реальные новости. Категория (category) — один из id ниже. Токен {{discounts}} подставляется из site.json.",
   "categories": [
     {"id": "news",    "name": "Новости",      "c1": "#66758f", "c2": "#c6cfdd", "ink": "#ffffff"},
-    {"id": "sale",    "name": "Акции",        "c1": "#101f37", "c2": "#8397bd", "ink": "#ffffff"},
+    {"id": "sale",    "name": "Акции",        "c1": "#2f5bd6", "c2": "#9db4f5", "ink": "#ffffff"},
     {"id": "novelty", "name": "Новинки",      "c1": "#1c2f5a", "c2": "#c3a6b0", "ink": "#ffffff"},
     {"id": "edu",     "name": "Обучение",     "c1": "#2f7f7a", "c2": "#a7d3cd", "ink": "#ffffff"},
     {"id": "event",   "name": "Мероприятия",  "c1": "#6a5a8c", "c2": "#cbbfe0", "ink": "#ffffff"}

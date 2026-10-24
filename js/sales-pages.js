@@ -227,7 +227,7 @@
   /* настоящий календарик: сетка месяца Пн–Вс; дни с мероприятиями окрашены цветом бренда и ведут на мероприятие; под сеткой — встречи месяца списком.
      Месяцы листаются стрелками; фильтр города оставляет его мероприятия и онлайн. Всё считается в браузере из расписания сайта. */
   const MONTHS = ['Январь', 'Февраль', 'Март', 'Апрель', 'Май', 'Июнь', 'Июль', 'Август', 'Сентябрь', 'Октябрь', 'Ноябрь', 'Декабрь'], WD = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'];
-  const bOf = e => B[e.b] || {c1: '#101f37', c2: '#8397bd', ink: '#fff', name: ''};
+  const bOf = e => B[e.b] || {c1: '#2f5bd6', c2: '#8ea8f0', ink: '#fff', name: ''};
   const evLabel = e => dShort(e.date) + ', ' + e.city + ' — ' + e.title;
   const monthsBetween = (a, z) => { const out = []; let y = +a.slice(0, 4), m = +a.slice(5, 7); const yz = +z.slice(0, 4), mz = +z.slice(5, 7); while ((y < yz || (y === yz && m <= mz)) && out.length < 12) { out.push(y + '-' + String(m).padStart(2, '0')); m++; if (m > 12) { m = 1; y++; } } return out; };
   function calMonth(evs, key, nearId, cfg) {

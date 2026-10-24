@@ -105,7 +105,7 @@ body::after{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;bac
 .halo{animation:breathe 7s ease-in-out infinite}
 @keyframes breathe{0%,100%{transform:scale(1);opacity:.85}50%{transform:scale(1.07);opacity:1}}
 .pearl{background:radial-gradient(circle at var(--lx) var(--ly),#fff 0,#fdfbf7 12%,#eeeae2 34%,#cdd3de 62%,#8f9db4 100%)}
-.pearl::before{mix-blend-mode:normal;background:conic-gradient(from 0deg at 50% 50%,rgba(16,31,55,0),rgba(110,140,235,.30) 18%,rgba(236,170,196,.30) 38%,rgba(150,214,198,.27) 58%,rgba(16,31,55,0) 78%);-webkit-mask-image:radial-gradient(circle closest-side at 50% 50%,transparent 38%,rgba(0,0,0,.55) 68%,#000 96%);mask-image:radial-gradient(circle closest-side at 50% 50%,transparent 38%,rgba(0,0,0,.55) 68%,#000 96%);animation:spin 16s linear infinite}
+.pearl::before{mix-blend-mode:normal;background:conic-gradient(from 0deg at 50% 50%,rgba(47,91,214,0),rgba(110,140,235,.30) 18%,rgba(236,170,196,.30) 38%,rgba(150,214,198,.27) 58%,rgba(47,91,214,0) 78%);-webkit-mask-image:radial-gradient(circle closest-side at 50% 50%,transparent 38%,rgba(0,0,0,.55) 68%,#000 96%);mask-image:radial-gradient(circle closest-side at 50% 50%,transparent 38%,rgba(0,0,0,.55) 68%,#000 96%);animation:spin 16s linear infinite}
 .ring.r3{animation:spin 84s linear infinite}
 .ring.r1{animation:spin 42s linear infinite}
 .ring.r2{animation:spin 64s linear infinite reverse}

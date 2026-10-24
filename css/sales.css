@@ -117,7 +117,7 @@
 .plan-board-n{font:500 13px/1.4 var(--sans);color:var(--muted)}
 @keyframes sxPop{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
 /* кнопка «Стартовый подбор» вместо прежней «Подобрать по задаче»: выделена синим, ведёт на страницу start.html (вне чата) */
-.chip.chip-plan{display:inline-flex;align-items:center;gap:7px;background:var(--blue);border-color:var(--blue);color:#fff;font-weight:600;box-shadow:0 10px 20px -12px rgba(16,31,55,.9);transition:background-color .25s,transform .25s,box-shadow .25s}
+.chip.chip-plan{display:inline-flex;align-items:center;gap:7px;background:var(--blue);border-color:var(--blue);color:#fff;font-weight:600;box-shadow:0 10px 20px -12px rgba(47,91,214,.9);transition:background-color .25s,transform .25s,box-shadow .25s}
 .chip.chip-plan .ic{width:14px;height:14px;transition:transform .25s}
 .chip.chip-plan:hover,.chip.chip-plan:focus-visible{background:var(--blue-d);border-color:var(--blue-d);color:#fff;transform:translateY(-1px)}
 .chip.chip-plan:hover .ic{transform:translateX(3px)}

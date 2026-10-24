@@ -33,8 +33,6 @@
 /* шапка поверх сцены: прозрачная, светлая; в конце сцены возвращается к обычной */
 body.jar-on:not(.menu-open) .hdr{background:transparent;border-bottom-color:transparent;--navy:var(--milk);--lm:var(--milk);--line:rgba(245,242,236,.32);--line-soft:rgba(245,242,236,.16);-webkit-backdrop-filter:none;backdrop-filter:none}
 body.jar-on:not(.menu-open) .hdr .logo{--lm:var(--milk)}
-body.jar-on:not(.menu-open) .hdr .btn-fill{background:var(--milk);color:#101f37}                       /* над тёмной сценой тёмно-синяя кнопка слилась бы с фоном */
-body.jar-on:not(.menu-open) .hdr .btn-fill:hover{background:#fff}
 .hdr{transition:transform .6s var(--ease-out),background-color .5s ease,border-color .5s ease}
 
 @media (max-width:640px){
