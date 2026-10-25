@@ -105,7 +105,7 @@ module.exports = function showroom(ctx, C, P) {
   let LY = {}; try { LY = JSON.parse(fs.readFileSync(path.join(__dirname, '..', '..', 'assets', 'showroom', 'layers.json'), 'utf8')); } catch (e) {}
   const layer = (k, extra = '') => LY[k] ? `<img class="shw-ly shw-ly-${k}" src="${C.u(P, LY[k].file)}" alt="" width="${Math.round(LY[k].w)}" height="${Math.round(LY[k].h)}" style="left:${LY[k].x}px;top:${LY[k].y}px;width:${LY[k].w}px;height:${LY[k].h}px" decoding="async"${extra}>` : '';
   const world = `<div class="shw-plane shw-world" aria-hidden="true" data-shw-world>
-        ${layer('shell', ' fetchpriority="high"')}${layer('niche')}${layer('ring')}${layer('dais')}${layer('plant')}
+        ${layer('shell', ' fetchpriority="high"')}${layer('niche')}${layer('ring')}${layer('dais')}${layer('plant')}<i class="shw-grain" aria-hidden="true"></i>
       </div>`;
 
   const scene = `<section class="shw" data-shw aria-label="Витрина каталога">

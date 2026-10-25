@@ -14,6 +14,7 @@
 .shw-room{position:relative;width:100%;max-width:2400px;margin:0 auto;aspect-ratio:1536/1024;overflow:hidden;background:#e8dbc5;--s:.9}
 .shw-canvas{position:absolute;left:0;top:0;width:1536px;height:1024px;transform-origin:0 0;transform:scale(var(--s))}
 .shw-vw{position:absolute;inset:0}
+.shw-grain{position:absolute;inset:0;z-index:5;pointer-events:none;background:url(../assets/bg/stone-grain.webp) 0 0/512px 512px;opacity:.55}      /* зерно камня: поры, крупинки и облака тона поверх стены, арок и платформы (рендеры после сжатия слишком гладкие) */
 .shw-view{position:absolute;inset:0;overflow:hidden;background:#e4d6bf}
 @media (min-width:2401px){.shw-vw::before,.shw-vw::after{content:"";position:absolute;top:0;bottom:0;z-index:6;width:90px;pointer-events:none}.shw-vw::before{left:0;background:linear-gradient(90deg,var(--milk),rgba(245,242,236,0))}.shw-vw::after{right:0;background:linear-gradient(270deg,var(--milk),rgba(245,242,236,0))}}      /* шире 2400 px сцена не растёт: края плавно уходят в фон страницы */
 .shw-pan{display:none}
@@ -50,7 +51,6 @@ html.lite .shw-motes{display:none}
   .shw:not(.has-sel) .shw-it:hover .shw-ph{--ly:-12px;--zm:1.16}
   .shw:not(.has-sel) .shw-it:hover .shw-sh{--ss:.82;--so:.55}
   .shw:not(.has-sel) .shw-it:hover .shw-gl{opacity:1;transform:translateX(-50%) scale(1.12)}
-}
 }
 /* пока открыта карточка товара, наведение на остальные ничего не двигает: сцена стоит спокойно */
 .shw:not(.has-sel) .shw-it.is-hov{z-index:60}

@@ -78,9 +78,9 @@
  "pod": {
   "cap": "assets/showroom/pod-cap.webp",
   "body": "assets/showroom/pod-body.webp",
-  "capRatio": 0.1018,
-  "bodyRatio": 0.5064,
-  "capW": 1463,
-  "bodyH": 714
+  "capRatio": 0.1024,
+  "bodyRatio": 0.506,
+  "capW": 1045,
+  "bodyH": 510
  }
 }

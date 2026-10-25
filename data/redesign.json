@@ -242,7 +242,20 @@
       "cosmetic": "Косметические бренды",
       "device": "Аппаратные решения"
     },
-    "deviceNote": "Аппаратное решение, а не линия косметики: подробности — у менеджеров."
+    "deviceNote": "Аппаратное решение, а не линия косметики: подробности — у менеджеров.",
+  "gallery": {
+    "_note": "Архитектурная галерея брендов (css/brands.css). Первый экран — рендер зала (assets/brands/hero*.webp), у каждого бренда своя ниша (assets/brands/niche-<id>.webp + niches.json: куда ставить товары). gallery: null — прежний вид страницы.",
+    "eyebrow": "Мир профессионального ухода",
+    "title": "Косметические бренды",
+    "lead": "Профессиональные решения для разных задач кожи — от диагностики до ежедневного ухода.",
+    "search": "Найти бренд",
+    "all": "Все бренды",
+    "help": "Подобрать бренд",
+    "helpSub": "со Стеллой",
+    "hero": {"src": "assets/brands/hero.webp", "mobile": "assets/brands/hero-m.webp", "w": 3200, "h": 900},
+    "_wallTextures": "Полосы фоновых текстур (assets/bg, система фоновых вставок) за галереей: [текстура, положение, сила 3…10] — идут друг за другом по высоте, края растворяются.",
+    "wallTextures": [["cream", "l", 8], ["film", "r", 7], ["smear", "l", 7], ["silk", "r", 6], ["cream", "l", 8], ["swatch", "r", 7], ["ribbon", "l", 7]]
+  }
   },
   "picker": {
     "audienceTitle": "Для кого?",
@@ -432,7 +445,7 @@
         {"sel": "section.rd-final", "tex": "smear", "pos": "c", "o": 8}
       ]},
       "catalog": {"top": {"tex": "cream", "pos": "tr"}, "mid": [{"sel": "section.shw-tasks", "tex": "cream", "pos": "c", "o": 10}, {"sel": "section.shw-dirs", "tex": "cream", "pos": "l", "o": 9}, {"sel": "section.shw-brands", "tex": "film", "pos": "l", "o": 8}], "end": {"tex": "smear", "pos": "br"}},
-      "brands": {"top": {"tex": "smear", "pos": "tr"}, "end": {"tex": "film", "pos": "br"}},
+      "brands": {},
       "brand": {"variants": [
         {"top": {"tex": "smear", "pos": "tr"}, "mid": [{"sel": "section.sec", "n": 2, "tex": "silk", "pos": "l", "o": 6}], "end": {"tex": "cream", "pos": "b"}},
         {"top": {"tex": "silk", "pos": "tr"}, "mid": [{"sel": "section.sec", "n": 2, "tex": "film", "pos": "l", "o": 6}], "end": {"tex": "smear", "pos": "br"}},

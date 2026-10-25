@@ -6,6 +6,8 @@
    python3 tools/showroom-assets/scene.py preview    — один быстрый кадр целиком (/tmp/scene_preview.png)
 Переменные: SCENE_W (ширина, по умолчанию 1920), SCENE_SPP (сэмплов), SCENE_LAYERS (список через запятую)."""
 import bpy, bmesh, math, os, sys, json, addon_utils
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import materials as MT                                    # общая библиотека камня: травертин, известняк, штукатурка, плитка (см. materials.py)
 import numpy as np
 from mathutils import Vector, Matrix
 from bpy_extras.object_utils import world_to_camera_view
@@ -134,8 +136,8 @@ def set_cam(sc, loc=None, lens=None, pitch=0.0):
     cam.location = loc or CAM['loc']; cam.rotation_euler = (math.radians(90 - pitch), 0, 0); sc.camera = cam; bpy.context.view_layer.update(); return cam
 
 def build(sc):
-    M = {'plaster': mat_plaster('plaster', (.89, .79, .65)), 'plaster2': mat_plaster('plaster2', (.94, .87, .76), .7), 'trav': mat_travertine('trav', (1.02, .94, .82)), 'trav2': mat_travertine('trav2', (1.04, .97, .86), 1.4, .7), 'floor': mat_floor(),
-         'led': mat_led(), 'glass': mat_glass(), 'back': mat_plaster('back', (.95, .87, .73), .85), 'ring': mat_plaster('ring', (.97, .92, .83), .5), 'white': mat_simple('white', (.95, .93, .88), .35), 'dark': mat_simple('dark', (.05, .045, .04), .25)}
+    M = {'plaster': MT.plaster('plaster', (.89, .79, .65)), 'plaster2': MT.limestone('plaster2', (1.0, .97, .93)), 'trav': MT.travertine('trav', (1.02, .94, .82)), 'trav2': MT.travertine('trav2', (1.04, .97, .86), 1.35, .8), 'trav_pod': MT.travertine('trav_pod', (1.04, .97, .86), .62, 1.0), 'floor': MT.floor_stone(),
+         'led': mat_led(), 'glass': mat_glass(), 'back': MT.plaster('back', (.95, .87, .73), rough=.85), 'ring': MT.limestone('ring', (1.02, 1.0, .96)), 'white': mat_simple('white', (.95, .93, .88), .35), 'dark': mat_simple('dark', (.05, .045, .04), .25)}
     ob = []
     # --- пол и стены
     floor = box('floor', M['floor'], -14, 14, -16, 6, -0.4, 0.0, 'shell')
@@ -172,7 +174,7 @@ def build(sc):
     stepr = cylinder('stepr', M['trav'], 4.1, -0.9, 2.1, 0.0, 0.42, 'steps', bev=0.03)
     for st_ in (stepl, stepr):                                              # платформа и ступени — одно тело (объединение): без скрытых внутренних граней
         bmd = dais.modifiers.new('uni', 'BOOLEAN'); bmd.operation = 'UNION'; bmd.object = st_; bmd.solver = 'EXACT'; st_.hide_render = True; st_.display_type = 'WIRE'
-    pod = cylinder('pod', M['trav2'], 0.2, -6.8, 1.0, 0.0, 1.0, 'pod', seg=160, bev=0.0)
+    pod = cylinder('pod', M['trav_pod'], 0.2, -6.8, 1.0, 0.0, 1.0, 'pod', seg=160, bev=0.0)
     plant(M)
     return M
 

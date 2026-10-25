@@ -1,0 +1,128 @@
+/* ============ Страница «Бренды»: архитектурная галерея ============
+   Первый экран — рендер светлого зала с арочными нишами (assets/brands/hero*.webp, tools/brands-assets/scene.py), ниже панель поиска и фильтров и «стена» витрин:
+   у каждого бренда своя арочная ниша-рендер (assets/brands/niche-<id>.webp), логотип бренда и товары на каменных подиумах (HTML поверх рендера).
+   Токены, камень и тени — из css/system.css (общая система с каталогом). Двигаются только opacity и transform. Выключатель: redesign.json → brandsPage.gallery = null. */
+
+/* ---------- шапка поверх первого экрана (как на каталоге) ---------- */
+body[data-page="brands"] .hdr{transition:background-color .35s var(--ax-ease),border-color .35s var(--ax-ease),transform .6s var(--ease-out)}
+html.br-top .hdr{background:transparent;border-bottom-color:transparent}
+body[data-page="brands"] #main{overflow-x:clip}
+
+.br-page{--br-gap:18px;--br-cols:6;--br-bg:var(--ax-milk);color:var(--ax-ink)}
+.br-in{width:min(1640px,100% - 2 * var(--gut));margin-inline:auto}
+
+/* ---------- первый экран ---------- */
+.br-hero{position:relative;isolation:isolate;margin-top:calc(var(--hdr) * -1);min-height:clamp(400px,29vw,580px);display:flex;align-items:center;overflow:hidden}
+.br-hero-pic{position:absolute;inset:0;z-index:-2;display:block}
+.br-hero-pic img{display:block;width:100%;height:100%;object-fit:cover;object-position:68% 56%}
+.br-hero-pic::after,.br-niche::after{content:"";position:absolute;inset:0;pointer-events:none;background:url(../assets/bg/stone-grain.webp) 0 0/512px 512px;opacity:.5}      /* зерно камня поверх рендера: поры, крупинки, лёгкие облака тона */
+.br-niche::after{z-index:1;opacity:.42}
+.br-hero::before{content:"";position:absolute;inset:0;z-index:-1;pointer-events:none;background:linear-gradient(90deg,rgba(247,242,233,.3) 0,rgba(247,242,233,.4) 15%,rgba(247,242,233,.68) 27%,rgba(247,242,233,.5) 42%,rgba(247,242,233,.14) 54%,rgba(247,242,233,0) 62%)}      /* слева декор виден, под текстом — молочная вуаль для читаемости */
+.br-hero::after{content:"";position:absolute;left:0;right:0;bottom:-1px;height:clamp(60px,8vw,120px);z-index:-1;pointer-events:none;background:linear-gradient(180deg,rgba(245,242,236,0),rgba(245,242,236,.7) 62%,var(--br-bg))}
+.br-hero-in{width:100%;padding:calc(var(--hdr) + clamp(16px,2.4vw,40px)) var(--gut) clamp(54px,6vw,96px) max(var(--gut),calc((100% - var(--maxw)) / 2 + var(--gut)))}
+.br-eyebrow{font:700 11.5px/1 var(--sans);letter-spacing:.24em;text-transform:uppercase;color:var(--ax-ink-2);margin:0 0 clamp(12px,1.2vw,20px);max-width:36em}
+.br-hero h1{font:500 clamp(40px,3.25vw,58px)/1.04 var(--serif);letter-spacing:-.012em;color:var(--ax-ink);margin:0;max-width:15em}
+.br-lead{font:400 clamp(15px,1.25vw,19px)/1.55 var(--sans);color:var(--ax-ink-2);margin:clamp(14px,1.4vw,24px) 0 0;max-width:27em}
+
+/* ---------- панель поиска и фильтров ---------- */
+.br-wall{position:relative;display:flow-root;isolation:isolate;background:var(--br-bg);padding-bottom:clamp(60px,8vw,120px)}
+/* фон стены: фоновые текстуры сайта (крем, плёнка, мазок, шёлк …) полосами по высоте галереи — мягкие края, без обрывов (js/backdrops.js подгружает их по мере прокрутки) */
+.br-wall>.br-wall-bg{position:absolute;inset:0;z-index:-1;pointer-events:none;overflow:hidden}
+.br-wall-bg{--bh:clamp(560px,30%,1000px)}
+.br-wall-bg>i[data-bd]{position:absolute;left:0;right:0;height:var(--bh);top:calc(var(--i) * (100% - var(--bh)) / var(--n,6))}      /* полосы равномерно по всей высоте стены на любой ширине экрана; слева и справа поочерёдно, поэтому не накладываются друг на друга */
+.br-bar.toolbar{display:flex;align-items:center;flex-wrap:wrap;gap:12px 14px;margin:0;padding:clamp(6px,1vw,16px) 0 clamp(22px,2.4vw,34px);background:none;border-radius:0;box-shadow:none}
+.br-search{flex:0 1 330px;min-width:220px;background:rgba(255,253,248,.92);border:1px solid var(--ax-line);border-radius:var(--ax-r-pill);box-shadow:0 10px 24px -20px rgba(86,60,30,.5)}
+.br-search input{font-size:14px}
+.br-chips{display:flex;flex-wrap:wrap;gap:8px;flex:1 1 360px}
+.br-chips .chip{font-size:13px;padding:9px 16px;background:rgba(255,253,248,.92);border-color:var(--ax-line);color:var(--ax-ink)}
+.br-chips .chip.on{background:var(--navy);border-color:var(--navy);color:#fff}
+.br-help{margin-left:auto;display:inline-flex;align-items:center;gap:10px;padding:6px 20px 6px 8px;border-radius:var(--ax-r-pill);background:var(--navy);color:#fff;border:0;cursor:pointer;font-family:var(--sans);text-align:left;transition:transform .5s var(--ax-ease),box-shadow .5s var(--ax-ease);box-shadow:0 14px 26px -16px rgba(16,31,55,.8)}
+.br-help:hover{transform:translateY(-2px);box-shadow:0 18px 28px -14px rgba(16,31,55,.85)}
+.br-help .br-st{width:38px;height:38px;flex:none}
+.br-help b{display:block;font:700 13px/1.2 var(--sans)}
+.br-help small{display:block;font:500 11.5px/1.2 var(--sans);opacity:.78;margin-top:2px}
+
+/* ---------- стена витрин ---------- */
+.br-grid{display:flex;flex-wrap:wrap;justify-content:center;gap:var(--br-gap)}
+.br-group{flex:0 0 100%;margin:clamp(26px,3vw,46px) 0 0;text-align:center;font:700 11px/1 var(--sans);letter-spacing:.24em;text-transform:uppercase;color:var(--muted)}
+.br-group[hidden],.br-dev-note[hidden]{display:none}
+.br-group.sr{margin:0}
+.br-dev-note{flex:0 0 100%;margin:-6px 0 4px;text-align:center;font-size:13px}
+.br-grid .guide-card,.br-grid .gd{flex:0 0 100%}
+.br-card{flex:0 0 calc((100% - (var(--br-cols) - 1) * var(--br-gap)) / var(--br-cols));min-width:0;min-height:0;height:auto;display:flex;flex-direction:column;border-radius:22px;background:linear-gradient(180deg,#fdfaf3,#f7f1e4);border:1px solid var(--ax-line);box-shadow:var(--ax-sh-1);overflow:hidden;position:relative;
+  transition:transform .6s var(--ax-ease),box-shadow .6s var(--ax-ease),border-color .4s}
+.br-card:hover,.br-card:focus-within{transform:translateY(-5px);box-shadow:var(--ax-sh-2);border-color:rgba(86,60,30,.22)}
+.br-card[hidden]{display:none}
+
+/* ниша: рендер арки с подиумами; логотип в своде, товары на подиумах (положения — assets/brands/niches.json) */
+.br-niche{position:relative;aspect-ratio:4/5;overflow:hidden;isolation:isolate;background:linear-gradient(180deg,#efe6d4,#e3d5bb)}
+.br-bg{position:absolute;inset:0;z-index:0;display:block;width:100%;height:100%;object-fit:cover;transform-origin:50% 60%;transition:transform 1.4s var(--ax-ease)}
+.br-card:hover .br-bg{transform:scale(1.035)}
+.br-logo{position:absolute;z-index:2;left:50%;top:16.5%;transform:translate(-50%,-50%);display:block;width:min(calc(var(--lw,100) / 2.0 * 1%),58%);height:auto;max-height:15%;object-fit:contain;pointer-events:none}      /* логотип — над аркой, на стене ниши */
+.br-logo-t{width:auto;max-width:60%;text-align:center;font:500 clamp(18px,2vw,28px)/1.1 var(--serif);color:var(--ax-ink);letter-spacing:.02em}
+.br-pk{position:absolute;z-index:3;left:var(--x);top:var(--y);height:var(--h);aspect-ratio:var(--ar);transform:translate(-50%,-100%);transition:transform .7s var(--ax-ease)}
+.br-pk img{display:block;width:100%;height:100%;object-fit:contain}
+.br-pk::before{content:"";position:absolute;z-index:-1;left:-16%;right:-16%;bottom:-3%;height:9%;border-radius:50%;background:radial-gradient(closest-side,rgba(58,38,16,.52),rgba(58,38,16,.2) 62%,rgba(58,38,16,0))}
+.br-card:hover .br-pk{transform:translate(-50%,calc(-100% - 3px))}
+
+/* текстовая часть */
+.br-card .br-bb{position:relative;padding:16px 18px 78px;display:flex;flex-direction:column;gap:9px;flex:1}      /* внизу — зарезервированная строка семинара: у карточек без мероприятия остаётся пустой, «О бренде» везде на одной высоте */
+.br-card .br-bb .br-cn{margin:0;font:600 10px/1 var(--sans);letter-spacing:.16em;text-transform:uppercase;color:var(--ax-muted)}
+.br-card .br-bb .br-sp{margin:0;font:400 13px/1.45 var(--sans);color:var(--ax-ink-2);opacity:.86}
+.br-card .tasks-line{display:flex;flex-wrap:wrap;gap:6px}
+.br-card .tag{font:500 11.5px/1 var(--sans);padding:6px 10px;border-radius:999px;background:rgba(255,253,248,.9);border:1px solid var(--ax-line);color:var(--ax-ink);letter-spacing:0;text-transform:none}
+.br-card .bl-foot{order:4;margin-top:auto;display:flex;flex-direction:column;align-items:flex-start;gap:9px;padding-top:4px}
+.br-card .br-n{font:400 12.5px/1.3 var(--sans);color:var(--ax-muted)}
+.br-card .bl-foot .lnk{font:700 11.5px/1 var(--sans);letter-spacing:.12em;text-transform:uppercase;color:var(--ax-ink)}
+.br-card .sx-bchip{position:absolute;left:18px;right:18px;bottom:16px;margin:0;align-self:auto;border:0;border-top:1px solid var(--ax-line);border-radius:0;background:transparent;padding:11px 0 0;gap:9px;font:500 12px/1.3 var(--sans);color:var(--ax-ink-2)}
+.br-card .sx-bchip:hover{transform:none;box-shadow:none;border-color:var(--ax-line)}
+.br-card .sx-bchip .sx-bt{width:34px;border-radius:7px;background:var(--navy);color:#fff;padding:5px 0 4px}
+.br-card .sx-bchip .sx-bt b{font-size:14px}
+.br-card .sx-bchip .sx-bt small{font-size:7.5px;opacity:.8}
+.br-card .sx-bchip>span:last-child{padding:0;flex:1}
+.br-card .lnk.stretch::after{border-radius:inherit}
+.br-card .sx-bchip{z-index:5}
+
+/* плавное появление витрин после фильтра или поиска */
+@keyframes brPop{from{opacity:0;transform:translateY(16px) scale(.985)}to{opacity:1;transform:none}}
+.br-card.br-pop{animation:brPop .7s var(--ax-ease) calc(var(--k,0) * 55ms) backwards}
+
+/* мягкий переход галереи в подвал: низ стены темнеет до песочного тона, а не обрывается */
+.br-wall::after{content:"";position:absolute;left:0;right:0;bottom:0;height:clamp(90px,10vw,170px);z-index:-1;pointer-events:none;background:linear-gradient(180deg,rgba(231,220,199,0),rgba(228,215,192,.62))}
+
+/* пустой результат */
+.br-page .empty{margin:30px auto 0;max-width:520px}
+
+/* ---------- Стелла: подсказка выбора бренда под галереей ---------- */
+.br-wall .guide-block,.br-wall [data-guide]{margin-top:clamp(28px,4vw,56px)}
+
+/* ---------- адаптив ---------- */
+@media (max-width:1559px){.br-page{--br-cols:4}}
+@media (max-width:1300px){.br-hero-pic img{object-position:52% 56%}}
+@media (max-width:1019px){.br-page{--br-cols:3}.br-help{margin-left:0}}
+@media (max-width:719px){
+  .br-page{--br-cols:2;--br-gap:12px}
+  .br-hero{min-height:0;align-items:flex-start}
+  .br-hero-pic img{object-position:66% 100%}
+  .br-hero::before{background:linear-gradient(180deg,rgba(247,242,233,.94) 0,rgba(247,242,233,.78) 46%,rgba(247,242,233,.1) 80%,rgba(247,242,233,0) 100%)}
+  .br-hero-in{padding-top:calc(var(--hdr) + 14px);padding-bottom:clamp(150px,44vw,230px)}
+  .br-hero h1{font-size:clamp(36px,10.5vw,50px)}
+  .br-search{flex:1 1 100%}
+  .br-chips{flex:1 1 100%;flex-wrap:nowrap;overflow-x:auto;padding:2px 0 6px;scrollbar-width:none;-webkit-overflow-scrolling:touch;-webkit-mask-image:linear-gradient(90deg,#000 0,#000 88%,transparent 100%);mask-image:linear-gradient(90deg,#000 0,#000 88%,transparent 100%)}      /* ряд чипов листается внутри колонки; правый край мягко растворяется — видно, что есть ещё */
+  .br-chips::-webkit-scrollbar{display:none}
+  .br-chips .chip{flex:none}
+  .br-help{width:100%;justify-content:center}
+  .br-card .br-bb{padding:12px 12px 74px;gap:7px}
+  .br-card .sx-bchip{left:12px;right:12px;bottom:12px}
+  .br-card .br-bb .br-sp{font-size:12px}
+  .br-card .tag{font-size:10.5px;padding:5px 8px}
+  .br-card .bl-foot .lnk{font-size:10.5px}
+}
+@media (max-width:519px){.br-page{--br-cols:1}}
+
+/* ---------- «меньше движения»: без подъёма и увеличения при наведении ---------- */
+@media (prefers-reduced-motion:reduce){
+  .br-card:hover,.br-card:focus-within{transform:none}
+  .br-card:hover .br-bg{transform:none}
+  .br-card:hover .br-pk{transform:translate(-50%,-100%)}
+}

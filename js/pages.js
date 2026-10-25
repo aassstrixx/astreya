@@ -105,16 +105,30 @@
   /* ---------- бренды ---------- */
   A.pages.brands = function () {
     const grid = $('#br-grid'); if (!grid) return;
-    const cards = $$('.bl-card', grid), qEl = $('#br-q'); let task = 'all';
+    const cards = $$('.bl-card', grid), qEl = $('#br-q'); let task = 'all', pageReady = false;
     function apply() {
       const toks = A.tokens(qEl.value); let n = 0;
-      cards.forEach(c => { const ok = (task === 'all' || c.dataset.tasks.split(' ').indexOf(task) !== -1) && toks.every(t => c.dataset.q.indexOf(t) !== -1); c.hidden = !ok; if (ok) n++; });
+      const pop = pageReady && grid.closest('[data-brands-gallery]');            // галерея: после смены запроса или задачи витрины плавно всплывают по очереди (keyframes — работают и в «лёгком режиме»)
+      cards.forEach(c => { const ok = (task === 'all' || c.dataset.tasks.split(' ').indexOf(task) !== -1) && toks.every(t => c.dataset.q.indexOf(t) !== -1); c.hidden = !ok; if (ok) { if (pop) { c.style.setProperty('--k', n); c.classList.remove('br-pop'); void c.offsetWidth; c.classList.add('br-pop'); } n++; } });
       $('#br-empty').hidden = n > 0;
       $$('.br-group, .br-dev-note', grid).forEach(h => { let el = h.nextElementSibling, any = false; while (el && !el.classList.contains('br-group')) { if (el.classList.contains('bl-card') && !el.hidden) any = true; el = el.nextElementSibling; } h.hidden = !any; });
     }
     qEl.addEventListener('input', debounce(apply, 120));
     A.actions['br-task'] = (t, id) => { task = id; setOn($('#br-tasks'), id); apply(); };
     const q = params().get('q'); if (q) { qEl.value = q; apply(); }
+    const tk = params().get('task'); if (tk && $('[data-act="br-task"][data-id="' + tk + '"]')) A.actions['br-task'](null, tk);
+    pageReady = true;
+    /* архитектурная галерея: шапка прозрачна над первым экраном, пока страница не прокручена (как на каталоге); «Подобрать бренд» — вопрос Стелле с учётом выбранного фильтра */
+    if (grid.closest('[data-brands-gallery]')) {
+      const root = document.documentElement; let raf = 0;
+      const top = () => { raf = 0; root.classList.toggle('br-top', (window.scrollY || 0) < 8); };
+      top(); window.addEventListener('scroll', () => { if (!raf) raf = requestAnimationFrame(top); }, {passive: true});
+      A.actions['br-help'] = () => {
+        if (!A.stella) return; const chip = $('#br-tasks .chip.on'), label = chip && chip.dataset.id !== 'all' ? chip.textContent.trim() : '', word = qEl.value.trim();
+        const text = label ? 'Помоги выбрать бренд для задачи «' + label + '»: чем бренды отличаются и с чего начать?' : word ? 'Помоги выбрать бренд по запросу «' + word + '»: что подойдёт и чем бренды отличаются?' : 'Помоги выбрать бренд: расскажи, чем бренды «Астреи» отличаются и под какие задачи кожи подходят.';
+        A.track && A.track('brands_help', {task: label}); A.stella.ask(text, {brands: true});
+      };
+    }
   };
 
   /* ---------- обучение ---------- */

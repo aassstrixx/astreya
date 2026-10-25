@@ -33,19 +33,21 @@
 <link rel="preload" href="assets/fonts/manrope-latin-938c6e.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="preload" href="assets/fonts/playfair-display-cyrillic-66a1a9.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="preload" href="assets/fonts/playfair-display-latin-ef05b3.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="stylesheet" href="css/fonts.css?v=748366c0">
-<link rel="stylesheet" href="css/base.css?v=748366c0">
-<link rel="stylesheet" href="css/components.css?v=748366c0">
-<link rel="stylesheet" href="css/pages.css?v=748366c0">
-<link rel="stylesheet" href="css/responsive.css?v=748366c0">
-<link rel="stylesheet" href="css/motion.css?v=748366c0">
-<link rel="stylesheet" href="css/consent.css?v=748366c0">
-<link rel="stylesheet" href="css/redesign.css?v=748366c0">
-<link rel="stylesheet" href="css/backdrops.css?v=748366c0">
-<link rel="stylesheet" href="css/extras.css?v=748366c0">
-<link rel="stylesheet" href="css/guide.css?v=748366c0">
-<link rel="stylesheet" href="css/sales.css?v=748366c0">
-<link rel="stylesheet" href="css/sales-pages.css?v=748366c0">
+<link rel="stylesheet" href="css/fonts.css?v=c3ef4064">
+<link rel="stylesheet" href="css/base.css?v=c3ef4064">
+<link rel="stylesheet" href="css/components.css?v=c3ef4064">
+<link rel="stylesheet" href="css/pages.css?v=c3ef4064">
+<link rel="stylesheet" href="css/responsive.css?v=c3ef4064">
+<link rel="stylesheet" href="css/motion.css?v=c3ef4064">
+<link rel="stylesheet" href="css/consent.css?v=c3ef4064">
+<link rel="stylesheet" href="css/redesign.css?v=c3ef4064">
+<link rel="stylesheet" href="css/backdrops.css?v=c3ef4064">
+<link rel="stylesheet" href="css/extras.css?v=c3ef4064">
+<link rel="stylesheet" href="css/guide.css?v=c3ef4064">
+<link rel="stylesheet" href="css/sales.css?v=c3ef4064">
+<link rel="stylesheet" href="css/sales-pages.css?v=c3ef4064">
+<link rel="stylesheet" href="css/system.css?v=c3ef4064">
+<link rel="stylesheet" href="css/brands.css?v=c3ef4064">
 
 <script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Главная","item":"https://aassstrixx.github.io/astreya/"},{"@type":"ListItem","position":2,"name":"Бренды","item":"https://aassstrixx.github.io/astreya/brands.html"}]}</script>
 </head>
@@ -123,55 +125,140 @@
 </header>
 
 <main id="main" tabindex="-1" data-page="brands">
-<div class="bd-fill bd-top" data-bd="smear" data-bd-pos="tr" aria-hidden="true"></div>
-<div class="wrap" data-brands>
-    <header class="page-head"><span class="eyebrow reveal">Бренды</span><h1 class="reveal">Бренды профессиональной косметики</h1><p class="lead reveal">Портфель «Астрея»: испанская профессиональная косметика, линии Cantabria Labs и аппаратное решение EVA.</p></header>
-    <div class="toolbar reveal">
-      <div class="tb-top"><label class="search"><span class="sr">Поиск по брендам</span><svg class="ic" viewBox="0 0 20 20" aria-hidden="true" focusable="false"><circle cx="9" cy="9" r="5.5"/><path d="m13.2 13.2 3.8 3.8"/></svg><input id="br-q" type="search" placeholder="Название бренда или направление" autocomplete="off"></label></div>
-      <div class="tb-row"><span class="tb-lab">Задача</span><div class="chips" id="br-tasks"><button type="button" class="chip on" data-act="br-task" data-id="all" aria-pressed="true">Любая</button><button type="button" class="chip" data-act="br-task" data-id="acne" aria-pressed="false">Акне</button><button type="button" class="chip" data-act="br-task" data-id="pigment" aria-pressed="false">Пигментация</button><button type="button" class="chip" data-act="br-task" data-id="antiage" aria-pressed="false">Антивозраст</button><button type="button" class="chip" data-act="br-task" data-id="sun" aria-pressed="false">Фотозащита</button><button type="button" class="chip" data-act="br-task" data-id="sens" aria-pressed="false">Чувствительная кожа</button><button type="button" class="chip" data-act="br-task" data-id="body" aria-pressed="false">Тело и фигура</button><button type="button" class="chip" data-act="br-task" data-id="hair" aria-pressed="false">Волосы и кожа головы</button><button type="button" class="chip" data-act="br-task" data-id="intim" aria-pressed="false">Интимное здоровье</button></div></div>
+<div class="br-page" data-brands data-brands-gallery>
+    <section class="br-hero" aria-labelledby="br-h1">
+      <picture class="br-hero-pic" aria-hidden="true"><source media="(max-width: 860px)" srcset="assets/brands/hero-m.webp"><img src="assets/brands/hero.webp?v=c3ef4064" alt="" width="3200" height="900" fetchpriority="high" decoding="async"></picture>
+      <div class="br-hero-in">
+        <p class="br-eyebrow reveal">Мир профессионального ухода</p>
+        <h1 id="br-h1" class="reveal">Косметические бренды</h1>
+        <p class="br-lead reveal">Профессиональные решения для разных задач кожи — от диагностики до ежедневного ухода.</p>
+      </div>
+    </section>
+    <section class="br-wall" aria-label="Каталог брендов">
+      <div class="br-wall-bg" aria-hidden="true" style="--n:6"><i data-bd="cream" data-bd-pos="l" data-bd-o="8" style="--i:0"></i><i data-bd="film" data-bd-pos="r" data-bd-o="7" style="--i:1"></i><i data-bd="smear" data-bd-pos="l" data-bd-o="7" style="--i:2"></i><i data-bd="silk" data-bd-pos="r" data-bd-o="6" style="--i:3"></i><i data-bd="cream" data-bd-pos="l" data-bd-o="8" style="--i:4"></i><i data-bd="swatch" data-bd-pos="r" data-bd-o="7" style="--i:5"></i><i data-bd="ribbon" data-bd-pos="l" data-bd-o="7" style="--i:6"></i></div>
+      <div class="br-in">
+        <div class="br-bar toolbar reveal">
+          <label class="search br-search"><span class="sr">Поиск по брендам</span><svg class="ic" viewBox="0 0 20 20" aria-hidden="true" focusable="false"><circle cx="9" cy="9" r="5.5"/><path d="m13.2 13.2 3.8 3.8"/></svg><input id="br-q" type="search" placeholder="Найти бренд" autocomplete="off"></label>
+          <div class="chips br-chips" id="br-tasks" role="group" aria-label="Фильтр по задаче"><button type="button" class="chip on" data-act="br-task" data-id="all" aria-pressed="true">Все бренды</button><button type="button" class="chip" data-act="br-task" data-id="acne" aria-pressed="false">Акне</button><button type="button" class="chip" data-act="br-task" data-id="pigment" aria-pressed="false">Пигментация</button><button type="button" class="chip" data-act="br-task" data-id="antiage" aria-pressed="false">Антивозраст</button><button type="button" class="chip" data-act="br-task" data-id="sun" aria-pressed="false">Фотозащита</button><button type="button" class="chip" data-act="br-task" data-id="sens" aria-pressed="false">Чувствительная кожа</button><button type="button" class="chip" data-act="br-task" data-id="body" aria-pressed="false">Тело и фигура</button><button type="button" class="chip" data-act="br-task" data-id="hair" aria-pressed="false">Волосы и кожа головы</button><button type="button" class="chip" data-act="br-task" data-id="intim" aria-pressed="false">Интимное здоровье</button></div>
+          <button class="br-help" type="button" data-act="br-help"><svg class="br-st" viewBox="0 0 48 48" aria-hidden="true" focusable="false"><defs><radialGradient id="br-pg" cx="38%" cy="30%" r="75%"><stop offset="0" stop-color="#fff"/><stop offset=".55" stop-color="#cfd9f0"/><stop offset="1" stop-color="#8ea3d8"/></radialGradient></defs><circle cx="24" cy="26" r="19" fill="url(#br-pg)"/><ellipse cx="18" cy="26.6" rx="2.1" ry="2.9" fill="#0b1a33"/><ellipse cx="30" cy="26.6" rx="2.1" ry="2.9" fill="#0b1a33"/><path d="M20.8 31.6q3.2 3.3 6.4 0" fill="none" stroke="#0b1a33" stroke-width="1.6" stroke-linecap="round"/><path d="M37.6 2.6l1.7 4.4 4.4 1.7-4.4 1.7-1.7 4.4-1.7-4.4-4.4-1.7 4.4-1.7z" fill="#f6d58b" stroke="#e3b95c" stroke-width=".5" stroke-linejoin="round"/></svg><span><b>Подобрать бренд</b><small>со Стеллой</small></span></button>
+        </div>
+        <h2 class="sr">Список брендов</h2>
+        <div class="br-grid" id="br-grid">
+          <h2 class="br-group sr">Косметические бренды</h2><article class="card br-card bl-card reveal" style="--c1:#2f5bd6;--c2:#9db4f5;--ink:#fff;--cc:#2f5bd6;--cs:color-mix(in srgb,#2f5bd6 58%,transparent)" data-id="dermatime" data-tasks="acne pigment antiage sens" data-q="dermatime химические пилинги, мезотерапия и домашний космецевтический уход испанский бренд эстетической косметологии: химические пилинги, препараты для мезотерапии и домашний уход, продлевающий результат процедур в кабинете. испания испания акне пигментация антивозраст чувствительная кожа">
+    <div class="br-niche" role="img" aria-label="Витрина бренда Dermatime: Acidcure, Elastense, Пре- и постпилинговый уход">
+      <img class="br-bg" src="assets/brands/niche-dermatime.webp?v=c3ef4064" alt="" width="720" height="900" loading="lazy" decoding="async">
+      <img class="br-logo" src="assets/brands/dermatime.svg?v=c3ef4064" alt="Dermatime" width="970" height="577" style="--lw:136" loading="lazy" decoding="async"><span class="br-pk" style="--x:50%;--y:75.14%;--h:27.36%;--ar:0.3078;z-index:75"><img src="assets/showroom/pack-bottle.webp?v=c3ef4064" alt="" width="277" height="900" loading="lazy" decoding="async"></span><span class="br-pk" style="--x:30.93%;--y:88.07%;--h:23.14%;--ar:0.2367;z-index:88"><img src="assets/showroom/pack-dropper.webp?v=c3ef4064" alt="" width="213" height="900" loading="lazy" decoding="async"></span><span class="br-pk" style="--x:70.73%;--y:91.53%;--h:10.19%;--ar:1.2022;z-index:92"><img src="assets/showroom/pack-jar.webp?v=c3ef4064" alt="" width="1082" height="900" loading="lazy" decoding="async"></span>
     </div>
-    <h2 class="sr">Список брендов</h2>
-    <div class="grid g3" id="br-grid"><h2 class="br-group reveal">Косметические бренды</h2><article class="card hov bl-card reveal" style="--c1:#2f5bd6;--c2:#9db4f5;--ink:#fff;--cc:#2f5bd6;--cs:color-mix(in srgb,#2f5bd6 58%,transparent)" data-id="dermatime" data-tasks="acne pigment antiage sens" data-q="dermatime химические пилинги, мезотерапия и домашний космецевтический уход испанский бренд эстетической косметологии: химические пилинги, препараты для мезотерапии и домашний уход, продлевающий результат процедур в кабинете. испания испания акне пигментация антивозраст чувствительная кожа">
-    <div class="band has-logo"><img class="blogo bl-img" src="assets/brands/dermatime.svg?v=748366c0" alt="Dermatime" width="970" height="577" style="--lw:136" loading="lazy" decoding="async"><span class="bc-mark" aria-hidden="true"><svg class="lgo" viewBox="46 338 836 436"><use href="#logo-art"/></svg></span></div>
-    <div class="bb"><div class="tasks-line"><span class="tag">Испания</span></div><h3 class="sr">Dermatime</h3><p>Химические пилинги, мезотерапия и домашний космецевтический уход</p><div class="tasks-line"><span class="tag">Акне</span><span class="tag">Пигментация</span><span class="tag">Антивозраст</span></div>
-      <div class="bl-foot"><span class="muted small">6 позиций в каталоге</span><a class="lnk stretch" href="brands/dermatime.html" data-track="brand_card_click" data-brand="dermatime">О бренде <svg class="ic" viewBox="0 0 20 20" aria-hidden="true" focusable="false"><path d="M3.5 10h13M11.5 5l5 5-5 5"/></svg></a></div></div>
-  </article><article class="card hov bl-card reveal" style="--c1:#1c2f5a;--c2:#c3a6b0;--ink:#fff;--cc:#1c2f5a;--cs:color-mix(in srgb,#1c2f5a 58%,transparent)" data-id="keenwell" data-tasks="antiage body" data-q="keenwell эстетика лица и тела, декоративная косметика испанский бренд с комплексным подходом: профессиональные программы для лица и тела и декоративная косметика — тональные средства и корректоры. испания испания антивозраст тело и фигура">
-    <div class="band has-logo"><img class="blogo bl-img" src="assets/brands/keenwell.svg?v=748366c0" alt="Keenwell" width="1190" height="365" style="--lw:189.4" loading="lazy" decoding="async"><span class="bc-mark" aria-hidden="true"><svg class="lgo" viewBox="46 338 836 436"><use href="#logo-art"/></svg></span></div>
-    <div class="bb"><div class="tasks-line"><span class="tag">Испания</span></div><h3 class="sr">Keenwell</h3><p>Эстетика лица и тела, декоративная косметика</p><div class="tasks-line"><span class="tag">Антивозраст</span><span class="tag">Тело и фигура</span></div>
-      <div class="bl-foot"><span class="muted small">5 позиций в каталоге</span><a class="lnk stretch" href="brands/keenwell.html" data-track="brand_card_click" data-brand="keenwell">О бренде <svg class="ic" viewBox="0 0 20 20" aria-hidden="true" focusable="false"><path d="M3.5 10h13M11.5 5l5 5-5 5"/></svg></a></div></div>
-  </article><article class="card hov bl-card reveal" style="--c1:#66758f;--c2:#bcc6d5;--ink:#fff;--cc:#66758f;--cs:color-mix(in srgb,#66758f 58%,transparent)" data-id="endocare" data-tasks="acne pigment antiage sens" data-q="endocare антивозрастная регенерация кожи линия cantabria labs для регенерации кожи и антивозрастного ухода на основе технологии sca biorepair. cantabria labs испания акне пигментация антивозраст чувствительная кожа">
-    <div class="band has-logo"><img class="blogo bl-img" src="assets/brands/endocare.svg?v=748366c0" alt="Endocare" width="593" height="263" style="--lw:157.5" loading="lazy" decoding="async"><span class="bc-mark" aria-hidden="true"><svg class="lgo" viewBox="46 338 836 436"><use href="#logo-art"/></svg></span></div>
-    <div class="bb"><div class="tasks-line"><span class="tag">Cantabria Labs</span><span class="tag">Испания</span></div><h3 class="sr">Endocare</h3><p>Антивозрастная регенерация кожи</p><div class="tasks-line"><span class="tag">Акне</span><span class="tag">Пигментация</span><span class="tag">Антивозраст</span></div>
-      <div class="bl-foot"><span class="muted small">3 позиции в каталоге</span><a class="lnk stretch" href="brands/endocare.html" data-track="brand_card_click" data-brand="endocare">О бренде <svg class="ic" viewBox="0 0 20 20" aria-hidden="true" focusable="false"><path d="M3.5 10h13M11.5 5l5 5-5 5"/></svg></a></div></div>
-  </article><article class="card hov bl-card reveal" style="--c1:#6a5a8c;--c2:#cbbfe0;--ink:#fff;--cc:#6a5a8c;--cs:color-mix(in srgb,#6a5a8c 58%,transparent)" data-id="neoretin" data-tasks="pigment sun" data-q="neoretin депигментирующая система discrom control система neoretin discrom control для работы с гиперпигментацией: whitening booster system и технология retinsphere. cantabria labs испания пигментация фотозащита">
-    <div class="band has-logo"><img class="blogo bl-img" src="assets/brands/neoretin.svg?v=748366c0" alt="Neoretin" width="541" height="261" style="--lw:151" loading="lazy" decoding="async"><span class="bc-mark" aria-hidden="true"><svg class="lgo" viewBox="46 338 836 436"><use href="#logo-art"/></svg></span></div>
-    <div class="bb"><div class="tasks-line"><span class="tag">Cantabria Labs</span><span class="tag">Испания</span></div><h3 class="sr">Neoretin</h3><p>Депигментирующая система Discrom Control</p><div class="tasks-line"><span class="tag">Пигментация</span><span class="tag">Фотозащита</span></div>
-      <div class="bl-foot"><span class="muted small">3 позиции в каталоге</span><a class="lnk stretch" href="brands/neoretin.html" data-track="brand_card_click" data-brand="neoretin">О бренде <svg class="ic" viewBox="0 0 20 20" aria-hidden="true" focusable="false"><path d="M3.5 10h13M11.5 5l5 5-5 5"/></svg></a></div></div>
-  </article><article class="card hov bl-card reveal" style="--c1:#dd5f22;--c2:#f09a5c;--ink:#fff;--cc:#dd5f22;--cs:color-mix(in srgb,#dd5f22 58%,transparent)" data-id="heliocare" data-tasks="acne pigment antiage sun sens" data-q="heliocare фотоиммунозащита с технологией fernblock фотоиммунозащита cantabria labs на основе fernblock: ежедневная защита кожи от солнца в связке с любым протоколом. cantabria labs испания акне пигментация антивозраст фотозащита чувствительная кожа">
-    <div class="band has-logo"><img class="blogo bl-img" src="assets/brands/heliocare.svg?v=748366c0" alt="Heliocare" width="612" height="264" style="--lw:159.7" loading="lazy" decoding="async"><span class="bc-mark" aria-hidden="true"><svg class="lgo" viewBox="46 338 836 436"><use href="#logo-art"/></svg></span></div>
-    <div class="bb"><div class="tasks-line"><span class="tag">Cantabria Labs</span><span class="tag">Испания</span></div><h3 class="sr">Heliocare</h3><p>Фотоиммунозащита с технологией Fernblock®</p><div class="tasks-line"><span class="tag">Акне</span><span class="tag">Пигментация</span><span class="tag">Антивозраст</span></div>
-      <div class="bl-foot"><span class="muted small">3 позиции в каталоге</span><a class="lnk stretch" href="brands/heliocare.html" data-track="brand_card_click" data-brand="heliocare">О бренде <svg class="ic" viewBox="0 0 20 20" aria-hidden="true" focusable="false"><path d="M3.5 10h13M11.5 5l5 5-5 5"/></svg></a></div></div>
-  </article><article class="card hov bl-card reveal" style="--c1:#2f7f7a;--c2:#a7d3cd;--ink:#fff;--cc:#2f7f7a;--cs:color-mix(in srgb,#2f7f7a 58%,transparent)" data-id="biretix" data-tasks="acne sens" data-q="biretix ретиноиды нового поколения для терапии акне линия cantabria labs на основе ретиноидов нового поколения с технологией retinsphere для ухода за кожей с акне. cantabria labs испания акне чувствительная кожа">
-    <div class="band has-logo"><img class="blogo bl-img" src="assets/brands/biretix.svg?v=748366c0" alt="Biretix" width="458" height="262" style="--lw:138.7" loading="lazy" decoding="async"><span class="bc-mark" aria-hidden="true"><svg class="lgo" viewBox="46 338 836 436"><use href="#logo-art"/></svg></span></div>
-    <div class="bb"><div class="tasks-line"><span class="tag">Cantabria Labs</span><span class="tag">Испания</span></div><h3 class="sr">Biretix</h3><p>Ретиноиды нового поколения для терапии акне</p><div class="tasks-line"><span class="tag">Акне</span><span class="tag">Чувствительная кожа</span></div>
-      <div class="bl-foot"><span class="muted small">3 позиции в каталоге</span><a class="lnk stretch" href="brands/biretix.html" data-track="brand_card_click" data-brand="biretix">О бренде <svg class="ic" viewBox="0 0 20 20" aria-hidden="true" focusable="false"><path d="M3.5 10h13M11.5 5l5 5-5 5"/></svg></a></div></div>
-  </article><article class="card hov bl-card reveal" style="--c1:#5b6b4a;--c2:#c5d0b3;--ink:#fff;--cc:#5b6b4a;--cs:color-mix(in srgb,#5b6b4a 58%,transparent)" data-id="iraltone" data-tasks="hair" data-q="iraltone трихологическая линия с доказанной эффективностью трихологическая линия cantabria labs для ухода за волосами и кожей головы с научно доказанной эффективностью. cantabria labs испания волосы и кожа головы">
-    <div class="band has-logo"><img class="blogo bl-img" src="assets/brands/iraltone.svg?v=748366c0" alt="Iraltone" width="534" height="265" style="--lw:148.9" loading="lazy" decoding="async"><span class="bc-mark" aria-hidden="true"><svg class="lgo" viewBox="46 338 836 436"><use href="#logo-art"/></svg></span></div>
-    <div class="bb"><div class="tasks-line"><span class="tag">Cantabria Labs</span><span class="tag">Испания</span></div><h3 class="sr">Iraltone</h3><p>Трихологическая линия с доказанной эффективностью</p><div class="tasks-line"><span class="tag">Волосы и кожа головы</span></div>
-      <div class="bl-foot"><span class="muted small">3 позиции в каталоге</span><a class="lnk stretch" href="brands/iraltone.html" data-track="brand_card_click" data-brand="iraltone">О бренде <svg class="ic" viewBox="0 0 20 20" aria-hidden="true" focusable="false"><path d="M3.5 10h13M11.5 5l5 5-5 5"/></svg></a></div></div>
-  </article><article class="card hov bl-card reveal" style="--c1:#5d9c2f;--c2:#8eba6d;--ink:#fff;--cc:#5d9c2f;--cs:color-mix(in srgb,#5d9c2f 58%,transparent)" data-id="elancyl" data-tasks="body" data-q="elancyl экспертные решения для коррекции фигуры elancyl — экспертные решения в области похудения и моделирования тела от cantabria labs. cantabria labs испания тело и фигура">
-    <div class="band has-logo"><img class="blogo bl-img" src="assets/brands/elancyl.png?v=748366c0" alt="Elancyl" width="900" height="154" style="--lw:228.2" loading="lazy" decoding="async"><span class="bc-mark" aria-hidden="true"><svg class="lgo" viewBox="46 338 836 436"><use href="#logo-art"/></svg></span></div>
-    <div class="bb"><div class="tasks-line"><span class="tag">Cantabria Labs</span><span class="tag">Испания</span></div><h3 class="sr">Elancyl</h3><p>Экспертные решения для коррекции фигуры</p><div class="tasks-line"><span class="tag">Тело и фигура</span></div>
-      <div class="bl-foot"><span class="muted small">3 позиции в каталоге</span><a class="lnk stretch" href="brands/elancyl.html" data-track="brand_card_click" data-brand="elancyl">О бренде <svg class="ic" viewBox="0 0 20 20" aria-hidden="true" focusable="false"><path d="M3.5 10h13M11.5 5l5 5-5 5"/></svg></a></div></div>
-  </article><h2 class="br-group br-group-dev reveal">Аппаратные решения</h2><p class="br-dev-note muted">Аппаратное решение, а не линия косметики: подробности — у менеджеров.</p><article class="card hov bl-card reveal" style="--c1:#a25a6e;--c2:#d4a5b1;--ink:#fff;--cc:#a25a6e;--cs:color-mix(in srgb,#a25a6e 58%,transparent)" data-id="eva" data-tasks="intim" data-q="eva rf-устройство для интимного здоровья женщин eva — rf-устройство для женского интимного здоровья, представленное в россии компанией «астрея». аппаратное решение  интимное здоровье">
-    <div class="band has-logo"><img class="blogo bl-img" src="assets/brands/eva.png?v=748366c0" alt="EVA" width="831" height="260" style="--lw:165" loading="lazy" decoding="async"><span class="bc-mark" aria-hidden="true"><svg class="lgo" viewBox="46 338 836 436"><use href="#logo-art"/></svg></span></div>
-    <div class="bb"><div class="tasks-line"><span class="tag">Аппаратное решение</span></div><h3 class="sr">EVA</h3><p>RF-устройство для интимного здоровья женщин</p><div class="tasks-line"><span class="tag">Интимное здоровье</span></div>
-      <div class="bl-foot"><span class="muted small">1 позиция в каталоге</span><a class="lnk stretch" href="brands/eva.html" data-track="brand_card_click" data-brand="eva">О бренде <svg class="ic" viewBox="0 0 20 20" aria-hidden="true" focusable="false"><path d="M3.5 10h13M11.5 5l5 5-5 5"/></svg></a></div></div>
-  </article></div>
-    <div class="empty" id="br-empty" hidden><b>Бренды не найдены</b>Измените запрос или выберите другую задачу.</div>
-    <div style="height:clamp(60px,8vw,110px)"></div>
+    <div class="bb br-bb">
+      <p class="br-cn">Испания</p>
+      <h3 class="sr">Dermatime</h3>
+      <p class="br-sp">Химические пилинги, мезотерапия и домашний космецевтический уход</p>
+      <div class="tasks-line"><span class="tag">Акне</span><span class="tag">Пигментация</span></div>
+      <div class="bl-foot"><span class="br-n">6 позиций в каталоге</span><a class="lnk stretch" href="brands/dermatime.html" data-track="brand_card_click" data-brand="dermatime">О бренде <svg class="ic" viewBox="0 0 20 20" aria-hidden="true" focusable="false"><path d="M3.5 10h13M11.5 5l5 5-5 5"/></svg></a></div>
+    </div>
+  </article><article class="card br-card bl-card reveal" style="--c1:#1c2f5a;--c2:#c3a6b0;--ink:#fff;--cc:#1c2f5a;--cs:color-mix(in srgb,#1c2f5a 58%,transparent)" data-id="keenwell" data-tasks="antiage body" data-q="keenwell эстетика лица и тела, декоративная косметика испанский бренд с комплексным подходом: профессиональные программы для лица и тела и декоративная косметика — тональные средства и корректоры. испания испания антивозраст тело и фигура">
+    <div class="br-niche" role="img" aria-label="Витрина бренда Keenwell: Тональный флюид, Корректор, Программа эстетики лица">
+      <img class="br-bg" src="assets/brands/niche-keenwell.webp?v=c3ef4064" alt="" width="720" height="900" loading="lazy" decoding="async">
+      <img class="br-logo" src="assets/brands/keenwell.svg?v=c3ef4064" alt="Keenwell" width="1190" height="365" style="--lw:189.4" loading="lazy" decoding="async"><span class="br-pk" style="--x:63.02%;--y:77.78%;--h:24.29%;--ar:0.3167;z-index:78"><img src="assets/showroom/pack-pump-noir.webp?v=c3ef4064" alt="" width="285" height="900" loading="lazy" decoding="async"></span><span class="br-pk" style="--x:38.8%;--y:87.92%;--h:19.93%;--ar:0.3278;z-index:88"><img src="assets/showroom/pack-tube.webp?v=c3ef4064" alt="" width="295" height="900" loading="lazy" decoding="async"></span><span class="br-pk" style="--x:29.03%;--y:93.47%;--h:10.19%;--ar:1.2022;z-index:93"><img src="assets/showroom/pack-jar.webp?v=c3ef4064" alt="" width="1082" height="900" loading="lazy" decoding="async"></span>
+    </div>
+    <div class="bb br-bb">
+      <p class="br-cn">Испания</p>
+      <h3 class="sr">Keenwell</h3>
+      <p class="br-sp">Эстетика лица и тела, декоративная косметика</p>
+      <div class="tasks-line"><span class="tag">Антивозраст</span><span class="tag">Тело и фигура</span></div>
+      <div class="bl-foot"><span class="br-n">5 позиций в каталоге</span><a class="lnk stretch" href="brands/keenwell.html" data-track="brand_card_click" data-brand="keenwell">О бренде <svg class="ic" viewBox="0 0 20 20" aria-hidden="true" focusable="false"><path d="M3.5 10h13M11.5 5l5 5-5 5"/></svg></a></div>
+    </div>
+  </article><article class="card br-card bl-card reveal" style="--c1:#66758f;--c2:#bcc6d5;--ink:#fff;--cc:#66758f;--cs:color-mix(in srgb,#66758f 58%,transparent)" data-id="endocare" data-tasks="acne pigment antiage sens" data-q="endocare антивозрастная регенерация кожи линия cantabria labs для регенерации кожи и антивозрастного ухода на основе технологии sca biorepair. cantabria labs испания акне пигментация антивозраст чувствительная кожа">
+    <div class="br-niche" role="img" aria-label="Витрина бренда Endocare: Сыворотка SCA® Biorepair, Регенерирующий крем, Ампулы для кабинета">
+      <img class="br-bg" src="assets/brands/niche-endocare.webp?v=c3ef4064" alt="" width="720" height="900" loading="lazy" decoding="async">
+      <img class="br-logo" src="assets/brands/endocare.svg?v=c3ef4064" alt="Endocare" width="593" height="263" style="--lw:157.5" loading="lazy" decoding="async"><span class="br-pk" style="--x:43.11%;--y:76.2%;--h:23.14%;--ar:0.2367;z-index:76"><img src="assets/showroom/pack-dropper.webp?v=c3ef4064" alt="" width="213" height="900" loading="lazy" decoding="async"></span><span class="br-pk" style="--x:62.74%;--y:85.33%;--h:10.19%;--ar:1.2022;z-index:85"><img src="assets/showroom/pack-jar.webp?v=c3ef4064" alt="" width="1082" height="900" loading="lazy" decoding="async"></span><span class="br-pk" style="--x:27.21%;--y:93.76%;--h:8.57%;--ar:1.5600;z-index:94"><img src="assets/showroom/pack-box.webp?v=c3ef4064" alt="" width="1404" height="900" loading="lazy" decoding="async"></span>
+    </div>
+    <div class="bb br-bb">
+      <p class="br-cn">Испания</p>
+      <h3 class="sr">Endocare</h3>
+      <p class="br-sp">Антивозрастная регенерация кожи</p>
+      <div class="tasks-line"><span class="tag">Акне</span><span class="tag">Пигментация</span></div>
+      <div class="bl-foot"><span class="br-n">3 позиции в каталоге</span><a class="lnk stretch" href="brands/endocare.html" data-track="brand_card_click" data-brand="endocare">О бренде <svg class="ic" viewBox="0 0 20 20" aria-hidden="true" focusable="false"><path d="M3.5 10h13M11.5 5l5 5-5 5"/></svg></a></div>
+    </div>
+  </article><article class="card br-card bl-card reveal" style="--c1:#6a5a8c;--c2:#cbbfe0;--ink:#fff;--cc:#6a5a8c;--cs:color-mix(in srgb,#6a5a8c 58%,transparent)" data-id="neoretin" data-tasks="pigment sun" data-q="neoretin депигментирующая система discrom control система neoretin discrom control для работы с гиперпигментацией: whitening booster system и технология retinsphere. cantabria labs испания пигментация фотозащита">
+    <div class="br-niche" role="img" aria-label="Витрина бренда Neoretin: Discrom Control · флюид SPF 50+, Discrom Control · сыворотка, Discrom Control · гель-крем">
+      <img class="br-bg" src="assets/brands/niche-neoretin.webp?v=c3ef4064" alt="" width="720" height="900" loading="lazy" decoding="async">
+      <img class="br-logo" src="assets/brands/neoretin.svg?v=c3ef4064" alt="Neoretin" width="541" height="261" style="--lw:151" loading="lazy" decoding="async"><span class="br-pk" style="--x:50%;--y:75.14%;--h:27.36%;--ar:0.3078;z-index:75"><img src="assets/showroom/pack-bottle.webp?v=c3ef4064" alt="" width="277" height="900" loading="lazy" decoding="async"></span><span class="br-pk" style="--x:30.93%;--y:88.07%;--h:23.14%;--ar:0.2367;z-index:88"><img src="assets/showroom/pack-dropper.webp?v=c3ef4064" alt="" width="213" height="900" loading="lazy" decoding="async"></span><span class="br-pk" style="--x:70.73%;--y:91.53%;--h:10.19%;--ar:1.2022;z-index:92"><img src="assets/showroom/pack-jar.webp?v=c3ef4064" alt="" width="1082" height="900" loading="lazy" decoding="async"></span>
+    </div>
+    <div class="bb br-bb">
+      <p class="br-cn">Испания</p>
+      <h3 class="sr">Neoretin</h3>
+      <p class="br-sp">Депигментирующая система Discrom Control</p>
+      <div class="tasks-line"><span class="tag">Пигментация</span><span class="tag">Фотозащита</span></div>
+      <div class="bl-foot"><span class="br-n">3 позиции в каталоге</span><a class="lnk stretch" href="brands/neoretin.html" data-track="brand_card_click" data-brand="neoretin">О бренде <svg class="ic" viewBox="0 0 20 20" aria-hidden="true" focusable="false"><path d="M3.5 10h13M11.5 5l5 5-5 5"/></svg></a></div>
+    </div>
+  </article><article class="card br-card bl-card reveal" style="--c1:#dd5f22;--c2:#f09a5c;--ink:#fff;--cc:#dd5f22;--cs:color-mix(in srgb,#dd5f22 58%,transparent)" data-id="heliocare" data-tasks="acne pigment antiage sun sens" data-q="heliocare фотоиммунозащита с технологией fernblock фотоиммунозащита cantabria labs на основе fernblock: ежедневная защита кожи от солнца в связке с любым протоколом. cantabria labs испания акне пигментация антивозраст фотозащита чувствительная кожа">
+    <div class="br-niche" role="img" aria-label="Витрина бренда Heliocare: Солнцезащитный флюид SPF 50+, Минеральный крем SPF 50+, Гель для жирной кожи">
+      <img class="br-bg" src="assets/brands/niche-heliocare.webp?v=c3ef4064" alt="" width="720" height="900" loading="lazy" decoding="async">
+      <img class="br-logo" src="assets/brands/heliocare.svg?v=c3ef4064" alt="Heliocare" width="612" height="264" style="--lw:159.7" loading="lazy" decoding="async"><span class="br-pk" style="--x:63.02%;--y:77.78%;--h:27.36%;--ar:0.3078;z-index:78"><img src="assets/showroom/pack-bottle-noir.webp?v=c3ef4064" alt="" width="277" height="900" loading="lazy" decoding="async"></span><span class="br-pk" style="--x:38.8%;--y:87.92%;--h:19.93%;--ar:0.3278;z-index:88"><img src="assets/showroom/pack-tube.webp?v=c3ef4064" alt="" width="295" height="900" loading="lazy" decoding="async"></span><span class="br-pk" style="--x:29.03%;--y:93.47%;--h:19.93%;--ar:0.3278;z-index:93"><img src="assets/showroom/pack-tube.webp?v=c3ef4064" alt="" width="295" height="900" loading="lazy" decoding="async"></span>
+    </div>
+    <div class="bb br-bb">
+      <p class="br-cn">Испания</p>
+      <h3 class="sr">Heliocare</h3>
+      <p class="br-sp">Фотоиммунозащита с технологией Fernblock®</p>
+      <div class="tasks-line"><span class="tag">Акне</span><span class="tag">Пигментация</span></div>
+      <div class="bl-foot"><span class="br-n">3 позиции в каталоге</span><a class="lnk stretch" href="brands/heliocare.html" data-track="brand_card_click" data-brand="heliocare">О бренде <svg class="ic" viewBox="0 0 20 20" aria-hidden="true" focusable="false"><path d="M3.5 10h13M11.5 5l5 5-5 5"/></svg></a></div>
+    </div>
+  </article><article class="card br-card bl-card reveal" style="--c1:#2f7f7a;--c2:#a7d3cd;--ink:#fff;--cc:#2f7f7a;--cs:color-mix(in srgb,#2f7f7a 58%,transparent)" data-id="biretix" data-tasks="acne sens" data-q="biretix ретиноиды нового поколения для терапии акне линия cantabria labs на основе ретиноидов нового поколения с технологией retinsphere для ухода за кожей с акне. cantabria labs испания акне чувствительная кожа">
+    <div class="br-niche" role="img" aria-label="Витрина бренда Biretix: Очищающий гель, Гель против несовершенств, Увлажняющий крем">
+      <img class="br-bg" src="assets/brands/niche-biretix.webp?v=c3ef4064" alt="" width="720" height="900" loading="lazy" decoding="async">
+      <img class="br-logo" src="assets/brands/biretix.svg?v=c3ef4064" alt="Biretix" width="458" height="262" style="--lw:138.7" loading="lazy" decoding="async"><span class="br-pk" style="--x:43.11%;--y:76.2%;--h:24.29%;--ar:0.3167;z-index:76"><img src="assets/showroom/pack-pump.webp?v=c3ef4064" alt="" width="285" height="900" loading="lazy" decoding="async"></span><span class="br-pk" style="--x:62.74%;--y:85.33%;--h:19.93%;--ar:0.3278;z-index:85"><img src="assets/showroom/pack-tube.webp?v=c3ef4064" alt="" width="295" height="900" loading="lazy" decoding="async"></span><span class="br-pk" style="--x:27.21%;--y:93.76%;--h:10.19%;--ar:1.2022;z-index:94"><img src="assets/showroom/pack-jar.webp?v=c3ef4064" alt="" width="1082" height="900" loading="lazy" decoding="async"></span>
+    </div>
+    <div class="bb br-bb">
+      <p class="br-cn">Испания</p>
+      <h3 class="sr">Biretix</h3>
+      <p class="br-sp">Ретиноиды нового поколения для терапии акне</p>
+      <div class="tasks-line"><span class="tag">Акне</span><span class="tag">Чувствительная кожа</span></div>
+      <div class="bl-foot"><span class="br-n">3 позиции в каталоге</span><a class="lnk stretch" href="brands/biretix.html" data-track="brand_card_click" data-brand="biretix">О бренде <svg class="ic" viewBox="0 0 20 20" aria-hidden="true" focusable="false"><path d="M3.5 10h13M11.5 5l5 5-5 5"/></svg></a></div>
+    </div>
+  </article><article class="card br-card bl-card reveal" style="--c1:#5b6b4a;--c2:#c5d0b3;--ink:#fff;--cc:#5b6b4a;--cs:color-mix(in srgb,#5b6b4a 58%,transparent)" data-id="iraltone" data-tasks="hair" data-q="iraltone трихологическая линия с доказанной эффективностью трихологическая линия cantabria labs для ухода за волосами и кожей головы с научно доказанной эффективностью. cantabria labs испания волосы и кожа головы">
+    <div class="br-niche" role="img" aria-label="Витрина бренда Iraltone: Шампунь, Лосьон для кожи головы, Ампулы для трихопротоколов">
+      <img class="br-bg" src="assets/brands/niche-iraltone.webp?v=c3ef4064" alt="" width="720" height="900" loading="lazy" decoding="async">
+      <img class="br-logo" src="assets/brands/iraltone.svg?v=c3ef4064" alt="Iraltone" width="534" height="265" style="--lw:148.9" loading="lazy" decoding="async"><span class="br-pk" style="--x:50%;--y:75.14%;--h:27.36%;--ar:0.3078;z-index:75"><img src="assets/showroom/pack-bottle-noir.webp?v=c3ef4064" alt="" width="277" height="900" loading="lazy" decoding="async"></span><span class="br-pk" style="--x:30.93%;--y:88.07%;--h:23.14%;--ar:0.2367;z-index:88"><img src="assets/showroom/pack-dropper-noir.webp?v=c3ef4064" alt="" width="213" height="900" loading="lazy" decoding="async"></span><span class="br-pk" style="--x:70.73%;--y:91.53%;--h:8.57%;--ar:1.5600;z-index:92"><img src="assets/showroom/pack-box.webp?v=c3ef4064" alt="" width="1404" height="900" loading="lazy" decoding="async"></span>
+    </div>
+    <div class="bb br-bb">
+      <p class="br-cn">Испания</p>
+      <h3 class="sr">Iraltone</h3>
+      <p class="br-sp">Трихологическая линия с доказанной эффективностью</p>
+      <div class="tasks-line"><span class="tag">Волосы и кожа головы</span></div>
+      <div class="bl-foot"><span class="br-n">3 позиции в каталоге</span><a class="lnk stretch" href="brands/iraltone.html" data-track="brand_card_click" data-brand="iraltone">О бренде <svg class="ic" viewBox="0 0 20 20" aria-hidden="true" focusable="false"><path d="M3.5 10h13M11.5 5l5 5-5 5"/></svg></a></div>
+    </div>
+  </article><article class="card br-card bl-card reveal" style="--c1:#5d9c2f;--c2:#8eba6d;--ink:#fff;--cc:#5d9c2f;--cs:color-mix(in srgb,#5d9c2f 58%,transparent)" data-id="elancyl" data-tasks="body" data-q="elancyl экспертные решения для коррекции фигуры elancyl — экспертные решения в области похудения и моделирования тела от cantabria labs. cantabria labs испания тело и фигура">
+    <div class="br-niche" role="img" aria-label="Витрина бренда Elancyl: Антицеллюлитный гель, Против растяжек, Крем для упругости кожи">
+      <img class="br-bg" src="assets/brands/niche-elancyl.webp?v=c3ef4064" alt="" width="720" height="900" loading="lazy" decoding="async">
+      <img class="br-logo" src="assets/brands/elancyl.png?v=c3ef4064" alt="Elancyl" width="900" height="154" style="--lw:228.2" loading="lazy" decoding="async"><span class="br-pk" style="--x:43.11%;--y:76.2%;--h:19.93%;--ar:0.3278;z-index:76"><img src="assets/showroom/pack-tube.webp?v=c3ef4064" alt="" width="295" height="900" loading="lazy" decoding="async"></span><span class="br-pk" style="--x:62.74%;--y:85.33%;--h:19.93%;--ar:0.3278;z-index:85"><img src="assets/showroom/pack-tube.webp?v=c3ef4064" alt="" width="295" height="900" loading="lazy" decoding="async"></span><span class="br-pk" style="--x:27.21%;--y:93.76%;--h:10.19%;--ar:1.2022;z-index:94"><img src="assets/showroom/pack-jar.webp?v=c3ef4064" alt="" width="1082" height="900" loading="lazy" decoding="async"></span>
+    </div>
+    <div class="bb br-bb">
+      <p class="br-cn">Испания</p>
+      <h3 class="sr">Elancyl</h3>
+      <p class="br-sp">Экспертные решения для коррекции фигуры</p>
+      <div class="tasks-line"><span class="tag">Тело и фигура</span></div>
+      <div class="bl-foot"><span class="br-n">3 позиции в каталоге</span><a class="lnk stretch" href="brands/elancyl.html" data-track="brand_card_click" data-brand="elancyl">О бренде <svg class="ic" viewBox="0 0 20 20" aria-hidden="true" focusable="false"><path d="M3.5 10h13M11.5 5l5 5-5 5"/></svg></a></div>
+    </div>
+  </article>
+          <h2 class="br-group br-group-dev reveal">Аппаратные решения</h2><p class="br-dev-note muted">Аппаратное решение, а не линия косметики: подробности — у менеджеров.</p><article class="card br-card bl-card reveal" style="--c1:#a25a6e;--c2:#d4a5b1;--ink:#fff;--cc:#a25a6e;--cs:color-mix(in srgb,#a25a6e 58%,transparent)" data-id="eva" data-tasks="intim" data-q="eva rf-устройство для интимного здоровья женщин eva — rf-устройство для женского интимного здоровья, представленное в россии компанией «астрея». аппаратное решение  интимное здоровье">
+    <div class="br-niche" role="img" aria-label="Витрина бренда EVA: EVA">
+      <img class="br-bg" src="assets/brands/niche-eva.webp?v=c3ef4064" alt="" width="720" height="900" loading="lazy" decoding="async">
+      <img class="br-logo" src="assets/brands/eva.png?v=c3ef4064" alt="EVA" width="831" height="260" style="--lw:165" loading="lazy" decoding="async"><span class="br-pk" style="--x:63.02%;--y:77.78%;--h:22.29%;--ar:0.3389;z-index:78"><img src="assets/showroom/pack-device.webp?v=c3ef4064" alt="" width="305" height="900" loading="lazy" decoding="async"></span>
+    </div>
+    <div class="bb br-bb">
+      <p class="br-cn">Аппаратное решение</p>
+      <h3 class="sr">EVA</h3>
+      <p class="br-sp">RF-устройство для интимного здоровья женщин</p>
+      <div class="tasks-line"><span class="tag">Интимное здоровье</span></div>
+      <div class="bl-foot"><span class="br-n">1 позиция в каталоге</span><a class="lnk stretch" href="brands/eva.html" data-track="brand_card_click" data-brand="eva">О бренде <svg class="ic" viewBox="0 0 20 20" aria-hidden="true" focusable="false"><path d="M3.5 10h13M11.5 5l5 5-5 5"/></svg></a></div>
+    </div>
+  </article>
+        </div>
+        <div class="empty" id="br-empty" hidden><b>Бренды не найдены</b>Измените запрос или выберите другую задачу.</div>
+      </div>
+    </section>
   </div>
-<div class="bd-fill bd-end" data-bd="film" data-bd-pos="br" aria-hidden="true"></div>
 </main>
 
 <footer class="ftr ftr-rd">
@@ -220,22 +307,22 @@
 <div id="modal" aria-hidden="true"></div>
 <div id="toast" role="status" aria-live="polite"></div>
 
-<script src="js/shared.js?v=748366c0" defer></script>
-<script src="js/data.js?v=748366c0" defer></script>
-<script src="js/core.js?v=748366c0" defer></script>
-<script src="js/consent.js?v=748366c0" defer></script>
-<script src="js/motion.js?v=748366c0" defer></script>
-<script src="js/pages.js?v=748366c0" defer></script>
-<script src="js/hero-mark.js?v=748366c0" defer></script>
-<script src="js/redesign.js?v=748366c0" defer></script>
-<script src="js/backdrops.js?v=748366c0" defer></script>
-<script src="js/extras.js?v=748366c0" defer></script>
-<script src="js/explore.js?v=748366c0" defer></script>
-<script src="js/assistant-brain.js?v=748366c0" defer></script>
-<script src="js/stella-policy.js?v=748366c0" defer></script>
-<script src="js/assistant.js?v=748366c0" defer></script>
-<script src="js/guide.js?v=748366c0" defer></script>
-<script src="js/sales.js?v=748366c0" defer></script>
-<script src="js/sales-pages.js?v=748366c0" defer></script>
+<script src="js/shared.js?v=c3ef4064" defer></script>
+<script src="js/data.js?v=c3ef4064" defer></script>
+<script src="js/core.js?v=c3ef4064" defer></script>
+<script src="js/consent.js?v=c3ef4064" defer></script>
+<script src="js/motion.js?v=c3ef4064" defer></script>
+<script src="js/pages.js?v=c3ef4064" defer></script>
+<script src="js/hero-mark.js?v=c3ef4064" defer></script>
+<script src="js/redesign.js?v=c3ef4064" defer></script>
+<script src="js/backdrops.js?v=c3ef4064" defer></script>
+<script src="js/extras.js?v=c3ef4064" defer></script>
+<script src="js/explore.js?v=c3ef4064" defer></script>
+<script src="js/assistant-brain.js?v=c3ef4064" defer></script>
+<script src="js/stella-policy.js?v=c3ef4064" defer></script>
+<script src="js/assistant.js?v=c3ef4064" defer></script>
+<script src="js/guide.js?v=c3ef4064" defer></script>
+<script src="js/sales.js?v=c3ef4064" defer></script>
+<script src="js/sales-pages.js?v=c3ef4064" defer></script>
 </body>
 </html>

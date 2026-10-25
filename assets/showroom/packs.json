@@ -1,100 +1,100 @@
 {
  "pack-tube": {
   "file": "assets/showroom/pack-tube.webp",
-  "w": 234,
-  "h": 840,
+  "w": 295,
+  "h": 900,
   "label": [
-   0.0438,
-   0.2447,
-   0.9124,
-   0.4184
+   0.0844,
+   0.2235,
+   0.8311,
+   0.4219
   ]
  },
  "pack-bottle": {
   "file": "assets/showroom/pack-bottle.webp",
-  "w": 258,
-  "h": 840,
+  "w": 277,
+  "h": 900,
   "label": [
-   0.0173,
-   0.3926,
-   0.9655,
-   0.3959
+   0.0189,
+   0.3989,
+   0.9621,
+   0.3992
   ]
  },
  "pack-bottle-noir": {
   "file": "assets/showroom/pack-bottle-noir.webp",
-  "w": 258,
-  "h": 840,
+  "w": 277,
+  "h": 900,
   "label": [
-   0.0173,
-   0.3926,
-   0.9655,
-   0.3959
+   0.0189,
+   0.3989,
+   0.9621,
+   0.3992
   ]
  },
  "pack-jar": {
   "file": "assets/showroom/pack-jar.webp",
-  "w": 1001,
-  "h": 840,
+  "w": 1082,
+  "h": 900,
   "label": [
-   0.0268,
-   0.4765,
-   0.9463,
-   0.4138
+   0.0315,
+   0.4593,
+   0.9371,
+   0.4251
   ]
  },
  "pack-pump": {
   "file": "assets/showroom/pack-pump.webp",
-  "w": 274,
-  "h": 840,
+  "w": 285,
+  "h": 900,
   "label": [
-   0.0172,
-   0.4358,
-   0.9655,
-   0.3812
+   0.0529,
+   0.472,
+   0.9223,
+   0.3619
   ]
  },
  "pack-pump-noir": {
   "file": "assets/showroom/pack-pump-noir.webp",
-  "w": 274,
-  "h": 840,
+  "w": 285,
+  "h": 900,
   "label": [
-   0.0172,
-   0.4358,
-   0.9655,
-   0.3812
+   0.0529,
+   0.472,
+   0.9223,
+   0.3619
   ]
  },
  "pack-dropper": {
   "file": "assets/showroom/pack-dropper.webp",
-  "w": 248,
-  "h": 840,
+  "w": 213,
+  "h": 900,
   "label": [
-   0.0184,
-   0.5709,
-   0.9632,
-   0.2978
+   0.0375,
+   0.6183,
+   0.925,
+   0.2796
   ]
  },
  "pack-dropper-noir": {
   "file": "assets/showroom/pack-dropper-noir.webp",
-  "w": 248,
-  "h": 840,
+  "w": 213,
+  "h": 900,
   "label": [
-   0.0184,
-   0.5709,
-   0.9632,
-   0.2978
+   0.0375,
+   0.6183,
+   0.925,
+   0.2796
   ]
  },
  "pack-box": {
   "file": "assets/showroom/pack-box.webp",
-  "w": 1187,
-  "h": 840
+  "w": 1404,
+  "h": 900
  },
  "pack-device": {
   "file": "assets/showroom/pack-device.webp",
-  "w": 252,
-  "h": 840
+  "w": 305,
+  "h": 900
  }
 }
