@@ -1,0 +1,26 @@
+{
+ "sphere": {
+  "file": "assets/decor/stone-sphere.webp",
+  "w": 1400,
+  "h": 1003,
+  "kb": 144
+ },
+ "mountain": {
+  "file": "assets/decor/stone-mountain.webp",
+  "w": 1400,
+  "h": 895,
+  "kb": 77
+ },
+ "logo": {
+  "file": "assets/decor/stone-logo.webp",
+  "w": 1400,
+  "h": 877,
+  "kb": 73
+ },
+ "front": {
+  "file": "assets/decor/stone-front.webp",
+  "w": 1400,
+  "h": 888,
+  "kb": 49
+ }
+}

@@ -140,12 +140,12 @@ def sphere_satin(name='sl_satin', scale=1.0):
 
 
 def materials(k, tone=1.0, texscale=1.0):
-    """три камня: гора (травертин, тёплый, шлифованный), волна (тот же камень, темнее), шар (светлый мрамор с тонкими прожилками)"""
+    """три камня: гора (травертин, тёплый, шлифованный), волна (тот же камень, темнее), шар (травертин с порами — как шар в зале на главной)"""
     mt = MT.travertine('sl_mountain', (1.04 * tone, .95 * tone, .83 * tone), 2.6 * texscale, 1.0 if texscale < .8 else 1.7, 2.4, honed=True)
     bd = MT.travertine('sl_band', (.93 * tone, .82 * tone, .66 * tone), 3.0 * texscale, 1.2, 1.6, honed=True)
     for m, r in ((mt, .56), (bd, .42)):
         b = next(n for n in m.node_tree.nodes if n.type == 'BSDF_PRINCIPLED'); b.inputs['Roughness'].default_value = r
-    return mt, bd, sphere_satin()
+    return mt, bd, sphere_stone('sl_sphere', (.80, .70, .56), 1.1)               # шар — тот же травертин, что в зале на главной (поры, слоистость), чуть темнее стен
 
 
 def build_logo(height=.40, loc=(0, 0, 0), sphere_scale=1.35, depth=.14, parts=('mountain', 'band', 'sphere'), mats=None, sphere_dy=None, sphere_dz=0.0, thick=0.0):

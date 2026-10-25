@@ -19,7 +19,10 @@ module.exports = function decor(ctx, C) {
   const cfg = ctx.redesign && ctx.redesign.decor, on = !!(cfg && cfg.enabled);
   let meta = {};
   for (const f of ['rocks.json', 'stone.json']) {                                                                      // камни и каменный знак «Астреи» (шар, гора, знак целиком, знак анфас): id — как в файлах
-    try { Object.assign(meta, JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'assets', 'decor', f), 'utf8'))); } catch (e) { /* набор ещё не отрисован */ }
+    try {
+      const j = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'assets', 'decor', f), 'utf8'));
+      for (const [k, v] of Object.entries(j)) meta[f === 'stone.json' ? 'stone-' + k : k] = v;                       // знак: stone-sphere, stone-mountain, stone-logo, stone-front
+    } catch (e) { /* набор ещё не отрисован */ }
   }
   function apply(P, html) {
     if (!on || !html || !cfg.pages) return html;

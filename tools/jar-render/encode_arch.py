@@ -2,7 +2,7 @@
 """Кодирует кадры архитектурной сцены (arch_story.py) для сайта: полный набор + лёгкий набор с «запечёнными» промежуточными кадрами.
 
     python3 encode_arch.py <папка PNG> <вывод: …/assets/jar-arch/d> [--lite <вывод лёгкого набора: …/dm>] [--size 1600x900] [--lite-size 1120x630]
-                           [--q 82] [--lite-q 74] [--end 0.92] [--grain 1.0] [--sharpen 0.5]
+                           [--q 82] [--lite-q 74] [--end 0.92] [--grain 1.0] [--sharpen 0.5] [--knee 0.36:0.22]
 
 • полный набор: кадры 000.webp … как отрендерены (N штук); положения p[k] = end · k/(N−1) — после `end` сцена «держит» последний кадр (хвост прокрутки — спокойный финал);
 • лёгкий набор: между каждой парой соседних кадров — промежуточный (оба кадра сдвигаются к середине по оптическому потоку DIS и смешиваются), всего 2N−1;
@@ -46,7 +46,7 @@ def fit(img, size):
 def main():
     a = sys.argv[1:]
     src, out = a[0], a[1]
-    o = dict(lite=None, size=(1600, 900), lsize=(1120, 630), q=82, lq=74, end=0.92, grain=1.0, sharp=0.5)
+    o = dict(lite=None, size=(1600, 900), lsize=(1120, 630), q=82, lq=74, end=0.92, grain=1.0, sharp=0.5, knee=None)
     i = 2
     while i < len(a) - 1:
         k, v = a[i], a[i + 1]
@@ -66,6 +66,8 @@ def main():
             o['grain'] = float(v)
         elif k == '--sharpen':
             o['sharp'] = float(v)
+        elif k == '--knee':                                                  # «кадры:путь» — сколько пути прокрутки отдать начальной части кадров (0.36:0.22 — первые 36 % кадров за первые 22 % пути)
+            o['knee'] = tuple(float(x) for x in v.split(':'))
         i += 2
     GRAIN[0] = o['grain']
     SHARP[0] = o['sharp']
@@ -74,7 +76,11 @@ def main():
     os.makedirs(out, exist_ok=True)
     if o['lite']:
         os.makedirs(o['lite'], exist_ok=True)
-    p = [round(o['end'] * k / (n - 1), 5) for k in range(n)]
+    def g(f):
+        if not o['knee']: return f
+        kf, kp = o['knee']
+        return f / kf * kp if f <= kf else kp + (f - kf) / (1 - kf) * (1 - kp)
+    p = [round(o['end'] * g(k / (n - 1)), 5) for k in range(n)]
     pb = []
     dis = cv2.DISOpticalFlow_create(cv2.DISOPTICAL_FLOW_PRESET_MEDIUM)
     prev = load(os.path.join(src, files[0]))

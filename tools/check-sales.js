@@ -62,7 +62,8 @@ const J = f => JSON.parse(fs.readFileSync(path.join(ROOT, f), 'utf8'));
       const oi = old.indexOf('<section class="sec rd-about"'), ci = cur.indexOf('<section class="sec rd-about"');
       ok(ci > 0 && cur.slice(0, ci) === old.slice(0, oi), 'вступление, герой с орбитой брендов и бегущая строка — побайтно как до продающего слоя', {ci, oi});
       const au = h => h.slice(h.indexOf('<section class="rd-sec rd-clinical rd-aud"'), h.indexOf('<section class="rd-sec rd-news"'));
-      const restOld = old.slice(oi).replace(au(old), ''), restNew = cur.slice(ci).replace(au(cur), '');
+      const noRk = h => h.replace(/<img class="rk"[^>]*>/g, '').replace(/ data-rk(?=[ >])/g, '');                         // декоративные камни на фоне (src/decor.js) — отдельный слой оформления, не часть продающего
+      const restOld = old.slice(oi).replace(au(old), ''), restNew = noRk(cur.slice(ci).replace(au(cur), ''));
       ok(restOld === restNew, 'остальные разделы главной не изменились (кроме адресных кнопок в блоке «Для кого»)', {a: restOld.length, b: restNew.length});
     } }
 

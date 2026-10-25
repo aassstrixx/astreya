@@ -481,14 +481,16 @@
         {"sel": "section.rd-training", "rock": "chunk-b", "side": "r", "t": "92%", "w": "clamp(90px,10vw,190px)", "off": "-2%"},
         {"sel": "section.rd-aud", "rock": "slab-b", "side": "l", "t": "96%", "w": "clamp(120px,14vw,270px)", "off": "-4%", "flip": true},
         {"sel": "section.rd-news", "rock": "boulder-a", "side": "r", "t": "8%", "w": "clamp(110px,13vw,250px)", "off": "-5%"},
-        {"sel": "section.rd-wall", "rock": "cluster-b", "side": "l", "t": "94%", "w": "clamp(130px,16vw,300px)", "off": "-4%"}
+        {"sel": "section.rd-wall", "rock": "cluster-b", "side": "l", "t": "94%", "w": "clamp(130px,16vw,300px)", "off": "-4%"},
+        {"sel": "section.rd-wall", "rock": "stone-front", "side": "r", "t": "76%", "w": "clamp(170px,20vw,380px)", "off": "2%"}
       ],
       "brands": [
         {"sel": "section.br-hero", "rock": "cluster-a", "side": "r", "t": "96%", "w": "clamp(120px,15vw,280px)", "off": "2%"},
         {"sel": "section.br-wall", "rock": "boulder-a", "side": "l", "t": "16%", "w": "clamp(110px,13vw,250px)", "off": "-6%", "flip": true},
         {"sel": "section.br-wall", "rock": "cluster-c", "side": "r", "t": "44%", "w": "clamp(130px,16vw,300px)", "off": "-5%"},
         {"sel": "section.br-wall", "rock": "slab-a", "side": "l", "t": "72%", "w": "clamp(120px,14vw,270px)", "off": "-5%"},
-        {"sel": "section.br-wall", "rock": "chunk-a", "side": "r", "t": "94%", "w": "clamp(90px,10vw,190px)", "off": "-2%", "rot": -6}
+        {"sel": "section.br-wall", "rock": "chunk-a", "side": "r", "t": "94%", "w": "clamp(90px,10vw,190px)", "off": "-2%", "rot": -6},
+        {"sel": "section.br-wall", "rock": "stone-logo", "side": "r", "t": "9%", "w": "clamp(150px,17vw,320px)", "off": "-3%"}
       ],
       "catalog": [
         {"sel": "section.shw", "rock": "boulder-c", "side": "l", "t": "97%", "w": "clamp(90px,10vw,190px)", "off": "-2%"},
@@ -496,6 +498,7 @@
         {"sel": "div.shw-rest", "rock": "cluster-c", "side": "r", "t": "10%", "w": "clamp(130px,16vw,300px)", "off": "-5%"},
         {"sel": "div.shw-rest", "rock": "boulder-b", "side": "l", "t": "38%", "w": "clamp(100px,12vw,230px)", "off": "-5%"},
         {"sel": "div.shw-rest", "rock": "slab-b", "side": "r", "t": "66%", "w": "clamp(120px,14vw,270px)", "off": "-4%"},
+        {"sel": "div.shw-rest", "rock": "stone-sphere", "side": "l", "t": "62%", "w": "clamp(90px,10vw,190px)", "off": "-3%"},
         {"sel": "div.shw-rest", "rock": "cluster-b", "side": "l", "t": "94%", "w": "clamp(130px,16vw,300px)", "off": "-4%", "flip": true}
       ]
     }
