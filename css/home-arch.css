@@ -119,6 +119,7 @@ html:not(.js) .arch-story{display:none;margin:0}
 }
 @media (prefers-reduced-motion:reduce){
   .ar-e,.ar-h,.ar-lead,.ar-cta,.ar-panel,.ar-chip,.ar-card{transform:none}
+  .ar-pearl i{animation:none;translate:none}
 }
 
 /* ============ 2. Секции главной в архитектурной системе ============

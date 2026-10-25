@@ -18,7 +18,9 @@ function matcher(sel) {
 module.exports = function decor(ctx, C) {
   const cfg = ctx.redesign && ctx.redesign.decor, on = !!(cfg && cfg.enabled);
   let meta = {};
-  try { meta = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'assets', 'decor', 'rocks.json'), 'utf8')); } catch (e) { /* набор ещё не отрисован */ }
+  for (const f of ['rocks.json', 'stone.json']) {                                                                      // камни и каменный знак «Астреи» (шар, гора, знак целиком, знак анфас): id — как в файлах
+    try { Object.assign(meta, JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'assets', 'decor', f), 'utf8'))); } catch (e) { /* набор ещё не отрисован */ }
+  }
   function apply(P, html) {
     if (!on || !html || !cfg.pages) return html;
     const plan = cfg.pages[P.key]; if (!plan || !plan.length) return html;
