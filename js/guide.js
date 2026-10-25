@@ -159,7 +159,8 @@
     if (cfg.tour) lockPage(true);
     if (!cfg.noScroll && !cfg.free) { const pl = planScroll(el, {frac: cfg.at, fit: true, keep: cfg.keep, dockTop: cfg.dockTop}); if (pl.dockTop && !cfg.dockTop) { cfg.dockTop = true; pop.classList.toggle('sheet-top', mobile()); pop.classList.toggle('dock-top', !mobile()); } progScroll(pl.to); }
     cur.fixed = isFixedEl(el); $$('.xdock .g-keep').forEach(e => e.classList.remove('g-keep')); { const dk = el.closest ? el.closest('.xdock > *') : null; if (dk) dk.classList.add('g-keep'); }          // плашка сайта внизу прячется на время показа, кроме той, которую сама показываем
-    cancelAnimationFrame(spotRaf); spotRaf = requestAnimationFrame(place); if (fresh) requestAnimationFrame(() => requestAnimationFrame(() => hole.classList.remove('g-nt')));
+    cancelAnimationFrame(spotRaf); place();          // рамка встаёт на новую цель сразу, в том же кадре, что и новый текст: ни кадра со старым положением (лишняя рамка над чужим местом)
+    if (fresh) requestAnimationFrame(() => requestAnimationFrame(() => hole.classList.remove('g-nt')));
     const f = $('.g-ctl .btn-fill', s); if (f) { try { f.focus({preventScroll: true}); } catch (e) {} }
     A.track && A.track('guide_spot', {target: cfg.t ? cfg.t.id : '', tour: cfg.tour || ''});
   }
