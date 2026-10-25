@@ -82,7 +82,7 @@ def camera(sc, loc, lens, target=None, rot=None):
     cd = bpy.data.cameras.new('cam'); cd.lens = lens; cd.sensor_width = 36; cd.sensor_fit = 'HORIZONTAL'; cam = bpy.data.objects.new('cam', cd); bpy.context.collection.objects.link(cam)
     cam.location = loc; cam.rotation_euler = rot or (math.radians(90), 0, 0); sc.camera = cam; bpy.context.view_layer.update(); return cam
 
-def olive(base, h=.3, n=14, sc=1.0, rnd=None, grp='plant', seed=2, lush=True):
+def olive(base, h=.3, n=14, sc=1.0, rnd=None, grp='plant', seed=2, lush=True, lean=-.05):
     """ветка оливы: стебли-трубки и листья; lush — пышный букет: три стебля из горлышка, боковые побеги и широкие густые листья"""
     rnd = rnd or random.Random(seed); base = Vector(base)
     leaf = SC.leaf_mesh(L=.082 * sc, Wd=(.024 if lush else .016) * sc); m1 = bpy.data.materials.new('olive'); m1.use_nodes = True; b = m1.node_tree.nodes['Principled BSDF']
@@ -102,14 +102,14 @@ def olive(base, h=.3, n=14, sc=1.0, rnd=None, grp='plant', seed=2, lush=True):
                 put(pos, d * .5 + Vector((side * 1.0, rnd.uniform(-.25, .35), rnd.uniform(.05, .4))), (1.0 - .3 * t) * (.85 + rnd.random() * .3))
         if lush: put(at(1.0), (at(1.0) - at(.94)).normalized() + Vector((0, 0, .15)), .9)      # верхушечный листок
         return at
-    main = [base, base + Vector((-.012 * sc, 0, h * .35)), base + Vector((-.03 * sc, .004, h * .7)), base + Vector((-.05 * sc, .006, h))]
+    main = [base, base + Vector((lean * .24 * sc, 0, h * .35)), base + Vector((lean * .6 * sc, .004, h * .7)), base + Vector((lean * sc, .006, h))]          # lean — на сколько вершина стебля отклонена по x (в долях масштаба)
     at = shoot(main, n)
     if not lush: return
     for t, side, ln in ((.26, -1, .42), (.40, 1, .38), (.55, -1, .32), (.70, 1, .26)):          # боковые побеги основного стебля
         P = at(t); dv = Vector((side * .7, rnd.uniform(-.25, .25), .9)).normalized(); Ls = h * ln
         shoot([P, P + dv * Ls * .4, P + dv * Ls * .75 + Vector((side * .06 * Ls, 0, .16 * Ls)), P + dv * Ls + Vector((side * .14 * Ls, 0, .12 * Ls))], max(5, int(n * .5)), .92)
-    for lean, hs in ((-.2, .84), (.16, .72)):                                                    # ещё два стебля из горлышка вазы — веером в стороны
-        shoot([base, base + Vector((lean * h * .12, .004, h * hs * .35)), base + Vector((lean * h * .3, .012, h * hs * .7)), base + Vector((lean * h * .5, .018, h * hs))], int(n * .85), .96)
+    for ln, hs in ((-.2, .84), (.16, .72)):                                                      # ещё два стебля из горлышка вазы — веером в стороны
+        shoot([base, base + Vector((ln * h * .12 + lean * .24 * sc, .004, h * hs * .35)), base + Vector((ln * h * .3 + lean * .6 * sc, .012, h * hs * .7)), base + Vector((ln * h * .5 + lean * sc, .018, h * hs))], int(n * .85), .96)
 
 def vase(loc, h=.075, r=.028, mat=None):
     prof = [(0, 0), (.55 * r, 0), (.9 * r, .1 * h), (r, .38 * h), (.78 * r, .7 * h), (.42 * r, .88 * h), (.4 * r, h), (.52 * r, 1.05 * h), (0, 1.05 * h)]

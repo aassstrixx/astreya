@@ -41,6 +41,20 @@
   });
 
 
+  /* галерея брендов на главной (#hb-strip): стрелки листают ленту на две карточки; стрелка гаснет у края */
+  function hbState(s) {
+    const prev = document.querySelector('[data-act="hb-prev"]'), next = document.querySelector('[data-act="hb-next"]'); if (!prev || !next) return;
+    prev.disabled = s.scrollLeft < 4; next.disabled = s.scrollLeft + s.clientWidth > s.scrollWidth - 4;
+  }
+  document.addEventListener('click', function (e) {
+    const b = e.target.closest && e.target.closest('[data-act="hb-prev"],[data-act="hb-next"]'); if (!b) return;
+    const s = document.getElementById('hb-strip'); if (!s) return;
+    const c = s.querySelector('.br-card'), step = (c ? c.offsetWidth + 18 : 300) * 2, dir = b.getAttribute('data-act') === 'hb-next' ? 1 : -1;
+    s.scrollBy({left: dir * step, behavior: 'smooth'});
+  });
+  document.addEventListener('scroll', function (e) { if (e.target && e.target.id === 'hb-strip') hbState(e.target); }, true);
+  addEventListener('load', function () { const s = document.getElementById('hb-strip'); if (s) hbState(s); });
+
   /* «Почему Астрея»: подсветка цифр при скролле — светится номер пункта, ближайшего к центру экрана, пока список на экране.
      Список отслеживает IntersectionObserver: пока он вне экрана (почти всегда), в кадре прокрутки не читается вёрстка и не пишутся стили — раньше getBoundingClientRect
      вызывался в каждом кадре на любой странице и заставлял браузер пересчитывать стили посреди прокрутки. */

@@ -1,0 +1,68 @@
+{
+ "boulder-a": {
+  "file": "assets/decor/rock-boulder-a.webp",
+  "w": 1082,
+  "h": 405,
+  "kb": 62
+ },
+ "boulder-b": {
+  "file": "assets/decor/rock-boulder-b.webp",
+  "w": 1122,
+  "h": 543,
+  "kb": 100
+ },
+ "boulder-c": {
+  "file": "assets/decor/rock-boulder-c.webp",
+  "w": 1193,
+  "h": 553,
+  "kb": 93
+ },
+ "slab-a": {
+  "file": "assets/decor/rock-slab-a.webp",
+  "w": 844,
+  "h": 354,
+  "kb": 55
+ },
+ "slab-b": {
+  "file": "assets/decor/rock-slab-b.webp",
+  "w": 774,
+  "h": 367,
+  "kb": 56
+ },
+ "chunk-a": {
+  "file": "assets/decor/rock-chunk-a.webp",
+  "w": 1207,
+  "h": 596,
+  "kb": 106
+ },
+ "chunk-b": {
+  "file": "assets/decor/rock-chunk-b.webp",
+  "w": 1201,
+  "h": 587,
+  "kb": 106
+ },
+ "pebble-a": {
+  "file": "assets/decor/rock-pebble-a.webp",
+  "w": 1236,
+  "h": 523,
+  "kb": 106
+ },
+ "cluster-a": {
+  "file": "assets/decor/rock-cluster-a.webp",
+  "w": 921,
+  "h": 305,
+  "kb": 39
+ },
+ "cluster-b": {
+  "file": "assets/decor/rock-cluster-b.webp",
+  "w": 823,
+  "h": 283,
+  "kb": 38
+ },
+ "cluster-c": {
+  "file": "assets/decor/rock-cluster-c.webp",
+  "w": 1158,
+  "h": 342,
+  "kb": 49
+ }
+}

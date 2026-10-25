@@ -104,7 +104,7 @@
     /* ---- состояние ---- */
     let W = 0, H = 0, dead = false, firstDrawn = false, running = false, last = 0, dirty = true, started = false;
     let cp = 0, vp = 0, pT = 0, cq = 0, vq = 0, qT = 0, paintedP = -1, paintedWant = -1, rzTimer = 0;
-    let sTop = 0, sTot = 1, sH = 1, oTop = 0, oTot = 1, oH = 0;
+    let sTop = 0, sTot = 1, sH = 1, oTop = 0, oTot = 1, oH = 0, yNow = 0;
     const born = performance.now();
     /* уровень по скорости и регулятор нагрузки */
     let lastDraw = null, lastSig = -1, tier = 0, calm = 0, gov = 0, used = -1, wantIdx = 0, restW = 1, xf = null, xlWanted = false;
@@ -323,16 +323,17 @@
     function uiArch(p, inView) {
       const st = (a, b) => ease(clamp((p - a) / (b - a), 0, 1));
       setv(stage, '--m', (1 - st(0, 0.09)).toFixed(3));                       // слой цвета лозунга: кадры проявляются из молока
-      setv(stage, '--h1', st(0.58, 0.72).toFixed(3));                         // подпись и заголовок
-      setv(stage, '--h2', st(0.66, 0.80).toFixed(3));                         // текст и кнопки
-      setv(stage, '--h3', st(0.76, 0.90).toFixed(3));                         // панель «Почему выбирают Астрею?»
-      setv(stage, '--h4', st(0.70, 0.86).toFixed(3));                         // свечение подиума и мягкий свет за текстом
-      const hide = inView && p > 0.02 && p < 0.74, nav = inView && p >= 0.74 && p < 0.985, live = p > 0.74;
+      setv(stage, '--h1', st(0.64, 0.78).toFixed(3));                         // подпись и заголовок — когда камера почти закончила отъезд
+      setv(stage, '--h2', st(0.72, 0.84).toFixed(3));                         // текст и кнопки
+      setv(stage, '--h3', st(0.80, 0.92).toFixed(3));                         // панель «Почему выбирают Астрею?»
+      setv(stage, '--h4', st(0.64, 0.80).toFixed(3));                         // мягкая светлая завеса за текстом
+      const hide = inView && p > 0.02 && p < 0.76, nav = inView && p >= 0.76 && yNow < sTop + sTot + innerHeight * 0.55, live = p > 0.8, top = inView && p >= 0.76 && yNow < sTop + sTot + innerHeight * 0.1;      // шапка возвращается с героем и остаётся, пока он не ушёл больше чем наполовину
       if (hide !== archSt.hide) { archSt.hide = hide; document.body.classList.toggle('arch-hide', hide); }       // пока идёт кино — шапки нет
       if (nav !== archSt.nav) { archSt.nav = nav; document.body.classList.toggle('arch-nav', nav); }             // с появлением героя шапка возвращается (даже при прокрутке вниз); в конце пути — обычное поведение сайта
-      if (live !== archSt.live) { archSt.live = live; stage.classList.toggle('ar-live', live); }                  // кнопки героя нажимаются, только когда видны
+      if (top !== archSt.top) { archSt.top = top; document.body.classList.toggle('arch-top', top); }                                        // шапка прозрачная, пока герой стоит на месте
+      if (live !== archSt.live) { archSt.live = live; stage.classList.toggle('ar-live', live); document.body.classList.toggle('arch-live', live); document.dispatchEvent(new CustomEvent('astreya:arch', {detail: live})); }                  // кнопки героя нажимаются, только когда видны
     }
-    const archSt = {hide: false, nav: false, live: false};
+    const archSt = {hide: false, nav: false, live: false, top: false};
     function ui(p, inView) {
       if (arch) { uiArch(p, inView); return; }
       caps.forEach(c => {
@@ -373,7 +374,7 @@
       if (dead) { running = false; return; }
       const w0 = performance.now();
       const dtRaw = last ? t - last : 0, dt = last ? clamp(dtRaw / 1000, 0.001, 0.1) : 0.016; last = t;
-      const y = window.scrollY || window.pageYOffset || 0, vh = innerHeight;
+      const y = window.scrollY || window.pageYOffset || 0, vh = innerHeight; yNow = y;
       if (!loadGo) { if (y + vh * 3.2 > sTop) openGate(); else { running = false; return; } }
       pT = clamp((y - sTop) / sTot, 0, 1);
       qT = outro ? clamp((y - oTop) / oTot, 0, 1) : 0;
@@ -443,7 +444,7 @@
         removeEventListener('scroll', onScroll); removeEventListener('resize', onResize); removeEventListener('load', onLoad);
         portraitMQ.removeEventListener && portraitMQ.removeEventListener('change', onMQ);
         T = []; blobUrls.forEach(u => { try { URL.revokeObjectURL(u); } catch (e) {} }); blobUrls.length = 0;
-        document.body.classList.remove('jar-on', 'arch-hide', 'arch-nav');
+        document.body.classList.remove('jar-on', 'arch-hide', 'arch-nav', 'arch-live', 'arch-top');
       }
     };
     self.complete = () => T.length > 0 && T.every((t, i) => i === xlIdx || t.loaded >= t.N);
@@ -460,8 +461,13 @@
   window.Astreya = A; A.jar = {init, get ctrl() { return ctrl; }, get ctrls() { return ctrls; }, get arch() { return ctrls.find(c => c.arch) || null; }};
   /* где в документе «покой» героя (его верх под шапкой): от этой прокрутки считается уход текста героя (js/motion.js) */
   A.heroBase = function () {
-    const r = document.getElementById('jar-story'), hero = r && document.querySelector('.hero');
-    if (!r || !hero || !r.offsetHeight || !hero.offsetHeight) return 0;
+    const r = document.getElementById('jar-story'); if (!r || !r.offsetHeight) return 0;
+    const ar = document.getElementById('arch-story');
+    if (ar && ar.offsetHeight) {                       // архитектурный первый экран: «покой» героя — конец его закреплённой части (кадры доиграли, текст и панель на месте)
+      const st = ar.firstElementChild, y = ar.getBoundingClientRect().top + scrollY + 0.97 * Math.max(0, ar.offsetHeight - (st ? st.clientHeight : innerHeight));
+      return Math.max(0, Math.round(y));
+    }
+    const hero = document.querySelector('.hero'); if (!hero || !hero.offsetHeight) return 0;
     return Math.max(0, Math.round(hero.getBoundingClientRect().top + scrollY - ((document.getElementById('hdr') || {}).offsetHeight || 0)));
   };
 

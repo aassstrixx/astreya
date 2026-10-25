@@ -193,12 +193,29 @@ module.exports = function homeRedesign(ctx, C, P, parts, {events, val}) {
     const j = rd.jar, a = j && j.enabled && j.arch; if (!a || !a.enabled) return '';
     const nOff = ctx.stats.offices, nBr = ctx.stats.brands, cities = ctx.site.offices.map(o => o.city);
     const auto = {offices: `${nOff} ${S.plural(nOff, 'город', 'города', 'городов')} присутствия`, brands: `${nBr} ${S.plural(nBr, 'бренд', 'бренда', 'брендов')} в портфеле`};
+    /* каменный шар в нише: прозрачный рендер + живой свет поверх него (css/home-arch.css → .ar-pearl) */
+    const sp = a.sphere, pearl = sp ? `<div class="ar-pearl" aria-hidden="true"><i><img src="${C.u(P, sp.src)}" alt="" width="${sp.size}" height="${sp.size}" decoding="async"></i></div>` : '';
+    const worldVars = sp ? ` style="--sl:${sp.cx}%;--st:${sp.cy}%;--sw:${sp.crop}%;--sd:${sp.d}%"` : '';
+    /* флакон на подиуме — отдельный слой поверх жемчужины (положение в % сцены; у телефона своё) */
+    const fgImg = (b, cls) => b ? `<img class="ar-fg${cls}" src="${C.u(P, b.src)}" alt="" aria-hidden="true" decoding="async" style="--fl:${b.l}%;--ft:${b.t}%;--fw:${b.w}%">` : '';
+    const fg = a.fg ? fgImg(a.fg.desktop, '') + fgImg(a.fg.mobile, ' ar-fg-m') : '';
     const items = a.panel.items.map(it => ({icon: it.icon, title: it.auto ? auto[it.auto] : it.title, text: it.auto === 'offices' ? cities.join(', ') : it.text}));
-    return `<section class="jar-story arch-story" id="arch-story" data-mode="arch" data-defer="1" style="--jh:${a.heightVh.desktop}vh;--jhm:${a.heightVh.mobile}vh" data-n="${a.frames}" data-ext="${a.ext}" data-v="${esc(ctx.assetVersion || '')}" data-d="${a.desktop}" data-m="${a.mobile}" data-dm="${a.lite.desktop}" data-mm="${a.lite.mobile}" data-p="${a.p.join(',')}" data-pb="${a.pb.join(',')}" aria-label="${esc(a.alt)}">
+    /* логотипы на орбитах вокруг сферы-жемчужины — те же, что у прежнего героя (data/content.json → home.orbits) */
+    const orb = o => { const b = o.brand ? ctx.brandById[o.brand] : null, src = b ? b.logo : o.src, w = b ? b.logoW : o.w, hh = b ? b.logoH : o.h;
+      return `<span class="arm" style="--a:${o.angle}deg"><span class="orb"><img src="${C.u(P, src)}" alt=""${w ? ` width="${w}" height="${hh}"` : ''} style="--lw:${o.width}" decoding="async"></span></span>`; };
+    const ring = k => { const o = h.orbits.find(x => x.orbit === k); return `<div class="ring ${k}" aria-hidden="true">${o ? orb(o) : ''}</div>`; };
+    return `<section class="jar-story arch-story" id="arch-story" data-mode="arch" data-defer="1" data-view-at="0.97" style="--jh:${a.heightVh.desktop}vh;--jhm:${a.heightVh.mobile}vh" data-n="${a.frames}" data-ext="${a.ext}" data-v="${esc(ctx.assetVersion || '')}" data-d="${a.desktop}" data-m="${a.mobile}" data-dm="${a.lite.desktop}" data-mm="${a.lite.mobile}" data-p="${a.p.join(',')}" data-pb="${a.pb.join(',')}" aria-label="${esc(a.alt)}">
     <div class="js-stage">
       <canvas class="js-cv" role="img" aria-label="${esc(a.alt)}"></canvas>
       <div class="js-milk" aria-hidden="true"></div>
       <div class="ar-hero">
+        <div class="ar-world"${worldVars}>
+          ${pearl}
+          <div class="ar-orbit">${ring('r3')}${ring('r1')}${ring('r2')}</div>
+          <span class="ar-chip"><i></i>${esc(h.chip)}</span>
+          <div class="ar-card"><b>${esc(h.card.title)}</b><hr class="dash"><p>${esc(h.card.text)}</p></div>
+          ${fg}
+        </div>
         <div class="ar-copy">
           <span class="eyebrow ar-e">${esc(h.eyebrow)}</span>
           <h1 class="ar-h">${h.h1}</h1>
@@ -207,15 +224,29 @@ module.exports = function homeRedesign(ctx, C, P, parts, {events, val}) {
             <a class="btn btn-fill" href="${C.u(P, 'catalog.html')}" data-track="catalog_click" data-place="hero">Перейти в каталог ${I.arrow}</a>
             <a class="btn btn-ghost" href="${C.u(P, 'partners.html')}" data-track="partner_cta" data-place="hero">Стать партнёром</a>
           </div>
+          <ul class="ar-facts">${h.facts.map(f => `<li>${esc(f)}</li>`).join('')}<li>${esc(auto.offices)}</li></ul>
         </div>
         <div class="ar-panel" role="group" aria-label="${esc(a.panel.title)}">
           <p class="ar-pt">${esc(a.panel.title)}</p>
           <ul>${items.map(it => `<li><span class="ar-ic" aria-hidden="true">${I[it.icon] || I.check}</span><span class="ar-tx"><b>${esc(it.title)}</b><em>${esc(it.text)}</em></span></li>`).join('')}</ul>
+          <a class="btn btn-ghost btn-sm ar-more" href="${C.u(P, 'company.html')}">Подробнее ${I.arrow}</a>
         </div>
       </div>
     </div>
   </section>`;
   })();
+  /* галерея брендов в стиле страницы «Бренды»: те же арочные ниши-витрины (рендеры assets/brands, логотип и товары на подиумах), лентой с горизонтальной прокруткой */
+  const brandsX = (() => {
+    if (!arch) return null;
+    const mk = require('./brands.js').nicheCardMaker(ctx, C, P), bp = ctx.redesign.brandsPage || {}, dev = new Set(bp.deviceIds || []);
+    const list = brands.filter(b => !dev.has(b.id)).concat(brands.filter(b => dev.has(b.id)));
+    return `<section class="rd-sec rd-brands hb" id="brands-gallery"><div class="wrap">
+    <header class="rd-head rd-head-row reveal"><div><span class="eyebrow">Бренды</span><h2>${brands.length} ${S.plural(brands.length, 'бренд', 'бренда', 'брендов')} — один подход</h2></div>
+      <div class="hb-ctl"><button class="hb-arr" type="button" data-act="hb-prev" aria-label="Назад" disabled>${I.arrow}</button><button class="hb-arr" type="button" data-act="hb-next" aria-label="Вперёд">${I.arrow}</button>${C.lnk(C.u(P, 'brands.html'), 'Все бренды')}</div></header>
+    </div>
+    <div class="hb-strip" id="hb-strip" role="region" aria-label="Бренды портфеля: листайте по горизонтали" tabindex="0">${list.map(mk).join('')}</div>
+  </section>`;
+  })();
   const fork = ctx.sales && ctx.sales.homeFork ? require('./sales-home.js')(ctx, C, P) : '';          // продающий слой: развилка «Учиться / Закупать» сразу под строкой брендов (героя и вступление не трогаем)
-  return [jar, outro, arch, heroX, parts.marquee, ...(fork ? [fork] : []), about, stats, why, solutions, parts.brands.replace('class="sec tint"', 'class="rd-sec rd-brands"'), picker, featured, editorial, training, forWhom, news, wall, finalCta].join('\n\n  ');
+  return [jar, outro, arch, heroX, parts.marquee, ...(fork ? [fork] : []), about, stats, why, solutions, (brandsX || parts.brands.replace('class="sec tint"', 'class="rd-sec rd-brands"')), picker, featured, editorial, training, forWhom, news, wall, finalCta].join('\n\n  ');
 };

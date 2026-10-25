@@ -46,15 +46,14 @@ function nicheProducts(prods, n) {
   return out.sort((a, b) => (PACK_CM[b.type] || 0) - (PACK_CM[a.type] || 0));          // самый высокий — на главный подиум
 }
 
-function brandsGallery(ctx, C, P) {
-  const {brands, tasks, products, redesign} = ctx, bp = redesign.brandsPage, g = bp.gallery;
+/* карточка-витрина бренда (арочная ниша с логотипом и товарами на подиумах): общая для страницы «Бренды» и галереи на главной */
+function nicheCardMaker(ctx, C, P) {
+  const {products} = ctx;
   const niches = readJson('assets/brands/niches.json') || {}, packs = readJson('assets/showroom/packs.json') || {};
-  const dev = new Set(bp.deviceIds), cos = brands.filter(b => !dev.has(b.id)), dv = brands.filter(b => dev.has(b.id));
-  const usedTasks = new Set(); brands.forEach(b => b.tasks.forEach(t => usedTasks.add(t)));
   const logoPx = (b, A) => b.logoW && b.logoH ? Math.round(Math.sqrt(A * b.logoW / b.logoH) * (b.logoScale || 1) * 10) / 10 : 0;
   const pct = x => Math.round(x * 10000) / 100;
 
-  const card = b => {
+  return b => {
     const n = products.filter(p => p.brand === b.id).length, nm = niches[b.id], word = S.plural(n, 'позиция', 'позиции', 'позиций');
     const hay = S.norm([b.name, b.tag, b.desc, b.group, b.country, b.tasks.map(t => ctx.taskById[t].label).join(' ')].join(' '));
     const prods = nm ? nicheProducts(products.filter(p => p.brand === b.id), nm.slots.length) : [];
@@ -80,6 +79,13 @@ function brandsGallery(ctx, C, P) {
     </div>
   </article>`;
   };
+}
+
+function brandsGallery(ctx, C, P) {
+  const {brands, tasks, products, redesign} = ctx, bp = redesign.brandsPage, g = bp.gallery;
+  const dev = new Set(bp.deviceIds), cos = brands.filter(b => !dev.has(b.id)), dv = brands.filter(b => dev.has(b.id));
+  const usedTasks = new Set(); brands.forEach(b => b.tasks.forEach(t => usedTasks.add(t)));
+  const card = nicheCardMaker(ctx, C, P);
 
   const star = '<svg class="br-st" viewBox="0 0 48 48" aria-hidden="true" focusable="false"><defs><radialGradient id="br-pg" cx="38%" cy="30%" r="75%"><stop offset="0" stop-color="#fff"/><stop offset=".55" stop-color="#cfd9f0"/><stop offset="1" stop-color="#8ea3d8"/></radialGradient></defs><circle cx="24" cy="26" r="19" fill="url(#br-pg)"/><ellipse cx="18" cy="26.6" rx="2.1" ry="2.9" fill="#0b1a33"/><ellipse cx="30" cy="26.6" rx="2.1" ry="2.9" fill="#0b1a33"/><path d="M20.8 31.6q3.2 3.3 6.4 0" fill="none" stroke="#0b1a33" stroke-width="1.6" stroke-linecap="round"/><path d="M37.6 2.6l1.7 4.4 4.4 1.7-4.4 1.7-1.7 4.4-1.7-4.4-4.4-1.7 4.4-1.7z" fill="#f6d58b" stroke="#e3b95c" stroke-width=".5" stroke-linejoin="round"/></svg>';
   const hero = g.hero || {};
@@ -208,4 +214,4 @@ function partnerLink(C, P, place) {
   return `<a class="btn btn-ghost" href="${C.u(P, 'partners.html')}" data-track="partner_cta" data-place="${place}">Стать партнёром</a>`;
 }
 
-module.exports = {brandsPage, brandPage};
+module.exports = {brandsPage, brandPage, nicheCardMaker};

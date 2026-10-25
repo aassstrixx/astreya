@@ -278,9 +278,9 @@
         },
         {
           "id": "brands",
-          "sel": "#bgrid",
+          "sel": "#hb-strip, #bgrid",
           "label": "Бренды",
-          "say": "Вот бренды, с которыми мы работаем. Нажмите на любой — расскажу, чем он интересен.",
+          "say": "Вот бренды, с которыми мы работаем. Выберите любой — расскажу, чем он интересен.",
           "syn": [
             "бренды",
             "брендов"
@@ -308,7 +308,7 @@
         },
         {
           "id": "hero-cta",
-          "sel": ".hero-copy .row",
+          "sel": ":is(.arch-story:not(.jar-off) .ar-cta, .hero-copy .row)",
           "label": "Кнопки первого экрана",
           "say": "Главные кнопки первого экрана: в каталог или к партнёрству.",
           "syn": [
@@ -318,9 +318,9 @@
         },
         {
           "id": "brand-card",
-          "sel": "#bgrid .bcard",
+          "sel": "#hb-strip .br-card, #bgrid .bcard",
           "label": "Карточка бренда",
-          "say": "Нажмите на бренд — раскроется описание и кнопки «О бренде» и «Ассортимент».",
+          "say": "Откройте карточку бренда — там описание, ассортимент и ближайший семинар.",
           "syn": [
             "карточка бренда"
           ]
@@ -701,7 +701,7 @@
             "page": "home",
             "target": "header",
             "chrome": true,
-            "view": ".hero",
+            "view": "#arch-story, .hero",
             "acts": [
               {
                 "point": "#nav > a.nl[data-nav=\"/catalog\"]"
@@ -720,7 +720,7 @@
               }
             ],
             "say": "Давайте я вас проведу — это быстро. Вверху всегда под рукой меню, поиск и «Стать партнёром», так что заблудиться тут сложно.",
-            "clear": ".hero-copy .row"
+            "clear": ":is(.arch-story:not(.jar-off) .ar-cta, .hero-copy .row)"
           },
           {
             "g": 0,
@@ -728,19 +728,19 @@
             "target": "hero-cta",
             "acts": [
               {
-                "point": ".hero-copy .row a:first-child"
+                "point": ":is(.arch-story:not(.jar-off) .ar-cta, .hero-copy .row) a:first-child"
               },
               {
                 "wait": 350
               },
               {
-                "point": ".hero-copy .row a:last-child"
+                "point": ":is(.arch-story:not(.jar-off) .ar-cta, .hero-copy .row) a:last-child"
               },
               {
                 "wait": 350
               },
               {
-                "point": ".hero-copy .row a:first-child"
+                "point": ":is(.arch-story:not(.jar-off) .ar-cta, .hero-copy .row) a:first-child"
               }
             ],
             "next": {

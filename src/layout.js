@@ -6,6 +6,7 @@ const CSP = require('./csp.js');
 const MSG = require('./messengers.js');
 const S = require('../js/shared.js');
 const backdropsFactory = require('./backdrops.js');
+const decorFactory = require('./decor.js');
 const {esc, I} = S;
 
 const logoDefs = fs.readFileSync(path.join(__dirname, 'partials', 'logo-defs.html'), 'utf8');
@@ -22,10 +23,10 @@ const EARLY = `(function(d){var h=d.documentElement;h.classList.add('js');try{if
 module.exports = function layout(ctx, C) {
   const {site} = ctx, {u} = C;
   const showNote = !!site.demoNotice && !(ctx.redesign && ctx.redesign.ui && ctx.redesign.ui.showDemoNotices === false);   // пометка «демо-данные» в подвале (в режиме доработок скрывается флагом redesign.ui)
-  const rd = !!site.redesign, BD = rd ? backdropsFactory(ctx) : {on: false, apply: (P, h) => h};
+  const rd = !!site.redesign, BD = rd ? backdropsFactory(ctx) : {on: false, apply: (P, h) => h}, DC = rd ? decorFactory(ctx, C) : {on: false, apply: (P, h) => h};
   const EX = !!(rd && ctx.redesign && ctx.redesign.extras && ctx.redesign.extras.enabled);       // дополнения интерфейса (css/extras.css, js/extras.js): список запроса, быстрая связь, быстрый просмотр, сравнение, обратный отсчёт, помощник
   const SX = !!(EX && ctx.sales);                                                                      // продающий слой «Путь к закупке» (css/sales.css, js/sales.js): extras.sales
-  const cssList = rd ? [...CSS, 'redesign', ...(BD.on ? ['backdrops'] : []), ...(EX ? ['extras', ...(ctx.redesign.extras.assistant && ctx.redesign.extras.navigator ? ['guide'] : []), ...(SX ? ['sales', 'sales-pages'] : [])] : [])] : CSS, jsList = rd ? [...JS, 'redesign', ...(BD.on ? ['backdrops'] : []), ...(EX ? ['extras', 'explore', ...(ctx.redesign.extras.assistant ? ['assistant-brain', 'stella-policy', 'assistant', ...(ctx.redesign.extras.navigator ? ['guide'] : [])] : []), ...(SX ? ['sales', 'sales-pages'] : [])] : [])] : JS;   // слой доработок включается одним флагом site.redesign; фоновые вставки — backdrops.enabled в data/redesign.json
+  const cssList = rd ? [...CSS, 'redesign', ...(BD.on ? ['backdrops'] : []), ...(DC.on ? ['decor'] : []), ...(EX ? ['extras', ...(ctx.redesign.extras.assistant && ctx.redesign.extras.navigator ? ['guide'] : []), ...(SX ? ['sales', 'sales-pages'] : [])] : [])] : CSS, jsList = rd ? [...JS, 'redesign', ...(BD.on ? ['backdrops'] : []), ...(EX ? ['extras', 'explore', ...(ctx.redesign.extras.assistant ? ['assistant-brain', 'stella-policy', 'assistant', ...(ctx.redesign.extras.navigator ? ['guide'] : [])] : []), ...(SX ? ['sales', 'sales-pages'] : [])] : [])] : JS;   // слой доработок включается одним флагом site.redesign; фоновые вставки — backdrops.enabled в data/redesign.json
   const ver = ctx.assetVersion ? '?v=' + ctx.assetVersion : '';
   const jarCfg = rd && ctx.redesign && ctx.redesign.jar && ctx.redesign.jar.enabled ? ctx.redesign.jar : null;     // вступление с баночкой: css/jar.css + js/jar.js — только на главной и только пока jar.enabled
   const SHR = !!(EX && ctx.redesign.extras.showroom);                                                  // «Витрина-шоурум» (css/showroom.css, js/showroom.js): extras.showroom — только каталог; требует витрину-галерею (extras.gallery)
@@ -33,7 +34,7 @@ module.exports = function layout(ctx, C) {
   const withGal = (list, P, after) => GAL && P.key === 'catalog' && list.indexOf(after) >= 0 ? [...list.slice(0, list.indexOf(after) + 1), 'gallery', ...(SHR ? ['showroom'] : []), ...list.slice(list.indexOf(after) + 1)] : list;
   const BRG = !!(rd && ctx.redesign && ctx.redesign.brandsPage && ctx.redesign.brandsPage.gallery);                          // архитектурная галерея брендов (css/brands.css): redesign.json → brandsPage.gallery
   const HMA = !!(jarCfg && jarCfg.arch && jarCfg.arch.enabled);                                                       // архитектурный первый экран и оформление главной (css/system.css + css/home-arch.css): redesign.json → jar.arch.enabled
-  const withSys = (list, P) => HMA && P.key === 'home' ? [...list, 'system', 'home-arch'] : SHR && (P.key === 'catalog' || P.key === 'product' || (P.key === 'brands' && BRG)) ? [...list, 'system', ...(P.key === 'brands' ? ['brands'] : [])] : list;   // единая дизайн-система (css/system.css): каталог, страницы товаров и галерея брендов; на главной — вместе с css/home-arch.css   // единая дизайн-система (css/system.css): каталог, страницы товаров и галерея брендов
+  const withSys = (list, P) => HMA && P.key === 'home' ? [...list, 'system', 'brands', 'home-arch'] : SHR && (P.key === 'catalog' || P.key === 'product' || (P.key === 'brands' && BRG)) ? [...list, 'system', ...(P.key === 'brands' ? ['brands'] : [])] : list;   // единая дизайн-система (css/system.css): каталог, страницы товаров и галерея брендов; на главной — вместе с css/home-arch.css   // единая дизайн-система (css/system.css): каталог, страницы товаров и галерея брендов
   const pageCss = P => withSys(withGal(jarCfg && P.key === 'home' ? [...cssList, 'jar'] : cssList, P, 'extras'), P), pageJs = P => withGal(jarCfg && P.key === 'home' ? [...jsList, 'jar'] : jsList, P, 'explore');
   /* первый кадр вступления грузим сразу (до скриптов): иначе после заставки баночка появится с задержкой */
   const jarPreload = P => jarCfg && P.key === 'home' ? ['(min-aspect-ratio: 11/10)', '(max-aspect-ratio: 11/10)'].map((m, i) => `<link rel="preload" as="image" href="${u(P, (i ? jarCfg.mobile : jarCfg.desktop) + '000.' + jarCfg.ext)}${ver}" media="${m}">`).join('\n') : '';
@@ -201,7 +202,7 @@ module.exports = function layout(ctx, C) {
   /* картинки из assets/ получают ?v=<хэш> (как css/js): после замены файла браузер/CDN не показывают старый кэш */
   const verAssets = html => ver ? html.replace(/(\ssrc=")((?:\.\.\/)*assets\/[^"?#]+)(")/g, '$1$2' + ver + '$3') : html;
   function shell(P, body) {
-    body = BD.apply(P, body);
+    body = DC.apply(P, BD.apply(P, body));
     const url = absUrl(P.path), img = base + (P.image || site.ogImage || 'assets/og-image.png');
     const ld = [...(P.key === 'home' ? [orgLd, siteLd] : []), ...(P.jsonld || [])];
     const bread = P.breadcrumbs && P.breadcrumbs.length ? {'@context': 'https://schema.org', '@type': 'BreadcrumbList',

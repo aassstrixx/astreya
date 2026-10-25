@@ -1,0 +1,9 @@
+/* decor.css — декоративные камни на фоне страниц (src/decor.js, картинки assets/decor/rock-*.webp).
+   Камень — прозрачная картинка с мягкой тенью; кладётся в начало блока и лежит под его содержимым. Двигаться не двигается, кликов не перехватывает. */
+[data-rk]{position:relative;isolation:isolate}
+.rk{position:absolute;z-index:-1;top:var(--t,0);left:var(--l,auto);right:var(--r,auto);width:var(--w,14vw);height:auto;pointer-events:none;user-select:none;-webkit-user-drag:none;
+  transform:translate3d(0,-50%,0) rotate(var(--rot,0deg)) scaleX(var(--fx,1));transform-origin:50% 60%}
+@media (max-width:900px){.rk{width:calc(var(--w,14vw) * 1.5)}}
+@media (max-width:560px){.rk{width:calc(var(--w,14vw) * 1.9);opacity:.92}}
+@media print{.rk{display:none}}
+main#main{overflow-x:clip}

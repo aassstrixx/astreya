@@ -2,11 +2,12 @@
 """Кодирует кадры архитектурной сцены (arch_story.py) для сайта: полный набор + лёгкий набор с «запечёнными» промежуточными кадрами.
 
     python3 encode_arch.py <папка PNG> <вывод: …/assets/jar-arch/d> [--lite <вывод лёгкого набора: …/dm>] [--size 1600x900] [--lite-size 1120x630]
-                           [--q 80] [--lite-q 70] [--end 0.92]
+                           [--q 82] [--lite-q 74] [--end 0.92] [--grain 1.0]
 
 • полный набор: кадры 000.webp … как отрендерены (N штук); положения p[k] = end · k/(N−1) — после `end` сцена «держит» последний кадр (хвост прокрутки — спокойный финал);
 • лёгкий набор: между каждой парой соседних кадров — промежуточный (оба кадра сдвигаются к середине по оптическому потоку DIS и смешиваются), всего 2N−1;
   браузер в движении показывает его: вдвое больше кадров на тот же путь прокрутки, а каждый кадр дешевле;
+• лёгкое зерно (--grain, в уровнях 8 бит) при записи: плавные световые градиенты (свечение LED, стены) без него «полосатят» после сжатия;
 • p.json рядом с наборами: {"p": [...N положений...], "pb": [...2N−1 положений...]} — их кладут в data/redesign.json → jar.arch.
 """
 import json
@@ -22,8 +23,15 @@ def load(path):
     return cv2.cvtColor(cv2.imread(path, cv2.IMREAD_COLOR), cv2.COLOR_BGR2RGB)
 
 
+RNG = np.random.default_rng(5)
+GRAIN = [1.0]
+
+
 def save(arr, path, q):
-    Image.fromarray(np.clip(arr, 0, 255).astype(np.uint8)).save(path, 'WEBP', quality=q, method=6)
+    a = np.asarray(arr, dtype=np.float32)
+    if GRAIN[0] > 0:
+        a = a + RNG.normal(0, GRAIN[0], a.shape[:2])[..., None].astype(np.float32)
+    Image.fromarray(np.clip(a, 0, 255).astype(np.uint8)).save(path, 'WEBP', quality=q, method=6)
 
 
 def fit(img, size):
@@ -33,7 +41,7 @@ def fit(img, size):
 def main():
     a = sys.argv[1:]
     src, out = a[0], a[1]
-    o = dict(lite=None, size=(1600, 900), lsize=(1120, 630), q=80, lq=70, end=0.92)
+    o = dict(lite=None, size=(1600, 900), lsize=(1120, 630), q=82, lq=74, end=0.92, grain=1.0)
     i = 2
     while i < len(a) - 1:
         k, v = a[i], a[i + 1]
@@ -49,7 +57,10 @@ def main():
             o['lq'] = int(v)
         elif k == '--end':
             o['end'] = float(v)
+        elif k == '--grain':
+            o['grain'] = float(v)
         i += 2
+    GRAIN[0] = o['grain']
     files = sorted(f for f in os.listdir(src) if f.endswith('.png'))
     n = len(files)
     os.makedirs(out, exist_ok=True)

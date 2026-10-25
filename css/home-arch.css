@@ -6,81 +6,119 @@
 /* ============ 1. Архитектурный первый экран ============ */
 .arch-story{height:var(--jh,420vh);margin:0;background:var(--milk)}
 .arch-story .js-stage{background:var(--milk)}
-.arch-story .js-stage::after{display:none}                       /* плёночное зерно вступления на светлой сцене не нужно */
+.arch-story .js-stage::after{background:url(../assets/bg/stone-grain.webp) 0 0/512px 512px;opacity:calc(.5 * var(--h2,0));z-index:1}      /* зерно камня поверх рендера зала: поры и крупинки — сцена не «мыльная» после сжатия кадров */
 .arch-story .js-cv{transition:opacity .5s ease}
 .arch-story .js-milk{opacity:var(--m,1)}                          /* молочный слой лозунга: кадры проявляются из него (--m от 1 до 0 за первые ~9 % пути) */
 
-/* мягкая завеса под текстом (слева) — заголовок читается на любом кадре; проявляется вместе с героем */
-.ar-hero{position:absolute;inset:0;z-index:3;display:flex;flex-direction:column;justify-content:space-between;pointer-events:none;
-  --ar-side:clamp(20px,6vw,140px);padding:calc(var(--hdr) + clamp(14px,5.2vh,76px)) var(--ar-side) 0}
-.ar-hero::before{content:"";position:absolute;inset:0;z-index:-1;opacity:var(--h4,0);
-  background:linear-gradient(90deg,rgba(245,242,236,.82) 0,rgba(245,242,236,.64) 26%,rgba(245,242,236,.26) 42%,rgba(245,242,236,0) 54%)}
-.ar-copy{width:min(41%,720px)}
+/* герой поверх сцены: слой на весь экран; внутри — «мир» (рамка 16:9 по размеру кадра, чтобы орбиты, чип и карточка стояли на тех же местах сцены, что и в кадре), текст слева и панель снизу */
+.ar-hero{position:absolute;inset:0;z-index:3;pointer-events:none;--ar-x:max(var(--gut),calc((100% - var(--maxw)) / 2 + var(--gut)))}
+.ar-hero::before{content:"";position:absolute;inset:0;z-index:0;opacity:var(--h4,0);
+  background:linear-gradient(90deg,rgba(247,242,232,.74) 0,rgba(247,242,232,.54) 28%,rgba(247,242,232,.2) 44%,rgba(247,242,232,0) 54%)}      /* мягкая светлая завеса за текстом — читается на любом кадре */
+.ar-world{position:absolute;left:50%;top:50%;width:max(100%,calc(100lvh * 16 / 9));aspect-ratio:16/9;transform:translate(-50%,-50%);z-index:1}
+.ar-world{--pl:var(--sl,70.85%);--pt:var(--st,42.77%);--pw:var(--sw,26.5%);--pd:var(--sd,25%)}                       /* центр шара, ширина его картинки и диаметр (в % сцены) — орбиты строятся вокруг него; значения приходят из data/redesign.json → jar.arch.sphere */
+/* каменный шар в нише: прозрачный рендер (травертин, чуть темнее стен) + живой свет поверх: шар плавает, блик и тень скользят по камню за курсором (--lx/--ly ставит js/motion.js) */
+.ar-pearl{position:absolute;left:var(--pl);top:var(--pt);width:var(--pw);aspect-ratio:1;translate:-50% -50%;scale:calc(.7 + .3 * var(--h2,0));opacity:var(--h2,0);pointer-events:none;--lx:33%;--ly:27%;--px:0;--py:0}
+.ar-pearl i{position:absolute;inset:0;animation:floaty 8s ease-in-out infinite;translate:calc(var(--px) * -9px) calc(var(--py) * -9px)}
+.ar-pearl img{display:block;width:100%;height:100%;user-select:none}
+.ar-pearl i::before,.ar-pearl i::after{content:"";position:absolute;inset:2.8%;border-radius:50%}
+.ar-pearl i::before{background:radial-gradient(circle at var(--lx) var(--ly),rgba(255,247,230,.42),rgba(255,247,230,.12) 38%,rgba(255,247,230,0) 62%)}      /* свет следует за курсором */
+.ar-pearl i::after{background:radial-gradient(circle at calc(100% - var(--lx)) calc(100% - var(--ly)),rgba(58,40,26,.36),rgba(58,40,26,.10) 46%,rgba(58,40,26,0) 70%)}      /* и тень уходит на противоположную сторону */
+html.is-scrolling .ar-pearl i,.anim-off .ar-pearl i{animation-play-state:paused!important}
+.ar-fg{position:absolute;left:var(--fl);top:var(--ft);width:var(--fw);height:auto;opacity:var(--h2,0);pointer-events:none;user-select:none}
+.ar-fg-m{display:none}      /* флакон поверх жемчужины: шар позади, как в нише на референсе */
+.ar-orbit{position:absolute;left:var(--pl);top:var(--pt);width:calc(var(--pd) * 1.52);aspect-ratio:1;translate:-50% -50%;opacity:var(--h2,0)}
+.ar-orbit .ring{border-color:rgba(70,60,40,.34)}
+.ar-orbit .ring.r2{border-color:rgba(70,60,40,.2)}
+.ar-orbit .orb img{filter:drop-shadow(0 0 4px rgba(250,244,232,.95)) drop-shadow(0 0 10px rgba(250,244,232,.8)) drop-shadow(0 6px 8px rgba(60,40,18,.16));--k:1.15}
+.ar-chip{position:absolute;left:57%;top:10.5%;display:inline-flex;align-items:center;gap:9px;padding:9px 16px;border-radius:999px;background:rgba(252,249,243,.94);box-shadow:inset 0 0 0 1px rgba(255,255,255,.8),0 12px 22px -14px rgba(60,40,18,.55);
+  font:600 clamp(9px,.66vw,11.5px)/1 var(--sans);letter-spacing:.1em;text-transform:uppercase;color:var(--navy);white-space:nowrap;opacity:var(--h2,0);transform:translate3d(0,calc((1 - var(--h2,0)) * 12px),0)}
+.ar-chip i{width:7px;height:7px;border-radius:50%;background:#2fa36b;box-shadow:0 0 0 3px rgba(47,163,107,.18)}
+.ar-card{position:absolute;left:50.5%;top:60.5%;width:16%;min-width:170px;padding:clamp(10px,1vw,18px) clamp(12px,1.1vw,20px);border-radius:12px;background:rgba(252,249,243,.95);box-shadow:inset 0 0 0 1px rgba(255,255,255,.8),0 18px 30px -18px rgba(60,40,18,.6);
+  opacity:var(--h2,0);transform:translate3d(0,calc((1 - var(--h2,0)) * 16px),0)}
+.ar-card b{display:block;font:600 clamp(8.5px,.62vw,11px)/1.4 var(--sans);letter-spacing:.1em;text-transform:uppercase;color:var(--navy)}
+.ar-card hr{margin:.7em 0;border:0;border-top:1px dashed rgba(86,60,30,.28)}
+.ar-card p{margin:0;font:400 clamp(10.5px,.78vw,13.5px)/1.5 var(--sans);color:var(--slate)}
+
+.ar-copy{position:absolute;z-index:2;left:var(--ar-x);top:calc(var(--hdr) + clamp(26px,12.5vh,150px));width:clamp(320px,33%,560px)}
 .ar-copy .eyebrow{margin:0}
 .ar-e{opacity:var(--h1,0);transform:translate3d(0,calc((1 - var(--h1,0)) * 16px),0)}
-.ar-h{margin:clamp(14px,2.2vh,22px) 0 clamp(14px,2.4vh,24px);font:500 clamp(38px,4.15vw,74px)/1.04 var(--serif);letter-spacing:-.018em;color:var(--navy);hyphens:manual;text-wrap:balance;
+.ar-h{margin:clamp(12px,2vh,22px) 0 clamp(14px,2.4vh,24px);font:500 clamp(34px,3.3vw,64px)/1.07 var(--serif);letter-spacing:-.016em;color:var(--navy);hyphens:manual;text-wrap:balance;
   opacity:var(--h1,0);transform:translate3d(0,calc((1 - var(--h1,0)) * 26px),0)}
-.ar-h em{font-style:italic;font-weight:400;color:var(--blue)}
-.ar-lead{margin:0;max-width:34em;font:400 clamp(15px,1.22vw,19px)/1.6 var(--sans);color:var(--slate);opacity:var(--h2,0);transform:translate3d(0,calc((1 - var(--h2,0)) * 18px),0)}
-.ar-cta{margin-top:clamp(20px,3.6vh,36px);gap:12px;flex-wrap:wrap;opacity:var(--h2,0);transform:translate3d(0,calc((1 - var(--h2,0)) * 22px),0)}
+.ar-h em{font-style:italic;font-weight:400;color:var(--navy)}
+.ar-lead{margin:0;max-width:33em;font:400 clamp(14px,1.08vw,18px)/1.6 var(--sans);color:var(--slate);opacity:var(--h2,0);transform:translate3d(0,calc((1 - var(--h2,0)) * 18px),0)}
+.ar-cta{margin-top:clamp(18px,3.4vh,34px);gap:12px;flex-wrap:wrap;opacity:var(--h2,0);transform:translate3d(0,calc((1 - var(--h2,0)) * 22px),0)}
 .ar-cta .btn{pointer-events:none}
 .js-stage.ar-live .ar-cta .btn,.js-stage.ar-live .ar-panel a{pointer-events:auto}
+.ar-facts{display:flex;flex-wrap:wrap;gap:8px 28px;margin:clamp(22px,4.2vh,42px) 0 0;padding:0;list-style:none;font:600 clamp(9.5px,.7vw,12px)/1.3 var(--sans);letter-spacing:.13em;text-transform:uppercase;color:var(--slate);opacity:var(--h2,0)}
+.ar-facts li{display:flex;align-items:center;gap:10px}
+.ar-facts li::before{content:"";width:6px;height:6px;border-radius:50%;background:var(--navy)}
+.ar-facts li:nth-child(2)::before{background:#8190ad}
+.ar-facts li:nth-child(3)::before{background:#b8c0d2}
 
-/* панель «Почему выбирают Астрею?»: каменная плита внизу героя, продолжается в страницу */
-.ar-panel{position:relative;align-self:stretch;margin:0 calc(var(--ar-side) * -1 + clamp(12px,2.4vw,40px)) clamp(14px,2.6vh,30px);display:grid;grid-template-columns:minmax(150px,.72fr) repeat(4,minmax(0,1fr));align-items:center;gap:0;
-  border-radius:var(--ax-r-l,24px);background:rgba(249,244,234,.9);box-shadow:inset 0 0 0 1px rgba(255,255,255,.7),0 1px 2px rgba(86,60,30,.08),0 26px 44px -26px rgba(86,60,30,.5);
-  padding:clamp(12px,1.8vh,20px) clamp(14px,1.8vw,30px);
-  opacity:var(--h3,0);transform:translate3d(0,calc((1 - var(--h3,0)) * 40px),0)}
-.ar-panel::after{content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;background:url(../assets/bg/stone-grain.webp) 0 0/512px 512px;opacity:.28}
-.ar-pt{margin:0;font:500 clamp(17px,1.55vw,24px)/1.18 var(--serif);color:var(--navy);padding-right:16px}
+/* панель «Почему выбирают Астрею?»: каменная плита снизу героя; её нижний край продолжается в страницу (цвет — как у фона ниже) */
+.ar-panel{position:absolute;z-index:2;left:50%;bottom:0;width:min(var(--maxw),100% - 2 * var(--gut));translate:-50% 0;display:grid;grid-template-columns:minmax(180px,.9fr) repeat(4,minmax(0,1fr)) auto;align-items:center;gap:0;
+  border-radius:26px 26px 0 0;background:#f8f4ea;box-shadow:inset 0 0 0 1px rgba(255,255,255,.75),0 -14px 40px -22px rgba(60,40,18,.45);padding:clamp(14px,2.4vh,26px) clamp(16px,2vw,32px) clamp(16px,2.6vh,28px);
+  opacity:var(--h3,0);transform:translate3d(0,calc((1 - var(--h3,0)) * 46px),0)}
+.ar-pt{margin:0;font:500 clamp(17px,1.4vw,24px)/1.18 var(--serif);color:var(--navy);padding-right:16px}
 .ar-panel ul{display:contents;list-style:none;margin:0;padding:0}
-.ar-panel li{display:flex;align-items:center;gap:12px;padding:6px clamp(10px,1.4vw,22px);border-left:1px solid rgba(86,60,30,.14);min-width:0}
-.ar-ic{flex:none;width:38px;height:38px;border-radius:50%;display:grid;place-items:center;background:rgba(255,255,255,.75);box-shadow:inset 0 0 0 1px rgba(86,60,30,.12);color:var(--blue)}
-.ar-ic svg{width:19px;height:19px}
-.ar-tx{display:flex;flex-direction:column;gap:3px;min-width:0}
-.ar-tx b{font:600 clamp(13px,1vw,15px)/1.25 var(--sans);color:var(--navy)}
-.ar-tx em{font:400 clamp(11.5px,.86vw,13px)/1.35 var(--sans);font-style:normal;color:var(--ax-muted,#6b6454)}
+.ar-panel li{display:flex;align-items:center;gap:12px;padding:6px clamp(10px,1.2vw,20px);border-left:1px solid rgba(86,60,30,.14);min-width:0}
+.ar-ic{flex:none;width:36px;height:36px;display:grid;place-items:center;color:var(--navy)}
+.ar-ic svg{width:26px;height:26px;stroke-width:1.4}
+.ar-tx{display:flex;flex-direction:column;gap:2px;min-width:0}
+.ar-tx b{font:600 clamp(12.5px,.98vw,15px)/1.25 var(--sans);color:var(--navy)}
+.ar-tx em{font:400 clamp(11px,.82vw,13px)/1.35 var(--sans);font-style:normal;color:#6b6454}
+.ar-more{margin-left:clamp(8px,1.4vw,24px);white-space:nowrap}
+@media (min-width:1181px){.ar-tx em{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}}      /* на широком экране панель — в одну невысокую строку: пояснения остаются для чтения с экрана, но не растягивают плиту */
 
 /* нижняя кромка сцены растворяется в цвет страницы: герой мягко переходит в следующий блок без шва */
-.arch-story .js-stage::before{content:"";position:absolute;left:0;right:0;bottom:-1px;height:clamp(60px,12vh,140px);z-index:2;pointer-events:none;
-  background:linear-gradient(180deg,rgba(245,242,236,0),rgba(245,242,236,.72) 62%,var(--milk));opacity:var(--h3,0)}
+.arch-story .js-stage::before{content:"";position:absolute;left:0;right:0;bottom:-1px;height:clamp(40px,7vh,90px);z-index:2;pointer-events:none;
+  background:linear-gradient(180deg,rgba(245,242,236,0),rgba(245,242,236,.8) 70%,var(--milk));opacity:var(--h3,0)}
 
-/* шапка: на время кино уходит, к финалу возвращается (классы ставит js/jar.js) */
+/* шапка: на время кино уходит, к финалу возвращается и лежит прямо на сцене (прозрачная); дальше — обычная (классы ставит js/jar.js) */
 body.arch-hide .hdr{transform:translateY(-101%)!important}
 body.arch-nav .hdr.hide{transform:none}
+body.arch-top:not(.menu-open) .hdr{background:transparent;border-bottom-color:transparent}
 .hdr{transition:transform .7s var(--ease-out),background-color .5s ease,border-color .5s ease}
 
 /* запасной вариант: нет JS или canvas — вместо сцены остаётся прежний герой */
-.arch-story:not(.jar-off) ~ .hero{display:none}
+html.js .arch-story:not(.jar-off) ~ .hero{display:none}
+html:not(.js) .arch-story{display:none;margin:0}
 .arch-story.jar-off{display:none;margin:0}
-@media print{.arch-story{display:none;margin:0}.arch-story:not(.jar-off) ~ .hero{display:block}}
+@media print{.arch-story{display:none;margin:0}html.js .arch-story:not(.jar-off) ~ .hero{display:block}}
 
-@media (max-width:1100px){
-  .ar-panel{grid-template-columns:repeat(2,minmax(0,1fr));row-gap:6px}
-  .ar-pt{grid-column:1/-1;padding:0 0 6px}
+@media (max-width:1180px){
+  .ar-panel{grid-template-columns:repeat(2,minmax(0,1fr));row-gap:4px}
+  .ar-pt{grid-column:1/-1;padding:0 0 4px}
   .ar-panel li{border-left:0;border-top:1px solid rgba(86,60,30,.12);padding:8px 8px 4px}
+  .ar-more{grid-column:1/-1;justify-self:start;margin:8px 0 0}
 }
-@media (max-width:900px){
+@media (max-width:1100px) and (min-aspect-ratio:11/10){
+  .ar-card,.ar-chip{display:none}
+}
+@media (max-aspect-ratio:11/10){
   .arch-story{height:var(--jhm,380vh)}
-  .ar-hero{--ar-side:var(--gut);padding:calc(var(--hdr) + clamp(10px,2.6vh,28px)) var(--ar-side) 0}
-  .ar-hero::before{background:linear-gradient(180deg,rgba(245,242,236,.9) 0,rgba(245,242,236,.78) 26%,rgba(245,242,236,.34) 40%,rgba(245,242,236,0) 52%)}
-  .ar-copy{width:100%;padding:0}
-  .ar-h{font-size:clamp(28px,8.2vw,44px);margin:10px 0 0}
-  .ar-lead{display:none}
+  .ar-world{width:max(100%,calc(100lvh * 9 / 16));aspect-ratio:9/16}
+  .ar-hero{--ar-x:var(--gut)}
+  .ar-hero::before{background:linear-gradient(180deg,rgba(247,242,232,.9) 0,rgba(247,242,232,.74) 24%,rgba(247,242,232,.3) 38%,rgba(247,242,232,0) 50%)}
+  .ar-copy{top:calc(var(--hdr) + clamp(8px,2.2vh,26px));width:calc(100% - 2 * var(--gut))}
+  .ar-h{font-size:clamp(27px,8vw,42px);margin:10px 0 0}
+  .ar-lead,.ar-facts,.ar-card,.ar-chip{display:none}
   .ar-cta{margin-top:14px;gap:8px}
   .ar-cta .btn{padding:12px 16px;font-size:13.5px}
-  .ar-panel{margin:0 calc(var(--ar-side) * -1 + 10px) 10px;padding:10px 12px;border-radius:18px}
+  .ar-world{--pl:48%;--pt:54%;--pw:46.7%;--pd:44%}
+  .ar-fg{display:none}.ar-fg-m{display:block}
+  .ar-panel{width:calc(100% - 2 * var(--gut));grid-template-columns:repeat(2,minmax(0,1fr));border-radius:20px 20px 0 0;padding:10px 12px 12px}
   .ar-pt{font-size:16px}
-  .ar-ic{width:30px;height:30px}.ar-ic svg{width:15px;height:15px}
+  .ar-ic{width:26px;height:26px}.ar-ic svg{width:20px;height:20px}
   .ar-panel li{gap:8px}
   .ar-tx b{font-size:12.5px}.ar-tx em{display:none}
+  .ar-more{display:none}
 }
 @media (max-height:560px) and (min-width:700px){
-  .ar-lead{display:none}
-  .ar-h{font-size:clamp(28px,5vh,40px)}
+  .ar-lead,.ar-facts{display:none}
 }
 @media (prefers-reduced-motion:reduce){
-  .ar-e,.ar-h,.ar-lead,.ar-cta,.ar-panel{transform:none}
+  .ar-e,.ar-h,.ar-lead,.ar-cta,.ar-panel,.ar-chip,.ar-card{transform:none}
 }
 
 /* ============ 2. Секции главной в архитектурной системе ============
@@ -90,7 +128,7 @@ body.rd[data-page="home"]{--clin:#efe7d6;--ar-card:rgba(250,246,238,.94);--ar-ri
 body[data-page="home"] .rd-clinical{background:linear-gradient(180deg,rgba(239,231,214,0) 0,var(--clin) clamp(70px,9vw,140px),var(--clin) calc(100% - clamp(70px,9vw,140px)),rgba(239,231,214,0) 100%);border-block:0}
 
 /* арочные рамки: фото «О компании», «Обучение», эксперт-блок; тонкая линия-обводка вторым контуром */
-body[data-page="home"] .rd-about-photo,body[data-page="home"] .rd-about-p2,body[data-page="home"] .rd-about-p3,body[data-page="home"] .rd-train-photo,body[data-page="home"] .rd-ed-photo{border-radius:999px 999px var(--ax-r-m,18px) var(--ax-r-m,18px);outline:1px solid rgba(86,60,30,.16);outline-offset:9px;box-shadow:var(--ax-sh-2,0 20px 40px -24px rgba(86,60,30,.5))}
+body[data-page="home"] .rd-about-photo,body[data-page="home"] .rd-about-p2,body[data-page="home"] .rd-about-p3,body[data-page="home"] .rd-train-photo,body[data-page="home"] .rd-train-art,body[data-page="home"] .rd-ed-photo{border-radius:999px 999px var(--ax-r-m,18px) var(--ax-r-m,18px);outline:1px solid rgba(86,60,30,.16);outline-offset:9px;box-shadow:var(--ax-sh-2,0 20px 40px -24px rgba(86,60,30,.5))}
 body[data-page="home"] .rd-ed-photo{outline-color:rgba(245,242,236,.22)}
 body[data-page="home"] .rd-about-photo img{aspect-ratio:4/5}
 body[data-page="home"] .rd-about-photo figcaption,body[data-page="home"] .rd-about-p2 figcaption,body[data-page="home"] .rd-about-p3 figcaption{text-align:center;padding-inline:0}
@@ -109,12 +147,13 @@ body[data-page="home"] .rd-why-head h2{max-width:20ch}
 body[data-page="home"] .rd-why-list{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:clamp(14px,1.8vw,26px)}
 body[data-page="home"] .rd-why-item{position:relative;display:flex;flex-direction:column;align-items:center;text-align:center;gap:10px;border:0;padding:clamp(70px,8.4vw,128px) clamp(18px,2vw,30px) clamp(26px,3vw,40px);
   border-radius:999px 999px var(--ax-r-l,24px) var(--ax-r-l,24px);background:radial-gradient(120% 70% at 50% 0%,#fffaf0 0,#efe5d1 62%,#e8dcc4 100%);
-  box-shadow:inset 0 22px 34px -22px rgba(86,60,30,.32),inset 0 0 0 1px rgba(255,255,255,.7),var(--ax-sh-1);overflow:hidden;transition:transform .5s var(--ax-ease,var(--ease)),box-shadow .5s var(--ax-ease,var(--ease))}
+  box-shadow:inset 0 22px 34px -22px rgba(86,60,30,.32),inset 0 0 0 1px rgba(255,255,255,.7),var(--ax-sh-1);overflow:hidden}
 body[data-page="home"] .rd-why-item:last-child{border-bottom:0}
 body[data-page="home"] .rd-why-item::after{content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;background:url(../assets/bg/stone-grain.webp) 0 0/512px 512px;opacity:.4}
 body[data-page="home"] .rd-why-item:hover{transform:translateY(-6px);box-shadow:inset 0 22px 34px -22px rgba(86,60,30,.32),inset 0 0 0 1px rgba(255,255,255,.75),var(--ax-sh-2)}
 body[data-page="home"] .rd-why-item .rd-no{position:absolute;top:clamp(22px,3.2vw,46px);left:50%;transform:translateX(-50%);font-size:clamp(40px,4.6vw,68px);color:rgba(176,142,78,.5)}
-body[data-page="home"] .rd-why-item.lit .rd-no{color:var(--blue)}
+body[data-page="home"] .rd-why-item.lit .rd-no{color:rgba(176,142,78,.5)}
+body[data-page="home"] .rd-why-item:hover .rd-no{color:var(--blue)}
 body[data-page="home"] .rd-why-item h3{font-size:clamp(20px,1.9vw,27px)}
 body[data-page="home"] .rd-why-item p{margin-top:4px;font-size:14.5px;max-width:30ch}
 
@@ -125,7 +164,7 @@ body[data-page="home"] .rd-task,body[data-page="home"] .picker,body[data-page="h
 body[data-page="home"] .rd-pick-empty{background:var(--ar-card);border-color:var(--ax-line,rgba(86,60,30,.13))}
 
 /* редакторский блок: тёмный «вечерний зал» — края растворяются в молочный фон страницы */
-body[data-page="home"] .rd-editorial::before,body[data-page="home"] .rd-editorial::after{content:"";position:absolute;left:0;right:0;height:clamp(90px,13vw,200px);pointer-events:none;z-index:0}
+body[data-page="home"] .rd-editorial::before,body[data-page="home"] .rd-editorial::after{content:"";position:absolute;left:0;right:0;height:clamp(70px,9vw,140px);pointer-events:none;z-index:0}
 body[data-page="home"] .rd-editorial::before{top:0;background:linear-gradient(180deg,var(--ax-milk,#f5f2ec) 0,rgba(245,242,236,.55) 38%,rgba(245,242,236,0))}
 body[data-page="home"] .rd-editorial::after{bottom:0;background:linear-gradient(0deg,var(--ax-milk,#f5f2ec) 0,rgba(245,242,236,.55) 38%,rgba(245,242,236,0))}
 
@@ -146,4 +185,25 @@ body[data-page="home"] .rd-final-band{border-radius:clamp(60px,12vw,200px) clamp
   body[data-page="home"] .rd-why-item{padding-top:clamp(84px,24vw,110px)}
   body[data-page="home"] .rd-about-photo,body[data-page="home"] .rd-train-photo,body[data-page="home"] .rd-ed-photo{outline-offset:6px}
   body[data-page="home"] .rd-final-band{border-radius:80px 80px 28px 28px}
+}
+
+/* ---- галерея брендов: арочные витрины из страницы «Бренды» лентой ---- */
+.hb{padding-bottom:clamp(40px,6vw,90px);overflow-x:clip}
+.hb .rd-head{margin-bottom:clamp(14px,2vw,26px)}
+.hb-ctl{display:flex;align-items:center;gap:10px}
+.hb-ctl .lnk{margin-left:8px}
+.hb-arr{width:46px;height:46px;border-radius:50%;border:1px solid var(--ax-line,rgba(86,60,30,.13));background:var(--ar-card,#faf6ee);color:var(--navy);display:grid;place-items:center;cursor:pointer;box-shadow:var(--ax-sh-1);transition:transform .45s var(--ax-ease,var(--ease)),box-shadow .45s var(--ax-ease,var(--ease)),opacity .3s}
+.hb-arr svg{width:18px;height:18px}
+.hb-arr:first-of-type svg{transform:scaleX(-1)}
+.hb-arr:not(:disabled):hover{transform:translateY(-2px);box-shadow:var(--ax-sh-2)}
+.hb-arr:disabled{opacity:.35;cursor:default}
+.hb-strip{--br-gap:18px;display:flex;gap:var(--br-gap);align-items:stretch;overflow-x:auto;overscroll-behavior-x:contain;scroll-snap-type:x proximity;scrollbar-width:none;-webkit-overflow-scrolling:touch;
+  padding:10px max(var(--gut),calc((100% - var(--maxw)) / 2 + var(--gut))) 34px;scroll-padding-inline:max(var(--gut),calc((100% - var(--maxw)) / 2 + var(--gut)))}
+.hb-strip::-webkit-scrollbar{display:none}
+.hb-strip:focus-visible{outline:2px solid var(--blue);outline-offset:-4px;border-radius:12px}
+.hb-strip .br-card{flex:0 0 clamp(252px,21.5vw,318px);scroll-snap-align:start}
+@media (max-width:640px){
+  .hb-arr{display:none}
+  .hb-strip{--br-gap:12px;padding-bottom:26px}
+  .hb-strip .br-card{flex-basis:min(74vw,300px)}
 }

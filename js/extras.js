@@ -158,19 +158,21 @@
   function onScroll() { if (qcRaf) return; qcRaf = requestAnimationFrame(() => { qcRaf = 0; qcUpdate(); }); }
 
   /* вступление на главной (баночка, лозунг) и подвал: поверх них плавающие кнопки не показываем */
-  let io = null;
+  let io = null, introCalc = null;
+  document.addEventListener('astreya:arch', () => { if (introCalc) introCalc(); });
   function setIntro() { document.body.classList.toggle('x-intro', introSeen); document.dispatchEvent(new CustomEvent('astreya:intro', {detail: introSeen})); }
   function watch() {
     if (io) io.disconnect();
     introSeen = false; qcFooter = false; setIntro();
     if (!('IntersectionObserver' in window)) return;
     const state = new Map();
-    io = new IntersectionObserver(es => {
-      es.forEach(e => state.set(e.target, e.isIntersecting));
-      introSeen = ['#jar-story', '#jar-outro', '#arch-story'].some(s => { const t = $(s); return t && state.get(t); });
+    const calc = () => {            // архитектурный первый экран считается «вступлением» только пока идёт кино; когда встал герой (body.arch-live), кнопки Стеллы и подборки возвращаются
+      introSeen = ['#jar-story', '#jar-outro'].some(s => { const t = $(s); return t && state.get(t); }) || (!document.body.classList.contains('arch-live') && !!state.get($('#arch-story')));
       qcFooter = !!(state.get($('.ftr')));
       setIntro(); sync(); qcUpdate();
-    }, {threshold: 0});
+    };
+    introCalc = calc;
+    io = new IntersectionObserver(es => { es.forEach(e => state.set(e.target, e.isIntersecting)); calc(); }, {threshold: 0});
     ['#jar-story', '#jar-outro', '#arch-story', '.ftr'].forEach(s => { const t = $(s); if (t) io.observe(t); });
   }
 

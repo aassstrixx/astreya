@@ -154,8 +154,10 @@
 
   /* ---------- курсор: свет и глубина «жемчужины» (карточки и кнопки не двигаются — текст остаётся чётким) ---------- */
   const hp = {x: 0, y: 0, tx: 0, ty: 0, raf: 0};
+  const archEl = document.getElementById('arch-story');
+  const archOnScreen = () => { if (!archEl) return false; const r = archEl.getBoundingClientRect(); return r.bottom > 0 && r.top < innerHeight * .5; };          // живая жемчужина первого экрана (css/home-arch.css → .ar-pearl) следует за курсором, пока сцена на экране
   function hpTick() {
-    const w = $('.pearl-wrap'); if (!w) { hp.raf = 0; return; }
+    const w = (hp.arch && $('.ar-pearl')) || $('.pearl-wrap'); if (!w) { hp.raf = 0; return; }
     hp.x += (hp.tx - hp.x) * .07; hp.y += (hp.ty - hp.y) * .07;
     w.style.setProperty('--px', hp.x.toFixed(3)); w.style.setProperty('--py', hp.y.toFixed(3));
     w.style.setProperty('--lx', (33 + hp.x * 15).toFixed(1) + '%'); w.style.setProperty('--ly', (27 + hp.y * 13).toFixed(1) + '%');
@@ -164,7 +166,8 @@
   if (matchMedia('(hover:hover) and (pointer:fine)').matches) {
     document.addEventListener('pointermove', e => {
       if (e.pointerType !== 'mouse') return;
-      if (scrollY - heroBase < innerHeight && $('.pearl-wrap')) { hp.tx = e.clientX / innerWidth * 2 - 1; hp.ty = e.clientY / innerHeight * 2 - 1; if (!hp.raf) hp.raf = requestAnimationFrame(hpTick); }
+      hp.arch = archOnScreen();                                           // сцена с каменным шаром на экране — свет ведёт он, иначе — прежняя жемчужина запасного героя
+      if (hp.arch || (scrollY - heroBase < innerHeight && $('.pearl-wrap'))) { hp.tx = e.clientX / innerWidth * 2 - 1; hp.ty = e.clientY / innerHeight * 2 - 1; if (!hp.raf) hp.raf = requestAnimationFrame(hpTick); }
     }, {passive: true});
     html.addEventListener('mouseleave', () => { hp.tx = hp.ty = 0; if (!hp.raf) hp.raf = requestAnimationFrame(hpTick); });
   }
