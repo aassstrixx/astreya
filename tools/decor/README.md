@@ -24,3 +24,5 @@ RK_SCALE=.5 RK_SPP=24 RK_OUT=/tmp/rk python3 tools/decor/rocks.py render boulder
 
 `data/redesign.json → decor` (`src/decor.js`, `css/decor.css`): список блоков страницы (`sel`), на которые кладётся камень, его сторона, положение, размер и поворот. Страницы: главная, каталог, бренды.
 Камни лежат под содержимым блока, не перехватывают клики, не создают горизонтальной прокрутки; на телефоне — крупнее (иначе теряются). Выключить: `decor.enabled = false`.
+
+> **Статус:** вставка камней и каменного знака в фон страниц (`src/decor.js`, `css/decor.css`, `data/redesign.json → decor`) **выключена** (`enabled: false`) по решению заказчика — фон страниц делают только прежние текстуры `backdrops`. Механизм и рендеры сохранены: `enabled: true` вернёт камни по плану; id знака — `stone-sphere`, `stone-mountain`, `stone-logo`, `stone-front`.

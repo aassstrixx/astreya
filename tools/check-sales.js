@@ -53,6 +53,7 @@ const J = f => JSON.parse(fs.readFileSync(path.join(ROOT, f), 'utf8'));
   /* главная: вступление, герой, орбита и все разделы — прежние; отличается только блок «Для кого» (адресные кнопки) */
   { let base = ''; for (const ref of ['origin/pre-sales-rollback', 'pre-sales-rollback']) { try { base = cp.execFileSync('git', ['show', ref + ':index.html'], {cwd: ROOT, encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore']}); break; } catch (e) {} }
     if (!base) console.log('  – нет ссылки pre-sales-rollback в git: сравнение главной с прежней версией пропущено');
+    else if (/id="arch-story"/.test(fs.readFileSync(path.join(ROOT, 'index.html'), 'utf8'))) console.log('  – главная перерисована (архитектурный первый экран, галерея брендов, секции в новой системе): побайтное сравнение с версией до продающего слоя не применимо; продающие блоки проверяются пунктами ниже');
     else {
       const norm = h => h.replace(/<a class="rd-next[\s\S]*?<\/section>/, '</section>').replace(/\?v=[0-9a-f]{8}/g, '')          /* блок «ближайшие встречи» зависит от даты сборки — в сравнение не берём */.replace(/ data-v="[0-9a-f]{8}"/g, '').replace(/([Аа]стре)(?:и|е|ю|ей)(?![а-яё])/g, '$1я')          /* название компании теперь везде в именительном падеже — прежнюю версию приводим к тому же виду */.split('\n').filter(l => !/sales(-pages)?\.(css|js)|js\/consent\.js/.test(l) && l.trim() !== '').join('\n')
           /* слой запуска в РФ (CSP, свои шрифты, согласие на обработку ПДн) меняет только <head>, подпись у рассылки и ссылку на согласие в подвале — их в сравнение не берём */
