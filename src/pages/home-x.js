@@ -38,6 +38,7 @@ module.exports = function homeRedesign(ctx, C, P, parts, {events, val}) {
 
   /* ---------- 0. Hero: шар с орбитами — как прежде; фото 01 — мягкий фон слева, за текстом ---------- */
   const hero = parts.hero.replace('<section class="hero">', `<section class="hero"><div class="hero-bgphoto" aria-hidden="true">${img('hero', '', ' fetchpriority="high"')}</div>`);
+  const heroX = (rd.jar && rd.jar.enabled && rd.jar.arch && rd.jar.arch.enabled) ? hero.replace('<h1>', '<h2 class="h1x">').replace('</h1>', '</h2>') : hero;          // заголовок первой страницы — в архитектурном экране (jar.arch); у запасного героя он остаётся обычным заголовком второго уровня
 
   /* ---------- 1. Астрея в цифрах (CLINICAL + фоновый логотип) ---------- */
   const statItems = [...h.stats, ...rd.stats.extra].filter(s => s.value !== null && s.value !== undefined);
@@ -184,6 +185,37 @@ module.exports = function homeRedesign(ctx, C, P, parts, {events, val}) {
     </div>
   </section>`;
   })();
+  /* архитектурный первый экран после вступления (jar.arch): та же закреплённая сцена с кадрами, что и у баночки, но кадры — арочная ниша из камня с баночкой на подиуме
+     (tools/jar-render/arch_story.py). Баночка проявляется из молочного фона лозунга, камера отъезжает, свет в нише разгорается, затем поверх сцены встаёт герой:
+     заголовок слева, ниша с баночкой справа, снизу панель «Почему выбирают Астрею?». Прежний герой (шар с орбитами) остаётся запасным: без JS или canvas его показывает css/jar.css.
+     Тексты — те же, что у прежнего героя (data/content.json → home), цифры — из данных (число представительств и брендов). */
+  const arch = (() => {
+    const j = rd.jar, a = j && j.enabled && j.arch; if (!a || !a.enabled) return '';
+    const nOff = ctx.stats.offices, nBr = ctx.stats.brands, cities = ctx.site.offices.map(o => o.city);
+    const auto = {offices: `${nOff} ${S.plural(nOff, 'город', 'города', 'городов')} присутствия`, brands: `${nBr} ${S.plural(nBr, 'бренд', 'бренда', 'брендов')} в портфеле`};
+    const items = a.panel.items.map(it => ({icon: it.icon, title: it.auto ? auto[it.auto] : it.title, text: it.auto === 'offices' ? cities.join(', ') : it.text}));
+    return `<section class="jar-story arch-story" id="arch-story" data-mode="arch" data-defer="1" style="--jh:${a.heightVh.desktop}vh;--jhm:${a.heightVh.mobile}vh" data-n="${a.frames}" data-ext="${a.ext}" data-v="${esc(ctx.assetVersion || '')}" data-d="${a.desktop}" data-m="${a.mobile}" data-dm="${a.lite.desktop}" data-mm="${a.lite.mobile}" data-p="${a.p.join(',')}" data-pb="${a.pb.join(',')}" aria-label="${esc(a.alt)}">
+    <div class="js-stage">
+      <canvas class="js-cv" role="img" aria-label="${esc(a.alt)}"></canvas>
+      <div class="js-milk" aria-hidden="true"></div>
+      <div class="ar-hero">
+        <div class="ar-copy">
+          <span class="eyebrow ar-e">${esc(h.eyebrow)}</span>
+          <h1 class="ar-h">${h.h1}</h1>
+          <p class="lead ar-lead">${esc(h.lead)}</p>
+          <div class="row ar-cta">
+            <a class="btn btn-fill" href="${C.u(P, 'catalog.html')}" data-track="catalog_click" data-place="hero">Перейти в каталог ${I.arrow}</a>
+            <a class="btn btn-ghost" href="${C.u(P, 'partners.html')}" data-track="partner_cta" data-place="hero">Стать партнёром</a>
+          </div>
+        </div>
+        <div class="ar-panel" role="group" aria-label="${esc(a.panel.title)}">
+          <p class="ar-pt">${esc(a.panel.title)}</p>
+          <ul>${items.map(it => `<li><span class="ar-ic" aria-hidden="true">${I[it.icon] || I.check}</span><span class="ar-tx"><b>${esc(it.title)}</b><em>${esc(it.text)}</em></span></li>`).join('')}</ul>
+        </div>
+      </div>
+    </div>
+  </section>`;
+  })();
   const fork = ctx.sales && ctx.sales.homeFork ? require('./sales-home.js')(ctx, C, P) : '';          // продающий слой: развилка «Учиться / Закупать» сразу под строкой брендов (героя и вступление не трогаем)
-  return [jar, outro, hero, parts.marquee, ...(fork ? [fork] : []), about, stats, why, solutions, parts.brands.replace('class="sec tint"', 'class="rd-sec rd-brands"'), picker, featured, editorial, training, forWhom, news, wall, finalCta].join('\n\n  ');
+  return [jar, outro, arch, heroX, parts.marquee, ...(fork ? [fork] : []), about, stats, why, solutions, parts.brands.replace('class="sec tint"', 'class="rd-sec rd-brands"'), picker, featured, editorial, training, forWhom, news, wall, finalCta].join('\n\n  ');
 };

@@ -116,6 +116,6 @@
 @media (max-width:380px){
   .stat b{font-size:40px}
   .stat{padding-inline:8px}
-  .page-head h1,.hero h1{overflow-wrap:anywhere}
+  .page-head h1,.hero h1,.hero .h1x{overflow-wrap:anywhere}
 }
 @media (max-width:520px){.mb .slot-logo{--slot-w:84px;--slot-h:40px}.mb{gap:10px}}

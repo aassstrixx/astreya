@@ -76,7 +76,7 @@
     lite.last = t; lite.raf = requestAnimationFrame(liteFrame);
   }
   function liteKick() { if (!lite.on && !lite.raf) { lite.last = 0; lite.raf = requestAnimationFrame(liteFrame); } }
-  if (window.IntersectionObserver) { const jio = new IntersectionObserver(es => { es.forEach(e => { e.target._in = e.isIntersecting; }); lite.jar = ['#jar-story', '#jar-outro'].some(q => { const el = document.querySelector(q); return el && el._in; }); }); ['#jar-story', '#jar-outro'].forEach(q => { const el = document.querySelector(q); if (el) jio.observe(el); }); }
+  if (window.IntersectionObserver) { const jio = new IntersectionObserver(es => { es.forEach(e => { e.target._in = e.isIntersecting; }); lite.jar = ['#jar-story', '#jar-outro', '#arch-story'].some(q => { const el = document.querySelector(q); return el && el._in; }); }); ['#jar-story', '#jar-outro', '#arch-story'].forEach(q => { const el = document.querySelector(q); if (el) jio.observe(el); }); }
   addEventListener('scroll', () => { markScrolling(); if (!ticking) { ticking = true; requestAnimationFrame(onScroll); } }, {passive: true});
   addEventListener('resize', () => updateProgress());
 

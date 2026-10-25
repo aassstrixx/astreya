@@ -1,0 +1,149 @@
+/* home-arch.css — главная в архитектурной системе (подключается вместе с css/system.css, пока data/redesign.json → jar.arch.enabled = true).
+   Здесь: 1) архитектурный первый экран (#arch-story): закреплённая сцена с кадрами арочной ниши (js/jar.js, data-mode="arch") и герой поверх неё;
+   2) оформление секций главной ниже героя (камень, молочные поверхности, арки, фоновые текстуры) — часть «Секции» ниже.
+   Двигаются только opacity и transform; backdrop-filter и blend-режимы не используются. Значения --m, --h1…--h4 пишет js/jar.js от прокрутки. */
+
+/* ============ 1. Архитектурный первый экран ============ */
+.arch-story{height:var(--jh,420vh);margin:0;background:var(--milk)}
+.arch-story .js-stage{background:var(--milk)}
+.arch-story .js-stage::after{display:none}                       /* плёночное зерно вступления на светлой сцене не нужно */
+.arch-story .js-cv{transition:opacity .5s ease}
+.arch-story .js-milk{opacity:var(--m,1)}                          /* молочный слой лозунга: кадры проявляются из него (--m от 1 до 0 за первые ~9 % пути) */
+
+/* мягкая завеса под текстом (слева) — заголовок читается на любом кадре; проявляется вместе с героем */
+.ar-hero{position:absolute;inset:0;z-index:3;display:flex;flex-direction:column;justify-content:space-between;pointer-events:none;
+  --ar-side:clamp(20px,6vw,140px);padding:calc(var(--hdr) + clamp(14px,5.2vh,76px)) var(--ar-side) 0}
+.ar-hero::before{content:"";position:absolute;inset:0;z-index:-1;opacity:var(--h4,0);
+  background:linear-gradient(90deg,rgba(245,242,236,.82) 0,rgba(245,242,236,.64) 26%,rgba(245,242,236,.26) 42%,rgba(245,242,236,0) 54%)}
+.ar-copy{width:min(41%,720px)}
+.ar-copy .eyebrow{margin:0}
+.ar-e{opacity:var(--h1,0);transform:translate3d(0,calc((1 - var(--h1,0)) * 16px),0)}
+.ar-h{margin:clamp(14px,2.2vh,22px) 0 clamp(14px,2.4vh,24px);font:500 clamp(38px,4.15vw,74px)/1.04 var(--serif);letter-spacing:-.018em;color:var(--navy);hyphens:manual;text-wrap:balance;
+  opacity:var(--h1,0);transform:translate3d(0,calc((1 - var(--h1,0)) * 26px),0)}
+.ar-h em{font-style:italic;font-weight:400;color:var(--blue)}
+.ar-lead{margin:0;max-width:34em;font:400 clamp(15px,1.22vw,19px)/1.6 var(--sans);color:var(--slate);opacity:var(--h2,0);transform:translate3d(0,calc((1 - var(--h2,0)) * 18px),0)}
+.ar-cta{margin-top:clamp(20px,3.6vh,36px);gap:12px;flex-wrap:wrap;opacity:var(--h2,0);transform:translate3d(0,calc((1 - var(--h2,0)) * 22px),0)}
+.ar-cta .btn{pointer-events:none}
+.js-stage.ar-live .ar-cta .btn,.js-stage.ar-live .ar-panel a{pointer-events:auto}
+
+/* панель «Почему выбирают Астрею?»: каменная плита внизу героя, продолжается в страницу */
+.ar-panel{position:relative;align-self:stretch;margin:0 calc(var(--ar-side) * -1 + clamp(12px,2.4vw,40px)) clamp(14px,2.6vh,30px);display:grid;grid-template-columns:minmax(150px,.72fr) repeat(4,minmax(0,1fr));align-items:center;gap:0;
+  border-radius:var(--ax-r-l,24px);background:rgba(249,244,234,.9);box-shadow:inset 0 0 0 1px rgba(255,255,255,.7),0 1px 2px rgba(86,60,30,.08),0 26px 44px -26px rgba(86,60,30,.5);
+  padding:clamp(12px,1.8vh,20px) clamp(14px,1.8vw,30px);
+  opacity:var(--h3,0);transform:translate3d(0,calc((1 - var(--h3,0)) * 40px),0)}
+.ar-panel::after{content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;background:url(../assets/bg/stone-grain.webp) 0 0/512px 512px;opacity:.28}
+.ar-pt{margin:0;font:500 clamp(17px,1.55vw,24px)/1.18 var(--serif);color:var(--navy);padding-right:16px}
+.ar-panel ul{display:contents;list-style:none;margin:0;padding:0}
+.ar-panel li{display:flex;align-items:center;gap:12px;padding:6px clamp(10px,1.4vw,22px);border-left:1px solid rgba(86,60,30,.14);min-width:0}
+.ar-ic{flex:none;width:38px;height:38px;border-radius:50%;display:grid;place-items:center;background:rgba(255,255,255,.75);box-shadow:inset 0 0 0 1px rgba(86,60,30,.12);color:var(--blue)}
+.ar-ic svg{width:19px;height:19px}
+.ar-tx{display:flex;flex-direction:column;gap:3px;min-width:0}
+.ar-tx b{font:600 clamp(13px,1vw,15px)/1.25 var(--sans);color:var(--navy)}
+.ar-tx em{font:400 clamp(11.5px,.86vw,13px)/1.35 var(--sans);font-style:normal;color:var(--ax-muted,#6b6454)}
+
+/* нижняя кромка сцены растворяется в цвет страницы: герой мягко переходит в следующий блок без шва */
+.arch-story .js-stage::before{content:"";position:absolute;left:0;right:0;bottom:-1px;height:clamp(60px,12vh,140px);z-index:2;pointer-events:none;
+  background:linear-gradient(180deg,rgba(245,242,236,0),rgba(245,242,236,.72) 62%,var(--milk));opacity:var(--h3,0)}
+
+/* шапка: на время кино уходит, к финалу возвращается (классы ставит js/jar.js) */
+body.arch-hide .hdr{transform:translateY(-101%)!important}
+body.arch-nav .hdr.hide{transform:none}
+.hdr{transition:transform .7s var(--ease-out),background-color .5s ease,border-color .5s ease}
+
+/* запасной вариант: нет JS или canvas — вместо сцены остаётся прежний герой */
+.arch-story:not(.jar-off) ~ .hero{display:none}
+.arch-story.jar-off{display:none;margin:0}
+@media print{.arch-story{display:none;margin:0}.arch-story:not(.jar-off) ~ .hero{display:block}}
+
+@media (max-width:1100px){
+  .ar-panel{grid-template-columns:repeat(2,minmax(0,1fr));row-gap:6px}
+  .ar-pt{grid-column:1/-1;padding:0 0 6px}
+  .ar-panel li{border-left:0;border-top:1px solid rgba(86,60,30,.12);padding:8px 8px 4px}
+}
+@media (max-width:900px){
+  .arch-story{height:var(--jhm,380vh)}
+  .ar-hero{--ar-side:var(--gut);padding:calc(var(--hdr) + clamp(10px,2.6vh,28px)) var(--ar-side) 0}
+  .ar-hero::before{background:linear-gradient(180deg,rgba(245,242,236,.9) 0,rgba(245,242,236,.78) 26%,rgba(245,242,236,.34) 40%,rgba(245,242,236,0) 52%)}
+  .ar-copy{width:100%;padding:0}
+  .ar-h{font-size:clamp(28px,8.2vw,44px);margin:10px 0 0}
+  .ar-lead{display:none}
+  .ar-cta{margin-top:14px;gap:8px}
+  .ar-cta .btn{padding:12px 16px;font-size:13.5px}
+  .ar-panel{margin:0 calc(var(--ar-side) * -1 + 10px) 10px;padding:10px 12px;border-radius:18px}
+  .ar-pt{font-size:16px}
+  .ar-ic{width:30px;height:30px}.ar-ic svg{width:15px;height:15px}
+  .ar-panel li{gap:8px}
+  .ar-tx b{font-size:12.5px}.ar-tx em{display:none}
+}
+@media (max-height:560px) and (min-width:700px){
+  .ar-lead{display:none}
+  .ar-h{font-size:clamp(28px,5vh,40px)}
+}
+@media (prefers-reduced-motion:reduce){
+  .ar-e,.ar-h,.ar-lead,.ar-cta,.ar-panel{transform:none}
+}
+
+/* ============ 2. Секции главной в архитектурной системе ============
+   Те же материалы, что у каталога и брендов: молочный камень вместо холодно-серых полос, арочные рамки у фото, «ниши» вместо списков, каменные плиты у цифр,
+   мягкие кромки между блоками (фон секции проявляется и растворяется градиентом, а не обрезается линией). Селекторы — только в рамках главной. */
+body.rd[data-page="home"]{--clin:#efe7d6;--ar-card:rgba(250,246,238,.94);--ar-rim:inset 0 0 0 1px rgba(255,255,255,.75)}
+body[data-page="home"] .rd-clinical{background:linear-gradient(180deg,rgba(239,231,214,0) 0,var(--clin) clamp(70px,9vw,140px),var(--clin) calc(100% - clamp(70px,9vw,140px)),rgba(239,231,214,0) 100%);border-block:0}
+
+/* арочные рамки: фото «О компании», «Обучение», эксперт-блок; тонкая линия-обводка вторым контуром */
+body[data-page="home"] .rd-about-photo,body[data-page="home"] .rd-about-p2,body[data-page="home"] .rd-about-p3,body[data-page="home"] .rd-train-photo,body[data-page="home"] .rd-ed-photo{border-radius:999px 999px var(--ax-r-m,18px) var(--ax-r-m,18px);outline:1px solid rgba(86,60,30,.16);outline-offset:9px;box-shadow:var(--ax-sh-2,0 20px 40px -24px rgba(86,60,30,.5))}
+body[data-page="home"] .rd-ed-photo{outline-color:rgba(245,242,236,.22)}
+body[data-page="home"] .rd-about-photo img{aspect-ratio:4/5}
+body[data-page="home"] .rd-about-photo figcaption,body[data-page="home"] .rd-about-p2 figcaption,body[data-page="home"] .rd-about-p3 figcaption{text-align:center;padding-inline:0}
+
+/* цифры — каменные плиты */
+body[data-page="home"] .rd-nums{gap:14px}
+body[data-page="home"] .rd-num{position:relative;border:0;padding:clamp(20px,2.6vw,34px) clamp(16px,2vw,28px);border-radius:var(--ax-r-l,24px);background:var(--ar-card);box-shadow:var(--ar-rim),var(--ax-sh-1);overflow:hidden}
+body[data-page="home"] .rd-num::after{content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;background:url(../assets/bg/stone-grain.webp) 0 0/512px 512px;opacity:.34}
+body[data-page="home"] .rd-num:nth-child(even){border-left:0}
+body[data-page="home"] .rd-num b{font-size:clamp(40px,5.6vw,84px)}
+
+/* «Почему Астрея»: четыре ниши в ряд */
+body[data-page="home"] .rd-why-grid{grid-template-columns:1fr;gap:clamp(30px,4vw,56px)}
+body[data-page="home"] .rd-why-head{position:static;max-width:none}
+body[data-page="home"] .rd-why-head h2{max-width:20ch}
+body[data-page="home"] .rd-why-list{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:clamp(14px,1.8vw,26px)}
+body[data-page="home"] .rd-why-item{position:relative;display:flex;flex-direction:column;align-items:center;text-align:center;gap:10px;border:0;padding:clamp(70px,8.4vw,128px) clamp(18px,2vw,30px) clamp(26px,3vw,40px);
+  border-radius:999px 999px var(--ax-r-l,24px) var(--ax-r-l,24px);background:radial-gradient(120% 70% at 50% 0%,#fffaf0 0,#efe5d1 62%,#e8dcc4 100%);
+  box-shadow:inset 0 22px 34px -22px rgba(86,60,30,.32),inset 0 0 0 1px rgba(255,255,255,.7),var(--ax-sh-1);overflow:hidden;transition:transform .5s var(--ax-ease,var(--ease)),box-shadow .5s var(--ax-ease,var(--ease))}
+body[data-page="home"] .rd-why-item:last-child{border-bottom:0}
+body[data-page="home"] .rd-why-item::after{content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;background:url(../assets/bg/stone-grain.webp) 0 0/512px 512px;opacity:.4}
+body[data-page="home"] .rd-why-item:hover{transform:translateY(-6px);box-shadow:inset 0 22px 34px -22px rgba(86,60,30,.32),inset 0 0 0 1px rgba(255,255,255,.75),var(--ax-sh-2)}
+body[data-page="home"] .rd-why-item .rd-no{position:absolute;top:clamp(22px,3.2vw,46px);left:50%;transform:translateX(-50%);font-size:clamp(40px,4.6vw,68px);color:rgba(176,142,78,.5)}
+body[data-page="home"] .rd-why-item.lit .rd-no{color:var(--blue)}
+body[data-page="home"] .rd-why-item h3{font-size:clamp(20px,1.9vw,27px)}
+body[data-page="home"] .rd-why-item p{margin-top:4px;font-size:14.5px;max-width:30ch}
+
+/* карточки: молочный камень вместо белого пластика */
+body[data-page="home"] .rd-task:not(.rd-task-lead),body[data-page="home"] .rd .picker,body[data-page="home"] .picker,body[data-page="home"] .rd-next,body[data-page="home"] .events-grid .card,body[data-page="home"] .rd-news .card,body[data-page="home"] .rd-featured .pcard{background:var(--ar-card);box-shadow:var(--ar-rim),var(--ax-sh-1);border:0}
+body[data-page="home"] .rd-task:not(.rd-task-lead):hover,body[data-page="home"] .rd-featured .pcard:hover{box-shadow:var(--ar-rim),var(--ax-sh-2)}
+body[data-page="home"] .rd-task,body[data-page="home"] .picker,body[data-page="home"] .rd-next{border-radius:var(--ax-r-l,24px)}
+body[data-page="home"] .rd-pick-empty{background:var(--ar-card);border-color:var(--ax-line,rgba(86,60,30,.13))}
+
+/* редакторский блок: тёмный «вечерний зал» — края растворяются в молочный фон страницы */
+body[data-page="home"] .rd-editorial::before,body[data-page="home"] .rd-editorial::after{content:"";position:absolute;left:0;right:0;height:clamp(90px,13vw,200px);pointer-events:none;z-index:0}
+body[data-page="home"] .rd-editorial::before{top:0;background:linear-gradient(180deg,var(--ax-milk,#f5f2ec) 0,rgba(245,242,236,.55) 38%,rgba(245,242,236,0))}
+body[data-page="home"] .rd-editorial::after{bottom:0;background:linear-gradient(0deg,var(--ax-milk,#f5f2ec) 0,rgba(245,242,236,.55) 38%,rgba(245,242,236,0))}
+
+/* логотипы-стена: плитки как камень */
+body[data-page="home"] .rd-wall-grid{border:0;gap:14px;border-radius:0}
+body[data-page="home"] .rd-wall-grid li{border:0}
+body[data-page="home"] .rd-wall-grid a{border-radius:var(--ax-r-m,18px);background:var(--ar-card);box-shadow:var(--ar-rim),var(--ax-sh-1)}
+body[data-page="home"] .rd-wall-grid a:hover{background:#fffdf8;box-shadow:var(--ar-rim),var(--ax-sh-2)}
+
+/* финальный призыв: арка-плита */
+body[data-page="home"] .rd-final-band{border-radius:clamp(60px,12vw,200px) clamp(60px,12vw,200px) var(--ax-r-xl,32px) var(--ax-r-xl,32px)}
+
+@media (max-width:1100px){
+  body[data-page="home"] .rd-why-list{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@media (max-width:640px){
+  body[data-page="home"] .rd-why-list{grid-template-columns:1fr}
+  body[data-page="home"] .rd-why-item{padding-top:clamp(84px,24vw,110px)}
+  body[data-page="home"] .rd-about-photo,body[data-page="home"] .rd-train-photo,body[data-page="home"] .rd-ed-photo{outline-offset:6px}
+  body[data-page="home"] .rd-final-band{border-radius:80px 80px 28px 28px}
+}

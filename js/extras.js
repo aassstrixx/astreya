@@ -167,11 +167,11 @@
     const state = new Map();
     io = new IntersectionObserver(es => {
       es.forEach(e => state.set(e.target, e.isIntersecting));
-      introSeen = ['#jar-story', '#jar-outro'].some(s => { const t = $(s); return t && state.get(t); });
+      introSeen = ['#jar-story', '#jar-outro', '#arch-story'].some(s => { const t = $(s); return t && state.get(t); });
       qcFooter = !!(state.get($('.ftr')));
       setIntro(); sync(); qcUpdate();
     }, {threshold: 0});
-    ['#jar-story', '#jar-outro', '.ftr'].forEach(s => { const t = $(s); if (t) io.observe(t); });
+    ['#jar-story', '#jar-outro', '#arch-story', '.ftr'].forEach(s => { const t = $(s); if (t) io.observe(t); });
   }
 
   /* ---------- «Вы недавно смотрели» ---------- */

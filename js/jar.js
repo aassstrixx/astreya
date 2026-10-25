@@ -28,6 +28,10 @@
    прокрутке, линия с жемчужиной дорисовывается, затем всё уходит. Секция лозунга заходит под конец вступления (отрицательный margin-top в css/jar.css, величину считает src/pages/home-x.js из jar.outro.pauseVh):
    слова проявляются поверх растворяющихся в молоко кадров через заданную паузу после последней подписи (0.6 экрана на компьютере, 0.65 на телефоне),
    а не после долгого пустого молочного экрана (tools/check-outro.js меряет эту паузу).
+   Второй экземпляр — «архитектурный первый экран» (#arch-story, data-mode="arch", data/redesign.json → jar.arch): тот же движок кадров, но другая сцена и интерфейс:
+   кадры проявляются из молочного фона (слой .js-milk растворяется в первые ~9 % пути), камера отъезжает от баночки, поверх встаёт герой (заголовок, кнопки, панель
+   «Почему выбирают Астрею?» — переменные --h1…--h4 от прогресса), шапка на время сцены уходит и возвращается к финалу (классы body.arch-hide / arch-nav). Кадры сцены
+   грузятся не сразу, а когда до неё остаётся ~3 экрана или первое вступление загружено целиком (data-defer): два набора кадров не соперничают за канал.
    Файл загружается только на главной и только пока jar.enabled = true (data/redesign.json). */
 (function () {
   'use strict';
@@ -53,7 +57,7 @@
   const LANES_IMG = [4, 3];   // запасной путь (file://, нет fetch) — как раньше
   const FLOOR_LVL = 3;        // «каркас» среднего набора: каждый 8-й кадр (≈70 кадров)
   const GAP = 8;              // пока кадров рядом ещё нет, пару для смешивания берём из ближайших загруженных не дальше стольких кадров
-  let ctrl = null;
+  let ctrl = null, ctrls = [];       // ctrl — первое вступление (баночка), ctrls — все сцены страницы (вместе с архитектурным первым экраном)
 
   function create(root) {
     const stage = root.querySelector('.js-stage');
@@ -66,12 +70,13 @@
     let Pb = nums(ds.pb);
     if (Pb.some(isNaN)) Pb = [];
 
-    const outro = document.getElementById('jar-outro'), jo = outro && outro.querySelector('.jo-stage');
+    const arch = root.dataset.mode === 'arch', deferred = root.dataset.defer === '1';
+    const outro = arch ? null : document.getElementById('jar-outro'), jo = outro && outro.querySelector('.jo-stage');
     const words = outro ? Array.prototype.slice.call(outro.querySelectorAll('.jo-w')) : [];
 
     let ctx2d = null;
     try { ctx2d = cv.getContext('2d', {alpha: false}); } catch (e) { ctx2d = null; }
-    if (!ctx2d) { root.classList.add('jar-off'); return {root, destroy() {}}; }
+    if (!ctx2d) { root.classList.add('jar-off'); return {root, arch, complete: () => true, destroy() {}}; }
 
     /* ---- наборы кадров (уровни): для телефона — вертикальные; в автономной сборке — только лёгкий ---- */
     const isPortrait = () => portraitMQ.matches;
@@ -193,7 +198,9 @@
           .catch(() => { if (g === gen) viaImg(url, false); });
       } else viaImg(url, false);
     }
+    let loadGo = !deferred;
     function startLoading() {
+      if (!loadGo) return;
       const key = isPortrait() ? 'm' : 'd'; if (set === key) return;
       set = key; gen++; inflight = 0; firstAsked = false; hiPrime = 3; used = -1; paintedWant = -1; xf = null; lastSig = -1; dirty = true;
       T = makeTiers();
@@ -313,7 +320,21 @@
     }
 
     /* ---- интерфейс сцены от прогресса p (0…1) ---- */
+    function uiArch(p, inView) {
+      const st = (a, b) => ease(clamp((p - a) / (b - a), 0, 1));
+      setv(stage, '--m', (1 - st(0, 0.09)).toFixed(3));                       // слой цвета лозунга: кадры проявляются из молока
+      setv(stage, '--h1', st(0.58, 0.72).toFixed(3));                         // подпись и заголовок
+      setv(stage, '--h2', st(0.66, 0.80).toFixed(3));                         // текст и кнопки
+      setv(stage, '--h3', st(0.76, 0.90).toFixed(3));                         // панель «Почему выбирают Астрею?»
+      setv(stage, '--h4', st(0.70, 0.86).toFixed(3));                         // свечение подиума и мягкий свет за текстом
+      const hide = inView && p > 0.02 && p < 0.74, nav = inView && p >= 0.74 && p < 0.985, live = p > 0.74;
+      if (hide !== archSt.hide) { archSt.hide = hide; document.body.classList.toggle('arch-hide', hide); }       // пока идёт кино — шапки нет
+      if (nav !== archSt.nav) { archSt.nav = nav; document.body.classList.toggle('arch-nav', nav); }             // с появлением героя шапка возвращается (даже при прокрутке вниз); в конце пути — обычное поведение сайта
+      if (live !== archSt.live) { archSt.live = live; stage.classList.toggle('ar-live', live); }                  // кнопки героя нажимаются, только когда видны
+    }
+    const archSt = {hide: false, nav: false, live: false};
     function ui(p, inView) {
+      if (arch) { uiArch(p, inView); return; }
       caps.forEach(c => {
         const len = c.b - c.a, f = Math.max(0.012, len * 0.2);
         const o = ease(clamp((p - c.a) / f, 0, 1)) * (1 - ease(clamp((p - (c.b - f)) / f, 0, 1)));
@@ -353,6 +374,7 @@
       const w0 = performance.now();
       const dtRaw = last ? t - last : 0, dt = last ? clamp(dtRaw / 1000, 0.001, 0.1) : 0.016; last = t;
       const y = window.scrollY || window.pageYOffset || 0, vh = innerHeight;
+      if (!loadGo) { if (y + vh * 3.2 > sTop) openGate(); else { running = false; return; } }
       pT = clamp((y - sTop) / sTot, 0, 1);
       qT = outro ? clamp((y - oTop) / oTot, 0, 1) : 0;
       /* страница открыта посреди сцены (восстановление прокрутки после перезагрузки) — без «разгона» с нуля */
@@ -380,6 +402,13 @@
       if (cp !== pT || cq !== qT || xf || (dirty && !firstDrawn) || (inView && wantIdx !== paintedWant)) requestAnimationFrame(tick); else running = false;
     }
 
+    function openGate() { if (loadGo || dead) return; loadGo = true; startLoading(); schedule(); }
+    let gate = 0;
+    if (deferred) gate = setInterval(() => {            // первое вступление загружено целиком — можно начинать загрузку этой сцены, даже если до неё ещё далеко
+      if (loadGo || dead) { clearInterval(gate); return; }
+      const o = ctrls.find(c => c !== self && !c.arch);
+      if (!o || o.complete()) { clearInterval(gate); openGate(); }
+    }, 1500);
     const onScroll = () => schedule();
     const onResize = () => { clearTimeout(rzTimer); rzTimer = setTimeout(() => { measureStatic(); sizeCanvas(); startLoading(); schedule(); }, 120); schedule(); };
     const onMQ = () => { measureStatic(); sizeCanvas(); startLoading(); schedule(); };
@@ -399,8 +428,8 @@
     startLoading();
     schedule();
     const uOf = () => { const l = locate(Phi, cp); return l.k + l.t; };
-    return {
-      root,
+    const self = {
+      root, arch,
       tierP() { return T.map(t => t.P); },
       jump(p) { cp = pT = p; vp = 0; started = true; wantIdx = 0; tier = 0; restW = 1; xf = null; paint(performance.now()); ui(p, true); },
       state() {
@@ -410,27 +439,29 @@
           perf: {n: perfN, mean: ring.length ? ring.reduce((s, v) => s + v, 0) / ring.length : 0, p95: ring.length ? ring[Math.floor(ring.length * 0.95)] : 0, max: ring.length ? ring[ring.length - 1] : 0}};
       },
       destroy() {
-        dead = true; gen++; clearTimeout(rzTimer); if (ro) ro.disconnect();
+        dead = true; gen++; clearTimeout(rzTimer); clearInterval(gate); if (ro) ro.disconnect();
         removeEventListener('scroll', onScroll); removeEventListener('resize', onResize); removeEventListener('load', onLoad);
         portraitMQ.removeEventListener && portraitMQ.removeEventListener('change', onMQ);
         T = []; blobUrls.forEach(u => { try { URL.revokeObjectURL(u); } catch (e) {} }); blobUrls.length = 0;
-        document.body.classList.remove('jar-on');
+        document.body.classList.remove('jar-on', 'arch-hide', 'arch-nav');
       }
     };
+    self.complete = () => T.length > 0 && T.every((t, i) => i === xlIdx || t.loaded >= t.N);
+    return self;
   }
 
   function init() {
-    const root = document.getElementById('jar-story');
-    if (ctrl && ctrl.root === root) return;
-    if (ctrl) { ctrl.destroy(); ctrl = null; }
-    if (!root) return;
-    try { ctrl = create(root); } catch (e) { root.classList.add('jar-off'); ctrl = null; }
+    const roots = Array.prototype.slice.call(document.querySelectorAll('.jar-story'));
+    if (ctrls.length === roots.length && ctrls.every((c, i) => c.root === roots[i])) return;
+    ctrls.forEach(c => c.destroy()); ctrls = [];
+    roots.forEach(root => { try { ctrls.push(create(root)); } catch (e) { root.classList.add('jar-off'); } });
+    ctrl = ctrls.find(c => !c.arch) || null;
   }
-  window.Astreya = A; A.jar = {init, get ctrl() { return ctrl; }};
+  window.Astreya = A; A.jar = {init, get ctrl() { return ctrl; }, get ctrls() { return ctrls; }, get arch() { return ctrls.find(c => c.arch) || null; }};
   /* где в документе «покой» героя (его верх под шапкой): от этой прокрутки считается уход текста героя (js/motion.js) */
   A.heroBase = function () {
     const r = document.getElementById('jar-story'), hero = r && document.querySelector('.hero');
-    if (!r || !hero || !r.offsetHeight) return 0;
+    if (!r || !hero || !r.offsetHeight || !hero.offsetHeight) return 0;
     return Math.max(0, Math.round(hero.getBoundingClientRect().top + scrollY - ((document.getElementById('hdr') || {}).offsetHeight || 0)));
   };
 

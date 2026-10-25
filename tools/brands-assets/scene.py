@@ -82,22 +82,34 @@ def camera(sc, loc, lens, target=None, rot=None):
     cd = bpy.data.cameras.new('cam'); cd.lens = lens; cd.sensor_width = 36; cd.sensor_fit = 'HORIZONTAL'; cam = bpy.data.objects.new('cam', cd); bpy.context.collection.objects.link(cam)
     cam.location = loc; cam.rotation_euler = rot or (math.radians(90), 0, 0); sc.camera = cam; bpy.context.view_layer.update(); return cam
 
-def olive(base, h=.3, n=14, sc=1.0, rnd=None, grp='plant', seed=2):
-    """ветка оливы: стебель-трубка и узкие листья; небольшая, как в референсе (декор, не главное)"""
+def olive(base, h=.3, n=14, sc=1.0, rnd=None, grp='plant', seed=2, lush=True):
+    """ветка оливы: стебли-трубки и листья; lush — пышный букет: три стебля из горлышка, боковые побеги и широкие густые листья"""
     rnd = rnd or random.Random(seed); base = Vector(base)
-    leaf = SC.leaf_mesh(L=.075 * sc, Wd=.016 * sc); m1 = bpy.data.materials.new('olive'); m1.use_nodes = True; b = m1.node_tree.nodes['Principled BSDF']
+    leaf = SC.leaf_mesh(L=.082 * sc, Wd=(.024 if lush else .016) * sc); m1 = bpy.data.materials.new('olive'); m1.use_nodes = True; b = m1.node_tree.nodes['Principled BSDF']
     b.inputs['Base Color'].default_value = (.34, .40, .22, 1); b.inputs['Roughness'].default_value = .5; leaf.materials.append(m1)
     ms = bpy.data.materials.new('stem'); ms.use_nodes = True; ms.node_tree.nodes['Principled BSDF'].inputs['Base Color'].default_value = (.30, .26, .17, 1)
-    pts = [base, base + Vector((-.012 * sc, 0, h * .35)), base + Vector((-.03 * sc, .004, h * .7)), base + Vector((-.05 * sc, .006, h))]
-    cu = bpy.data.curves.new('st', 'CURVE'); cu.dimensions = '3D'; sp = cu.splines.new('POLY'); sp.points.add(len(pts) - 1)
-    for i, p in enumerate(pts): sp.points[i].co = (*p, 1)
-    cu.bevel_depth = .0012 * sc; co = bpy.data.objects.new('stem', cu); cu.materials.append(ms); bpy.context.collection.objects.link(co)
-    def at(t): f = t * (len(pts) - 1); i = min(int(f), len(pts) - 2); return pts[i].lerp(pts[i + 1], f - i)
-    for i in range(1, n + 1):
-        t = i / (n + 1) * .94 + .06; pos = at(t); d = (at(min(1, t + .03)) - pos).normalized()
-        for side in (-1, 1):
-            ob = bpy.data.objects.new('lf', leaf); bpy.context.collection.objects.link(ob); ob.scale = ((1.0 - .3 * t) * (.85 + rnd.random() * .3),) * 3
-            dv = (d * .5 + Vector((side * 1.0, rnd.uniform(-.2, .3), rnd.uniform(.05, .35)))).normalized(); ob.rotation_euler = dv.to_track_quat('Y', 'Z').to_euler(); ob.location = pos
+    def shoot(pts, count, k=1.0):
+        cu = bpy.data.curves.new('st', 'CURVE'); cu.dimensions = '3D'; sp = cu.splines.new('POLY'); sp.points.add(len(pts) - 1)
+        for i, p in enumerate(pts): sp.points[i].co = (*p, 1)
+        cu.bevel_depth = .0012 * sc * k; co = bpy.data.objects.new('stem', cu); cu.materials.append(ms); bpy.context.collection.objects.link(co)
+        def at(t): f = t * (len(pts) - 1); i = min(int(f), len(pts) - 2); return pts[i].lerp(pts[i + 1], f - i)
+        def put(pos, dv, s):
+            ob = bpy.data.objects.new('lf', leaf); bpy.context.collection.objects.link(ob); ob.scale = (s * k,) * 3
+            ob.rotation_euler = dv.normalized().to_track_quat('Y', 'Z').to_euler(); ob.location = pos
+        for i in range(1, count + 1):
+            t = i / (count + 1) * .94 + .06; pos = at(t); d = (at(min(1, t + .03)) - pos).normalized()
+            for side in (-1, 1):
+                put(pos, d * .5 + Vector((side * 1.0, rnd.uniform(-.25, .35), rnd.uniform(.05, .4))), (1.0 - .3 * t) * (.85 + rnd.random() * .3))
+        if lush: put(at(1.0), (at(1.0) - at(.94)).normalized() + Vector((0, 0, .15)), .9)      # верхушечный листок
+        return at
+    main = [base, base + Vector((-.012 * sc, 0, h * .35)), base + Vector((-.03 * sc, .004, h * .7)), base + Vector((-.05 * sc, .006, h))]
+    at = shoot(main, n)
+    if not lush: return
+    for t, side, ln in ((.26, -1, .42), (.40, 1, .38), (.55, -1, .32), (.70, 1, .26)):          # боковые побеги основного стебля
+        P = at(t); dv = Vector((side * .7, rnd.uniform(-.25, .25), .9)).normalized(); Ls = h * ln
+        shoot([P, P + dv * Ls * .4, P + dv * Ls * .75 + Vector((side * .06 * Ls, 0, .16 * Ls)), P + dv * Ls + Vector((side * .14 * Ls, 0, .12 * Ls))], max(5, int(n * .5)), .92)
+    for lean, hs in ((-.2, .84), (.16, .72)):                                                    # ещё два стебля из горлышка вазы — веером в стороны
+        shoot([base, base + Vector((lean * h * .12, .004, h * hs * .35)), base + Vector((lean * h * .3, .012, h * hs * .7)), base + Vector((lean * h * .5, .018, h * hs))], int(n * .85), .96)
 
 def vase(loc, h=.075, r=.028, mat=None):
     prof = [(0, 0), (.55 * r, 0), (.9 * r, .1 * h), (r, .38 * h), (.78 * r, .7 * h), (.42 * r, .88 * h), (.4 * r, h), (.52 * r, 1.05 * h), (0, 1.05 * h)]
