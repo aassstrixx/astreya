@@ -17,10 +17,12 @@
 .ar-hero::before{content:"";position:absolute;inset:0;z-index:0;opacity:var(--h4,0);
   background:linear-gradient(90deg,rgba(247,242,232,.26) 0,rgba(247,242,232,.22) 30%,rgba(247,242,232,.08) 46%,rgba(247,242,232,0) 56%)}      /* лёгкая светлая завеса за текстом: стеллаж и растение слева остаются видны и резки (никакого «молока»), а текст читается — слева гладкая светлая стена */
 .ar-world{position:absolute;left:50%;top:50%;width:max(100%,calc(100lvh * 16 / 9));aspect-ratio:16/9;transform:translate(-50%,-50%);z-index:1}
-.ar-world{--pl:var(--sl,70.85%);--pt:var(--st,42.77%);--pd:var(--sd,25%)}                       /* центр шара и его диаметр (в % сцены) — орбиты строятся вокруг него; значения приходят из data/redesign.json → jar.arch.sphere */
+.ar-world{--sb:300px;--sx:-9999px;--sy:-9999px;--sk:1}      /* шар привязан к миру: положение (--sx, --sy, px от левого верхнего угла мира), масштаб (--sk) и размер холста (--sb) на каждом кадре пишет js/jar.js по данным камеры (data/redesign.json → jar.arch.sphere.*.track) */
 /* каменный шар: живой, на WebGL (js/sphere.js). В прокрутке кадров он НЕ участвует — стоит на месте, камера «раскрывает» зал вокруг него. Слой лежит под баночкой, но под орбитами и текстом.
    Запасной вариант (нет WebGL, «меньше движения»): готовая картинка шара, он лишь мягко парит */
-.ar-pearl{position:absolute;left:var(--pl);top:var(--pt);width:var(--pd);aspect-ratio:1;translate:-50% -50%;pointer-events:none;z-index:1}
+.ar-sph{position:absolute;left:0;top:0;width:var(--sb);aspect-ratio:1;margin:calc(var(--sb) / -2) 0 0 calc(var(--sb) / -2);transform:translate3d(var(--sx),var(--sy),0) scale(var(--sk));pointer-events:none;z-index:1}
+.ar-sph-o{z-index:3}
+.ar-pearl{position:absolute;inset:0;pointer-events:none}
 .ar-gl,.ar-poster{position:absolute;left:0;top:0;width:100%;height:100%;display:block;user-select:none}
 .ar-gl{opacity:0}
 .ar-poster{inset:-1%;width:102%;height:102%;object-fit:contain}
@@ -36,7 +38,7 @@ html.is-scrolling .ar-pearl .ar-poster,.anim-off .ar-pearl .ar-poster{animation-
 @keyframes arJar{from{opacity:0;transform:translate3d(0,14px,0) scale(.95)}to{opacity:1;transform:none}}
 .arch-story.ar-intro.ready .js-cv{animation:arBg 2.8s cubic-bezier(.16,.7,.2,1) backwards}
 .arch-story.ar-intro.jar-ready .ar-jar-cv{transform-origin:50% 55%;animation:arJar 1.6s cubic-bezier(.16,.7,.2,1) .15s backwards}
-.ar-orbit{position:absolute;left:var(--pl);top:var(--pt);width:calc(var(--pd) * 1.52);aspect-ratio:1;translate:-50% -50%;opacity:var(--h2,0);z-index:3}
+.ar-orbit{position:absolute;left:50%;top:50%;width:152%;aspect-ratio:1;translate:-50% -50%;opacity:var(--h2,0)}
 .ar-orbit .ring{border-color:rgba(70,60,40,.34)}
 .ar-orbit .ring.r2{border-color:rgba(70,60,40,.2)}
 .ar-orbit .orb img{filter:drop-shadow(0 3px 6px rgba(60,40,18,.2));--k:1.15}      /* без светлого ореола: он «выбеливал» баночку, когда логотип проходил над ней */
@@ -109,8 +111,7 @@ html:not(.js) .arch-story{display:none;margin:0}
   .ar-lead,.ar-facts{display:none}
   .ar-cta{margin-top:14px;gap:8px}
   .ar-cta .btn{padding:12px 16px;font-size:13.5px}
-  .ar-world{--pl:var(--slm,24.5%);--pt:var(--stm,68%);--pd:var(--sdm,64.9%)}
-  .ar-orbit{width:calc(var(--pd) * 1.2)}
+  .ar-orbit{width:122%}
   .ar-orbit .orb img{scale:.82}      /* кольцо с логотипами целиком умещается в экран телефона, пока вращается */
   .ar-copy{left:var(--gut)}
   .ar-panel{width:calc(100% - 2 * var(--gut));grid-template-columns:repeat(2,minmax(0,1fr));border-radius:20px 20px 0 0;padding:10px 12px 12px}

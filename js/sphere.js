@@ -17,7 +17,7 @@
 
   const VS = 'attribute vec2 a;varying vec2 p;void main(){p=a;gl_Position=vec4(a,0.,1.);}';
   const FS = [
-    'precision highp float;varying vec2 p;uniform sampler2D tA,tN;uniform mat3 R;uniform vec3 L;uniform float px;',
+    'precision highp float;varying vec2 p;uniform sampler2D tA,tN;uniform mat3 R;uniform vec3 L;uniform float px,lit;',
     'void main(){',
     ' float r2=dot(p,p); if(r2>1.) discard;',
     ' float z=sqrt(1.-r2); vec3 nv=vec3(p.x,p.y,z);',
@@ -35,6 +35,7 @@
     ' col=mix(col,vec3(dot(col,vec3(.3,.59,.11))),.42);',                // приглушённая насыщенность (цвет шара — нейтральный тёплый, не выделяется среди стен зала)
     ' col*=(.90+.10*z)*1.33;',                                         // у края чуть темнее; общая экспозиция — как у рендера Blender: шар чуть темнее стен зала
     ' vec3 h=normalize(L+vec3(0.,0.,1.)); col+=vec3(1.,.95,.88)*pow(max(dot(n,h),0.),26.)*.05*key;',
+    ' col*=lit;',                                                        // освещённость зала в этом кадре сценария (в начале — полумрак)
     ' col=col/(1.+.10*col);',                                          // мягкое сжатие светов
     ' col=pow(col,vec3(1./2.2));',
     ' float e=smoothstep(1.,1.-2.*px,sqrt(r2));',
@@ -48,7 +49,7 @@
     if (!gl.getProgramParameter(prog, gl.LINK_STATUS)) throw new Error('link');
   } catch (e) { root.classList.add('gl-off'); return; }
   gl.useProgram(prog);
-  ['tA', 'tN', 'R', 'L', 'px'].forEach(n => { loc[n] = gl.getUniformLocation(prog, n); });
+  ['tA', 'tN', 'R', 'L', 'px', 'lit'].forEach(n => { loc[n] = gl.getUniformLocation(prog, n); });
   const buf = gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER, buf);
   gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 1, -1, -1, 1, 1, 1]), gl.STATIC_DRAW);
   const aLoc = gl.getAttribLocation(prog, 'a'); gl.enableVertexAttribArray(aLoc); gl.vertexAttribPointer(aLoc, 2, gl.FLOAT, false, 0, 0);
@@ -61,10 +62,12 @@
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.REPEAT); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
   }
-  let ready = 0, W = 0, running = false, raf = 0, onScreen = true, tPrev = 0, visible = true;
-  const st = {yaw: 0.6, pitch: -0.12, ty: 0, tp: 0, hx: 0, hy: 0, lx: 0, ly: 0};          // поворот шара, цель от курсора, положение курсора, свет
+  let ready = 0, W = 0, running = false, raf = 0, onScreen = true, tPrev = 0, visible = true, active = true;
+  const st = {yaw: 0.6, pitch: -0.12, ty: 0, tp: 0, hx: 0, hy: 0, lx: 0, ly: 0, lit: 1};          // поворот шара, цель от курсора, положение курсора, свет
   const A = window.Astreya = window.Astreya || {};
-  A.sphere = {state: () => ({yaw: st.yaw, ty: st.ty, tp: st.tp, lx: st.lx, ly: st.ly, running, ready: ready >= 2})};            // для проверок (tools/check-arch.js)
+  A.sphere = {state: () => ({yaw: st.yaw, ty: st.ty, tp: st.tp, lx: st.lx, ly: st.ly, lit: st.lit, running, ready: ready >= 2}),
+    setActive: v => { v = !!v; if (v !== active) { active = v; go(); if (v && !running && ready >= 2) draw(performance.now()); } },       // шар вне кадра не рисуется
+    setLit: v => { v = Math.max(0, Math.min(1, v)); if (Math.abs(v - st.lit) < .004) return; st.lit = v; if (!running && ready >= 2) draw(performance.now()); }};            // для проверок (tools/check-arch.js)
   function load(url, unit) {
     return new Promise(res => { const im = new Image(); im.crossOrigin = 'anonymous'; im.onload = () => { tex(unit, im); res(true); }; im.onerror = () => res(false); im.src = url; });
   }
@@ -87,13 +90,13 @@
     gl.clearColor(0, 0, 0, 0); gl.clear(gl.COLOR_BUFFER_BIT);
     gl.uniform1i(loc.tA, 0); gl.uniform1i(loc.tN, 1);
     gl.uniformMatrix3fv(loc.R, false, mat(st.yaw + st.ty, -.12 + st.tp));
-    gl.uniform3f(loc.L, L[0], L[1], L[2]); gl.uniform1f(loc.px, 1.5 / W);
+    gl.uniform3f(loc.L, L[0], L[1], L[2]); gl.uniform1f(loc.px, 1.5 / W); gl.uniform1f(loc.lit, st.lit);
     gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
     if (!root.classList.contains('gl-on')) root.classList.add('gl-on');
   }
   function loop(t) { raf = 0; if (!running) return; if (!tPrev || t - tPrev >= 21) draw(t); raf = requestAnimationFrame(loop); }
   function go() {
-    const want = ready >= 2 && onScreen && visible && !still && !document.documentElement.classList.contains('anim-off');
+    const want = ready >= 2 && onScreen && visible && active && !still && !document.documentElement.classList.contains('anim-off');
     if (want && !running) { running = true; tPrev = 0; raf = requestAnimationFrame(loop); }
     else if (!want && running) { running = false; if (raf) cancelAnimationFrame(raf); raf = 0; if (ready >= 2) draw(performance.now()); }
   }

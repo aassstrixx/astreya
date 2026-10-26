@@ -147,7 +147,7 @@ module.exports = function homeRedesign(ctx, C, P, parts, {events, val}) {
   /* первый экран главной (data/redesign.json → jar): закреплённая сцена со скролл-анимацией. Движок — js/jar.js, живой шар — js/sphere.js, стили — css/home-arch.css.
      Сцена открывается заставкой: баночка крупно по центру зала, внизу «Листайте»; по прокрутке камера отъезжает («наезд с отъездом»), баночка уходит на подиум и встаёт там одна,
      затем поверх встаёт герой: заголовок слева, шар с орбитами логотипов, внизу панель «Почему выбирают Астрею?».
-     Слои (снизу вверх): кадры зала без баночки (canvas .js-cv) → каменный шар (WebGL, .ar-pearl; в прокрутке неподвижен) → спрайт баночки (canvas .ar-jar-cv, чёткий, с прозрачным фоном; всегда поверх шара — товар виден целиком) → орбиты логотипов → текст и панель.
+     Слои (снизу вверх): кадры зала без баночки (canvas .js-cv) → каменный шар (WebGL, .ar-pearl; привязан к миру: положение и размер в каждом кадре — по данным камеры) → спрайт баночки (canvas .ar-jar-cv, чёткий, с прозрачным фоном; всегда поверх шара — товар виден целиком) → орбиты логотипов → текст и панель.
      Баночка лежит под надписями: ничто из текста и логотипов ею не закрывается. Без JS или без canvas сцена скрыта, остаётся прежний герой (css/home-arch.css).
      Тексты — те же, что у прежнего героя (data/content.json → home), цифры — из данных (число представительств и брендов). */
   const arch = (() => {
@@ -155,24 +155,23 @@ module.exports = function homeRedesign(ctx, C, P, parts, {events, val}) {
     const nOff = ctx.stats.offices, nBr = ctx.stats.brands, cities = ctx.site.offices.map(o => o.city);
     const auto = {offices: `${nOff} ${S.plural(nOff, 'город', 'города', 'городов')} присутствия`, brands: `${nBr} ${S.plural(nBr, 'бренд', 'бренда', 'брендов')} в портфеле`};
     /* каменный шар: холст WebGL (js/sphere.js) и готовая картинка на случай, когда WebGL нет или движение уменьшено; положение — в % кадра, у телефона своё */
-    const sp = a.sphere, tex = sp.tex, sd = sp.desktop, sm = sp.mobile;
-    const pearl = `<div class="ar-pearl" aria-hidden="true" data-a="${C.u(P, tex.a)}" data-n="${C.u(P, tex.n)}"><canvas class="ar-gl"></canvas><img class="ar-poster" src="${C.u(P, tex.poster)}" alt="" width="640" height="640" decoding="async"></div>`;
-    const worldVars = ` style="--sl:${sd.cx}%;--st:${sd.cy}%;--sd:${sd.d}%;--slm:${sm.cx}%;--stm:${sm.cy}%;--sdm:${sm.d}%"`;
+    const sp = a.sphere, tex = sp.tex;
+    const pearl = `<div class="ar-sph" aria-hidden="true"><div class="ar-pearl" data-a="${C.u(P, tex.a)}" data-n="${C.u(P, tex.n)}"><canvas class="ar-gl"></canvas><img class="ar-poster" src="${C.u(P, tex.poster)}" alt="" width="640" height="640" decoding="async"></div></div>`;
     const items = a.panel.items.map(it => ({icon: it.icon, title: it.auto ? auto[it.auto] : it.title, text: it.auto === 'offices' ? cities.join(', ') : it.text}));
     /* логотипы на орбитах вокруг шара — те же, что у прежнего героя (data/content.json → home.orbits) */
     const orb = o => { const b = o.brand ? ctx.brandById[o.brand] : null, src = b ? b.logo : o.src, w = b ? b.logoW : o.w, hh = b ? b.logoH : o.h;
       return `<span class="arm" style="--a:${o.angle}deg"><span class="orb"><img src="${C.u(P, src)}" alt=""${w ? ` width="${w}" height="${hh}"` : ''} style="--lw:${o.width}" decoding="async"></span></span>`; };
     const ring = k => { const o = h.orbits.find(x => x.orbit === k); return `<div class="ring ${k}" aria-hidden="true">${o ? orb(o) : ''}</div>`; };
     const jr = a.jar;
-    return `<section class="jar-story arch-story" id="arch-story" data-mode="arch" data-view-at="0.97" style="--jh:${a.heightVh.desktop}vh;--jhm:${a.heightVh.mobile}vh" data-n="${a.frames}" data-ext="${a.ext}" data-v="${esc(ctx.assetVersion || '')}" data-d="${a.desktop}" data-m="${a.mobile}" data-dm="${a.lite.desktop}" data-mm="${a.lite.mobile}" data-p="${a.p.join(',')}" data-pb="${a.pb.join(',')}" data-jd="${jr.desktop.dir}" data-jm="${jr.mobile.dir}" data-jx="${jr.ext}" data-jr="${JSON.stringify(jr.desktop.rects)}" data-jrm="${JSON.stringify(jr.mobile.rects)}" aria-label="${esc(a.alt)}">
+    return `<section class="jar-story arch-story" id="arch-story" data-mode="arch" data-view-at="0.97" style="--jh:${a.heightVh.desktop}vh;--jhm:${a.heightVh.mobile}vh" data-n="${a.frames}" data-ext="${a.ext}" data-v="${esc(ctx.assetVersion || '')}" data-d="${a.desktop}" data-m="${a.mobile}" data-dm="${a.lite.desktop}" data-mm="${a.lite.mobile}" data-p="${a.p.join(',')}" data-pb="${a.pb.join(',')}" data-jd="${jr.desktop.dir}" data-jm="${jr.mobile.dir}" data-jx="${jr.ext}" data-jr="${JSON.stringify(jr.desktop.rects)}" data-jrm="${JSON.stringify(jr.mobile.rects)}" data-sp="${JSON.stringify(sp.desktop.track)}" data-spm="${JSON.stringify(sp.mobile.track)}" data-spr="${sp.desktop.ref}" data-sprm="${sp.mobile.ref}" data-lit="${JSON.stringify(a.lit)}" aria-label="${esc(a.alt)}">
     <div class="js-stage">
       <canvas class="js-cv" role="img" aria-label="${esc(a.alt)}"></canvas>
       <div class="ar-vig" aria-hidden="true"></div>
       <div class="ar-hero">
-        <div class="ar-world"${worldVars}>
+        <div class="ar-world">
           ${pearl}
           <canvas class="ar-jar-cv" aria-hidden="true"></canvas>
-          <div class="ar-orbit">${ring('r3')}${ring('r1')}${ring('r2')}</div>
+          <div class="ar-sph ar-sph-o" aria-hidden="true"><div class="ar-orbit">${ring('r3')}${ring('r1')}${ring('r2')}</div></div>
         </div>
         <div class="ar-cue" aria-hidden="true"><span>${esc(j.cue)}</span><i></i></div>
         <div class="ar-copy">

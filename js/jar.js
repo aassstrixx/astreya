@@ -5,7 +5,7 @@
 
    Слои сцены:
    • кадры зала БЕЗ баночки — canvas .js-cv (этот файл: уровни качества, загрузка, пружина плейхеда);
-   • каменный шар — живой WebGL-слой .ar-pearl (js/sphere.js). В прокрутке он НЕ участвует: камера снята так, что шар стоит в кадре на одном месте и одного размера, зал раскрывается вокруг него;
+   • каменный шар — живой WebGL-слой .ar-pearl (js/sphere.js), привязанный к миру: он сам не двигается и не растёт — его положение и размер в каждом кадре идут по данным той же камеры, что снимала зал (jar.arch.sphere.*.track), поэтому он стоит на своём месте относительно арки и плит;
    • баночка — отдельные чёткие спрайты (WebP с прозрачным фоном, по одному на кадр сценария), canvas .ar-jar-cv: положение и размер между кадрами плавно интерполируются по рамкам
      (data-jr / data-jrm — доли кадра), поэтому баночка не двоится, не «пикселится» и не проходит сквозь фон. Рисуется над шаром и под орбитами и текстом: надписи идут поверх неё.
 
@@ -66,6 +66,7 @@
 
     const jsonOf = t => { try { const a = JSON.parse(t || '[]'); return Array.isArray(a) ? a : []; } catch (e) { return []; } };
     const JR = [jsonOf(ds.jr), jsonOf(ds.jrm)];                                     // рамки баночки по кадрам (доли кадра: x, y, w, h) — [компьютер, телефон]
+    const SPT = [jsonOf(ds.sp), jsonOf(ds.spm)], SPR = [+ds.spr || 0.25, +ds.sprm || 0.5], LIT = jsonOf(ds.lit);   // шар по кадрам: [центр x, центр y, диаметр] в долях кадра; размер его холста; освещённость зала по кадрам
 
     let ctx2d = null, jctx = null;
     try { ctx2d = cv.getContext('2d', {alpha: false}); } catch (e) { ctx2d = null; }
@@ -213,10 +214,11 @@
 
     /* ---- баночка: отдельный холст по размеру «мира» сцены (рамка кадра 16:9 или 9:16, как у кадров зала) — рамки спрайтов лежат в долях кадра, значит, и в долях этого холста.
        Пикселей на холсте — с запасом на Retina: спрайт отрендерен с передискретизацией, поэтому на экране он резкий, а не растянутый ---- */
-    let JW = 0, JH = 0, jarSig = '', jarShown = false, jdirty = true;
+    let JW = 0, JH = 0, jarSig = '', jarShown = false, jdirty = true, WW = 0, WH = 0, SB = 1, spSig = '';
     function sizeJar() {
       if (!jctx || !world) return;
       const w = world.clientWidth, h = world.clientHeight; if (!w || !h) return;
+      WW = w; WH = h; SB = Math.max(1, Math.round(SPR[isPortrait() ? 1 : 0] * w)); setv(world, '--sb', SB + 'px'); spSig = '';
       const dpr = Math.min(window.devicePixelRatio || 1, 2), s = Math.min(dpr, Math.sqrt(3.4e6 / (w * h)));
       const nw = Math.round(w * s), nh = Math.round(h * s);
       if (nw !== JW || nh !== JH || jcv.width !== nw || jcv.height !== nh) { JW = nw; JH = nh; jcv.width = nw; jcv.height = nh; jarSig = ''; jdirty = true; }
@@ -320,6 +322,26 @@
         else viaImg(url);
       }
     }
+    /* шар привязан к миру: его положение и размер даёт та же камера, что рисовала зал (hall_story.py → sphere_track); точки посчитаны чаще кадров (во сколько раз — по длине дорожки),
+       между ними линейно. Пока шар вне кадра (камера проходит рядом с ним) слой не показывается и не рисуется.
+       Слой двигается только трансформацией (центр, масштаб), холст шара не перерисовывается и не меняет размер */
+    function paintSphere() {
+      const T = SPT[isPortrait() ? 1 : 0]; if (!world || !WW || !T || T.length < 2) return;
+      const sub = (T.length - 1) / Math.max(1, NH - 1); if (sub !== Math.round(sub)) return;
+      const l = locate(Phi, cp), u = clamp(l.k + l.t, 0, NH - 1), us = u * sub, i0 = Math.min(T.length - 2, Math.floor(us + 1e-9)), f = clamp(us - i0, 0, 1), a = T[i0], b = T[i0 + 1];
+      const d = (a[2] * (1 - f) + b[2] * f) * WW, x = (a[0] * (1 - f) + b[0] * f) * WW, y = (a[1] * (1 - f) + b[1] * f) * WH, r = d / 2;
+      const vis = a[2] > 0 && b[2] > 0 && x + r > 0 && x - r < WW && y + r > 0 && y - r < WH, k = vis ? d / SB : 0;
+      const SPH = window.Astreya && window.Astreya.sphere;
+      if (SPH) {
+        if (SPH.setActive) SPH.setActive(vis);
+        const k0 = Math.min(NH - 1, Math.floor(u + 1e-9)), k1 = Math.min(NH - 1, k0 + 1), g = clamp(u - k0, 0, 1);
+        if (LIT.length === NH && SPH.setLit) SPH.setLit(Math.pow(LIT[k0] * (1 - g) + LIT[k1] * g, .9));          // шар темнеет вместе с залом: в начале сцены полумрак
+      }
+      const sig = Math.round(x * 4) + ':' + Math.round(y * 4) + ':' + Math.round(k * 1000);
+      if (sig === spSig) return;
+      spSig = sig;
+      setv(world, '--sx', x.toFixed(2) + 'px'); setv(world, '--sy', y.toFixed(2) + 'px'); setv(world, '--sk', k.toFixed(4));
+    }
     /* положение и размер баночки между кадрами интерполируются по рамкам (центр и ширина), а картинка берётся ближайшая — спрайты не смешиваются, двоения нет */
     function paintJar() {
       if (!jctx || !JD.dir || !JW) return true;
@@ -421,7 +443,7 @@
       if ((inView || !firstDrawn) && (dirty || xf || wantIdx !== paintedWant || Math.abs(cp - paintedP) > 1e-7)) {
         if (paint(t)) { paintedP = cp; paintedWant = wantIdx; dirty = false; } else dirty = true;
       }
-      if (inView && (jdirty || Math.abs(cp - paintedJ) > 1e-7)) { jdirty = !paintJar(); paintedJ = cp; }
+      if (inView && (jdirty || Math.abs(cp - paintedJ) > 1e-7)) { jdirty = !paintJar(); paintSphere(); paintedJ = cp; }
       ui(cp, inView);
       perfRing[perfN++ % perfRing.length] = performance.now() - w0;
       if (cp !== pT || xf || (dirty && !firstDrawn) || (inView && wantIdx !== paintedWant)) requestAnimationFrame(tick); else running = false;
@@ -450,7 +472,7 @@
     const self = {
       root,
       tierP() { return T.map(t => t.P); },
-      jump(p) { cp = pT = p; vp = 0; started = true; wantIdx = 0; tier = 0; restW = 1; xf = null; paint(performance.now()); jarSig = ''; paintJar(); ui(p, true); },
+      jump(p) { cp = pT = p; vp = 0; started = true; wantIdx = 0; tier = 0; restW = 1; xf = null; paint(performance.now()); jarSig = ''; paintJar(); paintSphere(); ui(p, true); },
       state() {
         const ring = Array.prototype.slice.call(perfRing, 0, Math.min(perfN, perfRing.length)).sort((a, b) => a - b);
         return {p: cp, pTarget: pT, u: uOf(), cur: uOf(), target: pT * (NH - 1), N: NH, loaded: T.length ? T[hasHi ? 0 : liteIdx].loaded : 0, set,
