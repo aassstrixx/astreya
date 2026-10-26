@@ -1,393 +1,200 @@
 /* jar.js — первый экран главной: закреплённая сцена со скролл-анимацией (секция #arch-story, data/redesign.json → jar.arch).
-   Секция в несколько экранов высотой, внутри — закреплённая сцена (sticky). Положение прокрутки внутри секции (0…1) выбирает момент заранее отрендеренной последовательности
-   (WebP): вниз — вперёд, вверх — обратная перемотка. Сцена — зал с арками (Blender, tools/jar-render/hall_story.py): камера «наезд с отъездом» от крупной баночки по центру
-   (заставка с полоской «Листайте») к готовому кадру, баночка уходит на подиум и встаёт там одна, затем поверх встаёт герой (заголовок, кнопки, панель «Почему выбирают Астрею?»).
+   Секция в несколько экранов высотой, внутри — закреплённая сцена (sticky). Положение прокрутки внутри секции (0…1) — это положение камеры на заранее отрендеренном пути (Blender, tools/jar-render/hall_story.py):
+   вниз — вперёд, вверх — обратная перемотка. Камера «наезд с отъездом» от крупной баночки по центру (заставка с полоской «Листайте») к готовому кадру; баночка раскручивается, уходит на подиум и встаёт там одна,
+   затем поверх встаёт герой (заголовок, кнопки, панель «Почему выбирают Астрею?»).
 
-   Слои сцены:
-   • кадры зала БЕЗ баночки — canvas .js-cv (этот файл: уровни качества, загрузка, пружина плейхеда);
-   • каменный шар — живой WebGL-слой .ar-pearl (js/sphere.js), привязанный к миру: он сам не двигается и не растёт — его положение и размер в каждом кадре идут по данным той же камеры, что снимала зал (jar.arch.sphere.*.track), поэтому он стоит на своём месте относительно арки и плит;
-   • баночка — отдельные чёткие спрайты (WebP с прозрачным фоном, по одному на кадр сценария), canvas .ar-jar-cv: положение и размер между кадрами плавно интерполируются по рамкам
-     (data-jr / data-jrm — доли кадра), поэтому баночка не двоится, не «пикселится» и не проходит сквозь фон. Рисуется над шаром и под орбитами и текстом: надписи идут поверх неё.
-
-   Как устроена плавность (по итогам «арены» — tools/jar-bench: десятки вариантов гоняли под нагрузкой и сравнивали по метрикам):
-   • кадры рисуются на 2D-canvas прямо из <img> — основной поток почти ничего не делает. WebGL/ImageBitmap/интерполяция потока были медленнее: загрузка текстур и декодирование выполняются
-     в основном потоке и забивают его при быстрой прокрутке (отсюда «лаги»);
-   • два набора кадров зала и их «запечённые» промежуточные кадры (tools/jar-render/encode_arch.py): полные (1920×1080 / 900×1600) — в покое; лёгкие (1280×720 / 600×1067, между каждой парой полных
-     дорисован промежуточный кадр) — пока картинка движется. Средний кадр декодировать дешевле, а кадров вдвое больше — движение ровнее;
-   • регулятор нагрузки: если кадры идут дольше бюджета (по интервалам requestAnimationFrame), уровень качества на время движения снижается, а когда запас снова есть — возвращается.
-     В покое всегда показываются полные кадры; смена уровня идёт короткой перекрёстной сменой. Спрайты баночки от уровня не зависят — она резкая всегда;
-   • движение ведёт «пружина» с критическим затуханием (а не простое сглаживание): нет рывка на старте и мягкая остановка без «щелчка»; в покое показывается ровно ближайший кадр (без двоения),
-     при движении соседние кадры смешиваются;
-   • в цикле нет чтения вёрстки: границы сцены измеряются один раз (и при изменении размера), CSS-переменные пишутся только при изменении;
-   • первая загрузка (холодный кэш): кадры берутся через fetch → Blob → <img> — это не задерживает событие load (его ждёт заставка); сначала — первый кадр и спрайт заставки, затем кадры
-     «от грубого к тонкому» с окном впереди по ходу движения; спрайты баночки грузятся от текущего положения.
-   Колесо мыши сглаживается самим браузером и сайтом (пружина по щелчкам колеса) — везде одинаково; пружина плейхеда добавляет к нему лишь небольшую задержку и ведёт сцену при касаниях,
-   перетаскивании ползунка и якорях (подбор — tools/jar-bench/scroll-sim.js).
-   Положения кадров по сценарию (p от 0 до 1): data-p — полный набор, data-pb — лёгкий.
-   Сцена показывается при любых настройках устройства («уменьшить движение», экономия трафика) — по решению заказчика; без JS её нет (остаётся прежний герой).
-   Интерфейс от прогресса p: --cue («Листайте» и виньетка гаснут с первой прокруткой), --h1…--h4 (герой), классы body.arch-hide / arch-nav / arch-top / arch-live (шапка уходит на время кино,
+   Как рисуется (js/jar-gl.js, WebGL2) — и почему картинка не «дребезжит» и не мылится в движении:
+   • зал — ключевые кадры (60 штук, 1920×1080 / 900×1600) с картами глубины; для любого положения прокрутки два соседних кадра перепроецируются на камеру этого положения (дорожка камеры из Blender)
+     и сливаются. Никакого смешивания «картинка в картинку»: предметы не раздваиваются, кромки резкие, камера движется непрерывно, а не шагает от кадра к кадру. Набор кадров один, без «лёгких»
+     уровней: в движении тот же резкий кадр, что и в покое;
+   • в покое прокрутка мягко «примагничивается» к ближайшему ключевому кадру: показывается сам отрендеренный кадр пиксель в пиксель (чёткость Cycles без пересчёта);
+   • баночка — отдельный слой (canvas .ar-jar-cv, второй WebGL-контекст): спрайт баночки без этикетки (Blender) ставится по настоящей проекции её центра на камеру, а надписи этикетки рисуются поверх
+     по геометрии цилиндра — баночка вращается плавно при любом положении прокрутки, не шагает от спрайта к спрайту и не ползёт относительно фона;
+   • каменный шар — часть кадров зала (запечён из того же камня, что и гора); на сайте от него остаётся только положение в готовом кадре — вокруг него встают орбиты логотипов (jar.arch.sphere);
+   • движение ведёт «пружина» с критическим затуханием: нет рывка на старте и мягкая остановка без «щелчка»; в цикле нет чтения вёрстки, CSS-переменные пишутся только при изменении;
+   • загрузка: первый кадр, его глубина и спрайт — сразу; остальное «от грубого к тонкому» с окном впереди по ходу движения; в видеопамяти держатся ближайшие к положению кадры (остальные —
+     в виде сжатых файлов и разворачиваются по требованию); слабое устройство: регулятор нагрузки уменьшает холст.
+   Сцена показывается при любых настройках устройства («уменьшить движение», экономия трафика) — по решению заказчика; без JS или без WebGL2 её нет (остаётся прежний герой).
+   Интерфейс от прогресса p: --cue («Листайте» и виньетка гаснут с первой прокруткой), --h1…--h3 (герой), классы body.arch-hide / arch-nav / arch-top / arch-live (шапка уходит на время кино,
    возвращается к финалу; кнопки героя нажимаются, только когда видны). Файл загружается только на главной и только пока jar.enabled = true (data/redesign.json). */
 (function () {
   'use strict';
   const A = window.Astreya || {};
   const clamp = (x, a, b) => Math.max(a, Math.min(b, x));
   const ease = x => x * x * (3 - 2 * x);
-  /* смешивание соседних кадров в движении: только в середине шага — кромки плит не двоятся, пока картинка почти стоит на кадре */
-  const blendCurve = x => ease(clamp((x - 0.2) / 0.6, 0, 1));
   const pad = i => String(i).padStart(3, '0');
   const portraitMQ = window.matchMedia('(max-aspect-ratio: 11/10)');
   const OMEGA = 24;           // жёсткость пружины, 1/с: отставание при равномерной прокрутке ≈ 2/OMEGA ≈ 0,08 с, остановка (до 2 %) ≈ 0,25 с
-  /* скорость плейхеда считаем в кадрах полного набора в секунду; полные кадры шагают по ~15 px, поэтому при любом заметном движении лучше средний уровень:
-     вдвое плотнее, с запечёнными промежуточными (арена, раунд 11: рывки 2,6 → 0,5 px, кадров дольше 33 мс 2,2 → 0,5 %) */
-  const FAST = 5;             // быстрее — средний уровень (в покое и почти в покое — полные)
-  const SLOW = 2.5;           // медленнее (дольше HOLD мс) — снова полные
-  const HOLD = 140;
-  const MOVING = 2.5;         // выше — «идёт движение»: регулятор нагрузки может ограничить уровень
-  const XFADE = 160;          // мс, перекрёстная смена уровней
-  /* загрузка кадров: HTTP/2 (GitHub Pages) тянет много маленьких файлов параллельно — «полос» должно быть много, иначе на мобильной сети скорость упирается
-     в задержку запроса, а не в канал (замеры: tools/jar-bench/cold.js) */
-  const LANES = [16, 10];     // [компьютер, телефон] — при загрузке через fetch (HTTP/2)
-  const LANES_IMG = [4, 3];   // запасной путь (file://, нет fetch) — как раньше
-  const FLOOR_LVL = 3;        // «каркас» среднего набора: каждый 8-й кадр (≈70 кадров)
-  const GAP = 8;              // пока кадров рядом ещё нет, пару для смешивания берём из ближайших загруженных не дальше стольких кадров
-  const JLANES = [6, 4];      // спрайтов баночки одновременно: [компьютер, телефон]
+  const SNAP_DELAY = 110;     // мс без движения прокрутки, после которых плейхед мягко встаёт на ближайший ключевой кадр
+  const MOVING = 0.04;        // ключевых кадров в секунду: быстрее — идёт движение (включается сглаживание кромок)
+  const LANES = [14, 8];      // запросов одновременно: [компьютер, телефон] (HTTP/2)
+  const RES = [5, 4];         // сколько ключевых кадров по обе стороны от положения держим в видеопамяти: [компьютер, телефон]
+  const DECODERS = 2;         // одновременных разворачиваний картинок в текстуры
   let ctrl = null, ctrls = [];       // ctrls — все сцены страницы (на главной одна: #arch-story), ctrl — она же
+
+  function glOk() {                  // WebGL2 есть? (проверка на отдельном холсте — холсты сцены остаются нетронутыми)
+    try { const c = document.createElement('canvas'), g = c.getContext('webgl2'); if (!g) return false; const e = g.getExtension('WEBGL_lose_context'); if (e) e.loseContext(); return true; } catch (e) { return false; }
+  }
 
   function create(root) {
     const stage = root.querySelector('.js-stage');
     const cv = root.querySelector('.js-cv');
     const jcv = root.querySelector('.ar-jar-cv'), world = root.querySelector('.ar-world');
-    const ds = root.dataset, NH = +ds.n || 1, ext = ds.ext || 'webp', ver = ds.v ? '?v=' + ds.v : '', bundle = !!window.__ASTREYA_BUNDLE;
+    const ds = root.dataset, NH = +ds.n || 1, ext = ds.ext || 'webp', ver = ds.v ? '?v=' + ds.v : '';
+    const dead0 = () => { root.classList.add('jar-off'); return {root, complete: () => true, destroy() {}, state: () => ({})}; };
+    if (!A.ArchGL || !cv || !jcv || typeof fetch !== 'function' || typeof createImageBitmap !== 'function' || !glOk()) return dead0();
     const nums = s => String(s || '').split(',').filter(x => x !== '').map(Number);
     let Phi = nums(ds.p);
     if (Phi.length !== NH || Phi.some(isNaN)) { Phi = []; for (let i = 0; i < NH; i++) Phi.push(NH > 1 ? i / (NH - 1) : 0); }
-    let Pb = nums(ds.pb);
-    if (Pb.some(isNaN)) Pb = [];
-
     const jsonOf = t => { try { const a = JSON.parse(t || '[]'); return Array.isArray(a) ? a : []; } catch (e) { return []; } };
     const JR = [jsonOf(ds.jr), jsonOf(ds.jrm)];                                     // рамки баночки по кадрам (доли кадра: x, y, w, h) — [компьютер, телефон]
-    const SPT = [jsonOf(ds.sp), jsonOf(ds.spm)], SPR = [+ds.spr || 0.25, +ds.sprm || 0.5], LIT = jsonOf(ds.lit);   // шар по кадрам: [центр x, центр y, диаметр] в долях кадра; размер его холста; освещённость зала по кадрам
-
-    let ctx2d = null, jctx = null;
-    try { ctx2d = cv.getContext('2d', {alpha: false}); } catch (e) { ctx2d = null; }
-    if (!ctx2d) { root.classList.add('jar-off'); return {root, complete: () => true, destroy() {}}; }
-    try { jctx = jcv ? jcv.getContext('2d') : null; } catch (e) { jctx = null; }
-
-    /* ---- наборы кадров (уровни): для телефона — вертикальные; в автономной сборке — только лёгкий ---- */
     const isPortrait = () => portraitMQ.matches;
-    const urlOf = (dir, i) => { const p = dir + pad(i) + '.' + ext; return A.assetUrl ? A.assetUrl(p) + (bundle ? '' : ver) : p + ver; };
-    let T = [], hasHi = false, liteIdx = 0, xlIdx = -1, set = '', gen = 0;
-    /* порядок «от грубого к тонкому»: сначала каждый 64-й кадр, потом каждый 32-й, 16-й … — на любом этапе загрузки кадры лежат по сценарию равномерно */
-    const ctz = (i, n) => { if (!i || i === n - 1) return 99; let c = 0; while (!(i & 1)) { i >>= 1; c++; } return c; };
-    const hier = n => Array.from({length: n}, (_, i) => i).sort((a, b) => ctz(b, n) - ctz(a, n) || a - b);
-    function makeTiers() {
-      const por = isPortrait(), pick = (a, b) => (por ? b : a), list = [];
-      const add = (dir, P) => { let t; if (dir && P.length) list.push({dir, P, N: P.length, im: new Array(P.length).fill(null), busy: new Uint8Array(P.length), loaded: 0, bb: hier(P.length), bbPos: 0, floor: 0}); t = list[list.length - 1]; t.floor = t.bb.filter(i => ctz(i, t.N) >= FLOOR_LVL).length; };
-      hasHi = false; liteIdx = 0; xlIdx = -1;
-      const mid = pick(ds.dm, ds.mm), low = pick(ds.dl, ds.ml);
-      if (bundle && Pb.length && low) add(low, Pb);                        // автономная сборка: один набор — самый лёгкий по весу
-      else {
-        add(pick(ds.d, ds.m), Phi); hasHi = list.length > 0;
-        if (Pb.length && mid) { liteIdx = list.length; add(mid, Pb); }
-        if (Pb.length && low) { xlIdx = list.length; add(low, Pb); }
-      }
-      if (liteIdx >= list.length) liteIdx = 0;
-      if (xlIdx >= list.length) xlIdx = -1;
-      return list;
-    }
+    const urlOf = p => (A.assetUrl ? A.assetUrl(p) : p) + ver;
+    const canFetch = true;
+    const PRESERVE = !!window.__ASTREYA_GL_PRESERVE;                                // проверки читают пиксели холстов
 
     /* ---- состояние ---- */
-    let W = 0, H = 0, dead = false, firstDrawn = false, running = false, last = 0, dirty = true, started = false;
-    let cp = 0, vp = 0, pT = 0, paintedP = -1, paintedJ = -1, paintedWant = -1, rzTimer = 0;
+    let W = 0, H = 0, JW = 0, JH = 0, dead = false, firstDrawn = false, jarShown = false, running = false, last = 0, dirty = true, started = false;
+    let cp = 0, vp = 0, pT = 0, pPrev = -1, lastMove = 0, paintedP = -2, rzTimer = 0, snapped = false;
     let sTop = 0, sTot = 1, sH = 1, yNow = 0;
     const born = performance.now();
-    /* уровень по скорости и регулятор нагрузки */
-    let lastDraw = null, lastSig = -1, tier = 0, calm = 0, gov = 0, used = -1, wantIdx = 0, restW = 1, xf = null, xlWanted = false;
-    let resScale = 1;          // доля разрешения холста: регулятор нагрузки уменьшает её, когда кадры не укладываются в бюджет
-    let dtEma = 16.7, minDt = 16.7, slowRun = 0, fastRun = 0, govLock = 0, lastGov = -1e9, upLocked = false, govChanges = 0;
+    let hall = null, jar = null, track = null, set = '', gen = 0, labelReady = false, lastDraw = null, resScale = 1;
+    let dtEma = 16.7, minDt = 16.7, slowRun = 0, govChanges = 0;
     const perfRing = new Float32Array(240); let perfN = 0;
+    let dirSign = 1;
 
-    /* ---- загрузка. Кадры берутся через fetch → Blob → <img>: такая загрузка не задерживает событие load (его ждёт заставка), поэтому начинается сразу;
-       если fetch недоступен (страница с диска, старый браузер) — обычные <img>, и до load берётся только первый кадр ----
-       Порядок: первый кадр → полные кадры у положения (чтобы первый вид был резким) → средний набор «от грубого к тонкому» с окном впереди по ходу движения →
-       полные кадры рядом с положением (в покое) → остальные полные от положения; самый лёгкий набор — только если регулятор его попросил. Пока идёт движение,
-       полные кадры не грузим: в движении показываются средние, а канал нужен им */
-    const canFetch = !bundle && typeof fetch === 'function' && location.protocol !== 'file:';
-    let inflight = 0, winLoaded = document.readyState === 'complete', firstAsked = false, hiPrime = 3, dirSign = 1;
-    const blobUrls = [];
-    function locate(P, p) {                // положение на сценарии → пара кадров и доля между ними
-      const N = P.length;
-      if (p <= P[0]) return {k: 0, t: 0};
-      if (p >= P[N - 1]) return {k: Math.max(0, N - 2), t: 1};
-      let lo = 0, hi = N - 1;
-      while (hi - lo > 1) { const m = (lo + hi) >> 1; if (P[m] <= p) lo = m; else hi = m; }
-      return {k: lo, t: (p - P[lo]) / (P[lo + 1] - P[lo])};
+    /* ---- данные ключевых кадров: сжатые файлы (Blob) всегда, текстуры — только рядом с положением ---- */
+    const blobs = {c: new Array(NH).fill(null), z: new Array(NH).fill(null), j: new Array(NH).fill(null)};
+    const busy = {c: new Uint8Array(NH), z: new Uint8Array(NH), j: new Uint8Array(NH)};
+    const resident = new Uint8Array(NH), resJ = new Uint8Array(NH), decoding = new Uint8Array(NH * 2);
+    let inflight = 0, decN = 0, loadedKeys = 0, pin = null;                  // pin — диапазон кадров, которые держим в видеопамяти независимо от положения (для проверок и точных замеров)
+    const pinned = k => !!pin && k >= pin[0] && k <= pin[1];
+    const ctz = (i, n) => { if (!i || i === n - 1) return 99; let c = 0; while (!(i & 1)) { i >>= 1; c++; } return c; };
+    const hier = Array.from({length: NH}, (_, i) => i).sort((a, b) => ctz(b, NH) - ctz(a, NH) || a - b);   // «от грубого к тонкому»
+    let hierPos = 0;
+    function locate(p) {                          // положение на сценарии → пара кадров и доля между ними
+      if (p <= Phi[0]) return {k: 0, t: 0};
+      if (p >= Phi[NH - 1]) return {k: Math.max(0, NH - 2), t: 1};
+      let lo = 0, hi = NH - 1;
+      while (hi - lo > 1) { const m = (lo + hi) >> 1; if (Phi[m] <= p) lo = m; else hi = m; }
+      return {k: lo, t: (p - Phi[lo]) / (Phi[lo + 1] - Phi[lo])};
     }
-    function nearestMissing(t, from, maxd) {
-      const lim = Math.min(t.N, maxd === undefined ? t.N : maxd + 1);
-      for (let d = 0; d < lim; d++) {
-        const a = from - d, b = from + d;
-        if (a >= 0 && !t.busy[a]) return a;
-        if (b < t.N && !t.busy[b]) return b;
-      }
-      return -1;
-    }
-    function nearDir(t, from, dir, ahead, behind) {       // ближайший ещё не запрошенный кадр в окне: впереди по ходу движения — шире, позади — уже
-      for (let d = 0, m = Math.max(ahead, behind); d <= m; d++) {
-        const a = from + dir * d, b = from - dir * d;
-        if (d <= ahead && a >= 0 && a < t.N && !t.busy[a]) return a;
-        if (d <= behind && b >= 0 && b < t.N && !t.busy[b]) return b;
-      }
-      return -1;
-    }
-    function nextHier(t, limit) {
-      const lim = limit === undefined ? t.N : limit;
-      while (t.bbPos < lim && t.busy[t.bb[t.bbPos]]) t.bbPos++;
-      return t.bbPos < lim ? t.bb[t.bbPos] : -1;
-    }
+    const kNear = p => { const l = locate(p); return l.t >= 0.5 ? Math.min(NH - 1, l.k + 1) : l.k; };
+    const dirOf = () => (isPortrait() ? 'm' : 'd');
+    const urls = (key, i) => key === 'c' ? urlOf((dirOf() === 'm' ? ds.m : ds.d) + pad(i) + '.' + ext) : key === 'z' ? urlOf((dirOf() === 'm' ? ds.zm : ds.zd) + pad(i) + '.' + (ds.zx || 'webp')) : urlOf((dirOf() === 'm' ? ds.jm : ds.jd) + pad(i) + '.' + (ds.jx || 'webp'));
+    const keyDone = k => !!(blobs.c[k] && blobs.z[k]);
+
+    /* что грузить следующим: первый кадр → пара у положения → окно впереди по ходу движения → остальное от грубого к тонкому */
     function pickNext() {
-      const lt = T[liteIdx], hi = hasHi ? T[0] : null, xl = xlIdx >= 0 ? T[xlIdx] : null;
-      const kOf = t => locate(t.P, cp).k;
-      let i;
-      if (!canFetch && !winLoaded) {                                  // без fetch до load — только первый кадр: остальные задержали бы событие load
-        if (firstAsked || !lt) return null;
-        firstAsked = true; i = nearestMissing(lt, kOf(lt)); return i >= 0 ? {ti: liteIdx, i} : null;
-      }
-      const moving = Math.abs(vp) * (NH - 1) > MOVING;
-      if (lt && !firstAsked) { firstAsked = true; i = nearestMissing(lt, kOf(lt)); if (i >= 0) return {ti: liteIdx, i}; }
-      if (hi && hiPrime > 0 && (i = nearestMissing(hi, kOf(hi))) >= 0) { hiPrime--; return {ti: 0, i}; }
-      if (hi && !moving && (i = nearestMissing(hi, kOf(hi), 3)) >= 0) return {ti: 0, i};          // стоим — нужен резкий кадр
-      if (lt) {
-        if ((i = nextHier(lt, lt.floor)) >= 0) return {ti: liteIdx, i};                               // сначала «каркас» — каждый 2^FLOOR_LVL-й кадр: листать можно из любого места
-        if ((i = nearDir(lt, kOf(lt), dirSign, moving ? 28 : 16, moving ? 6 : 4)) >= 0) return {ti: liteIdx, i};
-        if ((i = nextHier(lt)) >= 0) return {ti: liteIdx, i};
-      }
-      if (hi && (i = nearestMissing(hi, kOf(hi))) >= 0) return {ti: 0, i};
-      if (xl && xlWanted && (i = nearestMissing(xl, kOf(xl))) >= 0) return {ti: xlIdx, i};
+      const need = k => { for (const key of ['c', 'z', 'j']) if (!busy[key][k]) return key; return null; };
+      const tryK = k => { if (k < 0 || k >= NH) return null; const key = need(k); return key ? {key, k} : null; };
+      let r;
+      if ((r = tryK(0))) return r;
+      const l = locate(cp), kc = kNear(cp);
+      if ((r = tryK(l.k)) || (r = tryK(Math.min(NH - 1, l.k + 1)))) return r;
+      for (let d = 1; d <= 6; d++) { if ((r = tryK(kc + dirSign * d)) || (r = tryK(kc - dirSign * d))) return r; }
+      while (hierPos < NH) { const k = hier[hierPos]; if ((r = tryK(k))) return r; hierPos++; }
       return null;
     }
-    const lanesNow = () => (canFetch ? LANES : LANES_IMG)[isPortrait() ? 1 : 0];
     function pump() {
-      if (dead) return;
-      const lanes = lanesNow();
-      while (inflight < lanes) { const j = pickNext(); if (!j) return; load(j.ti, j.i); }
+      if (dead || !canFetch) return;
+      const lanes = LANES[isPortrait() ? 1 : 0];
+      while (inflight < lanes) {
+        const j = pickNext(); if (!j) return;
+        const {key, k} = j, g = gen;
+        busy[key][k] = 1; inflight++;
+        fetch(urls(key, k), {priority: k === 0 || Math.abs(k - kNear(cp)) < 3 ? 'high' : 'low'}).then(r => { if (!r.ok) throw new Error('http'); return r.blob(); })
+          .then(b => { if (g !== gen) return; blobs[key][k] = b; busy[key][k] = 2; inflight--; if (key === 'c') loadedKeys++; dirty = true; schedule(); pumpDecode(); pump(); })
+          .catch(() => { if (g !== gen) return; busy[key][k] = 3; inflight--; pump(); });
+      }
     }
-    function load(ti, i) {
-      const t = T[ti], g = gen, url = urlOf(t.dir, i);
-      t.busy[i] = 1; inflight++;
-      const done = img => {
-        if (g !== gen) return;
-        inflight--; t.busy[i] = 2;
-        if (img) { t.im[i] = img; t.loaded++; if (Math.abs(i - locate(t.P, cp).k) <= GAP + 1) { dirty = true; schedule(); } }        // перерисовываем, только если кадр нужен рядом с текущим положением
-        pump();
-      };
-      const viaImg = (src, blob) => {
-        const img = new Image(); img.decoding = 'async';
-        img.onload = () => { img.onload = img.onerror = null; done(img); };
-        img.onerror = () => { img.onload = img.onerror = null; if (blob) { try { URL.revokeObjectURL(src); } catch (e) {} } done(null); };
-        img.src = src;
-      };
-      if (canFetch) {
-        fetch(url, {priority: 'low'}).then(r => { if (!r.ok) throw new Error('http'); return r.blob(); })
-          .then(b => { if (g !== gen) return; const u = URL.createObjectURL(b); blobUrls.push(u); viaImg(u, true); })
-          .catch(() => { if (g === gen) viaImg(url, false); });
-      } else viaImg(url, false);
+    async function bmp(blob, premul) {
+      try { return await createImageBitmap(blob, {premultiplyAlpha: premul ? 'premultiply' : 'none', colorSpaceConversion: 'none'}); }
+      catch (e) { const u = URL.createObjectURL(blob); try { const im = new Image(); im.src = u; await im.decode(); return im; } finally { setTimeout(() => URL.revokeObjectURL(u), 3000); } }
     }
-    function startLoading() {
-      const key = isPortrait() ? 'm' : 'd'; if (set === key) return;
-      set = key; gen++; inflight = 0; firstAsked = false; hiPrime = 3; used = -1; paintedWant = -1; xf = null; lastSig = -1; dirty = true;
-      T = makeTiers();
-      pump();
+    /* развёртывание файлов в текстуры: нужные кадры рядом с положением, дальние выгружаем */
+    function pumpDecode() {
+      if (dead || !hall) return;
+      const R = RES[isPortrait() ? 1 : 0], l = locate(cp);
+      const need = [];
+      for (let d = 0; d <= R; d++) { for (const k of [l.k + d, l.k + 1 - d]) if (k >= 0 && k < NH && need.indexOf(k) < 0) need.push(k); }
+      need.sort((a, b) => Math.abs(a - (l.k + l.t)) - Math.abs(b - (l.k + l.t)));
+      if (pin) for (let k = pin[0]; k <= pin[1]; k++) if (need.indexOf(k) < 0) need.push(k);
+      for (const k of need) {
+        if (decN >= DECODERS) break;
+        if (!resident[k] && keyDone(k) && !decoding[k]) {
+          decoding[k] = 1; decN++; const g = gen;
+          Promise.all([bmp(blobs.c[k], false), bmp(blobs.z[k], false)]).then(([c, z]) => {
+            if (g === gen && hall && !dead) { hall.setKey(k, c, z, c.width, c.height, z.width, z.height); resident[k] = 1; dirty = true; schedule(); }
+            try { c.close && c.close(); z.close && z.close(); } catch (e) { /* — */ }
+          }).catch(() => {}).then(() => { decoding[k] = 0; decN--; pumpDecode(); evict(); });
+        } else if (!resJ[k] && blobs.j[k] && jar && !decoding[NH + k]) {
+          decoding[NH + k] = 1; decN++; const g = gen;
+          bmp(blobs.j[k], true).then(s => { if (g === gen && jar && !dead) { jar.setSprite(k, s); resJ[k] = 1; dirty = true; schedule(); } try { s.close && s.close(); } catch (e) { /* — */ } })
+            .catch(() => {}).then(() => { decoding[NH + k] = 0; decN--; pumpDecode(); });
+        }
+      }
+    }
+    function evict() {                                                // дальше окна — выгружаем текстуры (файлы остаются в памяти и разворачиваются снова по требованию)
+      if (!hall) return;
+      const R = RES[isPortrait() ? 1 : 0], l = locate(cp), c = l.k + l.t;
+      for (let k = 0; k < NH; k++) {
+        if (resident[k] && Math.abs(k - c) > R + 3 && !pinned(k)) { hall.dropKey(k); resident[k] = 0; }
+        if (resJ[k] && Math.abs(k - c) > R + 3 && k !== 0 && !pinned(k)) { jar && jar.dropSprite(k); resJ[k] = 0; }
+      }
     }
 
-    /* ---- размер холста ---- */
+    /* ---- инициализация WebGL (после загрузки дорожки камеры) ---- */
+    async function initGL() {
+      const key = dirOf();
+      const tr = await (await fetch(urlOf(key === 'm' ? ds.camm : ds.cam))).json();
+      if (dead || key !== dirOf()) return;
+      track = tr;
+      const fa = key === 'm' ? 9 / 16 : 16 / 9;
+      hall = A.ArchGL.createHall(cv, {track: tr, phi: Phi, portrait: key === 'm', frameAspect: fa, grid: (key === 'm' ? [450, 800] : [960, 540]).map(v => Math.max(60, Math.round(v * (window.__ASTREYA_GL_GRID || 1)))), stretch: 0.4, preserve: PRESERVE});
+      const rects = JR[key === 'm' ? 1 : 0];
+      jar = rects.length === NH ? A.ArchGL.createJar(jcv, {track: tr, phi: Phi, rects, portrait: key === 'm', frameAspect: fa, ink: +ds.ink || 0.43, preserve: PRESERVE}) : null;
+      if (!hall) { root.classList.add('jar-off'); dead = true; return; }
+      hall.setSize(W, H); JW = JH = 0; sizeJar();
+      if (jar && ds.lbl) bmp(await (await fetch(urlOf(ds.lbl))).blob(), false).then(b => { if (jar) { jar.setLabel(b); labelReady = true; dirty = true; schedule(); } }).catch(() => {});
+      cv.addEventListener('webglcontextlost', e => { e.preventDefault(); hall = null; jar = null; resident.fill(0); resJ.fill(0); }, false);
+      cv.addEventListener('webglcontextrestored', () => { if (!dead) initGL().catch(() => {}); }, false);
+      pumpDecode(); schedule();
+    }
+
+    /* ---- размер холстов ---- */
     function sizeCanvas() {
       const w = stage.clientWidth || innerWidth, h = stage.clientHeight || innerHeight;
-      /* пикселей на холсте — не больше, чем в самом кадре (1920×1080 ≈ 2,1 млн): больше деталей на экране всё равно не появится, а стоимость кадра растёт пропорционально
-         числу пикселей (на экранах Retina прежний потолок 4,4 млн удваивал нагрузку без выигрыша в чёткости); при слабом устройстве регулятор нагрузки снижает ещё (resScale) */
+      /* пикселей на холсте — не больше, чем в самом кадре (1920×1080 ≈ 2,1 млн): больше деталей на экране всё равно не появится; при слабом устройстве регулятор нагрузки снижает ещё (resScale) */
       const dpr = Math.min(window.devicePixelRatio || 1, 2), s = Math.min(dpr, Math.sqrt(2.1e6 / Math.max(1, w * h))) * resScale;
       const nw = Math.round(w * s), nh = Math.round(h * s);
-      if (nw !== W || nh !== H || cv.width !== nw || cv.height !== nh) { W = nw; H = nh; if (cv.width !== W || cv.height !== H) { cv.width = W; cv.height = H; } lastSig = -1; }
+      if (hall && (nw !== W || nh !== H)) { W = nw; H = nh; hall.setSize(W, H); }
+      else if (!hall) { W = nw; H = nh; }
       sizeJar();
       dirty = true;
     }
-
-    /* ---- баночка: отдельный холст по размеру «мира» сцены (рамка кадра 16:9 или 9:16, как у кадров зала) — рамки спрайтов лежат в долях кадра, значит, и в долях этого холста.
-       Пикселей на холсте — с запасом на Retina: спрайт отрендерен с передискретизацией, поэтому на экране он резкий, а не растянутый ---- */
-    let JW = 0, JH = 0, jarSig = '', jarShown = false, jdirty = true, WW = 0, WH = 0, SB = 1, spSig = '';
+    /* баночка: отдельный холст по размеру «мира» сцены (рамка кадра 16:9 или 9:16): спрайт отрендерен с передискретизацией, поэтому на Retina он резкий; пикселей — с запасом (до 6,5 млн) */
     function sizeJar() {
-      if (!jctx || !world) return;
+      if (!jar || !world) return;
       const w = world.clientWidth, h = world.clientHeight; if (!w || !h) return;
-      WW = w; WH = h; SB = Math.max(1, Math.round(SPR[isPortrait() ? 1 : 0] * w)); setv(world, '--sb', SB + 'px'); spSig = '';
-      const dpr = Math.min(window.devicePixelRatio || 1, 2), s = Math.min(dpr, Math.sqrt(3.4e6 / (w * h)));
+      const dpr = Math.min(window.devicePixelRatio || 1, 2), s = Math.min(dpr, Math.sqrt(6.5e6 / (w * h)));
       const nw = Math.round(w * s), nh = Math.round(h * s);
-      if (nw !== JW || nh !== JH || jcv.width !== nw || jcv.height !== nh) { JW = nw; JH = nh; jcv.width = nw; jcv.height = nh; jarSig = ''; jdirty = true; }
+      if (nw !== JW || nh !== JH) { JW = nw; JH = nh; jar.setSize(JW, JH); dirty = true; }
     }
 
-    /* ---- что рисовать: для уровня want — пара кадров и доля смешивания; если кадров ещё нет, берётся другой уровень или ближайший загруженный кадр ---- */
-    function mkPair(ti, ia, ib, tt) {          // пара кадров уровня ti и доля смешивания; null — нужных картинок ещё нет
-      const t = T[ti], full = hasHi && ti === 0;
-      let a = ib === ia ? 0 : (full ? blendCurve(tt) : tt) * (1 - restW) + (tt < 0.5 ? 0 : 1) * restW;       // в покое — ровно ближайший кадр, без двоения
-      let A_ = t.im[ia], B_ = t.im[ib];
-      if (a < 0.02) a = 0; else if (a > 0.98) { a = 0; A_ = B_; ia = ib; }
-      return A_ && (a === 0 || B_) ? {ti, ia, ib, a, A_, B_: a > 0 ? B_ : null} : null;
-    }
-    function pairFor(ti, gapMax) {
-      const t = T[ti], l = locate(t.P, cp), ib = Math.min(t.N - 1, l.k + 1);
-      const r = mkPair(ti, l.k, ib, l.t); if (r || !gapMax) return r;
-      let lo = l.k, up = ib;                      // кадров рядом ещё нет (идёт загрузка) — смешиваем ближайшие загруженные с обеих сторон, если они не слишком далеко
-      while (lo >= 0 && l.k - lo < gapMax && !t.im[lo]) lo--;
-      while (up < t.N && up - ib < gapMax && !t.im[up]) up++;
-      if (lo < 0 || up >= t.N || !t.im[lo] || !t.im[up]) return null;
-      return mkPair(ti, lo, up, clamp((cp - t.P[lo]) / (t.P[up] - t.P[lo]), 0, 1));
-    }
-    function resolve(want) {
-      const order = [want], nu = T.length;
-      for (let d = 1; d < nu; d++) { if (want + d < nu) order.push(want + d); if (want - d >= 0) order.push(want - d); }
-      let r;
-      for (let n = 0; n < order.length; n++) if ((r = pairFor(order[n], 0))) return r;              // точная пара где-нибудь
-      for (let n = 0; n < order.length; n++) if ((r = pairFor(order[n], GAP))) return r;            // пара из ближайших загруженных
-      let best = null, bd = 1e9;                         // ничего подходящего не загружено (самое начало) — ближайший к положению загруженный кадр любого уровня
-      T.forEach((t, ti) => {
-        const k = locate(t.P, cp).k;
-        for (let d = 0; d < t.N; d++) {
-          let found = false;
-          [k - d, k + 1 + d].forEach(j => { if (j >= 0 && j < t.N && t.im[j]) { found = true; const dd = Math.abs(t.P[j] - cp); if (dd < bd) { bd = dd; best = {ti, ia: j, ib: j, a: 0, A_: t.im[j], B_: null}; } } });
-          if (found) break;
-        }
-      });
-      return best;
-    }
-    function drawImg(im, alpha) {
-      const iw = im.naturalWidth, ih = im.naturalHeight; if (!iw || !ih) return;
-      const k = Math.max(W / iw, H / ih), dw = iw * k, dh = ih * k;
-      ctx2d.globalAlpha = alpha; ctx2d.drawImage(im, (W - dw) / 2, (H - dh) / 2, dw, dh);
-    }
-    function compose(r, alpha, single) {
-      ctx2d.imageSmoothingEnabled = true; ctx2d.imageSmoothingQuality = 'low';      // 'high' на процессорной растеризации в 10–20 раз дороже (замеры), а выигрыш в чёткости — доли дБ
-      if (single) { drawImg(r.B_ && r.a >= 0.5 ? r.B_ : r.A_, alpha); return; }
-      drawImg(r.A_, 1);
-      if (r.B_ && r.a > 0) drawImg(r.B_, r.a);
-    }
+    /* ---- отрисовка ---- */
     function paint(now) {
-      if (!T.length) return false;
-      restW = clamp(1 - Math.abs(vp) * (NH - 1), 0, 1);
-      const r = resolve(clamp(wantIdx, 0, T.length - 1)); if (!r) return false;
-      if (r.ti !== used) { if (used >= 0 && used < T.length && firstDrawn) xf = {from: used, t0: now}; used = r.ti; }      // сменился уровень — короткая перекрёстная смена
-      const sig = ((r.ti * 1024 + r.ia) * 1024 + r.ib) * 65 + Math.round(r.a * 64);
-      if (!xf && sig === lastSig) { lastDraw.xf = 0; return true; }       // та же картинка, что уже на холсте (например, пока полный кадр держится на месте) — не перерисовываем
-      let drew = false;
-      if (xf) {
-        const pr = (now - xf.t0) / XFADE;
-        if (pr >= 1 || xf.from === r.ti) xf = null;
-        else { const r0 = resolve(xf.from); if (r0) { compose(r0, 1, false); compose(r, ease(pr), true); drew = true; } else xf = null; }
+      if (!hall) return false;
+      const speed = Math.abs(vp) * (NH - 1);
+      const pair = hall.draw(cp, 0, speed > MOVING);
+      if (!pair) return false;
+      lastDraw = {ka: pair.ka, kb: pair.kb, t: pair.t, single: !!pair.single};
+      if (!firstDrawn) { firstDrawn = true; if (cp < 0.02) root.classList.add('ar-intro'); root.classList.add('ready'); }
+      if (jar) {
+        const ok = jar.draw(cp, pair, {});
+        if (ok && !jarShown) { jarShown = true; if (cp < 0.02) root.classList.add('ar-intro'); root.classList.add('jar-ready'); }
       }
-      if (!drew) compose(r, 1, false);
-      ctx2d.globalAlpha = 1;
-      lastDraw = {ti: r.ti, ia: r.ia, ib: r.ib, a: r.a, xf: drew ? ease(clamp((now - xf.t0) / XFADE, 0, 1)) : 0, xfTi: drew ? xf.from : -1};
-      lastSig = drew ? -1 : sig;
-      if (!firstDrawn) { firstDrawn = true; if (cp < 0.02) root.classList.add('ar-intro'); root.classList.add('ready'); }       // сцену открыли с самого начала — зал мягко «приезжает» (css/home-arch.css); при обновлении посреди сцены этого нет
       return true;
-    }
-
-    /* ---- спрайты баночки: по одному на кадр сценария (положения Phi). Грузятся от текущего положения, сначала — впереди по ходу движения; рисуется ближайший загруженный ---- */
-    const JD = {key: '', dir: '', R: [], im: [], busy: null, loaded: 0, inflight: 0};
-    function jarSetup() {
-      const key = isPortrait() ? 'm' : 'd';
-      if (JD.key === key) return;
-      JD.key = key; JD.dir = (key === 'm' ? ds.jm : ds.jd) || ''; JD.R = JR[key === 'm' ? 1 : 0];
-      JD.im = new Array(NH).fill(null); JD.busy = new Uint8Array(NH); JD.loaded = 0; JD.inflight = 0; jarSig = ''; jdirty = true;
-      if (!JD.dir || JD.R.length !== NH) JD.dir = '';               // нет данных для сцены — слой баночки молчит
-      jarPump();
-    }
-    function jarNext() {
-      const l = locate(Phi, cp), c = Math.round(l.k + l.t);
-      for (let d = 0; d < NH; d++) {
-        const a = c + dirSign * d, b = c - dirSign * d;
-        if (a >= 0 && a < NH && !JD.busy[a]) return a;
-        if (d && b >= 0 && b < NH && !JD.busy[b]) return b;
-      }
-      return -1;
-    }
-    function jarPump() {
-      if (dead || !JD.dir) return;
-      const lanes = JLANES[isPortrait() ? 1 : 0], g = gen, key = JD.key;
-      while (JD.inflight < lanes) {
-        const i = jarNext(); if (i < 0) return;
-        JD.busy[i] = 1; JD.inflight++;
-        const p = JD.dir + pad(i) + '.' + (ds.jx || 'webp'), url = A.assetUrl ? A.assetUrl(p) + (bundle ? '' : ver) : p + ver;
-        const done = img => { if (g !== gen || JD.key !== key) return; JD.inflight--; JD.busy[i] = 2; if (img) { JD.im[i] = img; JD.loaded++; jdirty = true; schedule(); } jarPump(); };
-        const viaImg = src => { const im = new Image(); im.decoding = 'async'; im.onload = () => { im.onload = im.onerror = null; done(im); }; im.onerror = () => { im.onload = im.onerror = null; done(null); }; im.src = src; };
-        if (canFetch) fetch(url, {priority: 'high'}).then(r => { if (!r.ok) throw new Error('http'); return r.blob(); }).then(b => { if (g !== gen) return; const u = URL.createObjectURL(b); blobUrls.push(u); viaImg(u); }).catch(() => { if (g === gen) viaImg(url); });
-        else viaImg(url);
-      }
-    }
-    /* шар привязан к миру: его положение и размер даёт та же камера, что рисовала зал (hall_story.py → sphere_track); точки посчитаны чаще кадров (во сколько раз — по длине дорожки),
-       между ними линейно. Пока шар вне кадра (камера проходит рядом с ним) слой не показывается и не рисуется.
-       Слой двигается только трансформацией (центр, масштаб), холст шара не перерисовывается и не меняет размер */
-    function paintSphere() {
-      const T = SPT[isPortrait() ? 1 : 0]; if (!world || !WW || !T || T.length < 2) return;
-      const sub = (T.length - 1) / Math.max(1, NH - 1); if (sub !== Math.round(sub)) return;
-      const l = locate(Phi, cp), u = clamp(l.k + l.t, 0, NH - 1), us = u * sub, i0 = Math.min(T.length - 2, Math.floor(us + 1e-9)), f = clamp(us - i0, 0, 1), a = T[i0], b = T[i0 + 1];
-      const d = (a[2] * (1 - f) + b[2] * f) * WW, x = (a[0] * (1 - f) + b[0] * f) * WW, y = (a[1] * (1 - f) + b[1] * f) * WH, r = d / 2;
-      const vis = a[2] > 0 && b[2] > 0 && x + r > 0 && x - r < WW && y + r > 0 && y - r < WH, k = vis ? d / SB : 0;
-      const SPH = window.Astreya && window.Astreya.sphere;
-      if (SPH) {
-        if (SPH.setActive) SPH.setActive(vis);
-        const k0 = Math.min(NH - 1, Math.floor(u + 1e-9)), k1 = Math.min(NH - 1, k0 + 1), g = clamp(u - k0, 0, 1);
-        if (LIT.length === NH && SPH.setLit) SPH.setLit(Math.pow(LIT[k0] * (1 - g) + LIT[k1] * g, .9), (d / (T[T.length - 1][2] * WW) - 1) / 2);          // шар темнеет вместе с залом: в начале сцены полумрак
-      }
-      const sig = Math.round(x * 4) + ':' + Math.round(y * 4) + ':' + Math.round(k * 1000);
-      if (sig === spSig) return;
-      spSig = sig;
-      setv(world, '--sx', x.toFixed(2) + 'px'); setv(world, '--sy', y.toFixed(2) + 'px'); setv(world, '--sk', k.toFixed(4));
-    }
-    /* положение и размер баночки между кадрами интерполируются по рамкам (центр и ширина), а картинка берётся ближайшая — спрайты не смешиваются, двоения нет */
-    function paintJar() {
-      if (!jctx || !JD.dir || !JW) return true;
-      const l = locate(Phi, cp), u = l.k + l.t, k0 = Math.min(NH - 1, Math.floor(u + 1e-9)), k1 = Math.min(NH - 1, k0 + 1), f = clamp(u - k0, 0, 1), R = JD.R;
-      let n = clamp(Math.round(u), 0, NH - 1);
-      if (!JD.im[n]) { n = -1; for (let d = 1; d < NH && n < 0; d++) { if (JD.im[Math.round(u) - d]) n = Math.round(u) - d; else if (JD.im[Math.round(u) + d]) n = Math.round(u) + d; } }
-      if (n < 0) return false;
-      const a = R[k0], b = R[k1], rn = R[n];
-      const cx = ((a[0] + a[2] / 2) * (1 - f) + (b[0] + b[2] / 2) * f), cy = ((a[1] + a[3] / 2) * (1 - f) + (b[1] + b[3] / 2) * f), w = a[2] * (1 - f) + b[2] * f;
-      const sc = w / rn[2], dw = w * JW, dh = rn[3] * sc * JH, dx = cx * JW - dw / 2, dy = cy * JH - dh / 2;
-      const sig = n + ':' + Math.round(dx * 4) + ':' + Math.round(dy * 4) + ':' + Math.round(dw * 4);
-      if (sig === jarSig) return true;
-      jarSig = sig;
-      jctx.clearRect(0, 0, JW, JH);
-      jctx.imageSmoothingEnabled = true; jctx.imageSmoothingQuality = 'high';
-      jctx.drawImage(JD.im[n], dx, dy, dw, dh);
-      if (!jarShown) { jarShown = true; if (cp < 0.02) root.classList.add('ar-intro'); root.classList.add('jar-ready'); }
-      return true;
-    }
-
-    /* ---- уровень по скорости + регулятор нагрузки ---- */
-    function chooseTier(now, dtRaw) {
-      const fps = Math.abs(vp) * (NH - 1), moving = fps > MOVING;
-      if (cp === pT && vp === 0) { tier = 0; calm = 0; }          // остановились — полные кадры
-      else {
-        const want = fps > FAST ? 1 : 0;
-        if (want >= tier) { tier = want; calm = 0; }
-        else if (fps < SLOW) { if (!calm) calm = now; if (now - calm > HOLD) { tier = want; calm = 0; } }
-        else calm = 0;
-      }
-      if (moving && T.length > 1 && dtRaw > 0) {
-        // интервалы кадров дольше бюджета → ограничиваем уровень сверху; запас → возвращаем. Бюджет считаем от частоты экрана (минимальный интервал)
-        dtRaw = Math.min(dtRaw, 80);
-        minDt = Math.max(5, Math.min(minDt + 0.004, dtRaw));
-        const base = minDt < 19 ? minDt : minDt < 28 ? 16.67 : 33.33;
-        dtEma += (dtRaw - dtEma) * 0.15;
-        if (dtEma > base * 1.25 + 0.5) { slowRun++; fastRun = 0; }
-        else if (dtEma < base * 1.05 + 0.2) { fastRun++; slowRun = 0; }
-        else slowRun = 0;
-        if (slowRun >= 14 && gov < T.length - 1 && now > govLock) {
-          gov = gov === 0 && T.length > 2 ? 2 : gov + 1; govChanges++; slowRun = fastRun = 0; govLock = now + 1200;      // уровень 1 (средний) при движении и так включён — сразу на низкий
-          if (now - lastGov < 4000) upLocked = true;                 // уровень снижали дважды подряд — устройство слабое, обратно не поднимаем
-          lastGov = now; if (gov >= 1) xlWanted = true;
-        } else if (fastRun >= 240 && gov > 0 && !upLocked && now > govLock + 2800) { gov = gov === 2 && T.length > 2 ? 0 : gov - 1; govChanges++; fastRun = 0; govLock = now + 1200; lastGov = now; }
-      }
-      wantIdx = Math.min(Math.max(tier, moving ? gov : 0), Math.max(0, T.length - 1));
     }
 
     /* ---- запись CSS-переменных только при изменении значения ---- */
@@ -405,7 +212,6 @@
       setv(stage, '--h1', st(0.62, 0.76).toFixed(3));                         // подпись и заголовок — когда камера почти закончила отъезд
       setv(stage, '--h2', st(0.70, 0.82).toFixed(3));                         // текст, кнопки, орбиты логотипов
       setv(stage, '--h3', st(0.78, 0.90).toFixed(3));                         // панель «Почему выбирают Астрею?»
-      setv(stage, '--h4', st(0.62, 0.78).toFixed(3));                         // мягкая светлая завеса за текстом
       const hide = inView && p > 0.02 && p < 0.76, nav = inView && p >= 0.76 && yNow < sTop + sTot + innerHeight * 0.55, live = p > 0.8,
         top = inView && (p <= 0.02 || (p >= 0.76 && yNow < sTop + sTot + innerHeight * 0.1));      // шапка прозрачная на заставке и пока герой стоит на месте; возвращается с героем и остаётся, пока он не ушёл больше чем наполовину
       if (hide !== archSt.hide) { archSt.hide = hide; document.body.classList.toggle('arch-hide', hide); }       // пока идёт кино — шапки нет
@@ -420,74 +226,98 @@
       const r = root.getBoundingClientRect(); sTop = r.top + sy; sH = root.offsetHeight; sTot = Math.max(1, sH - stage.clientHeight);
     }
 
-    /* ---- цикл: прокрутка → цель; пружина ведёт текущее положение к цели ---- */
+    /* ---- цикл: прокрутка → цель; пружина ведёт текущее положение к цели; в покое цель — ближайший ключевой кадр ---- */
     function schedule() { if (!running && !dead) { running = true; last = 0; requestAnimationFrame(tick); } }
     function tick(t) {
       if (dead) { running = false; return; }
       const w0 = performance.now();
-      const dtRaw = last ? t - last : 0, dt = last ? clamp(dtRaw / 1000, 0.001, 0.1) : 0.016; last = t;
+      const dtRaw = last ? t - last : 0, dt = last ? clamp(dtRaw / 1000, 0.001, 0.35) : 0.016; last = t;          // пружина считается точным решением — устойчива при любом шаге; потолок лишь не даёт сцене «прыгнуть» после долгого простоя вкладки
       const y = window.scrollY || window.pageYOffset || 0, vh = innerHeight; yNow = y;
       pT = clamp((y - sTop) / sTot, 0, 1);
       /* страница открыта посреди сцены (восстановление прокрутки после перезагрузки) — без «разгона» с нуля */
-      if (!started || (w0 - born < 900 && Math.abs(pT - cp) > 0.08)) { started = true; cp = pT; vp = 0; }
+      if (!started || (w0 - born < 900 && Math.abs(pT - cp) > 0.08)) { started = true; cp = pT; vp = 0; pPrev = pT; lastMove = t; }
+      if (Math.abs(pT - pPrev) > 1e-6) { pPrev = pT; lastMove = t; }
+      /* цель пружины: куда показывает прокрутка; если она стоит — ближайший ключевой кадр (там картинка — сам отрендеренный кадр) */
+      let target = pT;
+      if (t - lastMove > SNAP_DELAY && hall) { const kn = kNear(pT); if (resident[kn] || keyDone(kn)) target = Phi[kn]; }
       // критически затухающая пружина (точное решение на шаг dt): x'' = −2ω x' − ω² (x − цель)
       const e = Math.exp(-OMEGA * dt);
-      let d = cp - pT, c = vp + OMEGA * d;
-      cp = pT + (d + c * dt) * e; vp = (vp - OMEGA * c * dt) * e;
-      if (Math.abs(cp - pT) < 2e-6 && Math.abs(vp) < 1e-4) { cp = pT; vp = 0; }
+      let d = cp - target, c = vp + OMEGA * d;
+      cp = target + (d + c * dt) * e; vp = (vp - OMEGA * c * dt) * e;
+      if (Math.abs(cp - target) < 2e-6 && Math.abs(vp) < 1e-4) { cp = target; vp = 0; }
       cp = clamp(cp, 0, 1);
       if (Math.abs(vp) > 1e-3) dirSign = vp > 0 ? 1 : -1;
       const inView = y + vh > sTop && y < sTop + sH;
-      if (inView) chooseTier(t, dtRaw);
-      { const rs = gov >= 1 ? 0.75 : 1; if (rs !== resScale) { resScale = rs; sizeCanvas(); } }       // слабое устройство: холст меньше (кадры низкого уровня всё равно 960×540), нагрузка ∝ числу пикселей
-      if ((inView || !firstDrawn) && (dirty || xf || wantIdx !== paintedWant || Math.abs(cp - paintedP) > 1e-7)) {
-        if (paint(t)) { paintedP = cp; paintedWant = wantIdx; dirty = false; } else dirty = true;
+      /* регулятор нагрузки: кадры идут дольше бюджета — холст чуть меньше (не чаще раза в 1,5 с) */
+      if (inView && Math.abs(vp) * (NH - 1) > MOVING && dtRaw > 0) {
+        const dtc = Math.min(dtRaw, 80); minDt = Math.max(5, Math.min(minDt + 0.004, dtc));
+        const base = minDt < 19 ? minDt : minDt < 28 ? 16.67 : 33.33; dtEma += (dtc - dtEma) * 0.15;
+        if (dtEma > base * 1.35 + 0.5) slowRun++; else slowRun = 0;
+        if (slowRun >= 24 && resScale > 0.6 && now() - lastGov > 1500) { resScale = resScale > 0.8 ? 0.8 : 0.65; govChanges++; slowRun = 0; lastGov = now(); if (resScale < 0.7 && hall) hall.setGridScale(0.5); sizeCanvas(); }
       }
-      if (inView && (jdirty || Math.abs(cp - paintedJ) > 1e-7)) { jdirty = !paintJar(); paintSphere(); paintedJ = cp; }
+      if ((inView || !firstDrawn) && hall && (dirty || Math.abs(cp - paintedP) > 1e-7)) {
+        if (paint(t)) { paintedP = cp; dirty = false; } else dirty = true;
+      }
+      if (inView && hall) { pumpDecode(); }
       ui(cp, inView);
       perfRing[perfN++ % perfRing.length] = performance.now() - w0;
-      if (cp !== pT || xf || (dirty && !firstDrawn) || (inView && wantIdx !== paintedWant)) requestAnimationFrame(tick); else running = false;
+      if (cp !== target || vp !== 0 || (dirty && !firstDrawn) || (inView && (t - lastMove <= SNAP_DELAY + 40 || Math.abs(target - cp) > 1e-7))) requestAnimationFrame(tick); else running = false;
     }
+    let lastGov = -1e9;
+    const now = () => performance.now();
 
     const onScroll = () => schedule();
-    const onResize = () => { clearTimeout(rzTimer); rzTimer = setTimeout(() => { measureStatic(); sizeCanvas(); startLoading(); jarSetup(); schedule(); }, 120); schedule(); };
-    const onMQ = () => { measureStatic(); sizeCanvas(); startLoading(); jarSetup(); schedule(); };
+    const onResize = () => { clearTimeout(rzTimer); rzTimer = setTimeout(() => { measureStatic(); sizeCanvas(); schedule(); }, 120); schedule(); };
+    /* поменялась ориентация экрана (телефон ↔ компьютер): другой набор кадров, другая дорожка камеры — данные загружаем заново, холсты остаются теми же */
+    const onMQ = () => {
+      if (dead || set === dirOf()) return;
+      gen++; set = dirOf(); inflight = 0; decN = 0; hierPos = 0; loadedKeys = 0; labelReady = false;
+      for (const k in blobs) blobs[k].fill(null); for (const k in busy) busy[k].fill(0);
+      resident.fill(0); resJ.fill(0); decoding.fill(0);
+      if (hall) hall.destroy(true); if (jar) jar.destroy(true); hall = jar = null; W = H = JW = JH = 0;
+      measureStatic(); sizeCanvas(); pump(); initGL().then(() => { if (!dead) { pumpDecode(); schedule(); } }).catch(() => { root.classList.add('jar-off'); dead = true; }); schedule();
+    };
     addEventListener('scroll', onScroll, {passive: true});
     addEventListener('resize', onResize);
-    /* размер сцены может поменяться и без события resize (встроенные браузеры мессенджеров, поздно пришедший CSS, панели браузера) — тогда холст
-       остался бы старого размера и картинка растянулась; следим за самой сценой (CSS object-fit: cover страхует от растяжения до пересчёта) */
+    /* размер сцены может поменяться и без события resize (встроенные браузеры мессенджеров, панели браузера) — следим за самой сценой */
     let ro = null;
     if (typeof ResizeObserver === 'function') { ro = new ResizeObserver(() => { if (dead) return; measureStatic(); sizeCanvas(); schedule(); }); ro.observe(stage); if (world) ro.observe(world); }
     portraitMQ.addEventListener && portraitMQ.addEventListener('change', onMQ);
     if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => { if (!dead) { measureStatic(); schedule(); } });
-    const onLoad = () => { if (dead) return; winLoaded = true; measureStatic(); pump(); schedule(); };
+    const onLoad = () => { if (dead) return; measureStatic(); pump(); schedule(); };
     addEventListener('load', onLoad);
 
+    function destroyGL() {
+      gen++; clearTimeout(rzTimer); if (ro) ro.disconnect();
+      removeEventListener('scroll', onScroll); removeEventListener('resize', onResize); removeEventListener('load', onLoad);
+      portraitMQ.removeEventListener && portraitMQ.removeEventListener('change', onMQ);
+      if (hall) hall.destroy(false); if (jar) jar.destroy(false); hall = jar = null;
+      document.body.classList.remove('arch-hide', 'arch-nav', 'arch-live', 'arch-top');
+    }
+
+    set = dirOf();
     measureStatic();
     sizeCanvas();
-    startLoading();
-    jarSetup();
+    pump();
+    initGL().then(() => { if (!dead) { pumpDecode(); schedule(); } }).catch(() => { root.classList.add('jar-off'); dead = true; });
     schedule();
-    const uOf = () => { const l = locate(Phi, cp); return l.k + l.t; };
+    const uOf = () => { const l = locate(cp); return l.k + l.t; };
     const self = {
       root,
-      tierP() { return T.map(t => t.P); },
-      jump(p) { cp = pT = p; vp = 0; started = true; wantIdx = 0; tier = 0; restW = 1; xf = null; paint(performance.now()); jarSig = ''; paintJar(); paintSphere(); ui(p, true); },
+      /* для проверок: держать кадры a…b в видеопамяти и дождаться, пока они развернутся (все — и зал, и спрайты) */
+      prefetch(a, b) { pin = [Math.max(0, a), Math.min(NH - 1, b)]; return new Promise(res => { const t = setInterval(() => { let ok = !!hall; for (let k = pin[0]; k <= pin[1]; k++) if (!resident[k] || !resJ[k]) ok = false; if (ok || dead) { clearInterval(t); res(ok); } else pumpDecode(); }, 80); }); },
+      unpin() { pin = null; },
+      jump(p) { cp = pT = p; pPrev = p; vp = 0; started = true; lastMove = performance.now(); if (hall) paint(performance.now()); ui(p, true); },
       state() {
         const ring = Array.prototype.slice.call(perfRing, 0, Math.min(perfN, perfRing.length)).sort((a, b) => a - b);
-        return {p: cp, pTarget: pT, u: uOf(), cur: uOf(), target: pT * (NH - 1), N: NH, loaded: T.length ? T[hasHi ? 0 : liteIdx].loaded : 0, set,
-          drawn: lastDraw, tiers: T.map(t => t.loaded), tierN: T.map(t => t.N), complete: T.length > 0 && T.every((t, i) => i === xlIdx || t.loaded >= t.N), tierCount: T.length, hasHi, used, want: wantIdx, gov, govChanges, xl: xlWanted, firstDrawn, jar: {loaded: JD.loaded, n: NH, shown: jarShown, sig: jarSig},
-          perf: {n: perfN, mean: ring.length ? ring.reduce((s, v) => s + v, 0) / ring.length : 0, p95: ring.length ? ring[Math.floor(ring.length * 0.95)] : 0, max: ring.length ? ring[ring.length - 1] : 0}};
+        let res = 0, resj = 0; for (let k = 0; k < NH; k++) { res += resident[k]; resj += resJ[k]; }
+        return {p: cp, pTarget: pT, u: uOf(), N: NH, loaded: loadedKeys, set, gl: !!hall, drawn: lastDraw, firstDrawn, resident: res, residentJar: resj, resScale, govChanges, snapped: vp === 0 && Math.abs(cp - Phi[kNear(cp)]) < 1e-5,
+          jar: {loaded: blobs.j.filter(Boolean).length, n: NH, shown: jarShown, sprites: resj, label: labelReady},
+          size: [W, H, JW, JH], perf: {n: perfN, mean: ring.length ? ring.reduce((s, v) => s + v, 0) / ring.length : 0, p95: ring.length ? ring[Math.floor(ring.length * 0.95)] : 0, max: ring.length ? ring[ring.length - 1] : 0}};
       },
-      destroy() {
-        dead = true; gen++; clearTimeout(rzTimer); if (ro) ro.disconnect();
-        removeEventListener('scroll', onScroll); removeEventListener('resize', onResize); removeEventListener('load', onLoad);
-        portraitMQ.removeEventListener && portraitMQ.removeEventListener('change', onMQ);
-        T = []; blobUrls.forEach(u => { try { URL.revokeObjectURL(u); } catch (e) {} }); blobUrls.length = 0;
-        document.body.classList.remove('arch-hide', 'arch-nav', 'arch-live', 'arch-top');
-      }
+      destroy() { dead = true; destroyGL(); for (const k in blobs) blobs[k].fill(null); }
     };
-    self.complete = () => T.length > 0 && T.every((t, i) => i === xlIdx || t.loaded >= t.N);
+    self.complete = () => loadedKeys >= NH && blobs.z.every(Boolean) && blobs.j.every(Boolean);
     return self;
   }
 
@@ -500,7 +330,7 @@
   }
   window.Astreya = A; A.jar = {init, get ctrl() { return ctrl; }, get ctrls() { return ctrls; }, get arch() { return ctrl; }};
   /* где в документе «покой» героя (его верх под шапкой): от этой прокрутки считается уход текста героя (js/motion.js). Сцена есть — это конец её закреплённой части
-     (кадры доиграли, текст и панель на месте); нет сцены (выключена, нет canvas) — верх запасного героя под шапкой */
+     (кадры доиграли, текст и панель на месте); нет сцены (выключена, нет WebGL) — верх запасного героя под шапкой */
   A.heroBase = function () {
     const ar = document.getElementById('arch-story');
     if (ar && ar.offsetHeight) {
@@ -510,7 +340,7 @@
     return 0;
   };
 
-  /* подключаемся к инициализации страницы: при первой загрузке и после подмены содержимого (автономная сборка/переходы) */
+  /* подключаемся к инициализации страницы: при первой загрузке и после подмены содержимого (переходы между страницами) */
   const prev = A.initPage;
   A.initPage = function (r) { if (prev) prev.apply(this, arguments); init(); };
   if (document.readyState !== 'loading') init(); else document.addEventListener('DOMContentLoaded', init);

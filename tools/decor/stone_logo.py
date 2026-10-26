@@ -148,13 +148,13 @@ def materials(k, tone=1.0, texscale=1.0):
     return mt, bd, sphere_stone('sl_sphere', (.80, .70, .56), 1.1)               # шар — тот же травертин, что в зале на главной (поры, слоистость), чуть темнее стен
 
 
-def build_logo(height=.40, loc=(0, 0, 0), sphere_scale=1.35, depth=.14, parts=('mountain', 'band', 'sphere'), mats=None, sphere_dy=None, sphere_dz=0.0, thick=0.0):
+def build_logo(height=.40, loc=(0, 0, 0), sphere_scale=1.35, depth=.14, parts=('mountain', 'band', 'sphere'), mats=None, sphere_dy=None, sphere_dz=0.0, thick=0.0, bev_k=1.0):
     """знак высотой height (м); loc — точка под центром основания (низ горы). Возвращает словарь тел {'mountain', 'band', 'sphere'}"""
     k = height / YH
     mt, bd, sp = mats or materials(k)
     out = {}
     # толще — но кончики остаются острыми, как в логотипе: у горы сдвигается только внутренняя вершина (ножки полнеют), у серпа рост сходит на нет к обоим кончикам
-    if 'mountain' in parts: out['mountain'] = poly_mesh('sl_mountain', MOUNTAIN, k, depth, 0.0, mt, bev=.0011 * height / .4, grow=thick * 1.9, gw=[0, 0, 0, 1])
+    if 'mountain' in parts: out['mountain'] = poly_mesh('sl_mountain', MOUNTAIN, k, depth, 0.0, mt, bev=.0011 * height / .4 * bev_k, grow=thick * 1.9, gw=[0, 0, 0, 1])
     if 'band' in parts:
         bp = band_points()
         out['band'] = poly_mesh('sl_band', bp, k, depth * .80, -depth * .34, bd, bev=0, grow=thick * .8, gw=band_weights(bp))   # без фаски: на остром хвосте она оставляет щель

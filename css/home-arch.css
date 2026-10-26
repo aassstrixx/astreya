@@ -1,7 +1,7 @@
 /* home-arch.css — главная в архитектурной системе (подключается вместе с css/system.css, пока data/redesign.json → jar.arch.enabled = true).
    Здесь: 1) архитектурный первый экран (#arch-story): закреплённая сцена с кадрами арочной ниши (js/jar.js, data-mode="arch") и герой поверх неё;
    2) оформление секций главной ниже героя (камень, молочные поверхности, арки, фоновые текстуры) — часть «Секции» ниже.
-   Двигаются только opacity и transform; backdrop-filter и blend-режимы не используются. Значения --m, --h1…--h4 пишет js/jar.js от прокрутки. */
+   Двигаются только opacity и transform; backdrop-filter и blend-режимы не используются. Значения --m, --h1…--h3 пишет js/jar.js от прокрутки. */
 
 /* ============ 1. Архитектурный первый экран ============ */
 .arch-story{position:relative;height:var(--jh,420vh);margin:0;background:var(--milk)}
@@ -14,31 +14,17 @@
 
 /* герой поверх сцены: слой на весь экран; внутри — «мир» (рамка 16:9 по размеру кадра, чтобы шар, баночка и орбиты стояли на тех же местах сцены, что и в кадре), текст слева и панель снизу */
 .ar-hero{position:absolute;inset:0;z-index:3;pointer-events:none;--ar-x:max(var(--gut),calc((100% - var(--maxw)) / 2 + var(--gut)));--ww:max(100%,calc(100lvh * 16 / 9))}      /* --ww — ширина кадра зала на экране; текст героя начинается не левее правого края проёма с комнатой (--arch-r — его положение в долях кадра) плюс небольшой отступ: слева стоят стеллаж и растение, и надписи на них не налезают */
-.ar-hero::before{content:"";position:absolute;inset:0;z-index:0;opacity:var(--h4,0);
-  background:linear-gradient(90deg,rgba(247,242,232,.26) 0,rgba(247,242,232,.22) 30%,rgba(247,242,232,.08) 46%,rgba(247,242,232,0) 56%)}      /* лёгкая светлая завеса за текстом: стеллаж и растение слева остаются видны и резки (никакого «молока»), а текст читается — слева гладкая светлая стена */
 .ar-world{position:absolute;left:50%;top:50%;width:max(100%,calc(100lvh * 16 / 9));aspect-ratio:16/9;transform:translate(-50%,-50%);z-index:1}
-.ar-world{--sb:300px;--sx:-9999px;--sy:-9999px;--sk:1}      /* шар привязан к миру: положение (--sx, --sy, px от левого верхнего угла мира), масштаб (--sk) и размер холста (--sb) на каждом кадре пишет js/jar.js по данным камеры (data/redesign.json → jar.arch.sphere.*.track) */
-/* каменный шар: живой, на WebGL (js/sphere.js). В прокрутке кадров он НЕ участвует — стоит на месте, камера «раскрывает» зал вокруг него. Слой лежит под баночкой, но под орбитами и текстом.
-   Запасной вариант (нет WebGL, «меньше движения»): готовая картинка шара, он лишь мягко парит */
-.ar-sph{position:absolute;left:0;top:0;width:var(--sb);aspect-ratio:1;margin:calc(var(--sb) / -2) 0 0 calc(var(--sb) / -2);transform:translate3d(var(--sx),var(--sy),0) scale(var(--sk));pointer-events:none;z-index:1}
 .ar-orb{position:absolute;left:calc(var(--ox) * 100%);top:calc(var(--oy) * 100%);width:calc(var(--od) * 100%);aspect-ratio:1;translate:-50% -50%;pointer-events:none;z-index:3}      /* орбиты логотипов стоят вокруг шара в готовом кадре (положение и диаметр — из последней точки его пути); проявляются, когда сцена дошла до конца */
-.ar-pearl{position:absolute;inset:0;pointer-events:none}
-.ar-gl,.ar-poster{position:absolute;left:0;top:0;width:100%;height:100%;display:block;user-select:none}
-.ar-gl{opacity:0}
-.ar-poster{inset:-1%;width:102%;height:102%;object-fit:contain}
-.ar-pearl.gl-on .ar-gl{opacity:1}
-.ar-pearl.gl-on .ar-poster{opacity:0}
-.ar-pearl.gl-off .ar-poster{animation:floaty 8s ease-in-out infinite}      /* картинка совпадает с живым шаром в начальном повороте (tools/jar-render/sphere_poster.js): пока грузится WebGL, шар уже на месте, потом они сменяются незаметно */
-html.is-scrolling .ar-pearl .ar-poster,.anim-off .ar-pearl .ar-poster{animation-play-state:paused!important}
-/* баночка: отдельный чёткий слой (js/jar.js рисует на нём спрайты по прокрутке); лежит выше шара и ниже орбит и текста — надписи идут поверх неё */
-.ar-jar-cv{position:absolute;left:0;top:0;width:100%;height:100%;display:block;pointer-events:none;opacity:0;transition:opacity .5s ease;z-index:2}      /* баночка всегда поверх шара: в заставке она ближе к камере, а на подиуме её не должен закрывать даже край шара */
+/* баночка: отдельный чёткий слой (js/jar.js рисует на нём спрайты по прокрутке); лежит выше кадров зала и ниже орбит и текста — надписи идут поверх неё */
+.ar-jar-cv{position:absolute;left:0;top:0;width:100%;height:100%;display:block;pointer-events:none;opacity:0;transition:opacity .5s ease;z-index:2}      /* баночка всегда поверх кадров зала: в заставке она ближе к камере, а на подиуме её не должен закрывать даже край шара */
 .jar-story.jar-ready .ar-jar-cv{opacity:1}
 /* заставка: зал медленно приближается, баночка плавно проявляется и чуть всплывает; один раз при открытии сцены с начала (класс ar-intro ставит js/jar.js) */
 @keyframes arBg{from{transform:scale(1.05)}to{transform:none}}
 @keyframes arJar{from{opacity:0;transform:translate3d(0,14px,0) scale(.95)}to{opacity:1;transform:none}}
 .arch-story.ar-intro.ready .js-cv{animation:arBg 2.8s cubic-bezier(.16,.7,.2,1) backwards}
 .arch-story.ar-intro.jar-ready .ar-jar-cv{transform-origin:50% 55%;animation:arJar 1.6s cubic-bezier(.16,.7,.2,1) .15s backwards}
-.ar-orbit{position:absolute;left:50%;top:50%;width:152%;aspect-ratio:1;translate:-50% -50%;opacity:var(--h2,0)}
+.ar-orbit{position:absolute;left:50%;top:50%;width:140%;aspect-ratio:1;translate:-50% -50%;opacity:var(--h2,0)}
 .ar-orbit .ring{border-color:rgba(70,60,40,.34)}
 .ar-orbit .ring.r2{border-color:rgba(70,60,40,.2)}
 .ar-orbit .orb img{filter:drop-shadow(0 3px 6px rgba(60,40,18,.2));--k:1.15}      /* без светлого ореола: он «выбеливал» баночку, когда логотип проходил над ней */
@@ -105,14 +91,14 @@ html:not(.js) .arch-story{display:none;margin:0}
   .arch-story{height:var(--jhm,380vh)}
   .ar-world{width:max(100%,calc(100lvh * 9 / 16));aspect-ratio:9/16}
   .ar-hero{--ar-x:var(--gut)}
-  .ar-hero::before{background:linear-gradient(180deg,rgba(247,242,232,.9) 0,rgba(247,242,232,.74) 24%,rgba(247,242,232,.3) 38%,rgba(247,242,232,0) 50%)}
+  .ar-copy{text-shadow:0 1px 10px rgba(247,242,232,.6)}      /* никакой завесы поверх сцены: надписи читаются сами, а у букв — только лёгкое свечение по контуру */
   .ar-copy{top:calc(var(--hdr) + clamp(8px,2.2vh,26px));width:calc(100% - 2 * var(--gut))}
   .ar-h{font-size:clamp(27px,8vw,42px);margin:10px 0 0}
   .ar-lead,.ar-facts{display:none}
   .ar-cta{margin-top:14px;gap:8px}
   .ar-cta .btn{padding:12px 16px;font-size:13.5px}
   .ar-orb{left:calc(var(--oxm) * 100%);top:calc(var(--oym) * 100%);width:calc(var(--odm) * 100%)}
-  .ar-orbit{width:122%}
+  .ar-orbit{width:116%}
   .ar-orbit .orb img{scale:.82}      /* кольцо с логотипами целиком умещается в экран телефона, пока вращается */
   .ar-copy{left:var(--gut)}
   .ar-panel{width:calc(100% - 2 * var(--gut));grid-template-columns:repeat(2,minmax(0,1fr));border-radius:20px 20px 0 0;padding:10px 12px 12px}
@@ -127,7 +113,6 @@ html:not(.js) .arch-story{display:none;margin:0}
 }
 @media (prefers-reduced-motion:reduce){
   .ar-e,.ar-h,.ar-lead,.ar-cta,.ar-panel{transform:none}
-  .ar-poster{animation:none!important}
   .ar-cue i{animation:none}
   .arch-story.ar-intro.ready .js-cv,.arch-story.ar-intro.jar-ready .ar-jar-cv{animation:none}
 }

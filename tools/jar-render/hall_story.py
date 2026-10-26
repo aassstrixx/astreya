@@ -1,24 +1,22 @@
 #!/usr/bin/env python3
-"""Первый экран главной — «световая лаборатория»: зал с арками, нишей и подиумом + баночка «Астрея», которая ВСЕГДА стоит на подиуме (Blender / Cycles).
+"""Первый экран главной: зал с арками, нишей и подиумом + баночка «Астрея», которая раскручивается и по дуге уходит из центра кадра на подиум (Blender / Cycles).
 
 Сцена целиком в метрах (баночка — настоящая модель из lumiere_scene.py, увеличена вдвое: она «герой» кадра). Состав зала (по референсу заказчика):
-  • стена из светлого камня с большой аркой, внутри — ступенчатая ниша со светящейся линией свода и матовой стеклянной панелью в глубине; в нише на пороге — профессиональная косметика (упаковки
-    tools/showroom-assets/packs.py); шар — живой WebGL-слой на сайте (js/sphere.js), в кадры он не запекается, но привязан к миру: его положение и размер по кадрам даёт `track`;
-  • огромный каменный знак «Астреи» (гора с острыми кончиками и серп, tools/decor/stone_logo.py) — стоит на месте, ничего не «достраивается»;
-  • слева — проём второй арки: за ним комната со стеллажом из светлого камня и продукцией и ветка оливы на переднем плане (она же отбрасывает на стену и пол пятна света от листьев);
-    справа — рифлёная пилястра, ваза с оливой; перед нишей — низкий круглый подиум из травертина и камни-обломки (tools/decor/rocks.py);
+  • стена из светлого камня с большой аркой, внутри — ступенчатая ниша со светящейся линией свода и матовой стеклянной панелью в глубине; в нише на пороге — профессиональная косметика (упаковки tools/showroom-assets/packs.py);
+  • огромный каменный знак «Астреи» (гора с острыми, как в логотипе, кончиками, tools/decor/stone_logo.py) — стоит на месте, ничего не «достраивается»; серпа под шаром нет;
+  • каменный шар — статичная 3D-модель, запечённая в кадры: материал горы «точь в точь» (тот же объект материала), парит перед горой ничем не подпёртый; в слое баночки он «вырезает» спрайт там, где стоит перед ней;
+  • слева — проём второй арки: за ним комната со стеллажом из светлого камня и продукцией и ветка оливы на переднем плане (она же отбрасывает на стену и пол пятна света от листьев); справа — рифлёная пилястра, ваза с пышным
+    деревом (оливой с длинной густой листвой); перед нишей — низкий круглый подиум из травертина и камни-обломки (tools/decor/rocks.py);
   • тонкие концентрические линии — «сетка точности» (графитово-синий камень, инкрустация): на самом подиуме вокруг основания баночки и на полу вокруг подиума; пол — светлый полированный камень.
-Сюжет (прогресс p от 0 до 1 = прокрутка сцены; движется ТОЛЬКО камера, баночка стоит на месте и всегда опирается на подиум, этикетка смотрит на камеру):
-  p 0–0,2 — крупный предметный кадр в полумраке: узкий тёплый луч (SPOT) на баночке и подиуме, камера медленно приближается и смещается по небольшой дуге вокруг баночки, блик ползёт по крышке;
-  p 0,2–0,45 — камера отъезжает: из полумрака проявляются края подиума, линии на полу, стена, ниша с продукцией и матовым стеклом, шар въезжает в кадр сверху;
-  p 0,45–0,7 — раскрывается пространство целиком (параллакс арки, плиты-горы, стеллажа), свет поднимается; p 0,7–0,9 — широкий кадр: баночка справа на подиуме, слева свободное светлое место;
-  после HOLD (0,90) — покой: мягкий тёплый дневной свет, луч остаётся лёгкой подсветкой; поверх встаёт текст сайта (настоящие HTML-элементы, в рендер ничего не вшито).
-Свет по кадрам — `lit_of(p)` (доля мягкого света зала: от LIT0 = 0,2 до 1) и `beam_of(p)` (яркость луча); те же значения уходят на сайт (`lit` в data/redesign.json), чтобы живой шар темнел вместе с залом.
-Три слоя для сайта: кадры зала БЕЗ баночки (--layer bg; баночка невидима камере, но отбрасывает тень и отражается в полу), спрайты баночки на прозрачном фоне (--layer jar, --ss — передискретизация)
-и живой шар. Рамки спрайтов, положение шара (в 4 раза чаще кадров) и освещённость даёт `track`.
+Сюжет (прогресс p от 0 до 1 = прокрутка сцены): заставка — баночка крупно по центру кадра на ровном бежевом фоне (гладкая стена слева от горы, тени листьев), камера идёт рядом с ней; баночка раскручивается (SPIN = 360°: полный оборот
+вокруг оси, в конце снова лицом к зрителю) и по дуге JAR_WAY (огибает шар) уходит на подиум и опускается на него; камера плавно отъезжает от «следящего» кадра к общему плану (CAM_END_*, фокусное 36 мм);
+с HOLD (0,93) сцена «держит» последний кадр (покой героя). Свет постоянный, тёплый дневной; в нише по ходу сцены разгорается светящаяся линия свода.
+Два слоя для сайта: кадры зала БЕЗ баночки (--layer bg; баночка невидима камере, но отбрасывает тень и отражается в полу) и спрайты баночки на прозрачном фоне (--layer jar, --ss — передискретизация; по умолчанию «авто»:
+спрайт ≈ 1200 px по ширине, в общем плане — до ×8). Рамки спрайтов и положение шара в готовом кадре даёт `track`.
 
   python3 hall_story.py track out.json [--portrait] [--total 60]                  рамки баночки по кадрам, положение шара
   python3 hall_story.py still <кадр> out.png [--layer all|bg|jar] [--sphere] [--res 1600x900] [--samples 28] [--total 60] [--portrait] [--ss 1.6]
+  python3 hall_story.py view out.png x,y,z tx,ty,tz линза [--sphere]      произвольный ракурс для осмотра (зал целиком, знак, ветки)
   python3 hall_story.py anim <с> <по> outdir [--layer bg|jar] [--stride N] [--samples N] [--total 60] [--portrait]    (готовые кадры пропускаются)
 Кадры затем кодируют encode_arch.py (зал → assets/jar-arch/d, m и лёгкие dm, mm) и encode_jar.py (спрайты → j, jm); apply_arch.py записывает итог в data/redesign.json. Подробности — README.md."""
 import importlib.util
@@ -26,6 +24,8 @@ import json
 import math
 import os
 import random
+import re
+import shutil
 import sys
 
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -69,13 +69,15 @@ TARGET_MAIN_P = Vector((.292, 0.0, .52))      # (портрет: шар по ц�
 LOGO_H = 1.80                                  # каменный знак-гора выше кадра: вершина уходит за верх, правая ветвь — за правый край, как гигантский знак на фоне прежнего героя
 LOGO_CX = .741                                # центр знака по x: жемчужина знака совпадает с центром ниши (шар посередине арки, как на референсе)
 LOGO_Y = -.42                                 # передняя грань горы (перед аркой, позади подиума)
-LOGO_Z = -.012                               # низ знака: кончик левой «ножки» чуть врезан в пол — касается его остриём, не обрезан
+LOGO_Z = -.012 - float(os.environ.get('HALL_LOGO_DROP', 0.0))   # (по умолчанию знак стоит как в логотипе: ножка касается пола острым концом, серп — под шаром)  #                               # низ знака: кончик левой «ножки» чуть врезан в пол — касается его остриём, не обрезан
 LOGO_DEPTH = .46
-LOGO_THICK = 11.0                             # насколько «полнеют» ножки горы и серп (кончики не трогаем — остаются острыми, как в логотипе)
-SPHERE_TINT = (.62, .53, .41)                # каменный шар чуть темнее стен — как просил заказчик (на сайте он «живой»: вращается за курсором, см. spin)
-SPHERE_3D = False                           # True — запечь каменный шар в кадры (на сайте вместо него живая жемчужина, css/home-arch.css → .ar-pearl)
-SPHERE_X, SPHERE_Y, SPHERE_Z = .292, -1.10, .456              # шар парит далеко впереди горы и серпа — не «прилипает» к ним; выше прежнего, чтобы баночка на подиуме не касалась его края
-SPHERE_R = .163                              # большой шар: диаметр ≈ 0.28 ширины кадра (ближе к камере — выглядит как прежний, чуть крупнее)
+LOGO_THICK = 11.0                             # насколько «полнеют» ножки горы (кончики не трогаем — остаются острыми, как в логотипе)
+SPHERE_SCREEN = {False: (.715, float(os.environ.get('HALL_SPH_Y', .335)), float(os.environ.get('HALL_SPH_D', .205))), True: (.50, .475, .44)}     # где шар стоит в готовом кадре (центр x, центр y, диаметр — доли ширины кадра): компьютер и телефон; общий план мельче прежнего, орбиты не доходят до нижней панели
+SPHERE_DEPTH = {False: 1.78, True: 1.62}                                # на каком расстоянии от камеры (вдоль оси) шар парит: на 0,15–0,2 м перед горой, ничем не подпёрт
+
+LEAF = dict(leafk=1.55, wk=1.22, dens=1.7)                  # листья оливы в зале: длиннее, шире и гуще (множители к настройкам BR.olive)
+LOGO_PARTS = ('mountain',) if os.environ.get('HALL_BAND') == '0' else ('mountain', 'band')       # весь знак: две ножки горы с острыми кончиками и серп (волна) — как в логотипе
+LEAF_SHADOW = dict(leafk=1.3, wk=1.1, dens=1.0)             # ветки вне кадра, дающие пятна света на стене: листья чуть длиннее, но не гуще — тени остаются резными силуэтами листьев, а не мутными пятнами
 
 S = {}
 
@@ -146,10 +148,23 @@ def build_left_room(M):
             pl.material_index = 1
     build_shelf(M, yb)
     BR.vase((-1.12, 1.45, 0), .46, .13, M['ceramic'])                                                # ваза и высокая олива у проёма, чтобы дерево было видно сквозь арку
-    BR.olive((-1.12, 1.45, .46 + .04), 1.30, 36, 1.75, random.Random(31), lean=-.18)
-    BR.olive((-1.06, 1.42, .46 + .04), 1.10, 30, 1.55, random.Random(32), lean=.14)
+    BR.olive((-1.12, 1.45, .46 + .04), 1.30, 36, 1.75, random.Random(31), lean=-.18, **LEAF)
+    BR.olive((-1.06, 1.42, .46 + .04), 1.10, 30, 1.55, random.Random(32), lean=.14, **LEAF)
     rock = RK.ROCKS['boulder-a']
     RK.make_rock('room_rock', rock['seed'] + 7, tuple(v * .5 for v in rock['size']), rock['kind'], rock['cuts'], rock['tint'], (-2.55, 1.3, 0), 20, rough=rock['rough'])
+
+
+def sphere_place(portrait):
+    """мировое положение и радиус шара по тому, где он должен стоять в готовом кадре (SPHERE_SCREEN) при камере CAM_END_*: луч из камеры через нужную точку кадра, на глубине SPHERE_DEPTH"""
+    pos, tgt, lens = CAM_END_P if portrait else CAM_END_L
+    cx, cy, d = SPHERE_SCREEN[bool(portrait)]
+    D = SPHERE_DEPTH[bool(portrait)]
+    f = (tgt - pos).normalized(); r = f.cross(Vector((0, 0, 1))).normalized(); u = r.cross(f)
+    aspect = 9 / 16 if portrait else 16 / 9                                          # ширина / высота кадра
+    wm = D * 36.0 / lens * (aspect if portrait else 1.0)                              # ширина кадра в метрах на глубине D (36 мм — по длинной стороне кадра)
+    hm = wm / aspect
+    c = pos + f * D + r * ((cx - .5) * wm) + u * ((.5 - cy) * hm)
+    return c.x, c.y, c.z, d * wm / 2
 
 
 def build_architecture(M, portrait):
@@ -177,17 +192,18 @@ def build_architecture(M, portrait):
     SC.box('floor', M['floor'], -4.0, 4.0, -8.0, 3.0, -.3, 0, 'w', 0)
     # плита-порог под нишей и ступень перед ней
     SC.box('slab', M['trav'], INN['cx'] - INN['rx'] - .06, INN['cx'] + INN['rx'] + .06, -.02, .44, 0, .028, 'w', .004)
-    # постамент и каменный шар посередине арки (как на референсе); гора и волна — огромный каменный знак «Астреи» перед аркой (собирается по ходу анимации — см. logo_state)
-    bpy.ops.mesh.primitive_uv_sphere_add(segments=128, ring_count=96, radius=SPHERE_R, location=(SPHERE_X, SPHERE_Y, SPHERE_Z))                # шар на сайте — живой слой (js/sphere.js), в кадры он не запекается; здесь он невидим камере,
-    sp = bpy.context.object                                                                                                                       # но отбрасывает тень на пол и стены и отражается в полу, как настоящий (--sphere рисует его для просмотра)
+    # каменный шар — статичная 3D-модель (запечена в кадры): материал горы «точь в точь» (тот же узел материала, та же структура, тот же цвет); паря́ в воздухе перед горой, ничем не подпёрт
+    mats = SL.materials(LOGO_H / SL.YH, .78, .45)
+    sx, sy, sz, sr = sphere_place(portrait)
+    bpy.ops.mesh.primitive_uv_sphere_add(segments=128, ring_count=96, radius=sr, location=(sx, sy, sz))
+    sp = bpy.context.object
     sp.name = 'stone_sphere'
     bpy.ops.object.shade_smooth()
-    sp.data.materials.append(SL.sphere_stone('hall_sphere', SPHERE_TINT, 1.1))
-    sp.visible_camera = bool(SPHERE_3D)
+    sp.data.materials.append(mats[0])
     S['sphere'] = sp
-    mats = SL.materials(LOGO_H / SL.YH, .78, .45)
-    S['logo'] = SL.build_logo(LOGO_H, (LOGO_CX, LOGO_Y, LOGO_Z), depth=LOGO_DEPTH, mats=mats, parts=('mountain', 'band'), thick=LOGO_THICK)
-    for key in ('mountain', 'band'):
+    S['sphere_xyzr'] = (sx, sy, sz, sr)
+    S['logo'] = SL.build_logo(LOGO_H, (LOGO_CX, LOGO_Y, LOGO_Z), depth=LOGO_DEPTH, mats=mats, parts=LOGO_PARTS, thick=LOGO_THICK, bev_k=.22)
+    for key in LOGO_PARTS:
         S['logo_home_' + key] = S['logo'][key].location.copy()
     # рифлёная пилястра справа (вертикальные валики)
     for i in range(9):
@@ -209,23 +225,75 @@ def build_decor(M, portrait):
     rock('boulder-b', (.86, -.46, 0), 35, 4, .60)
     rock('pebble-a', (.72, -.72, 0), 60, 5, 1.1)
     # ваза и олива справа (как у пилястры на референсе)
-    BR.vase((.98, -.14, 0), .30, .085, M['ceramic'])
-    BR.olive((.98, -.14, .30 + .026), .90, 26, .78, random.Random(7), lean=-.10)
+    dxp = .11 if portrait else 0.0                                                                     # на телефоне вазу с деревом сдвигаем вправо: в узкий кадр заходит только край кроны
+    BR.vase((.98 + dxp, -.14, 0), .30, .085, M['ceramic'])
+    build_tree(random.Random(77), (.96 + dxp, -.12, .33), .30, .80)                                     # на вазе справа — пышное дерево (олива с густой длинной листвой): низкий ствол и широкая густая крона, верх уходит за край кадра
     # олива на переднем плане слева — сама в кадре и отбрасывает пятна света от листьев на стену и пол
     BR.vase((-.92, -1.10, 0), .26, .10, M['ceramic'])
-    BR.olive((-.92, -1.10, .26 + .03), .52, 28, 1.12, random.Random(3), lean=.31)                  # ветка выглядывает у левого края кадра (как на референсе), а не прячется за ним
-    BR.olive((-.86, -1.08, .26 + .03), .44, 22, .98, random.Random(12), lean=.23)
-    if portrait:                                                                                      # на телефоне камера уже и ближе: ветка заходит в кадр сверху-слева, прямо у заголовка (корни за краем кадра)
-        BR.olive((.0, -.85, .64), .50, 26, 1.0, random.Random(5), lean=.31)
-        BR.olive((-.02, -.83, .52), .40, 22, .9, random.Random(8), lean=.22)
+    BR.olive((-.92, -1.10, .26 + .03), .52, 28, 1.12, random.Random(3), lean=.31, **LEAF)                  # ветка выглядывает у левого края кадра (как на референсе), а не прячется за ним
+    BR.olive((-.86, -1.08, .26 + .03), .44, 22, .98, random.Random(12), lean=.23, **LEAF)
+
+
+
+def build_tree(rnd, loc, H, R):
+    """пышное дерево в вазе справа: изогнутый ствол и ярус ветвей веером (длинные дуги), на каждой — густые длинные листья двух оттенков; веточки-ответвления добавляют объём.
+    Листья расходятся в стороны от ветки (в плоскости, перпендикулярной ей), поэтому крона читается объёмной с любой стороны. Параметры — TREE"""
+    bx, by, bz = loc
+    ma = bpy.data.materials.new('tree_leafA'); ma.use_nodes = True; b = ma.node_tree.nodes['Principled BSDF']
+    b.inputs['Base Color'].default_value = (.36, .42, .25, 1); b.inputs['Roughness'].default_value = .5
+    mb = bpy.data.materials.new('tree_leafB'); mb.use_nodes = True; b = mb.node_tree.nodes['Principled BSDF']
+    b.inputs['Base Color'].default_value = (.50, .55, .36, 1); b.inputs['Roughness'].default_value = .5
+    ms = bpy.data.materials.new('tree_stem'); ms.use_nodes = True; ms.node_tree.nodes['Principled BSDF'].inputs['Base Color'].default_value = (.30, .25, .16, 1)
+    leaves = []
+    for m in (ma, mb):
+        me = SC.leaf_mesh(L=.082 * 1.9, Wd=.024 * 1.45); me.materials.append(m); leaves.append(me)
+    up = Vector((0, 0, 1))
+
+    def limb(pts, count, k, bevel):
+        cu = bpy.data.curves.new('tl', 'CURVE'); cu.dimensions = '3D'; sp = cu.splines.new('POLY'); sp.points.add(len(pts) - 1)
+        for i, p in enumerate(pts):
+            sp.points[i].co = (*p, 1)
+        cu.bevel_depth = bevel; cu.materials.append(ms)
+        bpy.context.collection.objects.link(bpy.data.objects.new('tl', cu))
+        def at(t):
+            f = t * (len(pts) - 1); i = min(int(f), len(pts) - 2); return pts[i].lerp(pts[i + 1], f - i)
+        for i in range(1, count + 1):
+            t = i / (count + 1) * .93 + .07; pos = at(t); d = (at(min(1, t + .03)) - pos).normalized()
+            u = d.cross(up)
+            if u.length < .2:
+                u = d.cross(Vector((1, 0, 0)))
+            u.normalize(); v = d.cross(u); phi = rnd.uniform(0, 6.283)
+            for side in (0, 1):
+                a = phi + side * 3.1416 + rnd.uniform(-.5, .5)
+                dv = d * .55 + (u * math.cos(a) + v * math.sin(a)) * 1.0 + Vector((0, 0, rnd.uniform(-.1, .3)))
+                ob = bpy.data.objects.new('lf', rnd.choice(leaves)); bpy.context.collection.objects.link(ob)
+                ob.scale = ((1.1 - .4 * t) * (.8 + rnd.random() * .4) * k,) * 3
+                ob.rotation_euler = dv.normalized().to_track_quat('Y', 'Z').to_euler(); ob.location = pos
+        ob = bpy.data.objects.new('lf', leaves[0]); bpy.context.collection.objects.link(ob)                         # верхушечный листок
+        ob.scale = (k,) * 3; ob.rotation_euler = (at(1) - at(.9)).normalized().to_track_quat('Y', 'Z').to_euler(); ob.location = at(1)
+        return at
+
+    base = Vector((bx, by, bz))
+    trunk = limb([base, base + Vector((-.02, 0, H * .35)), base + Vector((.02, 0, H * .7)), base + Vector((-.04, 0, H))], 4, .9, .026)
+    for j in range(22):                                                                  # ярус ветвей веером вокруг верхней части ствола
+        az = 6.283 * (j + rnd.random() * .7) / 22; el = rnd.uniform(.5, 1.3)
+        d = Vector((math.cos(az) * math.cos(el), math.sin(az) * math.cos(el), math.sin(el)))
+        P0 = trunk(rnd.uniform(.45, 1.0)); Lb = R * rnd.uniform(.8, 1.2)
+        pts = [P0, P0 + d * Lb * .34 + Vector((0, 0, .04)), P0 + d * Lb * .68 + Vector((0, 0, .07 * Lb)), P0 + d * Lb + Vector((0, 0, -.1 * Lb * (1.1 - math.sin(el))))]
+        at = limb(pts, 56, 1.0, .007)
+        for t in (.30, .46, .62, .78):                                                        # веточки-ответвления
+            P = at(t); az2 = az + rnd.choice((-1, 1)) * rnd.uniform(.5, .9); d2 = Vector((math.cos(az2) * math.cos(el), math.sin(az2) * math.cos(el), math.sin(el) * .8 + .15)).normalized()
+            L2 = Lb * rnd.uniform(.3, .45)
+            limb([P, P + d2 * L2 * .5 + Vector((0, 0, .03)), P + d2 * L2 + Vector((0, 0, -.02))], 20, .92, .0045)
+
 
 
 def build_shadow_branches():
     """ветки оливы вне кадра (камере не видны): отбрасывают пятна света от листьев на стену слева и пол — как на референсе"""
     before = set(bpy.data.objects.keys())
-    BR.olive((-1.05, -1.30, .50), .55, 24, 1.15, random.Random(21), lean=.35)
-    BR.olive((-.20, -1.40, .60), .50, 22, 1.0, random.Random(33), lean=-.20)
-    BR.olive((-1.60, -1.10, .30), .60, 24, 1.2, random.Random(44), lean=.40)
+    BR.olive((-1.05, -1.30, .50), .55, 24, 1.15, random.Random(21), lean=.35, **LEAF_SHADOW)
+    BR.olive((-.20, -1.40, .60), .50, 22, 1.0, random.Random(33), lean=-.20, **LEAF_SHADOW)
+    BR.olive((-1.60, -1.10, .30), .60, 24, 1.2, random.Random(44), lean=.40, **LEAF_SHADOW)
     for k in set(bpy.data.objects.keys()) - before:
         bpy.data.objects[k].visible_camera = False
 
@@ -260,6 +328,25 @@ def build_jar():
     lid.location = L.LID_CLOSED
     S['jg'] = jg
     S['jar_objs'] = [jg] + list(jg.children_recursive)
+    S['label_link'] = None
+    for n in glass.data.materials[0].node_tree.nodes:                                  # смешивание «стекло / чернила» по маске этикетки — им управляет set_jar_label
+        if n.type == 'MIX_SHADER':
+            S['label_mix'] = n
+            S['label_link'] = [(l.from_socket, l.to_socket) for l in n.inputs['Fac'].links][0]
+
+
+def set_jar_label(on):
+    """этикетка: вкл — как в настоящей баночке (чернила по маске label.png); выкл — чистое матовое стекло (спрайт без надписей: этикетку на сайте рисует и вращает WebGL)"""
+    n = S.get('label_mix')
+    if n is None or S.get('label_link') is None:
+        return
+    nt = n.id_data
+    for l in list(n.inputs['Fac'].links):
+        nt.links.remove(l)
+    if on:
+        nt.links.new(S['label_link'][0], n.inputs['Fac'])
+    else:
+        n.inputs['Fac'].default_value = 0.0
 
 
 def build_lights(M):
@@ -364,7 +451,7 @@ def ring(name, cx, cy, z, R, w, mat, flat=.45):
 LAB_RINGS_FLOOR = (.30, .40, .54, .72, .98, 1.32)                          # радиусы линий на полу вокруг подиума, м (шаг растёт — как сетка точности)
 LAB_RINGS_TOP = (.118, .152)                                              # линии на самом подиуме вокруг основания баночки
 LAB_PACKS = [('bottle', False, .205, .24, 12), ('dropper', True, .285, .30, -8), ('jar', False, .365, .22, 20)]      # упаковки на пороге ниши: профессиональная косметика «в нише»
-LAB_GLASS = ((.17, .63, .385, .40, .03, .60),)                          # матовая стеклянная панель в глубине ниши (x0, x1, y0, y1, z0, z1): за баночкой и упаковками, перед светящейся линией свода
+LAB_GLASS = ((.27, .53, .385, .40, .03, .50),)                          # матовая стеклянная панель в глубине ниши (x0, x1, y0, y1, z0, z1): за баночкой и упаковками, между боковыми светящимися линиями свода (светящиеся линии стекло не закрывает — иначе оно размывало их в белую «дымку»)
 
 
 def build_lab(M):
@@ -387,40 +474,6 @@ def build_lab(M):
         g.location = (x, y, .028)
         g.rotation_euler = (0, 0, math.radians(rot))
         g.scale = (1.25,) * 3
-    # узкий луч: тёплый прожектор сверху-спереди; в начале он главный источник света на баночке и подиуме, по ходу сцены уступает мягкому свету зала
-    bm = bpy.data.lights.new('beam', 'SPOT')
-    bm.energy = float(os.environ.get('HALL_BEAM', 700))
-    bm.spot_size = math.radians(float(os.environ.get('HALL_BEAM_ANG', 26)))
-    bm.spot_blend = .85
-    bm.shadow_soft_size = .035
-    bm.color = (1.0, .90, .72)
-    bo = bpy.data.objects.new('beam', bm)
-    bpy.context.collection.objects.link(bo)
-    bo.visible_camera = False
-    S['beam'] = (bo, bm)
-
-
-def lit_of(p):
-    """насколько зал освещён мягким светом: от полумрака с узким лучом (p = 0) до тёплого дневного света главного экрана (p ≥ 0,7)"""
-    return LIT0 + (1 - LIT0) * sm((p - .03) / .70)
-
-
-def beam_of(p):
-    """яркость луча: сильный в начале, к главному кадру остаётся лёгкой подсветкой баночки"""
-    return 1.0 - .80 * sm((p - .10) / .62)
-
-
-def apply_light(p):
-    k = lit_of(p)
-    for tgt, attr, base in S['scal']:
-        setattr(tgt, attr, base * k)
-    bo, bm = S['beam']
-    bm.energy = float(os.environ.get('HALL_BEAM', 700)) * beam_of(p)
-    t = sm(p / .60)                                                          # луч медленно «ведёт» по баночке: блик ползёт по крышке, тень на подиуме поворачивается
-    bo.location = (lerp(-.06, .30, t), lerp(-1.02, -1.10, t), lerp(.95, 1.05, t))
-    aim = Vector((JAR_FINAL.x, JAR_FINAL.y, JAR_FINAL.z + .05))
-    bo.rotation_euler = (aim - Vector(bo.location)).to_track_quat('-Z', 'Y').to_euler()
-
 
 
 def build_camera():
@@ -458,6 +511,9 @@ def build_scene(res, samples, portrait):
     build_lights(M)
     build_lab(M)
     build_camera()
+    for ob in list(bpy.data.objects):                                                  # «лишние» полоски-этикетки упаковок (label, labelh, labelm без родителя) лежали в начале координат — в левом углу ниши они выглядели колонной с чёрным швом
+        if ob.parent is None and re.match(r'label[hm]?(\.\d+)?$', ob.name) and os.environ.get('HALL_KEEP_STRAYS') != '1':
+            bpy.data.objects.remove(ob, do_unlink=True)
     S['vis0'] = {ob.name: ob.visible_camera for ob in bpy.data.objects}                  # исходная видимость для камеры (софтбоксы и заполняющие поверхности камере не видны)
     return sc
 
@@ -482,28 +538,16 @@ def bez(pts, t):
     return Vector([.5 * ((2 * p1[k]) + (-p0[k] + p2[k]) * u + (2 * p0[k] - 5 * p1[k] + 4 * p2[k] - p3[k]) * u * u + (-p0[k] + 3 * p1[k] - 3 * p2[k] + p3[k]) * u ** 3) for k in range(3)])
 
 
-# Сценарий: баночка ВСЕГДА стоит на подиуме (JAR_FINAL) — ни полёта, ни парения. Движется только камера: начинается у самой баночки (предметная съёмка, подиум виден под всей её опорой),
-# чуть приближается и смещается в сторону, затем плавно отъезжает по дуге влево-назад к широкому кадру первого экрана; пространство (арка, диагональная плита, стеллаж, шар) раскрывается за счёт
-# настоящего параллакса. Шар на сайте — живой слой, но привязан к миру: его положение и размер в каждом кадре даёт та же камера (sphere_track), поэтому он не «плывёт» относительно арки.
-CAM_END_L = (Vector((.02, -2.55, .36)), TARGET_MAIN_L, 40.0)                          # главный кадр (точка, цель, фокусное)
-CAM_END_P = (Vector((.292, -2.31, .40)), TARGET_MAIN_P, 40.0)
-# ключевые положения камеры: (доля пути до HOLD, точка, цель, фокусное мм); между ними — плавная кривая (Catmull–Rom), фокусное меняется по логарифму
-CAM0_L = tuple(float(v) for v in os.environ.get('HALL_CAM0', '.78,-1.14,.26').split(','))      # старт: правее баночки, чтобы за ней оказались арка и ниша
-CAM1_L = tuple(float(v) for v in os.environ.get('HALL_CAM1', '.72,-1.02,.25').split(','))
-CAM_KEYS = {
-    False: [(0.00, CAM0_L, (.52, -.30, .165), 58.0),                                 # заставка: баночка крупно, на широком подиуме; за ней видна часть арки
-            (0.18, CAM1_L, (.52, -.30, .165), 58.0),                                  # медленное приближение и лёгкий сдвиг в сторону
-            (0.40, (.34, -1.55, .27), (.50, -.30, .17), 50.0),                        # отъезд: видны края подиума, диагональная плита, ниша
-            (0.68, (.17, -2.05, .31), (.30, -.15, .26), 44.0),                        # открывается шар и стеллаж слева
-            (1.00, (.02, -2.55, .36), (.02, 0.0, .33), 40.0)],                        # широкий кадр главной
-    True: [(0.00, (.50, -1.30, .27), (.56, -.30, .16), 55.0),
-           (0.18, (.47, -1.18, .26), (.56, -.30, .16), 55.0),
-           (0.40, (.38, -1.65, .31), (.46, -.30, .22), 48.0),
-           (0.68, (.32, -2.05, .36), (.35, -.20, .40), 42.0),
-           (1.00, (.292, -2.31, .40), (.292, 0.0, .52), 40.0)]}
-TURN0 = float(os.environ.get('HALL_TURN', -8.0))                                       # на сколько градусов баночка довёрнута в самом начале (разворачивается к зрителю за первые 16 % пути; сама остаётся на подиуме)
-LIT0 = float(os.environ.get('HALL_LIT0', .20))                                         # доля мягкого света зала в первом кадре (остальное — узкий луч)
-HOLD = .90                                                                           # с этого положения сцена «держит» последний кадр (покой героя)
+# Сценарий («как раньше», доработанный): заставка — баночка крупно в центре кадра на ровном бежевом фоне (стена-плита знака), внизу «Листайте»; по прокрутке она раскручивается вокруг своей оси
+# (полный оборот, этикетка снова смотрит на камеру) и дугой уходит к подиуму, а камера, которая шла рядом с ней, плавно отъезжает к общему плану; шар — статичная 3D-модель из того же камня, что
+# и гора (запечён в кадры, ничем не управляется). После HOLD сцена «держит» последний кадр (покой героя).
+JAR_START = Vector((float(os.environ.get('HALL_JX', -.08)), -.95, .46))          # где баночка «парит» в начале: на уровне глаз перед ровной гладкой стеной слева от горы (за ней — только бежевая штукатурка с лёгкими тенями листьев)
+JAR_WAY = [JAR_START, Vector((.12, -1.12, .40)), Vector((.46, -1.06, .27)), Vector((.68, -.76, .18)), Vector((.62, -.46, .13)), JAR_FINAL]        # путь баночки: огибает шар спереди и справа-снизу (в него не входит), к подиуму подходит сбоку и опускается на него
+CAM_END_L = (Vector((.02, -2.55, .36)), TARGET_MAIN_L, float(os.environ.get('HALL_LENS_L', 36.0)))     # общий план: фокусное 36 вместо 40 — кадр чуть шире, шар и орбиты мельче и не доходят до нижней панели
+CAM_END_P = (Vector((.292, -2.31, .40)), TARGET_MAIN_P, float(os.environ.get('HALL_LENS_P', 36.0)))
+LIT0 = 1.0                                                                           # свет зала постоянный: яркий, тёплый (полумрака и луча нет)
+HOLD = float(os.environ.get('HALL_HOLD', .93))                                       # с этого положения сцена «держит» последний кадр (покой героя)
+SPIN = float(os.environ.get('HALL_SPIN', 360.0))                                     # на сколько градусов баночка раскручивается по пути (полный оборот — и этикетка снова смотрит на нас)
 
 
 def spline(keys, s):
@@ -516,16 +560,6 @@ def spline(keys, s):
     return Vector([.5 * ((2 * p1[k]) + (-p0[k] + p2[k]) * u + (2 * p0[k] - 5 * p1[k] + 4 * p2[k] - p3[k]) * u * u + (-p0[k] + 3 * p1[k] - 3 * p2[k] + p3[k]) * u ** 3) for k in range(3)])
 
 
-def cam_state(p, portrait):
-    """точка, цель и фокусное камеры при прогрессе p"""
-    ks = CAM_KEYS[bool(portrait)]
-    s = sm(p / HOLD) if p < HOLD else 1.0
-    pos = spline([(k[0], Vector(k[1])) for k in ks], s)
-    tgt = spline([(k[0], Vector(k[2])) for k in ks], s)
-    lens = math.exp(spline([(k[0], Vector((math.log(k[3]), 0, 0))) for k in ks], s)[0])
-    return pos, tgt, lens
-
-
 def place_camera(pos, tgt, lens, portrait=False):
     cam = S['cam']
     cam.location = pos
@@ -535,26 +569,45 @@ def place_camera(pos, tgt, lens, portrait=False):
     bpy.context.view_layer.update()
 
 
+def jar_pose(p):
+    """положение баночки: стоит в воздухе перед плитой, затем дугой (с лёгким подъёмом в начале) уходит на подиум и опускается на него"""
+    q = sm((min(p, HOLD) / HOLD - .20) / .68)
+    return bez(JAR_WAY, q), q
+
+
 def frame_state(p, portrait):
-    """состояние сцены при прогрессе p: камера и поворот баночки (она стоит на месте), свет в нише"""
-    pos, tgt, lens = cam_state(p, portrait)
-    glow = sm((p - .30) / .55)
-    yaw = 10.0 + math.degrees(math.atan2(pos.x - JAR_FINAL.x, JAR_FINAL.y - pos.y)) + TURN0 * (1 - sm(p / .16))      # этикетка смотрит на камеру («на нас»); в самом начале чуть довёрнута и разворачивается к зрителю
-    return dict(jar=JAR_FINAL.copy(), yaw=yaw, pos=pos, tgt=tgt, lens=lens, glow=glow)
+    """состояние сцены при прогрессе p: положение и поворот баночки, камера, свет в нише"""
+    pp = min(p, HOLD) / HOLD                                                         # с HOLD всё замирает
+    jar, q = jar_pose(p)
+    ctr = jar + Vector((0, 0, JAR_CENTER_Z))
+    # «следящая» камера рядом с баночкой: на старте крупный план (фокусное 85), потом всё дальше
+    near = lerp(float(os.environ.get('HALL_NEAR', .80)), 1.0, sm(pp / .5))
+    az = math.radians(lerp(float(os.environ.get('HALL_AZ', 11)), -6, sm(pp / .55)))                  # в начале камера чуть правее баночки и смотрит влево — на ровную стену; потом уходит влево
+    el = math.radians(lerp(2, 8, sm(pp / .5)))
+    follow_pos = ctr + near * Vector((math.sin(az) * math.cos(el), -math.cos(az) * math.cos(el), math.sin(el)))
+    follow_tgt = ctr
+    main_pos, main_tgt, main_lens = CAM_END_P if portrait else CAM_END_L
+    w = sm((pp - .20) / .78)
+    pos = follow_pos.lerp(main_pos, w)
+    tgt = follow_tgt.lerp(main_tgt, w)
+    lens = math.exp(lerp(math.log(85.0), math.log(main_lens), w))
+    face = float(os.environ.get('HALL_FACE', -3.5)) + math.degrees(math.atan2(pos.x - jar.x, jar.y - pos.y))              # этикетка смотрит на камеру («на нас»)
+    yaw = face + SPIN * sm((pp - .06) / .56)                                          # раскручивается: за первые две трети пути — полный оборот, и снова лицом к нам
+    glow = sm((pp - .30) / .55)
+    return dict(jar=jar, yaw=yaw, pos=pos, tgt=tgt, lens=lens, glow=glow)
 
 
 def apply_frame(i, total, portrait):
     p = i / max(1, total - 1)
     st = frame_state(p, portrait)
     place_camera(st['pos'], st['tgt'], st['lens'], portrait)
-    apply_light(p)
     S['jg'].location = st['jar']
     S['jg'].rotation_euler = Euler((0, 0, math.radians(st['yaw'])), 'XYZ')
     mat = S['led'].data.materials[0] if S['led'].data.materials else None
     if mat:
         for n in mat.node_tree.nodes:
             if n.type == 'EMISSION':
-                n.inputs['Strength'].default_value = 3.0 + 12.0 * st['glow']
+                n.inputs['Strength'].default_value = 2.0 + 7.0 * st['glow']
     bpy.context.view_layer.update()
 
 
@@ -575,6 +628,11 @@ def set_layer(layer):
             ob.visible_camera = ob in jar
         else:
             ob.visible_camera = was
+    set_jar_label(layer != 'jar' or os.environ.get('HALL_JAR_LABEL', '0') == '1')    # спрайт баночки — без этикетки (см. set_jar_label)
+    sp = S.get('sphere')
+    if sp is not None:                                                               # шар: в слое баночки — вырез (holdout): где он стоит перед баночкой, спрайт не рисуется, и она не «просвечивает» сквозь шар
+        sp.visible_camera = True
+        sp.is_holdout = layer == 'jar'
     sc = bpy.context.scene
     sc.render.film_transparent = layer == 'jar'
     sc.render.image_settings.color_mode = 'RGBA' if layer == 'jar' else 'RGB'
@@ -604,33 +662,112 @@ def jar_rect(margin=.02):
     return [round(l, 5), round(t, 5), round(r - l, 5), round(b - t, 5)]
 
 
-SPH_SUB = 4                                    # во сколько раз положение шара посчитано чаще, чем кадры
-
-
-def sphere_track():
-    """шар (живой слой на сайте, привязан к миру): центр и диаметр в долях ширины кадра для текущего положения камеры; [0, 0, 0] — шар за камерой"""
+def sphere_final():
+    """шар в готовом кадре (орбиты логотипов на сайте стоят вокруг него): центр и диаметр в долях ширины кадра"""
     from bpy_extras.object_utils import world_to_camera_view
     sc = bpy.context.scene
     cam = S['cam']
-    c = Vector((SPHERE_X, SPHERE_Y, SPHERE_Z))
+    sx, sy, sz, sr = S['sphere_xyzr']
+    c = Vector((sx, sy, sz))
     v = world_to_camera_view(sc, cam, c)
-    if v.z < .12:
-        return [0, 0, 0]
     right = cam.matrix_world.to_3x3() @ Vector((1, 0, 0))
-    x1, _ = proj(sc, cam, c + right * SPHERE_R)
+    x1, _ = proj(sc, cam, c + right * sr)
     return [round(v.x, 5), round(1.0 - v.y, 5), round(2 * abs(x1 - v.x), 5)]
 
 
 def info(total, portrait):
-    """дорожки для сайта по всем кадрам: рамка баночки и положение шара"""
-    out = {'rects': [], 'sphere': [], 'lit': [], 'sub': SPH_SUB}
+    """дорожки для сайта: рамка баночки по кадрам и положение шара в готовом кадре"""
+    out = {'rects': [], 'sphere': None}
     for i in range(total):
         apply_frame(i, total, portrait)
         out['rects'].append(jar_rect())
-        out['lit'].append(round(lit_of(i / max(1, total - 1)), 4))
-    for j in range((total - 1) * SPH_SUB + 1):                                # шар — чаще, чем кадры: камера проходит рядом с ним, и между кадрами его путь по экрану заметно не прямой
-        apply_frame(j / SPH_SUB, total, portrait)
-        out['sphere'].append(sphere_track())
+    out['sphere'] = sphere_final()
+    return out
+
+
+DEPTH_DISP = (0.08, 4.0)                                    # диапазон обратной глубины 1/z, 1/м (от 12,5 м до 25 см): кодируется в 16 бит (R — старший байт, G — младший)
+
+
+def setup_depth():
+    """режим карты глубины: каждый материал заменяется излучением, цвет которого — 16-битная обратная глубина по оси камеры (View Z Depth); один проход без шумоподавления,
+    без сглаживания краёв (иначе на кромках предметов получаются «средние» глубины), без тонового преобразования — значения пишутся в PNG как есть"""
+    sc = bpy.context.scene
+    vl = sc.view_layers[0]
+    mat = bpy.data.materials.new('DepthOut')
+    mat.use_nodes = True
+    nt = mat.node_tree
+    for n in list(nt.nodes):
+        nt.nodes.remove(n)
+
+    def mth(op, a=None, b=None, clamp=False):
+        n = nt.nodes.new('ShaderNodeMath')
+        n.operation = op
+        n.use_clamp = clamp
+        for k, v in enumerate((a, b)):
+            if v is None:
+                continue
+            if isinstance(v, (int, float)):
+                n.inputs[k].default_value = v
+            else:
+                nt.links.new(v, n.inputs[k])
+        return n.outputs['Value']
+    cd = nt.nodes.new('ShaderNodeCameraData')
+    disp = mth('DIVIDE', 1.0, mth('MAXIMUM', cd.outputs['View Z Depth'], 1e-3))
+    dn = mth('DIVIDE', mth('SUBTRACT', disp, DEPTH_DISP[0]), DEPTH_DISP[1] - DEPTH_DISP[0], True)
+    v = mth('MULTIPLY', dn, 65535.0)
+    hi = mth('FLOOR', mth('DIVIDE', v, 256.0))
+    lo = mth('SUBTRACT', v, mth('MULTIPLY', hi, 256.0))
+    cc = nt.nodes.new('ShaderNodeCombineColor')
+    nt.links.new(mth('DIVIDE', hi, 255.0), cc.inputs['Red'])
+    nt.links.new(mth('DIVIDE', lo, 255.0), cc.inputs['Green'])
+    em = nt.nodes.new('ShaderNodeEmission')
+    nt.links.new(cc.outputs['Color'], em.inputs['Color'])
+    out = nt.nodes.new('ShaderNodeOutputMaterial')
+    nt.links.new(em.outputs['Emission'], out.inputs['Surface'])
+    vl.material_override = mat
+    for n in sc.world.node_tree.nodes:                                               # небо чёрное: «бесконечность» = обратная глубина 0
+        if n.type == 'BACKGROUND':
+            n.inputs['Strength'].default_value = 0.0
+    sc.view_settings.view_transform = 'Raw'
+    sc.view_settings.look = 'None'
+    sc.view_settings.exposure = 0.0
+    sc.view_settings.gamma = 1.0
+    sc.render.dither_intensity = 0.0
+    sc.cycles.samples = 1
+    sc.cycles.use_adaptive_sampling = False
+    sc.cycles.use_denoising = False
+    sc.cycles.filter_width = 0.01
+    sc.render.image_settings.file_format = 'PNG'
+    sc.render.image_settings.color_mode = 'RGB'
+    sc.render.image_settings.color_depth = '8'
+
+
+def render_depth(i, total, out, portrait):
+    apply_frame(i, total, portrait)
+    set_layer('bg')
+    sc = bpy.context.scene
+    sc.render.use_border = False
+    sc.render.film_transparent = False
+    sc.render.filepath = out
+    bpy.ops.render.render(write_still=True)
+
+
+def cam_track(n, portrait):
+    """плотная дорожка камеры и баночки по сценарию (n отсчётов, p = j / (n − 1)): по ней сайт строит вид из любой точки прокрутки"""
+    out = {'p': [], 'pos': [], 'tgt': [], 'lens': [], 'jar': [], 'yaw': [], 'glow': []}
+    for j in range(n):
+        p = j / (n - 1)
+        st = frame_state(p, portrait)
+        out['p'].append(round(p, 6))
+        out['pos'].append([round(v, 5) for v in st['pos']])
+        out['tgt'].append([round(v, 5) for v in st['tgt']])
+        out['lens'].append(round(st['lens'], 4))
+        out['jar'].append([round(v, 5) for v in st['jar']])
+        out['yaw'].append(round(st['yaw'], 4))
+        out['glow'].append(round(st['glow'], 5))
+    out['jarScale'] = .01 * JAR_S                                                    # метров в одном «сантиметре» модели баночки
+    out['jarCenterZ'] = JAR_CENTER_Z
+    out['dispRange'] = list(DEPTH_DISP)
     return out
 
 
@@ -639,6 +776,19 @@ def render_bg(i, total, out, portrait):
     set_layer('bg')
     sc = bpy.context.scene
     sc.render.use_border = False
+    sc.render.filepath = out
+    bpy.ops.render.render(write_still=True)
+
+
+def render_bg_crop(i, total, out, portrait, box):
+    """перерисовка только участка кадра box = (x0, x1, y0, y1) в долях кадра (y сверху вниз): результат — картинка размером с участок; для правки готовых кадров без полной перерисовки"""
+    apply_frame(i, total, portrait)
+    set_layer('bg')
+    sc = bpy.context.scene
+    sc.render.use_border = True
+    sc.render.use_crop_to_border = True
+    sc.render.border_min_x, sc.render.border_max_x = box[0], box[1]
+    sc.render.border_min_y, sc.render.border_max_y = 1 - box[3], 1 - box[2]
     sc.render.filepath = out
     bpy.ops.render.render(write_still=True)
 
@@ -659,6 +809,8 @@ def render_jar(i, total, out, portrait, base, ss=2.0):
     sc = bpy.context.scene
     rect = jar_rect()
     l, t, w, h = rect
+    if not ss:                                                                       # auto: спрайт ≈ 1200 px по ширине при любом размере баночки в кадре (в готовом кадре она мелкая — передискретизация там до ×8), чётко и на экранах с удвоенной плотностью
+        ss = max(2.0, min(8.0, 1200.0 / max(1.0, w * base[0])))
     sc.render.resolution_x = int(round(base[0] * ss))
     sc.render.resolution_y = int(round(base[1] * ss))
     sc.render.use_border = True
@@ -671,7 +823,7 @@ def render_jar(i, total, out, portrait, base, ss=2.0):
 
 
 def parse(argv):
-    o = dict(res=(1920, 1080), samples=18, total=60, portrait=False, stride=1, layer='bg', ss=2.0)
+    o = dict(res=(1920, 1080), samples=18, total=60, portrait=False, stride=1, layer='bg', ss=0.0)
     rest = []
     k = 0
     while k < len(argv):
@@ -698,6 +850,9 @@ def parse(argv):
         elif a == '--sphere':                                # только для просмотра: нарисовать шар (на сайте он живой слой)
             globals()['SPHERE_3D'] = True
             k += 1
+        elif a == '--boxes':                                 # patch: файл с рамками участков по кадрам
+            o['boxes'] = argv[k + 1]
+            k += 2
         elif a == '--portrait':
             o['portrait'] = True
             k += 1
@@ -722,23 +877,66 @@ def main():
     if cmd == 'track':                                          # track out.json — рамки баночки и положение шара по кадрам
         json.dump(info(o['total'], o['portrait']), open(rest[1], 'w'))
         print('дорожки записаны', rest[1])
-    elif cmd == 'still':                                        # still <кадр> out.png [--layer all|bg|jar]
+    elif cmd == 'camtrack':                                     # camtrack out.json [--n 591] — плотная дорожка камеры и баночки (для сайта)
+        n = int(os.environ.get('HALL_CAMN', 591))
+        json.dump(cam_track(n, o['portrait']), open(rest[1], 'w'))
+        print('дорожка камеры записана', rest[1], n)
+    elif cmd == 'still':                                        # still <кадр> out.png [--layer all|bg|jar|z]
         i, out = int(rest[1]), os.path.abspath(rest[2])
         if o['layer'] == 'jar':
             print(render_jar(i, o['total'], out, o['portrait'], o['res'], o['ss']))
+        elif o['layer'] == 'z':
+            setup_depth()
+            render_depth(i, o['total'], out, o['portrait'])
         elif o['layer'] == 'all':
             render_all(i, o['total'], out, o['portrait'])
         else:
             render_bg(i, o['total'], out, o['portrait'])
+    elif cmd == 'view':                                         # view out.png x,y,z tx,ty,tz линза — произвольный ракурс для осмотра зала (свет — как в кадре HALL_VF, по умолчанию 59)
+        out = os.path.abspath(rest[1])
+        apply_frame(int(os.environ.get('HALL_VF', 59)), o['total'], o['portrait'])
+        place_camera(Vector([float(v) for v in rest[2].split(',')]), Vector([float(v) for v in rest[3].split(',')]), float(rest[4]))
+        set_layer(o['layer'] if o['layer'] != 'bg' else 'all')
+        sc = bpy.context.scene
+        sc.render.use_border = False
+        sc.render.filepath = out
+        bpy.ops.render.render(write_still=True)
+    elif cmd == 'patch':                                        # patch <с> <по> outdir --boxes boxes.json — перерисовать только участки кадров (рамки: кадр → x0, x1, y0, y1 в долях кадра)
+        a, b, outdir = int(rest[1]), int(rest[2]), rest[3]
+        os.makedirs(outdir, exist_ok=True)
+        boxes = json.load(open(o['boxes']))
+        for i in range(a, b + 1):
+            x0, x1, y0, y1 = boxes[str(i)]
+            if x1 <= 0 or x0 >= 1 or y1 <= 0 or y0 >= 1:
+                continue
+            path = os.path.join(outdir, '%03d.png' % i)
+            if os.path.exists(path):
+                continue
+            h = y1 - y0
+            box = (max(0.0, x0 - .04), min(1.0, x1 + .04), max(0.0, y0 - .04), min(1.0, y1 + h * 1.6 + .04))
+            render_bg_crop(i, o['total'], os.path.abspath(path), o['portrait'], box)
+            json.dump({'box': box, 'res': list(o['res'])}, open(path.replace('.png', '.json'), 'w'))
+            print('участок кадра', i, flush=True)
     elif cmd == 'anim':                                         # anim <с> <по> outdir [--layer bg|jar]
         a, b, outdir = int(rest[1]), int(rest[2]), rest[3]
         os.makedirs(outdir, exist_ok=True)
+        hold_i = int(math.ceil(HOLD * (o['total'] - 1) - 1e-9))                         # с этого кадра сцена «держит» последний кадр: следующие — точные копии (не считаем заново)
         for i in range(a, b + 1, o['stride']):
             path = os.path.join(outdir, '%03d.png' % i)
             if os.path.exists(path):
                 continue
+            ref = os.path.join(outdir, '%03d.png' % hold_i)
+            if i > hold_i and os.path.exists(ref):
+                shutil.copyfile(ref, path)
+                print('кадр', i, '= копия', hold_i, flush=True)
+                continue
             if o['layer'] == 'jar':
                 render_jar(i, o['total'], os.path.abspath(path), o['portrait'], o['res'], o['ss'])
+            elif o['layer'] == 'z':
+                if not S.get('depth_ready'):
+                    setup_depth()
+                    S['depth_ready'] = True
+                render_depth(i, o['total'], os.path.abspath(path), o['portrait'])
             else:
                 render_bg(i, o['total'], os.path.abspath(path), o['portrait'])
             print('кадр', i, flush=True)
