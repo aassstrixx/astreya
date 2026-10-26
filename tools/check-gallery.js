@@ -168,8 +168,8 @@ let base = '';
   await setSel(p, 'f-sort', 'def'); await wait(1300);
   await p.fill('#cat-q', 'spf'); await wait(1500); ok(await vis(p) === EXP.spf, 'поиск «spf»: ' + EXP.spf + ' (по названию, описанию, бренду и задачам)', await vis(p));
   await p.fill('#cat-q', 'zzzqqq'); await wait(1300);
-  const emp = await p.evaluate(() => ({empty: !document.querySelector('#cat-empty').hidden, txt: document.querySelector('#res-count').textContent, an: getComputedStyle(document.querySelector('#cat-empty')).animationName, ghosts: document.querySelectorAll('.pc-ghost').length}));
-  ok(emp.empty && emp.txt === 'Найдено: 0 из ' + EXP.all && /galEmpty/.test(emp.an) && emp.ghosts === 0, '«Ничего не нашлось»: плашка появляется мягко, счётчик «0 из ' + EXP.all + '»', emp);
+  const emp = await p.evaluate(() => ({empty: !document.querySelector('#cat-empty').hidden, txt: document.querySelector('#res-count').textContent, an: getComputedStyle(document.querySelector('#cat-empty')).animationName, ghosts: document.querySelectorAll('.pc-ghost').length, lite: document.documentElement.classList.contains('lite')}));
+  ok(emp.empty && emp.txt === 'Найдено: 0 из ' + EXP.all && (/galEmpty/.test(emp.an) || emp.lite) && emp.ghosts === 0, '«Ничего не нашлось»: плашка появляется мягко (в «лёгком режиме», когда устройство не успевает, — сразу), счётчик «0 из ' + EXP.all + '»', emp);
   await p.click('#cat-reset'); await wait(1400); ok(await vis(p) === EXP.all && !(await p.evaluate(() => !document.querySelector('#cat-empty').hidden)), 'после «Ничего не нашлось» сброс возвращает каталог');
   /* быстрые смены подряд: каждая отменяет незаконченную анимацию предыдущей */
   await p.evaluate(async () => { const set = (id, v) => { const s = document.getElementById(id); s.value = v; s.dispatchEvent(new Event('change', {bubbles: true})); }, z = ms => new Promise(r => setTimeout(r, ms));
