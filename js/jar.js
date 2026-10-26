@@ -284,7 +284,7 @@
       ctx2d.globalAlpha = 1;
       lastDraw = {ti: r.ti, ia: r.ia, ib: r.ib, a: r.a, xf: drew ? ease(clamp((now - xf.t0) / XFADE, 0, 1)) : 0, xfTi: drew ? xf.from : -1};
       lastSig = drew ? -1 : sig;
-      if (!firstDrawn) { firstDrawn = true; root.classList.add('ready'); }
+      if (!firstDrawn) { firstDrawn = true; if (cp < 0.02) root.classList.add('ar-intro'); root.classList.add('ready'); }       // сцену открыли с самого начала — зал мягко «приезжает» (css/home-arch.css); при обновлении посреди сцены этого нет
       return true;
     }
 
@@ -336,7 +336,7 @@
       jctx.clearRect(0, 0, JW, JH);
       jctx.imageSmoothingEnabled = true; jctx.imageSmoothingQuality = 'high';
       jctx.drawImage(JD.im[n], dx, dy, dw, dh);
-      if (!jarShown) { jarShown = true; root.classList.add('jar-ready'); }
+      if (!jarShown) { jarShown = true; if (cp < 0.02) root.classList.add('ar-intro'); root.classList.add('jar-ready'); }
       return true;
     }
 

@@ -3,7 +3,7 @@
    свет считается на лету. Шар сам медленно поворачивается, от движения курсора — поворачивается следом, а свет скользит по камню (поры и зерно видны в движении).
    Шар НЕ входит в скролл-анимацию кадров: стоит на месте, пока зал вокруг него раскрывается (его положение и размер задаёт CSS, data/redesign.json → jar.arch.sphere).
    Запасной путь: нет WebGL, «меньше движения» или экономия — показана готовая картинка шара (.ar-pearl img), он лишь мягко парит (CSS). Цикл рисования стоит, пока сцена не на экране
-   или вкладка скрыта; кадры ограничены ~45 к/с, размер холста — не больше 640 px по стороне. Файл подключается только на главной (с jar.arch). */
+   или вкладка скрыта; кадры ограничены ~45 к/с, размер холста — не больше 1024 px по стороне. Файл подключается только на главной (с jar.arch). */
 (function () {
   'use strict';
   const root = document.querySelector('.ar-pearl');
@@ -27,11 +27,15 @@
     ' vec3 nm=texture2D(tN,vec2(u,v)).rgb*2.-1.;',
     ' vec3 T=normalize(cross(vec3(0.,1.,0.),o+vec3(1e-4,0.,0.))); vec3 B=cross(o,T);',
     ' vec3 no=normalize(T*nm.x+B*nm.y+o*nm.z); vec3 n=normalize(R*no);',
-    ' float g=max(dot(nv,L),0.); float d=max(dot(n,L),0.);',
-    ' float lit=.46+.95*mix(g,d,.55);',                 // объём даёт гладкая сфера, мелкий рельеф — карта нормалей
-    ' vec3 col=al*lit*(.80+.20*z)*1.6;',                // экспозиция и приглушённая насыщенность — как у рендера Blender (AgX): камень чуть темнее стен зала, но не бурый
-    ' col=mix(col,vec3(dot(col,vec3(.3,.59,.11))),.42);',
-    ' vec3 h=normalize(L+vec3(0.,0.,1.)); col+=vec3(.9,.82,.7)*pow(max(dot(n,h),0.),38.)*.045;',
+    ' float dg=dot(nv,L), dn=dot(n,L);',
+    ' float w=clamp((mix(dg,dn,.72)+.30)/1.30,0.,1.);',                // мягкий переход света в тень (камень матовый, терминатор не резкий), мелкий рельеф даёт карта нормалей
+    ' float key=pow(w,1.15);',
+    ' float bnc=.10*max(dot(nv,normalize(vec3(.45,-.75,.35))),0.);',   // тёплый отсвет от пола снизу
+    ' vec3 col=al*((.29+.10*nv.y)*vec3(.99,.95,.91)+key*1.05*vec3(1.,.96,.90)+bnc*vec3(1.,.82,.62));',
+    ' col=mix(col,vec3(dot(col,vec3(.3,.59,.11))),.42);',                // приглушённая насыщенность (цвет шара — нейтральный тёплый, не выделяется среди стен зала)
+    ' col*=(.90+.10*z)*1.33;',                                         // у края чуть темнее; общая экспозиция — как у рендера Blender: шар чуть темнее стен зала
+    ' vec3 h=normalize(L+vec3(0.,0.,1.)); col+=vec3(1.,.95,.88)*pow(max(dot(n,h),0.),26.)*.05*key;',
+    ' col=col/(1.+.10*col);',                                          // мягкое сжатие светов
     ' col=pow(col,vec3(1./2.2));',
     ' float e=smoothstep(1.,1.-2.*px,sqrt(r2));',
     ' gl_FragColor=vec4(col*e,e);',
@@ -65,7 +69,7 @@
     return new Promise(res => { const im = new Image(); im.crossOrigin = 'anonymous'; im.onload = () => { tex(unit, im); res(true); }; im.onerror = () => res(false); im.src = url; });
   }
   function size() {
-    const w = Math.round(Math.min(640, Math.max(160, (cv.clientWidth || 300) * Math.min(window.devicePixelRatio || 1, 2))));
+    const w = Math.round(Math.min(1024, Math.max(160, (cv.clientWidth || 300) * Math.min(window.devicePixelRatio || 1, 2))));
     if (w !== W) { W = w; cv.width = W; cv.height = W; gl.viewport(0, 0, W, W); }
   }
   function mat(yaw, pitch) {                                  // R (объект → вид): R = Ry(yaw)·Rx(pitch), записана по столбцам для uniformMatrix3fv

@@ -31,6 +31,11 @@ html.is-scrolling .ar-pearl .ar-poster,.anim-off .ar-pearl .ar-poster{animation-
 /* баночка: отдельный чёткий слой (js/jar.js рисует на нём спрайты по прокрутке); лежит выше шара и ниже орбит и текста — надписи идут поверх неё */
 .ar-jar-cv{position:absolute;left:0;top:0;width:100%;height:100%;display:block;pointer-events:none;opacity:0;transition:opacity .5s ease;z-index:2}      /* баночка всегда поверх шара: в заставке она ближе к камере, а на подиуме её не должен закрывать даже край шара */
 .jar-story.jar-ready .ar-jar-cv{opacity:1}
+/* заставка: зал медленно приближается, баночка плавно проявляется и чуть всплывает; один раз при открытии сцены с начала (класс ar-intro ставит js/jar.js) */
+@keyframes arBg{from{transform:scale(1.05)}to{transform:none}}
+@keyframes arJar{from{opacity:0;transform:translate3d(0,14px,0) scale(.95)}to{opacity:1;transform:none}}
+.arch-story.ar-intro.ready .js-cv{animation:arBg 2.8s cubic-bezier(.16,.7,.2,1) backwards}
+.arch-story.ar-intro.jar-ready .ar-jar-cv{transform-origin:50% 55%;animation:arJar 1.6s cubic-bezier(.16,.7,.2,1) .15s backwards}
 .ar-orbit{position:absolute;left:var(--pl);top:var(--pt);width:calc(var(--pd) * 1.52);aspect-ratio:1;translate:-50% -50%;opacity:var(--h2,0);z-index:3}
 .ar-orbit .ring{border-color:rgba(70,60,40,.34)}
 .ar-orbit .ring.r2{border-color:rgba(70,60,40,.2)}
@@ -122,6 +127,7 @@ html:not(.js) .arch-story{display:none;margin:0}
   .ar-e,.ar-h,.ar-lead,.ar-cta,.ar-panel{transform:none}
   .ar-poster{animation:none!important}
   .ar-cue i{animation:none}
+  .arch-story.ar-intro.ready .js-cv,.arch-story.ar-intro.jar-ready .ar-jar-cv{animation:none}
 }
 
 /* ============ 2. Секции главной в архитектурной системе ============
