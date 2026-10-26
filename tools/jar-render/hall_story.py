@@ -365,12 +365,12 @@ def render_frame(i, total, out, portrait):
     bpy.ops.render.render(write_still=True)
 
 
-def render_matte(i, total, out, portrait):
+def render_matte(i, total, out, portrait, what='bottle'):
     """прозрачный слой «только флакон» в положении кадра i: всё остальное невидимо для камеры, но по-прежнему отражается и отбрасывает свет — флакон выглядит точно как в кадре.
     На сайте он кладётся поверх живой жемчужины (css/home-arch.css → .ar-fg), и жемчужина оказывается позади флакона, как шар в нише на референсе."""
     apply_frame(i, total, portrait)
     sc = bpy.context.scene
-    keep = set(S['bottle'])
+    keep = set(S['bottle']) if what == 'bottle' else set([S['jg']] + list(S['jg'].children_recursive))          # bottle — флакон на подиуме, jar — баночка (в финальной позе)
     for ob in bpy.data.objects:
         if ob.type in ('MESH', 'CURVE', 'SURFACE', 'FONT', 'META') and ob not in keep: ob.visible_camera = False
     sc.render.film_transparent = True
@@ -455,7 +455,7 @@ def main():
     if cmd == 'spin':
         render_spin(os.path.abspath(rest[1]), int(rest[2]) if len(rest) > 2 else 24, int(rest[3]) if len(rest) > 3 else 560)
     elif cmd == 'matte':
-        render_matte(int(rest[1]), o['total'], os.path.abspath(rest[2]), o['portrait'])
+        render_matte(int(rest[1]), o['total'], os.path.abspath(rest[2]), o['portrait'], rest[3] if len(rest) > 3 else 'bottle')
     elif cmd == 'still':
         render_frame(int(rest[1]), o['total'], os.path.abspath(rest[2]), o['portrait'])
     elif cmd == 'anim':

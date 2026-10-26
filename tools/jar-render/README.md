@@ -64,7 +64,8 @@ python3 hall_story.py anim 0 83 /tmp/hall_d --res 1600x900 --samples 26 --total 
 python3 hall_story.py anim 0 83 /tmp/hall_d --res 1600x900 --samples 26 --total 84        # десктоп, ≈2 мин/кадр на 4 ядрах; готовые кадры пропускаются, поэтому добирает остальные
 python3 hall_story.py anim 0 83 /tmp/hall_m --portrait --res 720x1280 --samples 24 --total 84   # телефон (другой ракурс: арка и подиум в нижней части кадра, сверху место под заголовок)
 python3 hall_story.py spin /tmp/spin 1 560 --samples 28                  # каменный шар (кадров, ширина в пикселях) → /tmp/spin/00.png и spin.json (положение шара в % сцены)
-python3 hall_story.py matte 83 /tmp/m83.png --samples 40                  # слой «только флакон» (--portrait — для телефона)
+python3 hall_story.py matte 83 /tmp/m83.png bottle --samples 40            # слой «только флакон» (--portrait — для телефона); вместо bottle можно jar — слой «баночка на подиуме»
+python3 apply_p.py ../../assets/jar-arch/p-d.json                         # число кадров и положения p / pb → data/redesign.json
 python3 crop_matte.py /tmp/m83.png ../../assets/jar-arch/fg-bottle.webp   # обрезка слоя и его положение (l, t, w в %) для data/redesign.json → jar.arch.fg
 python3 encode_arch.py /tmp/hall_d ../../assets/jar-arch/d  --lite ../../assets/jar-arch/dm --size 1600x900 --lite-size 1120x630 --end 0.92   # --sharpen 0.5 по умолчанию: возвращает резкость мелкого камня после шумоподавления
 python3 encode_arch.py /tmp/hall_m ../../assets/jar-arch/m  --lite ../../assets/jar-arch/mm --size 720x1280 --lite-size 540x960 --end 0.92

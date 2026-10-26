@@ -197,8 +197,8 @@ module.exports = function homeRedesign(ctx, C, P, parts, {events, val}) {
     const sp = a.sphere, pearl = sp ? `<div class="ar-pearl" aria-hidden="true"><i><img src="${C.u(P, sp.src)}" alt="" width="${sp.size}" height="${sp.size}" decoding="async"></i></div>` : '';
     const worldVars = sp ? ` style="--sl:${sp.cx}%;--st:${sp.cy}%;--sw:${sp.crop}%;--sd:${sp.d}%"` : '';
     /* флакон на подиуме — отдельный слой поверх жемчужины (положение в % сцены; у телефона своё) */
-    const fgImg = (b, cls) => b ? `<img class="ar-fg${cls}" src="${C.u(P, b.src)}" alt="" aria-hidden="true" decoding="async" style="--fl:${b.l}%;--ft:${b.t}%;--fw:${b.w}%">` : '';
-    const fg = a.fg ? fgImg(a.fg.desktop, '') + fgImg(a.fg.mobile, ' ar-fg-m') : '';
+    const fgImg = (b, cls) => `<img class="ar-fg${cls}${b.k === 'jar' ? ' ar-fg-jar' : ''}" src="${C.u(P, b.src)}" alt="" aria-hidden="true" decoding="async" style="--fl:${b.l}%;--ft:${b.t}%;--fw:${b.w}%">`;
+    const fg = a.fg ? [].concat(a.fg.desktop || []).map(b => fgImg(b, '')).join('') + [].concat(a.fg.mobile || []).map(b => fgImg(b, ' ar-fg-m')).join('') : '';
     const items = a.panel.items.map(it => ({icon: it.icon, title: it.auto ? auto[it.auto] : it.title, text: it.auto === 'offices' ? cities.join(', ') : it.text}));
     /* логотипы на орбитах вокруг сферы-жемчужины — те же, что у прежнего героя (data/content.json → home.orbits) */
     const orb = o => { const b = o.brand ? ctx.brandById[o.brand] : null, src = b ? b.logo : o.src, w = b ? b.logoW : o.w, hh = b ? b.logoH : o.h;

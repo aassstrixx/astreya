@@ -25,11 +25,12 @@
 .ar-pearl i::after{background:radial-gradient(circle at calc(100% - var(--lx)) calc(100% - var(--ly)),rgba(58,40,26,.36),rgba(58,40,26,.10) 46%,rgba(58,40,26,0) 70%)}      /* и тень уходит на противоположную сторону */
 html.is-scrolling .ar-pearl i,.anim-off .ar-pearl i{animation-play-state:paused!important}
 .ar-fg{position:absolute;left:var(--fl);top:var(--ft);width:var(--fw);height:auto;opacity:var(--h2,0);pointer-events:none;user-select:none}
+.ar-fg-jar{opacity:var(--hj,0)}      /* баночка — слоем поверх орбит, но только когда села на подиум (до этого она летит в кадрах)  */
 .ar-fg-m{display:none}      /* флакон поверх жемчужины: шар позади, как в нише на референсе */
 .ar-orbit{position:absolute;left:var(--pl);top:var(--pt);width:calc(var(--pd) * 1.52);aspect-ratio:1;translate:-50% -50%;opacity:var(--h2,0)}
 .ar-orbit .ring{border-color:rgba(70,60,40,.34)}
 .ar-orbit .ring.r2{border-color:rgba(70,60,40,.2)}
-.ar-orbit .orb img{filter:drop-shadow(0 0 4px rgba(250,244,232,.95)) drop-shadow(0 0 10px rgba(250,244,232,.8)) drop-shadow(0 6px 8px rgba(60,40,18,.16));--k:1.15}
+.ar-orbit .orb img{filter:drop-shadow(0 3px 6px rgba(60,40,18,.2));--k:1.15}      /* без светлого ореола: он «выбеливал» баночку, когда логотип проходил над ней */
 .ar-chip{position:absolute;left:57%;top:10.5%;display:inline-flex;align-items:center;gap:9px;padding:9px 16px;border-radius:999px;background:rgba(252,249,243,.94);box-shadow:inset 0 0 0 1px rgba(255,255,255,.8),0 12px 22px -14px rgba(60,40,18,.55);
   font:600 clamp(9px,.66vw,11.5px)/1 var(--sans);letter-spacing:.1em;text-transform:uppercase;color:var(--navy);white-space:nowrap;opacity:var(--h2,0);transform:translate3d(0,calc((1 - var(--h2,0)) * 12px),0)}
 .ar-chip i{width:7px;height:7px;border-radius:50%;background:#2fa36b;box-shadow:0 0 0 3px rgba(47,163,107,.18)}
@@ -105,7 +106,8 @@ html:not(.js) .arch-story{display:none;margin:0}
   .ar-lead,.ar-facts,.ar-card,.ar-chip{display:none}
   .ar-cta{margin-top:14px;gap:8px}
   .ar-cta .btn{padding:12px 16px;font-size:13.5px}
-  .ar-world{--pl:48%;--pt:54%;--pw:46.7%;--pd:44%}
+  .ar-world{--pl:47%;--pt:56.5%;--pw:55.1%;--pd:52%}
+  .ar-orbit{width:calc(var(--pd) * 1.3)}
   .ar-fg{display:none}.ar-fg-m{display:block}
   .ar-panel{width:calc(100% - 2 * var(--gut));grid-template-columns:repeat(2,minmax(0,1fr));border-radius:20px 20px 0 0;padding:10px 12px 12px}
   .ar-pt{font-size:16px}

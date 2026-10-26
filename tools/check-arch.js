@@ -88,8 +88,8 @@ if (!A || !A.enabled) { console.log('Архитектурный первый э�
       await p.mouse.move(40, H / 2); await wait(1400); const l0 = await lx(); await p.mouse.move(W - 40, H / 2); await wait(1600); const l1 = await lx();
       ok(l0.op > 0.97 && l0.w > W * 0.14 && /floaty/.test(l0.anim), 'финал: жемчужина на месте (крупная, проявлена, плавает)', l0);
       ok(l1.lx > l0.lx + 8 && l1.px > l0.px + .5, 'жемчужина следует за курсором: блик и сдвиг меняются вслед за мышью', {l0, l1});
-      const z = await p.evaluate(() => { const w = document.querySelector('.ar-world'), kids = [...w.children]; return {pearl: kids.findIndex(e => e.classList.contains('ar-pearl')), fg: kids.findIndex(e => e.classList.contains('ar-fg')), fgOp: +getComputedStyle(w.querySelector('.ar-fg')).opacity}; });
-      ok(z.pearl >= 0 && z.fg > z.pearl && z.fgOp > 0.97, 'флакон отдельным слоем лежит поверх жемчужины', z);
+      const z = await p.evaluate(() => { const w = document.querySelector('.ar-world'), kids = [...w.children]; return {pearl: kids.findIndex(e => e.classList.contains('ar-pearl')), fg: kids.findIndex(e => e.classList.contains('ar-fg')), fgOp: +getComputedStyle(w.querySelector('.ar-fg')).opacity, jarOp: w.querySelector('.ar-fg-jar') ? +getComputedStyle(w.querySelector('.ar-fg-jar')).opacity : -1}; });
+      ok(z.pearl >= 0 && z.fg > z.pearl && z.fgOp > 0.97 && z.jarOp > 0.97, 'флакон и баночка отдельными слоями лежат поверх шара и орбит', z);
     }
     ok(/Подробнее/.test(v.moreTxt) && v.more && v.more.b <= H + 1, 'финал: в нижней панели есть кнопка «Подробнее» и она в экране', {t: v.moreTxt, r: v.more});
     if (!mobile) {

@@ -327,6 +327,7 @@
       setv(stage, '--h2', st(0.72, 0.84).toFixed(3));                         // текст и кнопки
       setv(stage, '--h3', st(0.80, 0.92).toFixed(3));                         // панель «Почему выбирают Астрею?»
       setv(stage, '--h4', st(0.64, 0.80).toFixed(3));                         // мягкая светлая завеса за текстом
+      setv(stage, '--hj', st(0.80, 0.83).toFixed(3));                         // слой «баночка на подиуме» — когда баночка села (кадр 75 из 84 ≈ p 0,81 с учётом data/redesign.json → jar.arch.p)
       const hide = inView && p > 0.02 && p < 0.76, nav = inView && p >= 0.76 && yNow < sTop + sTot + innerHeight * 0.55, live = p > 0.8, top = inView && p >= 0.76 && yNow < sTop + sTot + innerHeight * 0.1;      // шапка возвращается с героем и остаётся, пока он не ушёл больше чем наполовину
       if (hide !== archSt.hide) { archSt.hide = hide; document.body.classList.toggle('arch-hide', hide); }       // пока идёт кино — шапки нет
       if (nav !== archSt.nav) { archSt.nav = nav; document.body.classList.toggle('arch-nav', nav); }             // с появлением героя шапка возвращается (даже при прокрутке вниз); в конце пути — обычное поведение сайта
