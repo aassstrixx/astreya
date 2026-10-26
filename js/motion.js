@@ -76,7 +76,7 @@
     lite.last = t; lite.raf = requestAnimationFrame(liteFrame);
   }
   function liteKick() { if (!lite.on && !lite.raf) { lite.last = 0; lite.raf = requestAnimationFrame(liteFrame); } }
-  if (window.IntersectionObserver) { const jio = new IntersectionObserver(es => { es.forEach(e => { e.target._in = e.isIntersecting; }); lite.jar = ['#jar-story', '#jar-outro', '#arch-story'].some(q => { const el = document.querySelector(q); return el && el._in; }); }); ['#jar-story', '#jar-outro', '#arch-story'].forEach(q => { const el = document.querySelector(q); if (el) jio.observe(el); }); }
+  if (window.IntersectionObserver) { const jio = new IntersectionObserver(es => { es.forEach(e => { e.target._in = e.isIntersecting; }); lite.jar = ['#arch-story'].some(q => { const el = document.querySelector(q); return el && el._in; }); }); ['#arch-story'].forEach(q => { const el = document.querySelector(q); if (el) jio.observe(el); }); }
   addEventListener('scroll', () => { markScrolling(); if (!ticking) { ticking = true; requestAnimationFrame(onScroll); } }, {passive: true});
   addEventListener('resize', () => updateProgress());
 
@@ -154,10 +154,8 @@
 
   /* ---------- курсор: свет и глубина «жемчужины» (карточки и кнопки не двигаются — текст остаётся чётким) ---------- */
   const hp = {x: 0, y: 0, tx: 0, ty: 0, raf: 0};
-  const archEl = document.getElementById('arch-story');
-  const archOnScreen = () => { if (!archEl) return false; const r = archEl.getBoundingClientRect(); return r.bottom > 0 && r.top < innerHeight * .5; };          // живая жемчужина первого экрана (css/home-arch.css → .ar-pearl) следует за курсором, пока сцена на экране
   function hpTick() {
-    const w = (hp.arch && $('.ar-pearl')) || $('.pearl-wrap'); if (!w) { hp.raf = 0; return; }
+    const w = $('.pearl-wrap'); if (!w) { hp.raf = 0; return; }
     hp.x += (hp.tx - hp.x) * .07; hp.y += (hp.ty - hp.y) * .07;
     w.style.setProperty('--px', hp.x.toFixed(3)); w.style.setProperty('--py', hp.y.toFixed(3));
     w.style.setProperty('--lx', (33 + hp.x * 15).toFixed(1) + '%'); w.style.setProperty('--ly', (27 + hp.y * 13).toFixed(1) + '%');
@@ -166,8 +164,7 @@
   if (matchMedia('(hover:hover) and (pointer:fine)').matches) {
     document.addEventListener('pointermove', e => {
       if (e.pointerType !== 'mouse') return;
-      hp.arch = archOnScreen();                                           // сцена с каменным шаром на экране — свет ведёт он, иначе — прежняя жемчужина запасного героя
-      if (hp.arch || (scrollY - heroBase < innerHeight && $('.pearl-wrap'))) { hp.tx = e.clientX / innerWidth * 2 - 1; hp.ty = e.clientY / innerHeight * 2 - 1; if (!hp.raf) hp.raf = requestAnimationFrame(hpTick); }
+      if (scrollY - heroBase < innerHeight && $('.pearl-wrap')) { hp.tx = e.clientX / innerWidth * 2 - 1; hp.ty = e.clientY / innerHeight * 2 - 1; if (!hp.raf) hp.raf = requestAnimationFrame(hpTick); }
     }, {passive: true});
     html.addEventListener('mouseleave', () => { hp.tx = hp.ty = 0; if (!hp.raf) hp.raf = requestAnimationFrame(hpTick); });
   }
@@ -326,7 +323,7 @@
   /* Лого и ссылки на главную ведут к основной странице (герою), а не в начало вступления с баночкой: вступление остаётся выше героя — до него можно долистать вверх (его кадры при этом перематываются назад).
      При первой загрузке сайта главная по-прежнему открывается с вступления. Без вступления (выключено или нет canvas) герой и есть верх страницы. */
   const isHome = u => /(^|\/)(index\.html)?$/.test(u.pathname);
-  M.heroTop = () => { const jar = document.getElementById('jar-story'); return jar && jar.offsetHeight && A.heroBase ? A.heroBase() : 0; };
+  M.heroTop = () => { const jar = document.getElementById('arch-story'); return jar && jar.offsetHeight && A.heroBase ? A.heroBase() : 0; };
   M.scrollHome = () => window.scrollTo({top: M.heroTop(), behavior: 'smooth'});
   let busy = false, pending = null;
   /* quiet — тихий переход (поиск): без шторки и заставки, страница подменяется, как только пришла, и мягко проявляется */

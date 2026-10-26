@@ -144,78 +144,37 @@ module.exports = function homeRedesign(ctx, C, P, parts, {events, val}) {
   </div></div></section>`;
 
   /* порядок: воздух → цифры → причины → решения → бренды → подборщик → продукты → эксперт-блок → обучение → аудитория → новости → логотипы → призыв */
-  /* вступление со скролл-анимацией баночки (data/redesign.json → jar). Кадры — assets/jar/*; логика — js/jar.js, стили — css/jar.css.
-     Выключается флагом jar.enabled: тогда главная открывается сразу героем, как раньше. */
-  const jar = (() => {
-    const j = rd.jar; if (!j || !j.enabled) return '';
-    const words = String(ctx.site.tagline || '').split('.').map(x => x.trim()).filter(Boolean);
-    const caps = j.captions.map((c, i) => words[i] ? `<p class="js-cap${c.tone === 'dark' ? ' dk' : ''}" data-from="${c.from}" data-to="${c.to}"><b>${esc(words[i])}</b></p>` : '').join('');
-    return `<section class="jar-story" id="jar-story" style="--jh:${j.heightVh.desktop}vh;--jhm:${j.heightVh.mobile}vh" data-n="${j.frames}" data-ext="${j.ext}" data-v="${esc(ctx.assetVersion || '')}" data-d="${j.desktop}" data-m="${j.mobile}" data-dm="${j.lite.desktop}" data-mm="${j.lite.mobile}"${j.xlite ? ` data-dl="${j.xlite.desktop}" data-ml="${j.xlite.mobile}"` : ''}${j.p ? ` data-p="${j.p.join(',')}"` : ''}${j.pb ? ` data-pb="${j.pb.join(',')}"` : ''} data-h="${j.heightVh.desktop}" data-hm="${j.heightVh.mobile}" aria-label="Вступление: ${esc(j.alt)}">
-    <div class="js-stage">
-      <canvas class="js-cv" role="img" aria-label="${esc(j.alt)}"></canvas>
-      <div class="js-vig" aria-hidden="true"></div>
-      <div class="js-caps" aria-hidden="true">${caps}</div>
-      <div class="js-cue" aria-hidden="true"><span>${esc(j.cue)}</span><i></i></div>
-      <div class="js-milk" aria-hidden="true"></div>
-    </div>
-  </section>`;
-  })();
-  /* экран с лозунгом после баночки (jar.outro): слова проявляются по скроллу (js/jar.js), оформление — css/jar.css.
-     Секция заходит под конец вступления (отрицательный margin-top считается из --jh/--jhm), поэтому лозунг начинает проявляться сразу, как уходит последняя подпись, а не после пустого молочного экрана */
-  const outro = (() => {
-    const j = rd.jar, o = j && j.enabled && j.outro; if (!o || !o.enabled) return '';
-    let n = 0;
-    const lines = o.lines.map((t, li) => `<span class="jo-l${li === o.accent ? ' ac' : ''}">${String(t).split(/\s+/).filter(Boolean).map(w => `<span class="jo-w" data-i="${n++}">${esc(w)}</span>`).join(' ')}</span>`).join('');
-    const sub = o.sub || String(ctx.site.tagline || '');
-    /* насколько секция лозунга заходит под конец вступления (в высотах экрана). Пауза P = пустой экран между уходом последней подписи и первой надписью лозунга:
-       P = (1 − c)·J + c − D + 0.034·(Jo − 1), где J — высота вступления, Jo — высота секции лозунга (в экранах), c — прогресс баночки, на котором уходит последняя подпись
-       (captions[-1].to; подпись считается ушедшей при непрозрачности < 0.05 — это на 0.0045 раньше её `to`), 0.034 — доля прокрутки секции до заметного проявления надписи (js/jar.js, uiOutro). Отсюда D; pauseVh задаётся в redesign.json → jar.outro */
-    const caps = j.captions || [], c = (caps.length ? caps[caps.length - 1].to : 0.78) - 0.0045, pause = o.pauseVh || {desktop: 0.1, mobile: 0.1};
-    const pull = (J, Jo, P) => Math.round(((1 - c) * J + c + 0.034 * (Jo - 1) - P) * 1000) / 10;
-    const jod = pull(j.heightVh.desktop / 100, o.heightVh.desktop / 100, pause.desktop), jodm = pull(j.heightVh.mobile / 100, o.heightVh.mobile / 100, pause.mobile);
-    return `<section class="jar-outro" id="jar-outro" style="--jo:${o.heightVh.desktop}vh;--jom:${o.heightVh.mobile}vh;--jod:${jod}vh;--jodm:${jodm}vh" data-n="${n}">
-    <div class="jo-stage">
-      <div class="jo-bg" aria-hidden="true"><i class="jo-glow g1"></i><i class="jo-glow g2"></i></div>
-      <div class="jo-in">
-        <p class="jo-eye">${esc(o.eyebrow)}</p>
-        <p class="jo-title">${lines}</p>
-        <div class="jo-rule" aria-hidden="true"><i></i><b></b></div>
-        <p class="jo-sub">${esc(sub)}</p>
-      </div>
-    </div>
-  </section>`;
-  })();
-  /* архитектурный первый экран после вступления (jar.arch): та же закреплённая сцена с кадрами, что и у баночки, но кадры — арочная ниша из камня с баночкой на подиуме
-     (tools/jar-render/arch_story.py). Баночка проявляется из молочного фона лозунга, камера отъезжает, свет в нише разгорается, затем поверх сцены встаёт герой:
-     заголовок слева, ниша с баночкой справа, снизу панель «Почему выбирают Астрею?». Прежний герой (шар с орбитами) остаётся запасным: без JS или canvas его показывает css/jar.css.
+  /* первый экран главной (data/redesign.json → jar): закреплённая сцена со скролл-анимацией. Движок — js/jar.js, живой шар — js/sphere.js, стили — css/home-arch.css.
+     Сцена открывается заставкой: баночка крупно по центру зала, внизу «Листайте»; по прокрутке камера отъезжает («наезд с отъездом»), баночка уходит на подиум и встаёт там одна,
+     затем поверх встаёт герой: заголовок слева, шар с орбитами логотипов, внизу панель «Почему выбирают Астрею?».
+     Слои (снизу вверх): кадры зала без баночки (canvas .js-cv) → каменный шар (WebGL, .ar-pearl; в прокрутке неподвижен) → спрайт баночки (canvas .ar-jar-cv, чёткий, с прозрачным фоном; всегда поверх шара — товар виден целиком) → орбиты логотипов → текст и панель.
+     Баночка лежит под надписями: ничто из текста и логотипов ею не закрывается. Без JS или без canvas сцена скрыта, остаётся прежний герой (css/home-arch.css).
      Тексты — те же, что у прежнего героя (data/content.json → home), цифры — из данных (число представительств и брендов). */
   const arch = (() => {
     const j = rd.jar, a = j && j.enabled && j.arch; if (!a || !a.enabled) return '';
     const nOff = ctx.stats.offices, nBr = ctx.stats.brands, cities = ctx.site.offices.map(o => o.city);
     const auto = {offices: `${nOff} ${S.plural(nOff, 'город', 'города', 'городов')} присутствия`, brands: `${nBr} ${S.plural(nBr, 'бренд', 'бренда', 'брендов')} в портфеле`};
-    /* каменный шар в нише: прозрачный рендер + живой свет поверх него (css/home-arch.css → .ar-pearl) */
-    const sp = a.sphere, pearl = sp ? `<div class="ar-pearl" aria-hidden="true"><i><img src="${C.u(P, sp.src)}" alt="" width="${sp.size}" height="${sp.size}" decoding="async"></i></div>` : '';
-    const worldVars = sp ? ` style="--sl:${sp.cx}%;--st:${sp.cy}%;--sw:${sp.crop}%;--sd:${sp.d}%"` : '';
-    /* флакон на подиуме — отдельный слой поверх жемчужины (положение в % сцены; у телефона своё) */
-    const fgImg = (b, cls) => `<img class="ar-fg${cls}${b.k === 'jar' ? ' ar-fg-jar' : ''}" src="${C.u(P, b.src)}" alt="" aria-hidden="true" decoding="async" style="--fl:${b.l}%;--ft:${b.t}%;--fw:${b.w}%">`;
-    const fg = a.fg ? [].concat(a.fg.desktop || []).map(b => fgImg(b, '')).join('') + [].concat(a.fg.mobile || []).map(b => fgImg(b, ' ar-fg-m')).join('') : '';
+    /* каменный шар: холст WebGL (js/sphere.js) и готовая картинка на случай, когда WebGL нет или движение уменьшено; положение — в % кадра, у телефона своё */
+    const sp = a.sphere, tex = sp.tex, sd = sp.desktop, sm = sp.mobile;
+    const pearl = `<div class="ar-pearl" aria-hidden="true" data-a="${C.u(P, tex.a)}" data-n="${C.u(P, tex.n)}"><canvas class="ar-gl"></canvas><img class="ar-poster" src="${C.u(P, tex.poster)}" alt="" width="640" height="640" decoding="async"></div>`;
+    const worldVars = ` style="--sl:${sd.cx}%;--st:${sd.cy}%;--sd:${sd.d}%;--slm:${sm.cx}%;--stm:${sm.cy}%;--sdm:${sm.d}%"`;
     const items = a.panel.items.map(it => ({icon: it.icon, title: it.auto ? auto[it.auto] : it.title, text: it.auto === 'offices' ? cities.join(', ') : it.text}));
-    /* логотипы на орбитах вокруг сферы-жемчужины — те же, что у прежнего героя (data/content.json → home.orbits) */
+    /* логотипы на орбитах вокруг шара — те же, что у прежнего героя (data/content.json → home.orbits) */
     const orb = o => { const b = o.brand ? ctx.brandById[o.brand] : null, src = b ? b.logo : o.src, w = b ? b.logoW : o.w, hh = b ? b.logoH : o.h;
       return `<span class="arm" style="--a:${o.angle}deg"><span class="orb"><img src="${C.u(P, src)}" alt=""${w ? ` width="${w}" height="${hh}"` : ''} style="--lw:${o.width}" decoding="async"></span></span>`; };
     const ring = k => { const o = h.orbits.find(x => x.orbit === k); return `<div class="ring ${k}" aria-hidden="true">${o ? orb(o) : ''}</div>`; };
-    return `<section class="jar-story arch-story" id="arch-story" data-mode="arch" data-defer="1" data-view-at="0.97" style="--jh:${a.heightVh.desktop}vh;--jhm:${a.heightVh.mobile}vh" data-n="${a.frames}" data-ext="${a.ext}" data-v="${esc(ctx.assetVersion || '')}" data-d="${a.desktop}" data-m="${a.mobile}" data-dm="${a.lite.desktop}" data-mm="${a.lite.mobile}" data-p="${a.p.join(',')}" data-pb="${a.pb.join(',')}" aria-label="${esc(a.alt)}">
+    const jr = a.jar;
+    return `<section class="jar-story arch-story" id="arch-story" data-mode="arch" data-view-at="0.97" style="--jh:${a.heightVh.desktop}vh;--jhm:${a.heightVh.mobile}vh" data-n="${a.frames}" data-ext="${a.ext}" data-v="${esc(ctx.assetVersion || '')}" data-d="${a.desktop}" data-m="${a.mobile}" data-dm="${a.lite.desktop}" data-mm="${a.lite.mobile}" data-p="${a.p.join(',')}" data-pb="${a.pb.join(',')}" data-jd="${jr.desktop.dir}" data-jm="${jr.mobile.dir}" data-jx="${jr.ext}" data-jr="${JSON.stringify(jr.desktop.rects)}" data-jrm="${JSON.stringify(jr.mobile.rects)}" aria-label="${esc(a.alt)}">
     <div class="js-stage">
       <canvas class="js-cv" role="img" aria-label="${esc(a.alt)}"></canvas>
-      <div class="js-milk" aria-hidden="true"></div>
+      <div class="ar-vig" aria-hidden="true"></div>
       <div class="ar-hero">
         <div class="ar-world"${worldVars}>
           ${pearl}
+          <canvas class="ar-jar-cv" aria-hidden="true"></canvas>
           <div class="ar-orbit">${ring('r3')}${ring('r1')}${ring('r2')}</div>
-          <span class="ar-chip"><i></i>${esc(h.chip)}</span>
-          <div class="ar-card"><b>${esc(h.card.title)}</b><hr class="dash"><p>${esc(h.card.text)}</p></div>
-          ${fg}
         </div>
+        <div class="ar-cue" aria-hidden="true"><span>${esc(j.cue)}</span><i></i></div>
         <div class="ar-copy">
           <span class="eyebrow ar-e">${esc(h.eyebrow)}</span>
           <h1 class="ar-h">${h.h1}</h1>
@@ -248,5 +207,5 @@ module.exports = function homeRedesign(ctx, C, P, parts, {events, val}) {
   </section>`;
   })();
   const fork = ctx.sales && ctx.sales.homeFork ? require('./sales-home.js')(ctx, C, P) : '';          // продающий слой: развилка «Учиться / Закупать» сразу под строкой брендов (героя и вступление не трогаем)
-  return [jar, outro, arch, heroX, parts.marquee, ...(fork ? [fork] : []), about, stats, why, solutions, (brandsX || parts.brands.replace('class="sec tint"', 'class="rd-sec rd-brands"')), picker, featured, editorial, training, forWhom, news, wall, finalCta].join('\n\n  ');
+  return [arch, heroX, parts.marquee, ...(fork ? [fork] : []), about, stats, why, solutions, (brandsX || parts.brands.replace('class="sec tint"', 'class="rd-sec rd-brands"')), picker, featured, editorial, training, forWhom, news, wall, finalCta].join('\n\n  ');
 };

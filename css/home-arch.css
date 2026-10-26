@@ -4,43 +4,45 @@
    Двигаются только opacity и transform; backdrop-filter и blend-режимы не используются. Значения --m, --h1…--h4 пишет js/jar.js от прокрутки. */
 
 /* ============ 1. Архитектурный первый экран ============ */
-.arch-story{height:var(--jh,420vh);margin:0;background:var(--milk)}
-.arch-story .js-stage{background:var(--milk)}
-.arch-story .js-stage::after{background:url(../assets/bg/stone-grain.webp) 0 0/512px 512px;opacity:calc(.5 * var(--h2,0));z-index:1}      /* зерно камня поверх рендера зала: поры и крупинки — сцена не «мыльная» после сжатия кадров */
-.arch-story .js-cv{transition:opacity .5s ease}
-.arch-story .js-milk{opacity:var(--m,1)}                          /* молочный слой лозунга: кадры проявляются из него (--m от 1 до 0 за первые ~9 % пути) */
+.arch-story{position:relative;height:var(--jh,420vh);margin:0;background:var(--milk)}
+.js-stage{position:sticky;top:0;height:100vh;height:100lvh;overflow:hidden;background:var(--milk);isolation:isolate}
+.js-cv{position:absolute;inset:0;width:100%;height:100%;display:block;object-fit:cover;opacity:0;transition:opacity .9s ease}      /* cover: если размер холста устарел, картинка обрежется, но не растянется */
+.jar-story.ready .js-cv{opacity:1}
+.arch-story .js-stage::after{background:url(../assets/bg/stone-grain.webp) 0 0/512px 512px;opacity:calc(.34 * var(--h2,0));z-index:1}      /* зерно камня поверх рендера зала: поры и крупинки — сцена не «мыльная» после сжатия кадров */
+/* заставка: тёплая виньетка по краям (как у студийной съёмки) — уходит с первой же прокруткой; кадр зала, баночка и шар от неё не зависят */
+.ar-vig{position:absolute;inset:0;z-index:1;pointer-events:none;opacity:var(--cue,1);background:radial-gradient(115% 100% at 50% 48%,rgba(60,40,20,0) 54%,rgba(60,40,20,.2) 100%)}
 
-/* герой поверх сцены: слой на весь экран; внутри — «мир» (рамка 16:9 по размеру кадра, чтобы орбиты, чип и карточка стояли на тех же местах сцены, что и в кадре), текст слева и панель снизу */
+/* герой поверх сцены: слой на весь экран; внутри — «мир» (рамка 16:9 по размеру кадра, чтобы шар, баночка и орбиты стояли на тех же местах сцены, что и в кадре), текст слева и панель снизу */
 .ar-hero{position:absolute;inset:0;z-index:3;pointer-events:none;--ar-x:max(var(--gut),calc((100% - var(--maxw)) / 2 + var(--gut)))}
 .ar-hero::before{content:"";position:absolute;inset:0;z-index:0;opacity:var(--h4,0);
   background:linear-gradient(90deg,rgba(247,242,232,.74) 0,rgba(247,242,232,.54) 28%,rgba(247,242,232,.2) 44%,rgba(247,242,232,0) 54%)}      /* мягкая светлая завеса за текстом — читается на любом кадре */
 .ar-world{position:absolute;left:50%;top:50%;width:max(100%,calc(100lvh * 16 / 9));aspect-ratio:16/9;transform:translate(-50%,-50%);z-index:1}
-.ar-world{--pl:var(--sl,70.85%);--pt:var(--st,42.77%);--pw:var(--sw,26.5%);--pd:var(--sd,25%)}                       /* центр шара, ширина его картинки и диаметр (в % сцены) — орбиты строятся вокруг него; значения приходят из data/redesign.json → jar.arch.sphere */
-/* каменный шар в нише: прозрачный рендер (травертин, чуть темнее стен) + живой свет поверх: шар плавает, блик и тень скользят по камню за курсором (--lx/--ly ставит js/motion.js) */
-.ar-pearl{position:absolute;left:var(--pl);top:var(--pt);width:var(--pw);aspect-ratio:1;translate:-50% -50%;scale:calc(.7 + .3 * var(--h2,0));opacity:var(--h2,0);pointer-events:none;--lx:33%;--ly:27%;--px:0;--py:0}
-.ar-pearl i{position:absolute;inset:0;animation:floaty 8s ease-in-out infinite;translate:calc(var(--px) * -9px) calc(var(--py) * -9px)}
-.ar-pearl img{display:block;width:100%;height:100%;user-select:none}
-.ar-pearl i::before,.ar-pearl i::after{content:"";position:absolute;inset:2.8%;border-radius:50%}
-.ar-pearl i::before{background:radial-gradient(circle at var(--lx) var(--ly),rgba(255,247,230,.42),rgba(255,247,230,.12) 38%,rgba(255,247,230,0) 62%)}      /* свет следует за курсором */
-.ar-pearl i::after{background:radial-gradient(circle at calc(100% - var(--lx)) calc(100% - var(--ly)),rgba(58,40,26,.36),rgba(58,40,26,.10) 46%,rgba(58,40,26,0) 70%)}      /* и тень уходит на противоположную сторону */
-html.is-scrolling .ar-pearl i,.anim-off .ar-pearl i{animation-play-state:paused!important}
-.ar-fg{position:absolute;left:var(--fl);top:var(--ft);width:var(--fw);height:auto;opacity:var(--h2,0);pointer-events:none;user-select:none}
-.ar-fg-jar{opacity:var(--hj,0)}      /* баночка — слоем поверх орбит, но только когда села на подиум (до этого она летит в кадрах)  */
-.ar-fg-m{display:none}      /* флакон поверх жемчужины: шар позади, как в нише на референсе */
-.ar-orbit{position:absolute;left:var(--pl);top:var(--pt);width:calc(var(--pd) * 1.52);aspect-ratio:1;translate:-50% -50%;opacity:var(--h2,0)}
+.ar-world{--pl:var(--sl,70.85%);--pt:var(--st,42.77%);--pd:var(--sd,25%)}                       /* центр шара и его диаметр (в % сцены) — орбиты строятся вокруг него; значения приходят из data/redesign.json → jar.arch.sphere */
+/* каменный шар: живой, на WebGL (js/sphere.js). В прокрутке кадров он НЕ участвует — стоит на месте, камера «раскрывает» зал вокруг него. Слой лежит под баночкой, но под орбитами и текстом.
+   Запасной вариант (нет WebGL, «меньше движения»): готовая картинка шара, он лишь мягко парит */
+.ar-pearl{position:absolute;left:var(--pl);top:var(--pt);width:var(--pd);aspect-ratio:1;translate:-50% -50%;pointer-events:none;z-index:1}
+.ar-gl,.ar-poster{position:absolute;left:0;top:0;width:100%;height:100%;display:block;user-select:none}
+.ar-gl{opacity:0}
+.ar-poster{inset:-1%;width:102%;height:102%;object-fit:contain}
+.ar-pearl.gl-on .ar-gl{opacity:1}
+.ar-pearl.gl-on .ar-poster{opacity:0}
+.ar-pearl.gl-off .ar-poster,.ar-pearl:not(.gl-on) .ar-poster{animation:floaty 8s ease-in-out infinite}
+.ar-pearl.gl-on .ar-poster{animation:none}
+html.is-scrolling .ar-pearl .ar-poster,.anim-off .ar-pearl .ar-poster{animation-play-state:paused!important}
+/* баночка: отдельный чёткий слой (js/jar.js рисует на нём спрайты по прокрутке); лежит выше шара и ниже орбит и текста — надписи идут поверх неё */
+.ar-jar-cv{position:absolute;left:0;top:0;width:100%;height:100%;display:block;pointer-events:none;opacity:0;transition:opacity .5s ease;z-index:2}      /* баночка всегда поверх шара: в заставке она ближе к камере, а на подиуме её не должен закрывать даже край шара */
+.jar-story.jar-ready .ar-jar-cv{opacity:1}
+.ar-orbit{position:absolute;left:var(--pl);top:var(--pt);width:calc(var(--pd) * 1.52);aspect-ratio:1;translate:-50% -50%;opacity:var(--h2,0);z-index:3}
 .ar-orbit .ring{border-color:rgba(70,60,40,.34)}
 .ar-orbit .ring.r2{border-color:rgba(70,60,40,.2)}
 .ar-orbit .orb img{filter:drop-shadow(0 3px 6px rgba(60,40,18,.2));--k:1.15}      /* без светлого ореола: он «выбеливал» баночку, когда логотип проходил над ней */
-.ar-chip{position:absolute;left:57%;top:10.5%;display:inline-flex;align-items:center;gap:9px;padding:9px 16px;border-radius:999px;background:rgba(252,249,243,.94);box-shadow:inset 0 0 0 1px rgba(255,255,255,.8),0 12px 22px -14px rgba(60,40,18,.55);
-  font:600 clamp(9px,.66vw,11.5px)/1 var(--sans);letter-spacing:.1em;text-transform:uppercase;color:var(--navy);white-space:nowrap;opacity:var(--h2,0);transform:translate3d(0,calc((1 - var(--h2,0)) * 12px),0)}
-.ar-chip i{width:7px;height:7px;border-radius:50%;background:#2fa36b;box-shadow:0 0 0 3px rgba(47,163,107,.18)}
-.ar-card{position:absolute;left:50.5%;top:60.5%;width:16%;min-width:170px;padding:clamp(10px,1vw,18px) clamp(12px,1.1vw,20px);border-radius:12px;background:rgba(252,249,243,.95);box-shadow:inset 0 0 0 1px rgba(255,255,255,.8),0 18px 30px -18px rgba(60,40,18,.6);
-  opacity:var(--h2,0);transform:translate3d(0,calc((1 - var(--h2,0)) * 16px),0)}
-.ar-card b{display:block;font:600 clamp(8.5px,.62vw,11px)/1.4 var(--sans);letter-spacing:.1em;text-transform:uppercase;color:var(--navy)}
-.ar-card hr{margin:.7em 0;border:0;border-top:1px dashed rgba(86,60,30,.28)}
-.ar-card p{margin:0;font:400 clamp(10.5px,.78vw,13.5px)/1.5 var(--sans);color:var(--slate)}
+/* «Листайте» — полоска заставки внизу сцены; гаснет с первой прокруткой (--cue) */
+.ar-cue{position:absolute;left:50%;bottom:clamp(20px,4.4vh,40px);z-index:2;transform:translateX(-50%);display:flex;flex-direction:column;align-items:center;gap:12px;
+  color:var(--navy);font:600 11px/1 var(--sans);letter-spacing:.3em;text-transform:uppercase;opacity:var(--cue,1);pointer-events:none}
+.ar-cue i{display:block;width:1px;height:40px;background:linear-gradient(var(--navy),transparent);transform-origin:top;animation:jarCue 1.9s ease-in-out 6}
+@keyframes jarCue{0%{transform:scaleY(0);opacity:0}40%{opacity:1}100%{transform:scaleY(1);opacity:0}}
 
-.ar-copy{position:absolute;z-index:2;left:var(--ar-x);top:calc(var(--hdr) + clamp(26px,12.5vh,150px));width:clamp(320px,33%,560px)}
+.ar-copy{position:absolute;z-index:2;left:max(var(--gut),calc(var(--ar-x) - clamp(24px,4.4vw,86px)));top:calc(var(--hdr) + clamp(26px,12.5vh,150px));width:clamp(320px,33%,560px)}
 .ar-copy .eyebrow{margin:0}
 .ar-e{opacity:var(--h1,0);transform:translate3d(0,calc((1 - var(--h1,0)) * 16px),0)}
 .ar-h{margin:clamp(12px,2vh,22px) 0 clamp(14px,2.4vh,24px);font:500 clamp(34px,3.3vw,64px)/1.07 var(--serif);letter-spacing:-.016em;color:var(--navy);hyphens:manual;text-wrap:balance;
@@ -81,7 +83,7 @@ body.arch-nav .hdr.hide{transform:none}
 body.arch-top:not(.menu-open) .hdr{background:transparent;border-bottom-color:transparent}
 .hdr{transition:transform .7s var(--ease-out),background-color .5s ease,border-color .5s ease}
 
-/* запасной вариант: нет JS или canvas — вместо сцены остаётся прежний герой */
+/* запасной вариант: нет JS или canvas — вместо сцены остаётся прежний герой (без JS сцена — ни кадров, ни баночки) */
 html.js .arch-story:not(.jar-off) ~ .hero{display:none}
 html:not(.js) .arch-story{display:none;margin:0}
 .arch-story.jar-off{display:none;margin:0}
@@ -93,9 +95,6 @@ html:not(.js) .arch-story{display:none;margin:0}
   .ar-panel li{border-left:0;border-top:1px solid rgba(86,60,30,.12);padding:8px 8px 4px}
   .ar-more{grid-column:1/-1;justify-self:start;margin:8px 0 0}
 }
-@media (max-width:1100px) and (min-aspect-ratio:11/10){
-  .ar-card,.ar-chip{display:none}
-}
 @media (max-aspect-ratio:11/10){
   .arch-story{height:var(--jhm,380vh)}
   .ar-world{width:max(100%,calc(100lvh * 9 / 16));aspect-ratio:9/16}
@@ -103,12 +102,12 @@ html:not(.js) .arch-story{display:none;margin:0}
   .ar-hero::before{background:linear-gradient(180deg,rgba(247,242,232,.9) 0,rgba(247,242,232,.74) 24%,rgba(247,242,232,.3) 38%,rgba(247,242,232,0) 50%)}
   .ar-copy{top:calc(var(--hdr) + clamp(8px,2.2vh,26px));width:calc(100% - 2 * var(--gut))}
   .ar-h{font-size:clamp(27px,8vw,42px);margin:10px 0 0}
-  .ar-lead,.ar-facts,.ar-card,.ar-chip{display:none}
+  .ar-lead,.ar-facts{display:none}
   .ar-cta{margin-top:14px;gap:8px}
   .ar-cta .btn{padding:12px 16px;font-size:13.5px}
-  .ar-world{--pl:47%;--pt:56.5%;--pw:55.1%;--pd:52%}
+  .ar-world{--pl:var(--slm,24.5%);--pt:var(--stm,68%);--pd:var(--sdm,64.9%)}
   .ar-orbit{width:calc(var(--pd) * 1.3)}
-  .ar-fg{display:none}.ar-fg-m{display:block}
+  .ar-copy{left:var(--gut)}
   .ar-panel{width:calc(100% - 2 * var(--gut));grid-template-columns:repeat(2,minmax(0,1fr));border-radius:20px 20px 0 0;padding:10px 12px 12px}
   .ar-pt{font-size:16px}
   .ar-ic{width:26px;height:26px}.ar-ic svg{width:20px;height:20px}
@@ -120,8 +119,9 @@ html:not(.js) .arch-story{display:none;margin:0}
   .ar-lead,.ar-facts{display:none}
 }
 @media (prefers-reduced-motion:reduce){
-  .ar-e,.ar-h,.ar-lead,.ar-cta,.ar-panel,.ar-chip,.ar-card{transform:none}
-  .ar-pearl i{animation:none;translate:none}
+  .ar-e,.ar-h,.ar-lead,.ar-cta,.ar-panel{transform:none}
+  .ar-poster{animation:none!important}
+  .ar-cue i{animation:none}
 }
 
 /* ============ 2. Секции главной в архитектурной системе ============

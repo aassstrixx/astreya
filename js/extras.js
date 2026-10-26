@@ -167,13 +167,13 @@
     if (!('IntersectionObserver' in window)) return;
     const state = new Map();
     const calc = () => {            // архитектурный первый экран считается «вступлением» только пока идёт кино; когда встал герой (body.arch-live), кнопки Стеллы и подборки возвращаются
-      introSeen = ['#jar-story', '#jar-outro'].some(s => { const t = $(s); return t && state.get(t); }) || (!document.body.classList.contains('arch-live') && !!state.get($('#arch-story')));
+      introSeen = !document.body.classList.contains('arch-live') && !!state.get($('#arch-story'));
       qcFooter = !!(state.get($('.ftr')));
       setIntro(); sync(); qcUpdate();
     };
     introCalc = calc;
     io = new IntersectionObserver(es => { es.forEach(e => state.set(e.target, e.isIntersecting)); calc(); }, {threshold: 0});
-    ['#jar-story', '#jar-outro', '#arch-story', '.ftr'].forEach(s => { const t = $(s); if (t) io.observe(t); });
+    ['#arch-story', '.ftr'].forEach(s => { const t = $(s); if (t) io.observe(t); });
   }
 
   /* ---------- «Вы недавно смотрели» ---------- */

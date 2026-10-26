@@ -1,46 +1,39 @@
-/* jar.js — вступление на главной: баночка «Астрея» оживает по скроллу.
-   Секция #jar-story в несколько экранов высотой, внутри — закреплённая сцена (sticky) с canvas. Положение прокрутки внутри секции (0…1)
-   выбирает момент заранее отрендеренной последовательности кадров (WebP): вниз — вперёд, вверх — обратная перемотка.
+/* jar.js — первый экран главной: закреплённая сцена со скролл-анимацией (секция #arch-story, data/redesign.json → jar.arch).
+   Секция в несколько экранов высотой, внутри — закреплённая сцена (sticky). Положение прокрутки внутри секции (0…1) выбирает момент заранее отрендеренной последовательности
+   (WebP): вниз — вперёд, вверх — обратная перемотка. Сцена — зал с арками (Blender, tools/jar-render/hall_story.py): камера «наезд с отъездом» от крупной баночки по центру
+   (заставка с полоской «Листайте») к готовому кадру, баночка уходит на подиум и встаёт там одна, затем поверх встаёт герой (заголовок, кнопки, панель «Почему выбирают Астрею?»).
+
+   Слои сцены:
+   • кадры зала БЕЗ баночки — canvas .js-cv (этот файл: уровни качества, загрузка, пружина плейхеда);
+   • каменный шар — живой WebGL-слой .ar-pearl (js/sphere.js). В прокрутке он НЕ участвует: камера снята так, что шар стоит в кадре на одном месте и одного размера, зал раскрывается вокруг него;
+   • баночка — отдельные чёткие спрайты (WebP с прозрачным фоном, по одному на кадр сценария), canvas .ar-jar-cv: положение и размер между кадрами плавно интерполируются по рамкам
+     (data-jr / data-jrm — доли кадра), поэтому баночка не двоится, не «пикселится» и не проходит сквозь фон. Рисуется над шаром и под орбитами и текстом: надписи идут поверх неё.
 
    Как устроена плавность (по итогам «арены» — tools/jar-bench: десятки вариантов гоняли под нагрузкой и сравнивали по метрикам):
-   • картинка рисуется на 2D-canvas прямо из <img> — основной поток почти ничего не делает. WebGL/ImageBitmap/интерполяция потока были
-     медленнее: загрузка текстур и декодирование выполняются в основном потоке и забивают его при быстрой прокрутке (отсюда «лаги»);
-   • три уровня качества кадров (LOD): «полные» (1920×1080 / 810×1440, 278 кадров) — в покое; «средние» (1280×720 / 720×1280, 555 кадров: между
-     каждой парой полных — дорисованный промежуточный, tools/jar-render/bake_mid.py) — пока картинка движется; «низкие» (960×540 / 540×960) — только
-     если устройство не справляется. Средний кадр декодировать дешевле, а кадров вдвое больше — движение ровнее;
-   • регулятор нагрузки: если кадры идут дольше бюджета (по интервалам requestAnimationFrame), уровень качества на время движения снижается,
-     а когда запас снова есть — возвращается. В покое всегда показываются полные кадры; смена уровня идёт короткой перекрёстной сменой;
-   • движение по кадрам ведёт «пружина» с критическим затуханием (а не простое сглаживание): нет рывка на старте и мягкая остановка без «щелчка»;
-     в покое показывается ровно ближайший кадр (без двоения), при движении соседние кадры смешиваются;
+   • кадры рисуются на 2D-canvas прямо из <img> — основной поток почти ничего не делает. WebGL/ImageBitmap/интерполяция потока были медленнее: загрузка текстур и декодирование выполняются
+     в основном потоке и забивают его при быстрой прокрутке (отсюда «лаги»);
+   • два набора кадров зала и их «запечённые» промежуточные кадры (tools/jar-render/encode_arch.py): полные (1920×1080 / 900×1600) — в покое; лёгкие (1280×720 / 600×1067, между каждой парой полных
+     дорисован промежуточный кадр) — пока картинка движется. Средний кадр декодировать дешевле, а кадров вдвое больше — движение ровнее;
+   • регулятор нагрузки: если кадры идут дольше бюджета (по интервалам requestAnimationFrame), уровень качества на время движения снижается, а когда запас снова есть — возвращается.
+     В покое всегда показываются полные кадры; смена уровня идёт короткой перекрёстной сменой. Спрайты баночки от уровня не зависят — она резкая всегда;
+   • движение ведёт «пружина» с критическим затуханием (а не простое сглаживание): нет рывка на старте и мягкая остановка без «щелчка»; в покое показывается ровно ближайший кадр (без двоения),
+     при движении соседние кадры смешиваются;
    • в цикле нет чтения вёрстки: границы сцены измеряются один раз (и при изменении размера), CSS-переменные пишутся только при изменении;
-   • первая загрузка (холодный кэш): кадры берутся через fetch → Blob → <img> — это не задерживает событие load (его ждёт заставка), поэтому начинается сразу, и
-     тянутся параллельно по HTTP/2 (16 «полос» на компьютере, 10 на телефоне: при 3–4 полосах скорость упиралась в задержку запроса, а не в канал). Порядок:
-     первый кадр → полные кадры у положения → «каркас» среднего набора (каждый 8-й кадр) → средний набор с окном впереди по ходу движения и «от грубого к тонкому» →
-     полные кадры рядом (в покое) → остальные полные. Пока идёт движение, полные кадры не грузим (в движении показываются средние, а канал нужен им). Пока кадров
-     рядом ещё нет, смешиваются ближайшие загруженные (не дальше 8 кадров) — картинка едет по положению, а не шагает (замеры: tools/jar-bench/cold.js);
- (пружина по щелчкам колеса) — везде одинаково, в том числе на этой сцене; пружина плейхеда добавляет к нему
-     лишь небольшую задержку и ведёт сцену при касаниях, перетаскивании ползунка и якорях (подбор — tools/jar-bench/scroll-sim.js).
-   Кадры: assets/jar/d, dm, dl (горизонтальный экран) и m, mm, ml (вертикальный); в автономной сборке — только низкий набор dl/ml из data:-адресов (вес).
-   Положения кадров по сценарию (p от 0 до 1): data-p — полный набор (сетка неравномерная, кадров больше там, где движение быстрее),
-   data-pb — средний и низкий наборы.
-   Вступление показывается при любых настройках устройства («уменьшить движение», экономия трафика) — по решению заказчика; без JS его нет.
-   Подписи, шапка и кнопка «Пропустить» — тоже от прокрутки. После баночки идёт экран с лозунгом (#jar-outro): слова проявляются по той же
-   прокрутке, линия с жемчужиной дорисовывается, затем всё уходит. Секция лозунга заходит под конец вступления (отрицательный margin-top в css/jar.css, величину считает src/pages/home-x.js из jar.outro.pauseVh):
-   слова проявляются поверх растворяющихся в молоко кадров через заданную паузу после последней подписи (0.6 экрана на компьютере, 0.65 на телефоне),
-   а не после долгого пустого молочного экрана (tools/check-outro.js меряет эту паузу).
-   Второй экземпляр — «архитектурный первый экран» (#arch-story, data-mode="arch", data/redesign.json → jar.arch): тот же движок кадров, но другая сцена и интерфейс:
-   кадры проявляются из молочного фона (слой .js-milk растворяется в первые ~9 % пути), камера отъезжает от баночки, поверх встаёт герой (заголовок, кнопки, панель
-   «Почему выбирают Астрею?» — переменные --h1…--h4 от прогресса), шапка на время сцены уходит и возвращается к финалу (классы body.arch-hide / arch-nav). Кадры сцены
-   грузятся не сразу, а когда до неё остаётся ~3 экрана или первое вступление загружено целиком (data-defer): два набора кадров не соперничают за канал.
-   Файл загружается только на главной и только пока jar.enabled = true (data/redesign.json). */
+   • первая загрузка (холодный кэш): кадры берутся через fetch → Blob → <img> — это не задерживает событие load (его ждёт заставка); сначала — первый кадр и спрайт заставки, затем кадры
+     «от грубого к тонкому» с окном впереди по ходу движения; спрайты баночки грузятся от текущего положения.
+   Колесо мыши сглаживается самим браузером и сайтом (пружина по щелчкам колеса) — везде одинаково; пружина плейхеда добавляет к нему лишь небольшую задержку и ведёт сцену при касаниях,
+   перетаскивании ползунка и якорях (подбор — tools/jar-bench/scroll-sim.js).
+   Положения кадров по сценарию (p от 0 до 1): data-p — полный набор, data-pb — лёгкий.
+   Сцена показывается при любых настройках устройства («уменьшить движение», экономия трафика) — по решению заказчика; без JS её нет (остаётся прежний герой).
+   Интерфейс от прогресса p: --cue («Листайте» и виньетка гаснут с первой прокруткой), --h1…--h4 (герой), классы body.arch-hide / arch-nav / arch-top / arch-live (шапка уходит на время кино,
+   возвращается к финалу; кнопки героя нажимаются, только когда видны). Файл загружается только на главной и только пока jar.enabled = true (data/redesign.json). */
 (function () {
   'use strict';
   const A = window.Astreya || {};
   const clamp = (x, a, b) => Math.max(a, Math.min(b, x));
   const ease = x => x * x * (3 - 2 * x);
-  /* смешивание соседних полных кадров: пока на кадре чёткие детали (p < 0.6) — только на середине шага, чтобы этикетка не двоилась;
-     на гладком креме (нырок) — плавно по всему шагу */
-  const narrowBlend = (x, p) => p < 0.6 ? ease(clamp((x - 0.42) / 0.16, 0, 1)) : ease(x);
+  /* смешивание соседних кадров в движении: только в середине шага — кромки плит не двоятся, пока картинка почти стоит на кадре */
+  const blendCurve = x => ease(clamp((x - 0.2) / 0.6, 0, 1));
   const pad = i => String(i).padStart(3, '0');
   const portraitMQ = window.matchMedia('(max-aspect-ratio: 11/10)');
   const OMEGA = 24;           // жёсткость пружины, 1/с: отставание при равномерной прокрутке ≈ 2/OMEGA ≈ 0,08 с, остановка (до 2 %) ≈ 0,25 с
@@ -57,12 +50,13 @@
   const LANES_IMG = [4, 3];   // запасной путь (file://, нет fetch) — как раньше
   const FLOOR_LVL = 3;        // «каркас» среднего набора: каждый 8-й кадр (≈70 кадров)
   const GAP = 8;              // пока кадров рядом ещё нет, пару для смешивания берём из ближайших загруженных не дальше стольких кадров
-  let ctrl = null, ctrls = [];       // ctrl — первое вступление (баночка), ctrls — все сцены страницы (вместе с архитектурным первым экраном)
+  const JLANES = [6, 4];      // спрайтов баночки одновременно: [компьютер, телефон]
+  let ctrl = null, ctrls = [];       // ctrls — все сцены страницы (на главной одна: #arch-story), ctrl — она же
 
   function create(root) {
     const stage = root.querySelector('.js-stage');
     const cv = root.querySelector('.js-cv');
-    const caps = Array.prototype.slice.call(root.querySelectorAll('.js-cap')).map(el => ({el, a: +el.dataset.from, b: +el.dataset.to}));
+    const jcv = root.querySelector('.ar-jar-cv'), world = root.querySelector('.ar-world');
     const ds = root.dataset, NH = +ds.n || 1, ext = ds.ext || 'webp', ver = ds.v ? '?v=' + ds.v : '', bundle = !!window.__ASTREYA_BUNDLE;
     const nums = s => String(s || '').split(',').filter(x => x !== '').map(Number);
     let Phi = nums(ds.p);
@@ -70,13 +64,13 @@
     let Pb = nums(ds.pb);
     if (Pb.some(isNaN)) Pb = [];
 
-    const arch = root.dataset.mode === 'arch', deferred = root.dataset.defer === '1';
-    const outro = arch ? null : document.getElementById('jar-outro'), jo = outro && outro.querySelector('.jo-stage');
-    const words = outro ? Array.prototype.slice.call(outro.querySelectorAll('.jo-w')) : [];
+    const jsonOf = t => { try { const a = JSON.parse(t || '[]'); return Array.isArray(a) ? a : []; } catch (e) { return []; } };
+    const JR = [jsonOf(ds.jr), jsonOf(ds.jrm)];                                     // рамки баночки по кадрам (доли кадра: x, y, w, h) — [компьютер, телефон]
 
-    let ctx2d = null;
+    let ctx2d = null, jctx = null;
     try { ctx2d = cv.getContext('2d', {alpha: false}); } catch (e) { ctx2d = null; }
-    if (!ctx2d) { root.classList.add('jar-off'); return {root, arch, complete: () => true, destroy() {}}; }
+    if (!ctx2d) { root.classList.add('jar-off'); return {root, complete: () => true, destroy() {}}; }
+    try { jctx = jcv ? jcv.getContext('2d') : null; } catch (e) { jctx = null; }
 
     /* ---- наборы кадров (уровни): для телефона — вертикальные; в автономной сборке — только лёгкий ---- */
     const isPortrait = () => portraitMQ.matches;
@@ -103,8 +97,8 @@
 
     /* ---- состояние ---- */
     let W = 0, H = 0, dead = false, firstDrawn = false, running = false, last = 0, dirty = true, started = false;
-    let cp = 0, vp = 0, pT = 0, cq = 0, vq = 0, qT = 0, paintedP = -1, paintedWant = -1, rzTimer = 0;
-    let sTop = 0, sTot = 1, sH = 1, oTop = 0, oTot = 1, oH = 0, yNow = 0;
+    let cp = 0, vp = 0, pT = 0, paintedP = -1, paintedJ = -1, paintedWant = -1, rzTimer = 0;
+    let sTop = 0, sTot = 1, sH = 1, yNow = 0;
     const born = performance.now();
     /* уровень по скорости и регулятор нагрузки */
     let lastDraw = null, lastSig = -1, tier = 0, calm = 0, gov = 0, used = -1, wantIdx = 0, restW = 1, xf = null, xlWanted = false;
@@ -198,9 +192,7 @@
           .catch(() => { if (g === gen) viaImg(url, false); });
       } else viaImg(url, false);
     }
-    let loadGo = !deferred;
     function startLoading() {
-      if (!loadGo) return;
       const key = isPortrait() ? 'm' : 'd'; if (set === key) return;
       set = key; gen++; inflight = 0; firstAsked = false; hiPrime = 3; used = -1; paintedWant = -1; xf = null; lastSig = -1; dirty = true;
       T = makeTiers();
@@ -215,13 +207,25 @@
       const dpr = Math.min(window.devicePixelRatio || 1, 2), s = Math.min(dpr, Math.sqrt(2.1e6 / Math.max(1, w * h))) * resScale;
       const nw = Math.round(w * s), nh = Math.round(h * s);
       if (nw !== W || nh !== H || cv.width !== nw || cv.height !== nh) { W = nw; H = nh; if (cv.width !== W || cv.height !== H) { cv.width = W; cv.height = H; } lastSig = -1; }
+      sizeJar();
       dirty = true;
+    }
+
+    /* ---- баночка: отдельный холст по размеру «мира» сцены (рамка кадра 16:9 или 9:16, как у кадров зала) — рамки спрайтов лежат в долях кадра, значит, и в долях этого холста.
+       Пикселей на холсте — с запасом на Retina: спрайт отрендерен с передискретизацией, поэтому на экране он резкий, а не растянутый ---- */
+    let JW = 0, JH = 0, jarSig = '', jarShown = false;
+    function sizeJar() {
+      if (!jctx || !world) return;
+      const w = world.clientWidth, h = world.clientHeight; if (!w || !h) return;
+      const dpr = Math.min(window.devicePixelRatio || 1, 2), s = Math.min(dpr, Math.sqrt(3.4e6 / (w * h)));
+      const nw = Math.round(w * s), nh = Math.round(h * s);
+      if (nw !== JW || nh !== JH || jcv.width !== nw || jcv.height !== nh) { JW = nw; JH = nh; jcv.width = nw; jcv.height = nh; jarSig = ''; }
     }
 
     /* ---- что рисовать: для уровня want — пара кадров и доля смешивания; если кадров ещё нет, берётся другой уровень или ближайший загруженный кадр ---- */
     function mkPair(ti, ia, ib, tt) {          // пара кадров уровня ti и доля смешивания; null — нужных картинок ещё нет
       const t = T[ti], full = hasHi && ti === 0;
-      let a = ib === ia ? 0 : (full ? narrowBlend(tt, cp) : tt) * (1 - restW) + (tt < 0.5 ? 0 : 1) * restW;       // в покое — ровно ближайший кадр, без двоения
+      let a = ib === ia ? 0 : (full ? blendCurve(tt) : tt) * (1 - restW) + (tt < 0.5 ? 0 : 1) * restW;       // в покое — ровно ближайший кадр, без двоения
       let A_ = t.im[ia], B_ = t.im[ib];
       if (a < 0.02) a = 0; else if (a > 0.98) { a = 0; A_ = B_; ia = ib; }
       return A_ && (a === 0 || B_) ? {ti, ia, ib, a, A_, B_: a > 0 ? B_ : null} : null;
@@ -284,6 +288,57 @@
       return true;
     }
 
+    /* ---- спрайты баночки: по одному на кадр сценария (положения Phi). Грузятся от текущего положения, сначала — впереди по ходу движения; рисуется ближайший загруженный ---- */
+    const JD = {key: '', dir: '', R: [], im: [], busy: null, loaded: 0, inflight: 0};
+    function jarSetup() {
+      const key = isPortrait() ? 'm' : 'd';
+      if (JD.key === key) return;
+      JD.key = key; JD.dir = (key === 'm' ? ds.jm : ds.jd) || ''; JD.R = JR[key === 'm' ? 1 : 0];
+      JD.im = new Array(NH).fill(null); JD.busy = new Uint8Array(NH); JD.loaded = 0; JD.inflight = 0; jarSig = '';
+      if (!JD.dir || JD.R.length !== NH) JD.dir = '';               // нет данных для сцены — слой баночки молчит
+      jarPump();
+    }
+    function jarNext() {
+      const l = locate(Phi, cp), c = Math.round(l.k + l.t);
+      for (let d = 0; d < NH; d++) {
+        const a = c + dirSign * d, b = c - dirSign * d;
+        if (a >= 0 && a < NH && !JD.busy[a]) return a;
+        if (d && b >= 0 && b < NH && !JD.busy[b]) return b;
+      }
+      return -1;
+    }
+    function jarPump() {
+      if (dead || !JD.dir) return;
+      const lanes = JLANES[isPortrait() ? 1 : 0], g = gen, key = JD.key;
+      while (JD.inflight < lanes) {
+        const i = jarNext(); if (i < 0) return;
+        JD.busy[i] = 1; JD.inflight++;
+        const p = JD.dir + pad(i) + '.' + (ds.jx || 'webp'), url = A.assetUrl ? A.assetUrl(p) + (bundle ? '' : ver) : p + ver;
+        const done = img => { if (g !== gen || JD.key !== key) return; JD.inflight--; JD.busy[i] = 2; if (img) { JD.im[i] = img; JD.loaded++; dirty = true; schedule(); } jarPump(); };
+        const viaImg = src => { const im = new Image(); im.decoding = 'async'; im.onload = () => { im.onload = im.onerror = null; done(im); }; im.onerror = () => { im.onload = im.onerror = null; done(null); }; im.src = src; };
+        if (canFetch) fetch(url, {priority: 'high'}).then(r => { if (!r.ok) throw new Error('http'); return r.blob(); }).then(b => { if (g !== gen) return; const u = URL.createObjectURL(b); blobUrls.push(u); viaImg(u); }).catch(() => { if (g === gen) viaImg(url); });
+        else viaImg(url);
+      }
+    }
+    /* положение и размер баночки между кадрами интерполируются по рамкам (центр и ширина), а картинка берётся ближайшая — спрайты не смешиваются, двоения нет */
+    function paintJar() {
+      if (!jctx || !JD.dir || !JW) return;
+      const l = locate(Phi, cp), u = l.k + l.t, k0 = Math.min(NH - 1, Math.floor(u + 1e-9)), k1 = Math.min(NH - 1, k0 + 1), f = clamp(u - k0, 0, 1), R = JD.R;
+      let n = clamp(Math.round(u), 0, NH - 1);
+      if (!JD.im[n]) { n = -1; for (let d = 1; d < NH && n < 0; d++) { if (JD.im[Math.round(u) - d]) n = Math.round(u) - d; else if (JD.im[Math.round(u) + d]) n = Math.round(u) + d; } }
+      if (n < 0) return;
+      const a = R[k0], b = R[k1], rn = R[n];
+      const cx = ((a[0] + a[2] / 2) * (1 - f) + (b[0] + b[2] / 2) * f), cy = ((a[1] + a[3] / 2) * (1 - f) + (b[1] + b[3] / 2) * f), w = a[2] * (1 - f) + b[2] * f;
+      const sc = w / rn[2], dw = w * JW, dh = rn[3] * sc * JH, dx = cx * JW - dw / 2, dy = cy * JH - dh / 2;
+      const sig = n + ':' + Math.round(dx * 4) + ':' + Math.round(dy * 4) + ':' + Math.round(dw * 4);
+      if (sig === jarSig) return;
+      jarSig = sig;
+      jctx.clearRect(0, 0, JW, JH);
+      jctx.imageSmoothingEnabled = true; jctx.imageSmoothingQuality = 'high';
+      jctx.drawImage(JD.im[n], dx, dy, dw, dh);
+      if (!jarShown) { jarShown = true; root.classList.add('jar-ready'); }
+    }
+
     /* ---- уровень по скорости + регулятор нагрузки ---- */
     function chooseTier(now, dtRaw) {
       const fps = Math.abs(vp) * (NH - 1), moving = fps > MOVING;
@@ -320,53 +375,26 @@
     }
 
     /* ---- интерфейс сцены от прогресса p (0…1) ---- */
-    function uiArch(p, inView) {
-      const st = (a, b) => ease(clamp((p - a) / (b - a), 0, 1));
-      setv(stage, '--m', (1 - st(0, 0.09)).toFixed(3));                       // слой цвета лозунга: кадры проявляются из молока
-      setv(stage, '--h1', st(0.64, 0.78).toFixed(3));                         // подпись и заголовок — когда камера почти закончила отъезд
-      setv(stage, '--h2', st(0.72, 0.84).toFixed(3));                         // текст и кнопки
-      setv(stage, '--h3', st(0.80, 0.92).toFixed(3));                         // панель «Почему выбирают Астрею?»
-      setv(stage, '--h4', st(0.64, 0.80).toFixed(3));                         // мягкая светлая завеса за текстом
-      setv(stage, '--hj', st(0.80, 0.83).toFixed(3));                         // слой «баночка на подиуме» — когда баночка села (кадр 75 из 84 ≈ p 0,81 с учётом data/redesign.json → jar.arch.p)
-      const hide = inView && p > 0.02 && p < 0.76, nav = inView && p >= 0.76 && yNow < sTop + sTot + innerHeight * 0.55, live = p > 0.8, top = inView && p >= 0.76 && yNow < sTop + sTot + innerHeight * 0.1;      // шапка возвращается с героем и остаётся, пока он не ушёл больше чем наполовину
-      if (hide !== archSt.hide) { archSt.hide = hide; document.body.classList.toggle('arch-hide', hide); }       // пока идёт кино — шапки нет
-      if (nav !== archSt.nav) { archSt.nav = nav; document.body.classList.toggle('arch-nav', nav); }             // с появлением героя шапка возвращается (даже при прокрутке вниз); в конце пути — обычное поведение сайта
-      if (top !== archSt.top) { archSt.top = top; document.body.classList.toggle('arch-top', top); }                                        // шапка прозрачная, пока герой стоит на месте
-      if (live !== archSt.live) { archSt.live = live; stage.classList.toggle('ar-live', live); document.body.classList.toggle('arch-live', live); document.dispatchEvent(new CustomEvent('astreya:arch', {detail: live})); }                  // кнопки героя нажимаются, только когда видны
-    }
     const archSt = {hide: false, nav: false, live: false, top: false};
     function ui(p, inView) {
-      if (arch) { uiArch(p, inView); return; }
-      caps.forEach(c => {
-        const len = c.b - c.a, f = Math.max(0.012, len * 0.2);
-        const o = ease(clamp((p - c.a) / f, 0, 1)) * (1 - ease(clamp((p - (c.b - f)) / f, 0, 1)));
-        setv(c.el, '--o', o.toFixed(3));
-        setv(c.el, '--y', ((1 - o) * 26 * (p < (c.a + c.b) / 2 ? 1 : -1)).toFixed(1) + 'px');
-      });
-      setv(stage, '--cue', (1 - clamp(p / 0.035, 0, 1)).toFixed(3));
-      setv(stage, '--m', ease(clamp((p - 0.76) / 0.225, 0, 1)).toFixed(3));       // крем плавно растворяется в молоко почти до конца сцены
-      document.body.classList.toggle('jar-on', inView && p < 0.56);       // светлая шапка — только пока фон тёмный; на светлом креме возвращается обычная
-    }
-
-    /* ---- экран с лозунгом: q (0…1) — прокрутка внутри закреплённой части; проявление по порядку: подпись → слова → линия с жемчужиной → девиз → уход ---- */
-    function uiOutro(q, p) {
-      const st = (a, b) => ease(clamp((q - a) / (b - a), 0, 1));
-      const n = words.length;
-      setv(jo, '--q', q.toFixed(3));
-      setv(jo, '--e', st(0.02, 0.12).toFixed(3));
-      words.forEach((w, i) => { const a = 0.07 + i * (n > 1 ? 0.36 / (n - 1) : 0); setv(w, '--o', st(a, a + 0.2).toFixed(3)); });
-      setv(jo, '--r', st(0.56, 0.74).toFixed(3));
-      setv(jo, '--s', st(0.70, 0.82).toFixed(3));
-      setv(jo, '--x', (1 - st(0.90, 1.0)).toFixed(3));
-      setv(jo, '--g', (st(0.0, 0.45) * (1 - st(0.88, 1.0))).toFixed(3));
-      setv(jo, '--bo', ease(clamp((p - 0.93) / 0.055, 0, 1)).toFixed(3));       // сплошной молочный фон сцены лозунга: проявляется, когда кадры баночки уже почти растворились (p — прогресс баночки)       // свечение фона: из молока и обратно в молоко (без видимых краёв сцены)
+      const st = (a, b) => ease(clamp((p - a) / (b - a), 0, 1));
+      setv(stage, '--cue', (1 - clamp(p / 0.03, 0, 1)).toFixed(3));           // «Листайте» и виньетка заставки гаснут с первой прокруткой
+      setv(stage, '--h1', st(0.62, 0.76).toFixed(3));                         // подпись и заголовок — когда камера почти закончила отъезд
+      setv(stage, '--h2', st(0.70, 0.82).toFixed(3));                         // текст, кнопки, орбиты логотипов
+      setv(stage, '--h3', st(0.78, 0.90).toFixed(3));                         // панель «Почему выбирают Астрею?»
+      setv(stage, '--h4', st(0.62, 0.78).toFixed(3));                         // мягкая светлая завеса за текстом
+      const hide = inView && p > 0.02 && p < 0.76, nav = inView && p >= 0.76 && yNow < sTop + sTot + innerHeight * 0.55, live = p > 0.8,
+        top = inView && (p <= 0.02 || (p >= 0.76 && yNow < sTop + sTot + innerHeight * 0.1));      // шапка прозрачная на заставке и пока герой стоит на месте; возвращается с героем и остаётся, пока он не ушёл больше чем наполовину
+      if (hide !== archSt.hide) { archSt.hide = hide; document.body.classList.toggle('arch-hide', hide); }       // пока идёт кино — шапки нет
+      if (nav !== archSt.nav) { archSt.nav = nav; document.body.classList.toggle('arch-nav', nav); }             // с появлением героя шапка возвращается (даже при прокрутке вниз); в конце пути — обычное поведение сайта
+      if (top !== archSt.top) { archSt.top = top; document.body.classList.toggle('arch-top', top); }
+      if (live !== archSt.live) { archSt.live = live; stage.classList.toggle('ar-live', live); document.body.classList.toggle('arch-live', live); document.dispatchEvent(new CustomEvent('astreya:arch', {detail: live})); }                  // кнопки героя нажимаются, только когда видны
     }
 
     /* ---- границы сцены измеряются один раз (и при изменении размера) — в цикле вёрстку не читаем ---- */
     function measureStatic() {
       const sy = window.scrollY || window.pageYOffset || 0;
       const r = root.getBoundingClientRect(); sTop = r.top + sy; sH = root.offsetHeight; sTot = Math.max(1, sH - stage.clientHeight);
-      if (outro) { const o = outro.getBoundingClientRect(); oTop = o.top + sy; oH = outro.offsetHeight; oTot = Math.max(1, oH - jo.clientHeight); }
     }
 
     /* ---- цикл: прокрутка → цель; пружина ведёт текущее положение к цели ---- */
@@ -376,50 +404,37 @@
       const w0 = performance.now();
       const dtRaw = last ? t - last : 0, dt = last ? clamp(dtRaw / 1000, 0.001, 0.1) : 0.016; last = t;
       const y = window.scrollY || window.pageYOffset || 0, vh = innerHeight; yNow = y;
-      if (!loadGo) { if (y + vh * 3.2 > sTop) openGate(); else { running = false; return; } }
       pT = clamp((y - sTop) / sTot, 0, 1);
-      qT = outro ? clamp((y - oTop) / oTot, 0, 1) : 0;
       /* страница открыта посреди сцены (восстановление прокрутки после перезагрузки) — без «разгона» с нуля */
-      if (!started || (w0 - born < 900 && Math.abs(pT - cp) > 0.08)) { started = true; cp = pT; vp = 0; if (Math.abs(qT - cq) > 0.08) { cq = qT; vq = 0; } }
+      if (!started || (w0 - born < 900 && Math.abs(pT - cp) > 0.08)) { started = true; cp = pT; vp = 0; }
       // критически затухающая пружина (точное решение на шаг dt): x'' = −2ω x' − ω² (x − цель)
       const e = Math.exp(-OMEGA * dt);
       let d = cp - pT, c = vp + OMEGA * d;
       cp = pT + (d + c * dt) * e; vp = (vp - OMEGA * c * dt) * e;
-      d = cq - qT; c = vq + OMEGA * d;
-      cq = qT + (d + c * dt) * e; vq = (vq - OMEGA * c * dt) * e;
       if (Math.abs(cp - pT) < 2e-6 && Math.abs(vp) < 1e-4) { cp = pT; vp = 0; }
-      if (Math.abs(cq - qT) < 2e-6 && Math.abs(vq) < 1e-4) { cq = qT; vq = 0; }
-      cp = clamp(cp, 0, 1); cq = clamp(cq, 0, 1);
+      cp = clamp(cp, 0, 1);
       if (Math.abs(vp) > 1e-3) dirSign = vp > 0 ? 1 : -1;
       const inView = y + vh > sTop && y < sTop + sH;
-      const inOutro = !!outro && y + vh > oTop && y < oTop + oH;
       if (inView) chooseTier(t, dtRaw);
       { const rs = gov >= 1 ? 0.75 : 1; if (rs !== resScale) { resScale = rs; sizeCanvas(); } }       // слабое устройство: холст меньше (кадры низкого уровня всё равно 960×540), нагрузка ∝ числу пикселей
       if ((inView || !firstDrawn) && (dirty || xf || wantIdx !== paintedWant || Math.abs(cp - paintedP) > 1e-7)) {
         if (paint(t)) { paintedP = cp; paintedWant = wantIdx; dirty = false; } else dirty = true;
       }
+      if (inView && (dirty || jarSig === '' || Math.abs(cp - paintedJ) > 1e-7)) { paintJar(); paintedJ = cp; }
       ui(cp, inView);
-      if (jo && (inOutro || cq !== qT)) uiOutro(cq, cp);
       perfRing[perfN++ % perfRing.length] = performance.now() - w0;
-      if (cp !== pT || cq !== qT || xf || (dirty && !firstDrawn) || (inView && wantIdx !== paintedWant)) requestAnimationFrame(tick); else running = false;
+      if (cp !== pT || xf || (dirty && !firstDrawn) || (inView && wantIdx !== paintedWant)) requestAnimationFrame(tick); else running = false;
     }
 
-    function openGate() { if (loadGo || dead) return; loadGo = true; startLoading(); schedule(); }
-    let gate = 0;
-    if (deferred) gate = setInterval(() => {            // первое вступление загружено целиком — можно начинать загрузку этой сцены, даже если до неё ещё далеко
-      if (loadGo || dead) { clearInterval(gate); return; }
-      const o = ctrls.find(c => c !== self && !c.arch);
-      if (!o || o.complete()) { clearInterval(gate); openGate(); }
-    }, 1500);
     const onScroll = () => schedule();
-    const onResize = () => { clearTimeout(rzTimer); rzTimer = setTimeout(() => { measureStatic(); sizeCanvas(); startLoading(); schedule(); }, 120); schedule(); };
-    const onMQ = () => { measureStatic(); sizeCanvas(); startLoading(); schedule(); };
+    const onResize = () => { clearTimeout(rzTimer); rzTimer = setTimeout(() => { measureStatic(); sizeCanvas(); startLoading(); jarSetup(); schedule(); }, 120); schedule(); };
+    const onMQ = () => { measureStatic(); sizeCanvas(); startLoading(); jarSetup(); schedule(); };
     addEventListener('scroll', onScroll, {passive: true});
     addEventListener('resize', onResize);
     /* размер сцены может поменяться и без события resize (встроенные браузеры мессенджеров, поздно пришедший CSS, панели браузера) — тогда холст
        остался бы старого размера и картинка растянулась; следим за самой сценой (CSS object-fit: cover страхует от растяжения до пересчёта) */
     let ro = null;
-    if (typeof ResizeObserver === 'function') { ro = new ResizeObserver(() => { if (dead) return; measureStatic(); sizeCanvas(); schedule(); }); ro.observe(stage); }
+    if (typeof ResizeObserver === 'function') { ro = new ResizeObserver(() => { if (dead) return; measureStatic(); sizeCanvas(); schedule(); }); ro.observe(stage); if (world) ro.observe(world); }
     portraitMQ.addEventListener && portraitMQ.addEventListener('change', onMQ);
     if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => { if (!dead) { measureStatic(); schedule(); } });
     const onLoad = () => { if (dead) return; winLoaded = true; measureStatic(); pump(); schedule(); };
@@ -428,24 +443,25 @@
     measureStatic();
     sizeCanvas();
     startLoading();
+    jarSetup();
     schedule();
     const uOf = () => { const l = locate(Phi, cp); return l.k + l.t; };
     const self = {
-      root, arch,
+      root,
       tierP() { return T.map(t => t.P); },
-      jump(p) { cp = pT = p; vp = 0; started = true; wantIdx = 0; tier = 0; restW = 1; xf = null; paint(performance.now()); ui(p, true); },
+      jump(p) { cp = pT = p; vp = 0; started = true; wantIdx = 0; tier = 0; restW = 1; xf = null; paint(performance.now()); jarSig = ''; paintJar(); ui(p, true); },
       state() {
         const ring = Array.prototype.slice.call(perfRing, 0, Math.min(perfN, perfRing.length)).sort((a, b) => a - b);
         return {p: cp, pTarget: pT, u: uOf(), cur: uOf(), target: pT * (NH - 1), N: NH, loaded: T.length ? T[hasHi ? 0 : liteIdx].loaded : 0, set,
-          drawn: lastDraw, tiers: T.map(t => t.loaded), tierN: T.map(t => t.N), complete: T.length > 0 && T.every((t, i) => i === xlIdx || t.loaded >= t.N), tierCount: T.length, hasHi, used, want: wantIdx, gov, govChanges, xl: xlWanted, firstDrawn, oq: cq, oTarget: qT,
+          drawn: lastDraw, tiers: T.map(t => t.loaded), tierN: T.map(t => t.N), complete: T.length > 0 && T.every((t, i) => i === xlIdx || t.loaded >= t.N), tierCount: T.length, hasHi, used, want: wantIdx, gov, govChanges, xl: xlWanted, firstDrawn, jar: {loaded: JD.loaded, n: NH, shown: jarShown, sig: jarSig},
           perf: {n: perfN, mean: ring.length ? ring.reduce((s, v) => s + v, 0) / ring.length : 0, p95: ring.length ? ring[Math.floor(ring.length * 0.95)] : 0, max: ring.length ? ring[ring.length - 1] : 0}};
       },
       destroy() {
-        dead = true; gen++; clearTimeout(rzTimer); clearInterval(gate); if (ro) ro.disconnect();
+        dead = true; gen++; clearTimeout(rzTimer); if (ro) ro.disconnect();
         removeEventListener('scroll', onScroll); removeEventListener('resize', onResize); removeEventListener('load', onLoad);
         portraitMQ.removeEventListener && portraitMQ.removeEventListener('change', onMQ);
         T = []; blobUrls.forEach(u => { try { URL.revokeObjectURL(u); } catch (e) {} }); blobUrls.length = 0;
-        document.body.classList.remove('jar-on', 'arch-hide', 'arch-nav', 'arch-live', 'arch-top');
+        document.body.classList.remove('arch-hide', 'arch-nav', 'arch-live', 'arch-top');
       }
     };
     self.complete = () => T.length > 0 && T.every((t, i) => i === xlIdx || t.loaded >= t.N);
@@ -457,9 +473,9 @@
     if (ctrls.length === roots.length && ctrls.every((c, i) => c.root === roots[i])) return;
     ctrls.forEach(c => c.destroy()); ctrls = [];
     roots.forEach(root => { try { ctrls.push(create(root)); } catch (e) { root.classList.add('jar-off'); } });
-    ctrl = ctrls.find(c => !c.arch) || null;
+    ctrl = ctrls[0] || null;
   }
-  window.Astreya = A; A.jar = {init, get ctrl() { return ctrl; }, get ctrls() { return ctrls; }, get arch() { return ctrls.find(c => c.arch) || null; }};
+  window.Astreya = A; A.jar = {init, get ctrl() { return ctrl; }, get ctrls() { return ctrls; }, get arch() { return ctrl; }};
   /* где в документе «покой» героя (его верх под шапкой): от этой прокрутки считается уход текста героя (js/motion.js) */
   A.heroBase = function () {
     const r = document.getElementById('jar-story'); if (!r || !r.offsetHeight) return 0;
