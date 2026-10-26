@@ -163,6 +163,8 @@ module.exports = function homeRedesign(ctx, C, P, parts, {events, val}) {
       return `<span class="arm" style="--a:${o.angle}deg"><span class="orb"><img src="${C.u(P, src)}" alt=""${w ? ` width="${w}" height="${hh}"` : ''} style="--lw:${o.width}" decoding="async"></span></span>`; };
     const ring = k => { const o = h.orbits.find(x => x.orbit === k); return `<div class="ring ${k}" aria-hidden="true">${o ? orb(o) : ''}</div>`; };
     const jr = a.jar;
+    const lastOf = t => t[t.length - 1], fd = lastOf(sp.desktop.track), fm = lastOf(sp.mobile.track);                       // готовый кадр: где стоит шар (доли кадра) — вокруг него орбиты
+    const fin = `--ox:${fd[0]};--oy:${fd[1]};--od:${fd[2]};--oxm:${fm[0]};--oym:${fm[1]};--odm:${fm[2]}`;
     return `<section class="jar-story arch-story" id="arch-story" data-mode="arch" data-view-at="0.97" style="--jh:${a.heightVh.desktop}vh;--jhm:${a.heightVh.mobile}vh" data-n="${a.frames}" data-ext="${a.ext}" data-v="${esc(ctx.assetVersion || '')}" data-d="${a.desktop}" data-m="${a.mobile}" data-dm="${a.lite.desktop}" data-mm="${a.lite.mobile}" data-p="${a.p.join(',')}" data-pb="${a.pb.join(',')}" data-jd="${jr.desktop.dir}" data-jm="${jr.mobile.dir}" data-jx="${jr.ext}" data-jr="${JSON.stringify(jr.desktop.rects)}" data-jrm="${JSON.stringify(jr.mobile.rects)}" data-sp="${JSON.stringify(sp.desktop.track)}" data-spm="${JSON.stringify(sp.mobile.track)}" data-spr="${sp.desktop.ref}" data-sprm="${sp.mobile.ref}" data-lit="${JSON.stringify(a.lit)}" aria-label="${esc(a.alt)}">
     <div class="js-stage">
       <canvas class="js-cv" role="img" aria-label="${esc(a.alt)}"></canvas>
@@ -171,7 +173,7 @@ module.exports = function homeRedesign(ctx, C, P, parts, {events, val}) {
         <div class="ar-world">
           ${pearl}
           <canvas class="ar-jar-cv" aria-hidden="true"></canvas>
-          <div class="ar-sph ar-sph-o" aria-hidden="true"><div class="ar-orbit">${ring('r3')}${ring('r1')}${ring('r2')}</div></div>
+          <div class="ar-orb" style="${fin}" aria-hidden="true"><div class="ar-orbit">${ring('r3')}${ring('r1')}${ring('r2')}</div></div>
         </div>
         <div class="ar-cue" aria-hidden="true"><span>${esc(j.cue)}</span><i></i></div>
         <div class="ar-copy">

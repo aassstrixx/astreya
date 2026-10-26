@@ -21,7 +21,7 @@
 /* каменный шар: живой, на WebGL (js/sphere.js). В прокрутке кадров он НЕ участвует — стоит на месте, камера «раскрывает» зал вокруг него. Слой лежит под баночкой, но под орбитами и текстом.
    Запасной вариант (нет WebGL, «меньше движения»): готовая картинка шара, он лишь мягко парит */
 .ar-sph{position:absolute;left:0;top:0;width:var(--sb);aspect-ratio:1;margin:calc(var(--sb) / -2) 0 0 calc(var(--sb) / -2);transform:translate3d(var(--sx),var(--sy),0) scale(var(--sk));pointer-events:none;z-index:1}
-.ar-sph-o{z-index:3}
+.ar-orb{position:absolute;left:calc(var(--ox) * 100%);top:calc(var(--oy) * 100%);width:calc(var(--od) * 100%);aspect-ratio:1;translate:-50% -50%;pointer-events:none;z-index:3}      /* орбиты логотипов стоят вокруг шара в готовом кадре (положение и диаметр — из последней точки его пути); проявляются, когда сцена дошла до конца */
 .ar-pearl{position:absolute;inset:0;pointer-events:none}
 .ar-gl,.ar-poster{position:absolute;left:0;top:0;width:100%;height:100%;display:block;user-select:none}
 .ar-gl{opacity:0}
@@ -111,6 +111,7 @@ html:not(.js) .arch-story{display:none;margin:0}
   .ar-lead,.ar-facts{display:none}
   .ar-cta{margin-top:14px;gap:8px}
   .ar-cta .btn{padding:12px 16px;font-size:13.5px}
+  .ar-orb{left:calc(var(--oxm) * 100%);top:calc(var(--oym) * 100%);width:calc(var(--odm) * 100%)}
   .ar-orbit{width:122%}
   .ar-orbit .orb img{scale:.82}      /* кольцо с логотипами целиком умещается в экран телефона, пока вращается */
   .ar-copy{left:var(--gut)}

@@ -17,7 +17,7 @@
 
   const VS = 'attribute vec2 a;varying vec2 p;void main(){p=a;gl_Position=vec4(a,0.,1.);}';
   const FS = [
-    'precision highp float;varying vec2 p;uniform sampler2D tA,tN;uniform mat3 R;uniform vec3 L;uniform float px,lit;',
+    'precision highp float;varying vec2 p;uniform sampler2D tA,tN;uniform mat3 R;uniform vec3 L;uniform float px,lit,nr;',
     'void main(){',
     ' float r2=dot(p,p); if(r2>1.) discard;',
     ' float z=sqrt(1.-r2); vec3 nv=vec3(p.x,p.y,z);',
@@ -30,12 +30,12 @@
     ' float dg=dot(nv,L), dn=dot(n,L);',
     ' float w=clamp((mix(dg,dn,.72)+.30)/1.30,0.,1.);',                // мягкий переход света в тень (камень матовый, терминатор не резкий), мелкий рельеф даёт карта нормалей
     ' float key=pow(w,1.15);',
-    ' float bnc=.10*max(dot(nv,normalize(vec3(.45,-.75,.35))),0.);',   // тёплый отсвет от пола снизу
-    ' vec3 col=al*((.29+.10*nv.y)*vec3(.99,.95,.91)+key*1.05*vec3(1.,.96,.90)+bnc*vec3(1.,.82,.62));',
+    ' float bnc=.22*pow(max(dot(nv,normalize(vec3(.30,-.80,.45))),0.),.85);',   // тёплый отсвет от светлого пола снизу (когда шар виден снизу, он не должен быть серым)
+    ' vec3 col=al*((.29+.10*nv.y+.22*nr)*vec3(.99,.95,.91)+key*(1.05-.25*nr)*vec3(1.,.96,.90)+bnc*(1.+2.6*nr)*vec3(1.,.82,.62));',
     ' col=mix(col,vec3(dot(col,vec3(.3,.59,.11))),.42);',                // приглушённая насыщенность (цвет шара — нейтральный тёплый, не выделяется среди стен зала)
     ' col*=(.90+.10*z)*1.33;',                                         // у края чуть темнее; общая экспозиция — как у рендера Blender: шар чуть темнее стен зала
     ' vec3 h=normalize(L+vec3(0.,0.,1.)); col+=vec3(1.,.95,.88)*pow(max(dot(n,h),0.),26.)*.05*key;',
-    ' col*=lit;',                                                        // освещённость зала в этом кадре сценария (в начале — полумрак)
+    ' col*=lit*mix(vec3(1.,.86,.66),vec3(1.),lit);',                                                        // освещённость зала в этом кадре сценария (в начале — полумрак)
     ' col=col/(1.+.10*col);',                                          // мягкое сжатие светов
     ' col=pow(col,vec3(1./2.2));',
     ' float e=smoothstep(1.,1.-2.*px,sqrt(r2));',
@@ -49,7 +49,7 @@
     if (!gl.getProgramParameter(prog, gl.LINK_STATUS)) throw new Error('link');
   } catch (e) { root.classList.add('gl-off'); return; }
   gl.useProgram(prog);
-  ['tA', 'tN', 'R', 'L', 'px', 'lit'].forEach(n => { loc[n] = gl.getUniformLocation(prog, n); });
+  ['tA', 'tN', 'R', 'L', 'px', 'lit', 'nr'].forEach(n => { loc[n] = gl.getUniformLocation(prog, n); });
   const buf = gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER, buf);
   gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 1, -1, -1, 1, 1, 1]), gl.STATIC_DRAW);
   const aLoc = gl.getAttribLocation(prog, 'a'); gl.enableVertexAttribArray(aLoc); gl.vertexAttribPointer(aLoc, 2, gl.FLOAT, false, 0, 0);
@@ -63,11 +63,11 @@
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.REPEAT); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
   }
   let ready = 0, W = 0, running = false, raf = 0, onScreen = true, tPrev = 0, visible = true, active = true;
-  const st = {yaw: 0.6, pitch: -0.12, ty: 0, tp: 0, hx: 0, hy: 0, lx: 0, ly: 0, lit: 1};          // поворот шара, цель от курсора, положение курсора, свет
+  const st = {yaw: 0.6, pitch: -0.12, ty: 0, tp: 0, hx: 0, hy: 0, lx: 0, ly: 0, lit: 1, nr: 0};          // поворот шара, цель от курсора, положение курсора, свет
   const A = window.Astreya = window.Astreya || {};
   A.sphere = {state: () => ({yaw: st.yaw, ty: st.ty, tp: st.tp, lx: st.lx, ly: st.ly, lit: st.lit, running, ready: ready >= 2}),
     setActive: v => { v = !!v; if (v !== active) { active = v; go(); if (v && !running && ready >= 2) draw(performance.now()); } },       // шар вне кадра не рисуется
-    setLit: v => { v = Math.max(0, Math.min(1, v)); if (Math.abs(v - st.lit) < .004) return; st.lit = v; if (!running && ready >= 2) draw(performance.now()); }};            // для проверок (tools/check-arch.js)
+    setLit: (v, n) => { v = Math.max(0, Math.min(1, v)); n = Math.max(0, Math.min(1, n || 0)); if (Math.abs(v - st.lit) < .004 && Math.abs(n - st.nr) < .01) return; st.lit = v; st.nr = n; if (!running && ready >= 2) draw(performance.now()); }};      // v — освещённость зала в кадре, n — «шар рядом с камерой и виден снизу»: подсвечивается светлым полом (0…1)            // для проверок (tools/check-arch.js)
   function load(url, unit) {
     return new Promise(res => { const im = new Image(); im.crossOrigin = 'anonymous'; im.onload = () => { tex(unit, im); res(true); }; im.onerror = () => res(false); im.src = url; });
   }
@@ -90,7 +90,7 @@
     gl.clearColor(0, 0, 0, 0); gl.clear(gl.COLOR_BUFFER_BIT);
     gl.uniform1i(loc.tA, 0); gl.uniform1i(loc.tN, 1);
     gl.uniformMatrix3fv(loc.R, false, mat(st.yaw + st.ty, -.12 + st.tp));
-    gl.uniform3f(loc.L, L[0], L[1], L[2]); gl.uniform1f(loc.px, 1.5 / W); gl.uniform1f(loc.lit, st.lit);
+    gl.uniform3f(loc.L, L[0], L[1], L[2]); gl.uniform1f(loc.px, 1.5 / W); gl.uniform1f(loc.lit, st.lit); gl.uniform1f(loc.nr, st.nr);
     gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
     if (!root.classList.contains('gl-on')) root.classList.add('gl-on');
   }

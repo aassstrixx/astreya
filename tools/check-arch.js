@@ -3,8 +3,9 @@
    Что проверяется:
    • данные: число кадров = число положений p = число файлов в наборах зала (десктоп и телефон), лёгкие наборы — 2N−1 файлов; спрайтов баночки и рамок — по числу кадров; положения возрастают;
    • старого тёмного вступления с баночкой и экрана с лозунгом нет, плашек «Запись на семинары» и «Дистрибьютор …» и белого флакона нет; один заголовок h1; запасной герой скрыт, пока работает сцена;
-   • заставка: «Листайте» виден, баночка нарисована крупно по центру, шар на месте; к концу сцены баночка уменьшается, уходит вправо-вниз на подиум и стоит там (по настоящим пикселям холста), а шар
-     в прокрутке НЕ двигается и не меняет размер (рамка слоя шара одна и та же на всех положениях); при курсоре шар живой (поворачивается, свет меняется);
+   • заставка: «Листайте» виден, баночка нарисована крупно по центру (стоит на подиуме), шара в кадре ещё нет — он стоит в зале рядом с камерой; по ходу сцены двигается только камера: баночка
+     плавно уменьшается и смещается вправо-вниз (по настоящим пикселям холста, без скачков), шар въезжает в кадр сверху и садится на своё место (размер на готовом кадре — по данным пути камеры),
+     зал светлеет от полумрака к дневному свету (lit); при курсоре шар живой (поворачивается, свет меняется);
    • слои: баночка лежит над шаром и под орбитами и текстом (надписи ею не закрываются); баночка не выходит за экран;
    • сцена идёт от прокрутки: в середине шапки нет и героя нет, к концу — заголовок слева (чуть левее прежнего), кнопки нажимаются, панель «Почему выбирают Астрею?» целиком в экране;
    • после конца сцены прокрутка свободная, вверх — обратная перемотка; резкий скачок и обновление страницы не ломают картинку;
@@ -35,8 +36,10 @@ if (!J || !J.enabled || !A || !A.enabled) { console.log('Первый экран
   ok(cnt(JA.desktop.dir) === N && cnt(JA.mobile.dir) === N, 'спрайты баночки: по одному на кадр (десктоп и телефон)', [cnt(JA.desktop.dir), cnt(JA.mobile.dir)]);
   const rectsOk = r => r.length === N && r.every(a => a.length === 4 && a.every(v => v >= 0 && v <= 1) && a[0] + a[2] <= 1.0001 && a[1] + a[3] <= 1.0001 && a[2] > 0.02 && a[3] > 0.02);
   ok(rectsOk(JA.desktop.rects) && rectsOk(JA.mobile.rects), 'рамки спрайтов: по кадру, внутри кадра', [JA.desktop.rects.length, JA.mobile.rects.length]);
-  const S = A.sphere, tex = S.tex, sOk = s => s && s.cx > 0 && s.cx < 100 && s.cy > 0 && s.cy < 100 && s.d > 5 && s.d < 100;
-  ok(sOk(S.desktop) && sOk(S.mobile) && ['a', 'n', 'poster'].every(k => fs.existsSync(pth.join(ROOT, tex[k]))), 'шар: положение (десктоп и телефон) и карты (цвет, нормали, запасная картинка) на месте', S);
+  const S = A.sphere, tex = S.tex, sub = (S.desktop.track.length - 1) / (N - 1);
+  const trOk = s => s && s.ref > 0.1 && s.ref <= 1.2 && Number.isInteger(sub) && sub >= 1 && s.track.length === (N - 1) * sub + 1 && s.track.every(a => a.length === 3 && a.every(Number.isFinite)) && s.track[s.track.length - 1][2] > 0.1;
+  ok(trOk(S.desktop) && trOk(S.mobile) && ['a', 'n', 'poster'].every(k => fs.existsSync(pth.join(ROOT, tex[k]))), 'шар: путь по кадрам (десктоп и телефон) и карты (цвет, нормали, запасная картинка) на месте', {sub, d: S.desktop.track.length, m: S.mobile.track.length});
+  ok(Array.isArray(A.lit) && A.lit.length === N && A.lit[0] < 0.45 && A.lit[N - 1] > 0.99 && A.lit.every((v, i) => i === 0 || v >= A.lit[i - 1]), 'освещённость зала по кадрам: от полумрака к дневному свету, не убывает', [A.lit[0], A.lit[N - 1]]);
   ok(A.panel.items.length >= 3 && A.panel.title && J.cue, 'панель «Почему выбирают…» и подпись «Листайте» заполнены');
   ok(!fs.existsSync(pth.join(ROOT, 'assets/jar')) && !fs.existsSync(pth.join(ROOT, 'css/jar.css')) && !J.outro && !J.captions, 'старого вступления и экрана с лозунгом нет ни в файлах, ни в настройках');
   const html = fs.readFileSync(pth.join(ROOT, 'index.html'), 'utf8');
@@ -79,7 +82,7 @@ if (!J || !J.enabled || !A || !A.enabled) { console.log('Первый экран
       hit: cr ? (() => { const e = document.elementFromPoint(cr.left + cr.width / 2, cr.top + cr.height / 2); return !!(e && e.closest('.ar-cta a')); })() : false,
       stageTop: Math.round(q('#arch-story').getBoundingClientRect().top), h1count: document.querySelectorAll('h1').length, hero: getComputedStyle(q('.hero')).display, sw: document.documentElement.scrollWidth,
       old: ['#jar-story', '#jar-outro', '.ar-chip', '.ar-card', '.ar-fg', '.js-milk', '.js-cap'].filter(s => q(s)),
-      z: (() => { const zi = e => e ? (parseInt(getComputedStyle(e).zIndex, 10) || 0) : -1; return {world: zi(q('.ar-world')), copy: zi(q('.ar-copy')), jar: zi(q('.ar-jar-cv')), pearl: zi(q('.ar-pearl')), orbit: zi(q('.ar-orbit'))}; })()};
+      z: (() => { const zi = e => e ? (parseInt(getComputedStyle(e).zIndex, 10) || 0) : -1; return {world: zi(q('.ar-world')), copy: zi(q('.ar-copy')), jar: zi(q('.ar-jar-cv')), pearl: zi(q('.ar-sph')), orbit: zi(q('.ar-orb'))}; })()};
   });
   const shot = async (p, name) => { if (process.env.ARCH_OUT) await p.screenshot({path: pth.join(process.env.ARCH_OUT, name + '.png')}); };
 
@@ -99,23 +102,28 @@ if (!J || !J.enabled || !A || !A.enabled) { console.log('Первый экран
     ok(!/arch-hide/.test(v.bodyCls) && /arch-top/.test(v.bodyCls), 'заставка: шапка на месте и прозрачная', v.bodyCls);
     ok(v.drawn && v.jar && v.jar.shown && v.jar.loaded > 1, 'заставка: зал и спрайт баночки нарисованы', {drawn: v.drawn, jar: v.jar});
     const pe0 = await pearl(p), jb0 = await jarBox(p);
-    ok(jb0 && jb0.n > 400 && jb0.l > W * 0.12 && jb0.r < W * 0.88 && (jb0.r - jb0.l) > W * (mobile ? 0.5 : 0.28) && jb0.t >= 0 && jb0.b <= H, 'заставка: баночка крупно по центру, целиком в экране', {jb0, W, H});
-    ok(pe0 && pe0.op > 0.99 && pe0.w > W * 0.12, 'шар на месте с самого начала (не появляется потом)', pe0);
+    ok(jb0 && jb0.n > 400 && jb0.l > W * 0.12 && jb0.r < W * 0.88 && (jb0.r - jb0.l) > W * (mobile ? 0.38 : 0.26) && jb0.t >= 0 && jb0.b <= H, 'заставка: баночка крупно по центру, целиком в экране', {jb0, W, H});
+    ok(pe0 && pe0.w < 2, 'заставка: шар стоит в зале рядом с камерой, в кадре его ещё нет (слой не показан и не рисуется)', pe0);
     await shot(p, `arch-0-splash-${mobile ? 'phone' : 'desktop'}`);
 
-    /* ---- движение: шар стоит, баночка уходит ---- */
-    const boxes = [], pearls = [pe0];
-    for (const pv of [0.15, 0.3, 0.45, 0.6, 0.8, 0.97]) {
+    /* ---- движение: двигается только камера — баночка стоит на подиуме, шар въезжает в кадр ---- */
+    const boxes = [], pearls = [pe0], PV = [0.15, 0.3, 0.45, 0.6, 0.8, 0.97], wW = Math.max(W, mobile ? H * 9 / 16 : H * 16 / 9);
+    for (const pv of PV) {
       await at(p, g, pv); const bx = await jarBox(p), pe = await pearl(p); boxes.push([pv, bx]); pearls.push(pe);
       if (pv === 0.45) { v = await view(p); ok(/arch-hide/.test(v.bodyCls) && v.hdrB <= 1, 'в середине сцены шапка убрана', {cls: v.bodyCls, hdrB: v.hdrB}); ok(v.h1 < 0.02 && v.panel < 0.02 && v.cue < 0.02, 'в середине сцены героя и «Листайте» нет', {h1: v.h1, cue: v.cue}); await shot(p, `arch-45-flight-${mobile ? 'phone' : 'desktop'}`); }
     }
-    const wid = bx => bx && bx.n ? bx.r - bx.l : 0;
+    const wid = bx => bx && bx.n ? bx.r - bx.l : 0, cxOf = bx => (bx.l + bx.r) / 2, cyOf = bx => bx.b;
     ok(boxes.every(([, bx]) => bx && bx.n > 0), 'баночка нарисована на всех положениях прокрутки', boxes.map(a => [a[0], a[1] && a[1].n]));
     ok(boxes.every(([, bx]) => bx.l >= -2 && bx.r <= W + 2 && bx.t >= -2 && bx.b <= H + 2), 'баночка нигде не выходит за экран', boxes.map(a => a[1]));
-    ok(wid(jb0) > wid(boxes[1][1]) && wid(boxes[1][1]) > wid(boxes[3][1]) && wid(boxes[3][1]) >= wid(boxes[5][1]) * 0.95, 'баночка по ходу сцены уменьшается (уходит вглубь зала)', [wid(jb0), ...boxes.map(a => wid(a[1]))]);
+    ok(wid(boxes[1][1]) > wid(boxes[2][1]) * 0.98 && wid(boxes[2][1]) > wid(boxes[3][1]) * 0.98 && wid(boxes[3][1]) > wid(boxes[4][1]) * 0.98 && wid(boxes[4][1]) >= wid(boxes[5][1]) * 0.95 && wid(boxes[5][1]) < wid(jb0) * 0.6, 'камера отъезжает: баночка по ходу сцены уменьшается (после первых 15 % приближения) и в конце вдвое меньше, чем на заставке', [wid(jb0), ...boxes.map(a => wid(a[1]))]);
     const fin = boxes[5][1];
     ok(fin.l > jb0.l + W * 0.12 && fin.t > jb0.t + H * 0.12 && (fin.r - fin.l) < W * (mobile ? 0.3 : 0.16), 'в конце баночка стоит правее и ниже заставки, небольшая (на подиуме)', {jb0, fin});
-    ok(pearls.every(e => e && Math.abs(e.l - pe0.l) <= 0.6 && Math.abs(e.t - pe0.t) <= 0.6 && Math.abs(e.w - pe0.w) <= 0.6 && Math.abs(e.op - 1) < 0.02), 'шар не участвует в прокрутке: на всех положениях то же место, тот же размер, всегда проявлен', pearls);
+    const path = [jb0, ...boxes.map(a => a[1])];
+    ok(path.every((bx, i) => i === 0 || (Math.abs(cxOf(bx) - cxOf(path[i - 1])) < W * 0.36 && Math.abs(cyOf(bx) - cyOf(path[i - 1])) < H * 0.4)), 'баночка перемещается плавно, без скачков между положениями прокрутки (она всё время на подиуме, парения нет)', path.map(bx => [Math.round(cxOf(bx)), Math.round(cyOf(bx))]));
+    const lastD = (mobile ? S.mobile : S.desktop).track.slice(-1)[0][2] * wW, pf = pearls[pearls.length - 1];
+    ok(pearls[1].w < 2 && pearls[2].w < 2, 'шар ещё не в кадре на первых 15–30 % прокрутки: он стоит в зале рядом с камерой и въезжает позже', [pearls[1].w, pearls[2].w]);
+    ok(pearls[3].w > 20 && pearls[3].w > pf.w * 1.15, 'шар въезжает в кадр сверху крупным планом, затем уменьшается по мере отъезда камеры', pearls.map(e => Math.round(e.w)));
+    ok(Math.abs(pf.w - lastD) <= wW * 0.03 && pf.l + pf.w / 2 > W * (mobile ? 0.3 : 0.58) && pf.l + pf.w / 2 < W * (mobile ? 0.7 : 0.85) && pf.t + pf.h / 2 > 0 && pf.t + pf.h / 2 < H, 'готовый кадр: шар стоит на своём месте (размер и положение — по данным камеры), справа от текста', {pf, lastD});
 
     /* ---- финал ---- */
     await at(p, g, 0.7); v = await view(p); ok(v.h1 > 0.05 && v.h1 < 0.95, 'камера почти отъехала — заголовок проявляется (не мгновенно)', v.h1);
@@ -126,7 +134,7 @@ if (!J || !J.enabled || !A || !A.enabled) { console.log('Первый экран
     ok(v.cr && v.cr.b <= H && v.pr && v.pr.b <= H + 1 && v.pr.t >= v.cr.b - 2, 'финал: кнопки и панель в экране и не налезают друг на друга', [v.cr, v.pr]);
     if (!mobile) {
       ok(v.hr.r <= W * 0.6, 'финал: текст слева, ниша справа свободна', v.hr);
-      ok(v.hr.l < Math.max(24, (W - 1180) / 2 + 24) - 8, 'финал: надписи сдвинуты чуть левее края контейнера (слева не остаётся пустой полосы)', {l: v.hr.l});
+      ok(v.hr.l >= W * 0.08 && v.hr.l <= W * 0.2, 'финал: надписи слева — правее проёма с комнатой и стеллажом (не заходят на него), но не дальше пятой части экрана (слева не остаётся пустой полосы)', {l: v.hr.l});
       ok(v.orbit > 0.97 && v.facts !== null, 'финал: орбиты с логотипами вокруг шара проявились', {orbit: v.orbit});
     }
     ok(v.z.world <= v.z.copy && v.z.jar > v.z.pearl && v.z.orbit > v.z.jar, 'слои: шар → баночка → орбиты (внутри мира), мир → текст: баночка не закрывает надписи', v.z);

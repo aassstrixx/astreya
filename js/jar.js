@@ -335,7 +335,7 @@
       if (SPH) {
         if (SPH.setActive) SPH.setActive(vis);
         const k0 = Math.min(NH - 1, Math.floor(u + 1e-9)), k1 = Math.min(NH - 1, k0 + 1), g = clamp(u - k0, 0, 1);
-        if (LIT.length === NH && SPH.setLit) SPH.setLit(Math.pow(LIT[k0] * (1 - g) + LIT[k1] * g, .9));          // шар темнеет вместе с залом: в начале сцены полумрак
+        if (LIT.length === NH && SPH.setLit) SPH.setLit(Math.pow(LIT[k0] * (1 - g) + LIT[k1] * g, .9), (d / (T[T.length - 1][2] * WW) - 1) / 2);          // шар темнеет вместе с залом: в начале сцены полумрак
       }
       const sig = Math.round(x * 4) + ':' + Math.round(y * 4) + ':' + Math.round(k * 1000);
       if (sig === spSig) return;
