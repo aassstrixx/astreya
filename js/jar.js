@@ -213,13 +213,13 @@
 
     /* ---- баночка: отдельный холст по размеру «мира» сцены (рамка кадра 16:9 или 9:16, как у кадров зала) — рамки спрайтов лежат в долях кадра, значит, и в долях этого холста.
        Пикселей на холсте — с запасом на Retina: спрайт отрендерен с передискретизацией, поэтому на экране он резкий, а не растянутый ---- */
-    let JW = 0, JH = 0, jarSig = '', jarShown = false;
+    let JW = 0, JH = 0, jarSig = '', jarShown = false, jdirty = true;
     function sizeJar() {
       if (!jctx || !world) return;
       const w = world.clientWidth, h = world.clientHeight; if (!w || !h) return;
       const dpr = Math.min(window.devicePixelRatio || 1, 2), s = Math.min(dpr, Math.sqrt(3.4e6 / (w * h)));
       const nw = Math.round(w * s), nh = Math.round(h * s);
-      if (nw !== JW || nh !== JH || jcv.width !== nw || jcv.height !== nh) { JW = nw; JH = nh; jcv.width = nw; jcv.height = nh; jarSig = ''; }
+      if (nw !== JW || nh !== JH || jcv.width !== nw || jcv.height !== nh) { JW = nw; JH = nh; jcv.width = nw; jcv.height = nh; jarSig = ''; jdirty = true; }
     }
 
     /* ---- что рисовать: для уровня want — пара кадров и доля смешивания; если кадров ещё нет, берётся другой уровень или ближайший загруженный кадр ---- */
@@ -294,7 +294,7 @@
       const key = isPortrait() ? 'm' : 'd';
       if (JD.key === key) return;
       JD.key = key; JD.dir = (key === 'm' ? ds.jm : ds.jd) || ''; JD.R = JR[key === 'm' ? 1 : 0];
-      JD.im = new Array(NH).fill(null); JD.busy = new Uint8Array(NH); JD.loaded = 0; JD.inflight = 0; jarSig = '';
+      JD.im = new Array(NH).fill(null); JD.busy = new Uint8Array(NH); JD.loaded = 0; JD.inflight = 0; jarSig = ''; jdirty = true;
       if (!JD.dir || JD.R.length !== NH) JD.dir = '';               // нет данных для сцены — слой баночки молчит
       jarPump();
     }
@@ -314,7 +314,7 @@
         const i = jarNext(); if (i < 0) return;
         JD.busy[i] = 1; JD.inflight++;
         const p = JD.dir + pad(i) + '.' + (ds.jx || 'webp'), url = A.assetUrl ? A.assetUrl(p) + (bundle ? '' : ver) : p + ver;
-        const done = img => { if (g !== gen || JD.key !== key) return; JD.inflight--; JD.busy[i] = 2; if (img) { JD.im[i] = img; JD.loaded++; dirty = true; schedule(); } jarPump(); };
+        const done = img => { if (g !== gen || JD.key !== key) return; JD.inflight--; JD.busy[i] = 2; if (img) { JD.im[i] = img; JD.loaded++; jdirty = true; schedule(); } jarPump(); };
         const viaImg = src => { const im = new Image(); im.decoding = 'async'; im.onload = () => { im.onload = im.onerror = null; done(im); }; im.onerror = () => { im.onload = im.onerror = null; done(null); }; im.src = src; };
         if (canFetch) fetch(url, {priority: 'high'}).then(r => { if (!r.ok) throw new Error('http'); return r.blob(); }).then(b => { if (g !== gen) return; const u = URL.createObjectURL(b); blobUrls.push(u); viaImg(u); }).catch(() => { if (g === gen) viaImg(url); });
         else viaImg(url);
@@ -322,21 +322,22 @@
     }
     /* положение и размер баночки между кадрами интерполируются по рамкам (центр и ширина), а картинка берётся ближайшая — спрайты не смешиваются, двоения нет */
     function paintJar() {
-      if (!jctx || !JD.dir || !JW) return;
+      if (!jctx || !JD.dir || !JW) return true;
       const l = locate(Phi, cp), u = l.k + l.t, k0 = Math.min(NH - 1, Math.floor(u + 1e-9)), k1 = Math.min(NH - 1, k0 + 1), f = clamp(u - k0, 0, 1), R = JD.R;
       let n = clamp(Math.round(u), 0, NH - 1);
       if (!JD.im[n]) { n = -1; for (let d = 1; d < NH && n < 0; d++) { if (JD.im[Math.round(u) - d]) n = Math.round(u) - d; else if (JD.im[Math.round(u) + d]) n = Math.round(u) + d; } }
-      if (n < 0) return;
+      if (n < 0) return false;
       const a = R[k0], b = R[k1], rn = R[n];
       const cx = ((a[0] + a[2] / 2) * (1 - f) + (b[0] + b[2] / 2) * f), cy = ((a[1] + a[3] / 2) * (1 - f) + (b[1] + b[3] / 2) * f), w = a[2] * (1 - f) + b[2] * f;
       const sc = w / rn[2], dw = w * JW, dh = rn[3] * sc * JH, dx = cx * JW - dw / 2, dy = cy * JH - dh / 2;
       const sig = n + ':' + Math.round(dx * 4) + ':' + Math.round(dy * 4) + ':' + Math.round(dw * 4);
-      if (sig === jarSig) return;
+      if (sig === jarSig) return true;
       jarSig = sig;
       jctx.clearRect(0, 0, JW, JH);
       jctx.imageSmoothingEnabled = true; jctx.imageSmoothingQuality = 'high';
       jctx.drawImage(JD.im[n], dx, dy, dw, dh);
       if (!jarShown) { jarShown = true; root.classList.add('jar-ready'); }
+      return true;
     }
 
     /* ---- уровень по скорости + регулятор нагрузки ---- */
@@ -420,7 +421,7 @@
       if ((inView || !firstDrawn) && (dirty || xf || wantIdx !== paintedWant || Math.abs(cp - paintedP) > 1e-7)) {
         if (paint(t)) { paintedP = cp; paintedWant = wantIdx; dirty = false; } else dirty = true;
       }
-      if (inView && (dirty || jarSig === '' || Math.abs(cp - paintedJ) > 1e-7)) { paintJar(); paintedJ = cp; }
+      if (inView && (jdirty || Math.abs(cp - paintedJ) > 1e-7)) { jdirty = !paintJar(); paintedJ = cp; }
       ui(cp, inView);
       perfRing[perfN++ % perfRing.length] = performance.now() - w0;
       if (cp !== pT || xf || (dirty && !firstDrawn) || (inView && wantIdx !== paintedWant)) requestAnimationFrame(tick); else running = false;
@@ -476,16 +477,15 @@
     ctrl = ctrls[0] || null;
   }
   window.Astreya = A; A.jar = {init, get ctrl() { return ctrl; }, get ctrls() { return ctrls; }, get arch() { return ctrl; }};
-  /* где в документе «покой» героя (его верх под шапкой): от этой прокрутки считается уход текста героя (js/motion.js) */
+  /* где в документе «покой» героя (его верх под шапкой): от этой прокрутки считается уход текста героя (js/motion.js). Сцена есть — это конец её закреплённой части
+     (кадры доиграли, текст и панель на месте); нет сцены (выключена, нет canvas) — верх запасного героя под шапкой */
   A.heroBase = function () {
-    const r = document.getElementById('jar-story'); if (!r || !r.offsetHeight) return 0;
     const ar = document.getElementById('arch-story');
-    if (ar && ar.offsetHeight) {                       // архитектурный первый экран: «покой» героя — конец его закреплённой части (кадры доиграли, текст и панель на месте)
+    if (ar && ar.offsetHeight) {
       const st = ar.firstElementChild, y = ar.getBoundingClientRect().top + scrollY + 0.97 * Math.max(0, ar.offsetHeight - (st ? st.clientHeight : innerHeight));
       return Math.max(0, Math.round(y));
     }
-    const hero = document.querySelector('.hero'); if (!hero || !hero.offsetHeight) return 0;
-    return Math.max(0, Math.round(hero.getBoundingClientRect().top + scrollY - ((document.getElementById('hdr') || {}).offsetHeight || 0)));
+    return 0;
   };
 
   /* подключаемся к инициализации страницы: при первой загрузке и после подмены содержимого (автономная сборка/переходы) */

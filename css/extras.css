@@ -465,7 +465,7 @@ button.qc-item{width:100%;text-align:left}
   /* всё, что появляется при прокрутке, на бумаге должно быть видно сразу */
   .js .reveal,.js .reveal.in,.reveal,.split .w>span,.js .split .w>span{opacity:1!important;translate:none!important;transform:none!important;scale:1!important;clip-path:none!important;filter:none!important;transition:none!important;animation:none!important}
   /* интерактив и украшения — прочь */
-  .skip,#progress,#splash,#curtain,#srch,#modal,#toast,.nav,.hdr-cta,.burger,.asst,.asst-fab,.asst-tip,.xdock,.cd-slot,.rl-bar,.cmp-bar,.rl-add,.cmp-add,.qv-btn,.cd .btn,.rl-tog,.qc,.rv-sec,.ftr-btn,.bd-fill,.bd-logo,.jar-story,.jar-outro,.hero-mark,.marquee,canvas,video,.stretch::after,
+  .skip,#progress,#splash,#curtain,#srch,#modal,#toast,.nav,.hdr-cta,.burger,.asst,.asst-fab,.asst-tip,.xdock,.cd-slot,.rl-bar,.cmp-bar,.rl-add,.cmp-add,.qv-btn,.cd .btn,.rl-tog,.qc,.rv-sec,.ftr-btn,.bd-fill,.bd-logo,.jar-story,.hero-mark,.marquee,canvas,video,.stretch::after,
   .btn,.chip,.pf .btn,.fb-link,.sec-head .lnk,.crumbs,.ftr-grid,.ftr-rd-cols,.ftr-sub,.ftr-legal,.ftr-note,.ftr-rd-top .about{display:none!important}
   .hdr{position:static!important;background:#fff!important;border-bottom:1px solid #888!important;padding:0 0 8px!important}
   .hdr .logo{--lm:#0b1a33;max-width:150px}

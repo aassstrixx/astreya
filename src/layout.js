@@ -37,7 +37,7 @@ module.exports = function layout(ctx, C) {
   const withSys = (list, P) => HMA && P.key === 'home' ? [...list, 'system', 'brands', 'home-arch'] : SHR && (P.key === 'catalog' || P.key === 'product' || (P.key === 'brands' && BRG)) ? [...list, 'system', ...(P.key === 'brands' ? ['brands'] : [])] : list;   // единая дизайн-система (css/system.css): каталог, страницы товаров и галерея брендов; на главной — вместе с css/home-arch.css   // единая дизайн-система (css/system.css): каталог, страницы товаров и галерея брендов
   const pageCss = P => withSys(withGal(cssList, P, 'extras'), P), pageJs = P => withGal(HMA && P.key === 'home' ? [...jsList, 'jar', 'sphere'] : jsList, P, 'explore');
   /* первый кадр сцены грузим сразу (до скриптов): иначе заставка появится с задержкой */
-  const jarPreload = P => HMA && P.key === 'home' ? ['(min-aspect-ratio: 11/10)', '(max-aspect-ratio: 11/10)'].map((m, i) => `<link rel="preload" as="image" href="${u(P, (i ? jarCfg.arch.mobile : jarCfg.arch.desktop) + '000.' + jarCfg.arch.ext)}${ver}" media="${m}">`).join('\n') : '';
+  const jarPreload = P => HMA && P.key === 'home' ? ['(min-aspect-ratio: 11/10)', '(max-aspect-ratio: 11/10)'].map((m, i) => [(i ? jarCfg.arch.mobile : jarCfg.arch.desktop) + '000.' + jarCfg.arch.ext, jarCfg.arch.jar[i ? 'mobile' : 'desktop'].dir + '000.' + jarCfg.arch.jar.ext].map(f => `<link rel="preload" as="image" href="${u(P, f)}${ver}" media="${m}">`).join('\n')).join('\n') : '';
   const base = site.url.replace(/\/?$/, '/');
   const absUrl = p => p === 'index.html' ? base : base + p;
   const nav = [...ctx.nav, ...ctx.customNav].map(i => [i.title, i.href, i.key]);                    // меню — data/menu.json + свои страницы с включённым пунктом меню

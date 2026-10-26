@@ -7,7 +7,6 @@
     "build": "node tools/build.js",
     "check": "node tools/check.js",
     "check:reveal": "node tools/check-reveal.js",
-    "check:outro": "node tools/check-outro.js",
     "check:logo": "node tools/check-logo.js",
     "check:bg": "node tools/check-bg.js",
     "redesign:off": "node tools/redesign.js off",

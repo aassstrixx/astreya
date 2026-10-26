@@ -72,7 +72,7 @@ const TEXTS = () => {
   const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT); const seen = new Set();
   while (walker.nextNode()) {
     const t = walker.currentNode; if (!/\S{2,}/.test(t.nodeValue)) continue; const el = t.parentElement; if (!el || seen.has(el)) continue; seen.add(el);
-    if (el.closest('.hero,.jar-story,.jar-outro,.marquee,input,textarea,select,button,.btn,.chip,.tag,.badge,.srch,.sr,svg,script,style,noscript,[hidden],[aria-hidden="true"]')) continue;
+    if (el.closest('.hero,.jar-story,.marquee,input,textarea,select,button,.btn,.chip,.tag,.badge,.srch,.sr,svg,script,style,noscript,[hidden],[aria-hidden="true"]')) continue;
     const cs = getComputedStyle(el); if (cs.visibility === 'hidden' || cs.display === 'none') continue;
     const col = parse(cs.color); if (!col || col[3] < .5) continue;
     let skip = false, op = 1;
@@ -122,8 +122,8 @@ const MEASURE = async ({b64, rects}) => {
       return ({fills: document.querySelectorAll('.bd-fill').length, hosts: shown().length, on: shown().filter(e => e.classList.contains('bd-on')).length,
         imgs: shown().filter(e => /url\(/.test(e.style.getPropertyValue('--bd-img'))).length, ovf: document.documentElement.scrollWidth - innerWidth, muted: getComputedStyle(document.getElementById('main')).getPropertyValue('--muted').trim()}); });
       if (home) {
-        const free = await p.evaluate(() => ['.hero', '.jar-story', '.jar-outro', '.marquee'].map(q => { const e = document.querySelector(q); return e ? (!e.closest('[data-bd]') && !e.querySelector('[data-bd]')) : true; }));
-        ok(free.every(Boolean), `${rel}: герой, вступление с баночкой и бегущая строка без вставок`, free);
+        const free = await p.evaluate(() => ['.hero', '.jar-story', '.marquee'].map(q => { const e = document.querySelector(q); return e ? (!e.closest('[data-bd]') && !e.querySelector('[data-bd]')) : true; }));
+        ok(free.every(Boolean), `${rel}: герой, первый экран со сценой и бегущая строка без вставок`, free);
       }
       ok(st.hosts > 0 && st.on === st.hosts && st.imgs === st.hosts, `${rel}: вставки подгрузились и проявились (${st.on}/${st.hosts})`, st);
       ok(st.ovf <= 1, `${rel}: нет горизонтальной прокрутки`, st.ovf);

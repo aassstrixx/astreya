@@ -29,7 +29,8 @@
     ' vec3 no=normalize(T*nm.x+B*nm.y+o*nm.z); vec3 n=normalize(R*no);',
     ' float g=max(dot(nv,L),0.); float d=max(dot(n,L),0.);',
     ' float lit=.46+.95*mix(g,d,.55);',                 // объём даёт гладкая сфера, мелкий рельеф — карта нормалей
-    ' vec3 col=al*lit*(.80+.20*z);',
+    ' vec3 col=al*lit*(.80+.20*z)*1.6;',                // экспозиция и приглушённая насыщенность — как у рендера Blender (AgX): камень чуть темнее стен зала, но не бурый
+    ' col=mix(col,vec3(dot(col,vec3(.3,.59,.11))),.42);',
     ' vec3 h=normalize(L+vec3(0.,0.,1.)); col+=vec3(.9,.82,.7)*pow(max(dot(n,h),0.),38.)*.045;',
     ' col=pow(col,vec3(1./2.2));',
     ' float e=smoothstep(1.,1.-2.*px,sqrt(r2));',
@@ -58,6 +59,8 @@
   }
   let ready = 0, W = 0, running = false, raf = 0, onScreen = true, tPrev = 0, visible = true;
   const st = {yaw: 0.6, pitch: -0.12, ty: 0, tp: 0, hx: 0, hy: 0, lx: 0, ly: 0};          // поворот шара, цель от курсора, положение курсора, свет
+  const A = window.Astreya = window.Astreya || {};
+  A.sphere = {state: () => ({yaw: st.yaw, ty: st.ty, tp: st.tp, lx: st.lx, ly: st.ly, running, ready: ready >= 2})};            // для проверок (tools/check-arch.js)
   function load(url, unit) {
     return new Promise(res => { const im = new Image(); im.crossOrigin = 'anonymous'; im.onload = () => { tex(unit, im); res(true); }; im.onerror = () => res(false); im.src = url; });
   }
