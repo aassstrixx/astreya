@@ -11,8 +11,7 @@ body:not([data-page="home"]) #main{position:relative}                 /* нуж�
 .bd-top{top:0;height:var(--bd-h,800px)}
 .bd-end{bottom:0;height:var(--bd-h,560px)}
 [data-bd]::before{content:"";position:absolute;inset:0;z-index:-1;pointer-events:none;
-  background-image:var(--bd-img,none);background-repeat:no-repeat;background-size:cover;background-position:var(--bd-bp,50% 50%);
-  mix-blend-mode:multiply;                                         /* текстура «впитывается» в фон страницы: белое не меняет цвет, тени и блики только затеняют */
+  background-image:var(--bd-img,none);background-repeat:no-repeat;background-size:cover;background-position:var(--bd-bp,50% 50%);      /* текстуры — полупрозрачные слои (tools/bg-alpha.py): без blend-режима, он на быстрой прокрутке даёт тёмные плитки */
   opacity:0;transition:opacity 1.5s var(--ease);
   -webkit-mask-image:var(--bd-mask);mask-image:var(--bd-mask)}
 [data-bd].bd-on::before{opacity:var(--bd-o,.9)}
