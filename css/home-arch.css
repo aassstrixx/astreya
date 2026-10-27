@@ -39,7 +39,7 @@
 .ar-h{margin:clamp(12px,2vh,22px) 0 clamp(14px,2.4vh,24px);font:500 clamp(34px,calc(var(--wwv) * .0299),64px)/1.07 var(--serif);letter-spacing:-.016em;color:var(--navy);hyphens:manual;text-wrap:balance;
   opacity:var(--h1,0);transform:translate3d(0,calc((1 - var(--h1,0)) * 26px),0)}
 .ar-h em{font-style:italic;font-weight:400;color:var(--navy)}
-.ar-lead{margin:0;max-width:22em;text-wrap:pretty;font:400 clamp(14px,1.08vw,18px)/1.6 var(--sans);color:var(--slate);opacity:var(--h2,0);transform:translate3d(0,calc((1 - var(--h2,0)) * 18px),0)}
+.ar-lead{margin:0;max-width:min(33em,calc(var(--wwv) * .2377));text-wrap:pretty;font:400 clamp(14px,calc(var(--wwv) * .0108),21px)/1.6 var(--sans);color:var(--slate);opacity:var(--h2,0);transform:translate3d(0,calc((1 - var(--h2,0)) * 18px),0)}
 .ar-cta{margin-top:clamp(18px,3.4vh,34px);gap:12px;flex-wrap:wrap;opacity:var(--h2,0);transform:translate3d(0,calc((1 - var(--h2,0)) * 22px),0)}
 .ar-cta .btn{pointer-events:none}
 .js-stage.ar-live .ar-cta .btn,.js-stage.ar-live .ar-panel a{pointer-events:auto}
