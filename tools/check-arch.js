@@ -71,7 +71,7 @@ if (!J || !J.enabled || !A || !A.enabled) { console.log('Первый экран
         if (x1 < 0) return 0; const ya = Math.round(y0 + 0.58 * (y1 - y0)), yb = Math.round(y1 - 0.06 * (y1 - y0)), xa = Math.round(x0 + 0.1 * (x1 - x0)), xb = Math.round(x1 - 0.1 * (x1 - x0)), L = [];
         for (let yy = ya; yy < yb; yy++) for (let xx = xa; xx < xb; xx++) { const i = (yy * w + xx) * 4; if (d[i + 3] > 240) L.push(.299 * d[i] + .587 * d[i + 1] + .114 * d[i + 2]); }
         if (L.length < 50) return 0; const m = L.slice().sort((a, b) => a - b)[L.length >> 1]; return L.filter(v => v < m * 0.72).length; };
-      window.__jbox = () => { const cv = document.querySelector('.ar-jar-cv'); if (!cv || !cv.width) return null; const w = 640, h = Math.round(cv.height * w / cv.width), c = document.createElement('canvas'); c.width = w; c.height = h; const x = c.getContext('2d', {willReadFrequently: true}); x.drawImage(cv, 0, 0, w, h);
+      window.__jbox = () => { const cv = document.querySelector('.ar-jar-cv'); if (!cv || !cv.width) return null; const w = 1280, h = Math.round(cv.height * w / cv.width), c = document.createElement('canvas'); c.width = w; c.height = h; const x = c.getContext('2d', {willReadFrequently: true}); x.drawImage(cv, 0, 0, w, h);
         const d = x.getImageData(0, 0, w, h).data; let x0 = w, x1 = -1, y0 = h, y1 = -1, n = 0; for (let yy = 0; yy < h; yy++) for (let xx = 0; xx < w; xx++) if (d[(yy * w + xx) * 4 + 3] > 40) { n++; if (xx < x0) x0 = xx; if (xx > x1) x1 = xx; if (yy < y0) y0 = yy; if (yy > y1) y1 = yy; } return n ? {l: x0 / w, r: x1 / w, t: y0 / h, b: y1 / h, n} : {n: 0}; };
     });
     if (o.noCanvas) await ctx.addInitScript(() => { HTMLCanvasElement.prototype.getContext = () => null; });
@@ -126,6 +126,10 @@ if (!J || !J.enabled || !A || !A.enabled) { console.log('Первый экран
     ok(v.drawn && v.jar && v.jar.shown && v.jar.loaded > 1, 'заставка: зал и спрайт баночки нарисованы', {drawn: v.drawn, jar: v.jar});
     const jb0 = await jarBox(p);
     ok(jb0 && jb0.n > 400 && jb0.l > W * 0.12 && jb0.r < W * 0.88 && (jb0.r - jb0.l) > W * (mobile ? 0.38 : 0.26) && jb0.t >= 0 && jb0.b <= H, 'заставка: баночка крупно по центру, целиком в экране', {jb0, W, H});
+    ok(jb0 && Math.abs((jb0.l + jb0.r) / 2 - W / 2) < W * 0.02 && Math.abs((jb0.t + jb0.b) / 2 - H / 2) < H * 0.035, 'заставка: баночка ровно по центру экрана (по горизонтали и вертикали)', {cx: jb0 && (jb0.l + jb0.r) / 2, cy: jb0 && (jb0.t + jb0.b) / 2, W, H});
+    const top0 = await p.evaluate(() => { const st = document.querySelector('#arch-story .js-stage'), cue = document.querySelector('.ar-cue i'), a = cue && getComputedStyle(cue, '::after'); return {stageTop: st.getBoundingClientRect().top, scrollY: Math.round(scrollY), cueAnim: a && a.animationName, cueState: a && a.animationPlayState}; });
+    ok(top0.scrollY === 0 && top0.stageTop <= 0.5, 'заставка: сцена начинается от самого верха экрана (под прозрачной шапкой), белой полосы над ней нет', top0);
+    ok(top0.cueAnim === 'jarCue' && top0.cueState === 'running', '«Листайте»: по полоске бежит свет (анимация идёт)', top0);
     await shot(p, `arch-0-splash-${mobile ? 'phone' : 'desktop'}`);
 
     /* ---- плавность и чёткость по настоящим пикселям холстов ---- */
