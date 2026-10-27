@@ -204,5 +204,11 @@ module.exports = function homeRedesign(ctx, C, P, parts, {events, val}) {
   </section>`;
   })();
   const fork = ctx.sales && ctx.sales.homeFork ? require('./sales-home.js')(ctx, C, P) : '';          // продающий слой: развилка «Учиться / Закупать» сразу под строкой брендов (героя и вступление не трогаем)
+  /* «маршрут партнёра» (data/redesign.json → homePath, src/pages/home-path.js): после героя — роль → доверие → бренды → подбор по задаче → обучение → новости → шаги → призыв;
+     анимация (#arch-story) и герой сразу после неё не затрагиваются. homePath.enabled = false возвращает прежний порядок секций (ниже). */
+  if (arch && rd.homePath && rd.homePath.enabled) {
+    const hpS = require('./home-path.js')(ctx, C, P, {events, val, img, bgLogo, showDemo});
+    return [arch, heroX, parts.marquee, ...(fork ? [fork] : []), hpS.rolesSec, hpS.proofSec, brandsX, hpS.finderSec, hpS.academySec, news, hpS.stepsSec, finalCta].join('\n\n  ');
+  }
   return [arch, heroX, parts.marquee, ...(fork ? [fork] : []), about, stats, why, solutions, (brandsX || parts.brands.replace('class="sec tint"', 'class="rd-sec rd-brands"')), picker, featured, editorial, training, forWhom, news, wall, finalCta].join('\n\n  ');
 };

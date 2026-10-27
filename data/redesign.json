@@ -149,6 +149,43 @@
       }
     ]
   },
+  "homePath": {
+    "_note": "Главная ниже первого экрана (src/pages/home-path.js, css/home-path.css, js/redesign.js): «маршрут партнёра» — роль → доверие → бренды → подбор по задаче → обучение → новости → шаги → призыв. Тексты заголовков — здесь; цифры, бренды, задачи, товары, события, преподаватели, шаги и преимущества берутся из остальных данных (stats, advantages, catalog, events, teachers, partners.steps) — ничего не выдумано. enabled=false возвращает прежний порядок секций (src/pages/home-x.js → legacy).",
+    "enabled": true,
+    "roles": {
+      "eyebrow": "С чего начать",
+      "title": "Расскажите, кто вы, — подскажем маршрут",
+      "lead": "У каждой роли свой путь: бренды, обучение и условия под вашу работу. Выбор займёт минуту и ни к чему не обязывает.",
+      "stella": {"text": "Не уверены, какая роль ваша?", "sub": "«Старт со Стеллой» — минута, без обязательств.", "cta": "Старт со Стеллой", "href": "start.html"}
+    },
+    "proof": {
+      "eyebrow": "Астрея в цифрах",
+      "reasonsEyebrow": "Что вы получаете",
+      "pick": [0, 1, 2, 4],
+      "more": "О компании"
+    },
+    "finder": {
+      "eyebrow": "Подбор по задаче",
+      "title": "Начните с задачи кожи — остальное подскажем",
+      "open": "Открыть подборку в каталоге",
+      "ask": "Спросить Стеллу",
+      "all": "Весь каталог"
+    },
+    "academy": {
+      "facts": ["Базовые семинары — бесплатные", "Очно в четырёх городах и онлайн", "Теория и практика в один день"],
+      "teachersLabel": "Преподаватели",
+      "teachersHref": "training.html#teachers",
+      "eventsLabel": "Ближайшие встречи",
+      "all": "Расписание семинаров",
+      "about": "Об учебном центре"
+    },
+    "steps": {
+      "eyebrow": "Как начать",
+      "title": "Четыре шага до начала работы",
+      "lead": "Сотрудничество можно начать с небольшого шага: заявка ни к чему не обязывает.",
+      "calc": {"label": "Рассчитать скидку", "href": "partners.html#calc"}
+    }
+  },
   "finalCta": {
     "eyebrow": "Партнёрам",
     "title": "Хотите работать с Астрея?",
@@ -463,16 +500,12 @@
     },
     "pages": {
       "home": {"mid": [
-        {"sel": "section.rd-about", "tex": "silk", "pos": "r", "o": 6},
-        {"sel": "section.rd-why", "tex": "cream", "pos": "l", "o": 8},
-        {"sel": "section.rd-solutions", "tex": "smear", "pos": "r", "o": 7},
+        {"sel": "section.hp-roles", "tex": "silk", "pos": "r", "o": 6},
+        {"sel": "section.hp-proof", "tex": "cream", "pos": "l", "o": 8},
+        {"sel": "section.hp-steps", "tex": "smear", "pos": "r", "o": 7},
         {"sel": "section.rd-brands", "tex": "ribbon", "pos": "c", "o": 6},
-        {"sel": "section.rd-picker", "tex": "swatch", "pos": "tl", "o": 7},
-        {"sel": "section.rd-featured", "tex": "cream", "pos": "r", "o": 7},
-        {"sel": "section.rd-training", "tex": "molecules", "pos": "r", "o": 7},
-        {"sel": "section.rd-aud", "tex": "film", "pos": "l", "o": 7},
+        {"sel": "section.hp-find", "tex": "swatch", "pos": "tl", "o": 7},
         {"sel": "section.rd-news", "tex": "pipette", "pos": "l", "o": 7},
-        {"sel": "section.rd-wall", "tex": "cream", "pos": "c", "o": 8},
         {"sel": "section.rd-final", "tex": "smear", "pos": "c", "o": 8}
       ]},
       "catalog": {"top": {"tex": "cream", "pos": "tr"}, "mid": [{"sel": "section.shw-tasks", "tex": "cream", "pos": "c", "o": 10}, {"sel": "section.shw-dirs", "tex": "cream", "pos": "l", "o": 9}, {"sel": "section.shw-brands", "tex": "film", "pos": "l", "o": 8}], "end": {"tex": "smear", "pos": "br"}},

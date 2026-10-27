@@ -55,6 +55,24 @@
   document.addEventListener('scroll', function (e) { if (e.target && e.target.id === 'hb-strip') hbState(e.target); }, true);
   addEventListener('load', function () { const s = document.getElementById('hb-strip'); if (s) hbState(s); });
 
+  /* подбор по задаче на главной (.hp-find-grid): наведение, фокус или первое касание переключает витрину справа; клик по уже выбранной задаче открывает каталог.
+     Без JS все задачи — обычные ссылки в каталог, а справа видна первая витрина. */
+  function hpActivate(a, count) {
+    const root = a.closest('[data-hp-find]'); if (!root || a.classList.contains('on')) return;
+    const id = a.getAttribute('data-hp-task');
+    Array.prototype.forEach.call(root.querySelectorAll('[data-hp-task]'), function (t) { const on = t === a; t.classList.toggle('on', on); if (on) t.setAttribute('aria-current', 'true'); else t.removeAttribute('aria-current'); });
+    Array.prototype.forEach.call(root.querySelectorAll('[data-hp-panel]'), function (p) { p.classList.toggle('on', p.getAttribute('data-hp-panel') === id); });
+    if (count && window.Astreya && window.Astreya.track) window.Astreya.track('finder_task', {task: id});          // считаем осознанный выбор (касание, клавиатура), а не каждое проведение мыши
+  }
+  document.addEventListener('mouseover', function (e) {
+    const a = e.target.closest && e.target.closest('[data-hp-task]'); if (a && window.matchMedia && window.matchMedia('(hover:hover)').matches) hpActivate(a);
+  });
+  document.addEventListener('focusin', function (e) { const a = e.target.closest && e.target.closest('[data-hp-task]'); if (a) hpActivate(a, true); });
+  document.addEventListener('click', function (e) {
+    const a = e.target.closest && e.target.closest('[data-hp-task]'); if (!a) return;
+    if (!a.classList.contains('on')) { e.preventDefault(); hpActivate(a, true); }
+  });
+
   /* «Почему Астрея»: подсветка цифр при скролле — светится номер пункта, ближайшего к центру экрана, пока список на экране.
      Список отслеживает IntersectionObserver: пока он вне экрана (почти всегда), в кадре прокрутки не читается вёрстка и не пишутся стили — раньше getBoundingClientRect
      вызывался в каждом кадре на любой странице и заставлял браузер пересчитывать стили посреди прокрутки. */

@@ -86,6 +86,12 @@ const median = a => { const b = a.slice().sort((x, y) => x - y); return b[Math.f
 
   console.log('\n[подсветка «Почему Астрея» вне экрана]');
   { const p = await open(b, 'index.html', null, 14000);
+    if (!await p.evaluate(() => !!document.querySelector('.rd-why-list'))) {        // новая главная («маршрут партнёра») без списка «Почему Астрея»: подсветки по прокрутке нет — читать геометрию в кадрах прокрутки нечему
+      const reads = await p.evaluate(() => { let n = 0; const o = Element.prototype.getBoundingClientRect; Element.prototype.getBoundingClientRect = function () { if (this.closest && this.closest('.hp-roles,.hp-proof,.hp-find,.hp-acad,.hp-steps')) n++; return o.apply(this, arguments); }; window.__hpReads = () => n; return 0; });
+      await p.mouse.move(700, 400); for (let i = 0; i < 25; i++) { await p.mouse.wheel(0, 60); await wait(40); } await wait(500);
+      const n = await p.evaluate(() => window.__hpReads());
+      ok(n === 0, 'разделы «маршрута партнёра» при прокрутке не читают свою геометрию в каждом кадре (чтений: ' + n + ')', n); void reads; await p.ctx.close();
+    } else {
     await p.evaluate(() => { window.__why = 0; const o = Element.prototype.getBoundingClientRect; Element.prototype.getBoundingClientRect = function () { if (this.classList && (this.classList.contains('rd-why-list') || this.classList.contains('rd-why-item'))) window.__why++; return o.apply(this, arguments); }; });
     await p.mouse.move(700, 400); for (let i = 0; i < 25; i++) { await p.mouse.wheel(0, 60); await wait(40); } await wait(500);
     const n = await p.evaluate(() => window.__why), y = await p.evaluate(() => scrollY), top = await p.evaluate(() => { const l = document.querySelector('.rd-why-list'); const r = l.getBoundingClientRect(); window.__why = 0; return {t: r.top, b: r.bottom, h: innerHeight}; });
@@ -93,7 +99,7 @@ const median = a => { const b = a.slice().sort((x, y) => x - y); return b[Math.f
     ok(n === 0, 'пока список вне экрана, в кадрах прокрутки его геометрия не читается (чтений: ' + n + ')', n);
     await wait(1500); await p.evaluate(() => { document.querySelector('.rd-why-list').scrollIntoView({block: 'center'}); }); await wait(1500);
     const lit = await p.evaluate(() => document.querySelectorAll('.rd-why-item.lit').length);
-    ok(lit === 1, 'когда список на экране, подсвечен ровно один пункт (' + lit + ')', lit); await p.ctx.close(); }
+    ok(lit === 1, 'когда список на экране, подсвечен ровно один пункт (' + lit + ')', lit); await p.ctx.close(); } }
 
   console.log('\n[инерция колеса на компьютере]');
   { const p = await open(b, 'catalog.html', null, 600); await p.mouse.move(700, 400);

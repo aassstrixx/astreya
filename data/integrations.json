@@ -19,7 +19,11 @@
       {"id": "catalog_click", "name": "Переход в каталог", "key": false},
       {"id": "product_card_click", "name": "Открыта карточка товара", "key": false},
       {"id": "quick_view", "name": "Быстрый просмотр товара", "key": false},
-      {"id": "search_open", "name": "Открыт поиск", "key": false}
+      {"id": "search_open", "name": "Открыт поиск", "key": false},
+      {"id": "role_click", "name": "Выбрана роль на главной («С чего начать»)", "key": false},
+      {"id": "finder_task", "name": "Выбрана задача в подборе на главной", "key": false},
+      {"id": "stella_start", "name": "Нажат «Старт со Стеллой»", "key": false},
+      {"id": "calc_click", "name": "Открыт калькулятор скидок", "key": false}
     ]
   },
   "consent": {

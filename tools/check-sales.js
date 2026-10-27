@@ -118,7 +118,7 @@ const J = f => JSON.parse(fs.readFileSync(path.join(ROOT, f), 'utf8'));
   }
   { const p = await mk();
     await p.goto(base + 'index.html'); await wait(5500);
-    ok(await p.evaluate(() => [...document.querySelectorAll('.rd-aud-item a.lnk')].slice(0, 3).every(a => /start\.html\?r=/.test(a.getAttribute('href')))), 'в блоке «Для кого»: косметологам, клиникам и салонам — адресный подбор под роль');
+    ok(await p.evaluate(() => [...document.querySelectorAll('.hp-role a')].slice(0, 3).every(a => /start\.html\?r=/.test(a.getAttribute('href')))), 'в блоке «С чего начать»: косметологам, клиникам и салонам — адресный подбор под роль (Старт со Стеллой)');
     await p.context().close(); }
 
   /* ================= C. Старт со Стеллой — диалог со Стеллой ================= */
