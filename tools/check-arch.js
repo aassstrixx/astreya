@@ -67,12 +67,12 @@ if (!J || !J.enabled || !A || !A.enabled) { console.log('Первый экран
       window.__lap = sel => { const r = window.__gray(sel, 960); if (!r) return -1; const {g, w, h} = r; let s = 0, s2 = 0, n = 0; for (let y = 1; y < h - 1; y++) for (let x = 1; x < w - 1; x++) { const v = 4 * g[y * w + x] - g[y * w + x - 1] - g[y * w + x + 1] - g[(y - 1) * w + x] - g[(y + 1) * w + x]; s += v; s2 += v * v; n++; } return s2 / n - (s / n) * (s / n); };
       /* сколько тёмных штрихов (надписи этикетки) на нижней части корпуса баночки: непрозрачные пиксели темнее 72 % медианы */
       window.__ink = () => { const cv = document.querySelector('.ar-jar-cv'); if (!cv || !cv.width) return -1; const w = 960, h = Math.round(cv.height * w / cv.width), c = document.createElement('canvas'); c.width = w; c.height = h; const x = c.getContext('2d', {willReadFrequently: true}); x.drawImage(cv, 0, 0, w, h);
-        const d = x.getImageData(0, 0, w, h).data; let x0 = w, x1 = -1, y0 = h, y1 = -1; for (let yy = 0; yy < h; yy++) for (let xx = 0; xx < w; xx++) if (d[(yy * w + xx) * 4 + 3] > 40) { if (xx < x0) x0 = xx; if (xx > x1) x1 = xx; if (yy < y0) y0 = yy; if (yy > y1) y1 = yy; }
+        const d = x.getImageData(0, 0, w, h).data; let x0 = w, x1 = -1, y0 = h, y1 = -1; for (let yy = 0; yy < h; yy++) for (let xx = 0; xx < w; xx++) if (d[(yy * w + xx) * 4 + 3] > 128) { if (xx < x0) x0 = xx; if (xx > x1) x1 = xx; if (yy < y0) y0 = yy; if (yy > y1) y1 = yy; }
         if (x1 < 0) return 0; const ya = Math.round(y0 + 0.58 * (y1 - y0)), yb = Math.round(y1 - 0.06 * (y1 - y0)), xa = Math.round(x0 + 0.1 * (x1 - x0)), xb = Math.round(x1 - 0.1 * (x1 - x0)), L = [];
         for (let yy = ya; yy < yb; yy++) for (let xx = xa; xx < xb; xx++) { const i = (yy * w + xx) * 4; if (d[i + 3] > 240) L.push(.299 * d[i] + .587 * d[i + 1] + .114 * d[i + 2]); }
         if (L.length < 50) return 0; const m = L.slice().sort((a, b) => a - b)[L.length >> 1]; return L.filter(v => v < m * 0.72).length; };
       window.__jbox = () => { const cv = document.querySelector('.ar-jar-cv'); if (!cv || !cv.width) return null; const w = 1280, h = Math.round(cv.height * w / cv.width), c = document.createElement('canvas'); c.width = w; c.height = h; const x = c.getContext('2d', {willReadFrequently: true}); x.drawImage(cv, 0, 0, w, h);
-        const d = x.getImageData(0, 0, w, h).data; let x0 = w, x1 = -1, y0 = h, y1 = -1, n = 0; for (let yy = 0; yy < h; yy++) for (let xx = 0; xx < w; xx++) if (d[(yy * w + xx) * 4 + 3] > 40) { n++; if (xx < x0) x0 = xx; if (xx > x1) x1 = xx; if (yy < y0) y0 = yy; if (yy > y1) y1 = yy; } return n ? {l: x0 / w, r: x1 / w, t: y0 / h, b: y1 / h, n} : {n: 0}; };
+        const d = x.getImageData(0, 0, w, h).data; let x0 = w, x1 = -1, y0 = h, y1 = -1, n = 0; for (let yy = 0; yy < h; yy++) for (let xx = 0; xx < w; xx++) if (d[(yy * w + xx) * 4 + 3] > 128) { n++; if (xx < x0) x0 = xx; if (xx > x1) x1 = xx; if (yy < y0) y0 = yy; if (yy > y1) y1 = yy; } return n ? {l: x0 / w, r: x1 / w, t: y0 / h, b: y1 / h, n} : {n: 0}; };
     });
     if (o.noCanvas) await ctx.addInitScript(() => { HTMLCanvasElement.prototype.getContext = () => null; });
     const p = await ctx.newPage(); p.errs = []; p.reqs = [];
@@ -89,11 +89,11 @@ if (!J || !J.enabled || !A || !A.enabled) { console.log('Первый экран
     try { await p.waitForFunction(t => { const c = window.Astreya.jar.arch, s = c && c.state(); return s && s.firstDrawn && Math.abs(s.p - s.pTarget) < 0.012 && (s.pTarget < 0.003 || s.drawn); }, pv, {timeout: 60000, polling: 250}); } catch (e) { /* — */ } await wait(500); };
   /* что нарисовано на холсте баночки: рамка непрозрачных пикселей в координатах экрана и доля заполнения (по настоящим пикселям, шаг 6) */
   const jarBox = p => p.evaluate(() => {
-    const cv = document.querySelector('.ar-jar-cv'); if (!cv || !cv.width) return null;
+    const cv = document.querySelector('.ar-jar-cv'); if (!cv || !cv.width) return null;          // рамка — по плотным пикселям (мягкая тень под баночкой на заставке прозрачнее 50 % и в неё не входит)
     const w = cv.width, h = cv.height, c = document.createElement('canvas'); c.width = w; c.height = h;
     const cx = c.getContext('2d', {willReadFrequently: true}); cx.drawImage(cv, 0, 0); const d = cx.getImageData(0, 0, w, h).data, r = cv.getBoundingClientRect(), k = r.width / w;
     let x0 = w, x1 = -1, y0 = h, y1 = -1, n = 0;
-    for (let y = 0; y < h; y += 6) for (let x = 0; x < w; x += 6) if (d[(y * w + x) * 4 + 3] > 30) { n++; if (x < x0) x0 = x; if (x > x1) x1 = x; if (y < y0) y0 = y; if (y > y1) y1 = y; }
+    for (let y = 0; y < h; y += 6) for (let x = 0; x < w; x += 6) if (d[(y * w + x) * 4 + 3] > 128) { n++; if (x < x0) x0 = x; if (x > x1) x1 = x; if (y < y0) y0 = y; if (y > y1) y1 = y; }
     return n ? {l: Math.round(r.left + x0 * k), t: Math.round(r.top + y0 * k), r: Math.round(r.left + x1 * k), b: Math.round(r.top + y1 * k), n} : {n: 0};
   });
   const orbitBox = p => p.evaluate(() => { const e = document.querySelector('.ar-orb'); if (!e) return null; const r = e.getBoundingClientRect(); return {cx: r.left + r.width / 2, cy: r.top + r.height / 2, w: r.width, op: +getComputedStyle(document.querySelector('.ar-orbit')).opacity}; });
