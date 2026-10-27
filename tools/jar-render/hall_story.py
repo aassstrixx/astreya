@@ -72,12 +72,14 @@ LOGO_Y = -.42                                 # передняя грань го
 LOGO_Z = -.012 - float(os.environ.get('HALL_LOGO_DROP', 0.0))   # (по умолчанию знак стоит как в логотипе: ножка касается пола острым концом, серп — под шаром)  #                               # низ знака: кончик левой «ножки» чуть врезан в пол — касается его остриём, не обрезан
 LOGO_DEPTH = .46
 LOGO_THICK = 11.0                             # насколько «полнеют» ножки горы (кончики не трогаем — остаются острыми, как в логотипе)
-SPHERE_SCREEN = {False: (.715, float(os.environ.get('HALL_SPH_Y', .335)), float(os.environ.get('HALL_SPH_D', .205))), True: (.50, .475, .44)}     # где шар стоит в готовом кадре (центр x, центр y, диаметр — доли ширины кадра): компьютер и телефон; общий план мельче прежнего, орбиты не доходят до нижней панели
+SPHERE_SCREEN = {False: (float(os.environ.get('HALL_SPH_X', .711)), float(os.environ.get('HALL_SPH_Y', .426)), float(os.environ.get('HALL_SPH_D', .255))), True: (.50, .475, .44)}     # где шар стоит в готовом кадре (центр x, центр y, диаметр — доли ширины кадра): компьютер и телефон; общий план мельче прежнего, орбиты не доходят до нижней панели
 SPHERE_DEPTH = {False: 1.78, True: 1.62}                                # на каком расстоянии от камеры (вдоль оси) шар парит: на 0,15–0,2 м перед горой, ничем не подпёрт
 
-LEAF = dict(leafk=float(os.environ.get('HALL_LEAFK', 2.15)), wk=float(os.environ.get('HALL_LEAFW', 1.40)), dens=float(os.environ.get('HALL_LEAFD', 2.1)))                  # листья оливы в зале: длиннее, шире и гуще (множители к настройкам BR.olive)
+LEAF = dict(leafk=float(os.environ.get('HALL_LEAFK', 1.0)), wk=float(os.environ.get('HALL_LEAFW', 1.0)), dens=float(os.environ.get('HALL_LEAFD', 1.0)))                  # листья оливы в зале: по эталону заказчика (кадр 26.10) — тонкие ветки оливы с узкими листьями; множители к настройкам BR.olive (1 — как в эталоне)
+TREES = os.environ.get('HALL_TREES', '0') == '1'                                                                                                                             # густые деревья в вазах (build_tree) — не по эталону: в кадре заказчика у вазы тонкая ветка, а сверху — ветки оливы
+LAB = os.environ.get('HALL_LAB', '0') == '1'                                                                                                                                 # «световая лаборатория» (кольца на полу и подиуме, упаковки на пороге ниши) — в эталоне заказчика их нет: пол ровный, полированный
 LOGO_PARTS = ('mountain',) if os.environ.get('HALL_BAND') == '0' else ('mountain', 'band')       # весь знак: две ножки горы с острыми кончиками и серп (волна) — как в логотипе
-LEAF_SHADOW = dict(leafk=1.3, wk=1.1, dens=1.0)             # ветки вне кадра, дающие пятна света на стене: листья чуть длиннее, но не гуще — тени остаются резными силуэтами листьев, а не мутными пятнами
+LEAF_SHADOW = dict(leafk=float(os.environ.get('HALL_SHLEAFK', 1.0)), wk=float(os.environ.get('HALL_SHLEAFW', 1.0)), dens=1.0)             # ветки вне кадра, дающие пятна света на стене: как в эталоне
 
 S = {}
 
@@ -169,13 +171,13 @@ def sphere_place(portrait):
 
 def sphere_material():
     """камень шара: тот же травертин, что и у горы, но с другой структурой — крупнее и чаще поры, заметнее слоистость, рельеф глубже, чуть теплее и матово-шёлковый: шар отделяется от горы и не сливается с ней"""
-    t = float(os.environ.get('HALL_SPH_TONE', .90))
-    m = MT.travertine('hall_sphere', (1.0 * t, .90 * t, .76 * t), float(os.environ.get('HALL_SPH_SCALE', 1.35)), float(os.environ.get('HALL_SPH_PITS', 1.3)), float(os.environ.get('HALL_SPH_BANDS', 3.0)), honed=True)
+    t = float(os.environ.get('HALL_SPH_TONE', .86))
+    m = MT.travertine('hall_sphere', (1.0 * t, .90 * t, .76 * t), float(os.environ.get('HALL_SPH_SCALE', 1.2)), float(os.environ.get('HALL_SPH_PITS', 1.0)), float(os.environ.get('HALL_SPH_BANDS', 3.0)), honed=True)
     b = next(n for n in m.node_tree.nodes if n.type == 'BSDF_PRINCIPLED')
     b.inputs['Roughness'].default_value = .52
     bp = next((n for n in m.node_tree.nodes if n.type == 'BUMP'), None)
     if bp is not None:
-        bp.inputs['Strength'].default_value = float(os.environ.get('HALL_SPH_BUMP', 1.1)); bp.inputs['Distance'].default_value = .009
+        bp.inputs['Strength'].default_value = float(os.environ.get('HALL_SPH_BUMP', .75)); bp.inputs['Distance'].default_value = .009
     for key, val in (('Sheen Weight', .12), ('Sheen Roughness', .6)):
         if key in b.inputs: b.inputs[key].default_value = val
     return m
@@ -250,14 +252,19 @@ def build_decor(M, portrait):
     rock('pebble-a', (.72, -.72, 0), 60, 5, 1.1)
     # ваза и олива справа (как у пилястры на референсе)
     dxp = .11 if portrait else 0.0                                                                     # на телефоне вазу с деревом сдвигаем вправо: в узкий кадр заходит только край кроны
-    BR.vase((.98 + dxp, -.14, 0), .42, .095, M['ceramic'])                                               # ваза повыше: ствол не торчит палкой из-под серпа, крона растёт прямо из горлышка
-    build_tree(random.Random(77), (.98 + dxp, -.14, .36), .39, .98, lk=1.3, per=84, nb=32)                                     # на вазе справа — пышное дерево (олива с густой длинной листвой): низкий ствол и широкая густая крона, верх уходит за край кадра
+    if TREES:
+        BR.vase((.98 + dxp, -.14, 0), .42, .095, M['ceramic'])                                           # ваза повыше: ствол не торчит палкой из-под серпа, крона растёт прямо из горлышка
+        build_tree(random.Random(77), (.98 + dxp, -.14, .36), .39, .98, lk=1.3, per=84, nb=32)           # на вазе справа — пышное дерево (олива с густой длинной листвой)
+    else:                                                                                                 # как в эталоне: низкая ваза и тонкая ветка оливы; её верх виден над серпом
+        BR.vase((.98 + dxp, -.14, 0), .30, .085, M['ceramic'])
+        BR.olive((.98 + dxp, -.14, .30 + .026), .90, 26, .78, random.Random(7), lean=-.10, **LEAF)
     # олива на переднем плане слева — сама в кадре и отбрасывает пятна света от листьев на стену и пол
     BR.vase((-.92, -1.10, 0), .26, .10, M['ceramic'])
     BR.olive((-.92, -1.10, .26 + .03), .52, 28, 1.12, random.Random(3), lean=.31, **LEAF)                  # ветка выглядывает у левого края кадра (как на референсе), а не прячется за ним
     BR.olive((-.86, -1.08, .26 + .03), .44, 22, .98, random.Random(12), lean=.23, **LEAF)
-    BR.vase((-1.42, 1.22, 0), .26, .085, M['ceramic'])                                                    # пышное дерево в комнате за левой аркой: густая крона заполняет верх проёма за пальмовыми ветками, полки с продукцией остаются видны
-    build_tree(random.Random(91), (-1.42, 1.22, .225), .425, .90, lk=1.25, per=84, nb=30)
+    if TREES:
+        BR.vase((-1.42, 1.22, 0), .26, .085, M['ceramic'])                                                # пышное дерево в комнате за левой аркой (не по эталону — выключено по умолчанию)
+        build_tree(random.Random(91), (-1.42, 1.22, .225), .425, .90, lk=1.25, per=84, nb=30)
 
 
 
@@ -595,10 +602,11 @@ def build_scene(res, samples, portrait):
     build_shadow_branches()
     build_jar()
     build_lights(M)
-    build_lab(M)
+    if LAB:
+        build_lab(M)
     build_camera()
     for ob in list(bpy.data.objects):                                                  # «лишние» полоски-этикетки упаковок (label, labelh, labelm без родителя) лежали в начале координат — в левом углу ниши они выглядели колонной с чёрным швом
-        if ob.parent is None and re.match(r'label[hm]?(\.\d+)?$', ob.name) and os.environ.get('HALL_KEEP_STRAYS') != '1':
+        if ob.parent is None and re.match(r'label[hm]?(\.\d+)?$', ob.name) and os.environ.get('HALL_KEEP_STRAYS', '1') != '1':
             bpy.data.objects.remove(ob, do_unlink=True)
     S['vis0'] = {ob.name: ob.visible_camera for ob in bpy.data.objects}                  # исходная видимость для камеры (софтбоксы и заполняющие поверхности камере не видны)
     return sc
@@ -629,7 +637,7 @@ def bez(pts, t):
 # и гора (запечён в кадры, ничем не управляется). После HOLD сцена «держит» последний кадр (покой героя).
 JAR_START = Vector((float(os.environ.get('HALL_JX', -.08)), -.95, .46))          # где баночка «парит» в начале: на уровне глаз перед ровной гладкой стеной слева от горы (за ней — только бежевая штукатурка с лёгкими тенями листьев)
 JAR_WAY = [JAR_START, Vector((.12, -1.12, .40)), Vector((.46, -1.06, .27)), Vector((.68, -.76, .18)), Vector((.62, -.46, .13)), JAR_FINAL]        # путь баночки: огибает шар спереди и справа-снизу (в него не входит), к подиуму подходит сбоку и опускается на него
-CAM_END_L = (Vector((.02, -2.55, .36)), TARGET_MAIN_L, float(os.environ.get('HALL_LENS_L', 36.0)))     # общий план: фокусное 36 вместо 40 — кадр чуть шире, шар и орбиты мельче и не доходят до нижней панели
+CAM_END_L = (Vector((.02, -2.55, .36)), TARGET_MAIN_L, float(os.environ.get('HALL_LENS_L', 40.0)))     # общий план: фокусное 40, как в кадре-эталоне заказчика (26.10)
 CAM_END_P = (Vector((.292, -2.31, .40)), TARGET_MAIN_P, float(os.environ.get('HALL_LENS_P', 36.0)))
 LIT0 = 1.0                                                                           # свет зала постоянный: яркий, тёплый (полумрака и луча нет)
 SHADOW_FROM = int(os.environ.get('HALL_SHADOW_FROM', 49))                            # с этого кадра баночка уже стоит на подиуме: её тень запечена в кадры, а до него — живая тень на сайте (js/jar-gl.js)
