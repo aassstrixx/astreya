@@ -29,7 +29,7 @@
   const MOVING = 0.04;        // ключевых кадров в секунду: быстрее — идёт движение (включается сглаживание кромок)
   const LANES = [14, 8];      // запросов одновременно: [компьютер, телефон] (HTTP/2)
   const RES = [5, 4];         // сколько ключевых кадров по обе стороны от положения держим в видеопамяти: [компьютер, телефон]
-  const DECODERS = 2;         // одновременных разворачиваний картинок в текстуры
+  const DECODERS = 3;         // одновременных разворачиваний картинок в текстуры
   let ctrl = null, ctrls = [];       // ctrls — все сцены страницы (на главной одна: #arch-story), ctrl — она же
 
   function glOk() {                  // WebGL2 есть? (проверка на отдельном холсте — холсты сцены остаются нетронутыми)
@@ -265,14 +265,15 @@
     function paint(now) {
       if (!hall) return false;
       const speed = Math.abs(vp) * (NH - 1);
-      const jk = jarK(cp), lift = jarLift(cp), ground = jarGround(cp), halo = jarHalo(cp);
+      const pc = hall.plan(cp);                                                    // рисуем это положение: обычно cp, а при быстрой прокрутке, пока кадры рядом не развернулись, — ближайший загруженный кадр как есть (без «размазанных» пятен от далёкой перепроекции)
+      const jk = jarK(pc), lift = jarLift(pc), ground = jarGround(pc), halo = jarHalo(pc);
       sphPush();
-      const pair = hall.draw(cp, 0, speed > MOVING, {jk, lift});
+      const pair = hall.draw(pc, 0, speed > MOVING, {jk, lift});
       if (!pair) return false;
       lastDraw = {ka: pair.ka, kb: pair.kb, t: pair.t, single: !!pair.single};
       if (!firstDrawn) { firstDrawn = true; if (cp < 0.02) root.classList.add('ar-intro'); root.classList.add('ready'); }
       if (jar) {
-        const ok = jar.draw(cp, pair, {jk, lift, ground, halo});
+        const ok = jar.draw(pc, pair, {jk, lift, ground, halo});
         if (ok && !jarShown) { jarShown = true; if (cp < 0.02) root.classList.add('ar-intro'); root.classList.add('jar-ready'); }
       }
       return true;

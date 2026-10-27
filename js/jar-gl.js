@@ -435,6 +435,24 @@ void main() {
     /* поворот шара (3×3, по столбцам; объект → мир), курсор (−1…1) для света */
     function setSphere(m, cx, cy) { if (m) sph.m.set(m); sph.cur[0] = cx || 0; sph.cur[1] = cy || 0; }
 
+    /* какое положение реально рисовать для p. Если нужных кадров рядом ещё нет (быстрая прокрутка, кадры только догружаются), перепроецировать далёкие кадры нельзя: из-за огромного
+       сдвига камеры получаются размазанные тёмные «пятна» (заполнитель тянет края кадра). Тогда показываем ближайший загруженный кадр как есть — чистая картинка, пока рядом не развернутся нужные */
+    function plan(p) {
+      if (dead || !W) return p;
+      p = clamp(p, 0, 1);
+      let lo = 0, hi = N - 1;
+      if (p <= Phi[0]) { hi = 0; } else if (p >= Phi[N - 1]) { lo = N - 1; } else { while (hi - lo > 1) { const m = (lo + hi) >> 1; if (Phi[m] <= p) lo = m; else hi = m; } }
+      const nxt = Math.min(N - 1, lo + 1);
+      const u = lo + (nxt > lo ? clamp((p - Phi[lo]) / (Phi[nxt] - Phi[lo]), 0, 1) : 0);
+      let a = lo, b = nxt;
+      while (a >= 0 && !keys[a]) a--;
+      while (b < N && !keys[b]) b++;
+      const dA = a >= 0 ? u - a : 1e9, dB = b < N ? b - u : 1e9;
+      if (dA > 1e8 && dB > 1e8) return p;
+      if ((dA <= 2.001 && dB <= 2.001) || Math.min(dA, dB) <= 1.2) return p;
+      return Phi[dA <= dB ? a : b];
+    }
+
     /* рисует вид для положения p; rest ∈ [0,1] — «покой»: 1 — только ближайший кадр (пиксель в пиксель), 0 — плавное слияние двух.
        Возвращает {ka, kb, t} или null, если нужных кадров ещё нет */
     function draw(p, rest, aa, opt) {
@@ -486,7 +504,7 @@ void main() {
       if (ibo) gl.deleteBuffer(ibo); [P0, P1, P2, P3, P4].forEach(q => q && gl.deleteProgram(q.p));
       if (!keepContext) { try { const ext = gl.getExtension('WEBGL_lose_context'); if (ext) ext.loseContext(); } catch (e) { /* — */ } }
     }
-    return {gl, setSize, setKey, dropKey, hasKey, draw, drawSphere, setSphereTex, setSphere, destroy, setGridScale, get sphereReady() { return !!(P4 && sph.ready); }, get hasSphere() { return !!P4; }, camAt: p => track.at(p, {}), keys, get size() { return [W, H]; }};
+    return {gl, setSize, setKey, dropKey, hasKey, plan, draw, drawSphere, setSphereTex, setSphere, destroy, setGridScale, get sphereReady() { return !!(P4 && sph.ready); }, get hasSphere() { return !!P4; }, camAt: p => track.at(p, {}), keys, get size() { return [W, H]; }};
   }
 
 
