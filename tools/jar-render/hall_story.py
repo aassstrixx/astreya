@@ -77,6 +77,8 @@ SPHERE_DEPTH = {False: 1.78, True: 1.62}                                # на �
 
 LEAF = dict(leafk=float(os.environ.get('HALL_LEAFK', 1.0)), wk=float(os.environ.get('HALL_LEAFW', 1.0)), dens=float(os.environ.get('HALL_LEAFD', 1.0)))                  # листья оливы в зале: по эталону заказчика (кадр 26.10) — тонкие ветки оливы с узкими листьями; множители к настройкам BR.olive (1 — как в эталоне)
 TREES = os.environ.get('HALL_TREES', '0') == '1'                                                                                                                             # густые деревья в вазах (build_tree) — не по эталону: в кадре заказчика у вазы тонкая ветка, а сверху — ветки оливы
+SPHERE_LIVE = os.environ.get('HALL_SPHERE_LIVE', '1') == '1'                                                                                                                 # шар рисует сайт (живой, от курсора), а не кадры зала
+TREE_R = os.environ.get('HALL_TREE_R', '1') == '1'                                                                                                                          # пышная ветка (дерево) в вазе справа — по просьбе заказчика, как на телефоне
 LAB = os.environ.get('HALL_LAB', '0') == '1'                                                                                                                                 # «световая лаборатория» (кольца на полу и подиуме, упаковки на пороге ниши) — в эталоне заказчика их нет: пол ровный, полированный
 LOGO_PARTS = ('mountain',) if os.environ.get('HALL_BAND') == '0' else ('mountain', 'band')       # весь знак: две ножки горы с острыми кончиками и серп (волна) — как в логотипе
 LEAF_SHADOW = dict(leafk=float(os.environ.get('HALL_SHLEAFK', 1.0)), wk=float(os.environ.get('HALL_SHLEAFW', 1.0)), dens=1.0)             # ветки вне кадра, дающие пятна света на стене: как в эталоне
@@ -251,11 +253,11 @@ def build_decor(M, portrait):
     rock('boulder-b', (.86, -.46, 0), 35, 4, .60)
     rock('pebble-a', (.72, -.72, 0), 60, 5, 1.1)
     # ваза и олива справа (как у пилястры на референсе)
-    dxp = .11 if portrait else 0.0                                                                     # на телефоне вазу с деревом сдвигаем вправо: в узкий кадр заходит только край кроны
-    if TREES:
-        BR.vase((.98 + dxp, -.14, 0), .42, .095, M['ceramic'])                                           # ваза повыше: ствол не торчит палкой из-под серпа, крона растёт прямо из горлышка
-        build_tree(random.Random(77), (.98 + dxp, -.14, .36), .39, .98, lk=1.3, per=84, nb=32)           # на вазе справа — пышное дерево (олива с густой длинной листвой)
-    else:                                                                                                 # как в эталоне: низкая ваза и тонкая ветка оливы; её верх виден над серпом
+    dxp = float(os.environ.get('HALL_DXP_P', .11)) if portrait else 0.0                                 # на телефоне вазу с деревом сдвигаем: ваза должна быть видна в кадре (иначе крона «висит» в воздухе)
+    if TREE_R:                                                                                           # ваза справа с пышной веткой (олива с густой длинной листвой): на ПК и на телефоне — в одном месте сцены
+        BR.vase((.98 + dxp, -.14, 0), .42, .095, M['ceramic'])
+        build_tree(random.Random(77), (.98 + dxp, -.14, .36), .39, .98, lk=1.3, per=84, nb=32)
+    else:                                                                                                 # как в эталоне: низкая ваза и тонкая ветка оливы
         BR.vase((.98 + dxp, -.14, 0), .30, .085, M['ceramic'])
         BR.olive((.98 + dxp, -.14, .30 + .026), .90, 26, .78, random.Random(7), lean=-.10, **LEAF)
     # олива на переднем плане слева — сама в кадре и отбрасывает пятна света от листьев на стену и пол
@@ -781,7 +783,7 @@ def set_layer(layer):
     set_jar_label(layer != 'jar' or os.environ.get('HALL_JAR_LABEL', '0') == '1')    # спрайт баночки — без этикетки (см. set_jar_label)
     sp = S.get('sphere')
     if sp is not None:                                                               # шар: в слое баночки — вырез (holdout): где он стоит перед баночкой, спрайт не рисуется, и она не «просвечивает» сквозь шар
-        sp.visible_camera = True
+        sp.visible_camera = not (SPHERE_LIVE and layer == 'bg')                      # шар на сайте живой (js/jar-gl.js: луч–сфера, вращается и следует за курсором): в кадрах зала и в картах глубины его нет, но тень, отсвет и отражение в полу остаются запечёнными
         sp.is_holdout = layer == 'jar'
     sc = bpy.context.scene
     sc.render.film_transparent = layer == 'jar'
@@ -915,6 +917,7 @@ def cam_track(n, portrait):
         out['jar'].append([round(v, 5) for v in st['jar']])
         out['yaw'].append(round(st['yaw'], 4))
         out['glow'].append(round(st['glow'], 5))
+    out['sphere3d'] = [round(v, 5) for v in S['sphere_xyzr']]                        # центр (x, y, z) и радиус шара в метрах: сайт рисует его сам
     out['jarScale'] = .01 * JAR_S                                                    # метров в одном «сантиметре» модели баночки
     out['jarCenterZ'] = JAR_CENTER_Z
     out['dispRange'] = list(DEPTH_DISP)
