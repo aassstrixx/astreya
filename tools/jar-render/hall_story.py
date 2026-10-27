@@ -548,6 +548,12 @@ CAM_END_P = (Vector((.292, -2.31, .40)), TARGET_MAIN_P, float(os.environ.get('HA
 LIT0 = 1.0                                                                           # свет зала постоянный: яркий, тёплый (полумрака и луча нет)
 HOLD = float(os.environ.get('HALL_HOLD', .93))                                       # с этого положения сцена «держит» последний кадр (покой героя)
 SPIN = float(os.environ.get('HALL_SPIN', 360.0))                                     # на сколько градусов баночка раскручивается по пути (полный оборот — и этикетка снова смотрит на нас)
+# Вертикальный кадр (телефон) узкий: при том же фокусном баночка занимает вдвое больше его ширины, чем на компьютере, и на середине пути уходит за правый край. Поэтому на телефоне камера на старте дальше
+# (NEAR_P — во сколько раз), а затем плавно доворачивается вокруг вертикали, так что баночка идёт по кадру внутри границ FRAME_LO…FRAME_HI (доли ширины кадра) и заканчивает путь на своём месте у подиума.
+NEAR_P = float(os.environ.get('HALL_NEAR_P', 1.6))
+NEAR_P_END = float(os.environ.get('HALL_NEAR_P_END', .80))                          # до какой доли пути «следящая» дистанция остаётся увеличенной
+FRAME_LO, FRAME_HI = float(os.environ.get('HALL_FRAME_LO', .17)), float(os.environ.get('HALL_FRAME_HI', .83))
+JAR_R = .0365 * JAR_S * 1.12                                                            # радиус баночки с запасом на крышку, м
 
 
 def spline(keys, s):
@@ -575,6 +581,48 @@ def jar_pose(p):
     return bez(JAR_WAY, q), q
 
 
+def jar_x(pos, tgt, lens, ctr):
+    """где баночка стоит в вертикальном кадре по ширине (центр, половина ширины — доли кадра) при заданной камере"""
+    sc = bpy.context.scene
+    place_camera(pos, tgt, lens, True)
+    cam = S['cam']
+    x, _ = proj(sc, cam, ctr)
+    right = cam.matrix_world.to_3x3() @ Vector((1, 0, 0))
+    x1, _ = proj(sc, cam, ctr + right * JAR_R)
+    return x, abs(x1 - x)
+
+
+def soft_clamp(x, lo, hi, k=36.0):
+    """сглаженное ограничение x в [lo, hi]: без излома, чтобы камера не дёргалась в момент, когда доворот включается"""
+    if lo >= hi:
+        return .5 * (lo + hi)
+    a = -math.log(math.exp(-k * x) + math.exp(-k * hi)) / k                              # мягкий min(x, hi)
+    return math.log(math.exp(k * a) + math.exp(k * lo)) / k                              # мягкий max(·, lo)
+
+
+def keep_in_frame(pos, tgt, lens, ctr):
+    """телефон: доворот камеры вокруг вертикали (положение камеры не меняется), чтобы баночка целиком оставалась в границах FRAME_LO…FRAME_HI; в конце пути доворот равен нулю"""
+    x0, hw = jar_x(pos, tgt, lens, ctr)
+    xt = soft_clamp(x0, FRAME_LO + hw, FRAME_HI - hw)
+    if abs(x0 - xt) < 1e-5:
+        return tgt
+    d = tgt - pos
+    sw = 36.0 * 9 / 16                                                                   # ширина матрицы вертикального кадра, мм
+    rot = lambda a: pos + Euler((0, 0, a), 'XYZ').to_matrix() @ d
+    a0, x_a = 0.0, x0
+    a1 = -(x0 - xt) * sw / lens
+    for _ in range(5):
+        x_b, _ = jar_x(pos, rot(a1), lens, ctr)
+        err = x_b - xt
+        if abs(err) < 2e-5:
+            break
+        if abs(x_b - x_a) < 1e-9:
+            break
+        a2 = a1 - err * (a1 - a0) / (x_b - x_a)
+        a0, x_a, a1 = a1, x_b, a2
+    return rot(a1)
+
+
 def frame_state(p, portrait):
     """состояние сцены при прогрессе p: положение и поворот баночки, камера, свет в нише"""
     pp = min(p, HOLD) / HOLD                                                         # с HOLD всё замирает
@@ -582,6 +630,8 @@ def frame_state(p, portrait):
     ctr = jar + Vector((0, 0, JAR_CENTER_Z))
     # «следящая» камера рядом с баночкой: на старте крупный план (фокусное 85), потом всё дальше
     near = lerp(float(os.environ.get('HALL_NEAR', .80)), 1.0, sm(pp / .5))
+    if portrait:
+        near *= lerp(NEAR_P, 1.0, sm(pp / NEAR_P_END))
     az = math.radians(lerp(float(os.environ.get('HALL_AZ', 11)), -6, sm(pp / .55)))                  # в начале камера чуть правее баночки и смотрит влево — на ровную стену; потом уходит влево
     el = math.radians(lerp(2, 8, sm(pp / .5)))
     follow_pos = ctr + near * Vector((math.sin(az) * math.cos(el), -math.cos(az) * math.cos(el), math.sin(el)))
@@ -591,6 +641,8 @@ def frame_state(p, portrait):
     pos = follow_pos.lerp(main_pos, w)
     tgt = follow_tgt.lerp(main_tgt, w)
     lens = math.exp(lerp(math.log(85.0), math.log(main_lens), w))
+    if portrait:
+        tgt = keep_in_frame(pos, tgt, lens, ctr)
     face = float(os.environ.get('HALL_FACE', -3.5)) + math.degrees(math.atan2(pos.x - jar.x, jar.y - pos.y))              # этикетка смотрит на камеру («на нас»)
     yaw = face + SPIN * sm((pp - .06) / .56)                                          # раскручивается: за первые две трети пути — полный оборот, и снова лицом к нам
     glow = sm((pp - .30) / .55)
