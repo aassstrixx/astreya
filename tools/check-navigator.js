@@ -329,7 +329,7 @@ const wait = ms => new Promise(r => setTimeout(r, ms));
   const pages = ['index.html', 'catalog.html', 'brands.html', 'brands/' + D.brands[0].id + '.html', 'products/' + D.products[0].slug + '.html', 'training.html', 'training/' + D.events[0].slug + '.html', 'partners.html', 'contacts.html', 'company.html', 'news.html', 'search.html', '404.html'];
   p = await mk({speed: 14}); const miss = [], anchors = [];
   for (const u of pages) {
-    await p.goto(base + u); const s = await p.$('#sp-in'); if (s) { try { await s.click({timeout: 1200}); } catch (e) {} } await wait(1400);
+    await p.goto(base + u); const s = await p.$('#sp-in'); if (s) { try { await s.click({timeout: 1200}); } catch (e) {} } await p.waitForFunction(() => document.documentElement.classList.contains('ready'), null, {timeout: 30000}).catch(() => {}); await wait(1400);
     const has = await p.evaluate(() => { const e = document.querySelector('.g-entry'); return e ? {t: e.querySelector('b').textContent, chips: e.querySelectorAll('.chip').length, vis: e.getBoundingClientRect().width > 100} : null; });
     if (!has || !has.vis || has.chips < 1) miss.push(u); else anchors.push(u);
   }
