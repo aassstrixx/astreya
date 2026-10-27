@@ -94,7 +94,7 @@
     }
     function sphStart() { if (!sph.raf && sphWanted()) { sph.last = 0; sph.raf = requestAnimationFrame(sphLoop); } }
     function loadSphere() {                                                  // текстуры шара (цвет и нормали): после первых кадров, с низким приоритетом
-      if (!hall || !ds.sa || !ds.sn) return;
+      if (!hall || !hall.hasSphere || !ds.sa || !ds.sn) return;
       const g = gen;
       Promise.all([fetch(urlOf(ds.sa), {priority: 'low'}).then(r => r.blob()), fetch(urlOf(ds.sn), {priority: 'low'}).then(r => r.blob())])
         .then(bs => Promise.all(bs.map(b => createImageBitmap(b, {premultiplyAlpha: 'none', colorSpaceConversion: 'none'}))))

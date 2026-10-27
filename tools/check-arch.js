@@ -42,8 +42,9 @@ if (!J || !J.enabled || !A || !A.enabled) { console.log('Первый экран
   const rectsOk = r => r.length === N && r.every(a => a.length === 4 && a.every(v => v >= 0 && v <= 1) && a[0] + a[2] <= 1.0001 && a[1] + a[3] <= 1.0001 && a[2] > 0.02 && a[3] > 0.02);
   ok(rectsOk(JA.desktop.rects) && rectsOk(JA.mobile.rects), 'рамки спрайтов: по кадру, внутри кадра', [JA.desktop.rects.length, JA.mobile.rects.length]);
   const S = A.sphere, sOk = t => Array.isArray(t) && t.length === 3 && t[0] > 0.1 && t[0] < 0.9 && t[1] > 0.1 && t[1] < 0.8 && t[2] > 0.08 && t[2] < 0.5;
-  ok(sOk(S.desktop) && sOk(S.mobile) && !S.tex && !A.lit, 'шар: в данных только положение в готовом кадре (центр x, центр y, диаметр — доли кадра, компьютер и телефон); карт и освещённости живого шара нет', S);
-  ok(!fs.existsSync(pth.join(ROOT, 'js/sphere.js')) && ['sphere-a', 'sphere-n', 'stone-sphere'].every(f => !fs.existsSync(pth.join(ROOT, 'assets/jar-arch', f + '.webp'))), 'живого шара (js/sphere.js, карты, запасная картинка) больше нет — шар запечён в кадры');
+  ok(sOk(S.desktop) && sOk(S.mobile), 'шар: в данных положение в готовом кадре (центр x, центр y, диаметр — доли кадра, компьютер и телефон) — вокруг него орбиты', S);
+  ok(A.sphereTex && ['a', 'n'].every(k => A.sphereTex[k] && fs.existsSync(pth.join(ROOT, A.sphereTex[k]))) && !fs.existsSync(pth.join(ROOT, 'js/sphere.js')), 'живой шар: карты цвета и нормалей на месте (рисует js/jar-gl.js поверх запечённого шара кадров), отдельного js/sphere.js нет', A.sphereTex);
+  ok(Math.abs(S.desktop[1] - 0.426) < 0.03 && Math.abs(S.desktop[2] - 0.255) < 0.02, 'шар на ПК в готовом кадре стоит как в кадре-эталоне заказчика: центр по высоте ≈ 0,43, диаметр ≈ 0,255 ширины', S.desktop);
   ok(A.panel.items.length >= 3 && A.panel.title && J.cue, 'панель «Почему выбирают…» и подпись «Листайте» заполнены');
   ok(!fs.existsSync(pth.join(ROOT, 'assets/jar')) && !fs.existsSync(pth.join(ROOT, 'css/jar.css')) && !J.outro && !J.captions, 'старого вступления и экрана с лозунгом нет ни в файлах, ни в настройках');
   const html = fs.readFileSync(pth.join(ROOT, 'index.html'), 'utf8');
@@ -193,9 +194,22 @@ if (!J || !J.enabled || !A || !A.enabled) { console.log('Первый экран
     ok(/Подробнее/.test(v.moreTxt) && v.more && v.more.b <= H + 1, 'финал: в нижней панели есть кнопка «Подробнее» и она в экране', {t: v.moreTxt, r: v.more});
     ok(v.sw <= W + 1, 'нет горизонтальной прокрутки', [v.sw, W]);
     ok(v.gl && v.resident > 0 && v.loaded > 10, 'WebGL-движок работает: ключевые кадры загружены, текстуры в видеопамяти', {gl: v.gl, resident: v.resident, loaded: v.loaded});
-    const jc = await p.evaluate(() => { const c = document.querySelector('.ar-jar-cv'), w = document.querySelector('.ar-world'); return {cw: c.width, ww: w.clientWidth, dpr: window.devicePixelRatio || 1, pearl: !!document.querySelector('.ar-pearl, .ar-gl, .ar-poster'), webgl: !!(window.Astreya && window.Astreya.sphere)}; });
+    const jc = await p.evaluate(() => { const c = document.querySelector('.ar-jar-cv'), w = document.querySelector('.ar-world'); return {cw: c.width, ww: w.clientWidth, dpr: window.devicePixelRatio || 1, pearl: !!document.querySelector('.ar-pearl, .ar-gl, .ar-poster')}; });
     ok(jc.cw >= jc.ww * Math.min(jc.dpr, 2) * 0.99, 'баночка: холст рисуется в полном разрешении экрана (не мельче, чем пиксели устройства)', jc);
-    ok(!jc.pearl && !jc.webgl, 'живого шара на странице нет (ни холста, ни картинки, ни скрипта): шар — часть кадров зала', jc);
+    ok(!jc.pearl, 'отдельных холстов и картинок шара на странице нет: живой шар рисуется в том же холсте зала', jc);
+    /* живой шар: текстуры загружены, он сам медленно поворачивается, а курсор поворачивает его и двигает свет (на телефоне курсора нет — только собственное вращение) */
+    await wait(1500);
+    const sp0 = await p.evaluate(() => { const s = window.Astreya.jar.arch.state(); return s.sphere; });
+    ok(sp0 && sp0.ready, 'живой шар: карты загружены, шар включён', sp0);
+    if (!mobile) {
+      const sh1 = await p.evaluate(() => { const s = window.Astreya.jar.arch.state().sphere; return {yaw: s.yaw}; });
+      await p.mouse.move(W * 0.15, H * 0.8); await p.mouse.move(W * 0.2, H * 0.78); await wait(1300);
+      const sp1 = await p.evaluate(() => window.Astreya.jar.arch.state().sphere);
+      ok(sp1.cur[0] < -0.4 && sp1.cur[1] > 0.3 && Math.abs(sp1.yaw - sh1.yaw) > 0.02, 'живой шар: от курсора поворачивается и сдвигается свет (шар «подвижный»)', {sh1, sp1});
+      await p.mouse.move(W * 0.85, H * 0.2); await wait(900);
+      const sp2 = await p.evaluate(() => window.Astreya.jar.arch.state().sphere);
+      ok(sp2.cur[0] > 0.4 && sp2.cur[1] < -0.3, 'живой шар: курсор справа-вверху — шар отзывается в другую сторону', sp2);
+    }
     await shot(p, `arch-97-final-${mobile ? 'phone' : 'desktop'}`);
 
     /* ---- после сцены и обратная перемотка ---- */
