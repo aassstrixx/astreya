@@ -427,12 +427,25 @@ void main() {
   o = vec4(c, s.a) * uW;
 }`;
 
+  /* мягкая тень «парящей» баночки на заставке: тёмное размытое пятно под ней (рисуется ПОД спрайтом — только там, где баночка ещё не закрыла пиксель) — без неё баночка на ровном молочном фоне выглядит вырезанной картинкой */
+  const FS_G = `#version 300 es
+precision highp float;
+uniform float uA;
+in vec2 vUv;
+out vec4 o;
+void main() {
+  vec2 d = (vUv - 0.5) * 2.0;
+  float r = length(d);
+  float a = uA * exp(-3.4 * r * r) * (1.0 - smoothstep(0.62, 1.0, r));
+  o = vec4(vec3(0.30, 0.21, 0.14) * a, a);
+}`;
+
   function createJar(cv, cfg) {
     let gl = null;
     try { gl = cv.getContext('webgl2', {alpha: true, premultipliedAlpha: true, antialias: false, depth: false, stencil: false, powerPreference: 'high-performance', preserveDrawingBuffer: !!cfg.preserve}); } catch (e) { gl = null; }
     if (!gl) return null;
-    let PJ;
-    try { PJ = prog(gl, VS_J, FS_J); } catch (e) { console.warn('jar-gl (jar):', e.message); return null; }
+    let PJ, PG;
+    try { PJ = prog(gl, VS_J, FS_J); PG = prog(gl, VS_J, FS_G); } catch (e) { console.warn('jar-gl (jar):', e.message); return null; }
     const track = cfg.track.at ? cfg.track : camTrack(cfg.track), Phi = cfg.phi, N = Phi.length, portrait = !!cfg.portrait;
     const fAspect = cfg.frameAspect || (portrait ? 9 / 16 : 16 / 9);
     const asp = portrait ? [fAspect, 1] : [1, 1 / fAspect];
@@ -511,10 +524,17 @@ void main() {
         gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, sprites[k]); gl.uniform1i(u.uSprite, 0);
         gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
       }
+      if (opt.ground > 0.002) {                                                                // размеры и положение — по настоящим размерам баночки (не по рамке спрайта: она «дышит» при повороте)
+        const cc = proj(camP, center(camP)), S = 36 / camP.lens * cc.z, Rj = 3.65 * scale * jk / S, bj = cz * jk / (S * asp[1]);
+        const wu = 2.24 * Rj / asp[0], hv = 0.19 * wu * fAspect, cx = cc.u + 0.07 * wu, cy = cc.v + bj + 0.24 * bj + hv / 2;
+        gl.useProgram(PG.p); gl.blendFuncSeparate(gl.ONE_MINUS_DST_ALPHA, gl.ONE, gl.ONE_MINUS_DST_ALPHA, gl.ONE);
+        gl.uniform4f(PG.u.uRect, cx - wu / 2, cy - hv / 2, wu, hv); gl.uniform1f(PG.u.uA, opt.ground);
+        gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+      }
       gl.bindVertexArray(null); gl.disable(gl.BLEND);
       return true;
     }
-    function destroy(keepContext) { dead = true; for (let k = 0; k < N; k++) dropSprite(k); if (label) gl.deleteTexture(label); gl.deleteProgram(PJ.p); if (!keepContext) { try { const e = gl.getExtension('WEBGL_lose_context'); if (e) e.loseContext(); } catch (er) { /* — */ } } }
+    function destroy(keepContext) { dead = true; for (let k = 0; k < N; k++) dropSprite(k); if (label) gl.deleteTexture(label); gl.deleteProgram(PJ.p); gl.deleteProgram(PG.p); if (!keepContext) { try { const e = gl.getExtension('WEBGL_lose_context'); if (e) e.loseContext(); } catch (er) { /* — */ } } }
     return {gl, setSize, setSprite, dropSprite, hasSprite, setLabel, draw, destroy, place, proj};
   }
 

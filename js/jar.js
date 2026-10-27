@@ -43,7 +43,7 @@
     const ds = root.dataset, NH = +ds.n || 1, ext = ds.ext || 'webp', ver = ds.v ? '?v=' + ds.v : '';
     /* вид заставки (data/redesign.json → jar.arch.look): размер баночки на старте и живая тень (кадры до shadow.from тени не содержат — её рисует сайт по текущему положению баночки) */
     let look = {}; try { look = JSON.parse(ds.look || '{}') || {}; } catch (e) { look = {}; }
-    const LS = look.scale || {}, LSH = look.shadow || null;
+    const LS = look.scale || {}, LSH = look.shadow || null, LG = look.ground || null;
     const dead0 = () => { root.classList.add('jar-off'); return {root, complete: () => true, destroy() {}, state: () => ({})}; };
     if (!A.ArchGL || !cv || !jcv || typeof fetch !== 'function' || typeof createImageBitmap !== 'function' || !glOk()) return dead0();
     const nums = s => String(s || '').split(',').filter(x => x !== '').map(Number);
@@ -203,17 +203,24 @@
       return ((cy || (r[1] + r[3] / 2)) - 0.5) * (1 - x * x * (3 - 2 * x));        // положительное — вверх
     }
 
+    /* сила мягкой тени под парящей баночкой: на заставке (look.ground.amount), сходит на нет, когда баночка уходит со своего места — дальше её тень рисует зал (живая тень) */
+    function jarGround(p) {
+      if (!LG || !LG.amount) return 0;
+      const a = LG.from === undefined ? 0.1 : +LG.from, b = LG.to === undefined ? 0.4 : +LG.to, x = clamp((p - a) / (b - a), 0, 1);
+      return +LG.amount * (1 - x * x * (3 - 2 * x));
+    }
+
     /* ---- отрисовка ---- */
     function paint(now) {
       if (!hall) return false;
       const speed = Math.abs(vp) * (NH - 1);
-      const jk = jarK(cp), lift = jarLift(cp);
+      const jk = jarK(cp), lift = jarLift(cp), ground = jarGround(cp);
       const pair = hall.draw(cp, 0, speed > MOVING, {jk, lift});
       if (!pair) return false;
       lastDraw = {ka: pair.ka, kb: pair.kb, t: pair.t, single: !!pair.single};
       if (!firstDrawn) { firstDrawn = true; if (cp < 0.02) root.classList.add('ar-intro'); root.classList.add('ready'); }
       if (jar) {
-        const ok = jar.draw(cp, pair, {jk, lift});
+        const ok = jar.draw(cp, pair, {jk, lift, ground});
         if (ok && !jarShown) { jarShown = true; if (cp < 0.02) root.classList.add('ar-intro'); root.classList.add('jar-ready'); }
       }
       return true;
