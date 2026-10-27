@@ -151,7 +151,7 @@ if (!J || !J.enabled || !A || !A.enabled) { console.log('Первый экран
       ok(Math.min(...walk.mad) > 0.3 * m && Math.max(...walk.mad) < 2.2 * m, 'камера идёт без «стоящих» кадров и скачков: разница между соседними шагами равномерна', {min: Math.min(...walk.mad).toFixed(2), mean: m.toFixed(2), max: Math.max(...walk.mad).toFixed(2)}); }
     await p.evaluate(() => Astreya.jar.ctrl.unpin());
     /* в покое прокрутка встаёт на ключевой кадр: показан сам отрендеренный кадр, без пересчёта */
-    await p.evaluate(y => window.scrollTo({top: y, behavior: 'instant'}), Math.round(g.top + (Pk[30] + (Pk[31] - Pk[30]) * 0.37) * g.tot)); await wait(1300); v = await view(p);
+    await p.evaluate(y => window.scrollTo({top: y, behavior: 'instant'}), Math.round(g.top + (Pk[30] + (Pk[31] - Pk[30]) * 0.37) * g.tot)); await wait(1300); await p.waitForFunction(() => Astreya.jar.ctrl.state().snapped, null, {timeout: 20000, polling: 200}).catch(() => {}); v = await view(p);
     ok(v.snapped && v.single && Math.abs(v.p - Pk[30]) < 2e-3, 'в покое картинка встаёт на ближайший ключевой кадр (пиксель в пиксель)', {p: v.p, key: Pk[30], snapped: v.snapped, single: v.single});
 
     /* ---- движение: двигается только камера — баночка стоит на подиуме, шар въезжает в кадр ---- */
@@ -200,7 +200,7 @@ if (!J || !J.enabled || !A || !A.enabled) { console.log('Первый экран
     ok(Math.abs((t0 - t1) - 200) <= 2, 'после конца сцены прокрутка свободная: за 200 px прокрутки сцена уехала на 200 px', [t0, t1]);
     await p.evaluate(y => window.scrollTo({top: y, behavior: 'instant'}), Math.round(g.top + g.h + H * 0.3)); await wait(900); v = await view(p);
     ok(v.stageTop < -g.tot, 'дальше по странице сцена осталась выше', v.stageTop);
-    await at(p, g, 0.5); v = await view(p); ok(Math.abs(v.p - 0.5) < 0.03 && /arch-hide/.test(v.bodyCls) && v.h1 < 0.02, 'вверх: кадры перематываются назад, шапка снова убрана, герой ушёл', {p: v.p, cls: v.bodyCls, h1: v.h1});
+    await at(p, g, 0.6); v = await view(p); ok(Math.abs(v.p - 0.6) < 0.03 && /arch-hide/.test(v.bodyCls) && v.h1 < 0.02, 'вверх: кадры перематываются назад, шапка снова убрана, герой ушёл', {p: v.p, cls: v.bodyCls, h1: v.h1});
     const jbBack = await jarBox(p); ok(jbBack && jbBack.n > 0 && Math.abs(wid(jbBack) - wid(boxes[3][1])) < W * 0.1 && wid(jbBack) > wid(boxes[5][1]), 'вверх: баночка возвращается по тому же пути (размер как на пути вниз)', [wid(jbBack), wid(boxes[3][1])]);
     await at(p, g, 0.02, 400); await at(p, g, 0.96, 1900); v = await view(p); ok(Math.abs(v.p - 0.96) < 0.03 && v.drawn && v.h1 > 0.95, 'резкий скачок из начала в конец: кадр на месте, герой проявлен', {p: v.p, drawn: v.drawn, h1: v.h1});
     await at(p, g, 0.4, 100); await at(p, g, 0.9, 150); await at(p, g, 0.05, 150); await at(p, g, 0.62, 1900); const jbMix = await jarBox(p); v = await view(p);

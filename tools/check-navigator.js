@@ -33,6 +33,7 @@ const wait = ms => new Promise(r => setTimeout(r, ms));
     o = o || {}; const ctx = await b.newContext({viewport: o.mobile ? {width: 390, height: 844} : {width: o.w || 1280, height: o.h || 860}, isMobile: !!o.mobile, hasTouch: !!o.mobile, locale: 'ru-RU'}); await ctx.addInitScript(() => { document.addEventListener('DOMContentLoaded', () => { const d = document.querySelector('[data-shw-list]'); if (d) d.open = true; }); });
     await ctx.route(/^https:\/\/fonts\./, r => r.abort()); await ctx.route('**/astreya/**', r => r.continue({url: r.request().url().replace('/astreya/', '/')})); /* страница 404 ссылается на ресурсы с префиксом /astreya/ (адрес сайта на GitHub Pages) */
     await ctx.addInitScript(sp => { window.ASTREYA_MOTION_SPEED = sp; }, o.speed || 8);
+    await ctx.addInitScript(() => { window.__ASTREYA_GL_GRID = 0.25; });                       /* тестовый браузер рисует WebGL программно: сетка перепроекции мельче — кадр главной не задерживает рамку подсветки */
     const p = await ctx.newPage(); p.errs = []; p.on('pageerror', e => p.errs.push(e.message)); p.on('console', m => { if (m.type() === 'error' && !/ERR_FAILED|fonts\.|status of (429|503)|404 \(Not Found\)/.test(m.text())) p.errs.push(m.text()); }); p.on('response', r => { if (r.status() >= 400 && !/fonts\./.test(r.url()) && !/\/404\.html$|\/assets\/jar\//.test(r.url())) p.errs.push('HTTP ' + r.status() + ' ' + r.url()); });
     if (!o.ai) await p.route('**/api/assistant/status', r => r.fulfill({status: 200, contentType: 'application/json', body: '{"ai":false}'}));
     p.open = async url => { await p.goto(base + url); const s = await p.$('#sp-in'); if (s) { try { await s.click({timeout: 1500}); } catch (e) {} } await p.waitForSelector('#asst-fab.in', {timeout: 20000}); await wait(300); };
@@ -120,7 +121,7 @@ const wait = ms => new Promise(r => setTimeout(r, ms));
     let x = null; const t0 = Date.now();
     while (Date.now() - t0 < (ms || 40000)) {
       x = await snap();
-      if (x && x.page === pg && re.test(x.tx.replace(/\u00a0/g, ' '))) { let prev = x, cur = x; for (let k = 0; k < 28; k++) { await wait(250); cur = await snap(); if (!cur) return x; if (cur.page === pg && re.test(cur.tx.replace(/\u00a0/g, ' ')) && same(prev, cur)) return cur; prev = cur; } return cur; }
+      if (x && x.page === pg && re.test(x.tx.replace(/\u00a0/g, ' '))) { let prev = x, cur = x, run = 0; for (let k = 0; k < 40; k++) { await wait(250); cur = await snap(); if (!cur) return x; if (cur.page === pg && re.test(cur.tx.replace(/\u00a0/g, ' ')) && same(prev, cur)) { if (++run >= 3) return cur; } else run = 0; prev = cur; } return cur; }          /* рамка и карточка неподвижны три замера подряд: в тестовом браузере без видеокарты кадр главной задерживает переход рамки на следующий блок */
       await wait(150);
     }
     return x;
