@@ -51,7 +51,7 @@ def jar_centres(data_dir, td, tp):
 
 # вид заставки: scale — во сколько раз баночка меньше на старте (ПК, телефон; до p=from — постоянно, от from до to плавно возвращается к натуральной, пока камера отъезжает и она уходит к подиуму); liftFrom…liftTo — где сходит на нет подъём к центру экрана; shadow — с какого ключевого кадра тень баночки запечена в кадр (до него её рисует сайт, живую);
 # amount — сила живой тени, contact — затемнение у касания
-LOOK = {"scale": {"desktop": 0.58, "mobile": 0.70, "from": 0.46, "to": 0.62, "liftFrom": 0.10, "liftTo": 0.40}, "shadow": {"from": {"desktop": 49, "mobile": 0}, "amount": 1, "contact": 0.42, "veil": 0.26, "veilCut": 0.5}, "ground": {"amount": 0.24, "from": 0.10, "to": 0.40}}
+LOOK = {"scale": {"desktop": 0.58, "mobile": 0.70, "from": 0.46, "to": 0.62, "liftFrom": 0.10, "liftTo": 0.40}, "shadow": {"from": {"desktop": 49, "mobile": 0}, "amount": 1, "contact": 0.42, "veil": 0.26, "veilCut": 0.5}, "ground": {"amount": 0.24, "from": 0.10, "to": 0.40}, "halo": {"amount": 0.5, "from": 0.10, "to": 0.40}}
 
 
 def main():
@@ -85,6 +85,7 @@ def main():
       "depth": {"ext": "webp", "desktop": "assets/jar-arch/zd/", "mobile": "assets/jar-arch/zm/"},
       "cam": {"desktop": "assets/jar-arch/cam-d.json", "mobile": "assets/jar-arch/cam-m.json"},
       "label": "assets/jar-arch/label.webp",
+      "sphereTex": %s,
       "ink": %s,
       "heightVh": {"desktop": %d, "mobile": %d},
       "alt": "%s",
@@ -98,7 +99,7 @@ def main():
       "panel": %s,
       "p": %s
     }
-  }''' % (n, ink, arch['heightVh']['desktop'], arch['heightVh']['mobile'], arch['alt'].replace('"', '\\"'),
+  }''' % (n, arr(arch.get('sphereTex', {"a": "assets/jar-arch/sphere-a.webp", "n": "assets/jar-arch/sphere-n.webp"})), ink, arch['heightVh']['desktop'], arch['heightVh']['mobile'], arch['alt'].replace('"', '\\"'),
           arr(td['sphere']), arr(tp['sphere']),
           arr(td['rects']), arr(tp['rects']), look, panel, arr(P['p']))
     s = s[:i] + new + s[j:]

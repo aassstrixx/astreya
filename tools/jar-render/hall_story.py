@@ -77,7 +77,7 @@ SPHERE_DEPTH = {False: 1.78, True: 1.62}                                # на �
 
 LEAF = dict(leafk=float(os.environ.get('HALL_LEAFK', 1.0)), wk=float(os.environ.get('HALL_LEAFW', 1.0)), dens=float(os.environ.get('HALL_LEAFD', 1.0)))                  # листья оливы в зале: по эталону заказчика (кадр 26.10) — тонкие ветки оливы с узкими листьями; множители к настройкам BR.olive (1 — как в эталоне)
 TREES = os.environ.get('HALL_TREES', '0') == '1'                                                                                                                             # густые деревья в вазах (build_tree) — не по эталону: в кадре заказчика у вазы тонкая ветка, а сверху — ветки оливы
-SPHERE_LIVE = os.environ.get('HALL_SPHERE_LIVE', '1') == '1'                                                                                                                 # шар рисует сайт (живой, от курсора), а не кадры зала
+SPHERE_LIVE = os.environ.get('HALL_SPHERE_LIVE', '0') == '1'                                                                                                                 # 1 — убрать шар из кадров (не годится: скрытый от камеры шар оставляет на нише чёрный круг от своей тени); по умолчанию шар запечён в кадры, а сайт рисует поверх него живой шар в том же месте
 TREE_R = os.environ.get('HALL_TREE_R', '1') == '1'                                                                                                                          # пышная ветка (дерево) в вазе справа — по просьбе заказчика, как на телефоне
 LAB = os.environ.get('HALL_LAB', '0') == '1'                                                                                                                                 # «световая лаборатория» (кольца на полу и подиуме, упаковки на пороге ниши) — в эталоне заказчика их нет: пол ровный, полированный
 LOGO_PARTS = ('mountain',) if os.environ.get('HALL_BAND') == '0' else ('mountain', 'band')       # весь знак: две ножки горы с острыми кончиками и серп (волна) — как в логотипе
@@ -253,7 +253,7 @@ def build_decor(M, portrait):
     rock('boulder-b', (.86, -.46, 0), 35, 4, .60)
     rock('pebble-a', (.72, -.72, 0), 60, 5, 1.1)
     # ваза и олива справа (как у пилястры на референсе)
-    dxp = float(os.environ.get('HALL_DXP_P', .11)) if portrait else 0.0                                 # на телефоне вазу с деревом сдвигаем: ваза должна быть видна в кадре (иначе крона «висит» в воздухе)
+    dxp = float(os.environ.get('HALL_DXP_P', -.15)) if portrait else 0.0                                 # на телефоне вазу с деревом сдвигаем: ваза должна быть видна в кадре (иначе крона «висит» в воздухе)
     if TREE_R:                                                                                           # ваза справа с пышной веткой (олива с густой длинной листвой): на ПК и на телефоне — в одном месте сцены
         BR.vase((.98 + dxp, -.14, 0), .42, .095, M['ceramic'])
         build_tree(random.Random(77), (.98 + dxp, -.14, .36), .39, .98, lk=1.3, per=84, nb=32)
@@ -488,6 +488,16 @@ def build_lights(M):
         em = next(n for n in sb.data.materials[0].node_tree.nodes if n.type == 'EMISSION')
         sk = em.inputs['Strength'].links[0].from_node.inputs[1]                  # сила софтбокса — второй вход узла умножения
         S['scal'].append((sk, 'default_value', sk.default_value))
+    for name, size in (('jar_fill', 1.3), ('jar_rim', .9)):                      # свет только для слоя баночки (в остальных слоях выключен): мягкий заполняющий спереди и контровой сзади-сверху — баночка читается светлой и объёмной (HALL_JAR_FILL / HALL_JAR_RIM — сила)
+        ar = bpy.data.lights.new(name, 'AREA')
+        ar.energy = 0.0
+        ar.size = size
+        ar.size_y = size * .7
+        ar.color = tuple(float(v) for v in os.environ.get('HALL_JAR_LCOL', '1.0,.93,.80').split(','))
+        ao = bpy.data.objects.new(name, ar)
+        bpy.context.collection.objects.link(ao)
+        ao.visible_camera = False
+        S[name] = ao
     w = bpy.data.worlds.new('w')
     w.use_nodes = True
     bg = w.node_tree.nodes['Background']
@@ -642,6 +652,8 @@ JAR_WAY = [JAR_START, Vector((.12, -1.12, .40)), Vector((.46, -1.06, .27)), Vect
 CAM_END_L = (Vector((.02, -2.55, .36)), TARGET_MAIN_L, float(os.environ.get('HALL_LENS_L', 40.0)))     # общий план: фокусное 40, как в кадре-эталоне заказчика (26.10)
 CAM_END_P = (Vector((.292, -2.31, .40)), TARGET_MAIN_P, float(os.environ.get('HALL_LENS_P', 36.0)))
 LIT0 = 1.0                                                                           # свет зала постоянный: яркий, тёплый (полумрака и луча нет)
+JAR_LIGHT = {'jar_fill': 100.0, 'jar_rim': 80.0}                                      # свет баночки (Вт): задаётся после сравнения вариантов
+JAR_EXP = float(os.environ.get('HALL_JAR_EXP', 0.25))                                # добавка к экспозиции в слое баночки, EV
 SHADOW_FROM = int(os.environ.get('HALL_SHADOW_FROM', 49))                            # с этого кадра баночка уже стоит на подиуме: её тень запечена в кадры, а до него — живая тень на сайте (js/jar-gl.js)
 HOLD = float(os.environ.get('HALL_HOLD', .93))                                       # с этого положения сцена «держит» последний кадр (покой героя)
 SPIN = float(os.environ.get('HALL_SPIN', 360.0))                                     # на сколько градусов баночка раскручивается по пути (полный оборот — и этикетка снова смотрит на нас)
@@ -753,6 +765,13 @@ def apply_frame(i, total, portrait):
     place_camera(st['pos'], st['tgt'], st['lens'], portrait)
     S['jg'].location = st['jar']
     S['jg'].rotation_euler = Euler((0, 0, math.radians(st['yaw'])), 'XYZ')
+    ctr = st['jar'] + Vector((0, 0, JAR_CENTER_Z))                                     # свет баночки идёт за ней: заполняющий — со стороны камеры слева-сверху, контровой — сзади-сверху
+    to_cam = (st['pos'] - ctr).normalized(); right = to_cam.cross(Vector((0, 0, 1))).normalized()
+    for name, loc in (('jar_fill', ctr + to_cam * .75 - right * .30 + Vector((0, 0, .32))), ('jar_rim', ctr - to_cam * .55 + right * .15 + Vector((0, 0, .55)))):
+        lo = S.get(name)
+        if lo is not None:
+            lo.location = loc
+            lo.rotation_euler = (ctr - loc).to_track_quat('-Z', 'Y').to_euler()
     mat = S['led'].data.materials[0] if S['led'].data.materials else None
     if mat:
         for n in mat.node_tree.nodes:
@@ -780,10 +799,14 @@ def set_layer(layer):
             ob.visible_camera = ob in jar
         else:
             ob.visible_camera = was
+    for name, env in (('jar_fill', 'HALL_JAR_FILL'), ('jar_rim', 'HALL_JAR_RIM')):
+        lo = S.get(name)
+        if lo is not None:
+            lo.data.energy = float(os.environ.get(env, JAR_LIGHT[name])) if layer == 'jar' else 0.0
     set_jar_label(layer != 'jar' or os.environ.get('HALL_JAR_LABEL', '0') == '1')    # спрайт баночки — без этикетки (см. set_jar_label)
     sp = S.get('sphere')
     if sp is not None:                                                               # шар: в слое баночки — вырез (holdout): где он стоит перед баночкой, спрайт не рисуется, и она не «просвечивает» сквозь шар
-        sp.visible_camera = not (SPHERE_LIVE and layer == 'bg')                      # шар на сайте живой (js/jar-gl.js: луч–сфера, вращается и следует за курсором): в кадрах зала и в картах глубины его нет, но тень, отсвет и отражение в полу остаются запечёнными
+        sp.visible_camera = not (SPHERE_LIVE and layer == 'bg')                      # по умолчанию шар виден в кадрах и картах глубины; живой шар сайта (js/jar-gl.js: луч–сфера, вращается и следует за курсором) ложится ровно поверх него
         sp.is_holdout = layer == 'jar'
     sc = bpy.context.scene
     sc.render.film_transparent = layer == 'jar'
@@ -960,6 +983,7 @@ def render_jar(i, total, out, portrait, base, ss=2.0):
     apply_frame(i, total, portrait)
     set_layer('jar')
     sc = bpy.context.scene
+    sc.view_settings.exposure = float(os.environ.get('HALL_EXP', -.85)) + JAR_EXP
     rect = jar_rect()
     l, t, w, h = rect
     if not ss:                                                                       # auto: спрайт ≈ 1200 px по ширине при любом размере баночки в кадре (в готовом кадре она мелкая — передискретизация там до ×8), чётко и на экранах с удвоенной плотностью

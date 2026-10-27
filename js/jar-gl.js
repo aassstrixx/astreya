@@ -139,6 +139,68 @@ void main() {
   o = vec4(c, 1.0);
 }`;
 
+  /* живой каменный шар: рисуется поверх готового кадра зала (в кадрах его нет — только запечённые тень, отсвет и отражение в полу). Для каждого пикселя луч камеры пересекается со сферой;
+     если она ближе, чем то, что видно в зале (по картам глубины двух слоёв), пиксель — шар: цвет и нормали берутся из двух развёрток Blender (sphere-a / sphere-n: тот же камень, что запечён в тени),
+     свет считается на лету: сам вращается, от курсора поворачивается и «скользит» свет по порам. Края — аналитическое сглаживание по расстоянию луча до сферы (в покое FXAA не включается) */
+  const FS_S = `#version 300 es
+precision highp float; precision highp sampler2D;
+uniform sampler2D uTex, uDA, uDB, uSA, uSN;
+uniform vec2 uRes, uNF, uAsp, uCover;
+uniform vec3 uCP, uCF, uCR, uCU; uniform float uCL;
+uniform vec4 uSph;          // центр шара (м) и радиус (м)
+uniform mat3 uSM;           // поворот шара: объект → мир
+uniform vec2 uCur;          // курсор −1…1 (x вправо, y вниз): сдвигает свет
+uniform vec3 uTune;         // x — яркость, y — насыщенность, z — сила блика
+uniform vec4 uTune2;        // x — рассеянный свет, y — прямой свет, z — отсвет от пола, w — мягкость терминатора
+out vec4 o;
+int pr(float d) { return d < 0.9999 ? 2 : (d < 0.99997 ? 1 : (d < 1.0 ? 0 : -1)); }
+float lin(float d) { float zn = d * 2.0 - 1.0; return 2.0 * uNF.x * uNF.y / (uNF.y + uNF.x - zn * (uNF.y - uNF.x)); }
+void main() {
+  vec2 uv = gl_FragCoord.xy / uRes;
+  vec3 base = texture(uTex, uv).rgb;
+  vec2 n = uv * 2.0 - 1.0;
+  float kt = 2.0 * uCL / 36.0;
+  vec3 dr = uCF + uCR * (n.x * uAsp.x / (kt * uCover.x)) + uCU * (n.y * uAsp.y / (kt * uCover.y));
+  float dl = length(dr); vec3 d = dr / dl;
+  vec3 oc = uCP - uSph.xyz;
+  float b = dot(oc, d), c2 = dot(oc, oc), R = uSph.w;
+  float dc = sqrt(max(c2 - b * b, 0.0));                       // расстояние от центра шара до луча
+  float t0 = -b - sqrt(max(R * R - dc * dc, 0.0));
+  float zs = t0 * dot(d, uCF);                                  // глубина вдоль оси камеры — как в картах глубины
+  float pxw = max(t0, 0.1) * 2.0 * uAsp.y / (kt * uCover.y * uRes.y) / dl;   // размер пикселя на глубине шара, м
+  float cov = clamp((R - dc) / pxw + 0.5, 0.0, 1.0);
+  if (cov <= 0.0 || b > 0.0 || t0 <= 0.0) { o = vec4(base, 1.0); return; }
+  float dA = texture(uDA, uv).r, dB = texture(uDB, uv).r;
+  float zh = 1e9;
+  if (pr(dA) == 2) zh = min(zh, lin(dA));
+  if (pr(dB) == 2) zh = min(zh, lin(dB));
+  if (zh < zs - 0.02) { o = vec4(base, 1.0); return; }          // перед шаром стоит другой предмет зала (в кадрах шар запечён: его собственная глубина равна zs и шар не перекрывает)
+  vec3 P = uCP + d * t0;
+  vec3 N = normalize(P - uSph.xyz);
+  vec3 ob = transpose(uSM) * N;                                  // направление в осях шара (z — полюс)
+  vec2 tuv = vec2(atan(ob.y, ob.x) * 0.15915494 + 0.5, asin(clamp(ob.z, -1.0, 1.0)) * 0.31830989 + 0.5);
+  vec3 al = pow(texture(uSA, tuv).rgb, vec3(2.2));
+  vec3 nm = texture(uSN, tuv).rgb * 2.0 - 1.0;
+  vec3 T = normalize(cross(vec3(0.0, 0.0, 1.0), ob + vec3(1e-4, 0.0, 0.0))); vec3 B = cross(ob, T);
+  vec3 nb = normalize(uSM * normalize(T * nm.x + B * nm.y + ob * nm.z));
+  /* свет в осях экрана (x вправо, y вверх, z на зрителя), как у прежнего шара: сверху-слева-спереди; курсор сдвигает его */
+  vec3 Ls = normalize(vec3(-0.40 + uCur.x * 0.40, 0.34 - uCur.y * 0.26, 0.86));
+  vec3 L = normalize(uCR * Ls.x + uCU * Ls.y - uCF * Ls.z);
+  vec3 up = vec3(0.0, 0.0, 1.0);
+  float dg = dot(N, L), dn = dot(nb, L);
+  float w = clamp((mix(dg, dn, 0.72) + uTune2.w) / (1.0 + uTune2.w), 0.0, 1.0);
+  float key = pow(w, 1.15);
+  float ny = dot(N, uCU);
+  float bnc = 0.22 * pow(max(dot(N, normalize(-up * 0.80 + uCR * 0.30 - uCF * 0.45)), 0.0), 0.85);
+  vec3 col = al * ((uTune2.x + 0.10 * ny) * vec3(0.99, 0.95, 0.91) + key * uTune2.y * vec3(1.0, 0.96, 0.90) + bnc * uTune2.z * vec3(1.0, 0.82, 0.62));
+  col = mix(col, vec3(dot(col, vec3(0.3, 0.59, 0.11))), uTune.y);
+  col *= (0.90 + 0.10 * clamp(dot(N, -uCF), 0.0, 1.0)) * uTune.x;
+  vec3 h = normalize(L - d); col += vec3(1.0, 0.95, 0.88) * pow(max(dot(nb, h), 0.0), 26.0) * uTune.z * key;
+  col = col / (1.0 + 0.10 * col);
+  col = pow(col, vec3(1.0 / 2.2));
+  o = vec4(mix(base, col, cov), 1.0);
+}`;
+
   /* лёгкое сглаживание кромок (FXAA): только на резких границах — в движении у перепроецированных кромок ступеньки по сетке; в покое показывается ровный кадр и сглаживание не нужно */
   const FS_AA = `#version 300 es
 precision highp float; precision highp sampler2D;
@@ -216,14 +278,18 @@ void main() {
       gl = cv.getContext('webgl2', {alpha: false, antialias: false, depth: false, stencil: false, powerPreference: 'high-performance', preserveDrawingBuffer: !!cfg.preserve});
     } catch (e) { gl = null; }
     if (!gl) return null;
-    let P0, P1, P2, P3;
+    let P0, P1, P2, P3, P4 = null;
     try { P1 = prog(gl, VS, FS); P2 = prog(gl, VS_Q, FS_Q); P3 = prog(gl, VS_Q, FS_AA); P0 = prog(gl, VS_Q, FS_BK); } catch (e) { console.warn('jar-gl:', e.message); return null; }
+    if (cfg.sphere) { try { P4 = prog(gl, VS_Q, FS_S); } catch (e) { console.warn('jar-gl (sphere):', e.message); P4 = null; } }      // шар — необязательная часть: нет шейдера — кадры без него
     const track = camTrack(cfg.track), Phi = cfg.phi, N = Phi.length, portrait = !!cfg.portrait;
     const asp = portrait ? [cfg.frameAspect || 9 / 16, 1] : [1, 1 / (cfg.frameAspect || 16 / 9)];
     const fAspect = cfg.frameAspect || (portrait ? 9 / 16 : 16 / 9);
     const NF = [0.1, 40], disp = cfg.track.dispRange || [0.08, 4];
     const keys = new Array(N).fill(null);
-    let gridK = 1, W = 0, H = 0, gw = 0, gh = 0, ibo = null, nIdx = 0, fb = [null, null], comp = null, dead = false;
+    let gridK = 1, W = 0, H = 0, gw = 0, gh = 0, ibo = null, nIdx = 0, fb = [null, null], comp = null, comp2 = null, dead = false;
+    const sph = {a: null, n: null, ready: false, m: new Float32Array([1, 0, 0, 0, 1, 0, 0, 0, 1]), cur: [0, 0], tune: cfg.sphereTune || [1.0, 0.45, 0.05], tune2: cfg.sphereTune2 || [0.45, 0.60, 0.9, 0.5]};     // живой шар: текстуры, поворот, курсор, настройки яркости
+    let lastP = null;                                                                  // что было нарисовано последним (для перерисовки одного шара без перерисовки зала)
+    const camL = {pos: [0, 0, 0], f: [0, 1, 0], r: [1, 0, 0], u: [0, 0, 1], lens: 36};
     const vao = gl.createVertexArray();
 
     function mkTex(filter, wrap) {
@@ -264,6 +330,9 @@ void main() {
       fb.forEach(f => { if (f) { gl.deleteFramebuffer(f.f); gl.deleteTexture(f.color); gl.deleteTexture(f.depth); } });
       fb = [mkFB(), mkFB()];
       if (comp) { gl.deleteFramebuffer(comp.f); gl.deleteTexture(comp.color); }
+      if (comp2) { gl.deleteFramebuffer(comp2.f); gl.deleteTexture(comp2.color); comp2 = null; }
+      if (P4) { const color = mkTex(gl.LINEAR); gl.bindTexture(gl.TEXTURE_2D, color); gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA8, W, H, 0, gl.RGBA, gl.UNSIGNED_BYTE, null);
+        const f = gl.createFramebuffer(); gl.bindFramebuffer(gl.FRAMEBUFFER, f); gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, color, 0); gl.bindFramebuffer(gl.FRAMEBUFFER, null); comp2 = {f, color}; }
       { const color = mkTex(gl.LINEAR); gl.bindTexture(gl.TEXTURE_2D, color); gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA8, W, H, 0, gl.RGBA, gl.UNSIGNED_BYTE, null);
         const f = gl.createFramebuffer(); gl.bindFramebuffer(gl.FRAMEBUFFER, f); gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, color, 0); gl.bindFramebuffer(gl.FRAMEBUFFER, null); comp = {f, color}; }
       const g = cfg.grid || [480, 270], f = gridK;
@@ -320,6 +389,52 @@ void main() {
       gl.bindVertexArray(vao); gl.drawElements(gl.TRIANGLES, nIdx, gl.UNSIGNED_INT, 0); gl.bindVertexArray(null);
     }
 
+    /* шар: поверх готового кадра зала (comp), с учётом глубины обоих слоёв; target — холст (null) или промежуточный буфер для сглаживания */
+    function paintSphere(target, f1) {
+      gl.bindFramebuffer(gl.FRAMEBUFFER, target); gl.viewport(0, 0, W, H); gl.disable(gl.DEPTH_TEST); gl.disable(gl.BLEND);
+      gl.useProgram(P4.p); const u = P4.u;
+      gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, comp.color); gl.uniform1i(u.uTex, 0);
+      gl.activeTexture(gl.TEXTURE2); gl.bindTexture(gl.TEXTURE_2D, fb[0].depth); gl.uniform1i(u.uDA, 2);
+      gl.activeTexture(gl.TEXTURE3); gl.bindTexture(gl.TEXTURE_2D, fb[f1].depth); gl.uniform1i(u.uDB, 3);
+      gl.activeTexture(gl.TEXTURE4); gl.bindTexture(gl.TEXTURE_2D, sph.a); gl.uniform1i(u.uSA, 4);
+      gl.activeTexture(gl.TEXTURE5); gl.bindTexture(gl.TEXTURE_2D, sph.n); gl.uniform1i(u.uSN, 5);
+      gl.uniform2f(u.uRes, W, H); gl.uniform2f(u.uNF, NF[0], NF[1]); gl.uniform2f(u.uAsp, asp[0], asp[1]);
+      const cb = W / H; gl.uniform2f(u.uCover, Math.max(1, fAspect / cb), Math.max(1, cb / fAspect));
+      gl.uniform3fv(u.uCP, camL.pos); gl.uniform3fv(u.uCF, camL.f); gl.uniform3fv(u.uCR, camL.r); gl.uniform3fv(u.uCU, camL.u); gl.uniform1f(u.uCL, camL.lens);
+      gl.uniform4f(u.uSph, cfg.sphere.c[0], cfg.sphere.c[1], cfg.sphere.c[2], cfg.sphere.r);
+      gl.uniformMatrix3fv(u.uSM, false, sph.m); gl.uniform2f(u.uCur, sph.cur[0], sph.cur[1]); gl.uniform3fv(u.uTune, sph.tune); gl.uniform4fv(u.uTune2, sph.tune2);
+      gl.drawArrays(gl.TRIANGLES, 0, 3);
+    }
+    function presentAA(tex) {
+      gl.bindFramebuffer(gl.FRAMEBUFFER, null); gl.useProgram(P3.p);
+      gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, tex); gl.uniform1i(P3.u.uTex, 0); gl.uniform2f(P3.u.uRes, W, H);
+      gl.drawArrays(gl.TRIANGLES, 0, 3);
+    }
+    /* только шар (зал не перерисовывается): положение шара/свет изменились, а камера стоит — дёшево (один проход) */
+    function drawSphere() {
+      if (dead || !W || !lastP || !lastP.sphereOn || !P4 || !sph.ready) return false;
+      gl.bindVertexArray(vao);
+      paintSphere(lastP.useAA ? comp2.f : null, lastP.f1);
+      if (lastP.useAA) presentAA(comp2.color);
+      gl.bindVertexArray(null);
+      return true;
+    }
+    function setSphereTex(a, n) {
+      if (!P4 || dead) return false;
+      const mk2 = img => { const t = gl.createTexture(); gl.bindTexture(gl.TEXTURE_2D, t);
+        gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true); gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, false); gl.pixelStorei(gl.UNPACK_COLORSPACE_CONVERSION_WEBGL, gl.NONE);
+        gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA8, gl.RGBA, gl.UNSIGNED_BYTE, img); gl.generateMipmap(gl.TEXTURE_2D);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_LINEAR); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.REPEAT); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+        const ext = gl.getExtension('EXT_texture_filter_anisotropic'); if (ext) gl.texParameterf(gl.TEXTURE_2D, ext.TEXTURE_MAX_ANISOTROPY_EXT, 4);
+        gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, false); return t; };
+      if (sph.a) gl.deleteTexture(sph.a); if (sph.n) gl.deleteTexture(sph.n);
+      sph.a = mk2(a); sph.n = mk2(n); sph.ready = true;
+      return true;
+    }
+    /* поворот шара (3×3, по столбцам; объект → мир), курсор (−1…1) для света */
+    function setSphere(m, cx, cy) { if (m) sph.m.set(m); sph.cur[0] = cx || 0; sph.cur[1] = cy || 0; }
+
     /* рисует вид для положения p; rest ∈ [0,1] — «покой»: 1 — только ближайший кадр (пиксель в пиксель), 0 — плавное слияние двух.
        Возвращает {ka, kb, t} или null, если нужных кадров ещё нет */
     function draw(p, rest, aa, opt) {
@@ -345,8 +460,8 @@ void main() {
       const one = ka === kb ? ka : t <= 0.0005 ? ka : kb;
       const f1 = single ? 0 : 1;                                                 // кадр один (покой на кадре): второй слой не рисуем
       if (single) { layer(0, one, 0, sh); t = 0; } else { layer(0, ka, t, sh); layer(1, kb, t, sh); }
-      const useAA = !!aa && !single;
-      gl.bindFramebuffer(gl.FRAMEBUFFER, useAA ? comp.f : null); gl.viewport(0, 0, W, H); gl.disable(gl.DEPTH_TEST); gl.disable(gl.BLEND);
+      const useAA = !!aa && !single, sphereOn = !!(P4 && sph.ready && comp2);
+      gl.bindFramebuffer(gl.FRAMEBUFFER, useAA || sphereOn ? comp.f : null); gl.viewport(0, 0, W, H); gl.disable(gl.DEPTH_TEST); gl.disable(gl.BLEND);
       gl.useProgram(P2.p); const u = P2.u;
       gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, fb[0].color); gl.uniform1i(u.uCA, 0);
       gl.activeTexture(gl.TEXTURE1); gl.bindTexture(gl.TEXTURE_2D, fb[f1].color); gl.uniform1i(u.uCB, 1);
@@ -354,11 +469,10 @@ void main() {
       gl.activeTexture(gl.TEXTURE3); gl.bindTexture(gl.TEXTURE_2D, fb[f1].depth); gl.uniform1i(u.uDB, 3);
       gl.uniform2f(u.uRes, W, H); gl.uniform2f(u.uNF, NF[0], NF[1]); gl.uniform1f(u.uT, t);
       gl.bindVertexArray(vao); gl.drawArrays(gl.TRIANGLES, 0, 3);
-      if (useAA) {
-        gl.bindFramebuffer(gl.FRAMEBUFFER, null); gl.useProgram(P3.p);
-        gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, comp.color); gl.uniform1i(P3.u.uTex, 0); gl.uniform2f(P3.u.uRes, W, H);
-        gl.drawArrays(gl.TRIANGLES, 0, 3);
-      }
+      for (const k of ['pos', 'f', 'r', 'u']) camL[k] = camT[k].slice(); camL.lens = camT.lens;
+      lastP = {f1, useAA, sphereOn};
+      if (sphereOn) paintSphere(useAA ? comp2.f : null, f1);
+      if (useAA) { presentAA(sphereOn ? comp2.color : comp.color); }
       gl.bindVertexArray(null);
       return {ka, kb, t: single ? (one === kb && ka !== kb ? 1 : 0) : t, single};
     }
@@ -367,10 +481,12 @@ void main() {
       for (let k = 0; k < N; k++) dropKey(k);
       fb.forEach(f => { if (f) { gl.deleteFramebuffer(f.f); gl.deleteTexture(f.color); gl.deleteTexture(f.depth); } });
       if (comp) { gl.deleteFramebuffer(comp.f); gl.deleteTexture(comp.color); }
-      if (ibo) gl.deleteBuffer(ibo); [P0, P1, P2, P3].forEach(q => q && gl.deleteProgram(q.p));
+      if (comp2) { gl.deleteFramebuffer(comp2.f); gl.deleteTexture(comp2.color); }
+      if (sph.a) gl.deleteTexture(sph.a); if (sph.n) gl.deleteTexture(sph.n);
+      if (ibo) gl.deleteBuffer(ibo); [P0, P1, P2, P3, P4].forEach(q => q && gl.deleteProgram(q.p));
       if (!keepContext) { try { const ext = gl.getExtension('WEBGL_lose_context'); if (ext) ext.loseContext(); } catch (e) { /* — */ } }
     }
-    return {gl, setSize, setKey, dropKey, hasKey, draw, destroy, setGridScale, camAt: p => track.at(p, {}), keys, get size() { return [W, H]; }};
+    return {gl, setSize, setKey, dropKey, hasKey, draw, drawSphere, setSphereTex, setSphere, destroy, setGridScale, get sphereReady() { return !!(P4 && sph.ready); }, camAt: p => track.at(p, {}), keys, get size() { return [W, H]; }};
   }
 
 
@@ -440,12 +556,25 @@ void main() {
   o = vec4(vec3(0.30, 0.21, 0.14) * a, a);
 }`;
 
+  /* мягкое тёплое свечение вокруг баночки на заставке (рисуется ПОД спрайтом и только там, где баночка не закрывает фон): баночка не «тонет» в бежевом, у неё есть светлый ореол */
+  const FS_H = `#version 300 es
+precision highp float;
+uniform float uA;
+in vec2 vUv;
+out vec4 o;
+void main() {
+  vec2 d = (vUv - 0.5) * 2.0;
+  float r = length(d);
+  float a = uA * exp(-2.6 * r * r) * (1.0 - smoothstep(0.7, 1.0, r));
+  o = vec4(vec3(1.0, 0.972, 0.905) * a, a);
+}`;
+
   function createJar(cv, cfg) {
     let gl = null;
     try { gl = cv.getContext('webgl2', {alpha: true, premultipliedAlpha: true, antialias: false, depth: false, stencil: false, powerPreference: 'high-performance', preserveDrawingBuffer: !!cfg.preserve}); } catch (e) { gl = null; }
     if (!gl) return null;
-    let PJ, PG;
-    try { PJ = prog(gl, VS_J, FS_J); PG = prog(gl, VS_J, FS_G); } catch (e) { console.warn('jar-gl (jar):', e.message); return null; }
+    let PJ, PG, PH;
+    try { PJ = prog(gl, VS_J, FS_J); PG = prog(gl, VS_J, FS_G); PH = prog(gl, VS_J, FS_H); } catch (e) { console.warn('jar-gl (jar):', e.message); return null; }
     const track = cfg.track.at ? cfg.track : camTrack(cfg.track), Phi = cfg.phi, N = Phi.length, portrait = !!cfg.portrait;
     const fAspect = cfg.frameAspect || (portrait ? 9 / 16 : 16 / 9);
     const asp = portrait ? [fAspect, 1] : [1, 1 / fAspect];
@@ -531,10 +660,17 @@ void main() {
         gl.uniform4f(PG.u.uRect, cx - wu / 2, cy - hv / 2, wu, hv); gl.uniform1f(PG.u.uA, opt.ground);
         gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
       }
+      if (opt.halo > 0.002) {                                                                  // свечение: круг вокруг баночки, в 2,4 раза шире её корпуса
+        const cc = proj(camP, center(camP)), S = 36 / camP.lens * cc.z, Rj = 3.65 * scale * jk / S;
+        const wu = 4.8 * Rj / asp[0], hv = wu * fAspect * 0.82;
+        gl.useProgram(PH.p); gl.blendFuncSeparate(gl.ONE_MINUS_DST_ALPHA, gl.ONE, gl.ONE_MINUS_DST_ALPHA, gl.ONE);
+        gl.uniform4f(PH.u.uRect, cc.u - wu / 2, cc.v - hv / 2, wu, hv); gl.uniform1f(PH.u.uA, opt.halo);
+        gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+      }
       gl.bindVertexArray(null); gl.disable(gl.BLEND);
       return true;
     }
-    function destroy(keepContext) { dead = true; for (let k = 0; k < N; k++) dropSprite(k); if (label) gl.deleteTexture(label); gl.deleteProgram(PJ.p); gl.deleteProgram(PG.p); if (!keepContext) { try { const e = gl.getExtension('WEBGL_lose_context'); if (e) e.loseContext(); } catch (er) { /* — */ } } }
+    function destroy(keepContext) { dead = true; for (let k = 0; k < N; k++) dropSprite(k); if (label) gl.deleteTexture(label); gl.deleteProgram(PJ.p); gl.deleteProgram(PG.p); gl.deleteProgram(PH.p); if (!keepContext) { try { const e = gl.getExtension('WEBGL_lose_context'); if (e) e.loseContext(); } catch (er) { /* — */ } } }
     return {gl, setSize, setSprite, dropSprite, hasSprite, setLabel, draw, destroy, place, proj};
   }
 

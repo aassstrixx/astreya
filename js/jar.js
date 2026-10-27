@@ -43,7 +43,7 @@
     const ds = root.dataset, NH = +ds.n || 1, ext = ds.ext || 'webp', ver = ds.v ? '?v=' + ds.v : '';
     /* вид заставки (data/redesign.json → jar.arch.look): размер баночки на старте и живая тень (кадры до shadow.from тени не содержат — её рисует сайт по текущему положению баночки) */
     let look = {}; try { look = JSON.parse(ds.look || '{}') || {}; } catch (e) { look = {}; }
-    const LS = look.scale || {}, LSH = look.shadow || null, LG = look.ground || null;
+    const LS = look.scale || {}, LSH = look.shadow || null, LG = look.ground || null, LH = look.halo || null;
     const dead0 = () => { root.classList.add('jar-off'); return {root, complete: () => true, destroy() {}, state: () => ({})}; };
     if (!A.ArchGL || !cv || !jcv || typeof fetch !== 'function' || typeof createImageBitmap !== 'function' || !glOk()) return dead0();
     const nums = s => String(s || '').split(',').filter(x => x !== '').map(Number);
@@ -65,6 +65,49 @@
     let dtEma = 16.7, minDt = 16.7, slowRun = 0, govChanges = 0;
     const perfRing = new Float32Array(240); let perfN = 0;
     let dirSign = 1;
+
+    /* ---- живой шар: сам медленно вращается, за курсором поворачивается и «скользит» свет по порам (js/jar-gl.js рисует его поверх кадра зала) ---- */
+    const reduceMQ = window.matchMedia('(prefers-reduced-motion: reduce)');
+    const sph = {yaw: 0.6, pitch: -0.12, hx: 0, hy: 0, ty: 0, tp: 0, lx: 0, ly: 0, raf: 0, last: 0, view: false, fed: false};
+    function sphMat() {                                                      // объект → мир: сначала вращение вокруг вертикали (полюс шара стоит вертикально), затем наклон от курсора
+      const y = sph.yaw + sph.ty, p = sph.pitch + sph.tp, cy = Math.cos(y), sy = Math.sin(y), cp_ = Math.cos(p), sp_ = Math.sin(p);
+      return [cy, sy * cp_, sy * sp_,   -sy, cy * cp_, cy * sp_,   0, -sp_, cp_];      // Rx(p)·Rz(y), по столбцам
+    }
+    function sphPush() { if (hall) hall.setSphere(sphMat(), sph.lx, sph.ly); }
+    function sphStep(dt) {
+      if (!reduceMQ.matches) sph.yaw += dt * 0.13;                            // ≈ 7,5°/с
+      sph.ty += (sph.hx * 1.05 - sph.ty) * Math.min(1, dt * 3); sph.tp += (sph.hy * 0.28 - sph.tp) * Math.min(1, dt * 3);
+      sph.lx += (sph.hx - sph.lx) * Math.min(1, dt * 2.4); sph.ly += (sph.hy - sph.ly) * Math.min(1, dt * 2.4);
+      sphPush();
+    }
+    function sphWanted() { return !!hall && hall.sphereReady && sph.view && !document.hidden && cp > 0.3 && !reduceMQ.matches && !document.documentElement.classList.contains('anim-off'); }
+    function sphLoop(t) {
+      sph.raf = 0;
+      if (!sphWanted() || dead) { sph.last = 0; return; }
+      const gap = isPortrait() ? 33 : 21;
+      if (!sph.last || t - sph.last >= gap) {
+        const dt = sph.last ? Math.min(0.08, (t - sph.last) / 1000) : 0.016; sph.last = t;
+        sphStep(dt);
+        if (!running) hall.drawSphere();                                      // зал стоит — перерисовываем один шар; идёт прокрутка — шар нарисует обычный цикл
+      }
+      sph.raf = requestAnimationFrame(sphLoop);
+    }
+    function sphStart() { if (!sph.raf && sphWanted()) { sph.last = 0; sph.raf = requestAnimationFrame(sphLoop); } }
+    function loadSphere() {                                                  // текстуры шара (цвет и нормали): после первых кадров, с низким приоритетом
+      if (!hall || !ds.sa || !ds.sn) return;
+      const g = gen;
+      Promise.all([fetch(urlOf(ds.sa), {priority: 'low'}).then(r => r.blob()), fetch(urlOf(ds.sn), {priority: 'low'}).then(r => r.blob())])
+        .then(bs => Promise.all(bs.map(b => createImageBitmap(b, {premultiplyAlpha: 'none', colorSpaceConversion: 'none'}))))
+        .then(([a, n]) => { if (g === gen && hall && !dead && hall.setSphereTex(a, n)) { sphPush(); dirty = true; schedule(); sphStart(); } try { a.close(); n.close(); } catch (e) { /* — */ } })
+        .catch(() => {});
+    }
+    const onPointer = e => {
+      if (e.pointerType && e.pointerType !== 'mouse') return;
+      sph.hx = clamp(e.clientX / innerWidth * 2 - 1, -1, 1); sph.hy = clamp(e.clientY / innerHeight * 2 - 1, -1, 1);
+      sphStart();
+    };
+    addEventListener('pointermove', onPointer, {passive: true});
+    document.addEventListener('visibilitychange', sphStart);
 
     /* ---- данные ключевых кадров: сжатые файлы (Blob) всегда, текстуры — только рядом с положением ---- */
     const blobs = {c: new Array(NH).fill(null), z: new Array(NH).fill(null), j: new Array(NH).fill(null)};
@@ -154,13 +197,14 @@
       if (dead || key !== dirOf()) return;
       track = tr;
       const fa = key === 'm' ? 9 / 16 : 16 / 9;
-      hall = A.ArchGL.createHall(cv, {track: tr, phi: Phi, portrait: key === 'm', frameAspect: fa, grid: (key === 'm' ? [450, 800] : [960, 540]).map(v => Math.max(60, Math.round(v * (window.__ASTREYA_GL_GRID || 1)))), stretch: 0.4, preserve: PRESERVE,
+      hall = A.ArchGL.createHall(cv, {track: tr, sphere: tr.sphere3d && ds.sa && ds.sn ? {c: tr.sphere3d.slice(0, 3), r: tr.sphere3d[3]} : null, phi: Phi, portrait: key === 'm', frameAspect: fa, grid: (key === 'm' ? [450, 800] : [960, 540]).map(v => Math.max(60, Math.round(v * (window.__ASTREYA_GL_GRID || 1)))), stretch: 0.4, preserve: PRESERVE,
         shadowFrom: LSH ? +(LSH.from && typeof LSH.from === 'object' ? LSH.from[key === 'm' ? 'mobile' : 'desktop'] : LSH.from) || 0 : 0, shadowAmount: LSH && LSH.amount !== undefined ? +LSH.amount : 1, contact: LSH && LSH.contact !== undefined ? +LSH.contact : 0.42,
         veil: LSH && +LSH.veil || 0, veilCut: LSH && +LSH.veilCut || 0});
       const rects = JR[key === 'm' ? 1 : 0];
       jar = rects.length === NH ? A.ArchGL.createJar(jcv, {track: tr, phi: Phi, rects, portrait: key === 'm', frameAspect: fa, ink: +ds.ink || 0.43, preserve: PRESERVE}) : null;
       if (!hall) { root.classList.add('jar-off'); dead = true; return; }
       hall.setSize(W, H); JW = JH = 0; sizeJar();
+      loadSphere();
       if (jar && ds.lbl) bmp(await (await fetch(urlOf(ds.lbl))).blob(), false).then(b => { if (jar) { jar.setLabel(b); labelReady = true; dirty = true; schedule(); } }).catch(() => {});
       cv.addEventListener('webglcontextlost', e => { e.preventDefault(); hall = null; jar = null; resident.fill(0); resJ.fill(0); }, false);
       cv.addEventListener('webglcontextrestored', () => { if (!dead) initGL().catch(() => {}); }, false);
@@ -210,17 +254,25 @@
       return +LG.amount * (1 - x * x * (3 - 2 * x));
     }
 
+    /* свечение вокруг баночки: на заставке (look.halo.amount), сходит на нет вместе с мягкой тенью — дальше баночка уже в зале и подсвечена самой сценой */
+    function jarHalo(p) {
+      if (!LH || !LH.amount) return 0;
+      const a = LH.from === undefined ? 0.1 : +LH.from, b = LH.to === undefined ? 0.4 : +LH.to, x = clamp((p - a) / (b - a), 0, 1);
+      return +LH.amount * (1 - x * x * (3 - 2 * x));
+    }
+
     /* ---- отрисовка ---- */
     function paint(now) {
       if (!hall) return false;
       const speed = Math.abs(vp) * (NH - 1);
-      const jk = jarK(cp), lift = jarLift(cp), ground = jarGround(cp);
+      const jk = jarK(cp), lift = jarLift(cp), ground = jarGround(cp), halo = jarHalo(cp);
+      sphPush();
       const pair = hall.draw(cp, 0, speed > MOVING, {jk, lift});
       if (!pair) return false;
       lastDraw = {ka: pair.ka, kb: pair.kb, t: pair.t, single: !!pair.single};
       if (!firstDrawn) { firstDrawn = true; if (cp < 0.02) root.classList.add('ar-intro'); root.classList.add('ready'); }
       if (jar) {
-        const ok = jar.draw(cp, pair, {jk, lift, ground});
+        const ok = jar.draw(cp, pair, {jk, lift, ground, halo});
         if (ok && !jarShown) { jarShown = true; if (cp < 0.02) root.classList.add('ar-intro'); root.classList.add('jar-ready'); }
       }
       return true;
@@ -277,6 +329,7 @@
       cp = clamp(cp, 0, 1);
       if (Math.abs(vp) > 1e-3) dirSign = vp > 0 ? 1 : -1;
       const inView = y + vh > sTop && y < sTop + sH;
+      if (inView !== sph.view) { sph.view = inView; if (inView) sphStart(); }
       /* регулятор нагрузки: кадры идут дольше бюджета — холст чуть меньше (не чаще раза в 1,5 с) */
       if (inView && Math.abs(vp) * (NH - 1) > MOVING && dtRaw > 0) {
         const dtc = Math.min(dtRaw, 80); minDt = Math.max(5, Math.min(minDt + 0.004, dtc));
@@ -319,6 +372,7 @@
     function destroyGL() {
       gen++; clearTimeout(rzTimer); if (ro) ro.disconnect();
       removeEventListener('scroll', onScroll); removeEventListener('resize', onResize); removeEventListener('load', onLoad);
+      removeEventListener('pointermove', onPointer); document.removeEventListener('visibilitychange', sphStart); if (sph.raf) cancelAnimationFrame(sph.raf); sph.raf = 0;
       portraitMQ.removeEventListener && portraitMQ.removeEventListener('change', onMQ);
       if (hall) hall.destroy(false); if (jar) jar.destroy(false); hall = jar = null;
       document.body.classList.remove('arch-hide', 'arch-nav', 'arch-live', 'arch-top');
@@ -342,6 +396,7 @@
         let res = 0, resj = 0; for (let k = 0; k < NH; k++) { res += resident[k]; resj += resJ[k]; }
         return {p: cp, pTarget: pT, u: uOf(), N: NH, loaded: loadedKeys, set, gl: !!hall, drawn: lastDraw, firstDrawn, resident: res, residentJar: resj, resScale, govChanges, snapped: vp === 0 && Math.abs(cp - Phi[kNear(cp)]) < 1e-5,
           jar: {loaded: blobs.j.filter(Boolean).length, n: NH, shown: jarShown, sprites: resj, label: labelReady},
+          sphere: {ready: !!(hall && hall.sphereReady), yaw: sph.yaw, cur: [sph.hx, sph.hy], running: !!sph.raf},
           size: [W, H, JW, JH], perf: {n: perfN, mean: ring.length ? ring.reduce((s, v) => s + v, 0) / ring.length : 0, p95: ring.length ? ring[Math.floor(ring.length * 0.95)] : 0, max: ring.length ? ring[ring.length - 1] : 0}};
       },
       destroy() { dead = true; destroyGL(); for (const k in blobs) blobs[k].fill(null); }
