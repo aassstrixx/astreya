@@ -5,6 +5,7 @@ track-p.json от hall_story.py track) и положение неподвижн�
     python3 apply_arch.py --p ../../assets/jar-arch/p-d.json --track-d /tmp/track-d.json --track-p /tmp/track-p.json [--ink 0.5] [--redesign ../../data/redesign.json]
 """
 import json
+import os
 import sys
 
 
@@ -35,6 +36,24 @@ def arr(a):
     return json.dumps(a, separators=(',', ':'), ensure_ascii=False)
 
 
+def jar_centres(data_dir, td, tp):
+    """видимый центр баночки по вертикали в долях кадра на первом кадре: рамка спрайта (rects[0]) × доля непрозрачных строк спрайта j/000.webp (ПК) и jm/000.webp (телефон)"""
+    import numpy as np
+    from PIL import Image
+    out = []
+    for d, tr in (('j', td), ('jm', tp)):
+        a = np.asarray(Image.open(os.path.join(data_dir, '..', 'assets', 'jar-arch', d, '000.webp')).convert('RGBA'))[..., 3]
+        ys = np.where((a > 40).any(1))[0]
+        r = tr['rects'][0]
+        out.append(round(r[1] + r[3] * (ys.min() + ys.max() + 1) / 2 / a.shape[0], 4))
+    return out
+
+
+# вид заставки: scale — во сколько раз баночка меньше на старте (ПК, телефон; растёт до натуральной от p=from до p=to, дальше камера отъезжает сама); shadow — с какого ключевого кадра тень баночки запечена в кадр (до него её рисует сайт, живую);
+# amount — сила живой тени, contact — затемнение у касания
+LOOK = {"scale": {"desktop": 0.58, "mobile": 0.70, "from": 0.12, "to": 0.60}, "shadow": {"from": 49, "amount": 1, "contact": 0.42, "veil": 0.26, "veilCut": 0.5}}
+
+
 def main():
     a = sys.argv[1:]
     opt = lambda k, d=None: a[a.index(k) + 1] if k in a else d
@@ -49,6 +68,9 @@ def main():
     n = len(P['p'])
     panel = json.dumps(arch['panel'], ensure_ascii=False, indent=2).replace('\n', '\n      ')
     ink = float(opt('--ink', arch.get('ink', 0.43)))
+    look = dict(arch.get('look', LOOK))
+    look['center'] = jar_centres(os.path.dirname(os.path.abspath(path)), td, tp)                    # где у баночки в первом кадре её видимый центр (по прозрачности спрайта): заставка ставит его ровно в середину экрана
+    look = json.dumps(look, ensure_ascii=False)                                   # вид заставки (размер баночки, живая тень) — правится вручную в redesign.json и сохраняется
     new = '''"jar": {
     "_note": "Первый экран главной (data-mode=arch, js/jar.js + js/jar-gl.js, WebGL2): закреплённая сцена — зал с арками (Blender, tools/jar-render/hall_story.py → encode_arch.py / encode_depth.py → assets/jar-arch). Заставка: баночка крупно по центру на светлом бежевом фоне (первые кадры зала закрыты светлым размытием), внизу «Листайте»; по прокрутке она раскручивается (полный оборот) и дугой уходит на свой подиум, камера отъезжает к общему плану, затем поверх встаёт герой. Кадры зала — ключевые (набор d/m) с картами глубины (zd/zm); для любого положения прокрутки два соседних кадра перепроецируются на камеру по дорожке камеры (cam-d/cam-m) — ни двоения, ни дребезга, одинаковая чёткость в движении и в покое. Баночка — отдельный слой: спрайт без этикетки (j/jm) + надписи этикетки (label.webp) рисуются по геометрии цилиндра, поэтому вращение плавное. Каменный шар запечён в кадры. Выключить: enabled=false (останется прежний герой с шаром и орбитами), затем node tools/build.js.",
     "enabled": true,
@@ -72,12 +94,13 @@ def main():
         "desktop": {"dir": "assets/jar-arch/j/", "rects": %s},
         "mobile": {"dir": "assets/jar-arch/jm/", "rects": %s}
       },
+      "look": %s,
       "panel": %s,
       "p": %s
     }
   }''' % (n, ink, arch['heightVh']['desktop'], arch['heightVh']['mobile'], arch['alt'].replace('"', '\\"'),
           arr(td['sphere']), arr(tp['sphere']),
-          arr(td['rects']), arr(tp['rects']), panel, arr(P['p']))
+          arr(td['rects']), arr(tp['rects']), look, panel, arr(P['p']))
     s = s[:i] + new + s[j:]
     json.loads(s)
     open(path, 'w', encoding='utf8').write(s)

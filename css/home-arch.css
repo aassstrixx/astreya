@@ -5,6 +5,7 @@
 
 /* ============ 1. Архитектурный первый экран ============ */
 .arch-story{position:relative;height:var(--jh,420vh);margin:0;background:var(--milk)}
+.arch-story:not(.jar-off){margin-top:calc((var(--hdr) + 1px) * -1)}      /* шапка закреплена в потоке: без этого над кадром оставалась полоса цвета страницы («белая панель»), а нижний край заставки уходил за экран; кадр зала идёт с самого верха, шапка прозрачная поверх него */
 .js-stage{position:sticky;top:0;height:100vh;height:100lvh;overflow:hidden;background:var(--milk);isolation:isolate}
 .js-cv{position:absolute;inset:0;width:100%;height:100%;display:block;object-fit:cover;opacity:0;transition:opacity .9s ease}      /* cover: если размер холста устарел, картинка обрежется, но не растянется */
 .jar-story.ready .js-cv{opacity:1}
@@ -30,8 +31,10 @@
 /* «Листайте» — полоска заставки внизу сцены; гаснет с первой прокруткой (--cue) */
 .ar-cue{position:absolute;left:50%;bottom:clamp(20px,4.4vh,40px);z-index:2;transform:translateX(-50%);display:flex;flex-direction:column;align-items:center;gap:12px;
   color:var(--navy);font:600 11px/1 var(--sans);letter-spacing:.3em;text-transform:uppercase;opacity:var(--cue,1);pointer-events:none}
-.ar-cue i{display:block;width:1px;height:40px;background:linear-gradient(var(--navy),transparent);transform-origin:top;animation:jarCue 1.9s ease-in-out 6}
-@keyframes jarCue{0%{transform:scaleY(0);opacity:0}40%{opacity:1}100%{transform:scaleY(1);opacity:0}}
+.ar-cue i{position:relative;display:block;width:2px;height:56px;border-radius:2px;overflow:hidden;background:linear-gradient(180deg,rgba(11,26,51,.58),rgba(11,26,51,.22))}
+.ar-cue i::after{content:"";position:absolute;left:0;right:0;top:0;height:55%;border-radius:2px;background:linear-gradient(180deg,rgba(255,252,244,0),rgba(255,252,244,.98) 55%,rgba(255,252,244,0));transform:translate3d(0,-100%,0);animation:jarCue 1.9s cubic-bezier(.45,0,.35,1) infinite}      /* по полоске сверху вниз проходит свет — подсказка, что сцену надо листать */
+@keyframes jarCue{0%{transform:translate3d(0,-100%,0)}70%,100%{transform:translate3d(0,185%,0)}}
+@media (prefers-reduced-motion:reduce){.ar-cue i::after{animation:none;transform:translate3d(0,40%,0)}}
 
 .ar-copy{position:absolute;z-index:2;left:max(var(--gut),calc(var(--ar-x) - clamp(24px,4.4vw,86px)),calc(50% + (var(--arch-r,.193) + var(--arch-m,.016) - .5) * var(--ww)));top:calc(var(--hdr) + clamp(20px,8.6vh,120px));width:clamp(320px,33%,560px)}
 .ar-copy .eyebrow{margin:0}
@@ -112,7 +115,6 @@ html:not(.js) .arch-story{display:none;margin:0}
 }
 @media (prefers-reduced-motion:reduce){
   .ar-e,.ar-h,.ar-lead,.ar-cta,.ar-panel{transform:none}
-  .ar-cue i{animation:none}
   .arch-story.ar-intro.ready .js-cv,.arch-story.ar-intro.jar-ready .ar-jar-cv{animation:none}
 }
 

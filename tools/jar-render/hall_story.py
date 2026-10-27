@@ -251,14 +251,55 @@ def build_decor(M, portrait):
     # ваза и олива справа (как у пилястры на референсе)
     dxp = .11 if portrait else 0.0                                                                     # на телефоне вазу с деревом сдвигаем вправо: в узкий кадр заходит только край кроны
     BR.vase((.98 + dxp, -.14, 0), .42, .095, M['ceramic'])                                               # ваза повыше: ствол не торчит палкой из-под серпа, крона растёт прямо из горлышка
-    build_tree(random.Random(77), (.96 + dxp, -.12, .45), .30, .98, lk=1.3, per=84, nb=32)                                     # на вазе справа — пышное дерево (олива с густой длинной листвой): низкий ствол и широкая густая крона, верх уходит за край кадра
+    build_tree(random.Random(77), (.98 + dxp, -.14, .36), .39, .98, lk=1.3, per=84, nb=32)                                     # на вазе справа — пышное дерево (олива с густой длинной листвой): низкий ствол и широкая густая крона, верх уходит за край кадра
     # олива на переднем плане слева — сама в кадре и отбрасывает пятна света от листьев на стену и пол
     BR.vase((-.92, -1.10, 0), .26, .10, M['ceramic'])
     BR.olive((-.92, -1.10, .26 + .03), .52, 28, 1.12, random.Random(3), lean=.31, **LEAF)                  # ветка выглядывает у левого края кадра (как на референсе), а не прячется за ним
     BR.olive((-.86, -1.08, .26 + .03), .44, 22, .98, random.Random(12), lean=.23, **LEAF)
     BR.vase((-1.42, 1.22, 0), .26, .085, M['ceramic'])                                                    # пышное дерево в комнате за левой аркой: густая крона заполняет верх проёма за пальмовыми ветками, полки с продукцией остаются видны
-    build_tree(random.Random(91), (-1.41, 1.21, .25), .40, .90, lk=1.25, per=84, nb=30)
+    build_tree(random.Random(91), (-1.42, 1.22, .225), .425, .90, lk=1.25, per=84, nb=30)
 
+
+
+class Solids:
+    """твёрдые тела сцены (знак, стены, шар, пилястра, плита): по ним листья деревьев проверяются на прохождение сквозь камень — лист, который протыкает поверхность, не создаётся, ветка упирается и не заходит в камень"""
+    def __init__(self):
+        from mathutils.bvhtree import BVHTree
+        bpy.context.view_layer.update()
+        dg = bpy.context.evaluated_depsgraph_get()
+        names = ['wall', 'back', 'stone_sphere', 'slab', 'podium'] + ['reed%d' % i for i in range(9)]
+        obs = [bpy.data.objects.get(n) for n in names] + [S.get('logo', {}).get(k) for k in ('mountain', 'band')]
+        self.items = []
+        for ob in obs:
+            if ob is None or ob.type != 'MESH':
+                continue
+            self.items.append((ob.matrix_world.inverted(), BVHTree.FromObject(ob, dg)))
+
+    def hit(self, p0, p1):
+        """отрезок p0→p1 пересекает поверхность какого-либо тела; возвращает расстояние до первого пересечения (или None)"""
+        best = None
+        d = p1 - p0; ln = d.length
+        if ln < 1e-6:
+            return None
+        for inv, t in self.items:
+            o = inv @ p0; dl = (inv.to_3x3() @ d).normalized()
+            loc, nrm, idx, dist = t.ray_cast(o, dl, ln)
+            if loc is not None and (best is None or dist < best):
+                best = dist
+        return best
+
+    def inside(self, p):
+        """точка внутри какого-либо тела (чётное/нечётное число пересечений луча вверх)"""
+        for inv, t in self.items:
+            o = inv @ p; n = 0
+            for _ in range(16):
+                loc, nrm, idx, dist = t.ray_cast(o, Vector((0, 0, 1)))
+                if loc is None:
+                    break
+                n += 1; o = loc + Vector((0, 0, 1e-4))
+            if n % 2 == 1:
+                return True
+        return False
 
 
 def build_tree(rnd, loc, H, R, lk=1.0, per=56, nb=22):
@@ -274,6 +315,17 @@ def build_tree(rnd, loc, H, R, lk=1.0, per=56, nb=22):
     for m in (ma, mb):
         me = SC.leaf_mesh(L=.082 * 1.9 * lk, Wd=.024 * 1.45 * (1 + .6 * (lk - 1))); me.materials.append(m); leaves.append(me)
     up = Vector((0, 0, 1))
+    solids = Solids()
+    Lleaf = max(v.co.y for v in leaves[0].vertices); Wleaf = max(v.co.x for v in leaves[0].vertices)
+    mods = S.setdefault('tree_mods', [])
+
+    def blocked(ob):
+        """лист (объект) протыкает камень: ось, поперечник или кончик/середина внутри тела"""
+        R3 = ob.rotation_euler.to_matrix(); sc = ob.scale.x; ax = R3 @ Vector((0, 1, 0)); sd = R3 @ Vector((1, 0, 0))
+        base = ob.location.copy(); tip = base + ax * Lleaf * sc; mid = base + ax * Lleaf * sc * .55; wd = sd * Wleaf * sc
+        if solids.hit(base, tip) is not None or solids.hit(mid - wd, mid + wd) is not None:
+            return True
+        return solids.inside(tip) or solids.inside(mid) or solids.inside(base)
 
     def limb(pts, count, k, bevel):
         cu = bpy.data.curves.new('tl', 'CURVE'); cu.dimensions = '3D'; sp = cu.splines.new('POLY'); sp.points.add(len(pts) - 1)
@@ -295,16 +347,24 @@ def build_tree(rnd, loc, H, R, lk=1.0, per=56, nb=22):
                 ob = bpy.data.objects.new('lf', rnd.choice(leaves)); bpy.context.collection.objects.link(ob)
                 ob.scale = ((1.1 - .4 * t) * (.8 + rnd.random() * .4) * k,) * 3
                 ob.rotation_euler = dv.normalized().to_track_quat('Y', 'Z').to_euler(); ob.location = pos
+                if blocked(ob):                                                                 # лист задел бы камень — не создаём (случайные числа уже израсходованы: остальная крона не меняется)
+                    mods.append(tuple(pos)); bpy.data.objects.remove(ob)
         ob = bpy.data.objects.new('lf', leaves[0]); bpy.context.collection.objects.link(ob)                         # верхушечный листок
         ob.scale = (k,) * 3; ob.rotation_euler = (at(1) - at(.9)).normalized().to_track_quat('Y', 'Z').to_euler(); ob.location = at(1)
+        if blocked(ob):                                                                       # верхушечный листок задел бы камень — убираем
+            mods.append(tuple(ob.location)); bpy.data.objects.remove(ob)
         return at
 
     base = Vector((bx, by, bz))
     trunk = limb([base, base + Vector((-.02, 0, H * .35)), base + Vector((.02, 0, H * .7)), base + Vector((-.04, 0, H))], 4, .9, .026)
+    mods.extend(tuple(base + Vector((0, 0, H * f))) for f in (-.2, 0, .3, .6, 1.0))                   # ствол и горлышко вазы: положение ствола в вазе поменялось
     for j in range(nb):                                                                  # ярус ветвей веером вокруг верхней части ствола
         az = 6.283 * (j + rnd.random() * .7) / nb; el = rnd.uniform(.5, 1.3)
         d = Vector((math.cos(az) * math.cos(el), math.sin(az) * math.cos(el), math.sin(el)))
         P0 = trunk(rnd.uniform(.45, 1.0)); Lb = R * rnd.uniform(.8, 1.2)
+        hd = solids.hit(P0, P0 + d * Lb)
+        if hd is not None:                                                                # ветка упирается в камень — укорачиваем, чтобы не заходила внутрь
+            mods.extend(tuple(P0 + d * Lb * f) for f in (.25, .5, .75, 1.0)); Lb = max(.10, hd - .05)
         pts = [P0, P0 + d * Lb * .34 + Vector((0, 0, .04)), P0 + d * Lb * .68 + Vector((0, 0, .07 * Lb)), P0 + d * Lb + Vector((0, 0, -.1 * Lb * (1.1 - math.sin(el))))]
         at = limb(pts, per, 1.0, .007)
         for t in (.30, .46, .62, .78):                                                        # веточки-ответвления
@@ -572,6 +632,7 @@ JAR_WAY = [JAR_START, Vector((.12, -1.12, .40)), Vector((.46, -1.06, .27)), Vect
 CAM_END_L = (Vector((.02, -2.55, .36)), TARGET_MAIN_L, float(os.environ.get('HALL_LENS_L', 36.0)))     # общий план: фокусное 36 вместо 40 — кадр чуть шире, шар и орбиты мельче и не доходят до нижней панели
 CAM_END_P = (Vector((.292, -2.31, .40)), TARGET_MAIN_P, float(os.environ.get('HALL_LENS_P', 36.0)))
 LIT0 = 1.0                                                                           # свет зала постоянный: яркий, тёплый (полумрака и луча нет)
+SHADOW_FROM = int(os.environ.get('HALL_SHADOW_FROM', 49))                            # с этого кадра баночка уже стоит на подиуме: её тень запечена в кадры, а до него — живая тень на сайте (js/jar-gl.js)
 HOLD = float(os.environ.get('HALL_HOLD', .93))                                       # с этого положения сцена «держит» последний кадр (покой героя)
 SPIN = float(os.environ.get('HALL_SPIN', 360.0))                                     # на сколько градусов баночка раскручивается по пути (полный оборот — и этикетка снова смотрит на нас)
 # Вертикальный кадр (телефон) узкий: при том же фокусном баночка занимает вдвое больше его ширины, чем на компьютере, и на середине пути уходит за правый край. Поэтому на телефоне камера на старте дальше
@@ -677,6 +738,7 @@ def frame_state(p, portrait):
 
 def apply_frame(i, total, portrait):
     p = i / max(1, total - 1)
+    S['frame_i'] = i
     st = frame_state(p, portrait)
     place_camera(st['pos'], st['tgt'], st['lens'], portrait)
     S['jg'].location = st['jar']
@@ -702,6 +764,8 @@ def set_layer(layer):
         was = S['vis0'].get(ob.name, True)
         if layer == 'bg':
             ob.visible_camera = was and ob not in jar
+            if ob in jar:                                                            # тень баночки: пока она летит, в кадры не запекается — сайт рисует её сам по текущему положению (плавно); когда баночка встала на подиум, тень запечена в кадр
+                ob.visible_shadow = S.get('frame_i', 0) >= SHADOW_FROM
         elif layer == 'jar':
             ob.visible_camera = ob in jar
         else:

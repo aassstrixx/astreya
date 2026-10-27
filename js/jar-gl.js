@@ -20,7 +20,7 @@ uniform vec3 uTP, uTF, uTR, uTU; uniform float uTL;   // текущая каме
 uniform vec2 uAsp;        // размеры кадра в долях большей стороны: ландшафт (1, 1/a), портрет (a, 1)
 uniform vec2 uCover;      // растяжение кадра до заполнения холста (cover)
 uniform vec2 uNF;         // ближняя / дальняя плоскости
-out vec2 vUv;
+out vec2 vUv; out vec3 vW;
 void main() {
   int gw = uGrid.x + 1;
   ivec2 ij = ivec2(gl_VertexID % gw, gl_VertexID / gw);
@@ -39,7 +39,7 @@ void main() {
   float a = (uNF.y + uNF.x) / (uNF.y - uNF.x), b = -2.0 * uNF.y * uNF.x / (uNF.y - uNF.x);
   /* деление на глубину делаем сами (w = 1): тогда uv и глубина интерполируются по экрану линейно — иначе у кромок, где соседние точки сетки лежат на разной глубине, пиксели берутся не из своих мест */
   gl_Position = vec4(vec2(xt * k / uAsp.x, yt * k / uAsp.y) * uCover / zc, (a * zc + b) / zc, 1.0);
-  vUv = uv;
+  vUv = uv; vW = P;
 }`;
 
   const FS = `#version 300 es
@@ -50,13 +50,39 @@ uniform float uEdge;      // относительный скачок глуби�
 uniform vec2 uTexSize;
 uniform float uExpect;    // сколько пикселей кадра приходится на пиксель экрана (по площади) при неизменной камере
 uniform float uStretch;   // треугольники, растянутые сильнее (площадь на экране больше в 1/uStretch раз), считаются «резиновыми»
-in vec2 vUv;
+uniform vec4 uJ;          // живая тень баночки: центр (м) и радиус (м) сплюснутого шара-заместителя
+uniform vec3 uJS;         // x — сила тени (0 — тень уже запечена в кадр), y — полувысота / радиус, z — сила затемнения у касания
+uniform vec3 uCamP;       // положение камеры (для ориентации нормали)
+in vec2 vUv; in vec3 vW;
 out vec4 o;
+/* мягкая тень шара радиуса R в начале координат на точку ro по лучу rd к источнику (Иниго Килес: физически правдоподобный вариант): k — резкость границы (чем больше, тем резче) */
+float sphSh(vec3 ro, vec3 rd, float R, float k) {
+  float b = dot(ro, rd), c = dot(ro, ro) - R * R, h = b * b - c;
+  float d = sqrt(max(0.0, R * R - h)) - R;
+  float t = -b - sqrt(max(h, 0.0));
+  return t < 0.0 ? 1.0 : smoothstep(0.0, 1.0, 2.5 * k * d / max(t, 1e-4));
+}
+const vec3 LSUN = vec3(-0.40, -0.86, 0.30) * 0.9407;     // к солнцу (в сцене лучи идут по (0,40; 0,86; −0,30))
+const vec3 LWIN = vec3(-1.9, -1.7, 1.0);                  // тёплое окно слева — большой мягкий источник
 float zAt(ivec2 tc) {
   vec4 d = texelFetch(uDepth, clamp(tc, ivec2(0), uDSize - 1), 0) * 255.0;
   return 1.0 / max(uDisp.x + (d.r * 256.0 + d.g) / 65535.0 * (uDisp.y - uDisp.x), 0.02);
 }
+vec3 jarShade() {
+  vec3 n = normalize(cross(dFdx(vW), dFdy(vW)));
+  if (dot(n, uCamP - vW) < 0.0) n = -n;
+  if (uJS.x <= 0.0) return vec3(1.0);
+  vec3 q = vec3(1.0, 1.0, 1.0 / max(uJS.y, 0.2));              // шар-заместитель: баночка приплюснута — растягиваем мир по высоте
+  vec3 ro = (vW - uJ.xyz) * q;
+  float sun = 1.0 - sphSh(ro, normalize(LSUN * q), uJ.w, 12.0);
+  float win = 1.0 - sphSh(ro, normalize((LWIN - vW) * q), uJ.w, 1.5);
+  vec3 dv = uJ.xyz - vW; float d2 = max(dot(dv, dv), uJ.w * uJ.w);
+  float ao = clamp(dot(n, dv * inversesqrt(d2)), 0.0, 1.0) * 0.8 * uJ.w * uJ.w / d2;      // затемнение у касания: чем ближе поверхность к баночке и чем прямее смотрит на неё, тем темнее
+  /* цвет тени взят из тени, которую рисовал Blender (кадры 0…48 версии со «вшитой» тенью): прямой свет выключен, остаётся тёплое заполнение — красный темнеет меньше всего */
+  return clamp(vec3(1.0) - uJS.x * (0.30 * sun * vec3(0.53, 0.77, 1.0) + (0.15 * win + uJS.z * ao) * vec3(0.9, 1.0, 1.06)), 0.0, 1.0);
+}
 void main() {
+  vec3 shade = jarShade();
   vec2 gx = dFdx(vUv * uTexSize), gy = dFdy(vUv * uTexSize);
   float det = abs(gx.x * gy.y - gx.y * gy.x);
   bool bad = det < uExpect * uStretch;
@@ -64,7 +90,7 @@ void main() {
   float z0 = zAt(tc);
   float m = max(max(abs(zAt(tc + ivec2(1, 0)) - z0), abs(zAt(tc - ivec2(1, 0)) - z0)), max(abs(zAt(tc + ivec2(0, 1)) - z0), abs(zAt(tc - ivec2(0, 1)) - z0)));
   bad = bad || m > uEdge * z0;
-  o = vec4(texture(uColor, vUv).rgb, 1.0);
+  o = vec4(texture(uColor, vUv).rgb * shade, 1.0);
   gl_FragDepth = bad ? 0.99995 : gl_FragCoord.z;
 }`;
 
@@ -174,6 +200,14 @@ void main() {
     return {at, M, raw: tr};
   }
 
+  /* баночку на заставке нужно держать ровно по центру экрана: сдвигаем её вдоль оси «вверх» камеры (глубина не меняется — на экране это чистый сдвиг вверх на dv высоты кадра) */
+  function liftJar(cam, dv, asp1, cz) {
+    if (!dv) return;
+    const q = [cam.jar[0] - cam.pos[0], cam.jar[1] - cam.pos[1], cam.jar[2] + cz - cam.pos[2]];
+    const d = dv * 36 / cam.lens * (q[0] * cam.f[0] + q[1] * cam.f[1] + q[2] * cam.f[2]) * asp1;
+    cam.jar[0] += cam.u[0] * d; cam.jar[1] += cam.u[1] * d; cam.jar[2] += cam.u[2] * d;
+  }
+
   /* cfg: {portrait, track (дорожка камеры), phi (положения кадров по сценарию), grid: [w, h] — число ячеек сетки, stretch}
      возвращает null, если WebGL2 недоступен */
   function createHall(cv, cfg) {
@@ -253,7 +287,8 @@ void main() {
     const hasKey = k => !!keys[k];
 
     const camS = {}, camT = {};
-    function layer(i, k, t) {
+    const jScale = (cfg.track.jarScale || 0.02), jCz = (cfg.track.jarCenterZ || 0.057);
+    function layer(i, k, t, sh) {
       const e = keys[k]; track.at(Phi[k], camS);
       gl.bindFramebuffer(gl.FRAMEBUFFER, fb[i].f); gl.viewport(0, 0, W, H);
       gl.clearColor(0, 0, 0, 0); gl.clearDepth(1.0); gl.enable(gl.DEPTH_TEST); gl.depthFunc(gl.LESS); gl.depthMask(true); gl.disable(gl.BLEND);
@@ -278,14 +313,18 @@ void main() {
       const sc = Math.max(W / e.cw, H / e.ch);                      // во сколько раз кадр растянут на холсте (cover)
       gl.uniform1f(u.uExpect, 1 / (sc * sc));
       gl.uniform1f(u.uStretch, cfg.stretch || 0.22);
+      { const jk = sh.jk, R = 3.65 * jScale * jk, Hz = jCz * jk; let on = (cfg.shadowFrom === undefined || k < cfg.shadowFrom) ? (cfg.shadowAmount === undefined ? 1 : cfg.shadowAmount) : 0;
+        if (on && cfg.veil) { const t = 1 - k / Math.max(1, cfg.veil * (N - 1)); if (t > 0) on *= 1 - (cfg.veilCut || 0) * t * t * (3 - 2 * t); }      // на кадрах под светлой завесой тень слабее: резкие края тени по геометрии не должны проявлять то, что завеса скрывает
+        gl.uniform4f(u.uJ, camT.jar[0], camT.jar[1], camT.jar[2] + jCz, R); gl.uniform3f(u.uJS, on, Hz / R, cfg.contact === undefined ? 0.42 : cfg.contact); gl.uniform3fv(u.uCamP, camT.pos); }
       gl.uniform2i(u.uDSize, e.dw, e.dh); gl.uniform2f(u.uDisp, disp[0], disp[1]); gl.uniform1f(u.uEdge, cfg.edge === undefined ? 0.08 : cfg.edge);
       gl.bindVertexArray(vao); gl.drawElements(gl.TRIANGLES, nIdx, gl.UNSIGNED_INT, 0); gl.bindVertexArray(null);
     }
 
     /* рисует вид для положения p; rest ∈ [0,1] — «покой»: 1 — только ближайший кадр (пиксель в пиксель), 0 — плавное слияние двух.
        Возвращает {ka, kb, t} или null, если нужных кадров ещё нет */
-    function draw(p, rest, aa) {
+    function draw(p, rest, aa, opt) {
       if (dead || !W) return null;
+      const sh = {jk: (opt && opt.jk) || 1, lift: (opt && opt.lift) || 0};
       p = clamp(p, 0, 1);
       let lo = 0, hi = N - 1;
       if (p <= Phi[0]) { hi = 0; } else if (p >= Phi[N - 1]) { lo = N - 1; } else { while (hi - lo > 1) { const m = (lo + hi) >> 1; if (Phi[m] <= p) lo = m; else hi = m; } }
@@ -301,11 +340,11 @@ void main() {
       let t = ka === kb ? 0 : clamp((p - Phi[ka]) / (Phi[kb] - Phi[ka]), 0, 1);
       const r = clamp(rest || 0, 0, 1);
       t = t * (1 - r) + (t < 0.5 ? 0 : 1) * r;
-      track.at(p, camT);
+      track.at(p, camT); liftJar(camT, sh.lift, asp[1], jCz);
       const single = ka === kb || t <= 0.0005 || t >= 0.9995;
       const one = ka === kb ? ka : t <= 0.0005 ? ka : kb;
       const f1 = single ? 0 : 1;                                                 // кадр один (покой на кадре): второй слой не рисуем
-      if (single) { layer(0, one, 0); t = 0; } else { layer(0, ka, t); layer(1, kb, t); }
+      if (single) { layer(0, one, 0, sh); t = 0; } else { layer(0, ka, t, sh); layer(1, kb, t, sh); }
       const useAA = !!aa && !single;
       gl.bindFramebuffer(gl.FRAMEBUFFER, useAA ? comp.f : null); gl.viewport(0, 0, W, H); gl.disable(gl.DEPTH_TEST); gl.disable(gl.BLEND);
       gl.useProgram(P2.p); const u = P2.u;
@@ -429,13 +468,16 @@ void main() {
     const camP = {}, camK = {};
     const center = cam => [cam.jar[0], cam.jar[1], cam.jar[2] + cz];
     /* где рисовать спрайт кадра k при камере p: его рамка переносится так, чтобы центр баночки встал на проекцию её настоящего центра, а размер изменился во столько же раз, во сколько изменился видимый размер */
-    function place(k, cp) {
+    function place(k, cp, jk) {
       track.at(Phi[k], camK);
       const ck = proj(camK, center(camK)), cc = proj(cp, center(cp));
-      const rho = (cp.lens / cc.z) / (camK.lens / ck.z), r = rects[k];
+      const rho = (cp.lens / cc.z) / (camK.lens / ck.z), r = rects[k];            // jk — во сколько раз баночка уменьшена на заставке (см. js/jar.js)
       const cx = r[0] + r[2] / 2, cy = r[1] + r[3] / 2;
-      const w = r[2] * rho, h = r[3] * rho;
-      return [cc.u + (cx - ck.u) * rho - w / 2, cc.v + (cy - ck.v) * rho - h / 2, w, h];
+      let w = r[2] * rho, h = r[3] * rho, x = cc.u + (cx - ck.u) * rho - w / 2, y = cc.v + (cy - ck.v) * rho - h / 2;
+      if (jk && jk !== 1) {                                                                       // уменьшение вокруг центра баночки на экране (в заставке она парит), как если бы она стала меньше физически
+        x = cc.u + (x - cc.u) * jk; y = cc.v + (y - cc.v) * jk; w *= jk; h *= jk;
+      }
+      return [x, y, w, h];
     }
     /* рисует баночку для положения p; pair = {ka, kb, t} из hall.draw (те же кадры и доля), чтобы баночка и зал смешивались одинаково */
     function draw(p, pair, opt) {
@@ -451,19 +493,20 @@ void main() {
         if (best < 0) return false;
         ka = kb = best; t = 0;
       } else if (!sprites[ka]) { ka = kb; t = 0; } else if (!sprites[kb]) { kb = ka; t = 0; }
-      track.at(p, camP);
+      track.at(p, camP); liftJar(camP, opt.lift, asp[1], cz);
       gl.useProgram(PJ.p); const u = PJ.u;
       gl.enable(gl.BLEND); gl.blendFunc(gl.ONE, gl.ONE); gl.disable(gl.DEPTH_TEST);
       gl.uniform2f(u.uAsp, asp[0], asp[1]);
       gl.uniform3fv(u.uCP, camP.pos); gl.uniform3fv(u.uCF, camP.f); gl.uniform3fv(u.uCR, camP.r); gl.uniform3fv(u.uCU, camP.u); gl.uniform1f(u.uCL, camP.lens);
-      gl.uniform3fv(u.uJar, camP.jar); gl.uniform1f(u.uYaw, camP.yaw * Math.PI / 180); gl.uniform1f(u.uScale, scale);
+      const jk = opt.jk || 1;
+      gl.uniform3f(u.uJar, camP.jar[0], camP.jar[1], camP.jar[2] + cz * (1 - jk)); gl.uniform1f(u.uYaw, camP.yaw * Math.PI / 180); gl.uniform1f(u.uScale, scale * jk);       // баночка уменьшена вокруг своего центра (в заставке она парит в воздухе): основание поднимается
       gl.uniform1f(u.uInk, opt.ink || cfg.ink || 0.43); gl.uniform1f(u.uInkOn, label && opt.label !== false ? 1 : 0);
       gl.activeTexture(gl.TEXTURE1); gl.bindTexture(gl.TEXTURE_2D, label || sprites[ka]); gl.uniform1i(u.uLabel, 1);
       gl.bindVertexArray(vao);
       const items = ka === kb ? [[ka, 1]] : [[ka, 1 - t], [kb, t]];
       for (const [k, w] of items) {
         if (w <= 0.0005) continue;
-        const rc = place(k, camP);
+        const rc = place(k, camP, jk);
         gl.uniform4f(u.uRect, rc[0], rc[1], rc[2], rc[3]); gl.uniform1f(u.uW, w);
         gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, sprites[k]); gl.uniform1i(u.uSprite, 0);
         gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);

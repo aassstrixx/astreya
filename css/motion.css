@@ -206,7 +206,7 @@ body::after{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;bac
 /* --- бесконечные декоративные анимации стоят, пока идёт прокрутка (html.is-scrolling ставит js/motion.js) и пока их не видно (.anim-off) ---
    !important — потому что сокращение animation в правилах состояний (например, .pe.live .pe-e) вернуло бы running */
 html.is-scrolling .ring,html.is-scrolling .ring .orb,html.is-scrolling .halo,html.is-scrolling .pearl,html.is-scrolling .pearl::before,
-html.is-scrolling .hm-sway,html.is-scrolling .mq-track,html.is-scrolling .ar-cue i,
+html.is-scrolling .hm-sway,html.is-scrolling .mq-track,html.is-scrolling .ar-cue i::after,
 html.is-scrolling .asst-fab-ring,html.is-scrolling .asst-fab-i,html.is-scrolling .pe-e,html.is-scrolling .pe-st,
 .anim-off .ring,.anim-off .ring .orb,.anim-off .halo,.anim-off .pearl,.anim-off .pearl::before,.anim-off .hm-sway,.anim-off .mq-track{animation-play-state:paused!important}
 

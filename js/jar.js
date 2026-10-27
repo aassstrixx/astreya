@@ -41,6 +41,9 @@
     const cv = root.querySelector('.js-cv');
     const jcv = root.querySelector('.ar-jar-cv'), world = root.querySelector('.ar-world');
     const ds = root.dataset, NH = +ds.n || 1, ext = ds.ext || 'webp', ver = ds.v ? '?v=' + ds.v : '';
+    /* вид заставки (data/redesign.json → jar.arch.look): размер баночки на старте и живая тень (кадры до shadow.from тени не содержат — её рисует сайт по текущему положению баночки) */
+    let look = {}; try { look = JSON.parse(ds.look || '{}') || {}; } catch (e) { look = {}; }
+    const LS = look.scale || {}, LSH = look.shadow || null;
     const dead0 = () => { root.classList.add('jar-off'); return {root, complete: () => true, destroy() {}, state: () => ({})}; };
     if (!A.ArchGL || !cv || !jcv || typeof fetch !== 'function' || typeof createImageBitmap !== 'function' || !glOk()) return dead0();
     const nums = s => String(s || '').split(',').filter(x => x !== '').map(Number);
@@ -151,7 +154,9 @@
       if (dead || key !== dirOf()) return;
       track = tr;
       const fa = key === 'm' ? 9 / 16 : 16 / 9;
-      hall = A.ArchGL.createHall(cv, {track: tr, phi: Phi, portrait: key === 'm', frameAspect: fa, grid: (key === 'm' ? [450, 800] : [960, 540]).map(v => Math.max(60, Math.round(v * (window.__ASTREYA_GL_GRID || 1)))), stretch: 0.4, preserve: PRESERVE});
+      hall = A.ArchGL.createHall(cv, {track: tr, phi: Phi, portrait: key === 'm', frameAspect: fa, grid: (key === 'm' ? [450, 800] : [960, 540]).map(v => Math.max(60, Math.round(v * (window.__ASTREYA_GL_GRID || 1)))), stretch: 0.4, preserve: PRESERVE,
+        shadowFrom: LSH ? +LSH.from : 0, shadowAmount: LSH && LSH.amount !== undefined ? +LSH.amount : 1, contact: LSH && LSH.contact !== undefined ? +LSH.contact : 0.42,
+        veil: LSH && +LSH.veil || 0, veilCut: LSH && +LSH.veilCut || 0});
       const rects = JR[key === 'm' ? 1 : 0];
       jar = rects.length === NH ? A.ArchGL.createJar(jcv, {track: tr, phi: Phi, rects, portrait: key === 'm', frameAspect: fa, ink: +ds.ink || 0.43, preserve: PRESERVE}) : null;
       if (!hall) { root.classList.add('jar-off'); dead = true; return; }
@@ -182,16 +187,33 @@
       if (nw !== JW || nh !== JH) { JW = nw; JH = nh; jar.setSize(JW, JH); dirty = true; }
     }
 
+    /* во сколько раз баночка меньше натуральной: на заставке — уменьшена (ПК/телефон), от p=from до p=to плавно растёт до натуральной (камера в это время отъезжает, видимый размер почти не меняется), дальше — натуральная */
+    function jarK(p) {
+      const k0 = isPortrait() ? (LS.mobile || 1) : (LS.desktop || 1);
+      if (k0 >= 1) return 1;
+      const a = LS.from === undefined ? 0.12 : +LS.from, b = LS.to === undefined ? 0.6 : +LS.to, x = clamp((p - a) / (b - a), 0, 1);
+      return k0 + (1 - k0) * x * x * (3 - 2 * x);
+    }
+
+    /* на заставке баночка стоит ровно по центру экрана (в кадре она чуть ниже: центр рамки спрайта первого кадра); сдвиг вверх сходит на нет вместе с уменьшением — дальше баночка идёт по своему пути */
+    function jarLift(p) {
+      const por = isPortrait(), r = JR[por ? 1 : 0][0], k0 = por ? (LS.mobile || 1) : (LS.desktop || 1), cy = look.center && look.center[por ? 1 : 0];     // cy — где на самом деле (по прозрачности спрайта) центр баночки в первом кадре
+      if (!r || k0 >= 1) return 0;
+      const a = LS.from === undefined ? 0.12 : +LS.from, b = LS.to === undefined ? 0.6 : +LS.to, x = clamp((p - a) / (b - a), 0, 1);
+      return ((cy || (r[1] + r[3] / 2)) - 0.5) * (1 - x * x * (3 - 2 * x));        // положительное — вверх
+    }
+
     /* ---- отрисовка ---- */
     function paint(now) {
       if (!hall) return false;
       const speed = Math.abs(vp) * (NH - 1);
-      const pair = hall.draw(cp, 0, speed > MOVING);
+      const jk = jarK(cp), lift = jarLift(cp);
+      const pair = hall.draw(cp, 0, speed > MOVING, {jk, lift});
       if (!pair) return false;
       lastDraw = {ka: pair.ka, kb: pair.kb, t: pair.t, single: !!pair.single};
       if (!firstDrawn) { firstDrawn = true; if (cp < 0.02) root.classList.add('ar-intro'); root.classList.add('ready'); }
       if (jar) {
-        const ok = jar.draw(cp, pair, {});
+        const ok = jar.draw(cp, pair, {jk, lift});
         if (ok && !jarShown) { jarShown = true; if (cp < 0.02) root.classList.add('ar-intro'); root.classList.add('jar-ready'); }
       }
       return true;
