@@ -25,7 +25,8 @@
 .arch-story.ar-intro.ready .js-cv{animation:arBg 2.8s cubic-bezier(.16,.7,.2,1) backwards}
 .arch-story.ar-intro.jar-ready .ar-jar-cv{transform-origin:50% 55%;animation:arJar 1.6s cubic-bezier(.16,.7,.2,1) .15s backwards}
 .ar-orbit{position:absolute;left:50%;top:50%;width:146%;aspect-ratio:1;translate:-50% -50%;opacity:var(--h2,0)}
-/* орбиты — прежние, как в первом экране до редизайна (css/pages.css, css/motion.css): три кольца пунктиром серо-голубого цвета, логотипы с мягким светлым ореолом, вращаются в разные стороны; здесь меняется только размер (кольцо чуть шире шара) */
+/* орбиты — прежние, как в первом экране до редизайна (css/pages.css, css/motion.css): три кольца пунктиром серо-голубого цвета, логотипы вращаются в разные стороны; здесь меняется размер (кольцо чуть шире шара) и убран белый ореол за логотипами — остаётся лишь едва заметная тёмная тень */
+.ar-orbit .orb img{filter:drop-shadow(0 6px 10px rgba(11,26,51,.10))}
 /* «Листайте» — полоска заставки внизу сцены; гаснет с первой прокруткой (--cue) */
 .ar-cue{position:absolute;left:50%;bottom:clamp(20px,4.4vh,40px);z-index:2;transform:translateX(-50%);display:flex;flex-direction:column;align-items:center;gap:12px;
   color:var(--navy);font:600 11px/1 var(--sans);letter-spacing:.3em;text-transform:uppercase;opacity:var(--cue,1);pointer-events:none}
