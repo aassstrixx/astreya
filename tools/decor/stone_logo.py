@@ -74,12 +74,40 @@ def band_weights(pts, ramp=120.0):
     return out
 
 
-def poly_mesh(name, pts, k, depth, y0, mat, bev=.0025, sink=0.0, grow=0.0, gw=None):
-    """плита по контуру знака: pts — точки в координатах SVG; k — метров на единицу SVG; depth — толщина по y; y0 — передняя грань; sink — на сколько опустить вниз"""
+def subdivide(pts, seg):
+    """каждое ребро контура делится на seg частей (чтобы толщина плиты могла плавно сходить на нет у кончика); возвращает новые точки и номера прежних вершин в них"""
+    out, idx, n = [], [], len(pts)
+    for i in range(n):
+        idx.append(len(out)); out.append(pts[i])
+        p, q = pts[i], pts[(i + 1) % n]
+        for j in range(1, seg):
+            out.append((p[0] + (q[0] - p[0]) * j / seg, p[1] + (q[1] - p[1]) * j / seg))
+    return out, idx
+
+
+def taper_factors(pts, tips, ramp):
+    """толщина плиты у каждой вершины контура в долях полной: 0 в кончике, линейно растёт до 1 на расстоянии ramp (единицы SVG) вдоль контура — кончик получается клином-лезвием, а не плоским торцом"""
+    n = len(pts); cum = [0.0]
+    for i in range(1, n): cum.append(cum[-1] + math.hypot(pts[i][0] - pts[i - 1][0], pts[i][1] - pts[i - 1][1]))
+    total = cum[-1] + math.hypot(pts[0][0] - pts[-1][0], pts[0][1] - pts[-1][1])
+    out = []
+    for i in range(n):
+        s = min(min(abs(cum[i] - cum[t]), total - abs(cum[i] - cum[t])) for t in tips)
+        out.append(max(0.0, min(1.0, s / ramp)))
+    return out
+
+
+def poly_mesh(name, pts, k, depth, y0, mat, bev=.0025, sink=0.0, grow=0.0, gw=None, tips=None, ramp=0.0, seg=1):
+    """плита по контуру знака: pts — точки в координатах SVG; k — метров на единицу SVG; depth — толщина по y; y0 — передняя грань; sink — на сколько опустить вниз;
+    tips — номера вершин-кончиков в pts (после роста), ramp — на каком расстоянии вдоль контура толщина плиты сходит на нет к кончику (0 — плита везде одинаковой толщины), seg — на сколько частей делить рёбра"""
     if grow: pts = grow_poly(pts, grow, w=gw)
+    fac = None
+    if tips is not None and ramp:
+        pts, idx = subdivide(pts, seg)
+        fac = taper_factors(pts, [idx[t] for t in tips], ramp)
     P = [Vector(((x - X0) * k, 0, (Y0 - y) * k - sink)) for x, y in pts]
     tris = geometry.tessellate_polygon([[Vector((p.x, p.z, 0)) for p in P]])
-    n = len(P); verts = [(p.x, y0, p.z) for p in P] + [(p.x, y0 + depth, p.z) for p in P]
+    n = len(P); verts = [(p.x, y0, p.z) for p in P] + [(p.x, y0 + depth * (1.0 if fac is None else fac[i]), p.z) for i, p in enumerate(P)]
     faces = [(a, c, b) for a, b, c in tris] + [(a + n, b + n, c + n) for a, b, c in tris] + [(i, (i + 1) % n, n + (i + 1) % n, n + i) for i in range(n)]
     me = bpy.data.meshes.new(name); me.from_pydata(verts, [], faces); me.update(); me.validate()
     ob = bpy.data.objects.new(name, me); bpy.context.collection.objects.link(ob)
@@ -148,16 +176,20 @@ def materials(k, tone=1.0, texscale=1.0):
     return mt, bd, sphere_stone('sl_sphere', (.80, .70, .56), 1.1)               # шар — тот же травертин, что в зале на главной (поры, слоистость), чуть темнее стен
 
 
-def build_logo(height=.40, loc=(0, 0, 0), sphere_scale=1.35, depth=.14, parts=('mountain', 'band', 'sphere'), mats=None, sphere_dy=None, sphere_dz=0.0, thick=0.0, bev_k=1.0):
-    """знак высотой height (м); loc — точка под центром основания (низ горы). Возвращает словарь тел {'mountain', 'band', 'sphere'}"""
+def build_logo(height=.40, loc=(0, 0, 0), sphere_scale=1.35, depth=.14, parts=('mountain', 'band', 'sphere'), mats=None, sphere_dy=None, sphere_dz=0.0, thick=0.0, bev_k=1.0, sharp=False):
+    """знак высотой height (м); loc — точка под центром основания (низ горы). Возвращает словарь тел {'mountain', 'band', 'sphere'};
+    sharp — толщина плит сходит на нет к каждому кончику (клин-лезвие): сбоку не виден плоский торец, кончики острые, как в логотипе"""
     k = height / YH
     mt, bd, sp = mats or materials(k)
     out = {}
     # толще — но кончики остаются острыми, как в логотипе: у горы сдвигается только внутренняя вершина (ножки полнеют), у серпа рост сходит на нет к обоим кончикам
-    if 'mountain' in parts: out['mountain'] = poly_mesh('sl_mountain', MOUNTAIN, k, depth, 0.0, mt, bev=.0011 * height / .4 * bev_k, grow=thick * 1.9, gw=[0, 0, 0, 1])
+    if 'mountain' in parts:
+        out['mountain'] = poly_mesh('sl_mountain', MOUNTAIN, k, depth, 0.0, mt, bev=.0011 * height / .4 * bev_k, grow=thick * 1.9, gw=[0, 0, 0, 1],
+                                    tips=[0, 1, 2] if sharp else None, ramp=115.0 if sharp else 0.0, seg=24 if sharp else 1)          # три кончика горы: левая ножка, вершина, правая ножка
     if 'band' in parts:
         bp = band_points()
-        out['band'] = poly_mesh('sl_band', bp, k, depth * .80, -depth * .34, bd, bev=0, grow=thick * .8, gw=band_weights(bp))   # без фаски: на остром хвосте она оставляет щель
+        out['band'] = poly_mesh('sl_band', bp, k, depth * .80, -depth * .34, bd, bev=0, grow=thick * .8, gw=band_weights(bp),
+                                tips=[0, max(range(len(bp)), key=lambda i: bp[i][0])] if sharp else None, ramp=85.0 if sharp else 0.0)   # без фаски: на остром хвосте она оставляет щель; оба кончика серпа — клином
     if 'sphere' in parts:
         r = PEARL[2] * k * sphere_scale
         cx, cz = (PEARL[0] - X0) * k, (Y0 - PEARL[1]) * k

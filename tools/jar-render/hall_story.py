@@ -75,7 +75,7 @@ LOGO_THICK = 11.0                             # насколько «полне�
 SPHERE_SCREEN = {False: (.715, float(os.environ.get('HALL_SPH_Y', .335)), float(os.environ.get('HALL_SPH_D', .205))), True: (.50, .475, .44)}     # где шар стоит в готовом кадре (центр x, центр y, диаметр — доли ширины кадра): компьютер и телефон; общий план мельче прежнего, орбиты не доходят до нижней панели
 SPHERE_DEPTH = {False: 1.78, True: 1.62}                                # на каком расстоянии от камеры (вдоль оси) шар парит: на 0,15–0,2 м перед горой, ничем не подпёрт
 
-LEAF = dict(leafk=1.55, wk=1.22, dens=1.7)                  # листья оливы в зале: длиннее, шире и гуще (множители к настройкам BR.olive)
+LEAF = dict(leafk=float(os.environ.get('HALL_LEAFK', 2.15)), wk=float(os.environ.get('HALL_LEAFW', 1.40)), dens=float(os.environ.get('HALL_LEAFD', 2.1)))                  # листья оливы в зале: длиннее, шире и гуще (множители к настройкам BR.olive)
 LOGO_PARTS = ('mountain',) if os.environ.get('HALL_BAND') == '0' else ('mountain', 'band')       # весь знак: две ножки горы с острыми кончиками и серп (волна) — как в логотипе
 LEAF_SHADOW = dict(leafk=1.3, wk=1.1, dens=1.0)             # ветки вне кадра, дающие пятна света на стене: листья чуть длиннее, но не гуще — тени остаются резными силуэтами листьев, а не мутными пятнами
 
@@ -167,6 +167,28 @@ def sphere_place(portrait):
     return c.x, c.y, c.z, d * wm / 2
 
 
+def sphere_material():
+    """камень шара: тот же травертин, что и у горы, но с другой структурой — крупнее и чаще поры, заметнее слоистость, рельеф глубже, чуть теплее и матово-шёлковый: шар отделяется от горы и не сливается с ней"""
+    t = float(os.environ.get('HALL_SPH_TONE', .90))
+    m = MT.travertine('hall_sphere', (1.0 * t, .90 * t, .76 * t), float(os.environ.get('HALL_SPH_SCALE', 1.35)), float(os.environ.get('HALL_SPH_PITS', 1.3)), float(os.environ.get('HALL_SPH_BANDS', 3.0)), honed=True)
+    b = next(n for n in m.node_tree.nodes if n.type == 'BSDF_PRINCIPLED')
+    b.inputs['Roughness'].default_value = .52
+    bp = next((n for n in m.node_tree.nodes if n.type == 'BUMP'), None)
+    if bp is not None:
+        bp.inputs['Strength'].default_value = float(os.environ.get('HALL_SPH_BUMP', 1.1)); bp.inputs['Distance'].default_value = .009
+    for key, val in (('Sheen Weight', .12), ('Sheen Roughness', .6)):
+        if key in b.inputs: b.inputs[key].default_value = val
+    return m
+
+
+def cut_mesh_x(ob, xc):
+    """убрать часть сетки правее мировой x = xc (плоскостью; объект стоит в начале координат)"""
+    import bmesh
+    bm = bmesh.new(); bm.from_mesh(ob.data)
+    bmesh.ops.bisect_plane(bm, geom=list(bm.verts) + list(bm.edges) + list(bm.faces), plane_co=(xc - ob.location.x, 0, 0), plane_no=(1, 0, 0), clear_outer=True)
+    bm.to_mesh(ob.data); bm.free(); ob.data.update()
+
+
 def build_architecture(M, portrait):
     # стена: толстая плита; вырезы — большая арка со ступенчатой нишей и проём слева
     wall = SC.box('wall', M['wall'], -3.2, 3.0, 0, .75, -.1, 2.4, 'w', 0)
@@ -186,6 +208,8 @@ def build_architecture(M, portrait):
             pl.material_index = 1
     # светящаяся линия свода ниши
     S['led'] = SC.arch_frame('led', M['led'], INN['cx'], INN['rx'] - .045, INN['zs'] - .03, .008, .43, .452, 'w', z0=.0)
+    if os.environ.get('HALL_LED_CUT', '1') != '0':
+        cut_mesh_x(S['led'], INN['cx'] + .03)           # правая половина светящейся арки (правая «ножка» ниши) приходилась ровно под шар и выглядела подставкой: шар парит ничем не подпёртый — правой ножки нет
     # задняя стена за проёмом слева (светлее): виден «следующий зал»
     build_left_room(M)
     # пол: полированный камень до самой камеры (и дальше — в комнату за левой аркой)
@@ -199,10 +223,10 @@ def build_architecture(M, portrait):
     sp = bpy.context.object
     sp.name = 'stone_sphere'
     bpy.ops.object.shade_smooth()
-    sp.data.materials.append(mats[0])
+    sp.data.materials.append(sphere_material())
     S['sphere'] = sp
     S['sphere_xyzr'] = (sx, sy, sz, sr)
-    S['logo'] = SL.build_logo(LOGO_H, (LOGO_CX, LOGO_Y, LOGO_Z), depth=LOGO_DEPTH, mats=mats, parts=LOGO_PARTS, thick=LOGO_THICK, bev_k=.22)
+    S['logo'] = SL.build_logo(LOGO_H, (LOGO_CX, LOGO_Y, LOGO_Z), depth=LOGO_DEPTH, mats=mats, parts=LOGO_PARTS, thick=LOGO_THICK, bev_k=.22, sharp=os.environ.get('HALL_SHARP', '1') != '0')
     for key in LOGO_PARTS:
         S['logo_home_' + key] = S['logo'][key].location.copy()
     # рифлёная пилястра справа (вертикальные валики)
@@ -226,16 +250,18 @@ def build_decor(M, portrait):
     rock('pebble-a', (.72, -.72, 0), 60, 5, 1.1)
     # ваза и олива справа (как у пилястры на референсе)
     dxp = .11 if portrait else 0.0                                                                     # на телефоне вазу с деревом сдвигаем вправо: в узкий кадр заходит только край кроны
-    BR.vase((.98 + dxp, -.14, 0), .30, .085, M['ceramic'])
-    build_tree(random.Random(77), (.96 + dxp, -.12, .33), .30, .80)                                     # на вазе справа — пышное дерево (олива с густой длинной листвой): низкий ствол и широкая густая крона, верх уходит за край кадра
+    BR.vase((.98 + dxp, -.14, 0), .42, .095, M['ceramic'])                                               # ваза повыше: ствол не торчит палкой из-под серпа, крона растёт прямо из горлышка
+    build_tree(random.Random(77), (.96 + dxp, -.12, .45), .30, .98, lk=1.3, per=84, nb=32)                                     # на вазе справа — пышное дерево (олива с густой длинной листвой): низкий ствол и широкая густая крона, верх уходит за край кадра
     # олива на переднем плане слева — сама в кадре и отбрасывает пятна света от листьев на стену и пол
     BR.vase((-.92, -1.10, 0), .26, .10, M['ceramic'])
     BR.olive((-.92, -1.10, .26 + .03), .52, 28, 1.12, random.Random(3), lean=.31, **LEAF)                  # ветка выглядывает у левого края кадра (как на референсе), а не прячется за ним
     BR.olive((-.86, -1.08, .26 + .03), .44, 22, .98, random.Random(12), lean=.23, **LEAF)
+    BR.vase((-1.42, 1.22, 0), .26, .085, M['ceramic'])                                                    # пышное дерево в комнате за левой аркой: густая крона заполняет верх проёма за пальмовыми ветками, полки с продукцией остаются видны
+    build_tree(random.Random(91), (-1.41, 1.21, .25), .40, .90, lk=1.25, per=84, nb=30)
 
 
 
-def build_tree(rnd, loc, H, R):
+def build_tree(rnd, loc, H, R, lk=1.0, per=56, nb=22):
     """пышное дерево в вазе справа: изогнутый ствол и ярус ветвей веером (длинные дуги), на каждой — густые длинные листья двух оттенков; веточки-ответвления добавляют объём.
     Листья расходятся в стороны от ветки (в плоскости, перпендикулярной ей), поэтому крона читается объёмной с любой стороны. Параметры — TREE"""
     bx, by, bz = loc
@@ -246,7 +272,7 @@ def build_tree(rnd, loc, H, R):
     ms = bpy.data.materials.new('tree_stem'); ms.use_nodes = True; ms.node_tree.nodes['Principled BSDF'].inputs['Base Color'].default_value = (.30, .25, .16, 1)
     leaves = []
     for m in (ma, mb):
-        me = SC.leaf_mesh(L=.082 * 1.9, Wd=.024 * 1.45); me.materials.append(m); leaves.append(me)
+        me = SC.leaf_mesh(L=.082 * 1.9 * lk, Wd=.024 * 1.45 * (1 + .6 * (lk - 1))); me.materials.append(m); leaves.append(me)
     up = Vector((0, 0, 1))
 
     def limb(pts, count, k, bevel):
@@ -275,16 +301,16 @@ def build_tree(rnd, loc, H, R):
 
     base = Vector((bx, by, bz))
     trunk = limb([base, base + Vector((-.02, 0, H * .35)), base + Vector((.02, 0, H * .7)), base + Vector((-.04, 0, H))], 4, .9, .026)
-    for j in range(22):                                                                  # ярус ветвей веером вокруг верхней части ствола
-        az = 6.283 * (j + rnd.random() * .7) / 22; el = rnd.uniform(.5, 1.3)
+    for j in range(nb):                                                                  # ярус ветвей веером вокруг верхней части ствола
+        az = 6.283 * (j + rnd.random() * .7) / nb; el = rnd.uniform(.5, 1.3)
         d = Vector((math.cos(az) * math.cos(el), math.sin(az) * math.cos(el), math.sin(el)))
         P0 = trunk(rnd.uniform(.45, 1.0)); Lb = R * rnd.uniform(.8, 1.2)
         pts = [P0, P0 + d * Lb * .34 + Vector((0, 0, .04)), P0 + d * Lb * .68 + Vector((0, 0, .07 * Lb)), P0 + d * Lb + Vector((0, 0, -.1 * Lb * (1.1 - math.sin(el))))]
-        at = limb(pts, 56, 1.0, .007)
+        at = limb(pts, per, 1.0, .007)
         for t in (.30, .46, .62, .78):                                                        # веточки-ответвления
             P = at(t); az2 = az + rnd.choice((-1, 1)) * rnd.uniform(.5, .9); d2 = Vector((math.cos(az2) * math.cos(el), math.sin(az2) * math.cos(el), math.sin(el) * .8 + .15)).normalized()
             L2 = Lb * rnd.uniform(.3, .45)
-            limb([P, P + d2 * L2 * .5 + Vector((0, 0, .03)), P + d2 * L2 + Vector((0, 0, -.02))], 20, .92, .0045)
+            limb([P, P + d2 * L2 * .5 + Vector((0, 0, .03)), P + d2 * L2 + Vector((0, 0, -.02))], max(20, per // 3), .92, .0045)
 
 
 
@@ -451,7 +477,7 @@ def ring(name, cx, cy, z, R, w, mat, flat=.45):
 LAB_RINGS_FLOOR = (.30, .40, .54, .72, .98, 1.32)                          # радиусы линий на полу вокруг подиума, м (шаг растёт — как сетка точности)
 LAB_RINGS_TOP = (.118, .152)                                              # линии на самом подиуме вокруг основания баночки
 LAB_PACKS = [('bottle', False, .205, .24, 12), ('dropper', True, .285, .30, -8), ('jar', False, .365, .22, 20)]      # упаковки на пороге ниши: профессиональная косметика «в нише»
-LAB_GLASS = ((.27, .53, .385, .40, .03, .50),)                          # матовая стеклянная панель в глубине ниши (x0, x1, y0, y1, z0, z1): за баночкой и упаковками, между боковыми светящимися линиями свода (светящиеся линии стекло не закрывает — иначе оно размывало их в белую «дымку»)
+LAB_GLASS = () if os.environ.get('HALL_GLASS', '0') != '1' else ((.27, .53, .385, .40, .03, .50),)                          # матовая стеклянная панель в глубине ниши (x0, x1, y0, y1, z0, z1): за баночкой и упаковками, между боковыми светящимися линиями свода (светящиеся линии стекло не закрывает — иначе оно размывало их в белую «дымку»)
 
 
 def build_lab(M):
