@@ -166,6 +166,7 @@ module.exports = function homeRedesign(ctx, C, P, parts, {events, val}) {
     const fin = `--ox:${fd[0]};--oy:${fd[1]};--od:${fd[2]};--oxm:${fm[0]};--oym:${fm[1]};--odm:${fm[2]}`;
     return `<section class="jar-story arch-story${houseOn ? ' is-house' : ''}" id="arch-story" data-mode="arch" data-view-at="0.97" style="--jh:${a.heightVh.desktop}vh;--jhm:${a.heightVh.mobile}vh" data-n="${a.frames}" data-ext="${a.ext}" data-v="${esc(ctx.assetVersion || '')}" data-d="${a.desktop}" data-m="${a.mobile}" data-zd="${a.depth.desktop}" data-zm="${a.depth.mobile}" data-zx="${a.depth.ext}" data-cam="${a.cam.desktop}" data-camm="${a.cam.mobile}" data-lbl="${a.label}" ${a.sphereTex ? `data-sa="${a.sphereTex.a}" data-sn="${a.sphereTex.n}" ` : ''}data-ink="${a.ink}" data-look="${esc(JSON.stringify(a.look || {}))}" data-p="${a.p.join(',')}" data-jd="${jr.desktop.dir}" data-jm="${jr.mobile.dir}" data-jx="${jr.ext}" data-jr="${JSON.stringify(jr.desktop.rects)}" data-jrm="${JSON.stringify(jr.mobile.rects)}" aria-label="${esc(a.alt)}">
     <div class="js-stage">
+      ${houseOn ? `<picture class="ar-poster" aria-hidden="true"><source media="(max-aspect-ratio: 11/10)" srcset="${C.u(P, 'assets/jar-arch/poster-m.webp')}"><img src="${C.u(P, 'assets/jar-arch/poster-d.webp')}" alt="" width="1920" height="1080" decoding="async" loading="lazy"></picture>` : ''}
       <canvas class="js-cv" role="img" aria-label="${esc(a.alt)}"></canvas>
       <div class="ar-vig" aria-hidden="true"></div>
       <div class="ar-hero">

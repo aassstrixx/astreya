@@ -559,21 +559,21 @@
       "greeting": "Добро пожаловать в ASTREYA HOUSE",
       "hint": "Откройте журнал ASTREYA",
       "doorsLabel": "Комнаты дома",
-      "table": {"d": [0.64, 0.66, 0.30], "m": [0.50, 0.70, 0.84]},
+      "table": {"d": [0.685, 0.748, 0.15], "m": [0.64, 0.70, 0.32]},
       "doors": [
-        {"room": "brands", "d": [0.11, 0.26, 0.15, 0.46], "m": [0.04, 0.20, 0.30, 0.40]},
-        {"room": "finder", "d": [0.42, 0.18, 0.17, 0.40], "m": [0.34, 0.14, 0.32, 0.34]},
-        {"room": "academy", "d": [0.82, 0.26, 0.15, 0.46], "m": [0.68, 0.20, 0.30, 0.40]}
+        {"room": "brands", "d": [0.0527, 0.2072, 0.1656, 0.3537], "m": null},
+        {"room": "finder", "d": [0.4107, 0.1321, 0.2138, 0.434], "m": [0.2152, 0.2026, 0.386, 0.2501]},
+        {"room": "academy", "d": [0.8263, 0.2078, 0.1757, 0.363], "m": null}
       ]
     },
     "rooms": [
-      {"id": "about", "name": "Галерея доверия", "short": "О компании", "href": "company.html", "cta": "Страница «О компании»"},
-      {"id": "brands", "name": "Галерея брендов", "short": "Бренды", "href": "brands.html", "cta": "Все бренды"},
-      {"id": "finder", "name": "Подбор профессионального решения", "short": "Подбор", "href": "catalog.html", "cta": "Открыть каталог"},
-      {"id": "expertise", "name": "Профессиональная экспертиза", "short": "Экспертиза", "href": "training.html#teachers", "cta": "Преподаватели"},
-      {"id": "academy", "name": "Учебный центр", "short": "Обучение", "href": "training.html", "cta": "Расписание семинаров"},
-      {"id": "partners", "name": "Партнёрская гостиная", "short": "Партнёрам", "href": "partners.html", "cta": "Стать партнёром"},
-      {"id": "editorial", "name": "Редакция ASTREYA", "short": "Новости", "href": "news.html", "cta": "Все новости"}
+      {"id": "about", "img": "assets/house/room-about.webp", "name": "Галерея доверия", "short": "О компании", "href": "company.html", "cta": "Страница «О компании»"},
+      {"id": "brands", "img": "assets/brands/hero.webp", "name": "Галерея брендов", "short": "Бренды", "href": "brands.html", "cta": "Все бренды"},
+      {"id": "finder", "img": "assets/house/room-finder.webp", "name": "Подбор профессионального решения", "short": "Подбор", "href": "catalog.html", "cta": "Открыть каталог"},
+      {"id": "expertise", "img": "assets/house/room-expertise.webp", "name": "Профессиональная экспертиза", "short": "Экспертиза", "href": "training.html#teachers", "cta": "Преподаватели"},
+      {"id": "academy", "img": "assets/house/room-academy.webp", "name": "Учебный центр", "short": "Обучение", "href": "training.html", "cta": "Расписание семинаров"},
+      {"id": "partners", "img": "assets/house/room-partners.webp", "name": "Партнёрская гостиная", "short": "Партнёрам", "href": "partners.html", "cta": "Стать партнёром"},
+      {"id": "editorial", "img": "assets/house/room-editorial.webp", "name": "Редакция ASTREYA", "short": "Новости", "href": "news.html", "cta": "Все новости"}
     ],
     "mag": {
       "title": "ASTREYA",

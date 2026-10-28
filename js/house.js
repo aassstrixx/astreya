@@ -16,13 +16,22 @@
   const reduce = () => matchMedia('(prefers-reduced-motion: reduce)').matches || root.classList.contains('lite');
   const phone = () => matchMedia('(max-width:700px)').matches;
 
+  /* без анимации (уменьшенное движение, «лёгкий режим»): вместо закреплённой сцены — готовый кадр зала; движок кадров выключаем */
+  function setStatic() {
+    if (story.classList.contains('is-static')) return;
+    story.classList.add('is-static');
+    try { if (A.jar && A.jar.arch && A.jar.arch.destroy) A.jar.arch.destroy(); } catch (e) {}
+  }
+  if (matchMedia('(prefers-reduced-motion: reduce)').matches || root.classList.contains('lite')) setStatic();
+  else if ('MutationObserver' in window) { const mo = new MutationObserver(() => { if (root.classList.contains('lite')) { setStatic(); mo.disconnect(); } }); mo.observe(root, {attributes: true, attributeFilter: ['class']}); }
+
   const rooms = $$('.room'), ids = rooms.map(r => r.getAttribute('data-room'));
   const veil = $('.house-veil'), nav = $('.house-nav'), mag = $('#mag');
   const LEGACY = {'start-path': 'partners', 'how-to-start': 'partners', 'brands-gallery': 'brands', 'hb-strip': 'brands', solutions: 'finder', 'training-block': 'academy', 'home-events': 'academy', 'expertise-block': 'expertise'};
 
   /* ---------- положение зала и перемещение ---------- */
   const abs = el => el.getBoundingClientRect().top + window.pageYOffset;
-  const hallY = () => Math.max(0, abs(story) + story.offsetHeight - window.innerHeight);       // конец закреплённой сцены: герой стоит в готовом кадре зала
+  const hallY = () => story.classList.contains('is-static') || story.classList.contains('jar-off') ? Math.max(0, abs(story)) : Math.max(0, abs(story) + story.offsetHeight - window.innerHeight);       // конец закреплённой сцены: герой стоит в готовом кадре зала
   const jump = y => window.scrollTo({top: Math.round(y), behavior: 'instant'});                // «instant» — мимо html{scroll-behavior:smooth}: никакого пролёта мимо чужих комнат
   const afterPaint = fn => requestAnimationFrame(() => requestAnimationFrame(fn));
   let veilTimer = 0;
@@ -42,6 +51,7 @@
   function go(id, o) {
     o = o || {};
     const room = document.getElementById('room-' + id); if (!room) return;
+    loadRoomImg(room);
     if (mag && mag.classList.contains('is-open')) closeMag({silent: true, noFocus: true});
     through(() => {
       const target = o.el && room.contains(o.el) ? o.el : room;
@@ -64,6 +74,17 @@
   function markNav(id) {
     $$('.hn-rooms a').forEach(a => { if (a.getAttribute('data-house-go') === id) a.setAttribute('aria-current', 'true'); else a.removeAttribute('aria-current'); });
   }
+
+  /* ---------- фоны комнат (рендеры интерьеров) подгружаются, когда комната приближается к экрану ---------- */
+  function loadRoomImg(room) {
+    const src = room.getAttribute('data-img'); if (!src || room.getAttribute('data-img-on')) return;
+    room.setAttribute('data-img-on', '1');
+    const im = new Image(); im.onload = () => { room.style.setProperty('--room-img', 'url("' + src + '")'); room.classList.add('has-img'); }; im.onerror = () => { room.removeAttribute('data-img-on'); }; im.decoding = 'async'; im.src = src;
+  }
+  if ('IntersectionObserver' in window) {
+    const io = new IntersectionObserver(es => es.forEach(e => { if (e.isIntersecting) { loadRoomImg(e.target); io.unobserve(e.target); } }), {rootMargin: '120% 0px'});
+    rooms.forEach(r => io.observe(r));
+  } else { rooms.forEach(loadRoomImg); }
 
   /* ---------- плавающая навигация: появляется, когда зал ушёл из кадра ---------- */
   let ticking = false;

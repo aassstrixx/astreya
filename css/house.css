@@ -22,18 +22,18 @@ body[data-page="home"]{--hs-paper:#f6f0e3;--hs-paper-2:#efe6d3;--hs-ink:#0b1a33;
 .hd-arch{position:absolute;inset:0;border-radius:999px 999px 0 0;box-shadow:inset 0 0 0 0 rgba(255,250,236,0);background:radial-gradient(120% 90% at 50% 70%,rgba(255,238,200,0),rgba(255,238,200,0));transition:box-shadow .5s var(--ease),background .5s var(--ease)}
 .hall-door:hover .hd-arch,.hall-door:focus-visible .hd-arch{box-shadow:inset 0 0 0 2px rgba(255,251,240,.92),0 0 70px rgba(255,232,186,.5);background:radial-gradient(120% 90% at 50% 70%,rgba(255,238,200,.34),rgba(255,238,200,.04))}
 .hall-door:focus-visible .hd-arch{box-shadow:inset 0 0 0 3px var(--hs-ink),0 0 0 3px rgba(255,251,240,.95)}
-.hd-tag{position:absolute;left:50%;bottom:6%;translate:-50% 0;display:flex;align-items:baseline;gap:8px;padding:8px 14px 8px 12px;border-radius:999px;white-space:nowrap;background:var(--hs-glass);box-shadow:inset 0 0 0 1px rgba(255,255,255,.7),0 8px 22px -10px rgba(60,40,18,.55);font:600 clamp(10px,.78vw,13px)/1 var(--sans);letter-spacing:.08em;text-transform:uppercase;color:var(--hs-ink);transition:transform .45s var(--ease),background-color .3s}
+.hd-tag{position:absolute;left:50%;top:9%;translate:-50% 0;display:flex;align-items:baseline;gap:8px;padding:8px 14px 8px 12px;border-radius:999px;white-space:nowrap;background:var(--hs-glass);box-shadow:inset 0 0 0 1px rgba(255,255,255,.7),0 8px 22px -10px rgba(60,40,18,.55);font:600 clamp(10px,.78vw,13px)/1 var(--sans);letter-spacing:.08em;text-transform:uppercase;color:var(--hs-ink);transition:transform .45s var(--ease),background-color .3s}
 .hd-tag b{font:500 clamp(12px,.95vw,15px)/1 var(--serif);letter-spacing:0;color:var(--hs-gold)}
-.hall-door:hover .hd-tag,.hall-door:focus-visible .hd-tag{transform:translateY(-6px);background:#fffaf0}
+.hall-door:hover .hd-tag,.hall-door:focus-visible .hd-tag{transform:translateY(4px);background:#fffaf0}
 
 .hall-mag{display:block}
-.hall-mag{left:calc(var(--tx) * 100%);top:calc(var(--ty) * 100%);right:auto;bottom:auto;width:calc(var(--tw) * 100%);aspect-ratio:1.46;translate:-50% -50%;opacity:var(--h3,0);perspective:1500px;position:absolute}
+.hall-mag{left:calc(var(--tx) * 100%);top:calc(var(--ty) * 100%);right:auto;bottom:auto;width:calc(var(--tw) * 100%);aspect-ratio:1.46;translate:-50% -50%;opacity:var(--h3,0);perspective:900px;position:absolute}
 .mag-prev{position:absolute;inset:0;display:block;margin:0;padding:0;border:0;background:none;cursor:pointer;pointer-events:none;color:inherit;font:inherit;text-align:left;-webkit-tap-highlight-color:transparent}
 .js-stage.ar-live .mag-prev{pointer-events:auto}
 .mag-prev:focus-visible{outline:3px solid var(--hs-ink);outline-offset:6px;border-radius:12px}
-.mag-prev-b{position:absolute;inset:0;display:grid;grid-template-columns:1fr 1fr;transform:rotateX(58deg) rotateZ(-7deg);transform-style:preserve-3d;transform-origin:50% 60%;transition:transform .7s var(--ease),filter .5s;
+.mag-prev-b{position:absolute;inset:0;display:grid;grid-template-columns:1fr 1fr;transform:rotateX(70deg) rotateZ(-3deg);transform-style:preserve-3d;transform-origin:50% 60%;transition:transform .7s var(--ease),filter .5s;
   filter:drop-shadow(0 26px 22px rgba(52,34,16,.42))}
-.mag-prev:hover .mag-prev-b,.mag-prev:focus-visible .mag-prev-b{transform:rotateX(50deg) rotateZ(-5deg) translateY(-3%)}
+.mag-prev:hover .mag-prev-b,.mag-prev:focus-visible .mag-prev-b{transform:rotateX(62deg) rotateZ(-3deg) translateY(-6%)}
 .mag-prev-b::before{content:"";position:absolute;inset:0;border-radius:3px;box-shadow:0 1px 0 #e8dfcb,0 2px 0 #e2d8c1,0 3px 0 #dcd1b8,0 4px 0 #d6cbb1,0 5px 0 #d0c4a9;pointer-events:none}
 .mp-l,.mp-r{position:relative;display:block;overflow:hidden;background:linear-gradient(90deg,#f7f1e4,#fbf7ee);padding:6%}
 .mp-l{border-radius:3px 0 0 3px;padding:0;background:#e9dfca}
@@ -50,6 +50,20 @@ body[data-page="home"]{--hs-paper:#f6f0e3;--hs-paper-2:#efe6d3;--hs-ink:#0b1a33;
 @keyframes hsPulse{0%{box-shadow:0 0 0 0 rgba(243,217,160,.7)}70%,100%{box-shadow:0 0 0 12px rgba(243,217,160,0)}}
 .mag-prev:hover .mag-hint,.mag-prev:focus-visible .mag-hint{transform:translateY(-4px)}
 
+/* текст героя читается поверх интерьера зала: мягкое молочное свечение за колонкой (без плашки и без размытия) */
+.is-house .ar-copy::before{content:"";position:absolute;z-index:-1;inset:-9% -16% -12% -12%;pointer-events:none;background:radial-gradient(72% 70% at 42% 46%,rgba(246,240,227,.84),rgba(246,240,227,.56) 52%,rgba(246,240,227,0) 100%);opacity:var(--h1,0)}
+
+/* зал без анимации: при уменьшенном движении, «лёгком режиме», без WebGL и без JS вместо закреплённой сцены — один экран с готовым кадром зала (assets/jar-arch/poster-*.webp); всё остальное — те же настоящие кнопки и ссылки */
+.ar-poster{display:none}
+.arch-story.is-house.is-static,.arch-story.is-house.jar-off,html:not(.js) .arch-story.is-house{display:block;height:auto;margin-top:calc((var(--hdr) + 1px) * -1)}
+.is-house.is-static .js-stage,.is-house.jar-off .js-stage,html:not(.js) .is-house .js-stage{position:relative;height:100vh;height:100svh;min-height:600px;--h1:1;--h2:1;--h3:1;--cue:0}
+.is-house.is-static .js-cv,.is-house.is-static .ar-jar-cv,.is-house.is-static .ar-cue,.is-house.is-static .ar-vig,.is-house.jar-off .js-cv,.is-house.jar-off .ar-jar-cv,.is-house.jar-off .ar-cue,.is-house.jar-off .ar-vig,html:not(.js) .is-house .js-cv,html:not(.js) .is-house .ar-jar-cv,html:not(.js) .is-house .ar-cue,html:not(.js) .is-house .ar-vig{display:none}
+.is-house.is-static .ar-poster,.is-house.jar-off .ar-poster,html:not(.js) .is-house .ar-poster{display:block;position:absolute;inset:0;width:100%;height:100%;z-index:0}
+.ar-poster img{display:block;width:100%;height:100%;object-fit:cover}
+.is-house.is-static .ar-cta .btn,.is-house.jar-off .ar-cta .btn,html:not(.js) .is-house .ar-cta .btn,.is-house.is-static .hall-door,.is-house.jar-off .hall-door,html:not(.js) .is-house .hall-door,.is-house.is-static .mag-prev,.is-house.jar-off .mag-prev,html:not(.js) .is-house .mag-prev,.is-house.is-static .hall-rooms a,.is-house.jar-off .hall-rooms a,html:not(.js) .is-house .hall-rooms a{pointer-events:auto;cursor:pointer}
+.is-house.is-static .ar-e,.is-house.is-static .ar-h,.is-house.is-static .ar-lead,.is-house.is-static .ar-cta{transform:none}
+.is-house.is-static .js-stage::before,.is-house.jar-off .js-stage::before{opacity:1}
+
 /* ============ 2. Комнаты ============ */
 .room{position:relative;isolation:isolate;padding:0 0 clamp(56px,7vw,110px);overflow:clip;scroll-margin-top:0}
 .room-stage{position:absolute;inset:0;z-index:-1;pointer-events:none;clip-path:inset(0 round 0)}
@@ -63,6 +77,9 @@ body[data-page="home"]{--hs-paper:#f6f0e3;--hs-paper-2:#efe6d3;--hs-ink:#0b1a33;
   linear-gradient(180deg,#f1e6d0 0,#ead9bd 62%,#dccbab 100%)}
 .room-bg::before{content:"";position:absolute;left:50%;top:9%;width:min(46vw,680px);height:78%;translate:-50% 0;border-radius:999px 999px 0 0;background:linear-gradient(180deg,rgba(255,250,238,.55),rgba(255,250,238,.1));box-shadow:0 0 0 clamp(10px,1.4vw,22px) rgba(236,222,194,.55),0 30px 80px -30px rgba(80,56,24,.35)}
 .room-bg::after{content:"";position:absolute;left:0;right:0;bottom:0;height:22%;background:linear-gradient(180deg,rgba(214,194,160,0),rgba(214,194,160,.5))}
+.room.has-img .room-bg::before,.room.has-img .room-bg::after{display:none}
+.room.has-img .room-bg{animation:hsFade .9s ease both}
+@keyframes hsFade{from{opacity:.2}to{opacity:1}}
 .room-top{position:relative;z-index:2;display:flex;align-items:center;justify-content:space-between;gap:14px 24px;flex-wrap:wrap;padding-top:clamp(84px,9vw,128px);padding-bottom:6px}
 .room-tag{display:flex;align-items:baseline;gap:12px;margin:0;font:600 12px/1 var(--sans);letter-spacing:.18em;text-transform:uppercase;color:var(--hs-ink)}
 .room-tag b{font:500 clamp(30px,3.4vw,52px)/1 var(--serif);letter-spacing:0;color:var(--hs-gold)}
@@ -212,8 +229,10 @@ html.mag-lock{overflow:hidden}
 /* ============ 5. Телефон ============ */
 @media (max-width:700px){
   .hall-rooms{display:none}
-  .hd-tag{padding:6px 10px 6px 9px;font-size:9px;gap:6px}.hd-tag span{display:none}
-  .hall-door .hd-tag{bottom:4%}
+  .hall-door.no-m{display:none}
+  .hd-tag{padding:6px 11px 6px 10px;font-size:10px;gap:6px}
+  .hall-door{left:calc(var(--xm,var(--x)) * 100%);top:calc(var(--ym,var(--y)) * 100%);width:calc(var(--wm,var(--w)) * 100%);height:calc(var(--hm,var(--h)) * 100%)}
+  .hall-mag{left:calc(var(--txm) * 100%);top:calc(var(--tym) * 100%);width:calc(var(--twm) * 100%)}
   .mag-hint{padding:8px 13px;font-size:11px}
   .room-top{padding-top:76px}
   .room-nav a span,.room-nav button{font-size:11.5px}

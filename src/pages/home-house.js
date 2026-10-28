@@ -20,8 +20,9 @@ module.exports = function homeHouse(ctx, C, P, deps) {
   const hallBox = (b, k) => `--x:${b[0]};--y:${b[1]};--w:${b[2]};--h:${b[3] === undefined ? 0 : b[3]}`;
   const doors = H.hall.doors.map(d => {
     const r = roomBy(d.room); if (!r) return '';
-    return `<a class="hall-door" href="#room-${r.id}" data-house-go="${r.id}" data-track="house_door" data-room="${r.id}" style="${hallBox(d.d)};--xm:${d.m[0]};--ym:${d.m[1]};--wm:${d.m[2]};--hm:${d.m[3]}" aria-label="Открыть комнату ${r.n2}: ${esc(r.name)}">
-      <span class="hd-arch" aria-hidden="true"></span><span class="hd-tag"><b>${r.n2}</b><span>${esc(r.name)}</span></span></a>`;
+    const m = d.m ? `;--xm:${d.m[0]};--ym:${d.m[1]};--wm:${d.m[2]};--hm:${d.m[3]}` : '';
+    return `<a class="hall-door${d.m ? '' : ' no-m'}" href="#room-${r.id}" data-house-go="${r.id}" data-track="house_door" data-room="${r.id}" style="${hallBox(d.d)}${m}" aria-label="Открыть комнату ${r.n2}: ${esc(r.name)}">
+      <span class="hd-arch" aria-hidden="true"></span><span class="hd-tag" aria-hidden="true"><b>${r.n2}</b><span>${esc(r.short)}</span></span></a>`;
   }).join('');
   const tb = H.hall.table;
   /* журнал на столике: раскрытый разворот (обложка слева — фото, справа — содержание), только для глаз; настоящий журнал — в диалоге ниже */
@@ -54,7 +55,7 @@ module.exports = function homeHouse(ctx, C, P, deps) {
     if (!nx) return `<a class="room-door rd-end" href="${C.u(P, 'contacts.html')}" data-track="house_contacts"><span class="rd-arch" aria-hidden="true"></span><small>Дальше</small><b>Контакты и подвал</b></a>`;
     return `<a class="room-door" href="#room-${nx.id}" data-house-go="${nx.id}"><span class="rd-arch" aria-hidden="true"></span><small>${esc(H.nav.next)}</small><b>${nx.n2} · ${esc(nx.name)}</b></a>`;
   };
-  const room = (r, i, body, cls = '') => `<section class="room room-${r.id}${cls ? ' ' + cls : ''}" id="room-${r.id}" data-room="${r.id}" data-no="${r.no}" aria-label="Комната ${r.n2}: ${esc(r.name)}">
+  const room = (r, i, body, cls = '') => `<section class="room room-${r.id}${cls ? ' ' + cls : ''}" id="room-${r.id}" data-room="${r.id}" data-no="${r.no}"${r.img ? ` data-img="${C.u(P, r.img)}"` : ''} aria-label="Комната ${r.n2}: ${esc(r.name)}">
     <div class="room-stage" aria-hidden="true"><i class="room-bg"></i><i class="room-sun"></i></div>
     <div class="wrap room-top">${roomTag(r)}${roomNav(r, i)}</div>
     <div class="room-body">${body}</div>
