@@ -1,0 +1,248 @@
+/* house.css — ASTREYA HOUSE: главная как архитектурный дом (подключается, когда data/redesign.json → house.enabled или на house.html).
+   Части: 1) зал: проходы, журнал на столике, приветствие; 2) комнаты (.room): фон-интерьер, метка, навигация, дверь в следующую; 3) журнал (.mag): листы с перелистыванием;
+   4) плавающая навигация по дому и «вуаль» перехода. Двигаются только opacity, transform и clip-path; backdrop-filter и blend-режимы не используются.
+   Без JS всё содержимое — обычные секции подряд; при prefers-reduced-motion переходы мгновенные. Поведение — js/house.js; документ — docs/ASTREYA-HOUSE.md. */
+
+body[data-page="home"]{--hs-paper:#f6f0e3;--hs-paper-2:#efe6d3;--hs-ink:#0b1a33;--hs-navy:#101f37;--hs-line:rgba(86,60,30,.16);--hs-gold:#b08e4e;--hs-stone:#e9dcc5;--hs-glass:rgba(250,246,238,.82)}
+
+/* ============ 1. Зал: проходы, журнал на столике, приветствие ============ */
+.hall-anchor{position:absolute;left:0;bottom:100lvh;width:1px;height:1px;pointer-events:none}
+.hall-greet{margin:0 0 clamp(10px,1.6vh,16px);font:italic 400 clamp(15px,calc(var(--wwv) * .0095),20px)/1.3 var(--serif);color:var(--hs-ink);opacity:var(--h1,0);transform:translate3d(0,calc((1 - var(--h1,0)) * 14px),0)}
+.hall-greet::before{content:"";display:inline-block;width:28px;height:1px;margin:0 12px 4px 0;background:var(--hs-gold);vertical-align:middle}
+.hall-rooms{margin:clamp(14px,2.4vh,26px) 0 0;opacity:var(--h3,0);transform:translate3d(0,calc((1 - var(--h3,0)) * 16px),0)}
+.hall-rooms ol{display:flex;flex-wrap:wrap;gap:6px 18px;margin:0;padding:0;list-style:none}
+.hall-rooms a{display:inline-flex;align-items:baseline;gap:8px;padding:4px 0;font:600 clamp(9.5px,.72vw,12px)/1.2 var(--sans);letter-spacing:.12em;text-transform:uppercase;color:var(--slate);pointer-events:none;border-bottom:1px solid transparent;transition:color .25s,border-color .25s}
+.js-stage.ar-live .hall-rooms a{pointer-events:auto}
+.hall-rooms a b{font:500 13px/1 var(--serif);letter-spacing:0;color:var(--hs-gold)}
+.hall-rooms a:hover,.hall-rooms a:focus-visible{color:var(--hs-ink);border-bottom-color:var(--hs-gold)}
+
+.hall-doors,.hall-mag{position:absolute;inset:0;pointer-events:none;z-index:4}
+.hall-door{position:absolute;left:calc(var(--x) * 100%);top:calc(var(--y) * 100%);width:calc(var(--w) * 100%);height:calc(var(--h) * 100%);display:block;pointer-events:none;opacity:var(--h3,0);outline:0}
+.js-stage.ar-live .hall-door{pointer-events:auto;cursor:pointer}
+.hd-arch{position:absolute;inset:0;border-radius:999px 999px 0 0;box-shadow:inset 0 0 0 0 rgba(255,250,236,0);background:radial-gradient(120% 90% at 50% 70%,rgba(255,238,200,0),rgba(255,238,200,0));transition:box-shadow .5s var(--ease),background .5s var(--ease)}
+.hall-door:hover .hd-arch,.hall-door:focus-visible .hd-arch{box-shadow:inset 0 0 0 2px rgba(255,251,240,.92),0 0 70px rgba(255,232,186,.5);background:radial-gradient(120% 90% at 50% 70%,rgba(255,238,200,.34),rgba(255,238,200,.04))}
+.hall-door:focus-visible .hd-arch{box-shadow:inset 0 0 0 3px var(--hs-ink),0 0 0 3px rgba(255,251,240,.95)}
+.hd-tag{position:absolute;left:50%;bottom:6%;translate:-50% 0;display:flex;align-items:baseline;gap:8px;padding:8px 14px 8px 12px;border-radius:999px;white-space:nowrap;background:var(--hs-glass);box-shadow:inset 0 0 0 1px rgba(255,255,255,.7),0 8px 22px -10px rgba(60,40,18,.55);font:600 clamp(10px,.78vw,13px)/1 var(--sans);letter-spacing:.08em;text-transform:uppercase;color:var(--hs-ink);transition:transform .45s var(--ease),background-color .3s}
+.hd-tag b{font:500 clamp(12px,.95vw,15px)/1 var(--serif);letter-spacing:0;color:var(--hs-gold)}
+.hall-door:hover .hd-tag,.hall-door:focus-visible .hd-tag{transform:translateY(-6px);background:#fffaf0}
+
+.hall-mag{display:block}
+.hall-mag{left:calc(var(--tx) * 100%);top:calc(var(--ty) * 100%);right:auto;bottom:auto;width:calc(var(--tw) * 100%);aspect-ratio:1.46;translate:-50% -50%;opacity:var(--h3,0);perspective:1500px;position:absolute}
+.mag-prev{position:absolute;inset:0;display:block;margin:0;padding:0;border:0;background:none;cursor:pointer;pointer-events:none;color:inherit;font:inherit;text-align:left;-webkit-tap-highlight-color:transparent}
+.js-stage.ar-live .mag-prev{pointer-events:auto}
+.mag-prev:focus-visible{outline:3px solid var(--hs-ink);outline-offset:6px;border-radius:12px}
+.mag-prev-b{position:absolute;inset:0;display:grid;grid-template-columns:1fr 1fr;transform:rotateX(58deg) rotateZ(-7deg);transform-style:preserve-3d;transform-origin:50% 60%;transition:transform .7s var(--ease),filter .5s;
+  filter:drop-shadow(0 26px 22px rgba(52,34,16,.42))}
+.mag-prev:hover .mag-prev-b,.mag-prev:focus-visible .mag-prev-b{transform:rotateX(50deg) rotateZ(-5deg) translateY(-3%)}
+.mag-prev-b::before{content:"";position:absolute;inset:0;border-radius:3px;box-shadow:0 1px 0 #e8dfcb,0 2px 0 #e2d8c1,0 3px 0 #dcd1b8,0 4px 0 #d6cbb1,0 5px 0 #d0c4a9;pointer-events:none}
+.mp-l,.mp-r{position:relative;display:block;overflow:hidden;background:linear-gradient(90deg,#f7f1e4,#fbf7ee);padding:6%}
+.mp-l{border-radius:3px 0 0 3px;padding:0;background:#e9dfca}
+.mp-l img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;filter:saturate(.9) contrast(.98)}
+.mp-l i{position:absolute;left:8%;bottom:9%;right:8%;font:italic 400 clamp(8px,1vw,15px)/1.2 var(--serif);color:#fff;text-shadow:0 1px 8px rgba(0,0,0,.45)}
+.mp-r{border-radius:0 3px 3px 0;background:linear-gradient(90deg,#efe6d3,#fbf7ee 22%)}
+.mp-r em{display:block;margin:0 0 5%;font:italic 500 clamp(9px,1.2vw,18px)/1 var(--serif);color:var(--hs-ink)}
+.mp-r ol{display:grid;gap:4%;margin:0;padding:0;list-style:none}
+.mp-r li{display:flex;gap:6%;align-items:baseline;border-bottom:1px solid rgba(86,60,30,.16);padding-bottom:3%;font:600 clamp(6px,.75vw,11px)/1.1 var(--sans);letter-spacing:.05em;text-transform:uppercase;color:#4b5975}
+.mp-r li b{font:500 clamp(7px,.9vw,13px)/1 var(--serif);letter-spacing:0;color:var(--hs-gold)}
+.mag-prev-b::after{content:"";position:absolute;left:50%;top:0;bottom:0;width:7%;translate:-50% 0;background:linear-gradient(90deg,rgba(60,40,18,0),rgba(60,40,18,.22) 48%,rgba(60,40,18,.34) 50%,rgba(60,40,18,.16) 54%,rgba(60,40,18,0));pointer-events:none}
+.mag-hint{position:absolute;left:50%;top:-6%;translate:-50% -100%;display:inline-flex;align-items:center;gap:10px;padding:9px 16px;border-radius:999px;white-space:nowrap;background:var(--hs-ink);color:#f7f1e3;font:600 clamp(10.5px,.82vw,13.5px)/1 var(--sans);letter-spacing:.06em;box-shadow:0 12px 28px -12px rgba(11,26,51,.65);transition:transform .4s var(--ease)}
+.mag-hint::before{content:"";width:7px;height:7px;border-radius:50%;background:#f3d9a0;box-shadow:0 0 0 0 rgba(243,217,160,.7);animation:hsPulse 2.4s ease-out infinite}
+@keyframes hsPulse{0%{box-shadow:0 0 0 0 rgba(243,217,160,.7)}70%,100%{box-shadow:0 0 0 12px rgba(243,217,160,0)}}
+.mag-prev:hover .mag-hint,.mag-prev:focus-visible .mag-hint{transform:translateY(-4px)}
+
+/* ============ 2. Комнаты ============ */
+.room{position:relative;isolation:isolate;padding:0 0 clamp(56px,7vw,110px);overflow:clip;scroll-margin-top:0}
+.room-stage{position:absolute;inset:0;z-index:-1;pointer-events:none;clip-path:inset(0 round 0)}
+.room-bg{position:sticky;top:0;display:block;height:100vh;height:100svh;max-height:100%;background:var(--room-bg,linear-gradient(180deg,#f3ead8,#eadcc2))}
+.room-sun{position:absolute;inset:0;background:linear-gradient(180deg,rgba(246,240,227,.0) 0,rgba(246,240,227,.5) 34%,rgba(246,240,227,.86) 100%)}
+/* временные «интерьеры» комнат: арка, стена, пол и диагональный свет — пока нет рендеров (assets/house/room-*.webp ставятся через --room-img) */
+.room-bg{background:
+  var(--room-img,none) center/cover no-repeat,
+  radial-gradient(46% 62% at 50% 0%,rgba(255,247,228,.95),rgba(255,247,228,0) 72%),
+  linear-gradient(118deg,rgba(255,244,220,.0) 38%,rgba(255,240,208,.55) 48%,rgba(255,240,208,0) 58%),
+  linear-gradient(180deg,#f1e6d0 0,#ead9bd 62%,#dccbab 100%)}
+.room-bg::before{content:"";position:absolute;left:50%;top:9%;width:min(46vw,680px);height:78%;translate:-50% 0;border-radius:999px 999px 0 0;background:linear-gradient(180deg,rgba(255,250,238,.55),rgba(255,250,238,.1));box-shadow:0 0 0 clamp(10px,1.4vw,22px) rgba(236,222,194,.55),0 30px 80px -30px rgba(80,56,24,.35)}
+.room-bg::after{content:"";position:absolute;left:0;right:0;bottom:0;height:22%;background:linear-gradient(180deg,rgba(214,194,160,0),rgba(214,194,160,.5))}
+.room-top{position:relative;z-index:2;display:flex;align-items:center;justify-content:space-between;gap:14px 24px;flex-wrap:wrap;padding-top:clamp(84px,9vw,128px);padding-bottom:6px}
+.room-tag{display:flex;align-items:baseline;gap:12px;margin:0;font:600 12px/1 var(--sans);letter-spacing:.18em;text-transform:uppercase;color:var(--hs-ink)}
+.room-tag b{font:500 clamp(30px,3.4vw,52px)/1 var(--serif);letter-spacing:0;color:var(--hs-gold)}
+.room-tag span{padding-top:6px;border-top:1px solid var(--hs-gold);color:#4b5975}
+.room-nav{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-left:auto;justify-content:flex-end}
+.room-nav a,.room-nav button{display:inline-flex;align-items:center;gap:8px;padding:9px 15px;border-radius:999px;border:0;background:var(--hs-glass);box-shadow:inset 0 0 0 1px rgba(255,255,255,.7),0 6px 18px -10px rgba(60,40,18,.5);font:600 12px/1 var(--sans);letter-spacing:.06em;color:var(--hs-ink);cursor:pointer;transition:transform .3s var(--ease),background-color .25s,box-shadow .25s}
+.room-nav a:hover,.room-nav button:hover{background:#fffaf0;transform:translateY(-1px)}
+.room-nav svg{width:15px;height:15px}
+.rn-hall svg,.rn-pv svg{transform:scaleX(-1)}
+.rn-sp{flex:0 0 8px}
+.rn-mag{background:var(--hs-ink)!important;color:#f7f1e3!important}
+.room-body{position:relative;z-index:1}
+.room .rd-sec{background:none;border:0;padding-top:clamp(18px,2.6vw,38px)}
+.room .rd-clinical,.room .hp-proof,.room .hp-find{background:none}
+.room .rd-bglogo,.room [data-bd]::before{display:none}
+.room .hp-head{margin-top:0}
+
+/* дверь в следующую комнату: арка внизу комнаты */
+.room-door{position:relative;z-index:2;display:grid;justify-items:center;gap:6px;width:min(360px,86vw);margin:clamp(34px,5vw,64px) auto 0;padding:clamp(70px,9vw,110px) 18px 22px;text-align:center;color:var(--hs-ink);transition:transform .5s var(--ease)}
+.room-door .rd-arch{position:absolute;inset:0;border-radius:999px 999px 18px 18px;background:linear-gradient(180deg,rgba(255,250,238,.9),rgba(246,238,220,.6));box-shadow:inset 0 0 0 1px rgba(255,255,255,.8),0 0 0 8px rgba(233,220,197,.55),0 26px 50px -28px rgba(60,40,18,.6);transition:box-shadow .5s var(--ease),background-color .4s}
+.room-door small,.room-door b{position:relative}
+.room-door small{font:600 11px/1 var(--sans);letter-spacing:.18em;text-transform:uppercase;color:#6b6454}
+.room-door b{font:500 clamp(18px,1.9vw,26px)/1.15 var(--serif);color:var(--hs-ink)}
+.room-door:hover,.room-door:focus-visible{transform:translateY(-4px)}
+.room-door:hover .rd-arch,.room-door:focus-visible .rd-arch{box-shadow:inset 0 0 0 1px #fff,0 0 0 8px rgba(176,142,78,.4),0 30px 56px -26px rgba(60,40,18,.7)}
+
+/* прибытие в комнату: арка раскрывается, свет проявляется (класс ставит js/house.js) */
+.room.is-arriving .room-stage{animation:hsOpen .95s cubic-bezier(.2,.7,.2,1) both}
+@keyframes hsOpen{from{clip-path:inset(7% 28% 34% 28% round 50% 50% 0 0)}to{clip-path:inset(0 0 0 0 round 0)}}
+.room.is-arriving .room-top{animation:hsRise .7s var(--ease) .12s both}
+@keyframes hsRise{from{opacity:0;transform:translate3d(0,18px,0)}to{opacity:1;transform:none}}
+.room:focus{outline:0}
+.room:focus-visible{outline:3px solid var(--hs-ink);outline-offset:-3px}
+
+/* ============ 3. Журнал ============ */
+.mag[hidden]{display:none}
+.mag{position:fixed;inset:0;z-index:420;display:grid;place-items:center;opacity:0;visibility:hidden;transition:opacity .45s var(--ease),visibility 0s .45s}
+.mag.is-open{opacity:1;visibility:visible;transition:opacity .45s var(--ease)}
+.mag-veil{position:absolute;inset:0;background:radial-gradient(90% 80% at 50% 45%,rgba(58,40,20,.55),rgba(30,20,10,.78));cursor:pointer}
+.mag-wrap{position:relative;--pw:min(44vw,calc((100svh - 220px) * .75),600px);width:calc(var(--pw) * 2);max-width:96vw;margin-top:34px}
+.mag-bar{position:absolute;left:0;right:0;top:-58px;display:flex;align-items:center;gap:12px;color:#f7f1e3}
+.mag-x{width:40px;height:40px;border-radius:50%;border:0;background:rgba(255,250,238,.16);color:#fff;font:300 28px/1 var(--sans);cursor:pointer;display:grid;place-items:center;transition:background-color .25s}
+.mag-x:hover{background:rgba(255,250,238,.3)}
+.mag-cv{padding:10px 16px;border-radius:999px;border:0;background:rgba(255,250,238,.16);color:#fff;font:600 12px/1 var(--sans);letter-spacing:.08em;cursor:pointer;transition:background-color .25s}
+.mag-cv:hover{background:rgba(255,250,238,.3)}
+.mag-st{margin:0 0 0 auto;font:600 12px/1 var(--sans);letter-spacing:.14em;text-transform:uppercase;color:rgba(247,241,227,.78)}
+.mag-book{position:relative;width:calc(var(--pw) * 2);height:calc(var(--pw) * 1.333);perspective:2800px;margin:0 auto;transition:transform .9s cubic-bezier(.5,.1,.2,1);outline:0}
+.mag-book[data-s="0"]{transform:translateX(calc(var(--pw) * -.5))}
+.mag-book[data-end="1"]{transform:translateX(calc(var(--pw) * .5))}
+.mag-spine{position:absolute;left:50%;top:1%;bottom:1%;width:2px;translate:-50% 0;background:rgba(0,0,0,.25);box-shadow:0 0 60px 26px rgba(30,20,10,.45);pointer-events:none}
+.mag-book[data-s="0"] .mag-spine,.mag-book[data-end="1"] .mag-spine{opacity:0}
+.leaves{position:absolute;inset:0;transform-style:preserve-3d;filter:drop-shadow(0 40px 38px rgba(20,12,4,.55))}
+.leaf{position:absolute;left:50%;top:0;width:50%;height:100%;transform-origin:left center;transform-style:preserve-3d;z-index:var(--zr);transition:transform .95s cubic-bezier(.5,.1,.2,1),z-index 0s .48s}
+.leaf.is-flipped{transform:rotateY(-180deg);z-index:var(--zl)}
+.face{position:absolute;inset:0;overflow:hidden;backface-visibility:hidden;-webkit-backface-visibility:hidden;background:var(--hs-paper)}
+.face.back{transform:rotateY(180deg)}
+.face::before{content:"";position:absolute;inset:0;background:url(../assets/bg/stone-grain.webp) 0 0/420px 420px;opacity:.10;pointer-events:none;z-index:3}
+.face.front::after,.face.back::after{content:"";position:absolute;top:0;bottom:0;width:14%;pointer-events:none;z-index:3}
+.face.front::after{left:0;background:linear-gradient(90deg,rgba(60,40,18,.28),rgba(60,40,18,0))}
+.face.back::after{right:0;background:linear-gradient(270deg,rgba(60,40,18,.28),rgba(60,40,18,0))}
+.leaf:first-child .face.front{border-radius:0 4px 4px 0}
+.pg{position:absolute;inset:0;padding:calc(var(--pw) * .09) calc(var(--pw) * .085) calc(var(--pw) * .085);color:var(--hs-ink);font-size:calc(var(--pw) * .028)}
+.pg-l{padding-right:calc(var(--pw) * .1)}
+.pg-r{padding-left:calc(var(--pw) * .1)}
+.mg-kick{margin:0;font:600 .86em/1.2 var(--sans);letter-spacing:.2em;text-transform:uppercase;color:#6b6454}
+.mg-h{margin:.7em 0 .5em;font:500 calc(var(--pw) * .06)/1.12 var(--serif);letter-spacing:-.012em;color:var(--hs-ink);text-wrap:balance}
+.mg-p{margin:0 0 1em;font:400 1em/1.55 var(--sans);color:#38465f;text-wrap:pretty}
+.mg-facts{display:grid;grid-template-columns:1fr 1fr;gap:.9em 1.2em;margin:.6em 0 1.2em;padding:0;list-style:none}
+.mg-facts b{display:block;font:500 calc(var(--pw) * .06)/1 var(--serif);color:var(--hs-ink)}
+.mg-facts span{display:block;margin-top:.3em;font:600 .8em/1.3 var(--sans);letter-spacing:.06em;text-transform:uppercase;color:#6b6454}
+.mg-lines{margin:.4em 0 1.2em;padding:0;list-style:none;display:grid;gap:.5em}
+.mg-lines li{padding:.5em 0;border-bottom:1px solid var(--hs-line);font:500 1em/1.35 var(--sans);color:#2a3854}
+.mg-chips{display:flex;flex-wrap:wrap;gap:.5em .6em;margin:.4em 0 1.2em;padding:0;list-style:none}
+.mg-chips li{padding:.45em .85em;border-radius:999px;background:rgba(11,26,51,.06);font:600 .84em/1.1 var(--sans);color:#2a3854}
+.mg-next{display:flex;gap:1em;align-items:center;margin:.5em 0 1.2em;padding:.9em 1em;border-radius:12px;background:rgba(11,26,51,.05)}
+.mg-next b{font:500 calc(var(--pw) * .05)/1 var(--serif);color:var(--hs-ink);white-space:nowrap}
+.mg-next span{font:600 .95em/1.3 var(--sans);color:#2a3854}
+.mg-next em{display:block;margin-top:.25em;font:400 .85em/1.3 var(--sans);font-style:normal;color:#6b6454}
+.mg-news{margin:.4em 0 1.2em;padding:0;list-style:none;display:grid;gap:.9em}
+.mg-news li{padding-bottom:.8em;border-bottom:1px solid var(--hs-line)}
+.mg-news time{display:block;font:600 .78em/1 var(--sans);letter-spacing:.12em;text-transform:uppercase;color:#6b6454}
+.mg-news span{display:block;margin-top:.4em;font:500 1.05em/1.3 var(--serif);color:var(--hs-ink)}
+.mg-act{position:absolute;left:calc(var(--pw) * .1);right:calc(var(--pw) * .085);bottom:calc(var(--pw) * .15);display:flex;flex-wrap:wrap;align-items:center;gap:.6em 1.2em}
+.mg-act .btn{padding:.9em 1.4em;font-size:.95em}
+.mg-deep{display:inline-flex;align-items:center;gap:.5em;font:600 .92em/1.2 var(--sans);color:var(--hs-ink);border-bottom:1px solid var(--hs-gold);padding-bottom:.2em}
+.mg-deep svg,.mg-act .btn svg{width:1.1em;height:1.1em}
+.pg-f,.pg-f{position:absolute;bottom:calc(var(--pw) * .05);left:calc(var(--pw) * .1);right:calc(var(--pw) * .085);display:flex;justify-content:space-between;font:600 .78em/1 var(--sans);letter-spacing:.22em;color:#8a8168}
+.pg-f.l{left:calc(var(--pw) * .085);right:calc(var(--pw) * .1);flex-direction:row-reverse}
+.pg-f b{font:500 1.2em/1 var(--serif);letter-spacing:0}
+.pg-ph{padding:0}
+.mg-ph{position:absolute;inset:0}
+.mg-ph img{width:100%;height:100%;object-fit:cover;display:block}
+.mg-ph .mg-prod{object-fit:contain;padding:12% 18% 22%;background:linear-gradient(180deg,#efe6d3,#e4d6bb)}
+.pg-ph .mg-kick{position:absolute;left:calc(var(--pw) * .085);top:calc(var(--pw) * .08);color:#fff;text-shadow:0 1px 10px rgba(0,0,0,.5)}
+.mg-no{position:absolute;left:calc(var(--pw) * .085);bottom:calc(var(--pw) * .13);margin:0;font:400 calc(var(--pw) * .26)/1 var(--serif);color:rgba(255,255,255,.92);text-shadow:0 2px 30px rgba(0,0,0,.35)}
+.pg-ph .pg-f{color:rgba(255,255,255,.8)}
+.mg-quote{position:absolute;left:calc(var(--pw) * .085);right:calc(var(--pw) * .1);bottom:calc(var(--pw) * .13);margin:0;font:italic 400 calc(var(--pw) * .06)/1.15 var(--serif);color:#fff;text-shadow:0 2px 24px rgba(0,0,0,.5)}
+.mg-toc{margin:1em 0 0;padding:0;list-style:none}
+.mg-toc li{border-bottom:1px solid var(--hs-line)}
+.mg-toc button{display:grid;grid-template-columns:2.2em 1fr auto;gap:.8em;align-items:baseline;width:100%;padding:.85em .2em;border:0;background:none;text-align:left;cursor:pointer;color:var(--hs-ink);transition:background-color .25s,padding .3s var(--ease)}
+.mg-toc button:hover,.mg-toc button:focus-visible{background:rgba(176,142,78,.12);padding-left:.8em}
+.mg-toc b{font:500 1.35em/1 var(--serif);color:var(--hs-gold)}
+.mg-toc span{font:600 1em/1.25 var(--sans)}
+.mg-toc i{font:500 .95em/1 var(--serif);color:#8a8168}
+.mg-cities{position:absolute;left:calc(var(--pw) * .085);right:calc(var(--pw) * .1);bottom:calc(var(--pw) * .13);margin:0;padding:0;list-style:none;display:grid;gap:.8em;color:#fff}
+.mg-cities b{display:block;font:500 calc(var(--pw) * .055)/1.1 var(--serif)}
+.mg-cities span{font:600 .8em/1.3 var(--sans);letter-spacing:.12em;text-transform:uppercase;opacity:.85}
+.pg-cont-l .mg-ph{background:linear-gradient(160deg,#1b2d4e,#0b1a33)}
+.mg-contacts{margin:.6em 0 1.4em;padding:0;list-style:none;display:grid;gap:.7em;font:500 1.05em/1.4 var(--sans)}
+.mg-contacts a{border-bottom:1px solid var(--hs-gold)}
+.pg-cover{padding:calc(var(--pw) * .1) calc(var(--pw) * .1);background:linear-gradient(160deg,#162744,#0b1a33);color:#f4ecda;text-align:center;display:grid;align-content:start;justify-items:center;gap:calc(var(--pw) * .04)}
+.pg-cover::before{content:"";position:absolute;inset:calc(var(--pw) * .035);border:1px solid rgba(176,142,78,.55);pointer-events:none}
+.cv-kick{font:600 .8em/1.4 var(--sans);letter-spacing:.3em;text-transform:uppercase;color:rgba(244,236,218,.78)}
+.cv-title{margin:0;font:400 calc(var(--pw) * .115)/1 var(--serif);letter-spacing:.14em;text-indent:.14em;color:#f4ecda}
+.cv-ph{margin:0;width:62%;aspect-ratio:3/4;border-radius:999px 999px 6px 6px;overflow:hidden;box-shadow:0 0 0 calc(var(--pw) * .012) rgba(244,236,218,.14)}
+.cv-ph img{width:100%;height:100%;object-fit:cover;display:block;filter:saturate(.85)}
+.cv-year{font:500 calc(var(--pw) * .045)/1 var(--serif);letter-spacing:.22em;color:rgba(244,236,218,.8)}
+.pg-cover .lgo{position:absolute;right:calc(var(--pw) * .07);bottom:calc(var(--pw) * .06);width:calc(var(--pw) * .16);height:auto;color:#f4ecda;opacity:.85}
+.pg-back{background:linear-gradient(160deg,#162744,#0b1a33);color:#f4ecda;display:grid;place-content:center;gap:1.4em;text-align:center}
+.mg-colophon{margin:0;font:600 .9em/1.6 var(--sans);letter-spacing:.14em;text-transform:uppercase;color:rgba(244,236,218,.7)}
+.pg-back .lgo{width:calc(var(--pw) * .3);margin:0 auto;opacity:.85}
+.mag-ctl{display:flex;justify-content:space-between;margin-top:18px}
+.mag-ctl button{display:inline-flex;align-items:center;gap:10px;padding:12px 20px;border-radius:999px;border:0;background:rgba(255,250,238,.16);color:#fff;font:600 13px/1 var(--sans);letter-spacing:.06em;cursor:pointer;transition:background-color .25s,opacity .25s}
+.mag-ctl button:hover:not(:disabled){background:rgba(255,250,238,.3)}
+.mag-ctl button:disabled{opacity:.35;cursor:default}
+.mag-ctl svg{width:16px;height:16px}
+.mag-pv svg{transform:scaleX(-1)}
+.mag-book[data-hover="l"],.mag-book[data-hover="r"]{cursor:pointer}
+html.mag-lock{overflow:hidden}
+
+/* ============ 4. Навигация по дому и вуаль перехода ============ */
+.house-nav{position:fixed;left:50%;bottom:clamp(12px,2vh,22px);z-index:90;translate:-50% 0;display:flex;align-items:center;gap:6px;padding:6px 8px;border-radius:999px;background:var(--hs-glass);box-shadow:inset 0 0 0 1px rgba(255,255,255,.75),0 14px 34px -14px rgba(40,26,10,.6);max-width:calc(100vw - 24px);transition:opacity .4s var(--ease),transform .4s var(--ease)}
+.house-nav.is-off{opacity:0;pointer-events:none;visibility:hidden;transform:translateY(16px);transition:opacity .4s var(--ease),transform .4s var(--ease),visibility 0s .4s}
+.house-nav a,.house-nav button{display:inline-flex;align-items:center;gap:7px;padding:9px 13px;border-radius:999px;border:0;background:none;font:600 12px/1 var(--sans);letter-spacing:.06em;color:var(--hs-ink);cursor:pointer;white-space:nowrap;transition:background-color .25s,color .25s}
+.house-nav a:hover,.house-nav button:hover{background:rgba(11,26,51,.07)}
+.hn-mag{background:var(--hs-ink)!important;color:#f7f1e3!important}
+.hn-rooms{display:flex;gap:2px;margin:0 0 0 4px;padding:0 0 0 8px;list-style:none;border-left:1px solid var(--hs-line)}
+.hn-rooms a{padding:9px 10px}
+.hn-rooms b{font:500 14px/1 var(--serif);letter-spacing:0;color:var(--hs-gold)}
+.hn-rooms span{display:none;font:600 11px/1 var(--sans);letter-spacing:.06em;text-transform:uppercase}
+.hn-rooms a[aria-current="true"]{background:var(--hs-ink);color:#f7f1e3}
+.hn-rooms a[aria-current="true"] b{color:#f3d9a0}
+.hn-rooms a[aria-current="true"] span{display:inline}
+.house-veil{position:fixed;inset:0;z-index:380;pointer-events:none;opacity:0;background:radial-gradient(70% 60% at 50% 55%,#fffaf0,#f2e8d2 75%);transition:opacity .24s ease}
+.house-veil.on{opacity:1}
+
+/* ============ 5. Телефон ============ */
+@media (max-width:700px){
+  .hall-rooms{display:none}
+  .hd-tag{padding:6px 10px 6px 9px;font-size:9px;gap:6px}.hd-tag span{display:none}
+  .hall-door .hd-tag{bottom:4%}
+  .mag-hint{padding:8px 13px;font-size:11px}
+  .room-top{padding-top:76px}
+  .room-nav a span,.room-nav button{font-size:11.5px}
+  .rn-sp{display:none}
+  .room-bg::before{width:78vw;top:12%;height:70%}
+  .house-nav{left:12px;right:84px;translate:0 0;max-width:none;overflow-x:auto;scrollbar-width:none}
+  .house-nav::-webkit-scrollbar{display:none}
+  .hn-rooms a{padding:9px 8px}
+  /* журнал: одна страница на экране, листаем пальцем (scroll-snap); те же настоящие страницы */
+  .mag-wrap{--pw:min(88vw,calc((100svh - 190px) * .75));width:var(--pw);max-width:none}
+  .mag-bar{top:-50px}
+  .mag-book,.mag-book[data-s="0"],.mag-book[data-end="1"]{width:var(--pw);height:calc(var(--pw) * 1.333);perspective:none;transform:none}
+  .mag-spine{display:none}
+  .leaves{display:flex;overflow-x:auto;overflow-y:hidden;scroll-snap-type:x mandatory;scrollbar-width:none;filter:drop-shadow(0 24px 24px rgba(20,12,4,.5));transform-style:flat;border-radius:4px}
+  .leaves::-webkit-scrollbar{display:none}
+  .leaf{display:contents;transform:none!important}
+  .face,.face.back{position:relative;flex:0 0 100%;width:100%;height:100%;scroll-snap-align:center;scroll-snap-stop:always;transform:none;backface-visibility:visible;-webkit-backface-visibility:visible}
+  .face::after{display:none}
+  .mag-ctl{margin-top:12px}
+}
+
+@media (prefers-reduced-motion:reduce){
+  .leaf,.mag-book,.mag,.house-veil,.house-nav,.mag-prev-b,.hd-arch,.hd-tag,.room-door,.room-door .rd-arch{transition:none!important}
+  .room.is-arriving .room-stage,.room.is-arriving .room-top{animation:none}
+  .mag-hint::before{animation:none}
+  .mag-prev-b{transform:rotateX(58deg) rotateZ(-7deg)!important}
+}
+html.lite .leaf,html.lite .mag-book{transition-duration:.01s!important}
+@media print{.mag,.house-nav,.house-veil,.hall-doors,.hall-mag{display:none!important}.room-stage{display:none}}
+
+/* журнал открыт: кнопка Стеллы не перекрывает страницы */
+html.mag-lock .asst-fab{opacity:0;pointer-events:none;visibility:hidden}

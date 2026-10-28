@@ -6,6 +6,8 @@ const {esc, I} = S;
 
 module.exports = function homeRedesign(ctx, C, P, parts, {events, val}) {
   const rd = ctx.redesign, brands = ctx.brands, tasks = ctx.tasks, content = ctx.content, h = content.home;
+  const houseOn = !!(rd.house && (rd.house.enabled || P.house));          // ASTREYA HOUSE (data/redesign.json → house, src/pages/home-house.js): зал со столиком и журналом + семь комнат; house.html — предпросмотр, index.html — при enabled
+  let HOUSE = null;                                                       // собирается ниже, когда готовы секции маршрута партнёра
 
   /* фото 01–05 (data/redesign.json → photos): каждое — только в своём блоке */
   const ph = k => rd.photos[k];
@@ -150,7 +152,7 @@ module.exports = function homeRedesign(ctx, C, P, parts, {events, val}) {
      Слои (снизу вверх): кадры зала без баночки (canvas .js-cv; каменный шар запечён в них — статичная 3D-модель из того же камня, что и гора) → спрайт баночки (canvas .ar-jar-cv, чёткий, с прозрачным фоном) → орбиты логотипов → текст и панель.
      Баночка лежит под надписями: ничто из текста и логотипов ею не закрывается. Без JS или без canvas сцена скрыта, остаётся прежний герой (css/home-arch.css).
      Тексты — те же, что у прежнего героя (data/content.json → home), цифры — из данных (число представительств и брендов). */
-  const arch = (() => {
+  const buildArch = () => {
     const j = rd.jar, a = j && j.enabled && j.arch; if (!a || !a.enabled) return '';
     const nOff = ctx.stats.offices, nBr = ctx.stats.brands, cities = ctx.site.offices.map(o => o.city);
     const auto = {offices: `${nOff} ${S.plural(nOff, 'город', 'города', 'городов')} присутствия`, brands: `${nBr} ${S.plural(nBr, 'бренд', 'бренда', 'брендов')} в портфеле`};
@@ -162,18 +164,18 @@ module.exports = function homeRedesign(ctx, C, P, parts, {events, val}) {
     const jr = a.jar;
     const sp = a.sphere, fd = sp.desktop, fm = sp.mobile;                       // готовый кадр: где стоит шар (центр x, центр y, диаметр — доли кадра; он запечён в кадры) — вокруг него орбиты
     const fin = `--ox:${fd[0]};--oy:${fd[1]};--od:${fd[2]};--oxm:${fm[0]};--oym:${fm[1]};--odm:${fm[2]}`;
-    return `<section class="jar-story arch-story" id="arch-story" data-mode="arch" data-view-at="0.97" style="--jh:${a.heightVh.desktop}vh;--jhm:${a.heightVh.mobile}vh" data-n="${a.frames}" data-ext="${a.ext}" data-v="${esc(ctx.assetVersion || '')}" data-d="${a.desktop}" data-m="${a.mobile}" data-zd="${a.depth.desktop}" data-zm="${a.depth.mobile}" data-zx="${a.depth.ext}" data-cam="${a.cam.desktop}" data-camm="${a.cam.mobile}" data-lbl="${a.label}" ${a.sphereTex ? `data-sa="${a.sphereTex.a}" data-sn="${a.sphereTex.n}" ` : ''}data-ink="${a.ink}" data-look="${esc(JSON.stringify(a.look || {}))}" data-p="${a.p.join(',')}" data-jd="${jr.desktop.dir}" data-jm="${jr.mobile.dir}" data-jx="${jr.ext}" data-jr="${JSON.stringify(jr.desktop.rects)}" data-jrm="${JSON.stringify(jr.mobile.rects)}" aria-label="${esc(a.alt)}">
+    return `<section class="jar-story arch-story${houseOn ? ' is-house' : ''}" id="arch-story" data-mode="arch" data-view-at="0.97" style="--jh:${a.heightVh.desktop}vh;--jhm:${a.heightVh.mobile}vh" data-n="${a.frames}" data-ext="${a.ext}" data-v="${esc(ctx.assetVersion || '')}" data-d="${a.desktop}" data-m="${a.mobile}" data-zd="${a.depth.desktop}" data-zm="${a.depth.mobile}" data-zx="${a.depth.ext}" data-cam="${a.cam.desktop}" data-camm="${a.cam.mobile}" data-lbl="${a.label}" ${a.sphereTex ? `data-sa="${a.sphereTex.a}" data-sn="${a.sphereTex.n}" ` : ''}data-ink="${a.ink}" data-look="${esc(JSON.stringify(a.look || {}))}" data-p="${a.p.join(',')}" data-jd="${jr.desktop.dir}" data-jm="${jr.mobile.dir}" data-jx="${jr.ext}" data-jr="${JSON.stringify(jr.desktop.rects)}" data-jrm="${JSON.stringify(jr.mobile.rects)}" aria-label="${esc(a.alt)}">
     <div class="js-stage">
       <canvas class="js-cv" role="img" aria-label="${esc(a.alt)}"></canvas>
       <div class="ar-vig" aria-hidden="true"></div>
       <div class="ar-hero">
         <div class="ar-world">
           <canvas class="ar-jar-cv" aria-hidden="true"></canvas>
-          <div class="ar-orb" style="${fin}" aria-hidden="true"><div class="ar-orbit">${ring('r3')}${ring('r1')}${ring('r2')}</div></div>
+          ${houseOn ? HOUSE.hall.world : `<div class="ar-orb" style="${fin}" aria-hidden="true"><div class="ar-orbit">${ring('r3')}${ring('r1')}${ring('r2')}</div></div>`}
         </div>
         <div class="ar-cue" aria-hidden="true"><span>${esc(j.cue)}</span><i></i></div>
         <div class="ar-copy">
-          <span class="eyebrow ar-e">${esc(h.eyebrow)}</span>
+          ${houseOn ? HOUSE.hall.greeting : ''}<span class="eyebrow ar-e">${esc(h.eyebrow)}</span>
           <h1 class="ar-h">${h.h1}</h1>
           <p class="lead ar-lead">${esc(h.lead)}</p>
           <div class="row ar-cta">
@@ -181,16 +183,20 @@ module.exports = function homeRedesign(ctx, C, P, parts, {events, val}) {
             <a class="btn btn-ghost" href="${C.u(P, 'partners.html')}" data-track="partner_cta" data-place="hero">Стать партнёром</a>
           </div>
           <ul class="ar-facts">${h.facts.map(f => `<li>${esc(f)}</li>`).join('')}<li>${esc(auto.offices)}</li></ul>
+          ${houseOn ? HOUSE.hall.rooms : ''}
         </div>
-        <div class="ar-panel" role="group" aria-label="${esc(a.panel.title)}">
+        ${houseOn ? '' : `<div class="ar-panel" role="group" aria-label="${esc(a.panel.title)}">
           <p class="ar-pt">${esc(a.panel.title)}</p>
           <ul>${items.map(it => `<li><span class="ar-ic" aria-hidden="true">${I[it.icon] || I.check}</span><span class="ar-tx"><b>${esc(it.title)}</b><em>${esc(it.text)}</em></span></li>`).join('')}</ul>
           <a class="btn btn-ghost btn-sm ar-more" href="${C.u(P, 'company.html')}">Подробнее ${I.arrow}</a>
-        </div>
+        </div>`}
       </div>
     </div>
+    ${houseOn ? '<i class="hall-anchor" id="hall" aria-hidden="true"></i>' : ''}
   </section>`;
-  })();
+  };
+  const archOk = !!(rd.jar && rd.jar.enabled && rd.jar.arch && rd.jar.arch.enabled);
+  const arch = archOk ? (houseOn ? 'house' : buildArch()) : '';          // в режиме дома первый экран собирается позже (buildArch), когда готовы зал и журнал
   /* галерея брендов в стиле страницы «Бренды»: те же арочные ниши-витрины (рендеры assets/brands, логотип и товары на подиумах), лентой с горизонтальной прокруткой */
   const brandsX = (() => {
     if (!arch) return null;
@@ -208,6 +214,10 @@ module.exports = function homeRedesign(ctx, C, P, parts, {events, val}) {
      анимация (#arch-story) и герой сразу после неё не затрагиваются. homePath.enabled = false возвращает прежний порядок секций (ниже). */
   if (arch && rd.homePath && rd.homePath.enabled) {
     const hpS = require('./home-path.js')(ctx, C, P, {events, val, img, bgLogo, showDemo});
+    if (houseOn) {
+      HOUSE = require('./home-house.js')(ctx, C, P, {events, val, img, hpS, brandsX, news, fork, finalCta, marquee: parts.marquee});
+      return HOUSE.compose(buildArch());
+    }
     return [arch, heroX, parts.marquee, ...(fork ? [fork] : []), hpS.rolesSec, hpS.proofSec, brandsX, hpS.finderSec, hpS.academySec, news, hpS.stepsSec, finalCta].join('\n\n  ');
   }
   return [arch, heroX, parts.marquee, ...(fork ? [fork] : []), about, stats, why, solutions, (brandsX || parts.brands.replace('class="sec tint"', 'class="rd-sec rd-brands"')), picker, featured, editorial, training, forWhom, news, wall, finalCta].join('\n\n  ');
