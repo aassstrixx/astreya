@@ -78,6 +78,12 @@ SPHERE_DEPTH = {False: 1.78, True: 1.62}                                # на �
 LEAF = dict(leafk=float(os.environ.get('HALL_LEAFK', 1.0)), wk=float(os.environ.get('HALL_LEAFW', 1.0)), dens=float(os.environ.get('HALL_LEAFD', 1.0)))                  # листья оливы в зале: по эталону заказчика (кадр 26.10) — тонкие ветки оливы с узкими листьями; множители к настройкам BR.olive (1 — как в эталоне)
 TREES = os.environ.get('HALL_TREES', '0') == '1'                                                                                                                             # густые деревья в вазах (build_tree) — не по эталону: в кадре заказчика у вазы тонкая ветка, а сверху — ветки оливы
 SPHERE_LIVE = os.environ.get('HALL_SPHERE_LIVE', '0') == '1'                                                                                                                 # 1 — убрать шар из кадров (не годится: скрытый от камеры шар оставляет на нише чёрный круг от своей тени); по умолчанию шар запечён в кадры, а сайт рисует поверх него живой шар в том же месте
+def _xy(name, dflt):
+    return tuple(float(v) for v in os.environ.get(name, dflt).split(','))
+TXY = _xy('HALL_TREE_XY', '.70,-.52')                                                              # где стоит ваза с деревом справа (м): перед каменным знаком, не под его «рукой» — ствол виден от горлышка вазы до кроны, листья не задевают камень (раньше ваза стояла под нижним краем «руки» знака: ствол скрывался за ней, крона висела над ней и пересекала камень)
+TH = float(os.environ.get('HALL_TREE_H', .26))                                                     # высота ствола над горлышком вазы, м
+TCR = float(os.environ.get('HALL_TREE_CROWN', .50))                                                # длина ветвей кроны, м
+RXC, RXB, RXP = _xy('HALL_ROCK_C', '.3,0'), _xy('HALL_ROCK_B', '.35,.15'), _xy('HALL_ROCK_P', '-.25,-.25')   # сдвиги камней у вазы
 TREE_R = os.environ.get('HALL_TREE_R', '1') == '1'                                                                                                                          # пышная ветка (дерево) в вазе справа — по просьбе заказчика, как на телефоне
 LAB = os.environ.get('HALL_LAB', '0') == '1'                                                                                                                                 # «световая лаборатория» (кольца на полу и подиуме, упаковки на пороге ниши) — в эталоне заказчика их нет: пол ровный, полированный
 LOGO_PARTS = ('mountain',) if os.environ.get('HALL_BAND') == '0' else ('mountain', 'band')       # весь знак: две ножки горы с острыми кончиками и серп (волна) — как в логотипе
@@ -247,16 +253,16 @@ def build_decor(M, portrait):
         s = RK.ROCKS[rid]
         size = tuple(v * scale for v in s['size'])
         return RK.make_rock('%s_%d' % (rid, k), s['seed'] + k, size, s['kind'], s['cuts'], s['tint'], loc, rot, rough=s['rough'])
-    rock('boulder-c', (.84, -.88, 0), 25, 1, .55)
+    rock('boulder-c', (.84 + RXC[0], -.88 + RXC[1], 0), 25, 1, .55)
     rock('chunk-b', (-.05, -.74, 0), -40, 2, .60)
     rock('slab-b', (.74, -.06, 0), -6, 3, .80)
-    rock('boulder-b', (.86, -.46, 0), 35, 4, .60)
-    rock('pebble-a', (.72, -.72, 0), 60, 5, 1.1)
+    rock('boulder-b', (.86 + RXB[0], -.46 + RXB[1], 0), 35, 4, .60)
+    rock('pebble-a', (.72 + RXP[0], -.72 + RXP[1], 0), 60, 5, 1.1)
     # ваза и олива справа (как у пилястры на референсе)
     dxp = float(os.environ.get('HALL_DXP_P', -.15)) if portrait else 0.0                                 # на телефоне вазу с деревом сдвигаем: ваза должна быть видна в кадре (иначе крона «висит» в воздухе)
     if TREE_R:                                                                                           # ваза справа с пышной веткой (олива с густой длинной листвой): на ПК и на телефоне — в одном месте сцены
-        BR.vase((.98 + dxp, -.14, 0), .42, .095, M['ceramic'])
-        build_tree(random.Random(77), (.98 + dxp, -.14, .36), .39, .98, lk=1.3, per=84, nb=32)
+        BR.vase((TXY[0] + dxp, TXY[1], 0), .42, .095, M['ceramic'])
+        build_tree(random.Random(77), (TXY[0] + dxp, TXY[1], .36), TH, TCR, lk=1.3, per=84, nb=32)
     else:                                                                                                 # как в эталоне: низкая ваза и тонкая ветка оливы
         BR.vase((.98 + dxp, -.14, 0), .30, .085, M['ceramic'])
         BR.olive((.98 + dxp, -.14, .30 + .026), .90, 26, .78, random.Random(7), lean=-.10, **LEAF)
