@@ -117,6 +117,7 @@ if (!J || !J.enabled || !A || !A.enabled) { console.log('Первый экран
     const {ctx, p} = await open(W, H);
     await p.goto(base + 'index.html'); await skipSplash(p); await wait(2500);
     const g = await geo(p); ok(g && g.tot > H * 2, 'сцена на месте и закреплена на несколько экранов', g);
+    if (process.env.ARCH_DEBUG) setInterval(async () => { try { console.log('   [dbg]', JSON.stringify(await p.evaluate(() => { const s = Astreya.jar.arch.state(); return {res: s.resident, resJ: s.residentJar, lows: s.lows, ls: s.lowSprites, loaded: s.loaded, jl: s.jar.loaded, p: +s.p.toFixed(3), d: s.drawn}; })), 'rssMB', Math.round(require('child_process').execSync('ps -eo rss=,args=', {maxBuffer: 1 << 26}).toString().split('\n').filter(l => l.includes('pw-browsers/chromium')).reduce((a, l) => a + (+l.trim().split(/\s+/)[0] || 0), 0) / 1024)); } catch (e) { console.log('   [dbg] err', String(e.message).slice(0, 80)); } }, 20000).unref();
     let v = await view(p);
     ok(v.h1count === 1, 'на странице один заголовок первого уровня', v.h1count); ok(v.hero === 'none', 'запасной герой скрыт, пока работает сцена', v.hero);
     ok(v.old.length === 0, 'нет старого вступления, лозунга, плашек, флакона и молочного слоя', v.old);
@@ -139,6 +140,7 @@ if (!J || !J.enabled || !A || !A.enabled) { console.log('Первый экран
     const Pk = A.p;
     const ink0 = await p.evaluate(() => window.__ink());
     ok(ink0 > 250, 'заставка: надписи этикетки нарисованы на баночке (тёмные штрихи на корпусе)', ink0);
+    await p.evaluate(() => Astreya.jar.ctrl.prefetch(16, 19));                                                  // полные кадры у p = 0,3 (иначе сразу после скачка там ещё уменьшенные копии — мягче)
     const sh = await p.evaluate(() => { const c = Astreya.jar.ctrl; c.jump(0); const l0 = window.__lap('.js-cv'); c.jump(0.3); return {l0, l30: window.__lap('.js-cv')}; });
     if (camD.sphere3d) ok(!(A.look && A.look.shadow && A.look.shadow.veil), 'светлой завесы-дымки на первых кадрах нет: заставка — настоящий зал (стена, тени листьев, край горы), а не пустой бежевый экран', A.look && A.look.shadow);
     else ok(sh.l0 >= 0 && sh.l0 < sh.l30 * 0.65, 'прежние кадры: первый кадр закрыт светлым размытием: резкость на заставке (p = 0) ниже, чем после того, как оно сошло (p = 0,3)', sh);
@@ -197,6 +199,31 @@ if (!J || !J.enabled || !A || !A.enabled) { console.log('Первый экран
     ok(/Подробнее/.test(v.moreTxt) && v.more && v.more.b <= H + 1, 'финал: в нижней панели есть кнопка «Подробнее» и она в экране', {t: v.moreTxt, r: v.more});
     ok(v.sw <= W + 1, 'нет горизонтальной прокрутки', [v.sw, W]);
     ok(v.gl && v.resident > 0 && v.loaded > 10, 'WebGL-движок работает: ключевые кадры загружены, текстуры в видеопамяти', {gl: v.gl, resident: v.resident, loaded: v.loaded});
+    /* быстрая прокрутка: рядом с любым положением есть уменьшенные копии кадров и спрайтов, поэтому картинка не рвётся «зубцами» и не идёт против прокрутки */
+    if (v.lows !== undefined || (await p.evaluate(() => Astreya.jar.arch.state().lows !== undefined))) {
+      await p.waitForFunction(() => { const s = Astreya.jar.arch.state(); return s.lows >= s.N && s.lowSprites >= s.N; }, null, {timeout: 240000, polling: 500}).catch(() => {});
+      const lw = await p.evaluate(() => { const s = Astreya.jar.arch.state(); return {lows: s.lows, sprites: s.lowSprites, N: s.N}; });
+      ok(lw.lows === lw.N && lw.sprites === lw.N, 'быстрая прокрутка: уменьшенные копии всех кадров зала и спрайтов баночки лежат в видеопамяти', lw);
+      await p.evaluate(() => Astreya.jar.arch.lowOnly(true));
+      const Phi = await p.evaluate(() => document.getElementById('arch-story').dataset.p.split(',').map(Number));
+      const seq = [0.1, 0.22, 0.35, 0.47, 0.6, 0.72, 0.85, 0.97], seen = [];
+      for (const pv of seq) {
+        await p.evaluate(y => window.scrollTo({top: y, behavior: 'instant'}), Math.round(g.top + pv * g.tot));
+        await p.waitForFunction(pp => Math.abs(Astreya.jar.arch.state().p - pp) < 0.004 && Astreya.jar.arch.state().drawn, pv, {timeout: 120000, polling: 250}).catch(() => {});
+        const st = await p.evaluate(() => { const s = Astreya.jar.arch.state(); return {p: s.p, d: s.drawn, res: s.resident}; });
+        const D = st.d ? (st.d.ka === st.d.kb ? Phi[st.d.ka] : Phi[st.d.ka] + (Phi[st.d.kb] - Phi[st.d.ka]) * st.d.t) : -1;
+        seen.push([pv, +st.p.toFixed(3), +D.toFixed(3), st.res]);
+      }
+      ok(seen.every(([, cp, D]) => D >= 0 && Math.abs(D - cp) <= 0.035), 'быстрая прокрутка (только уменьшенные копии): на любом скачке показано то же положение, что и у прокрутки (без отставания и откатов)', seen);
+      ok(seen.every(([, , D], i) => i === 0 || D > seen[i - 1][2]), 'быстрая прокрутка: показанное положение идёт только вперёд за прокруткой', seen);
+      const lowMad = await p.evaluate(() => { const c = document.querySelector('.js-cv'); return !!c && c.width > 0; });
+      ok(lowMad, 'быстрая прокрутка: холст зала на месте', lowMad);
+      await p.evaluate(() => Astreya.jar.arch.lowOnly(false));
+      await p.waitForFunction(() => Astreya.jar.arch.state().resident > 0, null, {timeout: 120000, polling: 500}).catch(() => {});
+      const back = await p.evaluate(() => Astreya.jar.arch.state().resident);
+      ok(back > 0, 'после скачка полные кадры снова разворачиваются у положения', back);
+      await at(p, g, 0.97, 2500);
+    }
     const jc = await p.evaluate(() => { const c = document.querySelector('.ar-jar-cv'), w = document.querySelector('.ar-world'); return {cw: c.width, ww: w.clientWidth, dpr: window.devicePixelRatio || 1, pearl: !!document.querySelector('.ar-pearl, .ar-gl, .ar-poster')}; });
     ok(jc.cw >= jc.ww * Math.min(jc.dpr, 2) * 0.99, 'баночка: холст рисуется в полном разрешении экрана (не мельче, чем пиксели устройства)', jc);
     ok(!jc.pearl, 'отдельных холстов и картинок шара на странице нет: живой шар рисуется в том же холсте зала', jc);

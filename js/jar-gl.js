@@ -285,7 +285,7 @@ void main() {
     const asp = portrait ? [cfg.frameAspect || 9 / 16, 1] : [1, 1 / (cfg.frameAspect || 16 / 9)];
     const fAspect = cfg.frameAspect || (portrait ? 9 / 16 : 16 / 9);
     const NF = [0.1, 40], disp = cfg.track.dispRange || [0.08, 4];
-    const keys = new Array(N).fill(null);
+    const keys = new Array(N).fill(null), lows = new Array(N).fill(null);        // keys — полноразмерные кадры рядом с положением; lows — уменьшенные копии всех кадров (всегда в видеопамяти: при быстрой прокрутке рядом всегда есть кадр)
     let gridK = 1, W = 0, H = 0, gw = 0, gh = 0, ibo = null, nIdx = 0, fb = [null, null], comp = null, comp2 = null, dead = false;
     const sph = {a: null, n: null, ready: false, m: new Float32Array([1, 0, 0, 0, 1, 0, 0, 0, 1]), cur: [0, 0], tune: cfg.sphereTune || [1.0, 0.45, 0.05], tune2: cfg.sphereTune2 || [0.45, 0.60, 0.9, 0.5]};     // живой шар: текстуры, поворот, курсор, настройки яркости
     let lastP = null;                                                                  // что было нарисовано последним (для перерисовки одного шара без перерисовки зала)
@@ -354,11 +354,23 @@ void main() {
     }
     function dropKey(k) { const e = keys[k]; if (!e) return; gl.deleteTexture(e.c); gl.deleteTexture(e.d); keys[k] = null; }
     const hasKey = k => !!keys[k];
+    /* уменьшенная копия кадра k (цвет и глубина целыми пикселями, без мип-уровней): держится всегда; когда полного кадра нет, зал рисуется по ней — быстрая прокрутка не показывает ни «зубцов», ни скачков назад */
+    function setLow(k, colorSrc, depthSrc, cw, ch, dw, dh) {
+      dropLow(k);
+      gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, false); gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, false); gl.pixelStorei(gl.UNPACK_COLORSPACE_CONVERSION_WEBGL, gl.NONE);
+      const c = mkTex(gl.LINEAR), d = mkTex(gl.NEAREST);
+      gl.bindTexture(gl.TEXTURE_2D, c); gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA8, gl.RGBA, gl.UNSIGNED_BYTE, colorSrc);
+      gl.bindTexture(gl.TEXTURE_2D, d); gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA8, gl.RGBA, gl.UNSIGNED_BYTE, depthSrc);
+      lows[k] = {c, d, cw: cw || colorSrc.width, ch: ch || colorSrc.height, dw: dw || depthSrc.width, dh: dh || depthSrc.height};
+    }
+    function dropLow(k) { const e = lows[k]; if (!e) return; gl.deleteTexture(e.c); gl.deleteTexture(e.d); lows[k] = null; }
+    const hasLow = k => !!lows[k];
+    const has = k => !!(keys[k] || lows[k]);
 
     const camS = {}, camT = {};
     const jScale = (cfg.track.jarScale || 0.02), jCz = (cfg.track.jarCenterZ || 0.057);
     function layer(i, k, t, sh) {
-      const e = keys[k]; track.at(Phi[k], camS);
+      const e = keys[k] || lows[k]; track.at(Phi[k], camS);
       gl.bindFramebuffer(gl.FRAMEBUFFER, fb[i].f); gl.viewport(0, 0, W, H);
       gl.clearColor(0, 0, 0, 0); gl.clearDepth(1.0); gl.enable(gl.DEPTH_TEST); gl.depthFunc(gl.LESS); gl.depthMask(true); gl.disable(gl.BLEND);
       gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
@@ -445,8 +457,8 @@ void main() {
       const nxt = Math.min(N - 1, lo + 1);
       const u = lo + (nxt > lo ? clamp((p - Phi[lo]) / (Phi[nxt] - Phi[lo]), 0, 1) : 0);
       let a = lo, b = nxt;
-      while (a >= 0 && !keys[a]) a--;
-      while (b < N && !keys[b]) b++;
+      while (a >= 0 && !has(a)) a--;
+      while (b < N && !has(b)) b++;
       const dA = a >= 0 ? u - a : 1e9, dB = b < N ? b - u : 1e9;
       if (dA > 1e8 && dB > 1e8) return p;
       if ((dA <= 2.001 && dB <= 2.001) || Math.min(dA, dB) <= 1.2) return p;
@@ -462,10 +474,10 @@ void main() {
       let lo = 0, hi = N - 1;
       if (p <= Phi[0]) { hi = 0; } else if (p >= Phi[N - 1]) { lo = N - 1; } else { while (hi - lo > 1) { const m = (lo + hi) >> 1; if (Phi[m] <= p) lo = m; else hi = m; } }
       let ka = lo, kb = Math.min(N - 1, lo + 1);
-      if (!keys[ka] || !keys[kb]) {                                   // нужных кадров нет — ближайшие загруженные по обе стороны
+      if (!has(ka) || !has(kb)) {                                     // нужных кадров нет — ближайшие загруженные по обе стороны
         let a = lo, b = Math.min(N - 1, lo + 1);
-        while (a >= 0 && !keys[a]) a--;
-        while (b < N && !keys[b]) b++;
+        while (a >= 0 && !has(a)) a--;
+        while (b < N && !has(b)) b++;
         ka = a >= 0 ? a : -1; kb = b < N ? b : -1;
         if (ka < 0 && kb < 0) return null;
         if (ka < 0) ka = kb; if (kb < 0) kb = ka;
@@ -496,7 +508,7 @@ void main() {
     }
     function destroy(keepContext) {
       dead = true;
-      for (let k = 0; k < N; k++) dropKey(k);
+      for (let k = 0; k < N; k++) { dropKey(k); dropLow(k); }
       fb.forEach(f => { if (f) { gl.deleteFramebuffer(f.f); gl.deleteTexture(f.color); gl.deleteTexture(f.depth); } });
       if (comp) { gl.deleteFramebuffer(comp.f); gl.deleteTexture(comp.color); }
       if (comp2) { gl.deleteFramebuffer(comp2.f); gl.deleteTexture(comp2.color); }
@@ -504,7 +516,7 @@ void main() {
       if (ibo) gl.deleteBuffer(ibo); [P0, P1, P2, P3, P4].forEach(q => q && gl.deleteProgram(q.p));
       if (!keepContext) { try { const ext = gl.getExtension('WEBGL_lose_context'); if (ext) ext.loseContext(); } catch (e) { /* — */ } }
     }
-    return {gl, setSize, setKey, dropKey, hasKey, plan, draw, drawSphere, setSphereTex, setSphere, destroy, setGridScale, get sphereReady() { return !!(P4 && sph.ready); }, get hasSphere() { return !!P4; }, camAt: p => track.at(p, {}), keys, get size() { return [W, H]; }};
+    return {gl, setSize, setKey, dropKey, hasKey, setLow, dropLow, hasLow, plan, draw, drawSphere, setSphereTex, setSphere, destroy, setGridScale, get sphereReady() { return !!(P4 && sph.ready); }, get hasSphere() { return !!P4; }, camAt: p => track.at(p, {}), keys, get size() { return [W, H]; }};
   }
 
 
@@ -532,11 +544,12 @@ uniform vec3 uCP, uCF, uCR, uCU; uniform float uCL;      // камера
 uniform vec3 uJar; uniform float uYaw, uScale;             // основание баночки, поворот (рад), метров в сантиметре модели
 uniform float uInk;            // насколько чернила темнят корпус на полном покрытии (множитель яркости)
 uniform float uInkOn;
+uniform vec2 uBias;            // смещение уровня мип-карт (спрайт, этикетка): меньше нуля — чётче, но больше риск мерцания кромок
 in vec2 vUv; in vec2 vFr;
 out vec4 o;
 const float R = 3.65, ZMIN = 0.5, ZMAX = 3.35, H = 3.6, TAU = 6.28318530718;
 void main() {
-  vec4 s = texture(uSprite, vUv);
+  vec4 s = texture(uSprite, vUv, uBias.x);
   vec3 c = s.rgb;
   if (uInkOn > 0.5 && s.a > 0.002) {
     vec2 n = vFr - 0.5;
@@ -553,7 +566,7 @@ void main() {
       if (zl > ZMIN && zl < ZMAX) {
         float th = atan(hit.y - uJar.y, hit.x - uJar.x) - uYaw;
         float u = fract(th / TAU);
-        float ink = texture(uLabel, vec2(u, 1.0 - zl / H)).r;
+        float ink = texture(uLabel, vec2(u, 1.0 - zl / H), uBias.y).r;
         c *= mix(1.0, uInk, ink);
       }
     }
@@ -597,7 +610,9 @@ void main() {
     const fAspect = cfg.frameAspect || (portrait ? 9 / 16 : 16 / 9);
     const asp = portrait ? [fAspect, 1] : [1, 1 / fAspect];
     const rects = cfg.rects, raw = track.raw, scale = raw.jarScale || 0.02, cz = raw.jarCenterZ || 0.057;
-    const sprites = new Array(N).fill(null);
+    const BIAS = cfg.bias || [-0.6, -0.4];                                           // спрайт и этикетка читаются чуть резче (замеры: края круче на ≈20 %, мерцания кромок в движении нет)
+    const sprites = new Array(N).fill(null), lowSp = new Array(N).fill(null);        // lowSp — уменьшенные копии всех спрайтов (всегда в видеопамяти, как lows у зала)
+    const spr = k => sprites[k] || lowSp[k];
     let label = null, W = 0, H = 0, dead = false;
     const vao = gl.createVertexArray();
     const mk = (filter) => { const t = gl.createTexture(); gl.bindTexture(gl.TEXTURE_2D, t); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, filter); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE); return t; };
@@ -609,6 +624,14 @@ void main() {
       sprites[k] = t;
     }
     function dropSprite(k) { if (sprites[k]) { gl.deleteTexture(sprites[k]); sprites[k] = null; } }
+    function setSpriteLow(k, src) {
+      dropSpriteLow(k);
+      gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, false); gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, true); gl.pixelStorei(gl.UNPACK_COLORSPACE_CONVERSION_WEBGL, gl.NONE);
+      const t = mk(gl.LINEAR); gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA8, gl.RGBA, gl.UNSIGNED_BYTE, src);
+      lowSp[k] = t;
+    }
+    function dropSpriteLow(k) { if (lowSp[k]) { gl.deleteTexture(lowSp[k]); lowSp[k] = null; } }
+    const hasSpriteLow = k => !!lowSp[k];
     function setLabel(src) {
       if (label) gl.deleteTexture(label);
       gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, false); gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, false); gl.pixelStorei(gl.UNPACK_COLORSPACE_CONVERSION_WEBGL, gl.NONE);
@@ -647,12 +670,12 @@ void main() {
       gl.clearColor(0, 0, 0, 0); gl.clear(gl.COLOR_BUFFER_BIT);
       if (!pair) return false;
       let ka = pair.ka, kb = pair.kb, t = pair.t;
-      if (!sprites[ka] && !sprites[kb]) {               // нужных спрайтов ещё нет — ближайший загруженный
+      if (!spr(ka) && !spr(kb)) {                       // нужных спрайтов ещё нет — ближайший загруженный
         let best = -1, bd = 1e9;
-        for (let k = 0; k < N; k++) if (sprites[k]) { const d = Math.abs(Phi[k] - p); if (d < bd) { bd = d; best = k; } }
+        for (let k = 0; k < N; k++) if (spr(k)) { const d = Math.abs(Phi[k] - p); if (d < bd) { bd = d; best = k; } }
         if (best < 0) return false;
         ka = kb = best; t = 0;
-      } else if (!sprites[ka]) { ka = kb; t = 0; } else if (!sprites[kb]) { kb = ka; t = 0; }
+      } else if (!spr(ka)) { ka = kb; t = 0; } else if (!spr(kb)) { kb = ka; t = 0; }
       track.at(p, camP); liftJar(camP, opt.lift, asp[1], cz);
       gl.useProgram(PJ.p); const u = PJ.u;
       gl.enable(gl.BLEND); gl.blendFunc(gl.ONE, gl.ONE); gl.disable(gl.DEPTH_TEST);
@@ -661,14 +684,15 @@ void main() {
       const jk = opt.jk || 1;
       gl.uniform3f(u.uJar, camP.jar[0], camP.jar[1], camP.jar[2] + cz * (1 - jk)); gl.uniform1f(u.uYaw, camP.yaw * Math.PI / 180); gl.uniform1f(u.uScale, scale * jk);       // баночка уменьшена вокруг своего центра (в заставке она парит в воздухе): основание поднимается
       gl.uniform1f(u.uInk, opt.ink || cfg.ink || 0.43); gl.uniform1f(u.uInkOn, label && opt.label !== false ? 1 : 0);
-      gl.activeTexture(gl.TEXTURE1); gl.bindTexture(gl.TEXTURE_2D, label || sprites[ka]); gl.uniform1i(u.uLabel, 1);
+      gl.uniform2f(u.uBias, BIAS[0], BIAS[1]);
+      gl.activeTexture(gl.TEXTURE1); gl.bindTexture(gl.TEXTURE_2D, label || spr(ka)); gl.uniform1i(u.uLabel, 1);
       gl.bindVertexArray(vao);
       const items = ka === kb ? [[ka, 1]] : [[ka, 1 - t], [kb, t]];
       for (const [k, w] of items) {
         if (w <= 0.0005) continue;
         const rc = place(k, camP, jk);
         gl.uniform4f(u.uRect, rc[0], rc[1], rc[2], rc[3]); gl.uniform1f(u.uW, w);
-        gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, sprites[k]); gl.uniform1i(u.uSprite, 0);
+        gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, spr(k)); gl.uniform1i(u.uSprite, 0);
         gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
       }
       if (opt.ground > 0.002) {                                                                // размеры и положение — по настоящим размерам баночки (не по рамке спрайта: она «дышит» при повороте)
@@ -688,8 +712,8 @@ void main() {
       gl.bindVertexArray(null); gl.disable(gl.BLEND);
       return true;
     }
-    function destroy(keepContext) { dead = true; for (let k = 0; k < N; k++) dropSprite(k); if (label) gl.deleteTexture(label); gl.deleteProgram(PJ.p); gl.deleteProgram(PG.p); gl.deleteProgram(PH.p); if (!keepContext) { try { const e = gl.getExtension('WEBGL_lose_context'); if (e) e.loseContext(); } catch (er) { /* — */ } } }
-    return {gl, setSize, setSprite, dropSprite, hasSprite, setLabel, draw, destroy, place, proj};
+    function destroy(keepContext) { dead = true; for (let k = 0; k < N; k++) { dropSprite(k); dropSpriteLow(k); } if (label) gl.deleteTexture(label); gl.deleteProgram(PJ.p); gl.deleteProgram(PG.p); gl.deleteProgram(PH.p); if (!keepContext) { try { const e = gl.getExtension('WEBGL_lose_context'); if (e) e.loseContext(); } catch (er) { /* — */ } } }
+    return {gl, setSize, setSprite, dropSprite, hasSprite, setSpriteLow, dropSpriteLow, hasSpriteLow, setLabel, draw, destroy, place, proj};
   }
 
   A.ArchGL = {createHall, createJar, camTrack};

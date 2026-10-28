@@ -26,10 +26,13 @@
   const portraitMQ = window.matchMedia('(max-aspect-ratio: 11/10)');
   const OMEGA = 24;           // жёсткость пружины, 1/с: отставание при равномерной прокрутке ≈ 2/OMEGA ≈ 0,08 с, остановка (до 2 %) ≈ 0,25 с
   const SNAP_DELAY = 110;     // мс без движения прокрутки, после которых плейхед мягко встаёт на ближайший ключевой кадр
+  const FAST_ON = 22, FAST_OFF = 10;   // ключевых кадров в секунду: быстрее FAST_ON — «взмах»: тяжёлые полные кадры не разворачиваем и не грузим в видеопамять (их уже не успеть, а загрузка гасит кадры анимации), картинка идёт по уменьшенным копиям; медленнее FAST_OFF — снова обычная работа
   const MOVING = 0.04;        // ключевых кадров в секунду: быстрее — идёт движение (включается сглаживание кромок)
   const LANES = [14, 8];      // запросов одновременно: [компьютер, телефон] (HTTP/2)
   const RES = [5, 4];         // сколько ключевых кадров по обе стороны от положения держим в видеопамяти: [компьютер, телефон]
   const DECODERS = 3;         // одновременных разворачиваний картинок в текстуры
+  const LOWSZ = [[512, 288, 256, 144, 400], [288, 512, 144, 256, 300]];      // уменьшенные копии всех кадров (всегда в видеопамяти): цвет, глубина, ширина спрайта баночки — [компьютер, телефон]
+  const LOWDEC = [2, 1];           // одновременных разворачиваний уменьшенных копий (они мелкие, идут в стороне от основной очереди)
   let ctrl = null, ctrls = [];       // ctrls — все сцены страницы (на главной одна: #arch-story), ctrl — она же
 
   function glOk() {                  // WebGL2 есть? (проверка на отдельном холсте — холсты сцены остаются нетронутыми)
@@ -113,6 +116,9 @@
     const blobs = {c: new Array(NH).fill(null), z: new Array(NH).fill(null), j: new Array(NH).fill(null)};
     const busy = {c: new Uint8Array(NH), z: new Uint8Array(NH), j: new Uint8Array(NH)};
     const resident = new Uint8Array(NH), resJ = new Uint8Array(NH), decoding = new Uint8Array(NH * 2);
+    const lowDone = new Uint8Array(NH), lowJDone = new Uint8Array(NH), lowBusy = new Uint8Array(NH * 2);       // уменьшенные копии: 1 — в видеопамяти, 2 — не получилось (браузер не умеет сжимать при разворачивании)
+    let decL = 0, shownP = -1, lastCp = 0, lowOnlyF = false, fast = false, lowN = 0, lowJN = 0, cpTick = 0;
+    const upQ = [], upN = {full: 0, low: 0};                                                          // загрузки в видеопамять идут по одной-две за кадр: несколько больших текстур сразу — это подвисание
     let inflight = 0, decN = 0, loadedKeys = 0, pin = null;                  // pin — диапазон кадров, которые держим в видеопамяти независимо от положения (для проверок и точных замеров)
     const pinned = k => !!pin && k >= pin[0] && k <= pin[1];
     const ctz = (i, n) => { if (!i || i === n - 1) return 99; let c = 0; while (!(i & 1)) { i >>= 1; c++; } return c; };
@@ -158,33 +164,87 @@
       try { return await createImageBitmap(blob, {premultiplyAlpha: premul ? 'premultiply' : 'none', colorSpaceConversion: 'none'}); }
       catch (e) { const u = URL.createObjectURL(blob); try { const im = new Image(); im.src = u; await im.decode(); return im; } finally { setTimeout(() => URL.revokeObjectURL(u), 3000); } }
     }
+    /* то же, но сразу в нужном размере (меньше памяти и работы): null — браузер размер не применил или не справился */
+    async function bmpR(blob, premul, w, h, q) {
+      try {
+        const o = {premultiplyAlpha: premul ? 'premultiply' : 'none', colorSpaceConversion: 'none', resizeQuality: q}; if (w) o.resizeWidth = w; if (h) o.resizeHeight = h;
+        const b = await createImageBitmap(blob, o);
+        if (b.width > (w || 1e9) * 1.5) { try { b.close(); } catch (e) { /* — */ } return null; }
+        return b;
+      } catch (e) { return null; }
+    }
+    const closeB = b => { try { b && b.close && b.close(); } catch (e) { /* — */ } };
+    function decodeLow(k, sprite) {
+      const L = LOWSZ[isPortrait() ? 1 : 0], g = gen, bi = sprite ? NH + k : k;
+      lowBusy[bi] = 1; decL++;
+      (sprite ? bmpR(blobs.j[k], true, L[4], 0, 'medium').then(s => [s]) : Promise.all([bmpR(blobs.c[k], false, L[0], L[1], 'medium'), bmpR(blobs.z[k], false, L[2], L[3], 'pixelated')])).then(a => {
+        const ok = a.every(Boolean);
+        if (g !== gen || !ok || dead) { if (!ok && g === gen) (sprite ? lowJDone : lowDone)[k] = 2; if (g === gen) lowBusy[bi] = 0; a.forEach(closeB); return; }
+        pushUp(() => {                                                       // busy снимается только после загрузки в видеопамять: иначе пока она в очереди, тот же кадр разворачивался бы снова и снова
+          if (g === gen) lowBusy[bi] = 0;
+          if (g === gen && !dead && (sprite ? jar : hall)) { if (sprite) { jar.setSpriteLow(k, a[0]); if (lowJDone[k] !== 1) lowJN++; lowJDone[k] = 1; } else { hall.setLow(k, a[0], a[1], a[0].width, a[0].height, a[1].width, a[1].height); if (lowDone[k] !== 1) lowN++; lowDone[k] = 1; } dirty = true; }
+          a.forEach(closeB);
+        }, true);
+      }).catch(() => { if (g === gen) { (sprite ? lowJDone : lowDone)[k] = 2; lowBusy[bi] = 0; } }).then(() => { decL--; pumpDecode(); });
+    }
+    function pumpLows() {
+      const LD = LOWDEC[isPortrait() ? 1 : 0];
+      if (decL >= LD || !hall || !firstDrawn) return;
+      const u = locate(cp), c = u.k + u.t;
+      for (let d = 0; d < NH && decL < LD; d++) {
+        for (const k of [Math.round(c) + dirSign * d, Math.round(c) - dirSign * d]) {
+          if (k < 0 || k >= NH || decL >= LD) continue;
+          if (!lowDone[k] && !lowBusy[k] && keyDone(k)) decodeLow(k, false);
+          else if (jar && !lowJDone[k] && !lowBusy[NH + k] && blobs.j[k]) decodeLow(k, true);
+        }
+      }
+    }
+    let upTimer = 0;
+    function pushUp(f, low) {                                                     // в очередь на загрузку в видеопамять; запасной таймер — на случай, когда кадры анимации не идут (вкладка в фоне)
+      if (low) f.low = true; upQ.push(f); schedule();
+      if (!upTimer) upTimer = setTimeout(function again() { upTimer = 0; flushUploads(8); if (upQ.length) upTimer = setTimeout(again, 250); }, 250);
+    }
+    function flushUploads(budget) {
+      if (!upQ.length) return;
+      const t0 = performance.now();
+      do {
+        const i = fast ? upQ.findIndex(f => f.low) : 0;                      // во взмах тяжёлые загрузки ждут (в очереди их мало: новые не запускаются), уменьшенные копии идут
+        if (i < 0) break;
+        const f = upQ.splice(i, 1)[0]; if (f.low) upN.low++; else upN.full++; try { f(); } catch (e) { /* — */ }
+      } while (upQ.length && performance.now() - t0 < budget);
+    }
+
     /* развёртывание файлов в текстуры: нужные кадры рядом с положением, дальние выгружаем */
     function pumpDecode() {
       if (dead || !hall) return;
+      pumpLows();
+      if (fast) return;
       const R = RES[isPortrait() ? 1 : 0], l = locate(cp);
       const need = [];
       for (let d = 0; d <= R; d++) { for (const k of [l.k + d, l.k + 1 - d]) if (k >= 0 && k < NH && need.indexOf(k) < 0) need.push(k); }
       need.sort((a, b) => Math.abs(a - (l.k + l.t)) - Math.abs(b - (l.k + l.t)));
       if (pin) for (let k = pin[0]; k <= pin[1]; k++) if (need.indexOf(k) < 0) need.push(k);
       for (const k of need) {
-        if (decN >= DECODERS) break;
+        if (decN >= DECODERS || lowOnlyF) break;
         if (!resident[k] && keyDone(k) && !decoding[k]) {
           decoding[k] = 1; decN++; const g = gen;
           Promise.all([bmp(blobs.c[k], false), bmp(blobs.z[k], false)]).then(([c, z]) => {
-            if (g === gen && hall && !dead) { hall.setKey(k, c, z, c.width, c.height, z.width, z.height); resident[k] = 1; dirty = true; schedule(); }
-            try { c.close && c.close(); z.close && z.close(); } catch (e) { /* — */ }
-          }).catch(() => {}).then(() => { decoding[k] = 0; decN--; pumpDecode(); evict(); });
+            if (g === gen && hall && !dead) pushUp(() => { if (g === gen) decoding[k] = 0; if (g === gen && hall && !dead) { hall.setKey(k, c, z, c.width, c.height, z.width, z.height); resident[k] = 1; dirty = true; } closeB(c); closeB(z); });
+            else { if (g === gen) decoding[k] = 0; closeB(c); closeB(z); }
+          }).catch(() => { if (g === gen) decoding[k] = 0; }).then(() => { decN--; pumpDecode(); evict(); });
         } else if (!resJ[k] && blobs.j[k] && jar && !decoding[NH + k]) {
           decoding[NH + k] = 1; decN++; const g = gen;
-          bmp(blobs.j[k], true).then(s => { if (g === gen && jar && !dead) { jar.setSprite(k, s); resJ[k] = 1; dirty = true; schedule(); } try { s.close && s.close(); } catch (e) { /* — */ } })
-            .catch(() => {}).then(() => { decoding[NH + k] = 0; decN--; pumpDecode(); });
+          bmp(blobs.j[k], true).then(s => { if (g === gen && jar && !dead) pushUp(() => { if (g === gen) decoding[NH + k] = 0; if (g === gen && jar && !dead) { jar.setSprite(k, s); resJ[k] = 1; dirty = true; } closeB(s); }); else { if (g === gen) decoding[NH + k] = 0; closeB(s); } })
+            .catch(() => { if (g === gen) decoding[NH + k] = 0; }).then(() => { decN--; pumpDecode(); });
         }
       }
     }
     function evict() {                                                // дальше окна — выгружаем текстуры (файлы остаются в памяти и разворачиваются снова по требованию)
-      if (!hall) return;
+      if (!hall || fast) return;
       const R = RES[isPortrait() ? 1 : 0], l = locate(cp), c = l.k + l.t;
+      const ka = lastDraw ? lastDraw.ka : -1, kb = lastDraw ? lastDraw.kb : -1;       // кадры, по которым нарисовано то, что на экране сейчас, не выгружаем: иначе при нехватке новых картинка скачет назад к чужому кадру
       for (let k = 0; k < NH; k++) {
+        if (k === ka || k === kb) continue;
         if (resident[k] && Math.abs(k - c) > R + 3 && !pinned(k)) { hall.dropKey(k); resident[k] = 0; }
         if (resJ[k] && Math.abs(k - c) > R + 3 && k !== 0 && !pinned(k)) { jar && jar.dropSprite(k); resJ[k] = 0; }
       }
@@ -206,7 +266,7 @@
       hall.setSize(W, H); JW = JH = 0; sizeJar();
       loadSphere();
       if (jar && ds.lbl) bmp(await (await fetch(urlOf(ds.lbl))).blob(), false).then(b => { if (jar) { jar.setLabel(b); labelReady = true; dirty = true; schedule(); } }).catch(() => {});
-      cv.addEventListener('webglcontextlost', e => { e.preventDefault(); hall = null; jar = null; resident.fill(0); resJ.fill(0); }, false);
+      cv.addEventListener('webglcontextlost', e => { e.preventDefault(); hall = null; jar = null; resident.fill(0); resJ.fill(0); lowDone.fill(0); lowJDone.fill(0); lowBusy.fill(0); decL = 0; upQ.length = 0; shownP = -1; fast = false; lowN = lowJN = 0; }, false);
       cv.addEventListener('webglcontextrestored', () => { if (!dead) initGL().catch(() => {}); }, false);
       pumpDecode(); schedule();
     }
@@ -265,7 +325,10 @@
     function paint(now) {
       if (!hall) return false;
       const speed = Math.abs(vp) * (NH - 1);
-      const pc = hall.plan(cp);                                                    // рисуем это положение: обычно cp, а при быстрой прокрутке, пока кадры рядом не развернулись, — ближайший загруженный кадр как есть (без «размазанных» пятен от далёкой перепроекции)
+      let pc = hall.plan(cp);                                                      // рисуем это положение: обычно cp. Если рядом нет ни полных кадров, ни уменьшенных копий (страница только открыта), — ближайший загруженный кадр как есть
+      /* пока кадров рядом нет, картинка не должна идти против прокрутки: «ближайший» кадр бывает позади только что показанного — тогда остаёмся на показанном (оно ещё рисуется чисто) */
+      if (pc !== cp && shownP >= 0) { const mv = cp - lastCp; if (((mv > 0 && pc < shownP) || (mv < 0 && pc > shownP)) && hall.plan(shownP) === shownP) pc = shownP; }
+      lastCp = cp; shownP = pc;
       const jk = jarK(pc), lift = jarLift(pc), ground = jarGround(pc), halo = jarHalo(pc);
       sphPush();
       const pair = hall.draw(pc, 0, speed > MOVING, {jk, lift});
@@ -329,6 +392,9 @@
       if (Math.abs(cp - target) < 2e-6 && Math.abs(vp) < 1e-4) { cp = target; vp = 0; }
       cp = clamp(cp, 0, 1);
       if (Math.abs(vp) > 1e-3) dirSign = vp > 0 ? 1 : -1;
+      { const spd = Math.max(Math.abs(vp), Math.abs(cp - cpTick) / dt) * (NH - 1); cpTick = cp;      // скорость: и пружины, и реально пройденное за кадр (при редких кадрах скорость пружины к концу шага уже мала)                                   // «взмах»: пока он идёт, полные кадры не разворачиваем и не грузим (уменьшенных копий хватает)
+        if (!fast && spd > FAST_ON && lowN >= NH * 0.9 && (!jar || lowJN >= NH * 0.9)) fast = true;
+        else if (fast && spd < FAST_OFF) { fast = false; pumpDecode(); } }
       const inView = y + vh > sTop && y < sTop + sH;
       if (inView !== sph.view) { sph.view = inView; if (inView) sphStart(); }
       /* регулятор нагрузки: кадры идут дольше бюджета — холст чуть меньше (не чаще раза в 1,5 с) */
@@ -338,13 +404,14 @@
         if (dtEma > base * 1.35 + 0.5) slowRun++; else slowRun = 0;
         if (slowRun >= 24 && resScale > 0.6 && now() - lastGov > 1500) { resScale = resScale > 0.8 ? 0.8 : 0.65; govChanges++; slowRun = 0; lastGov = now(); if (resScale < 0.7 && hall) hall.setGridScale(0.5); sizeCanvas(); }
       }
+      if (upQ.length) flushUploads(Math.abs(vp) * (NH - 1) > MOVING ? 2.5 : 8);                // по одной-две тяжёлые текстуры за кадр; в покое — быстрее
       if ((inView || !firstDrawn) && hall && (dirty || Math.abs(cp - paintedP) > 1e-7)) {
         if (paint(t)) { paintedP = cp; dirty = false; } else dirty = true;
       }
       if (inView && hall) { pumpDecode(); }
       ui(cp, inView);
       perfRing[perfN++ % perfRing.length] = performance.now() - w0;
-      if (cp !== target || vp !== 0 || (dirty && !firstDrawn) || (inView && (t - lastMove <= SNAP_DELAY + 40 || Math.abs(target - cp) > 1e-7))) requestAnimationFrame(tick); else running = false;
+      if (cp !== target || vp !== 0 || upQ.length || (dirty && !firstDrawn) || (inView && (t - lastMove <= SNAP_DELAY + 40 || Math.abs(target - cp) > 1e-7))) requestAnimationFrame(tick); else running = false;
     }
     let lastGov = -1e9;
     const now = () => performance.now();
@@ -356,7 +423,7 @@
       if (dead || set === dirOf()) return;
       gen++; set = dirOf(); inflight = 0; decN = 0; hierPos = 0; loadedKeys = 0; labelReady = false;
       for (const k in blobs) blobs[k].fill(null); for (const k in busy) busy[k].fill(0);
-      resident.fill(0); resJ.fill(0); decoding.fill(0);
+      resident.fill(0); resJ.fill(0); decoding.fill(0); lowDone.fill(0); lowJDone.fill(0); lowBusy.fill(0); decL = 0; upQ.length = 0; shownP = -1; fast = false; lowN = lowJN = 0;
       if (hall) hall.destroy(true); if (jar) jar.destroy(true); hall = jar = null; W = H = JW = JH = 0;
       measureStatic(); sizeCanvas(); pump(); initGL().then(() => { if (!dead) { pumpDecode(); schedule(); } }).catch(() => { root.classList.add('jar-off'); dead = true; }); schedule();
     };
@@ -371,7 +438,7 @@
     addEventListener('load', onLoad);
 
     function destroyGL() {
-      gen++; clearTimeout(rzTimer); if (ro) ro.disconnect();
+      gen++; upQ.length = 0; clearTimeout(upTimer); upTimer = 0; clearTimeout(rzTimer); if (ro) ro.disconnect();
       removeEventListener('scroll', onScroll); removeEventListener('resize', onResize); removeEventListener('load', onLoad);
       removeEventListener('pointermove', onPointer); document.removeEventListener('visibilitychange', sphStart); if (sph.raf) cancelAnimationFrame(sph.raf); sph.raf = 0;
       portraitMQ.removeEventListener && portraitMQ.removeEventListener('change', onMQ);
@@ -391,11 +458,13 @@
       /* для проверок: держать кадры a…b в видеопамяти и дождаться, пока они развернутся (все — и зал, и спрайты) */
       prefetch(a, b) { pin = [Math.max(0, a), Math.min(NH - 1, b)]; return new Promise(res => { const t = setInterval(() => { let ok = !!hall; for (let k = pin[0]; k <= pin[1]; k++) if (!resident[k] || !resJ[k]) ok = false; if (ok || dead) { clearInterval(t); res(ok); } else pumpDecode(); }, 80); }); },
       unpin() { pin = null; },
-      jump(p) { cp = pT = p; pPrev = p; vp = 0; started = true; lastMove = performance.now(); if (hall) paint(performance.now()); ui(p, true); },
+      /* для проверок: только уменьшенные копии (полные кадры и спрайты выгружены и не разворачиваются) — так выглядит прокрутка, пока рядом нет полных кадров */
+      lowOnly(on) { lowOnlyF = !!on; if (on && hall) { for (let k = 0; k < NH; k++) { if (resident[k]) { hall.dropKey(k); resident[k] = 0; } if (resJ[k] && jar) { jar.dropSprite(k); resJ[k] = 0; } } } dirty = true; schedule(); },
+      jump(p) { cp = pT = p; cpTick = p; pPrev = p; vp = 0; started = true; lastMove = performance.now(); flushUploads(1e9); if (hall) paint(performance.now()); ui(p, true); },
       state() {
         const ring = Array.prototype.slice.call(perfRing, 0, Math.min(perfN, perfRing.length)).sort((a, b) => a - b);
-        let res = 0, resj = 0; for (let k = 0; k < NH; k++) { res += resident[k]; resj += resJ[k]; }
-        return {p: cp, pTarget: pT, u: uOf(), N: NH, loaded: loadedKeys, set, gl: !!hall, drawn: lastDraw, firstDrawn, resident: res, residentJar: resj, resScale, govChanges, snapped: vp === 0 && Math.abs(cp - Phi[kNear(cp)]) < 1e-5,
+        let res = 0, resj = 0, lo = 0, loj = 0; for (let k = 0; k < NH; k++) { res += resident[k]; resj += resJ[k]; lo += lowDone[k] === 1 ? 1 : 0; loj += lowJDone[k] === 1 ? 1 : 0; }
+        return {p: cp, pTarget: pT, u: uOf(), N: NH, loaded: loadedKeys, set, gl: !!hall, drawn: lastDraw, firstDrawn, resident: res, residentJar: resj, lows: lo, lowSprites: loj, resScale, govChanges, fast, up: {full: upN.full, low: upN.low, queued: upQ.length}, snapped: vp === 0 && Math.abs(cp - Phi[kNear(cp)]) < 1e-5,
           jar: {loaded: blobs.j.filter(Boolean).length, n: NH, shown: jarShown, sprites: resj, label: labelReady},
           sphere: {ready: !!(hall && hall.sphereReady), yaw: sph.yaw, cur: [sph.hx, sph.hy], running: !!sph.raf},
           size: [W, H, JW, JH], perf: {n: perfN, mean: ring.length ? ring.reduce((s, v) => s + v, 0) / ring.length : 0, p95: ring.length ? ring[Math.floor(ring.length * 0.95)] : 0, max: ring.length ? ring[ring.length - 1] : 0}};
