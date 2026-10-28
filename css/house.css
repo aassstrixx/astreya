@@ -236,7 +236,11 @@ html.mag-lock{overflow:hidden}
 
 /* ============ 5. Телефон ============ */
 @media (max-width:700px){
-  .hall-rooms{display:none}
+  .hall-rooms{margin-top:14px;margin-right:-20px}                                         /* на телефоне список комнат — лента «пилюль» под кнопками: путь в комнаты без двери и журнала */
+  .hall-rooms ol{flex-wrap:nowrap;overflow-x:auto;gap:8px;padding:2px 20px 6px 0;scrollbar-width:none;overscroll-behavior-x:contain}
+  .hall-rooms ol::-webkit-scrollbar{display:none}
+  .js-stage.ar-live .hall-rooms ol,.is-house.is-static .hall-rooms ol,.is-house.jar-off .hall-rooms ol{pointer-events:auto}
+  .hall-rooms a{flex:0 0 auto;padding:9px 13px;border-radius:999px;background:var(--hs-glass);box-shadow:inset 0 0 0 1px rgba(255,255,255,.7),0 6px 16px -10px rgba(60,40,18,.5);border-bottom:0;white-space:nowrap;font-size:10.5px;color:var(--hs-ink)}
   .hall-door.no-m{display:none}
   .hd-tag{padding:6px 11px 6px 10px;font-size:10px;gap:6px}
   .hall-door{left:calc(var(--xm,var(--x)) * 100%);top:calc(var(--ym,var(--y)) * 100%);width:calc(var(--wm,var(--w)) * 100%);height:calc(var(--hm,var(--h)) * 100%)}
