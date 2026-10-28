@@ -325,7 +325,7 @@
   const isHome = u => /(^|\/)(index\.html)?$/.test(u.pathname);
   M.heroTop = () => { const jar = document.getElementById('arch-story'); return jar && jar.offsetHeight && A.heroBase ? A.heroBase() : 0; };
   M.scrollHome = () => window.scrollTo({top: M.heroTop(), behavior: 'smooth'});
-  let busy = false, pending = null;
+  let busy = false, pending = null, here = location.pathname + location.search;          // here — страница, которая сейчас показана (без якоря)
   /* quiet — тихий переход (поиск): без шторки и заставки, страница подменяется, как только пришла, и мягко проявляется */
   async function go(url, push, quiet) {
     if (busy) { pending = {url, push, quiet}; return; }
@@ -340,6 +340,7 @@
     await syncAssets(doc, u.href);
     try {
       swapIn(doc, u.href);
+      here = u.pathname + u.search;
       if (push) history.pushState({}, '', u.href);
     } catch (e) { if (quiet) store.set('astreya:nav', JSON.stringify({t: Date.now(), q: 1})); location.href = u.href; return; }
     A.closeMenu(); A.closeSearch(); A.closeModal();
@@ -361,7 +362,7 @@
     if (pending) { const p = pending; pending = null; go(p.url, p.push, p.quiet); }
   }
   M.go = go;
-  addEventListener('popstate', () => { if (canSwap) go(location.href, false); });
+  addEventListener('popstate', () => { if (!canSwap || location.pathname + location.search === here) return; go(location.href, false); });          // «Назад» между якорями одной страницы (комнаты дома, журнал) страницу не подменяет
 
   let leaving = false;
   M.navigate = function (url, quiet) {                     // запасной путь (файл с диска): шторка закрывается, затем обычный переход

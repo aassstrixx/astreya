@@ -51,6 +51,7 @@
     let look = {}; try { look = JSON.parse(ds.look || '{}') || {}; } catch (e) { look = {}; }
     const LS = look.scale || {}, LSH = look.shadow || null, LG = look.ground || null, LH = look.halo || null;
     const dead0 = () => { root.classList.add('jar-off'); return {root, complete: () => true, destroy() {}, state: () => ({})}; };
+    if (root.classList.contains('is-house') && (window.matchMedia('(prefers-reduced-motion: reduce)').matches || document.documentElement.classList.contains('lite'))) return dead0();          // дом без анимации: вместо сцены — готовый кадр зала (css/house.css, .is-static/.jar-off)
     if (!A.ArchGL || !cv || !jcv || typeof fetch !== 'function' || typeof createImageBitmap !== 'function' || !glOk()) return dead0();
     const nums = s => String(s || '').split(',').filter(x => x !== '').map(Number);
     let Phi = nums(ds.p);
