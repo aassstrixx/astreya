@@ -25,6 +25,7 @@ body[data-page="home"]{--hs-paper:#f6f0e3;--hs-paper-2:#efe6d3;--hs-ink:#0b1a33;
 .hd-tag{position:absolute;left:50%;top:9%;translate:-50% 0;display:flex;align-items:baseline;gap:8px;padding:8px 14px 8px 12px;border-radius:999px;white-space:nowrap;background:var(--hs-glass);box-shadow:inset 0 0 0 1px rgba(255,255,255,.7),0 8px 22px -10px rgba(60,40,18,.55);font:600 clamp(10px,.78vw,13px)/1 var(--sans);letter-spacing:.08em;text-transform:uppercase;color:var(--hs-ink);transition:transform .45s var(--ease),background-color .3s}
 .hd-tag b{font:500 clamp(12px,.95vw,15px)/1 var(--serif);letter-spacing:0;color:var(--hs-gold)}
 .hall-door:hover .hd-tag,.hall-door:focus-visible .hd-tag{transform:translateY(4px);background:#fffaf0}
+.hall-door[data-room="brands"] .hd-tag{left:8%;translate:none}.hall-door[data-room="academy"] .hd-tag{left:auto;right:8%;translate:none}          /* таблички боковых проходов не уходят за край экрана при обрезке кадра по ширине */
 
 .hall-mag{display:block}
 .hall-mag{left:calc(var(--tx) * 100%);top:calc(var(--ty) * 100%);right:auto;bottom:auto;width:calc(var(--tw) * 100%);aspect-ratio:1.46;translate:-50% -50%;opacity:var(--h3,0);perspective:900px;position:absolute}
@@ -51,7 +52,7 @@ body[data-page="home"]{--hs-paper:#f6f0e3;--hs-paper-2:#efe6d3;--hs-ink:#0b1a33;
 .mag-prev:hover .mag-hint,.mag-prev:focus-visible .mag-hint{transform:translateY(-4px)}
 
 /* текст героя читается поверх интерьера зала: мягкое молочное свечение за колонкой (без плашки и без размытия) */
-.is-house .ar-copy::before{content:"";position:absolute;z-index:-1;inset:-9% -16% -12% -12%;pointer-events:none;background:radial-gradient(72% 70% at 42% 46%,rgba(246,240,227,.84),rgba(246,240,227,.56) 52%,rgba(246,240,227,0) 100%);opacity:var(--h1,0)}
+.is-house .ar-copy::before{content:"";position:absolute;z-index:-1;inset:-14% -24% -16% -16%;pointer-events:none;background:radial-gradient(closest-side at 46% 48%,rgba(246,240,227,.88),rgba(246,240,227,.64) 56%,rgba(246,240,227,0) 100%);opacity:var(--h1,0)}
 
 /* зал без анимации: при уменьшенном движении, «лёгком режиме», без WebGL и без JS вместо закреплённой сцены — один экран с готовым кадром зала (assets/jar-arch/poster-*.webp); всё остальное — те же настоящие кнопки и ссылки */
 .ar-poster{display:none}
