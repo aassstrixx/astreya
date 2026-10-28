@@ -188,6 +188,48 @@ def leaf_mesh(L=.17, Wd=.05):
     for p in me.polygons: p.use_smooth = True
     return me
 
+def lush_tree(base, me, me2, stem_m):
+    """пышное дерево в вазе (то же построение, что build_tree на главной, hall_story.py): изогнутый ствол и ярус ветвей веером — длинные дуги с густыми парами листьев; ветви не уходят назад в стену и раму арки"""
+    import random; rnd = random.Random(77)
+    H = float(os.environ.get('TREE_H', .46)); R = float(os.environ.get('TREE_R', 1.25)); nb = int(os.environ.get('TREE_NB', 36)); per = int(os.environ.get('TREE_PER', 60)); lk = float(os.environ.get('TREE_LK', 1.7)); el0, el1 = (float(v) for v in os.environ.get('TREE_EL', '.3,1.1').split(','))
+    up = Vector((0, 0, 1)); grp = 'plant'
+    def limb(pts, count, k, bevel):
+        cu = bpy.data.curves.new('tl', 'CURVE'); cu.dimensions = '3D'; sp = cu.splines.new('POLY'); sp.points.add(len(pts) - 1)
+        for i, p in enumerate(pts): sp.points[i].co = (*p, 1)
+        cu.bevel_depth = bevel; cu.bevel_resolution = 2; cu.materials.append(stem_m)
+        link(bpy.data.objects.new('tl', cu), grp)
+        def at(t):
+            f = t * (len(pts) - 1); i = min(int(f), len(pts) - 2); return pts[i].lerp(pts[i + 1], f - i)
+        for i in range(1, count + 1):
+            t = i / (count + 1) * .93 + .07; pos = at(t); d = (at(min(1, t + .03)) - pos).normalized()
+            u = d.cross(up)
+            if u.length < .2: u = d.cross(Vector((1, 0, 0)))
+            u.normalize(); v = d.cross(u); phi = rnd.uniform(0, 6.283)
+            for side in (0, 1):
+                a = phi + side * 3.1416 + rnd.uniform(-.5, .5)
+                dv = d * .55 + (u * math.cos(a) + v * math.sin(a)) * 1.0 + Vector((0, 0, rnd.uniform(-.1, .3)))
+                if dv.y > .35: dv.y = .35                                                              # листья не лезут назад, в стену
+                ob = bpy.data.objects.new('lf', me if rnd.random() > .3 else me2); link(ob, grp)
+                ob.scale = ((1.1 - .4 * t) * (.8 + rnd.random() * .4) * lk,) * 3
+                ob.rotation_euler = dv.normalized().to_track_quat('Y', 'Z').to_euler(); ob.location = pos
+        ob = bpy.data.objects.new('lf', me); link(ob, grp); ob.scale = (lk,) * 3
+        ob.rotation_euler = (at(1) - at(.9)).normalized().to_track_quat('Y', 'Z').to_euler(); ob.location = at(1)
+        return at
+    b = Vector(base)
+    trunk = limb([b, b + Vector((-.03, -.02, H * .35)), b + Vector((.03, -.03, H * .7)), b + Vector((-.05, -.04, H))], 4, .9, .03)
+    for j in range(nb):
+        az = 6.283 * (j + rnd.random() * .7) / nb; el = rnd.uniform(el0, el1)
+        d = Vector((math.cos(az) * math.cos(el), math.sin(az) * math.cos(el), math.sin(el)))
+        if d.y > .25: d.y = .25; d.normalize()                                                         # ветви веером вперёд, вбок и вверх — не в стену
+        P0 = trunk(rnd.uniform(.45, 1.0)); Lb = R * rnd.uniform(.8, 1.2)
+        pts = [P0, P0 + d * Lb * .34 + Vector((0, 0, .06)), P0 + d * Lb * .68 + Vector((0, 0, .10 * Lb)), P0 + d * Lb + Vector((0, 0, -.12 * Lb * (1.1 - math.sin(el))))]
+        at = limb(pts, per, 1.0, .009)
+        for t in (.30, .46, .62, .78):
+            P = at(t); az2 = az + rnd.choice((-1, 1)) * rnd.uniform(.5, .9); d2 = Vector((math.cos(az2) * math.cos(el), math.sin(az2) * math.cos(el), math.sin(el) * .8 + .15))
+            if d2.y > .25: d2.y = .25
+            d2.normalize(); L2 = Lb * rnd.uniform(.3, .45)
+            limb([P, P + d2 * L2 * .5 + Vector((0, 0, .04)), P + d2 * L2 + Vector((0, 0, -.03))], max(18, per // 3), .92, .006)
+
 def plant(M):
     import random; rnd = random.Random(5)
     m1 = mk('leafA'); nt = m1[1]; b = m1[2]; val(b, (.30, .38, .19, 1), 'Base Color'); val(b, .5, 'Roughness'); val(b, .25, 'Transmission Weight', 'Transmission'); val(b, .3, 'Subsurface Weight'); val(b, (.45, .5, .26), 'Subsurface Radius') if False else None
@@ -226,11 +268,14 @@ def plant(M):
         # верхний листок
         ob = bpy.data.objects.new('lf', me); link(ob, grp); ob.scale = (sc * .7,) * 3; ob.rotation_euler = at(1.0).__sub__(at(.97)).normalized().to_track_quat('Y', 'Z').to_euler(); ob.location = at(1.0)
     base = (-1.9, -0.7, 0.55 + .48)
-    branch(base, [(0, 0, 0), (-.06, 0, .5), (-.18, .02, 1.0), (-.36, .04, 1.45)], 22, 1.7)
-    branch(base, [(0, 0, 0), (.14, 0, .38), (.46, -.02, .72), (.88, -.05, .88)], 22, 1.6)
-    branch(base, [(0, 0, 0), (-.1, .02, .3), (-.34, 0, .56), (-.68, -.03, .66)], 18, 1.5)
-    branch(base, [(0, 0, 0), (.03, 0, .55), (.16, .01, 1.1), (.24, .02, 1.58)], 22, 1.6)
-    branch(base, [(0, 0, 0), (.1, 0, .3), (.3, .03, .62), (.5, .03, 1.08)], 16, 1.4)
+    if os.environ.get('LUSH', '1') == '1':
+        lush_tree(base, me, me2, stem[0])                                                                   # пышное дерево, как на главной (веер длинных дуг с густыми листьями)
+    else:
+        branch(base, [(0, 0, 0), (-.06, 0, .5), (-.18, .02, 1.0), (-.36, .04, 1.45)], 22, 1.7)
+        branch(base, [(0, 0, 0), (.14, 0, .38), (.46, -.02, .72), (.88, -.05, .88)], 22, 1.6)
+        branch(base, [(0, 0, 0), (-.1, .02, .3), (-.34, 0, .56), (-.68, -.03, .66)], 18, 1.5)
+        branch(base, [(0, 0, 0), (.03, 0, .55), (.16, .01, 1.1), (.24, .02, 1.58)], 22, 1.6)
+        branch(base, [(0, 0, 0), (.1, 0, .3), (.3, .03, .62), (.5, .03, 1.08)], 16, 1.4)
     # ветка в нише (справа внизу)
     branch((5.0, 1.5, 0.0), [(0, 0, 0), (0, 0, .5), (-.06, 0, 1.05), (-.2, 0, 1.55)], 20, 1.2, 'plant')
     # тени листьев на стене: ветки висят вне кадра на пути солнечного луча и невидимы камере, но отбрасывают чёткие тени
@@ -244,7 +289,7 @@ def plant(M):
 
 def lights(sc):
     # окно: солнце сквозь переплёт (переплёт невидим для камеры, но отбрасывает тень)
-    sun = bpy.data.lights.new('sun', 'SUN'); sun.energy = float(os.environ.get('SUN', 4.0)); sun.angle = math.radians(float(os.environ.get('SUN_ANGLE', 0.35))); sun.color = (1.0, .93, .80)
+    sun = bpy.data.lights.new('sun', 'SUN'); sun.energy = float(os.environ.get('SUN', 9.0)); sun.angle = math.radians(float(os.environ.get('SUN_ANGLE', 0.35))); sun.color = (1.0, .93, .80)
     so = bpy.data.objects.new('sun', sun); bpy.context.collection.objects.link(so)
     direction = Vector((.62, .72, -.55)).normalized(); so.rotation_euler = direction.to_track_quat('-Z', 'Y').to_euler(); so.location = (-6, -9, 7)
     mat = mat_simple('frame', (.1, .1, .1))
@@ -261,7 +306,7 @@ def lights(sc):
     for v in np.linspace(v_min, v_max, 4): bar(u_min, v - .06, u_max, v + .06)
     bar(u_min - 4, v_max, u_max + 4, v_max + 4); bar(u_min - 4, v_min - 4, u_max + 4, v_min); bar(u_min - 4, v_min, u_min, v_max); bar(u_max, v_min, u_max + 4, v_max)
     # мягкий заполняющий свет «из зала»
-    ar = bpy.data.lights.new('fill', 'AREA'); ar.energy = float(os.environ.get('FILL', 380)); ar.size = 9; ar.size_y = 5; ar.color = (1.0, .93, .82)
+    ar = bpy.data.lights.new('fill', 'AREA'); ar.energy = float(os.environ.get('FILL', 340)); ar.size = 9; ar.size_y = 5; ar.color = (1.0, .93, .82)
     ao = bpy.data.objects.new('fill', ar); bpy.context.collection.objects.link(ao); ao.location = (-2.5, -11.0, 5.5); ao.rotation_euler = (math.radians(70), 0, math.radians(8))
     ao.visible_camera = False
     w = bpy.data.worlds.new('w'); w.use_nodes = True; bg = w.node_tree.nodes['Background']; bg.inputs['Color'].default_value = (.98, .90, .78, 1); bg.inputs['Strength'].default_value = float(os.environ.get('WORLD', 0.30)); sc.world = w
@@ -271,7 +316,7 @@ def settings(sc, w=W, h=H, spp=SPP):
     cy.max_bounces = 8; cy.diffuse_bounces = 5; cy.glossy_bounces = 4; cy.transmission_bounces = 6; cy.transparent_max_bounces = 12; cy.caustics_reflective = False; cy.caustics_refractive = False
     cy.sample_clamp_indirect = 8
     sc.render.resolution_x = w; sc.render.resolution_y = h; sc.render.resolution_percentage = 100
-    sc.view_settings.view_transform = 'AgX'; sc.view_settings.look = 'AgX - Base Contrast'; sc.view_settings.exposure = float(os.environ.get('EXPO', -0.1))
+    sc.view_settings.view_transform = 'AgX'; sc.view_settings.look = os.environ.get('LOOK', 'AgX - Punchy'); sc.view_settings.exposure = float(os.environ.get('EXPO', -0.25))
     sc.render.image_settings.file_format = 'PNG'; sc.render.image_settings.color_mode = 'RGBA'; sc.render.image_settings.color_depth = '16'
 
 LAYERS = ['shell', 'niche', 'ring', 'dais', 'plant', 'pod']
@@ -311,9 +356,9 @@ def pod_sprites(sc, cam, f, meta):
     print('pod', meta['pod'], flush=True)
 
 def grade(a, sat=None, lift=None, cool=None, gamma=None):
-    """цветокоррекция слоёв под палитру сайта: чуть приглушаем тёплую «коричневу», добавляем молочную дымку (ivory/milk) и уводим глубокие тени в холодный тёмно-синий — цвет бренда. Применяется ко всем слоям одинаково."""
-    sat = float(os.environ.get('GRADE_SAT', .86)) if sat is None else sat; lift = float(os.environ.get('GRADE_LIFT', .09)) if lift is None else lift
-    cool = float(os.environ.get('GRADE_COOL', 1.4)) if cool is None else cool; gamma = float(os.environ.get('GRADE_GAMMA', .95)) if gamma is None else gamma
+    """цветокоррекция слоёв под палитру главной (тёплый золотисто-кремовый зал: яркий свет, насыщенные тёплые тени, без холодного сдвига): по умолчанию только гамма (.84) — насыщенность, молочная дымка (GRADE_LIFT) и холодный сдвиг теней (GRADE_COOL) выключены, но оставлены параметрами. Применяется ко всем слоям одинаково."""
+    sat = float(os.environ.get('GRADE_SAT', 1.0)) if sat is None else sat; lift = float(os.environ.get('GRADE_LIFT', 0.0)) if lift is None else lift
+    cool = float(os.environ.get('GRADE_COOL', 0.0)) if cool is None else cool; gamma = float(os.environ.get('GRADE_GAMMA', .84)) if gamma is None else gamma
     a = a.astype(np.float32); L = ((a @ np.array([.299, .587, .114], np.float32)) / 255.0)[..., None]
     a = a * sat + (L * 255.0) * (1 - sat)
     k = lift * (.35 + .65 * L); a = a * (1 - k) + np.array([250, 246, 237], np.float32) * k
@@ -379,7 +424,7 @@ def main():
     else: settings(sc)
     M = build(sc); lights(sc); cam = set_cam(sc)
     if mode == 'preview':
-        sc.render.film_transparent = False; sc.render.filepath = '/tmp/scene_preview.png'; bpy.ops.render.render(write_still=True); print('preview done'); print(json.dumps(anchors(sc, cam))); return
+        sc.render.film_transparent = False; sc.render.filepath = os.environ.get('PREVIEW_OUT', '/tmp/scene_preview.png'); bpy.ops.render.render(write_still=True); print('preview done'); print(json.dumps(anchors(sc, cam))); return
     names = [n for n in os.environ.get('SCENE_LAYERS', ','.join(LAYERS)).split(',') if n]
     render_layers(sc, cam, names)
 

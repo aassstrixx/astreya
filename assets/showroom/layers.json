@@ -8,31 +8,31 @@
  },
  "niche": {
   "file": "assets/showroom/layer-niche.webp",
-  "x": 1043.43,
+  "x": 1043.2,
   "y": 0.0,
-  "w": 492.57,
-  "h": 673.71
+  "w": 492.8,
+  "h": 674.4
  },
  "ring": {
   "file": "assets/showroom/layer-ring.webp",
-  "x": 284.57,
+  "x": 284.0,
   "y": 0.0,
-  "w": 305.71,
-  "h": 680.57
+  "w": 306.4,
+  "h": 680.8
  },
  "plant": {
   "file": "assets/showroom/layer-plant.webp",
-  "x": 246.29,
-  "y": 154.86,
-  "w": 1289.71,
-  "h": 461.71
+  "x": 49.6,
+  "y": 52.0,
+  "w": 1486.4,
+  "h": 562.4
  },
  "dais": {
   "file": "assets/showroom/layer-dais.webp",
-  "x": 101.71,
-  "y": 569.14,
-  "w": 1434.29,
-  "h": 237.71
+  "x": 101.6,
+  "y": 569.6,
+  "w": 1434.4,
+  "h": 237.6
  },
  "anchors": {
   "dais": {
