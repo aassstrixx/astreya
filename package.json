@@ -35,7 +35,8 @@
     "check:scroll": "node tools/check-scroll.js",
     "check:showroom": "node tools/check-showroom.js",
     "check:brands": "node tools/check-brands.js",
-    "check:arch": "node tools/check-arch.js"
+    "check:arch": "node tools/check-arch.js",
+    "check:house": "node tools/check-house.js"
   },
   "optionalDependencies": {
     "@anthropic-ai/sdk": "^0.133.0"

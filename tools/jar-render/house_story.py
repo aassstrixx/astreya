@@ -67,12 +67,39 @@ def house_mats():
     M['fabric'] = f
     # стекло столика: прозрачное, чуть зеленоватый торец (толстое стекло), гладкое
     g = bpy.data.materials.new('hs_glass'); g.use_nodes = True; nt = g.node_tree; nt.nodes.clear()
-    out = nt.nodes.new('ShaderNodeOutputMaterial'); gl = nt.nodes.new('ShaderNodeBsdfGlass'); gl.inputs['Color'].default_value = (.93, .98, .95, 1); gl.inputs['Roughness'].default_value = .02; gl.inputs['IOR'].default_value = 1.5
+    out = nt.nodes.new('ShaderNodeOutputMaterial'); gl = nt.nodes.new('ShaderNodeBsdfGlass'); gl.inputs['Color'].default_value = (.93, .98, .95, 1); gl.inputs['Roughness'].default_value = .02; gl.inputs['IOR'].default_value = _f('HOUSE_GLASS_IOR', 1.5)
     tr_ = nt.nodes.new('ShaderNodeBsdfTransparent'); lp_ = nt.nodes.new('ShaderNodeLightPath'); mx_ = nt.nodes.new('ShaderNodeMixShader')
-    nt.links.new(lp_.outputs['Is Shadow Ray'], mx_.inputs['Fac']); nt.links.new(gl.outputs['BSDF'], mx_.inputs[1]); nt.links.new(tr_.outputs['BSDF'], mx_.inputs[2]); nt.links.new(mx_.outputs['Shader'], out.inputs['Surface']); M['glass'] = g
+    if os.environ.get('HOUSE_GLASS', 'thin') == 'thin':                                                      # тонкое стекло: сквозь пластину видно без преломления, сверху — отражение по Френелю (толстая пластина с настоящим преломлением давала тёмную «воду» на половину столика)
+        nt.nodes.clear(); out = nt.nodes.new('ShaderNodeOutputMaterial')
+        tr1 = nt.nodes.new('ShaderNodeBsdfTransparent'); tr1.inputs['Color'].default_value = (_f('HOUSE_GLASS_TR', .86), _f('HOUSE_GLASS_TG', .95), _f('HOUSE_GLASS_TB', .90), 1)
+        gs = nt.nodes.new('ShaderNodeBsdfGlossy'); gs.inputs['Roughness'].default_value = _f('HOUSE_GLASS_R', .015); gs.inputs['Color'].default_value = (.97, 1.0, .98, 1)
+        fr = nt.nodes.new('ShaderNodeFresnel'); fr.inputs['IOR'].default_value = _f('HOUSE_GLASS_IOR', 1.5)
+        m1 = nt.nodes.new('ShaderNodeMixShader'); mxr = nt.nodes.new('ShaderNodeMath'); mxr.operation = 'MAXIMUM'; mxr.inputs[1].default_value = _f('HOUSE_GLASS_MINR', .16); nt.links.new(fr.outputs['Fac'], mxr.inputs[0]); nt.links.new(mxr.outputs['Value'], m1.inputs['Fac']); nt.links.new(tr1.outputs['BSDF'], m1.inputs[1]); nt.links.new(gs.outputs['BSDF'], m1.inputs[2])
+        # изнутри (задняя грань) — полностью прозрачно: иначе Френель при выходе из пластины даёт полное внутреннее отражение, и свет застревает внутри — стекло чернеет
+        gm = nt.nodes.new('ShaderNodeNewGeometry'); tr3 = nt.nodes.new('ShaderNodeBsdfTransparent'); m3 = nt.nodes.new('ShaderNodeMixShader')
+        nt.links.new(gm.outputs['Backfacing'], m3.inputs['Fac']); nt.links.new(m1.outputs['Shader'], m3.inputs[1]); nt.links.new(tr3.outputs['BSDF'], m3.inputs[2])
+        tr2 = nt.nodes.new('ShaderNodeBsdfTransparent'); lp2 = nt.nodes.new('ShaderNodeLightPath'); m2 = nt.nodes.new('ShaderNodeMixShader')
+        nt.links.new(lp2.outputs['Is Shadow Ray'], m2.inputs['Fac']); nt.links.new(m3.outputs['Shader'], m2.inputs[1]); nt.links.new(tr2.outputs['BSDF'], m2.inputs[2]); nt.links.new(m2.outputs['Shader'], out.inputs['Surface']); M['glass'] = g
+    elif os.environ.get('HOUSE_GLASS') == 'clear':                                                   # отладка: полностью прозрачная пластина (видно, что лежит под стеклом)
+        nt.nodes.clear(); out = nt.nodes.new('ShaderNodeOutputMaterial'); tb = nt.nodes.new('ShaderNodeBsdfTransparent'); nt.links.new(tb.outputs['BSDF'], out.inputs['Surface']); M['glass'] = g
+    elif os.environ.get('HOUSE_GLASS') == 'mirror':                                                 # отладка: чистое зеркало
+        nt.nodes.clear(); out = nt.nodes.new('ShaderNodeOutputMaterial'); gb = nt.nodes.new('ShaderNodeBsdfGlossy'); gb.inputs['Roughness'].default_value = .02; nt.links.new(gb.outputs['BSDF'], out.inputs['Surface']); M['glass'] = g
+    elif os.environ.get('HOUSE_GLASS') == 'prin':                                                    # вариант: принципиальный BSDF с пропусканием (для сравнения)
+        nt.nodes.clear(); out = nt.nodes.new('ShaderNodeOutputMaterial'); pb = nt.nodes.new('ShaderNodeBsdfPrincipled')
+        pb.inputs['Base Color'].default_value = (.95, .99, .97, 1); pb.inputs['Roughness'].default_value = .03; pb.inputs['IOR'].default_value = 1.45
+        for k_ in ('Transmission Weight', 'Transmission'):
+            if k_ in pb.inputs: pb.inputs[k_].default_value = 1.0
+        nt.links.new(pb.outputs['BSDF'], out.inputs['Surface']); M['glass'] = g
+    else:
+        nt.links.new(lp_.outputs['Is Shadow Ray'], mx_.inputs['Fac']); nt.links.new(gl.outputs['BSDF'], mx_.inputs[1]); nt.links.new(tr_.outputs['BSDF'], mx_.inputs[2]); nt.links.new(mx_.outputs['Shader'], out.inputs['Surface']); M['glass'] = g
+    # торец стола: настоящее толстое стекло (светло-зелёная кромка), только на боковых гранях пластины
+    ge = bpy.data.materials.new('hs_glass_edge'); ge.use_nodes = True; nte = ge.node_tree; nte.nodes.clear()
+    oe = nte.nodes.new('ShaderNodeOutputMaterial'); ge_ = nte.nodes.new('ShaderNodeBsdfGlass'); ge_.inputs['Color'].default_value = (.80, .96, .88, 1); ge_.inputs['Roughness'].default_value = .03; ge_.inputs['IOR'].default_value = 1.5
+    te = nte.nodes.new('ShaderNodeBsdfTransparent'); le = nte.nodes.new('ShaderNodeLightPath'); me_ = nte.nodes.new('ShaderNodeMixShader')
+    nte.links.new(le.outputs['Is Shadow Ray'], me_.inputs['Fac']); nte.links.new(ge_.outputs['BSDF'], me_.inputs[1]); nte.links.new(te.outputs['BSDF'], me_.inputs[2]); nte.links.new(me_.outputs['Shader'], oe.inputs['Surface']); M['glass_edge'] = ge
     # тёмно-синяя штукатурка (проём справа)
     n_ = bpy.data.materials.new('hs_navy'); n_.use_nodes = True; b = next(n for n in n_.node_tree.nodes if n.type == 'BSDF_PRINCIPLED')
-    b.inputs['Base Color'].default_value = (.060, .100, .190, 1); b.inputs['Roughness'].default_value = .62; M['navy'] = n_
+    b.inputs['Base Color'].default_value = (_f('HOUSE_NAVY_R', .09), _f('HOUSE_NAVY_G', .15), _f('HOUSE_NAVY_B', .30), 1); b.inputs['Roughness'].default_value = .62; M['navy'] = n_
     return M
 
 
@@ -123,8 +150,12 @@ def build_room_right(M):
     SC.box('r_back', M['navy'], 1.45, 3.4, yb, yb + .25, -.1, 2.4, 'w', 0)
     SC.box('r_sidel', M['navy'], 1.45, 1.60, WALL_Y1, yb + .25, -.1, 2.4, 'w', 0)
     SC.box('r_sider', M['navy'], 3.25, 3.40, WALL_Y1, yb + .25, -.1, 2.4, 'w', 0)
-    led = SC.mat_led('hs_r_led', 6.0, (1.0, .78, .48))
+    led = SC.mat_led('hs_r_led', _f('HOUSE_RLED', 14.0), (1.0, .78, .48))
     SC.arch_frame('r_led', led, RGT['cx'], RGT['rx'] - .05, RGT['zs'] - .03, .010, yb - .02, yb - .008, 'w', z0=.0)
+    # тёплый свет внутри проёма (камере не виден): без него тёмно-синяя стена читалась чёрной дырой в углу зала
+    bpy.ops.object.light_add(type='AREA', location=(RGT['cx'] + .05, yb - .45, 1.7)); rl = bpy.context.object; rl.name = 'r_light'
+    rl.data.size = .9; rl.data.energy = _f('HOUSE_RLIGHT', 90.0); rl.data.color = (1.0, .86, .66); rl.rotation_euler = (0, 0, 0)
+    rl.visible_camera = False
     SC.box('r_console', M['trav'], RGT['cx'] - .26, RGT['cx'] + .26, yb - .30, yb - .04, 0, .20, 'w', .01)
     BR.vase((RGT['cx'] - .12, yb - .17, .20), .22, .06, M['ceramic'])
 
@@ -152,12 +183,29 @@ def house_architecture(M, portrait):
     S['led'] = None
 
 
+def _crisp(ob, deg=38.0):
+    """цилиндр с чёткой плоской крышкой: фаска применяется, затем сглаживание только там, где угол между гранями меньше порога — иначе нормали огромной крышки «вспучиваются» к ободу и стекло столика отражает зал, как выпуклое зеркало"""
+    bpy.ops.object.select_all(action='DESELECT'); ob.select_set(True); bpy.context.view_layer.objects.active = ob
+    for md in list(ob.modifiers):
+        bpy.ops.object.modifier_apply(modifier=md.name)
+    try:
+        bpy.ops.object.shade_smooth_by_angle(angle=math.radians(deg))
+    except Exception:
+        bpy.ops.object.shade_auto_smooth(angle=math.radians(deg))
+
+
 def house_decor(M, portrait):
     """столик, пуфы, ваза с деревом, скульптура-шар на постаменте, камни, ветка слева (даёт пятна света от листьев)"""
     tx, ty = TBL['x'], TBL['y']
-    SC.cylinder('tbl_base', M['trav'], tx, ty, TBL['base_r'], 0, TBL['top'] - TBL['glass'] - .004, 'p', seg=96, bev=.012)
+    SC.cylinder('tbl_base', M['inner'], tx, ty, TBL['base_r'], 0, TBL['top'] - TBL['glass'] - .004, 'p', seg=96, bev=.012)
     SC.cylinder('tbl_foot', M['trav2'], tx, ty, TBL['base_r'] + .035, 0, .022, 'p', seg=96, bev=.006)
     SC.cylinder('tbl_glass', M['glass'], tx, ty, TBL['r'], TBL['top'] - TBL['glass'], TBL['top'], 'p', seg=160, bev=.0035)
+    for nm in ('tbl_base', 'tbl_foot', 'tbl_glass'):
+        _crisp(bpy.data.objects[nm])
+    gob = bpy.data.objects['tbl_glass']; gob.data.materials.append(M['glass_edge'])                      # боковые грани и фаска — толстое стекло с зелёной кромкой
+    for pl in gob.data.polygons:
+        if abs(pl.normal.z) < .6:
+            pl.material_index = 1
     # пуфы из букле
     for nm, (x, y, r, h) in (('pouf1', (-.18, -.62, .17, .15)), ('pouf2', (1.30, -.58, .14, .13))):
         ob = SC.cylinder(nm, M['fabric'], x, y, r, 0, h, 'p', seg=64, bev=.045)
@@ -176,7 +224,7 @@ def house_decor(M, portrait):
     vx, vy = _f('HOUSE_VX', 1.30), _f('HOUSE_VY', .42)
     BR.vase((vx, vy, 0), .42, .095, M['ceramic'])
     H.TXY = (vx, vy)
-    H.build_tree(random.Random(77), (vx, vy, .36), H.TH, _f('HOUSE_TCR', .42), lk=1.3, per=84, nb=32)
+    H.build_tree(random.Random(77), (vx, vy, .36), _f('HOUSE_TH', .22), _f('HOUSE_TCR', .36), lk=_f('HOUSE_LK', .60), per=int(_f('HOUSE_PER', 170)), nb=int(_f('HOUSE_NB', 40)))      # листья мельче и гуще: камера у зала близко, крупные листья выглядели бумажными
     # ветка слева у края кадра
     BR.vase((-.95, -.95, 0), .26, .10, M['ceramic'])
     BR.olive((-.95, -.95, .26 + .03), .52, 28, 1.12, random.Random(3), lean=.31, **H.LEAF)
@@ -281,11 +329,18 @@ def house_lights(M):
             lo.data.energy *= _f('HOUSE_FILLK', .55)
     bg_ = bpy.context.scene.world.node_tree.nodes['Background']; bg_.inputs['Strength'].default_value = _f('HOUSE_WORLD', .08)
     # светлый «потолок» над залом (камере и теням не виден): мягкий верхний свет и светлые отражения в стекле столика и полированном полу (без него стекло отражало чёрное небо)
-    bpy.ops.mesh.primitive_plane_add(size=1, location=(.4, .4, 3.4)); ce = bpy.context.object; ce.name = 'hs_ceiling'; ce.scale = (14, 14, 1)
+    bpy.ops.mesh.primitive_plane_add(size=1, location=(.4, .4, 3.4)); ce = bpy.context.object; ce.name = 'hs_ceiling'; ce.scale = (14, 14, 1); ce.rotation_euler = (math.pi, 0, 0)          # нормаль вниз: излучение в Cycles односторонне
     cm = bpy.data.materials.new('hs_ceiling'); cm.use_nodes = True; nt = cm.node_tree; nt.nodes.clear()
     em = nt.nodes.new('ShaderNodeEmission'); em.inputs['Color'].default_value = (1.0, .93, .80, 1); em.inputs['Strength'].default_value = _f('HOUSE_CEIL', 1.1)
     out = nt.nodes.new('ShaderNodeOutputMaterial'); nt.links.new(em.outputs['Emission'], out.inputs['Surface']); ce.data.materials.append(cm)
     ce.visible_camera = False; ce.visible_shadow = False
+    # «карточка» за камерой (камере и теням не видна): светлое отражение в стекле столика и полу — иначе стекло под камерой отражало тёмную пустоту и выглядело чёрным зеркалом
+    bpy.ops.mesh.primitive_plane_add(size=1, location=(_f('HOUSE_CARDX', .5), _f('HOUSE_CARDY', -3.4), _f('HOUSE_CARDZ', 1.3))); cd = bpy.context.object; cd.name = 'hs_card'
+    cd.scale = (_f('HOUSE_CARDW', 9.0), _f('HOUSE_CARDH', 3.4), 1); cd.rotation_euler = (math.radians(-90), 0, 0)          # нормаль к залу (+y)
+    cdm = bpy.data.materials.new('hs_card'); cdm.use_nodes = True; nt2 = cdm.node_tree; nt2.nodes.clear()
+    em2 = nt2.nodes.new('ShaderNodeEmission'); em2.inputs['Color'].default_value = (1.0, .94, .82, 1); em2.inputs['Strength'].default_value = _f('HOUSE_CARD', 1.3)
+    out2 = nt2.nodes.new('ShaderNodeOutputMaterial'); nt2.links.new(em2.outputs['Emission'], out2.inputs['Surface']); cd.data.materials.append(cdm)
+    cd.visible_camera = False; cd.visible_shadow = False
     if os.environ.get('HOUSE_GOBO', '1') == '1':
         center = Vector((_f('HOUSE_WX', .30), _f('HOUSE_WY', .50), _f('HOUSE_WZ', .45))) - d * 7.0
         ex = d.cross(Vector((0, 0, 1))).normalized(); ey = ex.cross(d).normalized()
@@ -303,6 +358,46 @@ def house_lights(M):
 
 _orig_lights = H.build_lights
 H.build_lights = house_lights
+_orig_shadow_branches = H.build_shadow_branches
+
+
+def house_shadow_branches():
+    """ветки вне кадра дают на стене и полу пятна света от листьев, но лежат между камерой и столиком — в стекле они отражались тёмно-зелёной массой: прячем их от отражений и преломлений (тень остаётся)"""
+    before = set(bpy.data.objects.keys())
+    _orig_shadow_branches()
+    for k in set(bpy.data.objects.keys()) - before:
+        ob = bpy.data.objects[k]
+        ob.visible_glossy = False; ob.visible_transmission = False
+
+
+H.build_shadow_branches = house_shadow_branches
+_orig_set_layer = H.set_layer
+
+
+def _hide_dbg():
+    """отладка: HOUSE_HIDE=jar,strip_l,… — скрыть объекты от отражений и преломлений (поиск источника тёмного пятна на стекле)"""
+    for nm in os.environ.get('HOUSE_HIDE', '').split(','):
+        if not nm:
+            continue
+        objs = list(S['jar_objs']) if nm == 'jar' else [bpy.data.objects.get(nm)]
+        for ob in objs:
+            if ob is not None:
+                ob.visible_glossy = False; ob.visible_transmission = False
+
+
+def house_set_layer(layer):
+    """в слоях зала свет баночки выключен (сила 0) — но площадные лампы видны в отражениях как чёрные прямоугольники (на стекле столика это крупное тёмное пятно): скрываем их от отражений и преломлений"""
+    _orig_set_layer(layer); _hide_dbg()
+    if os.environ.get('HOUSE_DENOISE') == '0':
+        bpy.context.scene.cycles.use_denoising = False
+    for name in ('jar_fill', 'jar_rim'):
+        lo = S.get(name)
+        if lo is not None:
+            on = layer == 'jar'
+            lo.visible_glossy = on; lo.visible_transmission = on; lo.visible_diffuse = on
+
+
+H.set_layer = house_set_layer
 H.build_architecture = house_architecture
 H.build_decor = house_decor
 H.apply_frame = apply_house_frame
