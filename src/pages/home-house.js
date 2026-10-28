@@ -91,7 +91,7 @@ module.exports = function homeHouse(ctx, C, P, deps) {
         <ul class="hp-facts reveal">${A.facts.map(f => `<li>${I.check}<span>${esc(f)}</span></li>`).join('')}</ul>
         ${nextBlock}
         ${next ? C.cdSlot() : ''}
-        <div class="row hp-acad-cta reveal"><a class="btn btn-fill" href="${C.u(P, 'training.html')}">${esc(A.all)} ${I.arrow}</a>${next ? `<a class="btn btn-ghost" href="${C.eurl(P, next)}">Подробнее</a>` : ''}</div>
+        <div class="row hp-acad-cta reveal"><a class="btn btn-light" href="${C.u(P, 'training.html')}">${esc(A.all)} ${I.arrow}</a>${next ? `<a class="btn btn-ghost-inv" href="${C.eurl(P, next)}">Подробнее</a>` : ''}</div>
       </div>
       ${events.length > 1 ? `<div class="hp-events" id="home-events" role="group" aria-label="${esc(A.eventsLabel)}">${events.slice(1, 4).map(evCard).join('')}</div>` : ''}
     </div>

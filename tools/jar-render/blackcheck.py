@@ -6,10 +6,25 @@
 
     python3 blackcheck.py <папка с PNG> [с] [по]     →  печатает номера плохих кадров (доля чёрного > 1 %) или пустую строку
 """
+import os
 import sys
 
 import numpy as np
 from PIL import Image
+
+
+def limit():
+    """Допустимая доля тёмного: 1 % (ниши с продукцией); сцена дома (house_story.py) легально темнее — тёмно-синие подушки, глубокая тень под столиком, — для неё предел задаётся в BLACK_MAX или в файле /tmp/blackmax."""
+    v = os.environ.get('BLACK_MAX')
+    if not v and os.path.exists('/tmp/blackmax'):
+        v = open('/tmp/blackmax').read().strip()
+    try:
+        return float(v) if v else 0.01
+    except ValueError:
+        return 0.01
+
+
+MAXF = limit()
 
 
 def main():
@@ -23,7 +38,7 @@ def main():
         except Exception:
             bad.append(f)
             continue
-        if float((im < 18).mean()) > 0.01:
+        if float((im < 18).mean()) > MAXF:
             bad.append(f)
     print(' '.join(map(str, bad)))
 

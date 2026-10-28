@@ -77,8 +77,9 @@ body[data-page="home"]{--hs-paper:#f6f0e3;--hs-paper-2:#efe6d3;--hs-ink:#0b1a33;
   linear-gradient(180deg,#f1e6d0 0,#ead9bd 62%,#dccbab 100%)}
 .room-bg::before{content:"";position:absolute;left:50%;top:9%;width:min(46vw,680px);height:78%;translate:-50% 0;border-radius:999px 999px 0 0;background:linear-gradient(180deg,rgba(255,250,238,.55),rgba(255,250,238,.1));box-shadow:0 0 0 clamp(10px,1.4vw,22px) rgba(236,222,194,.55),0 30px 80px -30px rgba(80,56,24,.35)}
 .room-bg::after{content:"";position:absolute;left:0;right:0;bottom:0;height:22%;background:linear-gradient(180deg,rgba(214,194,160,0),rgba(214,194,160,.5))}
-.room.has-img .room-bg::before,.room.has-img .room-bg::after{display:none}
-.room.has-img .room-bg{animation:hsFade .9s ease both}
+.room.has-img .room-bg::before,.room.has-img .room-bg::after,.room.has-img .room-sun{display:none}
+/* интерьер стоит на месте, пока листается комната; молочная вуаль светлее вверху (виден зал) и плотнее внизу (там текст) */
+.room.has-img .room-bg{background:linear-gradient(180deg,rgba(246,240,227,.34) 0,rgba(246,240,227,.58) 42%,rgba(246,240,227,.82) 100%),var(--room-img) center/cover no-repeat,#efe5d0;animation:hsFade .9s ease both}
 @keyframes hsFade{from{opacity:.2}to{opacity:1}}
 .room-top{position:relative;z-index:2;display:flex;align-items:center;justify-content:space-between;gap:14px 24px;flex-wrap:wrap;padding-top:clamp(84px,9vw,128px);padding-bottom:6px}
 .room-tag{display:flex;align-items:baseline;gap:12px;margin:0;font:600 12px/1 var(--sans);letter-spacing:.18em;text-transform:uppercase;color:var(--hs-ink)}
@@ -93,6 +94,12 @@ body[data-page="home"]{--hs-paper:#f6f0e3;--hs-paper-2:#efe6d3;--hs-ink:#0b1a33;
 .rn-mag{background:var(--hs-ink)!important;color:#f7f1e3!important}
 .room-body{position:relative;z-index:1}
 .room .rd-sec{background:none;border:0;padding-top:clamp(18px,2.6vw,38px)}
+.room-body>.rd-sec:not(.hp-acad){background:none!important}
+.room-body>.hp-acad{background:none!important;isolation:isolate;margin-top:clamp(10px,3vw,50px)}
+.room-body>.hp-acad::before{content:"";position:absolute;inset:0;height:auto;z-index:-1;border-radius:50% 50% clamp(24px,3vw,44px) clamp(24px,3vw,44px) / clamp(60px,9vw,140px) clamp(60px,9vw,140px) clamp(24px,3vw,44px) clamp(24px,3vw,44px);background:linear-gradient(180deg,rgba(14,28,54,.97),rgba(10,22,48,.98));box-shadow:0 -30px 80px -40px rgba(10,22,48,.55)}                  /* «учебные» комнаты — тёмно-синие под сводом: интерьер виден над ним, под светлым текстом плотный фон */
+.room-body>.hp-acad::after{display:none}
+.room-body>.hp-acad .wrap{position:relative}
+.room-body>.hp-acad .hp-head .lead{color:rgba(245,242,236,.8)}                  /* светлые комнаты: стены интерьера видны сквозь вуаль, а не заливка секции */
 .room .rd-clinical,.room .hp-proof,.room .hp-find{background:none}
 .room .rd-bglogo,.room [data-bd]::before{display:none}
 .room .hp-head{margin-top:0}
