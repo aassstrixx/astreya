@@ -124,6 +124,20 @@ uniform float uT;
 out vec4 o;
 int pr(float d) { return d < 0.9999 ? 2 : (d < 0.99997 ? 1 : (d < 1.0 ? 0 : -1)); }      // 2 — настоящая точка, 1 — «резиновая», 0 — заполнитель, −1 — пусто
 float lin(float d) { float zn = d * 2.0 - 1.0; return 2.0 * uNF.x * uNF.y / (uNF.y + uNF.x - zn * (uNF.y - uNF.x)); }
+/* кромка силуэта: рядом (в 2 пикселях) меняется вид точки (настоящая / «резиновая» / заполнитель) или глубина скачет — тут ступеньки карты глубины, их сглаживает следующий проход */
+float edgeAt(vec2 uv, float dA0, float dB0) {
+  vec2 px = 1.0 / uRes;
+  int a0 = pr(dA0), b0 = pr(dB0);
+  float zA0 = lin(dA0), zB0 = lin(dB0);
+  for (int i = 0; i < 4; i++) {
+    vec2 o2 = (i == 0 ? vec2(2.0, 0.0) : i == 1 ? vec2(-2.0, 0.0) : i == 2 ? vec2(0.0, 2.0) : vec2(0.0, -2.0)) * px;
+    float eA = texture(uDA, uv + o2).r, eB = texture(uDB, uv + o2).r;
+    if (pr(eA) != a0 || pr(eB) != b0) return 1.0;
+    if (a0 == 2 && abs(lin(eA) - zA0) > 0.04 * zA0) return 1.0;
+    if (b0 == 2 && abs(lin(eB) - zB0) > 0.04 * zB0) return 1.0;
+  }
+  return 0.0;
+}
 void main() {
   vec2 uv = gl_FragCoord.xy / uRes;
   float dA = texture(uDA, uv).r, dB = texture(uDB, uv).r;
@@ -136,7 +150,7 @@ void main() {
   } else if (pA > pB) c = cA;
   else if (pB > pA) c = cB;
   else c = mix(cA, cB, uT);
-  o = vec4(c, 1.0);
+  o = vec4(c, edgeAt(uv, dA, dB));
 }`;
 
   /* живой каменный шар: рисуется поверх готового кадра зала (в кадрах его нет — только запечённые тень, отсвет и отражение в полу). Для каждого пикселя луч камеры пересекается со сферой;
@@ -157,7 +171,7 @@ int pr(float d) { return d < 0.9999 ? 2 : (d < 0.99997 ? 1 : (d < 1.0 ? 0 : -1))
 float lin(float d) { float zn = d * 2.0 - 1.0; return 2.0 * uNF.x * uNF.y / (uNF.y + uNF.x - zn * (uNF.y - uNF.x)); }
 void main() {
   vec2 uv = gl_FragCoord.xy / uRes;
-  vec3 base = texture(uTex, uv).rgb;
+  vec4 baseT = texture(uTex, uv); vec3 base = baseT.rgb; float ea = baseT.a;       // альфа — флаг кромки (для сглаживания)
   vec2 n = uv * 2.0 - 1.0;
   float kt = 2.0 * uCL / 36.0;
   vec3 dr = uCF + uCR * (n.x * uAsp.x / (kt * uCover.x)) + uCU * (n.y * uAsp.y / (kt * uCover.y));
@@ -169,12 +183,12 @@ void main() {
   float zs = t0 * dot(d, uCF);                                  // глубина вдоль оси камеры — как в картах глубины
   float pxw = max(t0, 0.1) * 2.0 * uAsp.y / (kt * uCover.y * uRes.y) / dl;   // размер пикселя на глубине шара, м
   float cov = clamp((R - dc) / pxw + 0.5, 0.0, 1.0);
-  if (cov <= 0.0 || b > 0.0 || t0 <= 0.0) { o = vec4(base, 1.0); return; }
+  if (cov <= 0.0 || b > 0.0 || t0 <= 0.0) { o = vec4(base, ea); return; }
   float dA = texture(uDA, uv).r, dB = texture(uDB, uv).r;
   float zh = 1e9;
   if (pr(dA) == 2) zh = min(zh, lin(dA));
   if (pr(dB) == 2) zh = min(zh, lin(dB));
-  if (zh < zs - 0.02) { o = vec4(base, 1.0); return; }          // перед шаром стоит другой предмет зала (в кадрах шар запечён: его собственная глубина равна zs и шар не перекрывает)
+  if (zh < zs - 0.02) { o = vec4(base, ea); return; }          // перед шаром стоит другой предмет зала (в кадрах шар запечён: его собственная глубина равна zs и шар не перекрывает)
   vec3 P = uCP + d * t0;
   vec3 N = normalize(P - uSph.xyz);
   vec3 ob = transpose(uSM) * N;                                  // направление в осях шара (z — полюс)
@@ -198,23 +212,44 @@ void main() {
   vec3 h = normalize(L - d); col += vec3(1.0, 0.95, 0.88) * pow(max(dot(nb, h), 0.0), 26.0) * uTune.z * key;
   col = col / (1.0 + 0.10 * col);
   col = pow(col, vec3(1.0 / 2.2));
-  o = vec4(mix(base, col, cov), 1.0);
+  o = vec4(mix(base, col, cov), ea);
 }`;
 
   /* лёгкое сглаживание кромок (FXAA): только на резких границах — в движении у перепроецированных кромок ступеньки по сетке; в покое показывается ровный кадр и сглаживание не нужно */
+  const AAT = [0.035, 0.14], SHARP = 0.25;      // SHARP — сила адаптивной резкости (замеры: мелкий рисунок камня заметно чётче, ореолов нет)
   const FS_AA = `#version 300 es
 precision highp float; precision highp sampler2D;
-uniform sampler2D uTex; uniform vec2 uRes;
+uniform sampler2D uTex; uniform vec2 uRes; uniform vec2 uAAT;      // порог контраста кромки: абсолютный и доля от яркости
+uniform float uMode;                                               // 1 — сглаживание кромок (в движении) и резкость, 0 — только резкость (в покое)
+uniform float uSharp;                                              // сила адаптивной резкости (CAS), 0…1
 out vec4 o;
 float lm(vec3 c) { return dot(c, vec3(0.299, 0.587, 0.114)); }
+/* адаптивная резкость (FidelityFX CAS): подчёркивает мелкий рисунок камня и кромок, не давая ореолов на контрастных границах и не усиливая то, что и так на пределе */
+vec3 cas(vec3 c, vec2 uv, vec2 px) {
+  if (uSharp <= 0.0) return c;
+  vec3 b = texture(uTex, uv + vec2(0.0, -1.0) * px).rgb, d = texture(uTex, uv + vec2(-1.0, 0.0) * px).rgb, f = texture(uTex, uv + vec2(1.0, 0.0) * px).rgb, h = texture(uTex, uv + vec2(0.0, 1.0) * px).rgb;
+  vec3 mn = min(min(min(d, c), min(f, b)), h), mx = max(max(max(d, c), max(f, b)), h);
+  vec3 amp = sqrt(clamp(min(mn, 1.0 - mx) / max(mx, vec3(1e-4)), 0.0, 1.0));
+  vec3 w = amp * (-1.0 / mix(8.0, 5.0, uSharp));
+  return clamp((b * w + d * w + f * w + h * w + c) / (1.0 + 4.0 * w), 0.0, 1.0);
+}
 void main() {
   vec2 px = 1.0 / uRes, uv = gl_FragCoord.xy * px;
-  vec3 cM = texture(uTex, uv).rgb;
+  vec4 sM = texture(uTex, uv); vec3 cM = sM.rgb;
+  if (uMode < 0.5) { o = vec4(cas(cM, uv, px), 1.0); return; }
+  if (sM.a > 0.5) {                                                   // кромка силуэта: ступеньки карты глубины (2–4 px) сглаживаем небольшим размытием 5×5 (только здесь; остальная картинка не трогается)
+    vec3 acc = vec3(0.0); float ws = 0.0;
+    for (int j = -2; j <= 2; j++) for (int i = -2; i <= 2; i++) {
+      float w = (i == 0 ? 6.0 : (abs(i) == 1 ? 4.0 : 1.0)) * (j == 0 ? 6.0 : (abs(j) == 1 ? 4.0 : 1.0));
+      acc += texture(uTex, uv + vec2(float(i), float(j)) * px).rgb * w; ws += w;
+    }
+    o = vec4(acc / ws, 1.0); return;
+  }
   vec3 cNW = texture(uTex, uv + vec2(-1.0, 1.0) * px).rgb, cNE = texture(uTex, uv + vec2(1.0, 1.0) * px).rgb;
   vec3 cSW = texture(uTex, uv + vec2(-1.0, -1.0) * px).rgb, cSE = texture(uTex, uv + vec2(1.0, -1.0) * px).rgb;
   float lM = lm(cM), lNW = lm(cNW), lNE = lm(cNE), lSW = lm(cSW), lSE = lm(cSE);
   float lMin = min(lM, min(min(lNW, lNE), min(lSW, lSE))), lMax = max(lM, max(max(lNW, lNE), max(lSW, lSE)));
-  if (lMax - lMin < max(0.035, lMax * 0.14)) { o = vec4(cM, 1.0); return; }
+  if (lMax - lMin < max(uAAT.x, lMax * uAAT.y)) { o = vec4(cas(cM, uv, px), 1.0); return; }
   vec2 dir = vec2(-((lNW + lNE) - (lSW + lSE)), (lNW + lSW) - (lNE + lSE));
   float red = max((lNW + lNE + lSW + lSE) * 0.25 * 0.125, 1.0 / 128.0);
   float rcp = 1.0 / (min(abs(dir.x), abs(dir.y)) + red);
@@ -431,14 +466,15 @@ void main() {
     function presentAA(tex) {
       gl.bindFramebuffer(gl.FRAMEBUFFER, null); gl.useProgram(P3.p);
       gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, tex); gl.uniform1i(P3.u.uTex, 0); gl.uniform2f(P3.u.uRes, W, H);
+      gl.uniform2f(P3.u.uAAT, AAT[0], AAT[1]); gl.uniform1f(P3.u.uMode, lastP && lastP.useAA ? 1 : 0); gl.uniform1f(P3.u.uSharp, SHARP);
       gl.drawArrays(gl.TRIANGLES, 0, 3);
     }
     /* только шар (зал не перерисовывается): положение шара/свет изменились, а камера стоит — дёшево (один проход) */
     function drawSphere() {
       if (dead || !W || !lastP || !lastP.sphereOn || !P4 || !sph.ready) return false;
       gl.bindVertexArray(vao);
-      paintSphere(lastP.useAA ? comp2.f : null, lastP.f1);
-      if (lastP.useAA) presentAA(comp2.color);
+      paintSphere(comp2.f, lastP.f1);
+      presentAA(comp2.color);
       gl.bindVertexArray(null);
       return true;
     }
@@ -502,7 +538,7 @@ void main() {
       const f1 = single ? 0 : 1;                                                 // кадр один (покой на кадре): второй слой не рисуем
       if (single) { layer(0, one, 0, sh); t = 0; } else { layer(0, ka, t, sh); layer(1, kb, t, sh); }
       const useAA = !!aa && !single, sphereOn = !!(P4 && sph.ready && comp2);
-      gl.bindFramebuffer(gl.FRAMEBUFFER, useAA || sphereOn ? comp.f : null); gl.viewport(0, 0, W, H); gl.disable(gl.DEPTH_TEST); gl.disable(gl.BLEND);
+      gl.bindFramebuffer(gl.FRAMEBUFFER, comp.f); gl.viewport(0, 0, W, H); gl.disable(gl.DEPTH_TEST); gl.disable(gl.BLEND);
       gl.useProgram(P2.p); const u = P2.u;
       gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, fb[0].color); gl.uniform1i(u.uCA, 0);
       gl.activeTexture(gl.TEXTURE1); gl.bindTexture(gl.TEXTURE_2D, fb[f1].color); gl.uniform1i(u.uCB, 1);
@@ -512,8 +548,9 @@ void main() {
       gl.bindVertexArray(vao); gl.drawArrays(gl.TRIANGLES, 0, 3);
       for (const k of ['pos', 'f', 'r', 'u']) camL[k] = camT[k].slice(); camL.lens = camT.lens;
       lastP = {f1, useAA, sphereOn};
-      if (sphereOn) paintSphere(useAA ? comp2.f : null, f1);
-      if (useAA) { presentAA(sphereOn ? comp2.color : comp.color); }
+      lastP.useAA = useAA;
+      if (sphereOn) paintSphere(comp2.f, f1);
+      presentAA(sphereOn ? comp2.color : comp.color);
       gl.bindVertexArray(null);
       return {ka, kb, t: single ? (one === kb && ka !== kb ? 1 : 0) : t, single};
     }
