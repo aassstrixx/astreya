@@ -352,7 +352,7 @@ void main() {
       gl.bindTexture(gl.TEXTURE_2D, d); gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA8, gl.RGBA, gl.UNSIGNED_BYTE, depthSrc);
       keys[k] = {c, d, cw: cw || colorSrc.width || colorSrc.naturalWidth, ch: ch || colorSrc.height || colorSrc.naturalHeight, dw: dw || depthSrc.width || depthSrc.naturalWidth, dh: dh || depthSrc.height || depthSrc.naturalHeight};
     }
-    function dropKey(k) { const e = keys[k]; if (!e) return; gl.deleteTexture(e.c); gl.deleteTexture(e.d); keys[k] = null; }
+    function dropKey(k) { const e = keys[k]; if (!e) return; gl.deleteTexture(e.c); if (!e.shared) gl.deleteTexture(e.d); keys[k] = null; }      // shared — глубина принадлежит уменьшенной копии (одна и та же карта), её не удаляем
     const hasKey = k => !!keys[k];
     /* уменьшенная копия кадра k (цвет и глубина целыми пикселями, без мип-уровней): держится всегда; когда полного кадра нет, зал рисуется по ней — быстрая прокрутка не показывает ни «зубцов», ни скачков назад */
     function setLow(k, colorSrc, depthSrc, cw, ch, dw, dh) {
@@ -363,7 +363,18 @@ void main() {
       gl.bindTexture(gl.TEXTURE_2D, d); gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA8, gl.RGBA, gl.UNSIGNED_BYTE, depthSrc);
       lows[k] = {c, d, cw: cw || colorSrc.width, ch: ch || colorSrc.height, dw: dw || depthSrc.width, dh: dh || depthSrc.height};
     }
-    function dropLow(k) { const e = lows[k]; if (!e) return; gl.deleteTexture(e.c); gl.deleteTexture(e.d); lows[k] = null; }
+    function dropLow(k) { const e = lows[k]; if (!e) return; gl.deleteTexture(e.c); if (!(keys[k] && keys[k].d === e.d)) gl.deleteTexture(e.d); lows[k] = null; }
+    /* полный кадр, у которого глубина та же, что у уменьшенной копии (карта глубины и так хранится в натуральном размере): грузим и держим в видеопамяти только цвет — вдвое меньше работы на кадр */
+    function setKeyShared(k, colorSrc, cw, ch) {
+      const lw = lows[k]; if (!lw) return false;
+      dropKey(k);
+      gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, false); gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, false); gl.pixelStorei(gl.UNPACK_COLORSPACE_CONVERSION_WEBGL, gl.NONE);
+      const mip = W > 0 && W < 0.72 * (cw || colorSrc.width);
+      const c = mkTex(mip ? gl.LINEAR_MIPMAP_LINEAR : gl.LINEAR);
+      gl.bindTexture(gl.TEXTURE_2D, c); gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA8, gl.RGBA, gl.UNSIGNED_BYTE, colorSrc); if (mip) gl.generateMipmap(gl.TEXTURE_2D);
+      keys[k] = {c, d: lw.d, shared: true, cw: cw || colorSrc.width, ch: ch || colorSrc.height, dw: lw.dw, dh: lw.dh};
+      return true;
+    }
     const hasLow = k => !!lows[k];
     const has = k => !!(keys[k] || lows[k]);
 
@@ -516,7 +527,7 @@ void main() {
       if (ibo) gl.deleteBuffer(ibo); [P0, P1, P2, P3, P4].forEach(q => q && gl.deleteProgram(q.p));
       if (!keepContext) { try { const ext = gl.getExtension('WEBGL_lose_context'); if (ext) ext.loseContext(); } catch (e) { /* — */ } }
     }
-    return {gl, setSize, setKey, dropKey, hasKey, setLow, dropLow, hasLow, plan, draw, drawSphere, setSphereTex, setSphere, destroy, setGridScale, get sphereReady() { return !!(P4 && sph.ready); }, get hasSphere() { return !!P4; }, camAt: p => track.at(p, {}), keys, get size() { return [W, H]; }};
+    return {gl, setSize, setKey, setKeyShared, dropKey, hasKey, setLow, dropLow, hasLow, plan, draw, drawSphere, setSphereTex, setSphere, destroy, setGridScale, get sphereReady() { return !!(P4 && sph.ready); }, get hasSphere() { return !!P4; }, camAt: p => track.at(p, {}), keys, get size() { return [W, H]; }};
   }
 
 

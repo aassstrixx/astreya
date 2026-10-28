@@ -26,12 +26,15 @@
   const portraitMQ = window.matchMedia('(max-aspect-ratio: 11/10)');
   const OMEGA = 24;           // жёсткость пружины, 1/с: отставание при равномерной прокрутке ≈ 2/OMEGA ≈ 0,08 с, остановка (до 2 %) ≈ 0,25 с
   const SNAP_DELAY = 110;     // мс без движения прокрутки, после которых плейхед мягко встаёт на ближайший ключевой кадр
-  const FAST_ON = 22, FAST_OFF = 10;   // ключевых кадров в секунду: быстрее FAST_ON — «взмах»: тяжёлые полные кадры не разворачиваем и не грузим в видеопамять (их уже не успеть, а загрузка гасит кадры анимации), картинка идёт по уменьшенным копиям; медленнее FAST_OFF — снова обычная работа
+  const FAST_ON = 30, FAST_OFF = 12;   // ключевых кадров в секунду: быстрее FAST_ON — «взмах»: тяжёлые полные кадры не разворачиваем и не грузим в видеопамять (их уже не успеть, а загрузка гасит кадры анимации), картинка идёт по уменьшенным копиям; медленнее FAST_OFF — снова обычная работа
   const MOVING = 0.04;        // ключевых кадров в секунду: быстрее — идёт движение (включается сглаживание кромок)
   const LANES = [14, 8];      // запросов одновременно: [компьютер, телефон] (HTTP/2)
   const RES = [5, 4];         // сколько ключевых кадров по обе стороны от положения держим в видеопамяти: [компьютер, телефон]
   const DECODERS = 3;         // одновременных разворачиваний картинок в текстуры
-  const LOWSZ = [[512, 288, 256, 144, 400], [288, 512, 144, 256, 300]];      // уменьшенные копии всех кадров (всегда в видеопамяти): цвет, глубина, ширина спрайта баночки — [компьютер, телефон]
+  /* уменьшенные копии всех кадров (всегда в видеопамяти; во взмах картинка идёт по ним): ширина цвета, высота цвета, ширина и высота глубины (0 — глубина в натуральном размере: тогда полный кадр берёт её же и держит только цвет), ширина спрайта баночки.
+     Они должны быть почти неотличимы от полных кадров (мелкие копии давали «мыло» и ступеньки на кромках): на мощных устройствах (≥ 8 ГБ памяти) цвет 1280×720 и глубина целиком (≈ 350 МБ), иначе 960×540 и глубина 640×360 (≈ 180 МБ); телефон — 360×640 */
+  const RICH = (navigator.deviceMemory || 4) >= 8;
+  const LOWSZ = [RICH ? [1280, 720, 0, 0, 640] : [960, 540, 640, 360, 480], [360, 640, 300, 533, 360]];
   const LOWDEC = [2, 1];           // одновременных разворачиваний уменьшенных копий (они мелкие, идут в стороне от основной очереди)
   let ctrl = null, ctrls = [];       // ctrls — все сцены страницы (на главной одна: #arch-story), ctrl — она же
 
@@ -167,7 +170,7 @@
     /* то же, но сразу в нужном размере (меньше памяти и работы): null — браузер размер не применил или не справился */
     async function bmpR(blob, premul, w, h, q) {
       try {
-        const o = {premultiplyAlpha: premul ? 'premultiply' : 'none', colorSpaceConversion: 'none', resizeQuality: q}; if (w) o.resizeWidth = w; if (h) o.resizeHeight = h;
+        const o = {premultiplyAlpha: premul ? 'premultiply' : 'none', colorSpaceConversion: 'none'}; if (w) { o.resizeQuality = q; o.resizeWidth = w; } if (h) o.resizeHeight = h;
         const b = await createImageBitmap(blob, o);
         if (b.width > (w || 1e9) * 1.5) { try { b.close(); } catch (e) { /* — */ } return null; }
         return b;
@@ -228,8 +231,13 @@
         if (decN >= DECODERS || lowOnlyF) break;
         if (!resident[k] && keyDone(k) && !decoding[k]) {
           decoding[k] = 1; decN++; const g = gen;
-          Promise.all([bmp(blobs.c[k], false), bmp(blobs.z[k], false)]).then(([c, z]) => {
-            if (g === gen && hall && !dead) pushUp(() => { if (g === gen) decoding[k] = 0; if (g === gen && hall && !dead) { hall.setKey(k, c, z, c.width, c.height, z.width, z.height); resident[k] = 1; dirty = true; } closeB(c); closeB(z); });
+          const shared = lowDone[k] === 1 && !LOWSZ[isPortrait() ? 1 : 0][2];                 // глубина уменьшенной копии — натуральная: второй раз её не разворачиваем
+          Promise.all([bmp(blobs.c[k], false), shared ? null : bmp(blobs.z[k], false)]).then(([c, z]) => {
+            if (g === gen && hall && !dead) pushUp(() => {
+              if (g === gen) decoding[k] = 0;
+              if (g === gen && hall && !dead) { if (shared && hall.hasLow(k)) hall.setKeyShared(k, c, c.width, c.height); else if (z) hall.setKey(k, c, z, c.width, c.height, z.width, z.height); else { closeB(c); return; } resident[k] = 1; dirty = true; }
+              closeB(c); closeB(z);
+            });
             else { if (g === gen) decoding[k] = 0; closeB(c); closeB(z); }
           }).catch(() => { if (g === gen) decoding[k] = 0; }).then(() => { decN--; pumpDecode(); evict(); });
         } else if (!resJ[k] && blobs.j[k] && jar && !decoding[NH + k]) {

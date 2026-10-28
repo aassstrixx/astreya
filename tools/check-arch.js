@@ -204,6 +204,12 @@ if (!J || !J.enabled || !A || !A.enabled) { console.log('Первый экран
       await p.waitForFunction(() => { const s = Astreya.jar.arch.state(); return s.lows >= s.N && s.lowSprites >= s.N; }, null, {timeout: 240000, polling: 500}).catch(() => {});
       const lw = await p.evaluate(() => { const s = Astreya.jar.arch.state(); return {lows: s.lows, sprites: s.lowSprites, N: s.N}; });
       ok(lw.lows === lw.N && lw.sprites === lw.N, 'быстрая прокрутка: уменьшенные копии всех кадров зала и спрайтов баночки лежат в видеопамяти', lw);
+      await at(p, g, 0.6, 2500); await p.waitForFunction(() => { const s = Astreya.jar.arch.state(); return s.drawn && s.drawn.single && s.resident > 0; }, null, {timeout: 120000, polling: 500}).catch(() => {});
+      const grayFull = await p.evaluate(() => window.__gray('.js-cv', 240).g);
+      await p.evaluate(() => Astreya.jar.arch.lowOnly(true)); await at(p, g, 0.12, 2500); await at(p, g, 0.6, 2500);
+      const grayLow = await p.evaluate(() => ({g: window.__gray('.js-cv', 240).g, res: Astreya.jar.arch.state().resident}));
+      let dsum = 0; for (let i = 0; i < grayFull.length; i++) dsum += Math.abs(grayFull[i] - grayLow.g[i]); const dmean = dsum / grayFull.length;
+      ok(dmean < 6, 'быстрая прокрутка: картинка по уменьшенным копиям почти не отличается от полного кадра (средняя разница яркости на 255 — меньше 6; без «мыла» и ступенек на кромках)', {dmean: +dmean.toFixed(2), res: grayLow.res});
       await p.evaluate(() => Astreya.jar.arch.lowOnly(true));
       const Phi = await p.evaluate(() => document.getElementById('arch-story').dataset.p.split(',').map(Number));
       const seq = [0.1, 0.22, 0.35, 0.47, 0.6, 0.72, 0.85, 0.97], seen = [];
