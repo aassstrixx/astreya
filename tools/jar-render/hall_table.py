@@ -16,6 +16,9 @@ import sys
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
+# кадр — как на сайте сейчас (боевые кадры): шар выше и меньше, общий план 36 мм — под шаром баночка стоит свободно, не уходит за него вглубь
+for _k, _v in (('HALL_SPH_X', '.715'), ('HALL_SPH_Y', '.335'), ('HALL_SPH_D', '.205'), ('HALL_LENS_L', '36')):
+    os.environ.setdefault(_k, _v)
 import hall_story as H
 from hall_story import SC, S, Vector, bpy
 
