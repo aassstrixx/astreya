@@ -42,7 +42,7 @@ def main():
     jar = json.loads('{' + s[i:j].split('{', 1)[1])['arch']                                                  # из боевого блока берём то, что не зависит от сцены (высота закрепления, подпись, чернила этикетки)
     look = json.loads(json.dumps(jar['look']))
     look['center'] = centres(root, td, tp)
-    alt = 'Центральный зал ASTREYA HOUSE: каменный подиум с баночкой Астрея, шар и гора, стеклянный столик с журналом и два дивана — зона ожидания, арочные проходы в комнаты дома'
+    alt = 'Центральный зал ASTREYA HOUSE: каменный подиум с баночкой Астрея, шар и гора, стеклянный столик с раскрытым журналом и два дивана — зона ожидания'
     tex = jar.get('sphereTex') or {}
     new = '''"arch": {
       "_note": "Кадры зала дома (tools/jar-render/house_story.py → encode_arch.py → assets/house-hall/, записывает tools/jar-render/apply_house.py). Пока блока нет или enabled=false — страница дома берёт кадры прежней заставки (jar.arch); боевая главная этот блок не читает.",

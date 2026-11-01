@@ -16,111 +16,22 @@ module.exports = function homeHouse(ctx, C, P, deps) {
   const next = events[0];
   const pct = n => (Math.round(n * 1000) / 10) + '%';
 
-  /* ---------------------------------------------------------------- зал: проходы, журнал на столике, приветствие */
-  const hallBox = (b, k) => `--x:${b[0]};--y:${b[1]};--w:${b[2]};--h:${b[3] === undefined ? 0 : b[3]}`;
-  const tagsOn = H.hall.tags !== false;                    // таблички проходов («02 Бренды» и т. д.): false в data/redesign.json → house.hall.tags — убрать совсем
-  const doors = H.hall.doors.map(d => {
-    const r = roomBy(d.room); if (!r) return '';
-    const m = d.m ? `;--xm:${d.m[0]};--ym:${d.m[1]};--wm:${d.m[2]};--hm:${d.m[3]}` : '';
-    return `<a class="hall-door${d.m ? '' : ' no-m'}" href="#room-${r.id}" data-house-go="${r.id}" data-track="house_door" data-room="${r.id}" style="${hallBox(d.d)}${m}" aria-label="Открыть комнату ${r.n2}: ${esc(r.name)}">
-      <span class="hd-arch" aria-hidden="true"></span>${tagsOn ? `<span class="hd-tag" aria-hidden="true"><b>${r.n2}</b><span>${esc(r.short)}</span></span>` : ''}</a>`;
-  }).join('');
+  /* ---------------------------------------------------------------- зал: журнал на столике (проходов-арок с табличками больше нет — комнаты открывает журнал) */
   const tb = H.hall.table;
-  /* журнал на столике: раскрытый разворот (обложка слева — фото, справа — содержание), только для глаз; настоящий журнал — в диалоге ниже */
-  const prevLine = r => `<li><b>${r.n2}</b><span>${esc(r.short)}</span></li>`;
-  const mc = H.mag, cover = rd.photos.hero, hello = rd.photos.about;
-  const baked = H.hall.magBaked === true;                    // true — журнал нарисован в кадрах зала (3D-модель, tools/jar-render/mag_model.py): поверх остаётся только зона клика и подсказка
-  const magPrevB = baked ? '' : `<span class="mag-prev-b" aria-hidden="true">
-        <span class="mp-l"><img src="${C.u(P, hello.src)}" alt="" width="${hello.w}" height="${hello.h}" loading="lazy" decoding="async"><i>${esc(site.tagline.split('.')[0])}.</i></span>
-        <span class="mp-r"><em>${esc(mc.tocTitle)}</em><ol>${rooms.map(prevLine).join('')}</ol></span></span>`;
-  const magTable = `<div class="hall-mag${baked ? ' is-baked' : ''}" style="--tx:${tb.d[0]};--ty:${tb.d[1]};--tw:${tb.d[2]};--txm:${tb.m[0]};--tym:${tb.m[1]};--twm:${tb.m[2]}">
-      <button class="mag-prev" type="button" data-house-mag aria-haspopup="dialog" aria-controls="mag" data-track="house_magazine" data-place="table">${magPrevB}
-        <span class="mag-hint">${esc(H.hall.hint)}</span><span class="sr">Журнал ASTREYA: открыть и листать — оглавление и переходы в комнаты</span></button>
+  /* журнал на столике нарисован в кадрах зала (3D-модель, tools/jar-render/mag_model.py); поверх — невидимая зона клика и подсказка */
+  const mc = H.mag;
+  const magTable = `<div class="hall-mag" style="--tx:${tb.d[0]};--ty:${tb.d[1]};--tw:${tb.d[2]};--txm:${tb.m[0]};--tym:${tb.m[1]};--twm:${tb.m[2]}">
+      <button class="mag-prev" type="button" data-house-mag data-track="house_magazine" data-place="table"><span class="mag-hint">${esc(H.hall.hint)}</span><span class="sr">Журнал ASTREYA: открыть и листать — оглавление и переходы к разделам</span></button>
     </div>`;
-  const hallWorld = `<div class="hall-doors${tagsOn ? '' : ' no-tags'}" role="group" aria-label="${esc(H.hall.doorsLabel)}">${doors}</div>${magTable}`;
+  const hallWorld = magTable;
   const hallRooms = `<nav class="hall-rooms" aria-label="${esc(H.hall.doorsLabel)}"><ol>${rooms.map(r => `<li><a href="#room-${r.id}" data-house-go="${r.id}" data-track="house_room" data-place="hall"><b>${r.n2}</b><span>${esc(r.short)}</span></a></li>`).join('')}</ol></nav>`;
-
-  /* ---------------------------------------------------------------- комнаты */
-  const roomTag = r => `<p class="room-tag"><b>${r.n2}</b><span>${esc(r.name)}</span></p>`;
-  const roomNav = (r, i) => {
-    const pv = rooms[i - 1], nx = rooms[i + 1];
-    return `<nav class="room-nav" aria-label="${esc(H.nav.label)}">
-      <a class="rn-hall" href="#hall" data-house-hall>${I.arrow}<span>${esc(H.nav.hall)}</span></a>
-      <button class="rn-mag" type="button" data-house-mag data-mag-room="${r.id}" aria-haspopup="dialog" aria-controls="mag">${esc(H.nav.magazine)}</button>
-      <span class="rn-sp"></span>
-      ${pv ? `<a class="rn-pv" href="#room-${pv.id}" data-house-go="${pv.id}" aria-label="${esc(H.nav.prev)}: ${esc(pv.name)}">${I.arrow}<span>${pv.n2} ${esc(pv.short)}</span></a>` : ''}
-      ${nx ? `<a class="rn-nx" href="#room-${nx.id}" data-house-go="${nx.id}" aria-label="${esc(H.nav.next)}: ${esc(nx.name)}"><span>${nx.n2} ${esc(nx.short)}</span>${I.arrow}</a>` : ''}
-    </nav>`;
-  };
-  const roomDoor = (r, i) => {
-    const nx = rooms[i + 1];
-    if (!nx) return `<a class="room-door rd-end" href="${C.u(P, 'contacts.html')}" data-track="house_contacts"><span class="rd-arch" aria-hidden="true"></span><small>Дальше</small><b>Контакты и подвал</b></a>`;
-    return `<a class="room-door" href="#room-${nx.id}" data-house-go="${nx.id}"><span class="rd-arch" aria-hidden="true"></span><small>${esc(H.nav.next)}</small><b>${nx.n2} · ${esc(nx.name)}</b></a>`;
-  };
-  const room = (r, i, body, cls = '') => `<section class="room room-${r.id}${cls ? ' ' + cls : ''}" id="room-${r.id}" data-room="${r.id}" data-no="${r.no}"${r.img ? ` data-img="${C.u(P, r.img)}"` : ''} aria-label="Комната ${r.n2}: ${esc(r.name)}">
-    <div class="room-stage" aria-hidden="true"><i class="room-bg"></i><i class="room-sun"></i></div>
-    <div class="wrap room-top">${roomTag(r)}${roomNav(r, i)}</div>
-    <div class="room-body">${body}</div>
-    ${roomDoor(r, i)}
-  </section>`;
-
-  /* 04 экспертиза: фото эксперта + преподаватели + обещание (верх прежнего «учебного» блока) */
-  const faces = rd.teachers.items.slice(0, 5);
-  const expertise = `<section class="rd-sec hp-acad hp-exp" id="expertise-block" aria-labelledby="hp-exp-h"><div class="wrap">
-    <div class="hp-acad-grid">
-      <figure class="hp-acad-photo reveal">${img(ed.photo, '', ' loading="lazy"')}
-        <a class="hp-faces" href="${href(A.teachersHref)}" aria-label="${esc(A.teachersLabel)}"><span class="hp-faces-row">${faces.map(t => `<img src="${C.u(P, t.photo)}" alt="" width="280" height="300" loading="lazy" decoding="async">`).join('')}</span><span class="hp-faces-t">${esc(A.teachersLabel)} ${I.arrow}</span></a></figure>
-      <div class="hp-acad-copy">
-        <span class="eyebrow reveal">${esc(ed.eyebrow)}</span>
-        <h2 id="hp-exp-h" class="reveal"><span class="l1">${ed.lead.map(esc).join(' ')}</span> <span class="l2">${ed.accent.map(esc).join(' ')}</span></h2>
-        <p class="hp-sub reveal">${esc(tr.sub)}</p>
-        <ul class="hp-facts reveal">${A.facts.map(f => `<li>${I.check}<span>${esc(f)}</span></li>`).join('')}</ul>
-        <div class="row hp-acad-cta reveal"><a class="btn btn-light" href="${href(A.teachersHref)}">${esc(A.teachersLabel)} ${I.arrow}</a><a class="btn btn-ghost-inv" href="${C.u(P, ed.cta.href)}">${esc(A.about)}</a></div>
-      </div>
-    </div>
-  </div></section>`;
-
-  /* 05 учебный центр: ближайшее мероприятие с отсчётом и ближайшие встречи */
-  const nextBlock = next
-    ? (() => { const d = S.dparts(next.date), b = ctx.brandById[next.brand]; return `<a class="hp-next reveal" href="${C.eurl(P, next)}"><span class="hp-date"><b>${d.d}</b><i>${d.m}</i></span><span class="hp-next-t"><small>Ближайшее мероприятие</small><b>${esc(next.title)}</b><em>${esc(next.fmt)} · ${esc(next.city)} · ${esc(b.name)}</em></span>${I.arrow}</a>`; })()
-    : `<p class="hp-next-none">${esc(tr.emptyNote)}</p>`;
-  const evCard = e => { const d = S.dparts(e.date), b = ctx.brandById[e.brand]; return `<a class="hp-ev reveal" href="${C.eurl(P, e)}"><span class="hp-date"><b>${d.d}</b><i>${d.m}</i></span><span class="hp-ev-t"><b>${esc(e.title)}</b><em>${esc(e.fmt)} · ${esc(e.city)} · ${esc(b.name)}</em></span></a>`; };
-  const academy = `<section class="rd-sec hp-acad hp-train" id="training-block" aria-labelledby="hp-train-h"><div class="wrap">
-    <header class="hp-head"><div><span class="eyebrow">${esc(tr.eyebrow)}</span><h2 id="hp-train-h" class="reveal">${esc(tr.title)}</h2></div><p class="lead reveal">${esc(tr.text)}</p></header>
-    <div class="hp-train-grid">
-      <div class="hp-train-main">
-        <p class="hp-sub reveal">${esc(tr.sub)}</p>
-        <ul class="hp-facts reveal">${A.facts.map(f => `<li>${I.check}<span>${esc(f)}</span></li>`).join('')}</ul>
-        ${nextBlock}
-        ${next ? C.cdSlot() : ''}
-        <div class="row hp-acad-cta reveal"><a class="btn btn-light" href="${C.u(P, 'training.html')}">${esc(A.all)} ${I.arrow}</a>${next ? `<a class="btn btn-ghost-inv" href="${C.eurl(P, next)}">Подробнее</a>` : ''}</div>
-      </div>
-      ${events.length > 1 ? `<div class="hp-events" id="home-events" role="group" aria-label="${esc(A.eventsLabel)}">${events.slice(1, 4).map(evCard).join('')}</div>` : ''}
-    </div>
-  </div></section>`;
-
-  /* 07 редакция: новости; путь к событиям и контактам */
-  const editorial = `${news}
-    <div class="wrap hp-ed-more"><div class="row"><a class="btn btn-ghost" href="${C.u(P, 'training.html')}">${esc(A.all)} ${I.arrow}</a><a class="btn btn-ghost" href="${C.u(P, 'contacts.html')}" data-track="house_contacts">Контакты ${I.arrow}</a></div></div>`;
-
-  const bodies = {
-    about: hpS.proofSec,
-    brands: brandsX || '',
-    finder: hpS.finderSec,
-    expertise,
-    academy,
-    partners: `${hpS.rolesSec}${fork || ''}${hpS.stepsSec}${finalCta}`,
-    editorial
-  };
-  const roomsHtml = rooms.map((r, i) => room(r, i, bodies[r.id] || '')).join('\n\n  ');
 
   /* ---------------------------------------------------------------- журнал: настоящие страницы, содержимое — из данных */
   const ph = k => rd.photos[k];
   const pimg = (k, cls = '') => { const f = ph(k); return `<img${cls ? ` class="${cls}"` : ''} src="${C.u(P, f.src)}" alt="${esc(f.alt)}" width="${f.w}" height="${f.h}" loading="lazy" decoding="async">`; };
   const foot = (n, side) => `<footer class="pg-f ${side}"><span>ASTREYA</span><b>${n}</b></footer>`;
   const run = `<p class="mg-run" aria-hidden="true"><span>ASTREYA</span><span>${esc(mc.kicker)}</span></p>`;       // бегущий колонтитул текстовых страниц
-  const openBtn = r => `<a class="btn btn-fill btn-sm mg-open" href="#room-${r.id}" data-house-go="${r.id}" data-mag-close data-track="house_magazine_room" data-room="${r.id}">${esc(mc.open)} ${I.arrow}</a>`;
-  const deepBtn = r => `<a class="mg-deep" href="${href(r.href)}">${esc(r.cta)} ${I.arrow}</a>`;
+  const pageBtn = r => `<a class="btn btn-fill btn-sm mg-open" href="${href(r.href)}" data-track="house_magazine_page" data-room="${r.id}">${esc(r.cta)} ${I.arrow}</a>`;
   const statsOf = () => [...h.stats, ...rd.stats.extra].filter(s => s.value !== null && s.value !== undefined);
   const nTasks = tasks.length;
   const facts = arr => `<ul class="mg-facts">${arr.map(f => `<li><b>${esc(String(f[0]))}</b><span>${esc(f[1])}</span></li>`).join('')}</ul>`;
@@ -146,7 +57,7 @@ module.exports = function homeHouse(ctx, C, P, deps) {
     editorial: () => `<img src="${C.u(P, 'assets/photos/keenwell-mask.webp')}" alt="" class="mg-prod" loading="lazy" decoding="async">`
   };
   const pageL = (r, n) => `<div class="pg pg-l pg-ph pg-${r.id}"><div class="mg-ph">${leftPhoto[r.id]()}</div><p class="mg-no" aria-hidden="true">${r.n2}</p><p class="mg-kick">${esc(r.short)}</p>${foot(n, 'l')}</div>`;
-  const pageR = (r, n) => { const c = rightOf[r.id](); return `<div class="pg pg-r pg-tx pg-${r.id}">${run}<p class="mg-kick">Комната ${r.n2} · ${esc(r.name)}</p><h3 class="mg-h">${esc(c.head)}</h3>${c.text ? `<p class="mg-p${c.text.length > 130 ? ' mg-drop' : ''}">${esc(c.text)}</p>` : ''}${c.extra || ''}<div class="mg-act">${openBtn(r)}${deepBtn(r)}</div>${foot(n, 'r')}</div>`; };
+  const pageR = (r, n) => { const c = rightOf[r.id](); return `<div class="pg pg-r pg-tx pg-${r.id}" id="room-${r.id}" data-room="${r.id}">${run}<p class="mg-kick">Комната ${r.n2} · ${esc(r.name)}</p><h3 class="mg-h">${esc(c.head)}</h3>${c.text ? `<p class="mg-p${c.text.length > 130 ? ' mg-drop' : ''}">${esc(c.text)}</p>` : ''}${c.extra || ''}<div class="mg-act">${pageBtn(r)}</div>${foot(n, 'r')}</div>`; };
   const logoSvg = '<svg class="lgo" viewBox="46 338 836 436" aria-hidden="true"><use href="#logo-art"/></svg>';
   const pCover = `<div class="pg pg-cover"><span class="cv-kick">${esc(mc.kicker)}</span><p class="cv-title" role="heading" aria-level="2">${esc(mc.title)}</p><figure class="cv-ph">${pimg('hero')}</figure><span class="cv-year">${site.year}</span>${logoSvg}</div>`;
   /* разворот 2–3 (на нём журнал раскрыт на столике): слева — фото на всю страницу с крупным заголовком, справа — содержание в журнальной вёрстке */
@@ -166,38 +77,29 @@ module.exports = function homeHouse(ctx, C, P, deps) {
   const pagesR = [pCover, pToc, ...rooms.map((r, i) => pageR(r, (i + 1) * 2 + 3)), pContactsR((rooms.length + 1) * 2 + 3)];
   const pagesL = [pWelcome, ...rooms.map((r, i) => pageL(r, (i + 1) * 2 + 2)), pContactsL((rooms.length + 1) * 2 + 2), pBack];
   const leaves = pagesR.map((f, k) => `<div class="leaf" data-k="${k}" style="--zr:${pagesR.length - k};--zl:${k + 1}"><div class="face front">${f}</div><div class="face back">${pagesL[k] || ''}</div></div>`).join('');
-  const magazine = `<div class="mag" id="mag" role="dialog" aria-modal="true" aria-label="Журнал ASTREYA" hidden data-n="${pagesR.length}">
-    <div class="mag-veil" data-mag-close></div>
+  const magazine = `<div class="mag" id="mag" role="region" aria-label="Журнал ASTREYA" data-n="${pagesR.length}">
     <div class="mag-wrap">
-      <div class="mag-bar"><button class="mag-x" type="button" data-mag-close aria-label="${esc(mc.closeLabel)}"><span aria-hidden="true">×</span></button><button class="mag-cv" type="button" data-mag-page="0">${esc(mc.coverLabel)}</button><p class="mag-st" aria-live="polite"></p></div>
+      <div class="mag-bar"><p class="mag-st" aria-live="polite"></p></div>
       <div class="mag-book" tabindex="-1"><div class="mag-spine" aria-hidden="true"></div><div class="leaves">${leaves}</div></div>
       <div class="mag-ctl"><button class="mag-pv" type="button" data-mag-step="-1">${I.arrow}<span>${esc(mc.prevLabel)}</span></button><button class="mag-nx" type="button" data-mag-step="1"><span>${esc(mc.nextLabel)}</span>${I.arrow}</button></div>
     </div>
   </div>`;
 
   /* переход скролла к раскрытому журналу: после зала — закреплённая сцена; тот же кадр зала уходит вглубь, журнал вырастает со столика, обложка раскрывается, дальше прокрутка листает разворот за разворотом
-     (тот же настоящий журнал, что открывается кликом; прокрутка не блокируется; без JS и при уменьшенном движении — обычный блок с раскрытым журналом) */
+     (журнал — единственное, что идёт после зала: комнаты — его страницы; прокрутка не блокируется; без JS страницы идут подряд, при уменьшенном движении — обычный блок с раскрытым журналом) */
   const pst = (rd.house.arch && rd.house.arch.poster) || {};
-  const reader = `<section class="house-reader" id="house-reader" aria-label="${esc(mc.readerLabel || 'Журнал ASTREYA: листайте прокруткой')}" data-n="${pagesR.length}" style="--hrh:${(H.reader || {}).heightVh || 420}vh;--hrhm:${(H.reader || {}).heightVhMobile || 190}vh;--tx:${tb.d[0]};--ty:${tb.d[1]};--txm:${tb.m[0]};--tym:${tb.m[1]}">
+  const reader = `<section class="house-reader" id="house-reader" aria-label="${esc(mc.readerLabel || 'Журнал ASTREYA: листайте прокруткой')}" data-n="${pagesR.length}" style="--hrh:${(H.reader || {}).heightVh || 560}vh;--hrhm:${(H.reader || {}).heightVhMobile || 190}vh;--tx:${tb.d[0]};--ty:${tb.d[1]};--txm:${tb.m[0]};--tym:${tb.m[1]}">
     <div class="hr-stage">
       <picture class="hr-bg" aria-hidden="true"><source media="(max-aspect-ratio: 11/10)" srcset="${C.u(P, pst.mobile || 'assets/house-hall/poster-m.webp')}"><img src="${C.u(P, pst.desktop || 'assets/house-hall/poster-d.webp')}" alt="" width="1920" height="1080" decoding="async" loading="lazy"></picture>
       <div class="hr-veil" aria-hidden="true"></div>
       <p class="hr-cue" aria-hidden="true"><span>${esc((H.reader || {}).cue || 'Листайте — журнал откроется')}</span><i></i></p>
-      <a class="hr-skip" href="#room-${rooms[0].id}" data-house-go="${rooms[0].id}" data-track="house_reader_skip">${esc((H.reader || {}).skip || 'К комнатам')} ${I.arrow}</a>
+      <a class="hr-skip" href="#house-end" data-track="house_reader_skip">${esc((H.reader || {}).skip || 'К контактам')} ${I.arrow}</a>
       ${magazine}
     </div>
   </section>`;
 
-  /* плавающая навигация по дому: появляется, когда зал ушёл из кадра */
-  const houseNav = `<nav class="house-nav is-off" aria-label="${esc(H.nav.label)}">
-    <a class="hn-hall" href="#hall" data-house-hall>${esc(H.nav.hall)}</a>
-    <button class="hn-mag" type="button" data-house-mag aria-haspopup="dialog" aria-controls="mag">${esc(H.nav.magazine)}</button>
-    <ol class="hn-rooms" aria-label="${esc(H.nav.rooms)}">${rooms.map(r => `<li><a href="#room-${r.id}" data-house-go="${r.id}" aria-label="${r.n2}: ${esc(r.name)}"><b>${r.n2}</b><span>${esc(r.short)}</span></a></li>`).join('')}</ol>
-  </nav>`;
-  const veil = '<div class="house-veil" aria-hidden="true"></div>';
-
   return {
     hall: {world: hallWorld, rooms: hallRooms},
-    compose: arch => [arch, heroX, reader, marquee, roomsHtml, houseNav, veil].join('\n\n  ')
+    compose: arch => [arch, heroX, reader, '<div id="house-end" aria-hidden="true"></div>'].join('\n\n  ')
   };
 };

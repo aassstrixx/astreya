@@ -565,7 +565,7 @@
       "sphereTex": {"a": "assets/jar-arch/sphere-a.webp", "n": "assets/jar-arch/sphere-n.webp"},
       "ink": 0.43,
       "heightVh": {"desktop": 400, "mobile": 360},
-      "alt": "Центральный зал ASTREYA HOUSE: каменный подиум с баночкой Астрея, шар и гора, стеклянный столик с журналом и два дивана — зона ожидания, арочные проходы в комнаты дома",
+      "alt": "Центральный зал ASTREYA HOUSE: каменный подиум с баночкой Астрея, шар и гора, стеклянный столик с раскрытым журналом и два дивана — зона ожидания",
       "sphere": {"desktop": [0.715,0.335,0.205], "mobile": [0.48868,0.475,0.44001]},
       "jar": {
         "ext": "webp",
@@ -580,18 +580,11 @@
     "enabled": false,
     "preview": true,
     "hall": {
-      "tags": true,
-      "magBaked": true,
       "hint": "Откройте журнал ASTREYA",
-      "doorsLabel": "Комнаты дома",
-      "table": {"d": [0.4, 0.8, 0.225], "m": [0.371, 0.8, 0.29]},
-      "doors": [
-        {"room": "brands", "d": [0.0, 0.06, 0.17, 0.5], "m": null},
-        {"room": "finder", "d": [0.535, 0.28, 0.19, 0.31], "m": [0.379, 0.445, 0.36, 0.255]},
-        {"room": "partners", "d": [0.21, 0.56, 0.29, 0.22], "m": [0.55, 0.72, 0.44, 0.2]}
-      ]
+      "doorsLabel": "Разделы журнала",
+      "table": {"d": [0.4, 0.8, 0.225], "m": [0.371, 0.8, 0.29]}
     },
-    "reader": {"heightVh": 420, "heightVhMobile": 240, "cue": "Листайте — журнал откроется", "skip": "К комнатам"},
+    "reader": {"heightVh": 560, "heightVhMobile": 240, "cue": "Листайте — журнал откроется", "skip": "К контактам"},
     "rooms": [
       {"id": "about", "img": "assets/house/room-about.webp", "name": "Галерея доверия", "short": "О компании", "href": "company.html", "cta": "Страница «О компании»"},
       {"id": "brands", "img": "assets/brands/hero.webp", "name": "Галерея брендов", "short": "Бренды", "href": "brands.html", "cta": "Все бренды"},
@@ -613,14 +606,6 @@
       "coverLabel": "К обложке",
       "readerLabel": "Журнал ASTREYA: листайте прокруткой",
       "contactsTitle": "Контакты"
-    },
-    "nav": {
-      "hall": "В зал",
-      "magazine": "Журнал",
-      "rooms": "Комнаты",
-      "prev": "Предыдущая комната",
-      "next": "Следующая комната",
-      "label": "Навигация по дому"
     }
   }
 }

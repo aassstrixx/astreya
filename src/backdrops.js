@@ -56,6 +56,7 @@ module.exports = function backdrops(ctx) {
   function apply(P, html) {
     if (!on || !html) return html;
     if ((cfg.skipPages || []).includes(P.key)) return html;
+    if (/<section class="[^"]*is-house/.test(html)) return html;           // главная-дом: после зала идёт только журнал, блоков прежней главной (rd-sec, hp-*) на странице нет
     const plan = planFor(P.key);
     if (!plan) return html;
     const edits = new Map();                                    // позиция «>» открывающего тега → строка атрибутов
@@ -63,7 +64,7 @@ module.exports = function backdrops(ctx) {
     for (const it of plan.mid || []) {
       const tx = check(it, `страница ${P.key}, mid ${it.sel}`);
       const n = it.n || 0, hits = list.filter(matcher(it.sel)), b = hits[n < 0 ? hits.length + n : n];
-      if (!b) throw new Error(`backdrops: на странице ${P.key} нет блока «${it.sel}» №${n}`);
+      if (!b) throw new Error(`backdrops: на странице ${P.key} (${P.path || ""}) нет блока «${it.sel}» №${n}`);
       if (/\bdata-bd=/.test(b.attrs) || edits.has(b.end)) continue;
       edits.set(b.end, attrs(it, tx));
     }
