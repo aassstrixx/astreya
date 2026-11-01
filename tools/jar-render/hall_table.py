@@ -17,7 +17,7 @@ import sys
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
 # кадр — как на сайте сейчас (боевые кадры): шар выше и меньше, общий план 36 мм — под шаром баночка стоит свободно, не уходит за него вглубь
-for _k, _v in (('HALL_SPH_X', '.715'), ('HALL_SPH_Y', '.335'), ('HALL_SPH_D', '.205'), ('HALL_LENS_L', '36')):
+for _k, _v in (('HALL_SPH_X', '.715'), ('HALL_SPH_Y', '.335'), ('HALL_SPH_D', '.205'), ('HALL_LENS_L', '36'), ('HALL_TREE_H', '.50')):          # HALL_TREE_H: высота ствола над горлышком вазы — листва стоит высоко, у верхнего края, как на сайте сейчас
     os.environ.setdefault(_k, _v)
 import hall_story as H
 from hall_story import SC, S, Vector, bpy
@@ -439,13 +439,16 @@ def jar_vs_vase(argv):
         print('кадр', i, 'баночка', [round(v, 3) for v in j], 'до оси вазы %.3f' % d, 'радиус вазы ~%.3f' % r, 'ВНУТРИ' if d < r + .06 else '')
 
 
+PORTRAIT_PATCH = False
+
+
 def vase_box():
     """область кадра (x0, x1, y0, y1), где видна ваза с деревом на прежнем (.70, −.52) и новом месте с кроной (ограничивающие параллелепипеды с запасом), с полями"""
     sc = bpy.context.scene; cam = S['cam']; xs, ys = [], []
-    for cx, cy in ((.70, -.52), TREE_XY_D):
+    for cx, cy in (((.70, -.52), TREE_XY_D) if not PORTRAIT_PATCH else ((.80, -.52),)):
         for dx in (-.58, .58):
             for dy in (-.58, .58):
-                for z in (0.0, 1.3):
+                for z in (0.0, 1.9):
                     q = H.proj(sc, cam, Vector((cx + dx, cy + dy, z))); xs.append(q[0]); ys.append(q[1])
     return (min(xs) - .02, max(xs) + .02, min(ys) - .02, max(ys) + .02)
 
@@ -456,18 +459,22 @@ def vase_patch(argv):
     os.environ['ZONE_MAG'] = '1'
     a, b, outdir = int(rest[1]), int(rest[2]), rest[3]
     os.makedirs(outdir, exist_ok=True)
-    H.build_scene(o['res'], o['samples'], False)
+    global PORTRAIT_PATCH
+    PORTRAIT_PATCH = bool(o['portrait'])
+    if o['portrait'] and o['res'] == (1920, 1080):
+        o['res'] = (900, 1600)
+    H.build_scene(o['res'], o['samples'], o['portrait'])
     hold_i = int(math.ceil(H.HOLD * (o['total'] - 1) - 1e-9))
     for i in range(a, min(b, hold_i) + 1):
         path = os.path.abspath(os.path.join(outdir, '%03d.png' % i))
         if os.path.exists(path):
             continue
-        H.apply_frame(i, o['total'], False)
+        H.apply_frame(i, o['total'], o['portrait'])
         box = vase_box()
         if box[1] <= 0 or box[0] >= 1 or box[3] <= 0 or box[2] >= 1:
             continue
         box = tuple(min(1.0, max(0.0, v)) for v in box)
-        H.render_bg_crop(i, o['total'], path, False, box)
+        H.render_bg_crop(i, o['total'], path, o['portrait'], box)
         json.dump({'box': box, 'res': list(o['res'])}, open(path.replace('.png', '.json'), 'w'))
         print('участок кадра', i, [round(v, 3) for v in box], flush=True)
 

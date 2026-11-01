@@ -75,7 +75,8 @@
     }
     lite.last = t; lite.raf = requestAnimationFrame(liteFrame);
   }
-  function liteKick() { if (!lite.on && !lite.raf) { lite.last = 0; lite.raf = requestAnimationFrame(liteFrame); } }
+  const LITE_AUTO = false;                                                      // по просьбе заказчика автоматический «лёгкий режим» отключён: анимации идут всегда (пролёт камеры, листание журнала, проявление блоков); css/motion.css оставлен — режим можно включить вручную классом html.lite
+  function liteKick() { if (LITE_AUTO && !lite.on && !lite.raf) { lite.last = 0; lite.raf = requestAnimationFrame(liteFrame); } }
   if (window.IntersectionObserver) { const jio = new IntersectionObserver(es => { es.forEach(e => { e.target._in = e.isIntersecting; }); lite.jar = ['#arch-story'].some(q => { const el = document.querySelector(q); return el && el._in; }); }); ['#arch-story'].forEach(q => { const el = document.querySelector(q); if (el) jio.observe(el); }); }
   addEventListener('scroll', () => { markScrolling(); if (!ticking) { ticking = true; requestAnimationFrame(onScroll); } }, {passive: true});
   addEventListener('resize', () => updateProgress());
