@@ -265,6 +265,9 @@ _orig_set_layer = H.set_layer
 def zone_set_layer(layer):
     """в слое зала свет баночки выключен (сила 0), но площадные лампы видны в отражениях чёрными прямоугольниками: скрываем их от отражений и преломлений"""
     _orig_set_layer(layer)
+    for ob in bpy.data.objects:                                                                              # мебель и журнал зоны ожидания не затеняют «студийный» свет баночки: иначе на подлёте часть баночки за диваном чернела (кадры 35–37 ПК)
+        if ob.name.startswith(('sofa_', 'tbl_', 'mag_')):
+            ob.visible_shadow = layer != 'jar'
     for name in ('jar_fill', 'jar_rim'):
         lo = S.get(name)
         if lo is not None:
