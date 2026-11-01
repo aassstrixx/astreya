@@ -187,7 +187,7 @@ def zone_architecture(M, portrait):
     if os.environ.get('ZONE_MAG') == '1':                                                                   # 3D-журнал на стекле (mag_model.py): без этой переменной сцена прежняя
         from mag_model import build_magazine
         mc = (tx + _f('ZONE_MAG_DX', 0.0), ty + _f('ZONE_MAG_DY', 0.0))
-        S['mag_objs'] = build_magazine(mc[0], mc[1], TABLE_TOP, _f('ZONE_MAG_PW_K', .58) * tr, _f('ZONE_MAG_YAW', 7.0))
+        S['mag_objs'] = build_magazine(mc[0], mc[1], TABLE_TOP, _f('ZONE_MAG_PW_K', .72) * tr, _f('ZONE_MAG_YAW', 7.0))
         zone['magazine'] = mc
     # диван позади столика: на ПК — перед ножкой горы, на телефоне — перед вазой; лицом к зрителю и чуть к столику
     sb = SOFA_BACK[bool(portrait)]

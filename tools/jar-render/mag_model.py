@@ -33,7 +33,10 @@ def _page_mat(name, path):
     b = _principled(nt)
     im = bpy.data.images.load(path); im.name = name + '_img'; im.colorspace_settings.name = 'sRGB'
     tx = nt.nodes.new('ShaderNodeTexImage'); tx.image = im; tx.interpolation = 'Linear'; tx.extension = 'EXTEND'
-    nt.links.new(tx.outputs['Color'], b.inputs['Base Color'])
+    mul = nt.nodes.new('ShaderNodeMix'); mul.data_type = 'RGBA'; mul.blend_type = 'MULTIPLY'; mul.inputs['Factor'].default_value = 1.0
+    k = _f('ZONE_MAG_ALBEDO', .86)                                         # бумага чуть темнее текстуры: под светом зала белое выгорает
+    mul.inputs[7].default_value = (k, k, k, 1)
+    nt.links.new(tx.outputs['Color'], mul.inputs[6]); nt.links.new(mul.outputs[2], b.inputs['Base Color'])
     _set(b, 'Roughness', _f('ZONE_MAG_ROUGH', .46))
     _set(b, 'Specular IOR Level', .32)
     _set(b, 'Coat Weight', _f('ZONE_MAG_COAT', .16)); _set(b, 'Coat Roughness', .22)
@@ -74,10 +77,10 @@ def build_magazine(cx, cy, z, pw, yaw_deg=7.0, grp='p'):
     """журнал с центром разворота (cx, cy) на плоскости z; pw — ширина одной страницы; возвращает список объектов"""
     ph = pw * 4.0 / 3.0                                                    # формат страницы журнала на сайте 3:4
     sc = pw / .12
-    T = _f('ZONE_MAG_T', .0066) * sc                                       # толщина правого блока у края (≈ 50 листов)
+    T = _f('ZONE_MAG_T', .0092) * sc                                       # толщина правого блока у края (≈ 50 листов)
     TL = T * .93                                                           # левый чуть тоньше
-    cT = .0017 * sc                                                        # обложка
-    ov = .0042 * sc                                                        # выступ обложки за блок
+    cT = .0010 * sc                                                        # обложка
+    ov = .0028 * sc                                                        # выступ обложки за блок
     vz = .34 * T                                                           # высота дна жёлоба у корешка
     zb = z + .0003 + cT                                                    # низ блока
     yaw = math.radians(yaw_deg); ca, sa = math.cos(yaw), math.sin(yaw)
