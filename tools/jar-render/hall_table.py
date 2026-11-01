@@ -265,9 +265,11 @@ _orig_set_layer = H.set_layer
 def zone_set_layer(layer):
     """в слое зала свет баночки выключен (сила 0), но площадные лампы видны в отражениях чёрными прямоугольниками: скрываем их от отражений и преломлений"""
     _orig_set_layer(layer)
-    for ob in bpy.data.objects:                                                                              # мебель и журнал зоны ожидания не затеняют «студийный» свет баночки: иначе на подлёте часть баночки за диваном чернела (кадры 35–37 ПК)
-        if ob.name.startswith(('sofa_', 'tbl_', 'mag_')):
-            ob.visible_shadow = layer != 'jar'
+    for ob in bpy.data.objects:                                                                              # в слое баночки вазы и диваны — вырезы (holdout), как шар: где они стоят перед баночкой на подлёте (кадры 35–37 ПК), спрайт не рисуется; иначе часть баночки за вазой оставалась неосвещённой и рисовалась чёрной поверх вазы
+        if ob.type in H.MESHY and (ob.name.split('.')[0] == 'vase' or ob.name.startswith('sofa_')):
+            if layer == 'jar':
+                ob.visible_camera = True
+            ob.is_holdout = layer == 'jar'
     for name in ('jar_fill', 'jar_rim'):
         lo = S.get(name)
         if lo is not None:
@@ -373,6 +375,27 @@ def fix_patch(argv):
         H.render_bg_crop(i, o['total'], path, o['portrait'], box)
         json.dump({'box': box, 'res': list(o['res'])}, open(path.replace('.png', '.json'), 'w'))
         print('участок кадра', i, [round(v, 3) for v in box], flush=True)
+
+
+def lamp_block(argv):
+    """lampblock <кадр> — что стоит между лампами света баночки и самой баночкой (первое пересечение луча от лампы к центру баночки)"""
+    rest, o = H.parse(argv)
+    os.environ['ZONE_MAG'] = '1'
+    H.build_scene((480, 270), 4, False)
+    i = int(rest[1]); H.apply_frame(i, o['total'], False); H.set_layer('jar')
+    dg = bpy.context.evaluated_depsgraph_get(); jar = set(S['jar_objs'])
+    st = H.frame_state(i / float(max(1, o['total'] - 1)), False); ctr = st['jar'] + Vector((0, 0, H.JAR_CENTER_Z))
+    for nm in ('jar_fill', 'jar_rim'):
+        lo = S.get(nm); lp = lo.matrix_world.translation; d = (ctr - lp); dist = d.length; d.normalize(); org = lp.copy(); hits = []
+        for _ in range(6):
+            ok, loc, nrm, idx, hob, mt = bpy.context.scene.ray_cast(dg, org, d, distance=dist - (org - lp).length)
+            if not ok:
+                break
+            if hob in jar or hob.name in S.get('stray_names', ()):
+                break
+            hits.append((hob.name, round((loc - lp).length, 3), hob.visible_shadow)); org = loc + d * 1e-4
+        print('ЛАМПА', nm, [round(v, 3) for v in lp], 'до баночки', round(dist, 3), 'на пути:', hits)
+    print('БАНОЧКА', [round(v, 3) for v in ctr], 'кадр', i)
 
 
 def find_objs(argv):
@@ -497,6 +520,8 @@ if __name__ == '__main__':
         flight(sys.argv[1:])
     elif len(sys.argv) > 1 and sys.argv[1] == 'objs':
         find_objs(sys.argv[1:])
+    elif len(sys.argv) > 1 and sys.argv[1] == 'lampblock':
+        lamp_block(sys.argv[1:])
     elif len(sys.argv) > 1 and sys.argv[1] == 'fixpatch':
         fix_patch(sys.argv[1:])
     else:
