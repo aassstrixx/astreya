@@ -184,6 +184,10 @@ def zone_architecture(M, portrait):
             pl.material_index = 1
     S['table_xyr'] = (tx, ty, tr)
     zone['table'] = (tx, ty)
+    if os.environ.get('ZONE_KEEP_STRAY') != '1':                                                            # этикетки упаковок без родителя остались в нулевой точке сцены и слиплись в «цилиндр со швом и диском» (виден из-за дивана): не рисуем
+        S['stray'] = [ob for ob in bpy.data.objects if ob.type == 'MESH' and ob.parent is None and ob.name.split('.')[0] in ('label', 'labelh', 'labelm')]
+        for ob in S['stray']:
+            ob.hide_render = True
     if os.environ.get('ZONE_MAG') == '1':                                                                   # 3D-журнал на стекле (mag_model.py): без этой переменной сцена прежняя
         from mag_model import build_magazine
         mc = (tx + _f('ZONE_MAG_DX', 0.0), ty + _f('ZONE_MAG_DY', 0.0))
@@ -333,6 +337,152 @@ def mag_patch(argv):
         print('участок кадра', i, [round(v, 3) for v in box], flush=True)
 
 
+def stray_box():
+    """область кадра (x0, x1, y0, y1), где видны лишние этикетки в нулевой точке сцены, с полями"""
+    sc = bpy.context.scene; cam = S['cam']; xs, ys = [], []
+    for ob in S.get('stray', []):
+        for c in ob.bound_box:
+            q = H.proj(sc, cam, ob.matrix_world @ Vector(c)); xs.append(q[0]); ys.append(q[1])
+    if not xs:
+        return None
+    return (min(xs) - .035, max(xs) + .035, min(ys) - .05, max(ys) + .05)
+
+
+def fix_patch(argv):
+    """fixpatch <с> <по> outdir [--res WxH] [--samples N] [--portrait] — дорисовать (уже без лишних этикеток) область, где они были видны, в кадрах зала: те же файлы, что у magpatch; склейка — paste_mag.py"""
+    rest, o = H.parse(argv)
+    if o['portrait'] and o['res'] == (1920, 1080):
+        o['res'] = (900, 1600)
+    os.environ['ZONE_MAG'] = '1'
+    a, b, outdir = int(rest[1]), int(rest[2]), rest[3]
+    os.makedirs(outdir, exist_ok=True)
+    H.build_scene(o['res'], o['samples'], o['portrait'])
+    hold_i = int(math.ceil(H.HOLD * (o['total'] - 1) - 1e-9))
+    for i in range(a, min(b, hold_i) + 1):
+        path = os.path.abspath(os.path.join(outdir, '%03d.png' % i))
+        if os.path.exists(path):
+            continue
+        H.apply_frame(i, o['total'], o['portrait'])
+        box = stray_box()
+        if box is None or box[1] <= 0 or box[0] >= 1 or box[3] <= 0 or box[2] >= 1:
+            continue
+        box = tuple(min(1.0, max(0.0, v)) for v in box)
+        H.render_bg_crop(i, o['total'], path, o['portrait'], box)
+        json.dump({'box': box, 'res': list(o['res'])}, open(path.replace('.png', '.json'), 'w'))
+        print('участок кадра', i, [round(v, 3) for v in box], flush=True)
+
+
+def find_objs(argv):
+    """objs <кадр> x,y [--portrait] — какие объекты сцены стоят в точке кадра (доли кадра x, y сверху вниз): имя, размеры, положение, материалы — чтобы найти лишний предмет"""
+    rest, o = H.parse(argv)
+    if o['portrait'] and o['res'] == (1920, 1080):
+        o['res'] = (900, 1600)
+    os.environ['ZONE_MAG'] = '1'
+    H.build_scene((480, 270) if not o['portrait'] else (270, 480), 4, o['portrait'])
+    i = int(rest[1]); px, py = [float(v) for v in rest[2].split(',')]
+    H.apply_frame(i, o['total'], o['portrait'])
+    sc = bpy.context.scene; cam = S['cam']
+    out = []
+    for ob in bpy.data.objects:
+        if ob.type not in H.MESHY or not ob.visible_get():
+            continue
+        pts = [H.proj(sc, cam, ob.matrix_world @ Vector(c)) for c in ob.bound_box]
+        xs, ys = [q[0] for q in pts], [q[1] for q in pts]
+        if min(xs) - .01 <= px <= max(xs) + .01 and min(ys) - .01 <= py <= max(ys) + .01:
+            d = ob.dimensions
+            out.append((round((max(xs) - min(xs)) * (max(ys) - min(ys)), 5), ob.name, (ob.parent.name if ob.parent else None, [round(v, 3) for v in ob.parent.matrix_world.translation] if ob.parent else None), [round(v, 3) for v in ob.location], [round(v, 3) for v in d], [m.name for m in ob.data.materials if m], [round(min(xs), 3), round(max(xs), 3), round(min(ys), 3), round(max(ys), 3)]))
+    for r in sorted(out)[:25]:
+        print('ОБЪЕКТ', r)
+    cm = cam.matrix_world; lens = cam.data.lens; W, Hh = o['res'] if o['res'] != (1920, 1080) else (480, 270)
+    tanh = 18.0 / lens * (1.0 if W >= Hh else W / float(Hh)); dg = bpy.context.evaluated_depsgraph_get(); hits = {}
+    for gx in range(-12, 13):
+        for gy in range(-24, 25):
+            fx, fy = px + gx * .001, py + gy * .002
+            d = cm.to_3x3() @ Vector(((fx - .5) * 2 * tanh, (.5 - fy) * 2 * tanh * Hh / W, -1.0)); d.normalize()
+            ok, loc, nrm, idx, hob, mt = bpy.context.scene.ray_cast(dg, cm.translation, d)
+            if ok:
+                hits.setdefault(hob.name, []).append((round(fx, 3), round(fy, 3)))
+    for nm, pts in sorted(hits.items(), key=lambda kv: len(kv[1])):
+        ob = bpy.data.objects[nm]
+        print('ЛУЧ', nm, len(pts), 'родитель', ob.parent.name if ob.parent else None, 'точки', pts[:2], [round(v, 3) for v in ob.dimensions])
+    import collections
+    pref = collections.Counter(ob.name.split('.')[0].rstrip('0123456789_') for ob in bpy.data.objects if ob.type == 'EMPTY')
+    print('ПУСТЫШКИ', dict(pref))
+    for ob in bpy.data.objects:
+        if ob.type == 'EMPTY' and (ob.name.startswith('lab') or ob.name.startswith('pk') or ob.name.startswith('shelf') or ob.name.startswith('pack')):
+            q = H.proj(sc, cam, ob.matrix_world.translation)
+            print('ГРУППА', ob.name, [round(v, 3) for v in ob.matrix_world.translation], [round(v, 3) for v in q], 'детей', len(ob.children))
+    for ob in bpy.data.objects:                                                        # пустышки-группы (упаковки, баночки) и их положение в кадре
+        if ob.type == 'EMPTY':
+            q = H.proj(sc, cam, ob.matrix_world.translation)
+            if .40 <= q[0] <= .60 and .50 <= q[1] <= .85:
+                print('ГРУППА', ob.name, [round(v, 3) for v in ob.matrix_world.translation], [round(v, 3) for v in q], 'детей', len(ob.children), [c.name for c in ob.children][:4])
+    for ob in bpy.data.objects:                                                        # вазы и керамика: где в кадре
+        if ob.type in H.MESHY and (ob.name.lower().startswith('vase') or any(m and 'ceramic' in m.name for m in ob.data.materials)):
+            pts = [H.proj(sc, cam, ob.matrix_world @ Vector(c)) for c in ob.bound_box]
+            print('КЕРАМИКА', ob.name, [round(v, 3) for v in ob.matrix_world.translation], [round(v, 3) for v in ob.dimensions], [round(min(q[0] for q in pts), 3), round(max(q[0] for q in pts), 3), round(min(q[1] for q in pts), 3), round(max(q[1] for q in pts), 3)])
+
+
+def flight(argv):
+    """flight <n> outdir [--res WxH] [--samples N] [--portrait] — пролёт камеры от кадра зала к журналу на столике: n кадров от следующего за кадром зала до вида строго сверху,
+    где журнал стоит прямо (верх страницы вверху экрана) и занимает столько же места, сколько живой журнал на сайте. ПК — виден весь разворот, телефон — левая страница (на телефоне журнал показывает одну страницу).
+    Рядом пишется flight.json: число кадров и рамка журнала в последнем кадре (доли кадра) — по ней страница совмещает живой журнал с нарисованным."""
+    import mag_model
+    rest, o = H.parse(argv)
+    if o['portrait'] and o['res'] == (1920, 1080):
+        o['res'] = (900, 1600)
+    os.environ['ZONE_MAG'] = '1'
+    n, outdir = int(rest[1]), rest[2]
+    os.makedirs(outdir, exist_ok=True)
+    port = o['portrait']
+    H.build_scene(o['res'], o['samples'], port)
+    H.apply_frame(o['total'] - 1, o['total'], port)
+    st = H.frame_state(1.0, port); pos0, tgt0, lens = st['pos'].copy(), st['tgt'].copy(), st['lens']
+    cx, cy = S['zone_xy']['magazine']
+    tr = S['table_xyr'][2]
+    pw = _f('ZONE_MAG_PW_K', .72) * tr; ph = pw * 4.0 / 3.0
+    yaw = math.radians(_f('ZONE_MAG_YAW', 7.0)); ca, sa = math.cos(yaw), math.sin(yaw)
+    rot = lambda x, y: (cx + x * ca - y * sa, cy + x * sa + y * ca)
+    w_px, h_px = o['res']
+    tanh = 18.0 / lens * (1.0 if w_px >= h_px else w_px / float(h_px))              # половина ширины вида на единицу расстояния (датчик 36 мм по большей стороне)
+    if port:                                                                           # телефон: левая страница журнала (ширина страницы — .86 ширины кадра)
+        ex, ey = rot(-pw / 2, 0.0); dist = pw / (_f('ZONE_FLIGHT_W_P', .86) * 2 * tanh)
+    else:                                                                              # ПК: весь разворот (ширина — .62 ширины кадра)
+        ex, ey = cx, cy; dist = 2 * pw / (_f('ZONE_FLIGHT_W', .62) * 2 * tanh)
+    z0 = TABLE_TOP + .004
+    pos1 = Vector((ex, ey, z0 + dist)); tgt1 = Vector((ex, ey, z0))
+    up_mag = Vector((-sa, ca, 0.0)); zup = Vector((0.0, 0.0, 1.0))
+    sm = lambda x: x * x * (3 - 2 * x)
+    cam = S['cam']; sc = bpy.context.scene
+    from mathutils import Matrix
+    H.set_layer('all'); sc.render.use_border = False
+    for i in range(1, n + 1):
+        path = os.path.abspath(os.path.join(outdir, '%03d.png' % i))
+        w = i / float(n); e = sm(w)
+        if os.path.exists(path) and i < n:
+            continue
+        pos = pos0.lerp(pos1, e)
+        tw = sm(min(1.0, e / .72))                                                       # точка, на которую смотрит камера, к 72 % пути уже на журнале: он не уходит из кадра
+        f = ((tgt0.lerp(tgt1, tw)) - pos).normalized()
+        ew = sm(min(1.0, max(0.0, (e - .30) / .62)))                                     # к концу «верх» кадра совмещается с верхом страниц журнала
+        up = zup.lerp(up_mag, ew)
+        up = (up - f * up.dot(f)).normalized()
+        right = f.cross(up).normalized(); up = right.cross(f).normalized()
+        m3 = Matrix((right, up, -f)).transposed()
+        cam.matrix_world = Matrix.Translation(pos) @ m3.to_4x4()
+        cam.data.lens = lens; cam.data.shift_x = cam.data.shift_y = 0.0
+        bpy.context.view_layer.update()
+        sc.render.filepath = path
+        bpy.ops.render.render(write_still=True)
+        print('кадр пролёта', i, '/', n, flush=True)
+        if i == n:                                                                       # рамка журнала (ПК — разворот, телефон — левая страница) в последнем кадре
+            corners = [(-pw, -ph / 2), (pw, -ph / 2), (pw, ph / 2), (-pw, ph / 2)] if not port else [(-pw, -ph / 2), (0.0, -ph / 2), (0.0, ph / 2), (-pw, ph / 2)]
+            pts = [H.proj(sc, cam, Vector((rot(x, y)[0], rot(x, y)[1], z0 + .012))) for x, y in corners]
+            xs, ys = [q[0] for q in pts], [q[1] for q in pts]
+            json.dump({'n': n, 'res': list(o['res']), 'rect': [round(min(xs), 4), round(min(ys), 4), round(max(xs), 4), round(max(ys), 4)], 'pw': round(pw, 4)}, open(os.path.join(outdir, 'flight.json'), 'w'))
+            print('рамка журнала', [round(min(xs), 3), round(min(ys), 3), round(max(xs), 3), round(max(ys), 3)])
+
+
 if __name__ == '__main__':
     if len(sys.argv) > 1 and sys.argv[1] == 'where':
         port = '--portrait' in sys.argv
@@ -340,5 +490,11 @@ if __name__ == '__main__':
         print(json.dumps({'zone': {k: [round(v, 3) for v in xy] for k, xy in S['zone_xy'].items()}, 'wall_text': S.get('wall_text')}, ensure_ascii=False))
     elif len(sys.argv) > 1 and sys.argv[1] == 'magpatch':
         mag_patch(sys.argv[1:])
+    elif len(sys.argv) > 1 and sys.argv[1] == 'flight':
+        flight(sys.argv[1:])
+    elif len(sys.argv) > 1 and sys.argv[1] == 'objs':
+        find_objs(sys.argv[1:])
+    elif len(sys.argv) > 1 and sys.argv[1] == 'fixpatch':
+        fix_patch(sys.argv[1:])
     else:
         H.main()

@@ -230,7 +230,7 @@ if (!J || !J.enabled || !A || !A.enabled) { console.log('Первый экран
       ok(back > 0, 'после скачка полные кадры снова разворачиваются у положения', back);
       await at(p, g, 0.97, 2500);
     }
-    const jc = await p.evaluate(() => { const c = document.querySelector('.ar-jar-cv'), w = document.querySelector('.ar-world'); return {cw: c.width, ww: w.clientWidth, dpr: window.devicePixelRatio || 1, pearl: !!document.querySelector('.ar-pearl, .ar-gl, .ar-poster')}; });
+    const jc = await p.evaluate(() => { const c = document.querySelector('.ar-jar-cv'), w = document.querySelector('.ar-world'); return {cw: c.width, ww: w.clientWidth, dpr: window.devicePixelRatio || 1, pearl: [...document.querySelectorAll('.ar-pearl, .ar-gl, .ar-poster')].some(e => getComputedStyle(e).display !== 'none')}; });          // запасной постер (режим без анимации) в разметке есть, но скрыт
     ok(jc.cw >= jc.ww * Math.min(jc.dpr, 2) * 0.99, 'баночка: холст рисуется в полном разрешении экрана (не мельче, чем пиксели устройства)', jc);
     ok(!jc.pearl, 'отдельных холстов и картинок шара на странице нет: живой шар рисуется в том же холсте зала', jc);
     /* живой шар: текстуры загружены, он сам медленно поворачивается, а курсор поворачивает его и двигает свет (на телефоне курсора нет — только собственное вращение) */

@@ -57,7 +57,7 @@ module.exports = function homeHouse(ctx, C, P, deps) {
     editorial: () => `<img src="${C.u(P, 'assets/photos/keenwell-mask.webp')}" alt="" class="mg-prod" loading="lazy" decoding="async">`
   };
   const pageL = (r, n) => `<div class="pg pg-l pg-ph pg-${r.id}"><div class="mg-ph">${leftPhoto[r.id]()}</div><p class="mg-no" aria-hidden="true">${r.n2}</p><p class="mg-kick">${esc(r.short)}</p>${foot(n, 'l')}</div>`;
-  const pageR = (r, n) => { const c = rightOf[r.id](); return `<div class="pg pg-r pg-tx pg-${r.id}" id="room-${r.id}" data-room="${r.id}">${run}<p class="mg-kick">Комната ${r.n2} · ${esc(r.name)}</p><h3 class="mg-h">${esc(c.head)}</h3>${c.text ? `<p class="mg-p${c.text.length > 130 ? ' mg-drop' : ''}">${esc(c.text)}</p>` : ''}${c.extra || ''}<div class="mg-act">${pageBtn(r)}</div>${foot(n, 'r')}</div>`; };
+  const pageR = (r, n) => { const c = rightOf[r.id](); return `<div class="pg pg-r pg-tx pg-${r.id}" id="room-${r.id}" data-room="${r.id}">${run}<p class="mg-kick">${esc(r.name)}</p><h3 class="mg-h">${esc(c.head)}</h3>${c.text ? `<p class="mg-p${c.text.length > 130 ? ' mg-drop' : ''}">${esc(c.text)}</p>` : ''}${c.extra || ''}<div class="mg-act">${pageBtn(r)}</div>${foot(n, 'r')}</div>`; };
   const logoSvg = '<svg class="lgo" viewBox="46 338 836 436" aria-hidden="true"><use href="#logo-art"/></svg>';
   const pCover = `<div class="pg pg-cover"><span class="cv-kick">${esc(mc.kicker)}</span><p class="cv-title" role="heading" aria-level="2">${esc(mc.title)}</p><figure class="cv-ph">${pimg('hero')}</figure><span class="cv-year">${site.year}</span>${logoSvg}</div>`;
   /* разворот 2–3 (на нём журнал раскрыт на столике): слева — фото на всю страницу с крупным заголовком, справа — содержание в журнальной вёрстке */
@@ -88,9 +88,11 @@ module.exports = function homeHouse(ctx, C, P, deps) {
   /* переход скролла к раскрытому журналу: после зала — закреплённая сцена; тот же кадр зала уходит вглубь, журнал вырастает со столика, обложка раскрывается, дальше прокрутка листает разворот за разворотом
      (журнал — единственное, что идёт после зала: комнаты — его страницы; прокрутка не блокируется; без JS страницы идут подряд, при уменьшенном движении — обычный блок с раскрытым журналом) */
   const pst = (rd.house.arch && rd.house.arch.poster) || {};
-  const reader = `<section class="house-reader" id="house-reader" aria-label="${esc(mc.readerLabel || 'Журнал ASTREYA: листайте прокруткой')}" data-n="${pagesR.length}" style="--hrh:${(H.reader || {}).heightVh || 560}vh;--hrhm:${(H.reader || {}).heightVhMobile || 190}vh;--tx:${tb.d[0]};--ty:${tb.d[1]};--txm:${tb.m[0]};--tym:${tb.m[1]}">
+  const fl = (H.reader || {}).flight;                                              // кадры пролёта камеры к журналу: {n, ext, desktop: {dir, rect}, mobile: {dir, rect}} (tools/jar-render/hall_table.py flight)
+  const reader = `<section class="house-reader" id="house-reader" aria-label="${esc(mc.readerLabel || 'Журнал ASTREYA: листайте прокруткой')}" data-n="${pagesR.length}"${fl ? ` data-flight="${esc(JSON.stringify(fl))}"` : ''} style="--hrh:${(H.reader || {}).heightVh || 560}vh;--hrhm:${(H.reader || {}).heightVhMobile || 190}vh;--tx:${tb.d[0]};--ty:${tb.d[1]};--txm:${tb.m[0]};--tym:${tb.m[1]}">
     <div class="hr-stage">
       <picture class="hr-bg" aria-hidden="true"><source media="(max-aspect-ratio: 11/10)" srcset="${C.u(P, pst.mobile || 'assets/house-hall/poster-m.webp')}"><img src="${C.u(P, pst.desktop || 'assets/house-hall/poster-d.webp')}" alt="" width="1920" height="1080" decoding="async" loading="lazy"></picture>
+      <canvas class="hr-seq" aria-hidden="true"></canvas>
       <div class="hr-veil" aria-hidden="true"></div>
       <p class="hr-cue" aria-hidden="true"><span>${esc((H.reader || {}).cue || 'Листайте — журнал откроется')}</span><i></i></p>
       <a class="hr-skip" href="#house-end" data-track="house_reader_skip">${esc((H.reader || {}).skip || 'К контактам')} ${I.arrow}</a>

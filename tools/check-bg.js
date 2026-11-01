@@ -8,7 +8,7 @@
 'use strict';
 const fs = require('fs'), pth = require('path'), http = require('http');
 const ROOT = pth.join(__dirname, '..');
-const cfg = JSON.parse(fs.readFileSync(pth.join(ROOT, 'data', 'redesign.json'), 'utf8')).backdrops;
+const RDJ = JSON.parse(fs.readFileSync(pth.join(ROOT, 'data', 'redesign.json'), 'utf8')), cfg = RDJ.backdrops, HOUSE = !!(RDJ.house && RDJ.house.enabled);          // главная-дом (зал и журнал): блоков прежней главной нет, вставки за ними не рисуются
 let pass = 0, fail = 0; const ok = (c, m, x) => { if (c) { pass++; console.log('  ✓', m); } else { fail++; console.log('  ✗ FAIL:', m, x !== undefined ? JSON.stringify(x) : ''); } };
 const info = m => console.log('  ·', m);
 
@@ -61,7 +61,7 @@ const wait = ms => new Promise(r => setTimeout(r, ms));
 const OUT = process.env.CHECK_OUT || '';
 
 /* по одной странице каждого вида (ключ) + главная как отрицательный пример */
-const pick = [...new Set(['home', ...Object.keys(plans).filter(k => !(cfg.skipPages || []).includes(k))])].filter(k => byKey[k] && (!ONLY.length || k === 'home' && ONLY.includes('home') || ONLY.includes(k))).map(k => ({k, rel: byKey[k][0]}));
+const pick = [...new Set([...(HOUSE ? [] : ['home']), ...Object.keys(plans).filter(k => !(cfg.skipPages || []).includes(k))])].filter(k => byKey[k] && (!ONLY.length || k === 'home' && !HOUSE && ONLY.includes('home') || ONLY.includes(k))).map(k => ({k, rel: byKey[k][0]}));
 
 /* контраст: в браузере прячем текст, снимаем страницу целиком и для каждого текстового элемента берём самое тёмное место его рамки на фоне */
 const TEXTS = () => {
@@ -165,7 +165,7 @@ const MEASURE = async ({b64, rects}) => {
       await p.goto(base + 'company.html'); await wait(900);
       await p.evaluate(() => document.querySelector('#hdr a.logo').click()); await wait(3800);
       const s = await p.evaluate(() => ({page: document.body.getAttribute('data-page'), hosts: document.querySelectorAll('[data-bd]').length, fills: document.querySelectorAll('.bd-fill').length}));
-      ok(s.page === 'home' && s.hosts > 0 && s.fills === 0, 'переход «компания → главная» по лого: на главной вставки блоков есть, полос страницы нет', s);
+      ok(s.page === 'home' && (HOUSE ? s.hosts === 0 : s.hosts > 0) && s.fills === 0, HOUSE ? 'переход «компания → главная» по лого: главная-дом открылась без вставок блоков и полос' : 'переход «компания → главная» по лого: на главной вставки блоков есть, полос страницы нет', s);
       ok(!errs.length, 'при возврате на главную нет ошибок', errs.slice(0, 2));
       await p.close();
     }
