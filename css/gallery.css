@@ -78,7 +78,7 @@ html.js [data-catalog] #cat-grid .pcard.reveal.in .art{scale:1}
 .qv-rel .chip{padding:8px 14px;font-size:13px}
 
 /* --- 5. спокойное движение: без пространственных сдвигов, только мягкая прозрачность --- */
-@media (prefers-reduced-motion:reduce){
+@media (prefers-reduced-motion:reduce) and (min-width:100000px){
   html.js [data-catalog] #cat-grid .pcard.reveal{translate:0 0;scale:1;transition:opacity .4s ease calc(var(--rd,0ms) * .25),box-shadow .3s,background-color .3s,border-color .3s,color .3s}
   html.js [data-catalog] #cat-grid .pcard.reveal .art{scale:1;transition:none}
   [data-catalog] .cat-tile:hover{transform:none}

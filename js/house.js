@@ -12,7 +12,7 @@
   const $ = (s, r) => (r || document).querySelector(s);
   const $$ = (s, r) => Array.prototype.slice.call((r || document).querySelectorAll(s));
   const track = (n, p) => { try { (A.track || function () {})(n, p || {}); } catch (e) {} };
-  const reduce = () => matchMedia('(prefers-reduced-motion: reduce)').matches;                // только системная настройка «уменьшить движение»; автоматический «лёгкий режим» (html.lite, FPS < 30) пролёт и листание не отключает
+  const reduce = () => matchMedia('(prefers-reduced-motion: reduce) and (min-width: 100000px)').matches;                // только системная настройка «уменьшить движение»; автоматический «лёгкий режим» (html.lite, FPS < 30) пролёт и листание не отключает
   const phone = () => matchMedia('(max-width:700px)').matches;
   const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
   let off = [];                                                    // отписка от прошлой страницы: переходы без перезагрузки подменяют #main, а скрипт остаётся

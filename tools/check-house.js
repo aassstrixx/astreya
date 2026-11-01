@@ -5,7 +5,7 @@
    2) прежние разделы доступны: у каждой комнаты в журнале ссылка на её полную страницу, шапка и подвал на месте, список изменений относительно прежней главной (резервная метка restore-before-astreya-house-2026-10);
    3) читалка — прокрутка раскрывает журнал и листает развороты вперёд; листы поворачиваются вслед за прокруткой (есть кадры «лист в движении»), на развороте страница стоит; «Назад/Далее», оглавление, клавиатура;
    4) переходы к комнатам — список зала, оглавление, адреса #room-…, #magazine/N, #hall и прежние якоря приводят на нужный разворот; журнал на столике доступен с клавиатуры;
-   5) телефон 390×844 — нет горизонтальной прокрутки, журнал листается лентой, список разделов работает; 6) «без анимации» (prefers-reduced-motion), без WebGL и без JS; 7) нет ошибок JS и неудачных запросов, прокрутка не блокируется.
+   5) телефон 390×844 — нет горизонтальной прокрутки, журнал листается лентой, список разделов работает; 6) «уменьшить движение» (prefers-reduced-motion), без WebGL и без JS; 7) нет ошибок JS и неудачных запросов, прокрутка не блокируется.
    Запуск: node tools/check-house.js (после node tools/build.js). Код возврата ≠ 0 при ошибках. */
 'use strict';
 const http = require('http'), fs = require('fs'), path = require('path'), cp = require('child_process');
@@ -178,12 +178,11 @@ const t = (cond, name, info) => { if (cond) ok++; else bad.push(name + (info !==
 
   /* ================= 6. уменьшенное движение, без WebGL и без JS ================= */
   p = await open(1440, 900, {reduce: true});
-  { const r = await p.evaluate(() => { const rd = document.getElementById('house-reader'); return {flat: rd.classList.contains('is-flat'), pos: getComputedStyle(rd.querySelector('.hr-stage')).position, h: rd.getBoundingClientRect().height, s: window.Astreya.house.readerState().s, orb: !!document.querySelector('#arch-story .ar-orb')}; });
-    t(r.flat && r.pos !== 'sticky' && r.h < 1500 && r.s === 1 && r.orb, 'prefers-reduced-motion: журнал — обычный экран, раскрытый на первом развороте (без закреплённой сцены); основная сцена зала и орбиты на месте', r); }
-  { await p.evaluate(() => window.Astreya.house.go('finder')); await p.waitForTimeout(600); t((await rs(p)).s === 4, 'без анимации: переход к комнате открывает её разворот сразу');
-    await p.click('#mag .mag-nx'); await p.waitForTimeout(300); t((await rs(p)).s === 5, 'без анимации: «Далее» листает мгновенно');
-    await p.evaluate(() => window.Astreya.house.hall()); await p.waitForTimeout(600); t(await p.evaluate(() => scrollY) > 300, 'без анимации: «в зал» приводит в конец сцены зала'); }
-  t(p._errs.length === 0, 'нет ошибок JS без анимации', p._errs.slice(0, 5));
+  { const r = await p.evaluate(() => { const rd = document.getElementById('house-reader'); return {flat: rd.classList.contains('is-flat'), lite: document.documentElement.classList.contains('lite'), pos: getComputedStyle(rd.querySelector('.hr-stage')).position, h: rd.getBoundingClientRect().height, vh: innerHeight, orb: !!document.querySelector('#arch-story .ar-orb')}; });
+    t(!r.flat && !r.lite && r.pos === 'sticky' && r.h > r.vh * 4 && r.orb, 'prefers-reduced-motion: системная настройка не отключает анимации — журнал закреплён и листается прокруткой (решение заказчика), сцена и орбиты на месте', r); }
+  { await p.evaluate(() => window.Astreya.house.go('finder')); await p.waitForTimeout(2500); t((await rs(p)).s >= 3, 'при «уменьшить движение» переход к комнате листает журнал, как обычно');
+    await p.evaluate(() => window.Astreya.house.hall()); await p.waitForTimeout(2500); t(await p.evaluate(() => scrollY) < await p.evaluate(() => document.getElementById('house-reader').offsetTop), '«в зал» возвращает к сцене зала'); }
+  t(p._errs.length === 0, 'нет ошибок JS при «уменьшить движение»', p._errs.slice(0, 5));
   await p._ctx.close();
 
   /* без WebGL: сцена выключена (jar-off), вместо неё готовый кадр зала (постер), список разделов и тот же журнал */

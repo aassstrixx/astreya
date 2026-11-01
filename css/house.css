@@ -182,7 +182,7 @@ html:not(.js) .face::after{display:none}
 .house-reader.is-flat .hr-stage{position:relative;height:auto;min-height:100svh;padding:clamp(70px,10vh,120px) 0 clamp(40px,6vh,70px)}
 .house-reader.is-flat .mag{position:relative;inset:auto;display:grid;min-height:calc(100svh - 120px)}
 .house-reader.is-flat .hr-cue{display:none}
-@media (prefers-reduced-motion:reduce){.house-reader{height:auto;--ra:1;--fu:1}.hr-seq{display:none!important}.house-reader .hr-stage{position:relative;height:auto;min-height:100svh;padding:clamp(70px,10vh,120px) 0 clamp(40px,6vh,70px)}.house-reader .mag{position:relative;inset:auto;display:grid;min-height:calc(100svh - 120px)}.hr-bg,.house-reader .mag .mag-wrap{transform:none!important}.hr-cue{display:none}}
+@media (prefers-reduced-motion:reduce) and (min-width:100000px){.house-reader{height:auto;--ra:1;--fu:1}.hr-seq{display:none!important}.house-reader .hr-stage{position:relative;height:auto;min-height:100svh;padding:clamp(70px,10vh,120px) 0 clamp(40px,6vh,70px)}.house-reader .mag{position:relative;inset:auto;display:grid;min-height:calc(100svh - 120px)}.hr-bg,.house-reader .mag .mag-wrap{transform:none!important}.hr-cue{display:none}}
 
 /* ============ 5. Телефон ============ */
 @media (max-width:700px){
@@ -210,7 +210,7 @@ html:not(.js) .face::after{display:none}
   .mag-ctl{margin-top:12px}
 }
 
-@media (prefers-reduced-motion:reduce){
+@media (prefers-reduced-motion:reduce) and (min-width:100000px){
   .leaf,.mag-book,.mag,.mag-prev::after{transition:none!important}
   .mag-hint::before{animation:none}
   .mag-prev-b{transform:rotateX(58deg) rotateZ(-7deg)!important}

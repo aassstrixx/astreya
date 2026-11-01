@@ -236,7 +236,7 @@ body[data-page="home"]{--hp-card:var(--ar-card,rgba(250,246,238,.94));--hp-rim:v
   .hp-faces-t{display:none}
   .hp-faces{padding-right:9px}
 }
-@media (prefers-reduced-motion:reduce){
+@media (prefers-reduced-motion:reduce) and (min-width:100000px){
   .hp-panel.on{animation:none}
   .hp-role a,.hp-role a::before,.hp-steps-list::after{transition:none}
 }

@@ -121,7 +121,7 @@ body[data-page="brands"] #main{overflow-x:clip}
 @media (max-width:519px){.br-page{--br-cols:1}}
 
 /* ---------- «меньше движения»: без подъёма и увеличения при наведении ---------- */
-@media (prefers-reduced-motion:reduce){
+@media (prefers-reduced-motion:reduce) and (min-width:100000px){
   .br-card:hover,.br-card:focus-within{transform:none}
   .br-card:hover .br-bg{transform:none}
   .br-card:hover .br-pk{transform:translate(-50%,-100%)}

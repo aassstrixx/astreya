@@ -60,5 +60,5 @@ body:not([data-page="home"]) #main,[data-bd]:not(.bd-fill){--muted:#404e69;--sla
   [data-bd].bd-on::before{opacity:calc(var(--bd-o,.9) * var(--bd-oo))}
   [data-bd-pos="r"],[data-bd-pos="l"]{--bd-mask:radial-gradient(ellipse 100% 50% at 50% 50%,#000 28%,rgba(0,0,0,.62) 60%,transparent 100%)}
 }
-@media (prefers-reduced-motion:reduce){[data-bd]::before{transition:none}}
+@media (prefers-reduced-motion:reduce) and (min-width:100000px){[data-bd]::before{transition:none}}
 @media print{[data-bd]::before{display:none}}

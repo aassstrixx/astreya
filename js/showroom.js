@@ -15,7 +15,7 @@
   if (!A || !D || !D.extras || !D.extras.showroom || !D.extras.gallery) return;
   const X = D.extras, I = A.I || {};
   const $ = (s, r) => (r || document).querySelector(s), $$ = (s, r) => Array.prototype.slice.call((r || document).querySelectorAll(s));
-  const html = document.documentElement, rmq = matchMedia('(prefers-reduced-motion: reduce)'), smq = matchMedia('(max-width:1100px)');
+  const html = document.documentElement, rmq = matchMedia('(prefers-reduced-motion: reduce) and (min-width: 100000px)'), smq = matchMedia('(max-width:1100px)');
   const canAnimate = typeof Element.prototype.animate === 'function';
   const mode = () => (html.classList.contains('lite') || !canAnimate) ? 'off' : rmq.matches ? 'soft' : 'full';
   const EASE = 'cubic-bezier(.16,1,.3,1)';

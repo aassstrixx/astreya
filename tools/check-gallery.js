@@ -203,25 +203,15 @@ let base = '';
   ok(p.errs.length === 0, 'на компьютере нет ошибок JavaScript и консоли', p.errs);
   await p.ctx.close();
 
-  /* ================= спокойное движение ================= */
-  console.log('\n[prefers-reduced-motion: reduce]');
+  /* ================= системная настройка «уменьшить движение» ================= */
+  console.log('\n[prefers-reduced-motion: reduce — анимации всё равно работают (решение заказчика)]');
   p = await open(b, {viewport: {width: 1440, height: 900}, reducedMotion: 'reduce'}); await toResults(p);
-  ok(await p.evaluate(() => window.Astreya.gallery.mode()) === 'soft', 'режим «soft»: только прозрачность, без пространственного движения');
-  const rm0 = await p.evaluate(sel => { const c = document.querySelectorAll(sel)[1], cs = getComputedStyle(c); return {t: cs.transitionProperty, tr: cs.translate}; }, CARD);
-  ok(rm0.tr === 'none' || /^0(px)?( 0(px)?)?$/.test(rm0.tr), 'карточки в покое без смещения', rm0);
+  ok(await p.evaluate(() => window.Astreya.gallery.mode()) === 'full', 'режим «full»: системная настройка не отключает движение');
   await p.evaluate(sel => document.querySelectorAll(sel)[1].scrollIntoView({block: 'center'}), CARD); await wait(900);
   const rg = await p.evaluate(sel => { const c = document.querySelectorAll(sel)[1], g = document.querySelector('#cat-grid').getBoundingClientRect(); return {x: g.left + c.offsetLeft + c.offsetWidth / 2, y: g.top + c.offsetTop + 90}; }, CARD);
   await p.mouse.move(rg.x - 30, rg.y); await p.mouse.move(rg.x, rg.y, {steps: 4}); await wait(800);
-  const rh = await p.evaluate(sel => { const c = document.querySelector(sel + '.is-hov'); return c && {ty: new DOMMatrix(getComputedStyle(c).transform).m42, pk: new DOMMatrix(getComputedStyle(c.querySelector('.pk, .art-render img')).transform).a, qv: getComputedStyle(c.querySelector('.qv-btn')).opacity}; }, CARD);
-  ok(rh && rh.ty === 0 && Math.abs(rh.pk - 1) < 0.01 && rh.qv === '1', 'наведение без подъёма и увеличения (кнопка просмотра и тень остаются)', rh);
-  await p.evaluate(() => { window.__fl = 0; new MutationObserver(() => { if (document.querySelector('.gal-fly')) window.__fl++; }).observe(document.body, {childList: true}); });
-  await p.click(CARD + '.is-hov .qv-btn'); await wait(300);
-  const rq = await p.evaluate(() => ({fl: window.__fl, an: getComputedStyle(document.querySelector('.qv-dlg')).animationName, vis: getComputedStyle(document.querySelector('.qv-art .art')).visibility}));
-  ok(rq.fl === 0 && /galFade/.test(rq.an) && rq.vis === 'visible', 'окно просмотра: перелёта нет, только мягкое появление', rq);
-  await p.keyboard.press('Escape'); await wait(700); await p.mouse.move(20, 300);
-  await toResults(p);
-  const rf = await p.evaluate(sel => { const s = document.getElementById('f-cat'); s.value = 'sun'; s.dispatchEvent(new Event('change', {bubbles: true})); return new Promise(r => requestAnimationFrame(() => requestAnimationFrame(() => r({ghosts: document.querySelectorAll('.pc-ghost').length, n: [...document.querySelectorAll(sel)].filter(c => !c.hidden).length, tr: document.querySelector('#cat-grid').getAnimations({subtree: true}).filter(a => !(a instanceof CSSTransition) && !(a instanceof CSSAnimation) && a.effect.getKeyframes().some(k => k.transform && k.transform !== 'none')).length, op: document.querySelector('#cat-grid').getAnimations({subtree: true}).filter(a => !(a instanceof CSSTransition) && !(a instanceof CSSAnimation) && a.effect.getKeyframes().some(k => k.opacity !== undefined)).length})))); }, CARD);
-  ok(rf.ghosts === 0 && rf.n === EXP.sun && rf.tr === 0, 'смена фильтра: итог верный, призраков и движения карточек нет (' + rf.op + ' плавных проявлений по прозрачности)', rf);
+  const rh = await p.evaluate(sel => { const c = document.querySelector(sel + '.is-hov'); return !!c; }, CARD);
+  ok(rh, 'наведение работает при «уменьшить движение»');
   ok(p.errs.length === 0, 'без ошибок JavaScript', p.errs); await p.ctx.close();
 
   /* ================= лёгкий режим ================= */

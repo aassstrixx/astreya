@@ -334,7 +334,7 @@ html.shw-top .hdr{background:transparent;border-bottom-color:transparent}
 
 /* --- 9. спокойное движение и «лёгкий режим» --- */
 /* наведение, выбор и плашка товара анимируются всегда: «лёгкий режим» (html.lite) и системное «уменьшить движение» их не гасят — это несколько небольших элементов, нагрузки от них нет, а без плавности рост товара выглядит рывком (так решено для всего сайта: анимации работают всегда). Гасятся только дорогие вещи — перестройка сцены при смене фильтров (js/showroom.js, mode()) и «пылинки». */
-@media (prefers-reduced-motion:reduce){
+@media (prefers-reduced-motion:reduce) and (min-width:100000px){
   .shw-gh .ic,.shw-go,.shw-pc,.shw-help,.shw-reset .ic{transition:none!important}
   .shw-pc:hover{transform:none}
   [data-catalog] #cat-grid .pcard.is-hov .art-render img,[data-catalog] #cat-grid .pcard:has(:focus-visible) .art-render img{transform:translateX(-50%)}

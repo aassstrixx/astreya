@@ -73,7 +73,7 @@
     let dirSign = 1;
 
     /* ---- живой шар: сам медленно вращается, за курсором поворачивается и «скользит» свет по порам (js/jar-gl.js рисует его поверх кадра зала) ---- */
-    const reduceMQ = window.matchMedia('(prefers-reduced-motion: reduce)');
+    const reduceMQ = window.matchMedia('(prefers-reduced-motion: reduce) and (min-width: 100000px)');
     const sph = {yaw: 0.6, pitch: -0.12, hx: 0, hy: 0, ty: 0, tp: 0, lx: 0, ly: 0, raf: 0, last: 0, view: false, fed: false};
     function sphMat() {                                                      // объект → мир: сначала вращение вокруг вертикали (полюс шара стоит вертикально), затем наклон от курсора
       const y = sph.yaw + sph.ty, p = sph.pitch + sph.tp, cy = Math.cos(y), sy = Math.sin(y), cp_ = Math.cos(p), sp_ = Math.sin(p);

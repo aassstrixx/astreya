@@ -208,7 +208,7 @@ const userMsgs = p => p.evaluate(() => [...document.querySelectorAll('.asst-u .a
   p = await open(b, {viewport: {width: 1440, height: 900}, reducedMotion: 'reduce'});
   await p.click('.cat-tile[data-id="sun"]'); await wait(300);
   const RM = await p.evaluate(() => [...document.querySelector('.shw-stage').getAnimations({subtree: true})].filter(a => a.effect && a.effect.getKeyframes().some(k => k.transform && k.transform !== 'none')).length);
-  ok(RM === 0, 'reduced-motion: перестройка сцены без пространственных анимаций (только прозрачность)', RM); await wait(800);
+  ok(RM > 0, 'reduced-motion: системная настройка не отключает движение — перестройка сцены анимируется (решение заказчика)', RM); await wait(800);
   ok((await items(p)).length === EXP.sun, 'reduced-motion: фильтр работает');
   await p.evaluate(() => { document.documentElement.classList.add('lite'); document.querySelector('.shw-dirs').scrollIntoView({block: 'start', behavior: 'instant'}); }); await wait(500);
   const AN = await p.evaluate(() => ['.shw-dir', '.shw-task', '.shw-brand'].map(q => { const e = document.querySelector(q); return q + ':' + (e ? getComputedStyle(e).animationName : 'нет'); }));

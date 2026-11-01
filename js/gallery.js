@@ -16,7 +16,7 @@
   if (!A || !D || !D.extras || !D.extras.gallery) return;
   const X = D.extras;
   const $ = (s, r) => (r || document).querySelector(s), $$ = (s, r) => Array.prototype.slice.call((r || document).querySelectorAll(s));
-  const html = document.documentElement, rmq = matchMedia('(prefers-reduced-motion: reduce)');
+  const html = document.documentElement, rmq = matchMedia('(prefers-reduced-motion: reduce) and (min-width: 100000px)');
   const reduce = () => rmq.matches, lite = () => html.classList.contains('lite'), canAnimate = typeof Element.prototype.animate === 'function';
   const EASE = 'cubic-bezier(.16,1,.3,1)';
   const P = {}, B = {}, CAT = {}, TASK = {}, KIND = {};
