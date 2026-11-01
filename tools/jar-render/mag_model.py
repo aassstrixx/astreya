@@ -170,9 +170,9 @@ def build_magazine(cx, cy, z, pw, yaw_deg=7.0, grp='p'):
 
     for s in ('l', 'r'):
         half(s); board(s)
-    for ob in objs:                                                        # нормали наружу
-        bpy.context.view_layer.objects.active = ob
-        me = ob.data; me.validate(); me.calc_loop_triangles()
-        import bmesh
-        bm = bmesh.new(); bm.from_mesh(me); bmesh.ops.recalc_face_normals(bm, faces=bm.faces[:]); bm.to_mesh(me); bm.free()
+    import bmesh
+    for ob in objs:                                                        # нормали наружу — только у замкнутых обложек; у незамкнутых лент блока листов порядок вершин уже задан явно (пересчёт переворачивает их)
+        me = ob.data; me.validate()
+        if ob.name.startswith('mag_cv_'):
+            bm = bmesh.new(); bm.from_mesh(me); bmesh.ops.recalc_face_normals(bm, faces=bm.faces[:]); bm.to_mesh(me); bm.free()
     return objs

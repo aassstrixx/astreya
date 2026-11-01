@@ -44,7 +44,10 @@ def main():
     total = int(a[a.index('--total') + 1]) if '--total' in a else 60
     os.makedirs(outd, exist_ok=True)
     hold = int(math.ceil(HOLD * (total - 1) - 1e-9))
+    only = int(a[a.index('--only') + 1]) if '--only' in a else None          # проверка одного кадра
     for i in range(total):
+        if only is not None and i != only:
+            continue
         src = os.path.join(bgd, '%03d.png' % i); dst = os.path.join(outd, '%03d.png' % i)
         if os.path.exists(dst):
             continue
