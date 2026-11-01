@@ -156,7 +156,7 @@ module.exports = function homeRedesign(ctx, C, P, parts, {events, val}) {
     const j = rd.jar, ha = houseOn && rd.house.arch && rd.house.arch.enabled ? rd.house.arch : null, a = ha || (j && j.enabled && j.arch); if (!a || !a.enabled) return '';          // дом: свой набор кадров зала (house.arch), пока его нет — кадры прежней заставки
     const nOff = ctx.stats.offices, nBr = ctx.stats.brands, cities = ctx.site.offices.map(o => o.city);
     const auto = {offices: `${nOff} ${S.plural(nOff, 'город', 'города', 'городов')} присутствия`, brands: `${nBr} ${S.plural(nBr, 'бренд', 'бренда', 'брендов')} в портфеле`};
-    const items = (a.panel || j.arch.panel).items.map(it => ({icon: it.icon, title: it.auto ? auto[it.auto] : it.title, text: it.auto === 'offices' ? cities.join(', ') : it.text}));
+    const pn = a.panel || j.arch.panel, items = pn.items.map(it => ({icon: it.icon, title: it.auto ? auto[it.auto] : it.title, text: it.auto === 'offices' ? cities.join(', ') : it.text}));
     /* логотипы на орбитах вокруг шара — те же, что у прежнего героя (data/content.json → home.orbits) */
     const orb = o => { const b = o.brand ? ctx.brandById[o.brand] : null, src = b ? b.logo : o.src, w = b ? b.logoW : o.w, hh = b ? b.logoH : o.h;
       return `<span class="arm" style="--a:${o.angle}deg"><span class="orb"><img src="${C.u(P, src)}" alt=""${w ? ` width="${w}" height="${hh}"` : ''} style="--lw:${o.width}" decoding="async"></span></span>`; };
@@ -172,11 +172,12 @@ module.exports = function homeRedesign(ctx, C, P, parts, {events, val}) {
       <div class="ar-hero">
         <div class="ar-world">
           <canvas class="ar-jar-cv" aria-hidden="true"></canvas>
-          ${houseOn ? HOUSE.hall.world : `<div class="ar-orb" style="${fin}" aria-hidden="true"><div class="ar-orbit">${ring('r3')}${ring('r1')}${ring('r2')}</div></div>`}
+          <div class="ar-orb" style="${fin}" aria-hidden="true"><div class="ar-orbit">${ring('r3')}${ring('r1')}${ring('r2')}</div></div>
+          ${houseOn ? HOUSE.hall.world : ''}
         </div>
         <div class="ar-cue" aria-hidden="true"><span>${esc(j.cue)}</span><i></i></div>
         <div class="ar-copy">
-          ${houseOn ? HOUSE.hall.greeting : ''}<span class="eyebrow ar-e">${esc(h.eyebrow)}</span>
+          <span class="eyebrow ar-e">${esc(h.eyebrow)}</span>
           <h1 class="ar-h">${h.h1}</h1>
           <p class="lead ar-lead">${esc(h.lead)}</p>
           <div class="row ar-cta">
@@ -186,11 +187,11 @@ module.exports = function homeRedesign(ctx, C, P, parts, {events, val}) {
           <ul class="ar-facts">${h.facts.map(f => `<li>${esc(f)}</li>`).join('')}<li>${esc(auto.offices)}</li></ul>
           ${houseOn ? HOUSE.hall.rooms : ''}
         </div>
-        ${houseOn ? '' : `<div class="ar-panel" role="group" aria-label="${esc(a.panel.title)}">
-          <p class="ar-pt">${esc(a.panel.title)}</p>
+        <div class="ar-panel" role="group" aria-label="${esc(pn.title)}">
+          <p class="ar-pt">${esc(pn.title)}</p>
           <ul>${items.map(it => `<li><span class="ar-ic" aria-hidden="true">${I[it.icon] || I.check}</span><span class="ar-tx"><b>${esc(it.title)}</b><em>${esc(it.text)}</em></span></li>`).join('')}</ul>
           <a class="btn btn-ghost btn-sm ar-more" href="${C.u(P, 'company.html')}">Подробнее ${I.arrow}</a>
-        </div>`}
+        </div>
       </div>
     </div>
     ${houseOn ? '<i class="hall-anchor" id="hall" aria-hidden="true"></i>' : ''}
@@ -216,7 +217,7 @@ module.exports = function homeRedesign(ctx, C, P, parts, {events, val}) {
   if (arch && rd.homePath && rd.homePath.enabled) {
     const hpS = require('./home-path.js')(ctx, C, P, {events, val, img, bgLogo, showDemo});
     if (houseOn) {
-      HOUSE = require('./home-house.js')(ctx, C, P, {events, val, img, hpS, brandsX, news, fork, finalCta, marquee: parts.marquee});
+      HOUSE = require('./home-house.js')(ctx, C, P, {events, val, img, hpS, brandsX, news, fork, finalCta, marquee: parts.marquee, heroX});
       return HOUSE.compose(buildArch());
     }
     return [arch, heroX, parts.marquee, ...(fork ? [fork] : []), hpS.rolesSec, hpS.proofSec, brandsX, hpS.finderSec, hpS.academySec, news, hpS.stepsSec, finalCta].join('\n\n  ');

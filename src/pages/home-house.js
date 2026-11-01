@@ -7,7 +7,7 @@ const {esc, I} = S;
 
 module.exports = function homeHouse(ctx, C, P, deps) {
   const rd = ctx.redesign, H = rd.house, content = ctx.content, h = content.home, site = ctx.site, brands = ctx.brands, tasks = ctx.tasks;
-  const {events, val, img, hpS, brandsX, news, fork, finalCta, marquee} = deps;
+  const {events, val, img, hpS, brandsX, news, fork, finalCta, marquee, heroX} = deps;
   const hp = rd.homePath, ed = rd.editorial, tr = rd.training, A = hp.academy, F = hp.finder, R = hp.roles, ST = hp.steps, sol = rd.solutions;
   const href = x => { const [path, hash] = x.split('#'); return C.u(P, path) + (hash ? '#' + hash : ''); };
   const rooms = H.rooms.map((r, i) => Object.assign({no: i + 1, n2: String(i + 1).padStart(2, '0')}, r));
@@ -35,7 +35,6 @@ module.exports = function homeHouse(ctx, C, P, deps) {
         <span class="mag-hint">${esc(H.hall.hint)}</span><span class="sr">Журнал ASTREYA: открыть и листать — оглавление и переходы в комнаты</span></button>
     </div>`;
   const hallWorld = `<div class="hall-doors" role="group" aria-label="${esc(H.hall.doorsLabel)}">${doors}</div>${magTable}`;
-  const hallGreeting = `<p class="hall-greet reveal">${esc(H.hall.greeting)}</p>`;
   const hallRooms = `<nav class="hall-rooms" aria-label="${esc(H.hall.doorsLabel)}"><ol>${rooms.map(r => `<li><a href="#room-${r.id}" data-house-go="${r.id}" data-track="house_room" data-place="hall"><b>${r.n2}</b><span>${esc(r.short)}</span></a></li>`).join('')}</ol></nav>`;
 
   /* ---------------------------------------------------------------- комнаты */
@@ -169,6 +168,19 @@ module.exports = function homeHouse(ctx, C, P, deps) {
     </div>
   </div>`;
 
+  /* переход скролла к раскрытому журналу: после зала — закреплённая сцена; тот же кадр зала уходит вглубь, журнал вырастает со столика, обложка раскрывается, дальше прокрутка листает разворот за разворотом
+     (тот же настоящий журнал, что открывается кликом; прокрутка не блокируется; без JS и при уменьшенном движении — обычный блок с раскрытым журналом) */
+  const pst = (rd.house.arch && rd.house.arch.poster) || {};
+  const reader = `<section class="house-reader" id="house-reader" aria-label="${esc(mc.readerLabel || 'Журнал ASTREYA: листайте прокруткой')}" data-n="${pagesR.length}" style="--hrh:${(H.reader || {}).heightVh || 420}vh;--hrhm:${(H.reader || {}).heightVhMobile || 190}vh;--tx:${tb.d[0]};--ty:${tb.d[1]};--txm:${tb.m[0]};--tym:${tb.m[1]}">
+    <div class="hr-stage">
+      <picture class="hr-bg" aria-hidden="true"><source media="(max-aspect-ratio: 11/10)" srcset="${C.u(P, pst.mobile || 'assets/house-hall/poster-m.webp')}"><img src="${C.u(P, pst.desktop || 'assets/house-hall/poster-d.webp')}" alt="" width="1920" height="1080" decoding="async" loading="lazy"></picture>
+      <div class="hr-veil" aria-hidden="true"></div>
+      <p class="hr-cue" aria-hidden="true"><span>${esc((H.reader || {}).cue || 'Листайте — журнал откроется')}</span><i></i></p>
+      <a class="hr-skip" href="#room-${rooms[0].id}" data-house-go="${rooms[0].id}" data-track="house_reader_skip">${esc((H.reader || {}).skip || 'К комнатам')} ${I.arrow}</a>
+      ${magazine}
+    </div>
+  </section>`;
+
   /* плавающая навигация по дому: появляется, когда зал ушёл из кадра */
   const houseNav = `<nav class="house-nav is-off" aria-label="${esc(H.nav.label)}">
     <a class="hn-hall" href="#hall" data-house-hall>${esc(H.nav.hall)}</a>
@@ -178,7 +190,7 @@ module.exports = function homeHouse(ctx, C, P, deps) {
   const veil = '<div class="house-veil" aria-hidden="true"></div>';
 
   return {
-    hall: {world: hallWorld, greeting: hallGreeting, rooms: hallRooms},
-    compose: arch => [arch, marquee, roomsHtml, magazine, houseNav, veil].join('\n\n  ')
+    hall: {world: hallWorld, rooms: hallRooms},
+    compose: arch => [arch, heroX, reader, marquee, roomsHtml, houseNav, veil].join('\n\n  ')
   };
 };

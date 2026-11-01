@@ -556,16 +556,16 @@
     "enabled": false,
     "preview": true,
     "hall": {
-      "greeting": "Добро пожаловать в ASTREYA HOUSE",
       "hint": "Откройте журнал ASTREYA",
       "doorsLabel": "Комнаты дома",
-      "table": {"d": [0.668, 0.762, 0.155], "m": [0.67, 0.668, 0.30]},
+      "table": {"d": [0.4, 0.795, 0.17], "m": [0.371, 0.8, 0.29]},
       "doors": [
-        {"room": "brands", "d": [0.0527, 0.2072, 0.1656, 0.3537], "m": null},
-        {"room": "finder", "d": [0.4107, 0.1321, 0.2138, 0.434], "m": [0.2152, 0.2026, 0.386, 0.2501]},
-        {"room": "academy", "d": [0.8263, 0.2078, 0.1757, 0.363], "m": null}
+        {"room": "brands", "d": [0.0, 0.06, 0.17, 0.5], "m": null},
+        {"room": "finder", "d": [0.535, 0.28, 0.19, 0.31], "m": [0.379, 0.445, 0.36, 0.255]},
+        {"room": "partners", "d": [0.21, 0.56, 0.29, 0.22], "m": [0.55, 0.72, 0.44, 0.2]}
       ]
     },
+    "reader": {"heightVh": 420, "heightVhMobile": 240, "cue": "Листайте — журнал откроется", "skip": "К комнатам"},
     "rooms": [
       {"id": "about", "img": "assets/house/room-about.webp", "name": "Галерея доверия", "short": "О компании", "href": "company.html", "cta": "Страница «О компании»"},
       {"id": "brands", "img": "assets/brands/hero.webp", "name": "Галерея брендов", "short": "Бренды", "href": "brands.html", "cta": "Все бренды"},
@@ -585,6 +585,7 @@
       "prevLabel": "Назад",
       "nextLabel": "Далее",
       "coverLabel": "К обложке",
+      "readerLabel": "Журнал ASTREYA: листайте прокруткой",
       "contactsTitle": "Контакты"
     },
     "nav": {

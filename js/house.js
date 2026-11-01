@@ -21,22 +21,13 @@
     if (!story || !story.classList.contains('is-house')) return;
     const on = (t, ev, fn, o) => { t.addEventListener(ev, fn, o); off.push(() => t.removeEventListener(ev, fn, o)); };
 
-    /* без анимации (уменьшенное движение, «лёгкий режим»): вместо закреплённой сцены — готовый кадр зала; движок кадров выключаем */
-    function setStatic() {
-      if (story.classList.contains('is-static')) return;
-      story.classList.add('is-static');
-      try { if (A.jar && A.jar.arch && A.jar.arch.destroy) A.jar.arch.destroy(); } catch (e) {}
-    }
-    if (matchMedia('(prefers-reduced-motion: reduce)').matches || root.classList.contains('lite')) setStatic();
-    else if ('MutationObserver' in window) { const mo = new MutationObserver(() => { if (root.classList.contains('lite')) { setStatic(); mo.disconnect(); } }); mo.observe(root, {attributes: true, attributeFilter: ['class']}); off.push(() => mo.disconnect()); }
-
     const rooms = $$('.room'), ids = rooms.map(r => r.getAttribute('data-room'));
     const veil = $('.house-veil'), nav = $('.house-nav'), mag = $('#mag');
     const LEGACY = {'start-path': 'partners', 'how-to-start': 'partners', 'brands-gallery': 'brands', 'hb-strip': 'brands', solutions: 'finder', 'training-block': 'academy', 'home-events': 'academy', 'expertise-block': 'expertise'};
 
     /* ---------- положение зала и перемещение ---------- */
     const abs = el => el.getBoundingClientRect().top + window.pageYOffset;
-    const hallY = () => story.classList.contains('is-static') || story.classList.contains('jar-off') ? Math.max(0, abs(story)) : Math.max(0, abs(story) + story.offsetHeight - window.innerHeight);       // конец закреплённой сцены: герой стоит в готовом кадре зала
+    const hallY = () => story.classList.contains('jar-off') ? Math.max(0, abs(story)) : Math.max(0, abs(story) + story.offsetHeight - window.innerHeight);       // конец закреплённой сцены: герой стоит в готовом кадре зала
     const jump = y => window.scrollTo({top: Math.round(y), behavior: 'instant'});                // «instant» — мимо html{scroll-behavior:smooth}: никакого пролёта мимо чужих комнат
     const afterPaint = fn => requestAnimationFrame(() => requestAnimationFrame(fn));
     let veilTimer = 0; off.push(() => clearTimeout(veilTimer));
@@ -98,7 +89,9 @@
       requestAnimationFrame(() => {
         ticking = false;
         const y = window.pageYOffset, past = y > hallY() + window.innerHeight * 0.3;
-        if (nav) nav.classList.toggle('is-off', !past || !!(mag && mag.classList.contains('is-open')));
+        if (reader) readerUpdate();
+        const rb = reader ? reader.getBoundingClientRect() : null, inReader = !!rb && rb.top < window.innerHeight * .6 && rb.bottom > window.innerHeight * .4;       // пока журнал читается на сцене, плавающая навигация не закрывает его кнопки
+        if (nav) nav.classList.toggle('is-off', !past || inReader || !!(mag && mag.classList.contains('is-open')));
         let best = null, mid = window.innerHeight * 0.4;
         rooms.forEach(r => { const b = r.getBoundingClientRect(); if (b.top <= mid && b.bottom > mid) best = r.getAttribute('data-room'); });
         if (best !== current) { current = best; markNav(best); }
@@ -107,6 +100,8 @@
     on(window, 'scroll', onScroll, {passive: true}); on(window, 'resize', onScroll, {passive: true});
 
     /* ---------- журнал ---------- */
+    const reader = $('#house-reader'), inline = !!(reader && mag && reader.contains(mag));       // журнал стоит прямо в закреплённой сцене после зала: прокрутка раскрывает его и листает (тот же журнал открывается диалогом по клику)
+    if (inline) { mag.hidden = false; mag.classList.add('is-inline'); mag.setAttribute('role', 'region'); mag.removeAttribute('aria-modal'); }
     const book = mag && $('.mag-book', mag), leaves = mag ? $$('.leaf', mag) : [], N = leaves.length;
     const stEl = mag && $('.mag-st', mag), wrap = mag && $('.mag-wrap', mag), pvB = mag && $('.mag-pv', mag), nxB = mag && $('.mag-nx', mag), scroller = mag && $('.leaves', mag);
     let s = 1, lastFocus = null, magOpen = false;
@@ -128,13 +123,36 @@
       if (phone() && scroller && !o.noScroll) { const p = s === 0 ? 0 : 2 * s - 1, w = scroller.clientWidth; scroller.scrollTo({left: p * w, behavior: o.instant || reduce() ? 'instant' : 'smooth'}); }
       if (magOpen && !o.silent) { try { history.replaceState(history.state, '', '#magazine/' + s); } catch (e) {} }
     }
-    const step = d => { render(s + d); track('house_magazine_flip', {page: s}); };
+    /* ---------- читалка: состояние журнала задаёт прокрутка (единственный источник правды), кнопки и оглавление прокручивают к нужному развороту ---------- */
+    const RD = {open: .28, from: .30, span: .66};                         // доли пути закреплённой сцены: журнал вырастает до .28, обложка раскрывается, дальше разворот за разворотом до .96
+    const ease = x => x * x * (3 - 2 * x);
+    const flat = () => !!reader && (reduce() || reader.classList.contains('is-flat'));
+    const readerBox = () => { const r = reader.getBoundingClientRect(); return {top: r.top + window.pageYOffset, total: Math.max(0, r.height - window.innerHeight)}; };
+    const readerT = () => { const r = reader.getBoundingClientRect(), tot = r.height - window.innerHeight; return tot > 0 ? Math.max(0, Math.min(1, -r.top / tot)) : 1; };
+    function readerUpdate() {
+      if (!inline || magOpen) return;
+      if (flat()) { reader.classList.add('is-flat'); reader.style.setProperty('--ra', '1'); if (s === 0) render(1, {instant: true, silent: true, noScroll: true}); return; }
+      reader.classList.remove('is-flat');
+      const t = readerT(), open = phone() ? .5 : RD.open, ra = ease(Math.max(0, Math.min(1, t / open)));
+      reader.style.setProperty('--ra', ra.toFixed(4));
+      const target = phone() ? (ra > .94 ? Math.max(s, 1) : 0) : (t < RD.from ? 0 : 1 + Math.min(N - 2, Math.floor((t - RD.from) / RD.span * (N - 1))));
+      if (target !== s && !(phone() && s > 0 && target > 0)) render(target, {silent: true, noScroll: !phone() || target === 0, instant: true});
+    }
+    function toState(v, o) {                                                  // прокрутить страницу так, чтобы журнал стоял на развороте v
+      v = Math.max(0, Math.min(N - 1, v)); const b = readerBox();
+      const t = v === 0 ? .05 : RD.from + (v - 1 + .5) / (N - 1) * RD.span;
+      window.scrollTo({top: Math.round(b.top + b.total * t), behavior: (o && o.instant) || reduce() ? 'instant' : 'smooth'});
+    }
+    const useScroll = () => inline && !magOpen && !phone() && !flat();
+    const step = d => { if (useScroll()) { toState(s + d); track('house_magazine_flip', {page: s + d}); return; } render(s + d); track('house_magazine_flip', {page: s}); };
     const stateOfRoom = id => { const i = ids.indexOf(id); return i < 0 ? 1 : i + 2; };
 
     function openMag(o) {
       o = o || {}; if (!mag || magOpen) return;
       lastFocus = document.activeElement; magOpen = true;
-      mag.hidden = false; render(o.s === undefined ? 1 : o.s, {instant: true, silent: true});
+      mag.hidden = false;
+      if (inline) { mag.classList.add('is-modal'); mag.setAttribute('role', 'dialog'); mag.setAttribute('aria-modal', 'true'); reader.classList.add('has-modal'); }
+      render(o.s === undefined ? 1 : o.s, {instant: true, silent: true});
       root.classList.add('mag-lock');
       /* FLIP: журнал вырастает из разворота на столике */
       const src = $('.mag-prev-b'), phoneMode = phone();
@@ -155,7 +173,10 @@
     function closeMag(o) {
       o = o || {}; if (!mag || !magOpen) return; magOpen = false;
       mag.classList.remove('is-open'); root.classList.remove('mag-lock');
-      setTimeout(() => { if (!magOpen) mag.hidden = true; }, reduce() ? 0 : 480);
+      setTimeout(() => {
+        if (magOpen) return;
+        if (inline) { mag.classList.remove('is-modal'); mag.setAttribute('role', 'region'); mag.removeAttribute('aria-modal'); reader.classList.remove('has-modal'); readerUpdate(); } else mag.hidden = true;
+      }, reduce() ? 0 : 480);
       if (!o.noFocus && lastFocus && lastFocus.focus) { try { lastFocus.focus({preventScroll: true}); } catch (e) {} }
       if (!o.silent) { try { if (history.state && history.state.mag !== undefined) history.back(); else history.replaceState(history.state, '', location.pathname + location.search + (current ? '#room-' + current : '#hall')); } catch (e) {} }
       onScroll();
@@ -165,7 +186,7 @@
     on(document, 'click', e => {
       const t = e.target.closest && e.target.closest('[data-house-go],[data-house-hall],[data-house-mag],[data-mag-close],[data-mag-page],[data-mag-step]'); if (!t) return;
       if (t.hasAttribute('data-mag-step')) { e.preventDefault(); step(parseInt(t.getAttribute('data-mag-step'), 10)); return; }
-      if (t.hasAttribute('data-mag-page')) { e.preventDefault(); render(parseInt(t.getAttribute('data-mag-page'), 10)); return; }
+      if (t.hasAttribute('data-mag-page')) { e.preventDefault(); const v = parseInt(t.getAttribute('data-mag-page'), 10); if (useScroll()) toState(v); else render(v); return; }
       if (t.hasAttribute('data-house-go')) {
         e.preventDefault(); const via = t.closest('.mag') ? 'magazine' : t.closest('.hall-door') ? 'door' : t.closest('.hn-rooms') ? 'menu' : t.closest('.room-door') ? 'doorway' : t.closest('.hall-rooms') ? 'hall-list' : 'nav';
         if (t.hasAttribute('data-mag-close')) closeMag({silent: true, noFocus: true});
@@ -175,6 +196,7 @@
       if (t.hasAttribute('data-house-hall')) { e.preventDefault(); hall({via: t.closest('.house-nav') ? 'menu' : 'room'}); return; }
       if (t.hasAttribute('data-house-mag')) {
         e.preventDefault(); const rid = t.getAttribute('data-mag-room');
+        if (inline && t.classList.contains('mag-prev')) { track('house_magazine_open', {from: 'table', page: 1}); if (flat()) { jump(readerBox().top); render(1, {instant: true, silent: true, noScroll: true}); } else toState(1); return; }        // журнал на столике: сцена «подъезжает» к нему — прокрутка к раскрытому журналу
         openMag({s: rid ? stateOfRoom(rid) : 1, from: t.classList.contains('mag-prev') ? 'table' : rid ? 'room' : 'menu'});
       }
     });
@@ -233,9 +255,9 @@
     }
     on(window, 'popstate', () => { if (magOpen && !/^#magazine/.test(location.hash)) { closeMag({silent: true}); } applyHash(false); });
     if (location.hash) { const run = () => setTimeout(() => applyHash(true), 350); if (document.readyState === 'complete') run(); else on(window, 'load', run, {once: true}); }
-    render(1, {instant: true, silent: true, noScroll: true}); onScroll();
+    render(inline && !phone() ? 0 : 1, {instant: true, silent: true, noScroll: true}); onScroll();
 
-    A.house = {go: id => go(id, {via: 'api'}), hall: () => hall({via: 'api'}), openMagazine: p => openMag({s: p, from: 'api'}), closeMagazine: () => closeMag(), state: () => ({room: current, magazine: magOpen, page: s, rooms: ids})};
+    A.house = {go: id => go(id, {via: 'api'}), hall: () => hall({via: 'api'}), openMagazine: p => openMag({s: p, from: 'api'}), closeMagazine: () => closeMag(), state: () => ({room: current, magazine: magOpen, page: s, rooms: ids, reader: inline}), readerState: () => ({t: reader ? readerT() : null, s})};
   }
 
   init();

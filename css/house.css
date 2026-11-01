@@ -7,9 +7,10 @@ body[data-page="home"]{--hs-paper:#f6f0e3;--hs-paper-2:#efe6d3;--hs-ink:#0b1a33;
 
 /* ============ 1. Зал: проходы, журнал на столике, приветствие ============ */
 .hall-anchor{position:absolute;left:0;bottom:100lvh;width:1px;height:1px;pointer-events:none}
-.hall-greet{margin:0 0 clamp(10px,1.6vh,16px);font:italic 400 clamp(15px,calc(var(--wwv) * .0095),20px)/1.3 var(--serif);color:var(--hs-ink);opacity:var(--h1,0);transform:translate3d(0,calc((1 - var(--h1,0)) * 14px),0)}
-.hall-greet::before{content:"";display:inline-block;width:28px;height:1px;margin:0 12px 4px 0;background:var(--hs-gold);vertical-align:middle}
-.hall-rooms{margin:clamp(14px,2.4vh,26px) 0 0;opacity:var(--h3,0);transform:translate3d(0,calc((1 - var(--h3,0)) * 16px),0)}
+.hall-rooms{position:absolute;width:1px;height:1px;margin:0;overflow:hidden;clip-path:inset(50%);white-space:nowrap;opacity:var(--h3,0);transform:translate3d(0,calc((1 - var(--h3,0)) * 16px),0)}                /* на ПК список комнат — для клавиатуры и скринридера (на виду при фокусе), глазами — проходы и журнал */
+.hall-rooms:focus-within,.is-house.jar-off .hall-rooms,html:not(.js) .is-house .hall-rooms{position:static;width:auto;height:auto;margin:clamp(14px,2.4vh,26px) 0 0;overflow:visible;clip-path:none;white-space:normal}
+.is-house .ar-facts{display:none}                                                                  /* три пункта дублируют панель внизу; на столике и у дивана — своё место */
+.arch-story.is-house ~ .hero{display:none}                                                            /* запасной герой нужен только без сцены (старый вид страницы) */
 .hall-rooms ol{display:flex;flex-wrap:wrap;gap:6px 18px;margin:0;padding:0;list-style:none}
 .hall-rooms a{display:inline-flex;align-items:baseline;gap:8px;padding:4px 0;font:600 clamp(9.5px,.72vw,12px)/1.2 var(--sans);letter-spacing:.12em;text-transform:uppercase;color:var(--slate);pointer-events:none;border-bottom:1px solid transparent;transition:color .25s,border-color .25s}
 .js-stage.ar-live .hall-rooms a{pointer-events:auto}
@@ -25,16 +26,16 @@ body[data-page="home"]{--hs-paper:#f6f0e3;--hs-paper-2:#efe6d3;--hs-ink:#0b1a33;
 .hd-tag{position:absolute;left:50%;top:9%;translate:-50% 0;display:flex;align-items:baseline;gap:8px;padding:8px 14px 8px 12px;border-radius:999px;white-space:nowrap;background:var(--hs-glass);box-shadow:inset 0 0 0 1px rgba(255,255,255,.7),0 8px 22px -10px rgba(60,40,18,.55);font:600 clamp(10px,.78vw,13px)/1 var(--sans);letter-spacing:.08em;text-transform:uppercase;color:var(--hs-ink);transition:transform .45s var(--ease),background-color .3s}
 .hd-tag b{font:500 clamp(12px,.95vw,15px)/1 var(--serif);letter-spacing:0;color:var(--hs-gold)}
 .hall-door:hover .hd-tag,.hall-door:focus-visible .hd-tag{transform:translateY(4px);background:#fffaf0}
-.hall-door[data-room="brands"] .hd-tag{left:8%;translate:none}.hall-door[data-room="academy"] .hd-tag{left:5%;translate:none}          /* таблички боковых проходов не уходят за край экрана при обрезке кадра по ширине */
+.hall-door[data-room="brands"] .hd-tag{left:8%;translate:none}.hall-door[data-room="partners"] .hd-tag{top:-14%}          /* таблички боковых проходов не уходят за край экрана при обрезке кадра по ширине */
 
 .hall-mag{display:block}
 .hall-mag{left:calc(var(--tx) * 100%);top:calc(var(--ty) * 100%);right:auto;bottom:auto;width:calc(var(--tw) * 100%);aspect-ratio:1.46;translate:-50% -50%;opacity:var(--h3,0);perspective:900px;position:absolute}
 .mag-prev{position:absolute;inset:0;display:block;margin:0;padding:0;border:0;background:none;cursor:pointer;pointer-events:none;color:inherit;font:inherit;text-align:left;-webkit-tap-highlight-color:transparent}
 .js-stage.ar-live .mag-prev{pointer-events:auto}
 .mag-prev:focus-visible{outline:3px solid var(--hs-ink);outline-offset:6px;border-radius:12px}
-.mag-prev-b{position:absolute;inset:0;display:grid;grid-template-columns:1fr 1fr;transform:rotateX(70deg) rotateZ(-3deg);transform-style:preserve-3d;transform-origin:50% 60%;transition:transform .7s var(--ease),filter .5s;
+.mag-prev-b{position:absolute;inset:0;display:grid;grid-template-columns:1fr 1fr;transform:rotateX(62deg) rotateZ(-4deg);transform-style:preserve-3d;transform-origin:50% 60%;transition:transform .7s var(--ease),filter .5s;
   filter:drop-shadow(0 26px 22px rgba(52,34,16,.42))}
-.mag-prev:hover .mag-prev-b,.mag-prev:focus-visible .mag-prev-b{transform:rotateX(62deg) rotateZ(-3deg) translateY(-6%)}
+.mag-prev:hover .mag-prev-b,.mag-prev:focus-visible .mag-prev-b{transform:rotateX(54deg) rotateZ(-4deg) translateY(-8%)}
 .mag-prev-b::before{content:"";position:absolute;inset:0;border-radius:3px;box-shadow:0 1px 0 #e8dfcb,0 2px 0 #e2d8c1,0 3px 0 #dcd1b8,0 4px 0 #d6cbb1,0 5px 0 #d0c4a9;pointer-events:none}
 .mp-l,.mp-r{position:relative;display:block;overflow:hidden;background:linear-gradient(90deg,#f7f1e4,#fbf7ee);padding:6%}
 .mp-l{border-radius:3px 0 0 3px;padding:0;background:#e9dfca}
@@ -46,10 +47,10 @@ body[data-page="home"]{--hs-paper:#f6f0e3;--hs-paper-2:#efe6d3;--hs-ink:#0b1a33;
 .mp-r li{display:flex;gap:6%;align-items:baseline;border-bottom:1px solid rgba(86,60,30,.16);padding-bottom:3%;font:600 clamp(6px,.75vw,11px)/1.1 var(--sans);letter-spacing:.05em;text-transform:uppercase;color:#4b5975}
 .mp-r li b{font:500 clamp(7px,.9vw,13px)/1 var(--serif);letter-spacing:0;color:var(--hs-gold)}
 .mag-prev-b::after{content:"";position:absolute;left:50%;top:0;bottom:0;width:7%;translate:-50% 0;background:linear-gradient(90deg,rgba(60,40,18,0),rgba(60,40,18,.22) 48%,rgba(60,40,18,.34) 50%,rgba(60,40,18,.16) 54%,rgba(60,40,18,0));pointer-events:none}
-.mag-hint{position:absolute;left:50%;top:-6%;translate:-50% -100%;display:inline-flex;align-items:center;gap:10px;padding:9px 16px;border-radius:999px;white-space:nowrap;background:var(--hs-ink);color:#f7f1e3;font:600 clamp(10.5px,.82vw,13.5px)/1 var(--sans);letter-spacing:.06em;box-shadow:0 12px 28px -12px rgba(11,26,51,.65);transition:transform .4s var(--ease)}
+.mag-hint{position:absolute;left:104%;top:30%;translate:0 -50%;display:inline-flex;align-items:center;gap:10px;padding:9px 16px;border-radius:999px;white-space:nowrap;background:var(--hs-ink);color:#f7f1e3;font:600 clamp(10.5px,.82vw,13.5px)/1 var(--sans);letter-spacing:.06em;box-shadow:0 12px 28px -12px rgba(11,26,51,.65);transition:transform .4s var(--ease)}
 .mag-hint::before{content:"";width:7px;height:7px;border-radius:50%;background:#f3d9a0;box-shadow:0 0 0 0 rgba(243,217,160,.7);animation:hsPulse 2.4s ease-out infinite}
 @keyframes hsPulse{0%{box-shadow:0 0 0 0 rgba(243,217,160,.7)}70%,100%{box-shadow:0 0 0 12px rgba(243,217,160,0)}}
-.mag-prev:hover .mag-hint,.mag-prev:focus-visible .mag-hint{transform:translateY(-4px)}
+.mag-prev:hover .mag-hint,.mag-prev:focus-visible .mag-hint{transform:translateX(4px)}
 
 /* текст героя читается поверх интерьера зала: мягкое молочное свечение за колонкой (без плашки и без размытия) */
 .is-house .ar-copy::before{content:"";position:absolute;z-index:-1;inset:-14% -24% -16% -16%;pointer-events:none;background:radial-gradient(closest-side at 46% 48%,rgba(246,240,227,.88),rgba(246,240,227,.64) 56%,rgba(246,240,227,0) 100%);opacity:var(--h1,0)}
@@ -234,9 +235,39 @@ html.mag-lock{overflow:hidden}
 .house-veil{position:fixed;inset:0;z-index:380;pointer-events:none;opacity:0;background:radial-gradient(70% 60% at 50% 55%,#fffaf0,#f2e8d2 75%);transition:opacity .24s ease}
 .house-veil.on{opacity:1}
 
+/* ============ 4б. Переход скролла к раскрытому журналу ============ */
+/* после зала — закреплённая сцена: кадр зала отъезжает вглубь и темнеет, журнал вырастает со столика, обложка раскрывается, дальше прокрутка листает разворот за разворотом; --ra (0…1) задаёт js/house.js.
+   Двигаются только transform и opacity. Без JS блока нет, при уменьшенном движении (.is-flat) — обычный экран с раскрытым журналом. */
+.house-reader{position:relative;height:var(--hrh,420vh);background:#d9ccb2;--ra:0}
+html:not(.js) .house-reader{display:none}
+.hr-stage{position:sticky;top:0;height:100vh;height:100svh;overflow:clip}
+.hr-bg{position:absolute;inset:0;z-index:0;display:block;transform-origin:calc(var(--tx) * 100%) calc(var(--ty) * 100%);transform:scale(calc(1 + var(--ra) * .55));will-change:transform}
+.hr-bg img{display:block;width:100%;height:100%;object-fit:cover}
+.hr-veil{position:absolute;inset:0;z-index:1;pointer-events:none;background:radial-gradient(82% 72% at 50% 46%,rgba(50,34,18,.34),rgba(30,20,10,.74));opacity:calc(.1 + var(--ra) * .9)}
+.hr-cue{position:absolute;left:50%;bottom:clamp(22px,5vh,48px);z-index:3;translate:-50% 0;margin:0;display:grid;justify-items:center;gap:10px;pointer-events:none;font:600 12px/1 var(--sans);letter-spacing:.18em;text-transform:uppercase;color:#fffaf0;text-shadow:0 1px 12px rgba(30,20,8,.6);opacity:calc(1 - var(--ra) * 3)}
+.hr-cue i{display:block;width:1px;height:34px;background:linear-gradient(180deg,rgba(255,250,240,.9),rgba(255,250,240,0))}
+.hr-skip{position:absolute;top:clamp(78px,10vh,112px);right:clamp(16px,3vw,44px);z-index:4;display:inline-flex;align-items:center;gap:8px;padding:10px 16px;border-radius:999px;background:var(--hs-glass);box-shadow:inset 0 0 0 1px rgba(255,255,255,.75),0 8px 22px -10px rgba(40,26,10,.6);font:600 12px/1 var(--sans);letter-spacing:.06em;color:var(--hs-ink);opacity:clamp(0,calc(var(--ra) * 3 - .3),1);transition:background-color .25s,transform .3s var(--ease)}
+.hr-skip:hover,.hr-skip:focus-visible{background:#fffaf0;transform:translateY(-1px)}
+.hr-skip svg{width:15px;height:15px}
+/* тот же журнал (#mag) в двух видах: .is-inline — стоит на сцене и подчиняется прокрутке; .is-modal — диалог поверх страницы (открывается кнопками «Журнал» в комнатах и навигации) */
+.house-reader .mag.is-inline:not(.is-modal){position:absolute;inset:0;z-index:2;opacity:1;visibility:visible;transition:none}
+.house-reader .mag.is-inline:not(.is-modal) .mag-veil,.house-reader .mag.is-inline:not(.is-modal) .mag-x,.house-reader .mag.is-inline:not(.is-modal) .mag-cv{display:none}
+.house-reader .mag.is-inline:not(.is-modal) .mag-bar{justify-content:center;top:-46px}
+.house-reader .mag.is-inline:not(.is-modal) .mag-st{margin:0;color:rgba(255,250,238,.82)}
+.house-reader .mag.is-inline:not(.is-modal) .mag-wrap{transform:perspective(1600px) translate3d(0,calc((1 - var(--ra)) * 36vh),0) rotateX(calc((1 - var(--ra)) * 54deg)) scale(calc(.3 + var(--ra) * .7));opacity:clamp(0,calc(var(--ra) * 2.4),1);transform-origin:50% 100%;will-change:transform,opacity}
+.house-reader .mag.is-inline:not(.is-modal) .mag-ctl{opacity:clamp(0,calc((var(--ra) - .8) * 5),1)}
+.house-reader .mag.is-inline:not(.is-modal) .mag-bar{opacity:clamp(0,calc((var(--ra) - .8) * 5),1)}
+.house-reader.has-modal .hr-stage{z-index:430}                                                    /* диалог (fixed) живёт внутри закреплённой сцены: поднимаем её выше шапки */
+.house-reader .mag.is-modal{position:fixed;inset:0;z-index:420}
+.house-reader.is-flat{height:auto;--ra:1}
+.house-reader.is-flat .hr-stage{position:relative;height:auto;min-height:100svh;padding:clamp(70px,10vh,120px) 0 clamp(40px,6vh,70px)}
+.house-reader.is-flat .mag.is-inline:not(.is-modal){position:relative;inset:auto;display:grid;min-height:calc(100svh - 120px)}
+.house-reader.is-flat .hr-cue{display:none}
+@media (prefers-reduced-motion:reduce){.house-reader{height:auto;--ra:1}.house-reader .hr-stage{position:relative;height:auto;min-height:100svh;padding:clamp(70px,10vh,120px) 0 clamp(40px,6vh,70px)}.house-reader .mag.is-inline:not(.is-modal){position:relative;inset:auto;display:grid;min-height:calc(100svh - 120px)}.hr-bg,.house-reader .mag.is-inline:not(.is-modal) .mag-wrap{transform:none!important}.hr-cue{display:none}}
+
 /* ============ 5. Телефон ============ */
 @media (max-width:700px){
-  .hall-rooms{margin-top:14px;margin-right:-20px}                                         /* на телефоне список комнат — лента «пилюль» под кнопками: путь в комнаты без двери и журнала */
+  .hall-rooms{position:static;width:auto;height:auto;overflow:visible;clip-path:none;white-space:normal;display:block;margin:14px -20px 0 0}                                         /* на телефоне список комнат — лента «пилюль» под кнопками: путь в комнаты без двери и журнала */
   .hall-rooms ol{flex-wrap:nowrap;overflow-x:auto;gap:8px;padding:2px 20px 6px 0;scrollbar-width:none;overscroll-behavior-x:contain}
   .hall-rooms ol::-webkit-scrollbar{display:none}
   .js-stage.ar-live .hall-rooms ol,.is-house.is-static .hall-rooms ol,.is-house.jar-off .hall-rooms ol{pointer-events:auto}
@@ -245,7 +276,11 @@ html.mag-lock{overflow:hidden}
   .hd-tag{padding:6px 11px 6px 10px;font-size:10px;gap:6px}
   .hall-door{left:calc(var(--xm,var(--x)) * 100%);top:calc(var(--ym,var(--y)) * 100%);width:calc(var(--wm,var(--w)) * 100%);height:calc(var(--hm,var(--h)) * 100%)}
   .hall-mag{left:calc(var(--txm) * 100%);top:calc(var(--tym) * 100%);width:calc(var(--twm) * 100%)}
-  .mag-hint{padding:8px 13px;font-size:11px}
+  .mag-hint{left:50%;top:-10%;translate:-50% -100%;padding:8px 13px;font-size:11px}
+  .house-reader{height:var(--hrhm,190vh)}
+  .hr-bg{transform-origin:calc(var(--txm) * 100%) calc(var(--tym) * 100%)}
+  .hr-skip{top:76px}
+  .house-reader .mag.is-inline:not(.is-modal) .mag-bar{top:-44px}
   .room-top{padding-top:76px}
   .room-nav a span,.room-nav button{font-size:11.5px}
   .rn-sp{display:none}

@@ -13,8 +13,7 @@ from apply_arch import arr, block_span
 
 HALL = 'assets/house-hall/'
 
-LOOK = {"scale": {"desktop": 1, "mobile": 1, "from": 0.46, "to": 0.62, "liftFrom": 0.10, "liftTo": 0.40},
-        "shadow": {"from": {"desktop": 0, "mobile": 0}, "amount": 1, "contact": 0.42, "veil": 0.26, "veilCut": 0.5}}   # баночка стоит на столике: без уменьшения на старте; тень запечена в кадры с нулевого
+# вид заставки — тот же, что у боевой главной (jar.arch.look): сцена прежняя (подиум, баночка, путь баночки), кадры зала отличаются только зоной ожидания; центр баночки на первом кадре считается по новым спрайтам
 
 
 def centres(root, td, tp):
@@ -41,9 +40,10 @@ def main():
     s = open(path, encoding='utf8').read()
     i, j = block_span(s, 'jar')
     jar = json.loads('{' + s[i:j].split('{', 1)[1])['arch']                                                  # из боевого блока берём то, что не зависит от сцены (высота закрепления, подпись, чернила этикетки)
-    look = json.loads(json.dumps(LOOK))
+    look = json.loads(json.dumps(jar['look']))
     look['center'] = centres(root, td, tp)
-    alt = 'Центральный зал ASTREYA HOUSE: стеклянный столик с баночкой Астрея и журналом, три арочных прохода в комнаты дома'
+    alt = 'Центральный зал ASTREYA HOUSE: каменный подиум с баночкой Астрея, шар и гора, стеклянный столик с журналом и два дивана — зона ожидания, арочные проходы в комнаты дома'
+    tex = jar.get('sphereTex') or {}
     new = '''"arch": {
       "_note": "Кадры зала дома (tools/jar-render/house_story.py → encode_arch.py → assets/house-hall/, записывает tools/jar-render/apply_house.py). Пока блока нет или enabled=false — страница дома берёт кадры прежней заставки (jar.arch); боевая главная этот блок не читает.",
       "enabled": true,
@@ -54,6 +54,7 @@ def main():
       "depth": {"ext": "webp", "desktop": "%szd/", "mobile": "%szm/"},
       "cam": {"desktop": "%scam-d.json", "mobile": "%scam-m.json"},
       "label": "%s",
+      "sphereTex": {"a": "%s", "n": "%s"},
       "ink": %s,
       "heightVh": {"desktop": %d, "mobile": %d},
       "alt": "%s",
@@ -66,7 +67,7 @@ def main():
       "look": %s,
       "poster": {"desktop": "%sposter-d.webp", "mobile": "%sposter-m.webp"},
       "p": %s
-    }''' % (len(P['p']), HALL, HALL, HALL, HALL, HALL, HALL, jar['label'], jar.get('ink', 0.43), jar['heightVh']['desktop'], jar['heightVh']['mobile'], alt,
+    }''' % (len(P['p']), HALL, HALL, HALL, HALL, HALL, HALL, jar['label'], tex.get('a', ''), tex.get('n', ''), jar.get('ink', 0.43), jar['heightVh']['desktop'], jar['heightVh']['mobile'], alt,
             arr(td['sphere']), arr(tp['sphere']), HALL, arr(td['rects']), HALL, arr(tp['rects']), json.dumps(look, ensure_ascii=False), HALL, HALL, arr(P['p']))
     hi, hj = block_span(s, 'house')
     body = s[hi:hj]
