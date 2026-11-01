@@ -1,0 +1,295 @@
+#!/usr/bin/env python3
+"""ASTREYA HOUSE, зал на прежней сцене: тот же зал, что в hall_story.py (арка, ниша, каменный знак и шар, комната со стеллажом, олива, ваза с деревом, камни, пол, свет, камера, сценарий, каменный подиум с баночкой — всё как
+было, ничего из этого не тронуто), к которому добавлена «зона ожидания» на переднем плане:
+  • стеклянный столик (тонкое светлое стекло на низком каменном барабане) — на нём на сайте лежит журнал ASTREYA (настоящий HTML поверх кадра; положение столика в кадре даёт `track`);
+  • два диванчика (светлое букле, тёмно-синие подушки): один у стены за столиком, другой слева, повёрнут к столику;
+  • (надпись ASTREYA на стене по просьбе заказчика убрана; код оставлен: ZONE_TEXT_ON=1 включает её обратно).
+Места задаёт заказчик долями кадра (эскиз «столик — 2, диванчики — 3 и 4, надпись — 5»): ниже они переводятся лучом камеры общего плана в метры на полу, поэтому в готовом кадре всё стоит там, где нарисовано.
+Лампы света баночки (сила 0 в слое зала) и ветки вне кадра скрыты от отражений и преломлений: иначе в стекле они отражались чёрными пятнами (см. docs/ASTREYA-HOUSE.md).
+Команды те же, что у hall_story.py (track, camtrack, still, anim …); `where` печатает, куда в метрах попали места из эскиза.
+  python3 hall_table.py still <кадр> out.png [--layer all|bg|jar|z] [--res 1600x900] [--samples 28] [--total 60] [--portrait]
+"""
+import json
+import math
+import os
+import sys
+
+HERE = os.path.dirname(os.path.abspath(__file__))
+sys.path.insert(0, HERE)
+import hall_story as H
+from hall_story import SC, S, Vector, bpy
+
+_f = lambda k, d: float(os.environ.get(k, d))
+_xy = lambda k, d: tuple(float(v) for v in os.environ.get(k, d).split(','))
+
+# ---------------------------------------------------------------------------------------------------------------- места из эскиза (доли кадра: x, y)
+# ПК: положение — точка, где предмет касается пола (для надписи — центр на стене)
+SPOT = {
+    False: dict(table=_xy('ZONE_TABLE', '.40,.935'), sofa_back_x=_f('ZONE_SOFA_BACK_X', .335), sofa_left=_xy('ZONE_SOFA_LEFT', '.10,.89'), text=_xy('ZONE_TEXT', '.31,.155')),
+    True: dict(table=_xy('ZONE_TABLE_P', '.34,.985'), sofa_back_x=_f('ZONE_SOFA_BACK_X_P', .34), sofa_left=_xy('ZONE_SOFA_LEFT_P', '.10,.93'), text=_xy('ZONE_TEXT_P', '.46,.10')),
+}
+SOFA_BACK = {False: dict(xy=_xy('ZONE_SOFA_BACK_XY', '-.28,-.585'), w=_f('ZONE_SOFA_BACK_W', .56), yaw=_f('ZONE_SOFA_BACK_YAW', .30), hk=1.0),            # ПК: перед ножкой горы (гора стоит на y = −0,42), спинкой к ней, лицом к столику и зрителю
+             True: dict(xy=_xy('ZONE_SOFA_BACK_XY_P', '.54,-1.1'), w=_f('ZONE_SOFA_BACK_W_P', .32), yaw=_f('ZONE_SOFA_BACK_YAW_P', .35), hk=_f('ZONE_SOFA_BACK_HK_P', .7))}     # телефон: перед вазой с деревом
+TABLE_R_P = _f('ZONE_TABLE_R_P', .14)
+os.environ.setdefault('HALL_DXP_P', '.10')                                                                                               # на телефоне вазу с деревом чуть вправо: прежняя (−0,15) стояла ровно перед подиумом и закрывала баночку
+TEXT_W = {False: _f('ZONE_TEXT_W', .24), True: _f('ZONE_TEXT_W_P', .46)}            # ширина надписи, доли ширины кадра
+TABLE_TOP = _f('ZONE_TABLE_TOP', .105)                                               # высота стекла над полом, м
+TABLE_R = _f('ZONE_TABLE_R', .20)                                                    # радиус стекла, м
+SOFA_W = _f('ZONE_SOFA_W', .66)                                                      # длина дивана, м (сцена примерно втрое меньше жизни: арка 0,82 м)
+SOFA_D = _f('ZONE_SOFA_D', .30)
+GLASS_T = .018
+ROCK_SHIFT = _xy('ZONE_ROCK_SHIFT', '.34,-.10')                                      # камень «chunk-b» стоял ровно на месте столика: сдвигаем его правее и дальше (вне пути баночки)
+
+
+def cam_basis(portrait):
+    pos, tgt, lens = H.CAM_END_P if portrait else H.CAM_END_L
+    f = (tgt - pos).normalized(); r = f.cross(Vector((0, 0, 1))).normalized(); u = r.cross(f)
+    aspect = 9 / 16 if portrait else 16 / 9
+    thw = (18.0 * (aspect if portrait else 1.0)) / lens                              # половина ширины кадра на единице глубины
+    return pos, f, r, u, thw, thw / aspect
+
+
+def ray(fx, fy, portrait=False):
+    pos, f, r, u, thw, thh = cam_basis(portrait)
+    return pos, (f + r * ((fx - .5) * 2 * thw) + u * ((.5 - fy) * 2 * thh)).normalized()
+
+
+def floor_point(fx, fy, h=0.0, portrait=False):
+    """точка плоскости z = h, на которую при камере общего плана смотрит пиксель (fx, fy) кадра"""
+    pos, d = ray(fx, fy, portrait)
+    return pos + d * ((h - pos.z) / d.z)
+
+
+def plane_y_x(fx, fy, y, portrait=False):
+    """x точки, где луч через (fx, fy) пересекает плоскость y = const"""
+    pos, d = ray(fx, fy, portrait)
+    return (pos + d * ((y - pos.y) / d.y)).x
+
+
+def meters_per_frame(depth, portrait=False):
+    pos, f, r, u, thw, thh = cam_basis(portrait)
+    return depth * 2 * thw
+
+
+# ---------------------------------------------------------------------------------------------------------------- материалы
+_orig_mats = H.mats
+
+
+def zone_mats():
+    M = _orig_mats()
+    g = bpy.data.materials.new('zt_glass'); g.use_nodes = True; nt = g.node_tree; nt.nodes.clear()
+    out = nt.nodes.new('ShaderNodeOutputMaterial')
+    tr1 = nt.nodes.new('ShaderNodeBsdfTransparent'); tr1.inputs['Color'].default_value = (_f('ZONE_GLASS_TR', .86), _f('ZONE_GLASS_TG', .95), _f('ZONE_GLASS_TB', .90), 1)
+    gs = nt.nodes.new('ShaderNodeBsdfGlossy'); gs.inputs['Roughness'].default_value = .015; gs.inputs['Color'].default_value = (.97, 1.0, .98, 1)
+    fr = nt.nodes.new('ShaderNodeFresnel'); fr.inputs['IOR'].default_value = 1.5
+    mx = nt.nodes.new('ShaderNodeMath'); mx.operation = 'MAXIMUM'; mx.inputs[1].default_value = _f('ZONE_GLASS_MINR', .16)
+    nt.links.new(fr.outputs['Fac'], mx.inputs[0])
+    m1 = nt.nodes.new('ShaderNodeMixShader'); nt.links.new(mx.outputs['Value'], m1.inputs['Fac']); nt.links.new(tr1.outputs['BSDF'], m1.inputs[1]); nt.links.new(gs.outputs['BSDF'], m1.inputs[2])
+    # изнутри (задняя грань) — прозрачно: иначе Френель при выходе из пластины даёт полное внутреннее отражение, свет застревает внутри, и стекло чернеет
+    gm = nt.nodes.new('ShaderNodeNewGeometry'); tr3 = nt.nodes.new('ShaderNodeBsdfTransparent'); m3 = nt.nodes.new('ShaderNodeMixShader')
+    nt.links.new(gm.outputs['Backfacing'], m3.inputs['Fac']); nt.links.new(m1.outputs['Shader'], m3.inputs[1]); nt.links.new(tr3.outputs['BSDF'], m3.inputs[2])
+    tr2 = nt.nodes.new('ShaderNodeBsdfTransparent'); lp = nt.nodes.new('ShaderNodeLightPath'); m2 = nt.nodes.new('ShaderNodeMixShader')
+    nt.links.new(lp.outputs['Is Shadow Ray'], m2.inputs['Fac']); nt.links.new(m3.outputs['Shader'], m2.inputs[1]); nt.links.new(tr2.outputs['BSDF'], m2.inputs[2]); nt.links.new(m2.outputs['Shader'], out.inputs['Surface'])
+    M['glass'] = g
+    ge = bpy.data.materials.new('zt_glass_edge'); ge.use_nodes = True; nte = ge.node_tree; nte.nodes.clear()      # торец: настоящее толстое стекло (светло-зелёная кромка)
+    oe = nte.nodes.new('ShaderNodeOutputMaterial'); gl = nte.nodes.new('ShaderNodeBsdfGlass'); gl.inputs['Color'].default_value = (.80, .96, .88, 1); gl.inputs['Roughness'].default_value = .03; gl.inputs['IOR'].default_value = 1.5
+    te = nte.nodes.new('ShaderNodeBsdfTransparent'); le = nte.nodes.new('ShaderNodeLightPath'); me = nte.nodes.new('ShaderNodeMixShader')
+    nte.links.new(le.outputs['Is Shadow Ray'], me.inputs['Fac']); nte.links.new(gl.outputs['BSDF'], me.inputs[1]); nte.links.new(te.outputs['BSDF'], me.inputs[2]); nte.links.new(me.outputs['Shader'], oe.inputs['Surface'])
+    M['glass_edge'] = ge
+    # мягкая ткань букле (диваны): светлая, матовая, с мелкой неоднородностью цвета; тёмно-синие подушки — фирменный акцент
+    for key, col in (('fabric', (.93, .87, .76)), ('navy', (.018, .03, .075))):
+        f = bpy.data.materials.new('zt_' + key); f.use_nodes = True; nt = f.node_tree
+        b = next(n for n in nt.nodes if n.type == 'BSDF_PRINCIPLED')
+        b.inputs['Roughness'].default_value = .95
+        for k, v in (('Sheen Weight', .35), ('Sheen Roughness', .6)):
+            if k in b.inputs:
+                b.inputs[k].default_value = v
+        tc = nt.nodes.new('ShaderNodeTexCoord'); ns = nt.nodes.new('ShaderNodeTexNoise'); ns.inputs['Scale'].default_value = 260.0; ns.inputs['Detail'].default_value = 4.0
+        mx = nt.nodes.new('ShaderNodeMix'); mx.data_type = 'RGBA'; mx.inputs[6].default_value = (col[0] * .90, col[1] * .90, col[2] * .90, 1); mx.inputs[7].default_value = (*col, 1)
+        nt.links.new(tc.outputs['Object'], ns.inputs['Vector']); nt.links.new(ns.outputs['Fac'], mx.inputs['Factor']); nt.links.new(mx.outputs[2], b.inputs['Base Color'])
+        M['sofa_' + key] = f
+    t = bpy.data.materials.new('zt_ink'); t.use_nodes = True                                              # надпись на стене: тёмно-синяя матовая инкрустация
+    b = next(n for n in t.node_tree.nodes if n.type == 'BSDF_PRINCIPLED')
+    b.inputs['Base Color'].default_value = (.012, .022, .06, 1); b.inputs['Roughness'].default_value = .75
+    M['ink'] = t
+    return M
+
+
+H.mats = zone_mats
+
+
+# ---------------------------------------------------------------------------------------------------------------- геометрия зоны ожидания
+def _crisp(ob, deg=38.0):
+    """плоская чёткая крышка: фаска применяется, затем сглаживание только там, где угол между гранями мал — иначе нормали огромной крышки «вспучиваются» к ободу, и стекло отражает зал как выпуклое зеркало"""
+    bpy.ops.object.select_all(action='DESELECT'); ob.select_set(True); bpy.context.view_layer.objects.active = ob
+    for md in list(ob.modifiers):
+        bpy.ops.object.modifier_apply(modifier=md.name)
+    try:
+        bpy.ops.object.shade_smooth_by_angle(angle=math.radians(deg))
+    except Exception:
+        bpy.ops.object.shade_auto_smooth(angle=math.radians(deg))
+
+
+def build_sofa(name, M, cx, cy, yaw, w=SOFA_W, d=SOFA_D, hk=1.0):
+    """диванчик из светлого букле: основание на ножках, два сиденья, спинка из двух подушек, подлокотники, две тёмно-синие подушки; фронт — в сторону −y при yaw = 0"""
+    root = bpy.data.objects.new(name, None); bpy.context.collection.objects.link(root)
+    root.location = (cx, cy, 0); root.rotation_euler = (0, 0, yaw); root.scale = (1, 1, hk)
+    bpy.context.view_layer.update()
+    x0, x1, y0, y1 = -w / 2, w / 2, -d / 2, d / 2
+    fab, navy = M['sofa_fabric'], M['sofa_navy']
+    parts = [SC.box(name + '_base', fab, x0, x1, y0, y1, .035, .105, 'p', .018),
+             SC.box(name + '_back', fab, x0, x1, y1 - .075, y1, .105, .255, 'p', .02)]
+    for sgn in (-1, 1):                                                                                 # подлокотники
+        ax0, ax1 = (x0, x0 + .06) if sgn < 0 else (x1 - .06, x1)
+        parts.append(SC.box('%s_arm%d' % (name, sgn), fab, ax0, ax1, y0, y1 - .02, .105, .185, 'p', .02))
+    mid = (x0 + .06 + x1 - .06) / 2
+    for k, (sx0, sx1) in enumerate(((x0 + .06, mid - .004), (mid + .004, x1 - .06))):                  # сиденья и спинки-подушки
+        parts.append(SC.box('%s_seat%d' % (name, k), fab, sx0, sx1, y0 + .012, y1 - .08, .105, .145, 'p', .016))
+        parts.append(SC.box('%s_bk%d' % (name, k), fab, sx0 + .01, sx1 - .01, y1 - .125, y1 - .072, .145, .245, 'p', .018))
+    for k, px in enumerate((x0 + .16, x1 - .15)):                                                       # подушки: тёмно-синие
+        parts.append(SC.box('%s_pil%d' % (name, k), navy, px - .045, px + .045, y1 - .15, y1 - .085, .145, .22, 'p', .016))
+    for sx in (x0 + .05, x1 - .05):                                                                     # ножки
+        for sy in (y0 + .04, y1 - .04):
+            parts.append(SC.cylinder('%s_leg%d' % (name, len(parts)), M['trav2'], sx, sy, .012, 0, .038, 'p', seg=24, bev=0))
+    for ob in parts:                                                                                    # геометрия задана в осях дивана: единичная обратная матрица родителя — диван встаёт на место и поворачивается вместе с корнем
+        ob.parent = root
+    return root
+
+
+_orig_arch = H.build_architecture
+
+
+def zone_architecture(M, portrait):
+    _orig_arch(M, portrait)
+    sp = SPOT[bool(portrait)]
+    zone = {}
+    # стеклянный столик: основание + барабан + стекло с зелёной кромкой
+    if portrait:                                                                                             # телефон: места в метрах (кадр узкий, диван перед вазой, столик — слева внизу)
+        tx, ty = _xy('ZONE_TABLE_XY_P', '.22,-1.2')
+    else:
+        tp = floor_point(*sp['table'], portrait=portrait)
+        tx, ty = tp.x, tp.y
+    SC.cylinder('tbl_foot', M['trav2'], tx, ty, .085, 0, .02, 'p', seg=96, bev=.004)
+    SC.cylinder('tbl_drum', M['inner'], tx, ty, .06, 0, TABLE_TOP - GLASS_T - .003, 'p', seg=96, bev=.006)
+    tr = TABLE_R_P if portrait else TABLE_R
+    SC.cylinder('tbl_glass', M['glass'], tx, ty, tr, TABLE_TOP - GLASS_T, TABLE_TOP, 'p', seg=160, bev=.003)
+    for nm in ('tbl_foot', 'tbl_drum', 'tbl_glass'):
+        _crisp(bpy.data.objects[nm])
+    gob = bpy.data.objects['tbl_glass']; gob.data.materials.append(M['glass_edge'])
+    for pl in gob.data.polygons:
+        if abs(pl.normal.z) < .6:
+            pl.material_index = 1
+    S['table_xyr'] = (tx, ty, tr)
+    zone['table'] = (tx, ty)
+    # диван позади столика: на ПК — перед ножкой горы, на телефоне — перед вазой; лицом к зрителю и чуть к столику
+    sb = SOFA_BACK[bool(portrait)]
+    sx, sy = sb['xy']
+    build_sofa('sofa_back', M, sx, sy, math.atan2(tx - sx, -(ty - sy)) * sb['yaw'], w=sb['w'], hk=sb['hk'])
+    zone['sofa_back'] = (sx, sy)
+    # диван слева: лицом к столику (на ПК — сдвинут влево и вперёд, чтобы не стоять в одном месте с диваном перед горой)
+    if portrait:
+        lx, ly = _xy('ZONE_SOFA_LEFT_XY_P', '-.03,-1.05')
+    else:
+        lx, ly = _xy('ZONE_SOFA_LEFT_XY', '-.64,-1.0')
+    build_sofa('sofa_left', M, lx, ly, math.atan2(tx - lx, -(ty - ly)) * _f('ZONE_SOFA_LEFT_YAW', .85), w=SOFA_W * _f('ZONE_SOFA_LEFT_K_P' if portrait else 'ZONE_SOFA_LEFT_K', .5 if portrait else .72), hk=_f('ZONE_SOFA_LEFT_HK_P', .7) if portrait else 1.0)
+    zone['sofa_left'] = (lx, ly)
+    S['zone_xy'] = zone
+    # камень «chunk-b» стоял на месте столика
+    for ob in bpy.data.objects:
+        if ob.name.startswith('chunk-b'):
+            ob.location.x += ROCK_SHIFT[0]; ob.location.y += ROCK_SHIFT[1]
+    if os.environ.get('ZONE_TEXT_ON') == '1':                                                              # надпись на стене по просьбе заказчика убрана (везде): включается только явно
+        build_wall_text(M, portrait)
+
+
+def build_wall_text(M, portrait):
+    """надпись на большой гладкой стене: луч из камеры общего плана через точку из эскиза находит плоскость стены, буквы ложатся на неё (тёмно-синяя инкрустация)"""
+    from mathutils import Matrix
+    sc = bpy.context.scene
+    sp = SPOT[bool(portrait)]
+    pos, d = ray(*sp['text'], portrait)
+    bpy.context.view_layer.update()
+    hit, loc, nrm, _, obj, _ = sc.ray_cast(bpy.context.evaluated_depsgraph_get(), pos, d)
+    if not hit:
+        print('надпись: луч не попал в стену'); S['wall_text'] = None; return
+    if nrm.dot(-d) < 0:
+        nrm = -nrm
+    z = nrm.normalized(); y = Vector((0, 0, 1)) - z * z.z; y = y.normalized() if y.length > 1e-4 else Vector((0, 1, 0)); x = y.cross(z)
+    bpy.ops.object.text_add(location=(0, 0, 0))
+    t = bpy.context.object; t.name = 'wall_text'
+    t.data.body = os.environ.get('ZONE_TEXT_BODY', 'ASTREYA')
+    t.data.font = bpy.data.fonts.load(os.path.join(HERE, 'fonts', os.environ.get('ZONE_TEXT_FONT', 'Jost-400.ttf')))
+    t.data.extrude = .06; t.data.space_character = _f('ZONE_TEXT_TRACK', 1.5)
+    t.data.align_x = 'CENTER'; t.data.align_y = 'CENTER'
+    t.data.materials.append(M['ink'])
+    bpy.context.view_layer.update()
+    f = (S['cam'].matrix_world.to_3x3() @ Vector((0, 0, -1))) if S.get('cam') else (H.CAM_END_L[1] - pos).normalized()
+    width_target = meters_per_frame(max(.5, (loc - pos).length), portrait) * TEXT_W[bool(portrait)]
+    k = width_target / max(1e-6, t.dimensions.x)
+    org = loc + z * .0015
+    t.matrix_world = Matrix(((x.x, y.x, z.x, org.x), (x.y, y.y, z.y, org.y), (x.z, y.z, z.z, org.z), (0, 0, 0, 1))) @ Matrix.Diagonal((k, k, k * .5, 1))
+    S['wall_text'] = {'wall_obj': obj.name, 'loc': [round(v, 3) for v in loc], 'normal': [round(v, 3) for v in z], 'width_m': round(width_target, 3)}
+
+
+H.build_architecture = zone_architecture
+
+# ---------------------------------------------------------------------------------------------------------------- отражения
+_orig_branches = H.build_shadow_branches
+
+
+def zone_branches():
+    """ветки вне кадра дают пятна света от листьев, но лежат между камерой и сценой — в стекле они отражались тёмной массой: прячем их от отражений и преломлений (тень остаётся)"""
+    before = set(bpy.data.objects.keys())
+    _orig_branches()
+    for k in set(bpy.data.objects.keys()) - before:
+        ob = bpy.data.objects[k]
+        ob.visible_glossy = False; ob.visible_transmission = False
+
+
+H.build_shadow_branches = zone_branches
+_orig_set_layer = H.set_layer
+
+
+def zone_set_layer(layer):
+    """в слое зала свет баночки выключен (сила 0), но площадные лампы видны в отражениях чёрными прямоугольниками: скрываем их от отражений и преломлений"""
+    _orig_set_layer(layer)
+    for name in ('jar_fill', 'jar_rim'):
+        lo = S.get(name)
+        if lo is not None:
+            on = layer == 'jar'
+            lo.visible_glossy = on; lo.visible_transmission = on; lo.visible_diffuse = on
+
+
+H.set_layer = zone_set_layer
+
+# ---------------------------------------------------------------------------------------------------------------- дорожки для сайта
+_orig_info = H.info
+
+
+def zone_info(total, portrait):
+    """как в hall_story.info + в готовом кадре: столик (центр стекла и диаметр, доли кадра — по ним на сайте лежит журнал), надпись, диваны и проёмы-проходы в комнаты"""
+    out = _orig_info(total, portrait)
+    H.apply_frame(total - 1, total, portrait)
+    sc = bpy.context.scene; cam = S['cam']
+    tx, ty, tr = S['table_xyr']
+    c = Vector((tx, ty, TABLE_TOP)); x, y = H.proj(sc, cam, c); right = cam.matrix_world.to_3x3() @ Vector((1, 0, 0)); x1, _ = H.proj(sc, cam, c + right * tr)
+    out['table'] = [round(x, 5), round(y, 5), round(2 * abs(x1 - x), 5)]
+    doors = {}
+    for key, spec, y0 in (('brands', H.LEFT, 0.0), ('finder', H.INN, .43)):
+        pts = [(spec['cx'] - spec['rx'], 0.0), (spec['cx'] + spec['rx'], 0.0), (spec['cx'], spec['zs'] + spec['rx']), (spec['cx'] - spec['rx'], spec['zs']), (spec['cx'] + spec['rx'], spec['zs'])]
+        xs, ys = zip(*[H.proj(sc, cam, Vector((px, y0, pz))) for px, pz in pts])
+        l, r_, t_, b_ = max(0.0, min(xs)), min(1.0, max(xs)), max(0.0, min(ys)), min(1.0, max(ys))
+        doors[key] = [round(l, 4), round(t_, 4), round(r_ - l, 4), round(b_ - t_, 4)]
+    out['doors'] = doors
+    return out
+
+
+H.info = zone_info
+
+if __name__ == '__main__':
+    if len(sys.argv) > 1 and sys.argv[1] == 'where':
+        port = '--portrait' in sys.argv
+        H.build_scene((480, 270) if not port else (270, 480), 4, port)
+        print(json.dumps({'zone': {k: [round(v, 3) for v in xy] for k, xy in S['zone_xy'].items()}, 'wall_text': S.get('wall_text')}, ensure_ascii=False))
+    else:
+        H.main()
