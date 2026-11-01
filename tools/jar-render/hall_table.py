@@ -184,6 +184,11 @@ def zone_architecture(M, portrait):
             pl.material_index = 1
     S['table_xyr'] = (tx, ty, tr)
     zone['table'] = (tx, ty)
+    if os.environ.get('ZONE_MAG') == '1':                                                                   # 3D-журнал на стекле (mag_model.py): без этой переменной сцена прежняя
+        from mag_model import build_magazine
+        mc = (tx + _f('ZONE_MAG_DX', 0.0), ty + _f('ZONE_MAG_DY', 0.0))
+        S['mag_objs'] = build_magazine(mc[0], mc[1], TABLE_TOP, _f('ZONE_MAG_PW_K', .58) * tr, _f('ZONE_MAG_YAW', 7.0))
+        zone['magazine'] = mc
     # диван позади столика: на ПК — перед ножкой горы, на телефоне — перед вазой; лицом к зрителю и чуть к столику
     sb = SOFA_BACK[bool(portrait)]
     sx, sy = sb['xy']
@@ -289,10 +294,51 @@ def zone_info(total, portrait):
 
 H.info = zone_info
 
+def table_box(portrait):
+    """область кадра, где столик и журнал: диск стекла, барабан, основание — по ним в кадрах дорисовывается журнал (доли кадра x0, x1, y0, y1; y сверху вниз), поля 2,5 %"""
+    sc = bpy.context.scene; cam = S['cam']
+    tx, ty, tr = S['table_xyr']
+    pts = []
+    for k in range(48):
+        a = 2 * math.pi * k / 48
+        pts.append((tx + tr * math.cos(a), ty + tr * math.sin(a), TABLE_TOP + .02))
+        pts.append((tx + .085 * math.cos(a), ty + .085 * math.sin(a), 0.0))
+    xy = [H.proj(sc, cam, Vector(q)) for q in pts]
+    xs, ys = [q[0] for q in xy], [q[1] for q in xy]
+    return (min(xs) - .025, max(xs) + .025, min(ys) - .03, max(ys) + .025)
+
+
+def mag_patch(argv):
+    """magpatch <с> <по> outdir [--res WxH] [--samples N] [--portrait] — дорисовать область столика с 3D-журналом (ZONE_MAG=1) в кадрах зала: PNG участка + json с рамкой в outdir; кадры, где столика нет в кадре, пропускаются.
+    Склейку с готовыми кадрами делает paste_mag.py."""
+    rest, o = H.parse(argv)
+    if o['portrait'] and o['res'] == (1920, 1080):
+        o['res'] = (900, 1600)
+    os.environ['ZONE_MAG'] = '1'
+    a, b, outdir = int(rest[1]), int(rest[2]), rest[3]
+    os.makedirs(outdir, exist_ok=True)
+    H.build_scene(o['res'], o['samples'], o['portrait'])
+    hold_i = int(math.ceil(H.HOLD * (o['total'] - 1) - 1e-9))
+    for i in range(a, min(b, hold_i) + 1):
+        path = os.path.abspath(os.path.join(outdir, '%03d.png' % i))
+        if os.path.exists(path):
+            continue
+        H.apply_frame(i, o['total'], o['portrait'])
+        box = table_box(o['portrait'])
+        if box[1] <= 0 or box[0] >= 1 or box[3] <= 0 or box[2] >= 1:
+            continue
+        box = tuple(min(1.0, max(0.0, v)) for v in box)
+        H.render_bg_crop(i, o['total'], path, o['portrait'], box)
+        json.dump({'box': box, 'res': list(o['res'])}, open(path.replace('.png', '.json'), 'w'))
+        print('участок кадра', i, [round(v, 3) for v in box], flush=True)
+
+
 if __name__ == '__main__':
     if len(sys.argv) > 1 and sys.argv[1] == 'where':
         port = '--portrait' in sys.argv
         H.build_scene((480, 270) if not port else (270, 480), 4, port)
         print(json.dumps({'zone': {k: [round(v, 3) for v in xy] for k, xy in S['zone_xy'].items()}, 'wall_text': S.get('wall_text')}, ensure_ascii=False))
+    elif len(sys.argv) > 1 and sys.argv[1] == 'magpatch':
+        mag_patch(sys.argv[1:])
     else:
         H.main()

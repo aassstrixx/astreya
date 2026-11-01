@@ -18,23 +18,26 @@ module.exports = function homeHouse(ctx, C, P, deps) {
 
   /* ---------------------------------------------------------------- зал: проходы, журнал на столике, приветствие */
   const hallBox = (b, k) => `--x:${b[0]};--y:${b[1]};--w:${b[2]};--h:${b[3] === undefined ? 0 : b[3]}`;
+  const tagsOn = H.hall.tags !== false;                    // таблички проходов («02 Бренды» и т. д.): false в data/redesign.json → house.hall.tags — убрать совсем
   const doors = H.hall.doors.map(d => {
     const r = roomBy(d.room); if (!r) return '';
     const m = d.m ? `;--xm:${d.m[0]};--ym:${d.m[1]};--wm:${d.m[2]};--hm:${d.m[3]}` : '';
     return `<a class="hall-door${d.m ? '' : ' no-m'}" href="#room-${r.id}" data-house-go="${r.id}" data-track="house_door" data-room="${r.id}" style="${hallBox(d.d)}${m}" aria-label="Открыть комнату ${r.n2}: ${esc(r.name)}">
-      <span class="hd-arch" aria-hidden="true"></span><span class="hd-tag" aria-hidden="true"><b>${r.n2}</b><span>${esc(r.short)}</span></span></a>`;
+      <span class="hd-arch" aria-hidden="true"></span>${tagsOn ? `<span class="hd-tag" aria-hidden="true"><b>${r.n2}</b><span>${esc(r.short)}</span></span>` : ''}</a>`;
   }).join('');
   const tb = H.hall.table;
   /* журнал на столике: раскрытый разворот (обложка слева — фото, справа — содержание), только для глаз; настоящий журнал — в диалоге ниже */
   const prevLine = r => `<li><b>${r.n2}</b><span>${esc(r.short)}</span></li>`;
   const mc = H.mag, cover = rd.photos.hero, hello = rd.photos.about;
-  const magTable = `<div class="hall-mag" style="--tx:${tb.d[0]};--ty:${tb.d[1]};--tw:${tb.d[2]};--txm:${tb.m[0]};--tym:${tb.m[1]};--twm:${tb.m[2]}">
-      <button class="mag-prev" type="button" data-house-mag aria-haspopup="dialog" aria-controls="mag" data-track="house_magazine" data-place="table"><span class="mag-prev-b" aria-hidden="true">
+  const baked = H.hall.magBaked === true;                    // true — журнал нарисован в кадрах зала (3D-модель, tools/jar-render/mag_model.py): поверх остаётся только зона клика и подсказка
+  const magPrevB = baked ? '' : `<span class="mag-prev-b" aria-hidden="true">
         <span class="mp-l"><img src="${C.u(P, hello.src)}" alt="" width="${hello.w}" height="${hello.h}" loading="lazy" decoding="async"><i>${esc(site.tagline.split('.')[0])}.</i></span>
-        <span class="mp-r"><em>${esc(mc.tocTitle)}</em><ol>${rooms.map(prevLine).join('')}</ol></span></span>
+        <span class="mp-r"><em>${esc(mc.tocTitle)}</em><ol>${rooms.map(prevLine).join('')}</ol></span></span>`;
+  const magTable = `<div class="hall-mag${baked ? ' is-baked' : ''}" style="--tx:${tb.d[0]};--ty:${tb.d[1]};--tw:${tb.d[2]};--txm:${tb.m[0]};--tym:${tb.m[1]};--twm:${tb.m[2]}">
+      <button class="mag-prev" type="button" data-house-mag aria-haspopup="dialog" aria-controls="mag" data-track="house_magazine" data-place="table">${magPrevB}
         <span class="mag-hint">${esc(H.hall.hint)}</span><span class="sr">Журнал ASTREYA: открыть и листать — оглавление и переходы в комнаты</span></button>
     </div>`;
-  const hallWorld = `<div class="hall-doors" role="group" aria-label="${esc(H.hall.doorsLabel)}">${doors}</div>${magTable}`;
+  const hallWorld = `<div class="hall-doors${tagsOn ? '' : ' no-tags'}" role="group" aria-label="${esc(H.hall.doorsLabel)}">${doors}</div>${magTable}`;
   const hallRooms = `<nav class="hall-rooms" aria-label="${esc(H.hall.doorsLabel)}"><ol>${rooms.map(r => `<li><a href="#room-${r.id}" data-house-go="${r.id}" data-track="house_room" data-place="hall"><b>${r.n2}</b><span>${esc(r.short)}</span></a></li>`).join('')}</ol></nav>`;
 
   /* ---------------------------------------------------------------- комнаты */
@@ -115,6 +118,7 @@ module.exports = function homeHouse(ctx, C, P, deps) {
   const ph = k => rd.photos[k];
   const pimg = (k, cls = '') => { const f = ph(k); return `<img${cls ? ` class="${cls}"` : ''} src="${C.u(P, f.src)}" alt="${esc(f.alt)}" width="${f.w}" height="${f.h}" loading="lazy" decoding="async">`; };
   const foot = (n, side) => `<footer class="pg-f ${side}"><span>ASTREYA</span><b>${n}</b></footer>`;
+  const run = `<p class="mg-run" aria-hidden="true"><span>ASTREYA</span><span>${esc(mc.kicker)}</span></p>`;       // бегущий колонтитул текстовых страниц
   const openBtn = r => `<a class="btn btn-fill btn-sm mg-open" href="#room-${r.id}" data-house-go="${r.id}" data-mag-close data-track="house_magazine_room" data-room="${r.id}">${esc(mc.open)} ${I.arrow}</a>`;
   const deepBtn = r => `<a class="mg-deep" href="${href(r.href)}">${esc(r.cta)} ${I.arrow}</a>`;
   const statsOf = () => [...h.stats, ...rd.stats.extra].filter(s => s.value !== null && s.value !== undefined);
@@ -142,15 +146,18 @@ module.exports = function homeHouse(ctx, C, P, deps) {
     editorial: () => `<img src="${C.u(P, 'assets/photos/keenwell-mask.webp')}" alt="" class="mg-prod" loading="lazy" decoding="async">`
   };
   const pageL = (r, n) => `<div class="pg pg-l pg-ph pg-${r.id}"><div class="mg-ph">${leftPhoto[r.id]()}</div><p class="mg-no" aria-hidden="true">${r.n2}</p><p class="mg-kick">${esc(r.short)}</p>${foot(n, 'l')}</div>`;
-  const pageR = (r, n) => { const c = rightOf[r.id](); return `<div class="pg pg-r pg-tx pg-${r.id}"><p class="mg-kick">Комната ${r.n2} · ${esc(r.name)}</p><h3 class="mg-h">${esc(c.head)}</h3>${c.text ? `<p class="mg-p">${esc(c.text)}</p>` : ''}${c.extra || ''}<div class="mg-act">${openBtn(r)}${deepBtn(r)}</div>${foot(n, 'r')}</div>`; };
+  const pageR = (r, n) => { const c = rightOf[r.id](); return `<div class="pg pg-r pg-tx pg-${r.id}">${run}<p class="mg-kick">Комната ${r.n2} · ${esc(r.name)}</p><h3 class="mg-h">${esc(c.head)}</h3>${c.text ? `<p class="mg-p${c.text.length > 130 ? ' mg-drop' : ''}">${esc(c.text)}</p>` : ''}${c.extra || ''}<div class="mg-act">${openBtn(r)}${deepBtn(r)}</div>${foot(n, 'r')}</div>`; };
   const logoSvg = '<svg class="lgo" viewBox="46 338 836 436" aria-hidden="true"><use href="#logo-art"/></svg>';
   const pCover = `<div class="pg pg-cover"><span class="cv-kick">${esc(mc.kicker)}</span><p class="cv-title" role="heading" aria-level="2">${esc(mc.title)}</p><figure class="cv-ph">${pimg('hero')}</figure><span class="cv-year">${site.year}</span>${logoSvg}</div>`;
-  const pWelcome = `<div class="pg pg-l pg-ph pg-welcome"><div class="mg-ph">${pimg('about')}</div><p class="mg-kick">${esc(mc.welcome)}</p><p class="mg-quote">${esc(site.tagline)}</p>${foot(2, 'l')}</div>`;
-  const pToc = `<div class="pg pg-r pg-tx pg-toc"><p class="mg-kick">${esc(mc.tocTitle)}</p><h3 class="mg-h">${esc(site.name)} · ${esc(site.nameLatin)}</h3>
-    <ol class="mg-toc">${rooms.map((r, i) => `<li><button type="button" data-mag-page="${i + 2}"><b>${r.n2}</b><span>${esc(r.name)}</span><i>${(i + 1) * 2 + 2}</i></button></li>`).join('')}<li><button type="button" data-mag-page="${rooms.length + 2}"><b>—</b><span>${esc(mc.contactsTitle)}</span><i>${(rooms.length + 1) * 2 + 2}</i></button></li></ol>${foot(3, 'r')}</div>`;
+  /* разворот 2–3 (на нём журнал раскрыт на столике): слева — фото на всю страницу с крупным заголовком, справа — содержание в журнальной вёрстке */
+  const tag = site.tagline.split(/(?<=\.)\s*/).filter(Boolean);
+  const pWelcome = `<div class="pg pg-l pg-ph pg-welcome"><div class="mg-ph">${pimg('about')}</div><i class="mg-scrim" aria-hidden="true"></i><p class="mg-kick">${esc(mc.welcome)}</p>
+    <p class="mg-quote">${tag.map(t => `<span>${esc(t)}</span>`).join('')}</p><p class="mg-deck">${esc(mc.kicker)}</p>${foot(2, 'l')}</div>`;
+  const pToc = `<div class="pg pg-r pg-tx pg-toc">${run}<p class="mg-kick">${esc(mc.tocTitle)}</p><h3 class="mg-h">${esc(site.name)} <em>· ${esc(site.nameLatin)}</em></h3>
+    <ol class="mg-toc">${rooms.map((r, i) => `<li><button type="button" data-mag-page="${i + 2}"><b>${r.n2}</b><span><strong>${esc(r.name)}</strong><em>${esc(r.short)}</em></span><i>${(i + 1) * 2 + 2}</i></button></li>`).join('')}<li><button type="button" data-mag-page="${rooms.length + 2}"><b>—</b><span><strong>${esc(mc.contactsTitle)}</strong><em>${esc(site.name)}</em></span><i>${(rooms.length + 1) * 2 + 2}</i></button></li></ol>${foot(3, 'r')}</div>`;
   const offices = site.offices || [];
   const pContactsL = n => `<div class="pg pg-l pg-ph pg-cont-l"><div class="mg-ph"><ul class="mg-cities">${offices.map(o => `<li><b>${esc(o.city)}</b><span>${esc(o.role)}</span></li>`).join('')}</ul></div><p class="mg-kick">${esc(mc.contactsTitle)}</p>${foot(n, 'l')}</div>`;
-  const pContactsR = n => `<div class="pg pg-r pg-tx pg-cont-r"><p class="mg-kick">${esc(mc.contactsTitle)}</p><h3 class="mg-h">${esc(site.legalName)}</h3>
+  const pContactsR = n => `<div class="pg pg-r pg-tx pg-cont-r">${run}<p class="mg-kick">${esc(mc.contactsTitle)}</p><h3 class="mg-h">${esc(site.legalName)}</h3>
     <ul class="mg-contacts"><li><a href="tel:${site.contacts.phoneRaw}" data-track="phone_click">${esc(site.contacts.phone)}</a></li><li><a href="mailto:${site.contacts.email}" data-track="email_click">${esc(site.contacts.email)}</a></li><li>${esc(site.contacts.address)}</li><li>${esc(site.contacts.hours)}</li></ul>
     <div class="mg-act"><a class="btn btn-fill btn-sm" href="${C.u(P, 'partners.html')}" data-track="partner_cta" data-place="magazine">Стать партнёром ${I.arrow}</a><a class="mg-deep" href="${C.u(P, 'catalog.html')}" data-track="catalog_click" data-place="magazine">Каталог ${I.arrow}</a></div>${foot(n, 'r')}</div>`;
   const pBack = `<div class="pg pg-l pg-back"><p class="mg-colophon">${esc(site.legalName)} · ${esc(site.tagline)}</p>${logoSvg}</div>`;

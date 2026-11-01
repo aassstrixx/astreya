@@ -82,6 +82,21 @@
       rooms.forEach(r => io.observe(r)); off.push(() => io.disconnect());
     } else { rooms.forEach(loadRoomImg); }
 
+    /* ---------- таблички проходов: кадр зала обрезается по ширине экрана, табличка не должна уходить за край; ?tags=0 — посмотреть зал без табличек ---------- */
+    const hallDoors = $('.hall-doors');
+    if (hallDoors && /[?&]tags=0\b/.test(window.location.search)) hallDoors.classList.add('no-tags');
+    const tags = hallDoors && !hallDoors.classList.contains('no-tags') ? $$('.hall-door .hd-tag') : [];
+    function fitTags() {
+      const vw = document.documentElement.clientWidth, pad = 12;
+      tags.forEach(t => {
+        const r = t.getBoundingClientRect(); if (!r.width || !t.offsetWidth) return;
+        const k = r.width / t.offsetWidth || 1, cur = parseFloat(t.style.getPropertyValue('--fx')) || 0;       // k — масштаб мира кадра (камера); cur — прежний сдвиг
+        const nl = r.left - cur * k, nr = r.right - cur * k;
+        const fx = nl < pad ? (pad - nl) / k : nr > vw - pad ? (vw - pad - nr) / k : 0;
+        if (Math.abs(fx - cur) > 0.5) t.style.setProperty('--fx', fx.toFixed(1) + 'px');
+      });
+    }
+
     /* ---------- плавающая навигация: появляется, когда зал ушёл из кадра ---------- */
     let ticking = false;
     function onScroll() {
@@ -90,6 +105,7 @@
         ticking = false;
         const y = window.pageYOffset, past = y > hallY() + window.innerHeight * 0.3;
         if (reader) readerUpdate();
+        if (tags.length && Math.abs(y - hallY()) < window.innerHeight * 1.5) fitTags();
         const rb = reader ? reader.getBoundingClientRect() : null, inReader = !!rb && rb.top < window.innerHeight * .6 && rb.bottom > window.innerHeight * .4;       // пока журнал читается на сцене, плавающая навигация не закрывает его кнопки
         if (nav) nav.classList.toggle('is-off', !past || inReader || !!(mag && mag.classList.contains('is-open')));
         let best = null, mid = window.innerHeight * 0.4;
@@ -155,7 +171,7 @@
       render(o.s === undefined ? 1 : o.s, {instant: true, silent: true});
       root.classList.add('mag-lock');
       /* FLIP: журнал вырастает из разворота на столике */
-      const src = $('.mag-prev-b'), phoneMode = phone();
+      const src = $('.mag-prev-b') || $('.mag-prev'), phoneMode = phone();
       if (wrap) { wrap.style.transition = 'none'; wrap.style.transform = ''; wrap.style.opacity = ''; }
       if (src && wrap && !reduce() && !phoneMode && o.from === 'table') {
         const a = src.getBoundingClientRect(), b = book.getBoundingClientRect();

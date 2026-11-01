@@ -556,9 +556,11 @@
     "enabled": false,
     "preview": true,
     "hall": {
+      "tags": true,
+      "magBaked": false,
       "hint": "Откройте журнал ASTREYA",
       "doorsLabel": "Комнаты дома",
-      "table": {"d": [0.4, 0.795, 0.17], "m": [0.371, 0.8, 0.29]},
+      "table": {"d": [0.4, 0.802, 0.17], "m": [0.371, 0.8, 0.29]},
       "doors": [
         {"room": "brands", "d": [0.0, 0.06, 0.17, 0.5], "m": null},
         {"room": "finder", "d": [0.535, 0.28, 0.19, 0.31], "m": [0.379, 0.445, 0.36, 0.255]},

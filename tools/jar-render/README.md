@@ -109,3 +109,16 @@ OUT=/tmp/zone bash render_zone.sh        # дорожки, глубина, сп�
 OUT=/tmp/zone bash encode_zone.sh        # → assets/house-hall/ и data/redesign.json → house.arch (apply_house.py)
 ```
 Места задаются долями кадра (`ZONE_TABLE`, `ZONE_SOFA_LEFT`, …) или метрами (`ZONE_SOFA_BACK_XY`, `ZONE_SOFA_BACK_XY_P`, …); размеры — `ZONE_SOFA_W`, `ZONE_TABLE_R`. Стекло столика — `ZONE_GLASS_*`.
+
+### 3D-журнал на столике
+
+Журнал на столике — настоящая 3D-модель раскрытого журнала (`mag_model.py`): две половины блока листов с изгибом у корешка, срез листов с тонкой штриховкой, тёмно-синяя обложка с кромкой, глянцевая бумага. Страницы 2–3 — **те же страницы, что в журнале на сайте**: `mag_tex.js` рисует из вёрстки `house.html` два листа (`mag/page-l.png` — фото и заголовок «Наука. Забота. Результат.», `mag/page-r.png` — «Содержание»), поэтому разворот на столике и первый разворот раскрытого журнала совпадают. Поменяли вёрстку страниц — перегоните текстуры.
+
+```bash
+node tools/build.js && NODE_PATH=/opt/node22/lib/node_modules node tools/jar-render/mag_tex.js          # текстуры страниц
+ZONE_MAG=1 python3 hall_table.py still 59 /tmp/m.png --layer all --res 1280x720 --samples 24            # посмотреть журнал (ZONE_MAG=1 включает модель; без неё сцена прежняя)
+# кадры зала считаются без журнала; журнал дорисовывается только в области столика и вклеивается обратно
+ZONE_MAG=1 python3 hall_table.py magpatch 0 59 /tmp/zone/mag_d --samples 16                              # ПК;   телефон: --portrait
+python3 paste_mag.py /tmp/zone/bg_d /tmp/zone/mag_d /tmp/zone/bg_d_mag                                   # полный набор кадров для encode_arch.py
+```
+Размер и положение: `ZONE_MAG_PW_K` (ширина страницы в радиусах столика, 0,58), `ZONE_MAG_YAW` (поворот, °), `ZONE_MAG_DX/DY` (сдвиг от центра стекла, м), `ZONE_MAG_T` (толщина блока). После запекания журнала в кадры в `data/redesign.json` ставится `house.hall.magBaked: true` — HTML-картинка журнала над столиком убирается, остаётся невидимая зона клика и подсказка.
