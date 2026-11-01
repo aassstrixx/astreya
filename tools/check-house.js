@@ -44,7 +44,7 @@ const t = (cond, name, info) => { if (cond) ok++; else bad.push(name + (info !==
   const rs = p => p.evaluate(() => window.Astreya.house.readerState());
   const box = p => p.evaluate(() => { const r = document.getElementById('house-reader'), b = r.getBoundingClientRect(); return {top: b.top + scrollY, tot: r.offsetHeight - innerHeight}; });
   const at = async (p, f) => { const o = await box(p); await p.evaluate(y => window.scrollTo({top: y, behavior: 'instant'}), o.top + o.tot * f); await p.waitForTimeout(450); return rs(p); };
-  const PL = (a, b) => .28 + .68 * (a + b) / 9;                   // положение прокрутки: разворот a (целый) + доля пути b внутри отрезка; см. RD и WIN в js/house.js
+  const PL = (j, u) => .34 + .62 * (j + u) / 8;                    // положение прокрутки: j — сколько разворотов после первого пройдено, u — доля пути внутри отрезка; см. RD и WIN в js/house.js (p = 1 + j + поворот)
 
   /* ================= 1. структура (ПК) ================= */
   let p = await open(1440, 900);
@@ -90,19 +90,31 @@ const t = (cond, name, info) => { if (cond) ok++; else bad.push(name + (info !==
   await p.waitForFunction(() => document.querySelector('.js-stage.ar-live'), null, {timeout: 25000}).catch(() => {});
   t(await p.evaluate(() => !!document.querySelector('.js-stage.ar-live')), 'кадры зала загрузились: сцена «живая» (журнал на столике кликабелен)');
   { const o = await box(p); t(o.tot > 1500, 'читалка: после зала закреплённая сцена достаточной длины для листания', o);
-    const seq = []; for (const f of [.1, .2, .26, .36, .52, .7, .96]) { const s = await at(p, f); seq.push([f, s.s, +s.p.toFixed(2)]); }
-    t(seq[0][2] === 0 && seq[2][2] === 0 && seq[3][1] === 1, 'читалка: журнал вырастает со столика и раскрывается: обложка → первый разворот', seq);
+    const seq = []; for (const f of [.1, .2, .26, .36, .52, .7, .96]) { const s = await at(p, f); const ra = await p.evaluate(() => +document.getElementById('house-reader').style.getPropertyValue('--ra')); seq.push([f, s.s, +s.p.toFixed(2), +ra.toFixed(2)]); }
+    t(seq[0][3] === 0 && seq[2][3] > 0 && seq[3][3] === 1 && seq.every(x => x[1] >= 1), 'читалка: пролёт камеры к журналу (0…30 % пути), в конце живой журнал проявляется на первом развороте (разворот 2–3), обложка не показывается', seq);
     t(seq.slice(3).every((x, i, a) => i === 0 || x[2] >= a[i - 1][2]) && seq[6][1] >= 8, 'читалка: дальше прокрутка листает развороты вперёд (до контактов)', seq);
-    t(await p.evaluate(() => { const r = document.getElementById('house-reader'); return parseFloat(r.style.getPropertyValue('--ra')) === 1; }), 'читалка: к концу раскрытия журнал на полном размере (--ra = 1)'); }
+    t(await p.evaluate(() => { const r = document.getElementById('house-reader'); return parseFloat(r.style.getPropertyValue('--ra')) === 1; }), 'читалка: к концу пролёта журнал на полном размере (--ra = 1)'); }
+  if (((H.reader || {}).flight || {}).n) { /* пролёт камеры: кадры подгружены и рисуются, нарисованный журнал совмещается с живым */
+    const fl = H.reader.flight;
+    await p.waitForFunction(() => document.getElementById('house-reader').classList.contains('has-seq'), null, {timeout: 25000}).catch(() => {});
+    t(await p.evaluate(() => document.getElementById('house-reader').classList.contains('has-seq')), 'пролёт камеры: все кадры (' + fl.n + ') подгружены, холст включён');
+    const px = async f => { await at(p, f); return p.evaluate(() => { const c = document.querySelector('.hr-seq'), g = c.getContext('2d'), d = g.getImageData(0, 0, c.width, c.height).data; let sum = 0, n = 0; for (let i = 0; i < d.length; i += 4 * 97) { sum += d[i] + d[i + 1] + d[i + 2]; n++; } return {w: c.width, h: c.height, mean: Math.round(sum / n / 3), tr: c.style.transform}; }); };
+    const a1 = await px(.04), a2 = await px(.15), a3 = await px(.29);
+    t(a1.w > 300 && a1.mean > 60 && a2.mean > 60 && a3.mean > 60, 'пролёт камеры: холст рисует кадры на всём пути (не пустой)', {a1, a2, a3});
+    t(a1.mean !== a3.mean || a1.tr !== a3.tr, 'пролёт камеры: картинка меняется с прокруткой', {a1, a3});
+    t(!!a3.tr && /scale/.test(a3.tr), 'пролёт камеры: в конце кадр совмещён с живым журналом (сдвиг и масштаб)', a3.tr);
+    const cmp = await p.evaluate(() => { const b = document.querySelector('#mag .mag-book').getBoundingClientRect(), w = document.querySelector('#mag .mag-wrap'); return {bw: Math.round(b.width), op: +getComputedStyle(w).opacity}; });
+    t(cmp.bw > 300, 'пролёт камеры: живой журнал на месте, виден (' + cmp.bw + ' px)', cmp);
+  }
   { /* эффект перелистывания: лист поворачивается вслед за прокруткой, а не прыгает */
-    const f1 = await at(p, PL(1, .375));
+    const f1 = await at(p, PL(0, .375));
     const mid = await p.evaluate(() => { const l = [...document.querySelectorAll('#mag .leaf.is-turning')][0]; if (!l) return null; const cs = getComputedStyle(l); return {f: parseFloat(l.style.getPropertyValue('--f')), lt: parseFloat(l.style.getPropertyValue('--lt')), tr: cs.transform, k: +l.dataset.k}; });
     t(!!mid && mid.f > .05 && mid.f < .95 && mid.lt > .1 && mid.tr !== 'none' && mid.tr !== 'matrix(1, 0, 0, 1, 0, 0)', 'листание: на четверти пути лист повёрнут частично (--f между 0 и 1), приподнят и в 3D-трансформации', {mid, p: f1.p});
-    const f2 = await at(p, PL(1, .625)); const mid2 = await p.evaluate(() => parseFloat(([...document.querySelectorAll('#mag .leaf.is-turning')][0] || {style: {getPropertyValue: () => 'NaN'}}).style.getPropertyValue('--f')));
+    const f2 = await at(p, PL(0, .625)); const mid2 = await p.evaluate(() => parseFloat(([...document.querySelectorAll('#mag .leaf.is-turning')][0] || {style: {getPropertyValue: () => 'NaN'}}).style.getPropertyValue('--f')));
     t(f2.p > f1.p && mid2 > mid.f, 'листание: чем дальше прокрутка, тем сильнее повёрнут лист (поворот привязан к прокрутке)', {p1: f1.p, p2: f2.p, a: mid.f, b: mid2});
-    const calm = await at(p, PL(3, 0)); const turning = await p.evaluate(() => document.querySelectorAll('#mag .leaf.is-turning').length);
-    t(Math.abs(calm.p - 3) < .01 && turning === 0, 'листание: на развороте страница стоит неподвижно и читается (нет листов в движении)', {p: calm.p, turning});
-    const back = await at(p, PL(1, .375)); t(back.p < calm.p && back.p > 1, 'листание: обратная прокрутка переворачивает лист обратно', back); }
+    const calm = await at(p, PL(2, 0)); const turning = await p.evaluate(() => document.querySelectorAll('#mag .leaf.is-turning').length);
+    t(Math.abs(calm.p - 3) < .02 && turning === 0, 'листание: на развороте страница стоит неподвижно и читается (нет листов в движении)', {p: calm.p, turning});
+    const back = await at(p, PL(0, .375)); t(back.p < calm.p && back.p > 1 && back.p < 2, 'листание: обратная прокрутка переворачивает лист обратно', back); }
   { await at(p, .5); const mid = await p.evaluate(() => ({st: document.querySelector('.mag-st').textContent, vis: [...document.querySelectorAll('#mag .face:not([aria-hidden="true"]) h3')].length}));
     t(/Страницы \d+–\d+/.test(mid.st) && mid.vis >= 1, 'читалка: на экране два настоящих листа журнала (заголовки видны, остальные скрыты от скринридера)', mid);
     const before = (await rs(p)).s; await p.click('#mag .mag-nx'); await p.waitForTimeout(1500); const nx = await rs(p);
@@ -111,7 +123,7 @@ const t = (cond, name, info) => { if (cond) ok++; else bad.push(name + (info !==
     await p.focus('#mag .mag-book'); await p.keyboard.press('ArrowRight'); await p.waitForTimeout(1500); t((await rs(p)).s === before + 1, 'стрелка → листает вперёд (когда журнал в фокусе)');
     await p.keyboard.press('ArrowLeft'); await p.waitForTimeout(1500); t((await rs(p)).s === before, 'стрелка ← листает назад');
     await p.keyboard.press('End'); await p.waitForTimeout(1500); t((await rs(p)).s === 9 && await p.evaluate(() => document.querySelector('.mag-nx').disabled), 'End: последний разворот, «Далее» отключена');
-    await p.keyboard.press('Home'); await p.waitForTimeout(1500); t((await rs(p)).s === 0 && await p.evaluate(() => document.querySelector('.mag-pv').disabled), 'Home: обложка, «Назад» отключена');
+    await p.keyboard.press('Home'); await p.waitForTimeout(1500); t((await rs(p)).s === 1 && await p.evaluate(() => document.querySelector('.mag-pv').disabled), 'Home: первый разворот, «Назад» отключена');
     await at(p, .5); await p.click('#house-reader .hr-skip'); await p.waitForTimeout(1000);
     t(await p.evaluate(() => { const e = document.getElementById('house-end').getBoundingClientRect(); return e.top < innerHeight + 4; }), '«К контактам» из читалки приводит к концу страницы (подвал)');
     const tocN = await p.evaluate(() => document.querySelectorAll('.mg-toc button').length); t(tocN === ROOMS.length + 1, 'оглавление: строка на каждую комнату и контакты', tocN); }
