@@ -34,7 +34,7 @@ body[data-page="home"]{--hs-paper:#f6f0e3;--hs-paper-2:#efe6d3;--hs-ink:#0b1a33;
 .mag-prev{position:absolute;inset:0;display:block;margin:0;padding:0;border:0;background:none;cursor:pointer;pointer-events:none;color:inherit;font:inherit;text-align:left;-webkit-tap-highlight-color:transparent}
 .js-stage.ar-live .mag-prev{pointer-events:auto}
 .mag-prev:focus-visible{outline:3px solid var(--hs-ink);outline-offset:6px;border-radius:12px}
-.hall-mag.is-baked{aspect-ratio:2.5}
+.hall-mag.is-baked{aspect-ratio:3.6}
 .hall-mag.is-baked .mag-prev{border-radius:50%}
 .hall-mag.is-baked .mag-prev::after{content:"";position:absolute;inset:-22% -10%;border-radius:50%;background:radial-gradient(closest-side,rgba(255,238,200,.5),rgba(255,238,200,0));opacity:0;transition:opacity .5s var(--ease);pointer-events:none}
 .hall-mag.is-baked .mag-prev:hover::after,.hall-mag.is-baked .mag-prev:focus-visible::after{opacity:1}

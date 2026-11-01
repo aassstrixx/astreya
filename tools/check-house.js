@@ -70,7 +70,9 @@ const t = (cond, name, info) => { if (cond) ok++; else bad.push(name + (info !==
       const oldHref = new Set(attr(old, /<a\b[^>]*\shref="([^"#][^"]*|#[^"]+)"/g).filter(h => !/^(#|javascript)/.test(h) || /^#[a-z]/.test(h)).filter(h => !/^\/?(assets|css|js)\//.test(h)));
       const newHtml = fs.readFileSync(path.join(ROOT, page), 'utf8'), newHref = new Set(attr(newHtml, /<a\b[^>]*\shref="([^"]+)"/g));
       /* прежние сквозные ссылки шапки/подвала и разделов должны остаться; якоря внутри страницы — отдельно */
-      const lost = [...oldHref].filter(h => !/^#/.test(h) && !newHref.has(h));
+      const today = new Date().toISOString().slice(0, 10);       // ссылки на события, которые с тех пор прошли, из блока «ближайшие» уходят сами — это не потеря
+      const pastEvent = h => { const m = /^training\/(\d{4}-\d{2}-\d{2})-/.exec(h); return !!m && m[1] < today; };
+      const lost = [...oldHref].filter(h => !/^#/.test(h) && !newHref.has(h) && !pastEvent(h));
       t(lost.length === 0, 'все ссылки прежней главной на месте (' + [...oldHref].filter(h => !/^#/.test(h)).length + ')', lost.slice(0, 12));
       /* id прежней главной: якоря разделов обязаны остаться; оформительские id первого экрана (заставка, знак за шаром, подпись старого блока) заменены новой сценой */
       const oldIds = [...new Set(attr(old, /\sid="([a-z][\w-]*)"/g))], deco = /^(splash|sp-|hm-|hp-acad-h$)/;
