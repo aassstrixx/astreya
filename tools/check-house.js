@@ -130,8 +130,8 @@ const t = (cond, name, info) => { if (cond) ok++; else bad.push(name + (info !==
     await p.evaluate(y => window.scrollTo({top: y, behavior: 'instant'}), o.top + o.tot * .5); await p.waitForTimeout(500);
     const mid = await p.evaluate(() => ({st: document.querySelector('.mag-st').textContent, vis: [...document.querySelectorAll('#mag .face:not([aria-hidden="true"]) h3')].length}));
     t(/Страницы \d+–\d+/.test(mid.st) && mid.vis >= 1, 'читалка: на экране два настоящих листа журнала (заголовки видны, остальные скрыты от скринридера)', mid);
-    await p.click('#mag .mag-nx'); await p.waitForTimeout(1300); const nx = await rd();
-    t(nx.st.s === o.st.s + 0 || nx.st.s > seq[4][1], 'читалка: «Далее» прокручивает сцену к следующему развороту', {s: nx.st.s});
+    const before = (await rd()).st.s; await p.click('#mag .mag-nx'); await p.waitForTimeout(1300); const nx = await rd();
+    t(nx.st.s === before + 1, 'читалка: «Далее» прокручивает сцену к следующему развороту', {before, after: nx.st.s});
     await p.evaluate(y => window.scrollTo({top: y, behavior: 'instant'}), o.top + o.tot * .5); await p.waitForTimeout(400);
     await p.click('#house-reader .hr-skip'); await p.waitForTimeout(1000); t(await roomAt(p) === ROOMS[0], '«К комнатам» из читалки приводит в первую комнату', await roomAt(p)); }
   { /* журнал на столике: клик подъезжает сценой к раскрытому журналу */
