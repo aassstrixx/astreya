@@ -44,12 +44,13 @@ def _page_mat(name, path):
     return m
 
 
-def _edge_mat():
-    """срез листов: сотни листов — тонкие светлые полосы с редкими тёмными щелями между тетрадями"""
+def _edge_png(path):
+    """срез листов: сотни листов — тонкие светлые полосы с редкими тёмными щелями между тетрадями (PNG 8×288, строка 0 — верх блока); пишется один раз"""
+    from PIL import Image
     rnd = random.Random(7)
     W, H = 8, 288
-    px = []
-    for j in range(H):
+    im = Image.new('RGB', (W, H))
+    for j in range(H):                                                     # j = 0 — низ блока (v = 0), в файле строки идут сверху вниз
         g = .86 + .09 * rnd.random()
         if j % 24 == 0:
             g -= .14                                                       # щель между тетрадями
@@ -57,9 +58,16 @@ def _edge_mat():
             g -= .05
         for i in range(W):
             n = 1.0 + (rnd.random() - .5) * .04
-            px += [min(1.0, g * n * .985), min(1.0, g * n * .955), min(1.0, g * n * .87), 1.0]      # тёплый кремовый срез
-    im = bpy.data.images.new('mag_edge', W, H, alpha=False); im.pixels = px; im.colorspace_settings.name = 'sRGB'
+            im.putpixel((i, H - 1 - j), tuple(int(min(1.0, g * n * k) * 255 + .5) for k in (.985, .955, .87)))      # тёплый кремовый срез
+    im.save(path)
+
+
+def _edge_mat():
+    path = os.path.join(HERE, 'mag', 'edge.png')
+    if not os.path.exists(path):
+        _edge_png(path)
     m = bpy.data.materials.new('mag_edge_m'); m.use_nodes = True; nt = m.node_tree; b = _principled(nt)
+    im = bpy.data.images.load(path); im.name = 'mag_edge'; im.colorspace_settings.name = 'sRGB'
     tx = nt.nodes.new('ShaderNodeTexImage'); tx.image = im; tx.interpolation = 'Linear'; tx.extension = 'EXTEND'
     nt.links.new(tx.outputs['Color'], b.inputs['Base Color'])
     _set(b, 'Roughness', .78); _set(b, 'Specular IOR Level', .2)
@@ -140,12 +148,12 @@ def build_magazine(cx, cy, z, pw, yaw_deg=7.0, grp='p'):
         strip([(sgn * us[i] * pw, ph / 2, ztop(us[i], 1.0, Th)) for i in range(nu + 1)], -1 if sgn > 0 else 1, 'head')
         strip([(sgn * us[i] * pw, -ph / 2, ztop(us[i], 0.0, Th)) for i in range(nu + 1)], 1 if sgn > 0 else -1, 'tail')
         me = bpy.data.meshes.new('mag_pg_' + side); me.from_pydata(verts, [], faces); me.update()
+        me.materials.append(mats[side]); me.materials.append(edge)        # слоты — до индексов граней: без слотов Blender сбрасывает material_index в 0
         uvl = me.uv_layers.new(name='UVMap')
         for pi, poly in enumerate(me.polygons):
             poly.use_smooth = True; poly.material_index = midx[pi]
             for k, li in enumerate(poly.loop_indices):
                 uvl.data[li].uv = uvs[pi][k]
-        me.materials.append(mats[side]); me.materials.append(edge)
         ob = bpy.data.objects.new('mag_pg_' + side, me); bpy.context.scene.collection.objects.link(ob); ob['grp'] = grp
         objs.append(ob)
 
