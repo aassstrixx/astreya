@@ -303,6 +303,24 @@ def zone_info(total, portrait):
 
 H.info = zone_info
 
+
+# ---------------------------------------------------------------------------------------------------------------- траектория баночки в обход вазы
+# путь баночки (JAR_WAY) на кадрах 32–38 проходил сквозь вазу с деревом (расстояние до оси вазы 0,07–0,10 при радиусе вазы 0,095): баночка «заходила внутрь вазы».
+# Баночку отводим влево на этом участке (плавно, колоколом, к кадру 45 смещения нет — на подиуме стоит там же); камера считается по прежнему пути, поэтому кадры зала остаются теми же.
+JAR_DEFL = {'a': _f('ZONE_JAR_DEFL', .14), 'f': _f('ZONE_JAR_DEFL_F', 35.0), 's': _f('ZONE_JAR_DEFL_S', 3.2)}
+_orig_fs = H.frame_state
+
+
+def zone_frame_state(p, portrait):
+    st = _orig_fs(p, portrait)
+    a = JAR_DEFL['a'] * math.exp(-.5 * ((p * 59.0 - JAR_DEFL['f']) / JAR_DEFL['s']) ** 2)
+    if a > 1e-4:
+        st['jar'] = st['jar'] + Vector((-a, 0.0, 0.0))
+    return st
+
+
+H.frame_state = zone_frame_state
+
 def table_box(portrait):
     """область кадра, где столик и журнал: диск стекла, барабан, основание — по ним в кадрах дорисовывается журнал (доли кадра x0, x1, y0, y1; y сверху вниз), поля 2,5 %"""
     sc = bpy.context.scene; cam = S['cam']
@@ -396,6 +414,24 @@ def lamp_block(argv):
             hits.append((hob.name, round((loc - lp).length, 3), hob.visible_shadow)); org = loc + d * 1e-4
         print('ЛАМПА', nm, [round(v, 3) for v in lp], 'до баночки', round(dist, 3), 'на пути:', hits)
     print('БАНОЧКА', [round(v, 3) for v in ctr], 'кадр', i)
+
+
+def jar_vs_vase(argv):
+    """jarvase — габариты ваз и положение баночки по кадрам: заходит ли баночка в вазу (расстояние в плане и по высоте)"""
+    rest, o = H.parse(argv)
+    H.build_scene((480, 270), 4, o['portrait'])
+    vs = []
+    for ob in bpy.data.objects:
+        if ob.type == 'MESH' and ob.name.split('.')[0] == 'vase':
+            c = [ob.matrix_world @ Vector(v) for v in ob.bound_box]
+            vs.append((ob.name, [round(min(q[k] for q in c), 3) for k in range(3)], [round(max(q[k] for q in c), 3) for k in range(3)]))
+    for v in vs:
+        print('ВАЗА', v)
+    v1 = next(v for v in vs if v[0] == 'vase.001'); cx, cy = (v1[1][0] + v1[2][0]) / 2, (v1[1][1] + v1[2][1]) / 2; r = (v1[2][0] - v1[1][0]) / 2
+    for i in range(24, 60, 2):
+        st = H.frame_state(i / float(o['total'] - 1), o['portrait'])
+        j = st['jar']; d = math.hypot(j.x - cx, j.y - cy)
+        print('кадр', i, 'баночка', [round(v, 3) for v in j], 'до оси вазы %.3f' % d, 'радиус вазы ~%.3f' % r, 'ВНУТРИ' if d < r + .06 else '')
 
 
 def find_objs(argv):
@@ -520,6 +556,8 @@ if __name__ == '__main__':
         flight(sys.argv[1:])
     elif len(sys.argv) > 1 and sys.argv[1] == 'objs':
         find_objs(sys.argv[1:])
+    elif len(sys.argv) > 1 and sys.argv[1] == 'jarvase':
+        jar_vs_vase(sys.argv[1:])
     elif len(sys.argv) > 1 and sys.argv[1] == 'lampblock':
         lamp_block(sys.argv[1:])
     elif len(sys.argv) > 1 and sys.argv[1] == 'fixpatch':

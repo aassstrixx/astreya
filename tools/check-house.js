@@ -130,7 +130,7 @@ const t = (cond, name, info) => { if (cond) ok++; else bad.push(name + (info !==
   { /* журнал на столике: клик/Enter подъезжает сценой к раскрытому журналу */
     await p.evaluate(() => window.Astreya.house.hall()); await p.waitForTimeout(900);
     await p.focus('.mag-prev'); t(await p.evaluate(() => document.activeElement.classList.contains('mag-prev')), 'журнал на столике доступен с клавиатуры (кнопка получает фокус)');
-    await p.keyboard.press('Enter'); await p.waitForTimeout(2600); const o = await rs(p);
+    await p.keyboard.press('Enter'); await p.waitForFunction(() => window.Astreya.house.readerState().t > .25, null, {timeout: 12000}).catch(() => {}); await p.waitForTimeout(400); const o = await rs(p);
     t(o.s >= 1 && o.t > .25, 'Enter на столике прокручивает к раскрытому журналу (первый разворот)', o); }
 
   /* ================= 4. переходы к комнатам: те же адреса #room-… ================= */
@@ -150,7 +150,7 @@ const t = (cond, name, info) => { if (cond) ok++; else bad.push(name + (info !==
     const s = await rs(q); t(s.s === ROOMS.indexOf(room) + 2, `прежний адрес #${hash} открывает журнал на развороте комнаты ${room}`, s); await q._ctx.close();
   }
   { const q = await open(1440, 900, {url: page + '#magazine/3'}); await q.waitForTimeout(2600); t((await rs(q)).s === 3, 'адрес #magazine/3 открывает журнал на третьем развороте', await rs(q)); await q._ctx.close(); }
-  { const q = await open(1440, 900, {url: page + '#hall'}); await q.waitForTimeout(2400); t(await q.evaluate(() => scrollY) > 300 && (await rs(q)).s === 0, 'адрес #hall приводит в зал (журнал ещё закрыт)', await rs(q)); await q._ctx.close(); }
+  { const q = await open(1440, 900, {url: page + '#hall'}); await q.waitForTimeout(2400); t(await q.evaluate(() => scrollY) > 300 && (await rs(q)).t < .03, 'адрес #hall приводит в зал (читалка ещё не начата)', await rs(q)); await q._ctx.close(); }
   t(p._errs.length === 0, 'нет ошибок JS на ПК', p._errs.slice(0, 5));
   t(p._fails.length === 0, 'нет неудачных запросов на ПК', p._fails.slice(0, 6));
   for (const w of [1440, 1100, 820]) { await p.setViewportSize({width: w, height: 900}); await p.waitForTimeout(500); t(await noOverflow(p), `нет горизонтальной прокрутки (${w})`); }
