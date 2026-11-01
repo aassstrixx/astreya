@@ -12,7 +12,7 @@
   const $ = (s, r) => (r || document).querySelector(s);
   const $$ = (s, r) => Array.prototype.slice.call((r || document).querySelectorAll(s));
   const track = (n, p) => { try { (A.track || function () {})(n, p || {}); } catch (e) {} };
-  const reduce = () => matchMedia('(prefers-reduced-motion: reduce)').matches || root.classList.contains('lite');
+  const reduce = () => matchMedia('(prefers-reduced-motion: reduce)').matches;                // только системная настройка «уменьшить движение»; автоматический «лёгкий режим» (html.lite, FPS < 30) пролёт и листание не отключает
   const phone = () => matchMedia('(max-width:700px)').matches;
   const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
   let off = [];                                                    // отписка от прошлой страницы: переходы без перезагрузки подменяют #main, а скрипт остаётся
@@ -87,7 +87,7 @@
     let flImgs = [], flLoaded = 0, flStarted = false;
     const flCfg = () => FL ? (phone() ? FL.mobile : FL.desktop) : null;
     function loadFlight() {
-      const c = flCfg(); if (flStarted || !c || !cvS || reduce() || root.classList.contains('lite')) return;
+      const c = flCfg(); if (flStarted || !c || !cvS || reduce()) return;
       flStarted = true; flImgs = new Array(FL.n + 1); flImgs[0] = poster;       // нулевой кадр — готовый кадр зала (постер)
       let k = 1, act = 0;
       const pump = () => {

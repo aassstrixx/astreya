@@ -162,7 +162,12 @@ def build_sofa(name, M, cx, cy, yaw, w=SOFA_W, d=SOFA_D, hk=1.0):
 _orig_arch = H.build_architecture
 
 
+TREE_XY_D = _xy('ZONE_TREE_XY', '.82,-.52')                                                               # ПК: ваза с деревом правее и глубже прежней (.70, −.52): на прежнем месте путь баночки проходил сквозь вазу; телефон — прежнее место
+
+
 def zone_architecture(M, portrait):
+    if not portrait:
+        H.TXY = TREE_XY_D
     _orig_arch(M, portrait)
     sp = SPOT[bool(portrait)]
     zone = {}
@@ -306,8 +311,8 @@ H.info = zone_info
 
 # ---------------------------------------------------------------------------------------------------------------- траектория баночки в обход вазы
 # путь баночки (JAR_WAY) на кадрах 32–38 проходил сквозь вазу с деревом (расстояние до оси вазы 0,07–0,10 при радиусе вазы 0,095): баночка «заходила внутрь вазы».
-# Баночку отводим влево на этом участке (плавно, колоколом, к кадру 45 смещения нет — на подиуме стоит там же); камера считается по прежнему пути, поэтому кадры зала остаются теми же.
-JAR_DEFL = {'a': _f('ZONE_JAR_DEFL', .14), 'f': _f('ZONE_JAR_DEFL_F', 35.0), 's': _f('ZONE_JAR_DEFL_S', 3.2)}
+# Отвод баночки (ZONE_JAR_DEFL) оказался слишком «закрученным» — по просьбе заказчика путь прежний (отвод выключен), а вазу с деревом сдвигаем вправо (HALL_TREE_XY ниже).
+JAR_DEFL = {'a': _f('ZONE_JAR_DEFL', .0), 'f': _f('ZONE_JAR_DEFL_F', 35.0), 's': _f('ZONE_JAR_DEFL_S', 3.2)}
 _orig_fs = H.frame_state
 
 
@@ -434,6 +439,39 @@ def jar_vs_vase(argv):
         print('кадр', i, 'баночка', [round(v, 3) for v in j], 'до оси вазы %.3f' % d, 'радиус вазы ~%.3f' % r, 'ВНУТРИ' if d < r + .06 else '')
 
 
+def vase_box():
+    """область кадра (x0, x1, y0, y1), где видна ваза с деревом на прежнем (.70, −.52) и новом месте с кроной (ограничивающие параллелепипеды с запасом), с полями"""
+    sc = bpy.context.scene; cam = S['cam']; xs, ys = [], []
+    for cx, cy in ((.70, -.52), TREE_XY_D):
+        for dx in (-.58, .58):
+            for dy in (-.58, .58):
+                for z in (0.0, 1.3):
+                    q = H.proj(sc, cam, Vector((cx + dx, cy + dy, z))); xs.append(q[0]); ys.append(q[1])
+    return (min(xs) - .02, max(xs) + .02, min(ys) - .02, max(ys) + .02)
+
+
+def vase_patch(argv):
+    """vasepatch <с> <по> outdir [--res WxH] [--samples N] — дорисовать область вазы с деревом (после переноса вазы вправо на ПК); те же файлы, что у magpatch; склейка — paste_mag.py"""
+    rest, o = H.parse(argv)
+    os.environ['ZONE_MAG'] = '1'
+    a, b, outdir = int(rest[1]), int(rest[2]), rest[3]
+    os.makedirs(outdir, exist_ok=True)
+    H.build_scene(o['res'], o['samples'], False)
+    hold_i = int(math.ceil(H.HOLD * (o['total'] - 1) - 1e-9))
+    for i in range(a, min(b, hold_i) + 1):
+        path = os.path.abspath(os.path.join(outdir, '%03d.png' % i))
+        if os.path.exists(path):
+            continue
+        H.apply_frame(i, o['total'], False)
+        box = vase_box()
+        if box[1] <= 0 or box[0] >= 1 or box[3] <= 0 or box[2] >= 1:
+            continue
+        box = tuple(min(1.0, max(0.0, v)) for v in box)
+        H.render_bg_crop(i, o['total'], path, False, box)
+        json.dump({'box': box, 'res': list(o['res'])}, open(path.replace('.png', '.json'), 'w'))
+        print('участок кадра', i, [round(v, 3) for v in box], flush=True)
+
+
 def find_objs(argv):
     """objs <кадр> x,y [--portrait] — какие объекты сцены стоят в точке кадра (доли кадра x, y сверху вниз): имя, размеры, положение, материалы — чтобы найти лишний предмет"""
     rest, o = H.parse(argv)
@@ -523,7 +561,10 @@ def flight(argv):
         w = i / float(n); e = sm(w)
         if os.path.exists(path) and i < n:
             continue
+        if i > int(os.environ.get('ZONE_FLIGHT_MAX', n)) and i < n:                                    # перерисовка только начала пролёта (где видна ваза)
+            continue
         pos = pos0.lerp(pos1, e)
+
         tw = sm(min(1.0, e / .72))                                                       # точка, на которую смотрит камера, к 72 % пути уже на журнале: он не уходит из кадра
         f = ((tgt0.lerp(tgt1, tw)) - pos).normalized()
         ew = sm(min(1.0, max(0.0, (e - .30) / .62)))                                     # к концу «верх» кадра совмещается с верхом страниц журнала
@@ -556,6 +597,8 @@ if __name__ == '__main__':
         flight(sys.argv[1:])
     elif len(sys.argv) > 1 and sys.argv[1] == 'objs':
         find_objs(sys.argv[1:])
+    elif len(sys.argv) > 1 and sys.argv[1] == 'vasepatch':
+        vase_patch(sys.argv[1:])
     elif len(sys.argv) > 1 and sys.argv[1] == 'jarvase':
         jar_vs_vase(sys.argv[1:])
     elif len(sys.argv) > 1 and sys.argv[1] == 'lampblock':
