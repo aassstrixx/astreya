@@ -198,6 +198,25 @@ const t = (cond, name, info) => { if (cond) ok++; else bad.push(name + (info !==
     await p.mouse.wheel(0, -100); await p.waitForTimeout(900); const e1 = await rs(p);
     t(e0.s === 1 && e1.t < e0.t - .001, 'на первом развороте колесо вверх не перехвачено: страница идёт назад к пролёту камеры', {e0: e0.t, e1: e1.t});
     await p.evaluate(() => window.Astreya.house.openMagazine(1)); await settle(p);
+    { /* возврат в самое начало: кнопка «В начало» и быстрая серия прокруток вверх; обычный жест вверх по-прежнему листает на один разворот */
+      await p.evaluate(() => window.Astreya.house.openMagazine(5)); await settle(p);
+      const hb = await p.evaluate(() => { const b = document.querySelector('#mag .mag-hm'); return b ? {txt: b.textContent.trim(), y: scrollY} : null; });
+      t(!!hb && /В начало/.test(hb.txt) && hb.y > 1500, 'в журнале есть кнопка «В начало»', hb);
+      await p.click('#mag .mag-hm'); await p.waitForFunction(() => scrollY < 3 && !window.Astreya.house.busy(), null, {timeout: 12000}).catch(() => {}); const y1 = await p.evaluate(() => scrollY);
+      t(y1 < 3, 'кнопка «В начало» плавно возвращает на самый верх страницы (к герою с баночкой)', {y: y1});
+      await p.evaluate(() => window.Astreya.house.openMagazine(5)); await settle(p); const s5 = await rs(p);
+      await p.evaluate(() => new Promise(res => { let i = 0; const f = () => { document.body.dispatchEvent(new WheelEvent('wheel', {deltaY: -200, bubbles: true, cancelable: true})); if (++i < 14) setTimeout(f, 50); else res(); }; f(); }));
+      await p.waitForFunction(() => scrollY < 3 && !window.Astreya.house.busy(), null, {timeout: 12000}).catch(() => {}); const y2 = await p.evaluate(() => scrollY);
+      t(s5.s === 5 && y2 < 3, 'быстрая серия прокруток вверх (14 щелчков за 0,7 с) возвращает в самое начало страницы', {from: s5.s, y: y2});
+      await p.evaluate(() => window.Astreya.house.openMagazine(5)); await settle(p); const s6 = await rs(p); await p.mouse.move(700, 450); await p.mouse.wheel(0, -100); await settle(p); const s7 = await rs(p);
+      t(s6.s === 5 && s7.s === 4, 'обычный жест вверх по-прежнему листает назад на один разворот (в начало не уносит)', {from: s6.s, to: s7.s}); }
+    { /* вход на разворот со Стеллой: страницы «въезжают», переписка проигрывается по очереди и заканчивается полной перепиской; слои анимации после неё не остаются */
+      await p.evaluate(() => window.Astreya.house.openMagazine(6)); await settle(p); await p.waitForTimeout(800);
+      const early = await p.evaluate(() => ({hid: document.querySelectorAll('.mp-chat-log .mp-hid').length, pgin: document.querySelectorAll('.pg-in').length}));
+      await p.waitForTimeout(7000);
+      const late = await p.evaluate(() => ({hid: document.querySelectorAll('.mp-chat-log .mp-hid').length, n: document.querySelectorAll('.mp-chat-log .mp-m').length, busy: document.querySelector('.mp-chat-in').classList.contains('is-busy'), pgin: document.querySelectorAll('.pg-in').length, anim: document.getAnimations().filter(a => /^(mpRise|mpPop)$/.test(a.animationName || '')).length}));
+      t(early.hid > 0 && early.pgin > 0 && late.hid === 0 && late.n === 4 && !late.busy && late.pgin === 0 && late.anim === 0, 'Стелла: при входе на разворот переписка проигрывается (реплики по очереди) и завершается полной перепиской; анимации страниц не остаются', {early, late}); }
+    await p.evaluate(() => window.Astreya.house.openMagazine(1)); await settle(p);
     /* возврат из читалки к герою: вступительные анимации заставки (arBg — «наезд» фона с 1,05, arJar — проявление баночки) не перезапускаются */
     await p.evaluate(() => window.Astreya.house.hall()); await p.waitForTimeout(250);
     const rt = await p.evaluate(() => ({an: document.getAnimations().filter(a => /^(arBg|arJar)$/.test(a.animationName || '')).length, jo: getComputedStyle(document.querySelector('#arch-story .ar-jar-cv')).opacity, live: document.getElementById('arch-story').classList.contains('rd-live')}));
@@ -246,7 +265,7 @@ const t = (cond, name, info) => { if (cond) ok++; else bad.push(name + (info !==
   /* ================= 5. телефон ================= */
   p = await open(390, 844, {touch: true});
   t(await noOverflow(p), 'телефон: нет горизонтальной прокрутки в зале');
-  t(await p.evaluate(() => getComputedStyle(document.querySelector('.hall-rooms')).display !== 'none' && document.querySelectorAll('.hall-rooms a').length === ROOMS.length), 'телефон: в зале лента из всех разделов (по данным) (путь без журнала на столике)');
+  t(await p.evaluate(n => getComputedStyle(document.querySelector('.hall-rooms')).display !== 'none' && document.querySelectorAll('.hall-rooms a').length === n, ROOMS.length), 'телефон: в зале лента из всех разделов (по данным) (путь без журнала на столике)');
   await p.evaluate(() => window.Astreya.house.hall()); await p.waitForTimeout(900);
   { const o = await box(p); await p.evaluate(y => window.scrollTo({top: y, behavior: 'instant'}), o.top + o.tot * .75); await p.waitForTimeout(900);
     const m = await p.evaluate(() => { const l = document.querySelector('#mag .leaves'); return {s: window.Astreya.house.readerState().s, snap: getComputedStyle(l).scrollSnapType, ox: getComputedStyle(l).overflowX, w: document.querySelector('#mag .mag-book').getBoundingClientRect().width}; });
@@ -317,6 +336,21 @@ const t = (cond, name, info) => { if (cond) ok++; else bad.push(name + (info !==
     const norm = x => String(x).replace(/[*«»"“”]/g, '').replace(/\s+/g, ' ').trim();
     const same = PG.stella.dialog.every((d, i) => norm(real[i].text) === norm(d.a + ' ' + (d.note || '')) && (!d.product || (real[i].cards || []).includes(d.product)) && (!d.link || (real[i].links || []).some(l => l.h === d.link.h)));
     t(same, 'Стелла: пример диалога на странице — дословно те же ответы, что даёт настоящий помощник сайта сейчас (Astreya.assistant.answer)', real.map(r => norm(r.text).slice(0, 80)));
+    // 7.4б интерактивный чат на странице: подсказки и поле ввода, ответы — настоящие (тот же помощник), с памятью разговора
+    const live = await q.evaluate(() => ({vis: !!document.querySelector('.mp-chat-live') && !document.querySelector('.mp-chat-live').hidden, chips: [...document.querySelectorAll('.mp-chat-chips .mp-chip')].map(b => b.getAttribute('data-q')), inp: !!document.querySelector('.mp-chat-in input')}));
+    t(live.vis && live.chips.length >= 2 && live.inp, 'Стелла: под перепиской подсказки-кнопки и поле ввода', live);
+    const chatN = () => q.evaluate(() => { const m = [...document.querySelectorAll('.mp-chat-log .mp-m:not(.mp-typing)')]; return {n: m.length, u: m.length > 1 ? m[m.length - 2].textContent.trim() : '', a: m.length ? m[m.length - 1].textContent.replace(/\s+/g, ' ').trim() : '', chips: [...document.querySelectorAll('.mp-chat-chips .mp-chip')].map(b => b.textContent.trim())}; });
+    const n0 = (await chatN()).n, r1 = await q.evaluate(x => window.Astreya.assistant.answer(x).text, live.chips[0]);
+    await q.evaluate(() => document.querySelector('.mp-chat-chips .mp-chip').click()); await q.waitForTimeout(300);
+    const typingSeen = await q.evaluate(() => !!document.querySelector('.mp-chat-log .mp-typing')); await q.waitForTimeout(3600); const c1 = await chatN();
+    t(c1.n === n0 + 2 && c1.u === live.chips[0] && norm(c1.a).startsWith(norm(r1).slice(0, 40)) && typingSeen, 'Стелла: клик по подсказке — вопрос в переписке, точки набора, затем настоящий ответ помощника', {n0, c1: c1.n, u: c1.u, a: c1.a.slice(0, 60), typingSeen});
+    t(c1.chips.length >= 1 && c1.chips.every(x => x !== live.chips[0]) , 'Стелла: после ответа подсказки меняются на уточняющие вопросы помощника', c1.chips);
+    const fu = c1.chips[0];
+    await q.evaluate(f => [...document.querySelectorAll('.mp-chat-chips .mp-chip')].find(b => b.textContent.trim() === f).click(), fu); await q.waitForTimeout(3800); const c2 = await chatN();
+    t(c2.n === c1.n + 2 && c2.u === fu && !/\(\)/.test(c2.a) && c2.a.length > 40, 'Стелла: уточняющий вопрос понят из контекста разговора, в ответе нет пустых скобок', {u: c2.u, a: c2.a.slice(0, 120)});
+    const r3 = await q.evaluate(x => window.Astreya.assistant.answer(x).text, 'Как связаться с менеджером?');
+    await q.evaluate(() => { const f = document.querySelector('.mp-chat-in'); f.querySelector('input').value = 'Как связаться с менеджером?'; f.dispatchEvent(new Event('submit', {cancelable: true, bubbles: true})); }); await q.waitForTimeout(3800); const c3 = await chatN();
+    t(c3.n === c2.n + 2 && c3.u === 'Как связаться с менеджером?' && norm(c3.a).includes(norm(r3).slice(0, 30)), 'Стелла: вопрос из поля ввода — настоящий ответ (контакты менеджера из данных сайта)', {u: c3.u, a: c3.a.slice(0, 100)});
     await q._ctx.close();
     // 7.5 всё помещается: на каждой странице содержимое выше колонтитула и не выходит за страницу (ПК-окна и телефон)
     for (const [w, h] of [[1440, 900], [1868, 960], [1280, 720], [390, 844], [360, 640]]) {

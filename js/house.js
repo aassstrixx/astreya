@@ -51,6 +51,7 @@
     const fs = leaves.map(() => -1), faces = leaves.map(l => [$('.front', l), $('.back', l)]), cache = {};
     const fx = leaves.map(l => [$('.front .fx', l), $('.back .fx', l)]), shR = $('.mag-sh.r', mag), shL = $('.mag-sh.l', mag);                    // тень и блик поворачивающегося листа и тень на страницах под ним — настоящие элементы: им пишутся только opacity и transform
     const setVar = (el, k, v) => { const c = cache[k] || (cache[k] = new Map()); if (c.get(el) === v) return; c.set(el, v); el.style.setProperty(k, v); };          // то же значение второй раз не пишем: каждая запись пользовательского свойства — пересчёт стилей поддерева
+    let chat = null, entered = false, pgTimer = 0;                                 // чат Стеллы и вход на разворот объявлены ниже (setP их вызывает раньше по тексту)
     function setP(v) {
       v = clamp(v, 0, N - 1); p = v;
       let sr = 0, sl = 0;
@@ -66,7 +67,7 @@
       });
       for (let k = 0; k < N; k++) { const f = clamp(v - k, 0, 1); if (f > 0 && f < 1) { const lt = Math.sin(Math.PI * f); sr = Math.max(sr, lt * clamp((.64 - f) / .3, 0, 1)); sl = Math.max(sl, lt * clamp((f - .36) / .3, 0, 1)); } }
       if (shR) { const a = sr.toFixed(3), b2 = sl.toFixed(3); if (shR._v !== a) { shR._v = a; shR.style.opacity = a; } if (shL._v !== b2) { shL._v = b2; shL.style.opacity = b2; } }
-      const still = fs.every(q => q === 0 || q === 1); if (still !== stillNow) { stillNow = still; book.classList.toggle('is-still', still); }          // разворот стоит (ни один лист не в движении) — страницы рисуются без 3D-смещения, текст резкий
+      const still = fs.every(q => q === 0 || q === 1); if (still !== stillNow) { stillNow = still; book.classList.toggle('is-still', still); if (still && entered) setTimeout(pageIn, 60); else if (!still && chat) chat.stop(); }          // разворот стоит (ни один лист не в движении) — страницы рисуются без 3D-смещения, текст резкий
       if (book) setVar(book, '--bx', (-.5 * (1 - Math.min(1, v))).toFixed(3));       // закрытый журнал стоит по центру, раскрытый — разворотом
       const ns = Math.round(v);
       if (ns !== s || !book.hasAttribute('data-s')) setS(ns);
@@ -178,7 +179,10 @@
         wrapEl.style.transform = ''; const w2 = wrapEl.getBoundingClientRect(), b2 = $('.mag-book', mag).getBoundingClientRect(), sr = stageEl.getBoundingClientRect();
         hm.box = {ox: b2.left - w2.left, oy: b2.top - w2.top, bw: b2.width, bh: b2.height, wx: w2.left - sr.left, wy: w2.top - sr.top};
       }
-      const B = hm.box, src = [[B.ox, B.oy], [B.ox + B.bw, B.oy], [B.ox + B.bw, B.oy + B.bh], [B.ox, B.oy + B.bh]], dst = P.map(q => [q[0] - B.wx, q[1] - B.wy]);
+      const B = hm.box, src = [[B.ox, B.oy], [B.ox + B.bw, B.oy], [B.ox + B.bw, B.oy + B.bh], [B.ox, B.oy + B.bh]];
+      /* живая книга чуть больше нарисованной (≈ 1 %: так под ней не виден нарисованный край). Раньше матрицу снимали рывком на последнем шаге — книга «щёлкала» на 5 px;
+         теперь к концу цель плавно переходит от нарисованных углов к реальной раскладке, и снятие матрицы (тождественной) незаметно */
+      const kd = ease(clamp((fp - .80) / (.9995 - .80), 0, 1)), dst = P.map((q, i) => [(q[0] - B.wx) * (1 - kd) + src[i][0] * kd, (q[1] - B.wy) * (1 - kd) + src[i][1] * kd]);
       const h = homography(src, dst); if (!h) return;
       const m = [h[0], h[3], 0, h[6], h[1], h[4], 0, h[7], 0, 0, 1, 0, h[2], h[5], 0, 1].map(v => +v.toFixed(7)).join(',');
       if (m !== hm.key) { hm.key = m; wrapEl.style.willChange = 'transform'; wrapEl.style.transform = 'matrix3d(' + m + ')'; }
@@ -222,30 +226,38 @@
         if (!(A.flyDrawn && BKd)) { RS.rb = ra; RS.bd = 0; }              // движок не рисует (нет WebGL2/ключей): журнал проявляется как раньше; иначе --rb и --bd ведёт сам кадр (flyOnDraw), чтобы прозрачность была привязана к той позиции камеры, где журнал стоит на самом деле
       }
       paintReader();
+      if (!phone()) { const openNow = t >= RD.open - .001; if (openNow !== entered) { entered = openNow; if (entered) setTimeout(pageIn, 140); } }
       if (phone()) { const target = ra > .94 ? Math.max(s, 1) : 0; if (target !== s && !(s > 0 && target > 0)) render(target, {noScroll: target === 0, instant: true}); return; }
       setP(pOf(t));
     }
 
     /* ---------- автоматический плавный ход страницы: клик по «Откройте журнал», «Далее/Назад», оглавление, список разделов.
        Страницу ведёт одна кривая (rAF, по реальному времени кадра), журнал и камера считаются от прокрутки так же, как при колесе, — лист поворачивается тем же способом ---------- */
-    let glideRaf = 0, goal = null;
+    let glideRaf = 0, goal = null, homing = false;
     const eIO = x => x < .5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2;           // долгий ход: мягкий старт и мягкая остановка
     const eSoft = x => .5 * x + .5 * x * x * (3 - 2 * x);                                // листание: почти равномерно — лист успевает повернуться на виду
-    const glideStop = () => { if (glideRaf) { cancelAnimationFrame(glideRaf); glideRaf = 0; } goal = null; navStop(); };
-    function glide(y, g) {
+    const glideStop = () => { if (glideRaf) { cancelAnimationFrame(glideRaf); glideRaf = 0; } goal = null; homing = false; navStop(); };
+    function glide(y, g, o) {
       const mx = Math.max(0, document.documentElement.scrollHeight - window.innerHeight); y = Math.round(clamp(y, 0, mx));
       const y0 = window.pageYOffset, dist = y - y0; if (glideRaf) { cancelAnimationFrame(glideRaf); glideRaf = 0; } navStop();
       if (Math.abs(dist) < 2) { goal = null; return; }
-      const far = Math.abs(dist) > window.innerHeight * 1.2, dur = clamp(1050 + Math.abs(dist) / window.innerHeight * 330, 1200, 4200), ease = far ? eIO : eSoft; let t0 = 0;
+      const far = Math.abs(dist) > window.innerHeight * 1.2, dur = o && o.dur ? o.dur : clamp(1050 + Math.abs(dist) / window.innerHeight * 330, 1200, 4200), ease = far ? eIO : eSoft; let t0 = 0;
       goal = g === undefined ? null : g;
       const frame = ts => {
         if (!t0) t0 = ts; const k = clamp((ts - t0) / dur, 0, 1);
         window.scrollTo({top: y0 + dist * ease(k), behavior: 'instant'}); readerUpdate();
-        if (k < 1) glideRaf = requestAnimationFrame(frame); else { glideRaf = 0; goal = null; window.scrollTo({top: y, behavior: 'instant'}); readerUpdate(); }
+        if (k < 1) glideRaf = requestAnimationFrame(frame); else { glideRaf = 0; goal = null; homing = false; window.scrollTo({top: y, behavior: 'instant'}); readerUpdate(); }
       };
       glideRaf = requestAnimationFrame(frame);
     }
-    on(window, 'wheel', e => { if (!e.__houseStep) glideStop(); }, {passive: true});               // рука на колесе — автоход уступает (кроме колеса, которым листают журнал: оно само запускает следующий ход)
+    /* в самое начало страницы (герой с баночкой): кнопка «В начало» и быстрая серия прокруток вверх. Ход один, плавный, длительность 1,6–2,8 с (дальше — не быстрее); пока идёт, колесо вверх его не обрывает */
+    function home(via) {
+      glideStop(); if (A.motion && A.motion.cancelSmooth) A.motion.cancelSmooth();
+      track('house_magazine_home', {via: via || 'button'});
+      homing = true; glide(0, null, {dur: clamp(900 + window.pageYOffset / window.innerHeight * 150, 1600, 2800)});
+      if (!glideRaf) homing = false;
+    }
+    on(window, 'wheel', e => { if (e.__houseStep || (homing && e.deltaY < 0)) return; glideStop(); }, {passive: true});               // рука на колесе — автоход уступает (кроме колеса, которым листают журнал: оно само запускает следующий ход)
     on(window, 'touchstart', glideStop, {passive: true});
     /* колесо в журнале ведёт листы вслед за рукой: скорость листания равна скорости прокрутки — медленно крутишь, лист поворачивается медленно, быстро — быстро. Прокрутка колеса переводится в «развороты»
        (≈ 150 пикселей колеса — один разворот), а страницу ведёт пружина с критическим затуханием по реальному времени кадра (60 fps): за один щелчок колеса — один разворот, за быстрый взмах — несколько. Рука остановилась —
@@ -256,17 +268,23 @@
        Край журнала (первый разворот вверх, последний вниз) колесо не перехватывает. */
     const GESTURE_GAP = 130;
     const wg = {t: 0, fired: false};
+    const fq = [];                                                            // недавние события колеса вверх: [время, px]
     const navStop = () => {};
     on(window, 'wheel', e => {
       if (e.ctrlKey || e.defaultPrevented || flat() || phone() || !reader.classList.contains('is-live') || Math.abs(e.deltaX) > Math.abs(e.deltaY)) return;
       const t = readerT(); if (t < RD.open - .002 || t > RD.from + RD.span + .02) return;
       let dy = e.deltaY; if (e.deltaMode === 1) dy *= 34; else if (e.deltaMode === 2) dy *= window.innerHeight;
       if (Math.abs(dy) < 3) return;                                              // хвост инерции трекпада — шум
+      const lg = e.target.closest && e.target.closest('.mp-chat-log');            // переписка в чате Стеллы прокручивается своим колесом, пока есть куда (края — листаем журнал)
+      if (lg && ((dy < 0 && lg.scrollTop > 1) || (dy > 0 && lg.scrollTop + lg.clientHeight < lg.scrollHeight - 1))) return;
       const dir = dy > 0 ? 1 : -1, base = goal !== null ? goal : s;
       if ((dir > 0 && base >= N - 1) || (dir < 0 && base <= 1)) return;          // край журнала — обычная прокрутка (вверх с первого разворота — назад к пролёту камеры)
       e.preventDefault(); e.__houseStep = true;
       if (A.motion && A.motion.cancelSmooth) A.motion.cancelSmooth();
-      const now = performance.now(); if (now - wg.t > GESTURE_GAP) wg.fired = false; wg.t = now;
+      const now = performance.now();
+      /* быстрая серия вверх (≥ 2400 px и ≥ 8 событий за секунду — колесо мыши крутят подряд, трекпад сильно «бросили») — не листаем по развороту, а возвращаемся в самое начало */
+      if (dir < 0) { fq.push([now, -dy]); while (fq.length && now - fq[0][0] > 1000) fq.shift(); if (fq.length >= 8 && fq.reduce((a, q) => a + q[1], 0) >= 2400) { fq.length = 0; wg.t = now; wg.fired = true; home('wheel'); return; } } else fq.length = 0;
+      if (now - wg.t > GESTURE_GAP) wg.fired = false; wg.t = now;
       if (wg.fired || glideRaf) return;                                          // этот жест уже листнул разворот / лист ещё идёт
       wg.fired = true; step(dir);
     }, {passive: false, capture: true});
@@ -313,8 +331,9 @@
 
     /* ---------- события: клики, клавиатура, свайп ---------- */
     on(document, 'click', e => {
-      const t = e.target.closest && e.target.closest('[data-house-go],[data-house-mag],[data-mag-page],[data-mag-step]'); if (!t) return;
+      const t = e.target.closest && e.target.closest('[data-house-go],[data-house-mag],[data-mag-page],[data-mag-step],[data-mag-home]'); if (!t) return;
       if (t.hasAttribute('data-mag-step')) { e.preventDefault(); step(parseInt(t.getAttribute('data-mag-step'), 10)); return; }
+      if (t.hasAttribute('data-mag-home')) { e.preventDefault(); home('button'); return; }
       if (t.hasAttribute('data-mag-page')) { e.preventDefault(); const v = parseInt(t.getAttribute('data-mag-page'), 10); track('house_magazine_toc', {page: v}); if (flat() || phone()) render(v); else toState(v); return; }
       if (t.hasAttribute('data-house-go')) { e.preventDefault(); go(t.getAttribute('data-house-go'), {via: t.closest('.hall-rooms') ? 'hall-list' : 'link'}); return; }
       if (t.hasAttribute('data-house-mag')) {                                                  // журнал на столике: сцена «подъезжает» к нему и раскрывает
@@ -382,6 +401,96 @@
       $$('.mp-pe[data-pe]', mag).forEach(el => { if (el.getAttribute('data-done')) return; el.setAttribute('data-done', '1'); el.innerHTML = A.pearl(el.getAttribute('data-pe') || 'idle', true, ''); });
     }
     paintPearls(); on(window, 'load', paintPearls, {once: true});
+
+    /* ---------- чат Стеллы на развороте 12–13: оживает и отвечает по-настоящему ----------
+       Тот же «мозг», что в окне чата (Astreya.assistant.session): ответ собирается из каталога сайта, разговор помнит предыдущие вопросы (уточнения вроде «Почему именно эти?» понятны).
+       При входе на разворот переписка «проигрывается» (сообщения появляются по очереди, перед ответом — точки набора, маскот «думает» и «говорит»); дальше — подсказки-кнопки и поле ввода.
+       Нет ассистента — кнопки и поле открывают настоящее окно чата (Astreya.stella.ask). Без JS остаётся готовая переписка. Реплики из данных не подменяются: первые два ответа — настоящие ответы помощника (проверяет tools/check-house.js) */
+    const esc = t => String(t).replace(/[&<>"']/g, c => ({'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'}[c]));
+    chat = (() => {
+      const el = $('.mp-chat', mag); if (!el) return null;
+      const log = $('.mp-chat-log', el), live = $('.mp-chat-live', el), chipsEl = $('.mp-chat-chips', el), form = $('.mp-chat-in', el), inp = $('input', form), tpl = $('.mp-tpl-go', el);
+      const goHTML = tpl ? tpl.innerHTML : '';
+      let sess = null, busy = false, touched = false, tms = [], typ = null;
+      const at = (ms, f) => { tms.push(setTimeout(f, ms)); };
+      const top = () => $('.mp-chat-top .pe', el);
+      const mood = m => { const pe = top(); if (pe) pe.setAttribute('data-m', m); };
+      const pearlHTML = () => '<span class="mp-pe" data-pe="idle" data-done="1">' + (A.pearl ? A.pearl('idle', true, '') : ($('.mp-av .mp-pe', el) || {innerHTML: ''}).innerHTML) + '</span>';
+      const bottom = (smooth) => { log.scrollTo({top: log.scrollHeight, behavior: smooth === false ? 'instant' : 'smooth'}); };
+      const shade = () => log.classList.toggle('is-sc', log.scrollTop > 4);
+      on(log, 'scroll', shade, {passive: true});
+      const typing = on_ => {
+        if (typ) { typ.remove(); typ = null; }
+        if (!on_) return;
+        typ = document.createElement('div'); typ.className = 'mp-m mp-s mp-typing mp-new'; typ.setAttribute('aria-hidden', 'true');
+        typ.innerHTML = '<span class="mp-av">' + pearlHTML() + '</span><div><i></i><i></i><i></i></div>';
+        const pe = $('.pe', typ); if (pe) pe.setAttribute('data-m', 'think');
+        log.appendChild(typ); bottom();
+      };
+      const cut = () => { while (log.children.length > 16) { const f = log.firstElementChild; if (f === typ) break; f.remove(); } };
+      const userEl = q => { const m = document.createElement('div'); m.className = 'mp-m mp-u mp-new'; const p = document.createElement('p'); p.textContent = q; m.appendChild(p); return m; };
+      const botEl = r => {
+        const m = document.createElement('div'); m.className = 'mp-m mp-s mp-new';
+        let h = '<span class="mp-av">' + pearlHTML() + '</span><div>' + (r.html || '') + (r.html2 || '');
+        r.cards.slice(0, 2).forEach(c => { h += '<a class="mp-pc" href="' + esc(c.url) + '" data-track="house_magazine_product" data-product="' + esc(c.id) + '"><span class="mp-pk">' + (c.im ? '<img src="' + esc(c.im) + '" alt="" loading="lazy" decoding="async">' : '') + '</span><span><em class="mp-bn">' + esc(c.brand) + '</em><strong>' + esc(c.name) + '</strong></span>' + goHTML + '</a>'; });
+        r.links.slice(0, 2).forEach(l => { h += '<a class="mp-pl" href="' + esc(l.h) + '" data-track="house_magazine_page" data-room="stella">' + esc(l.l) + goHTML + '</a>'; });
+        r.actions.filter(a => a.act === 'form').slice(0, 1).forEach(a => { h += '<button type="button" class="mp-act" data-act="form" data-type="' + esc(a.type) + '"' + (a.ref ? ' data-ref="' + esc(a.ref) + '"' : '') + ' data-track="house_magazine_stella">' + esc(a.l) + '</button>'; });
+        m.innerHTML = h + '</div>'; return m;
+      };
+      const setChips = list => {                                                 // подсказки: сколько влезает в одну строку
+        chipsEl.textContent = '';
+        (list || []).slice(0, 5).forEach(q => { const b = document.createElement('button'); b.type = 'button'; b.className = 'mp-chip'; b.setAttribute('data-q', q.q || q); b.textContent = q.l || q; chipsEl.appendChild(b); });
+        let guard = 8; while (guard-- && chipsEl.scrollWidth > chipsEl.clientWidth + 1 && chipsEl.children.length > 1) chipsEl.lastElementChild.remove();
+      };
+      const initial = $$('.mp-chip', chipsEl).map(b => ({l: b.textContent, q: b.getAttribute('data-q')}));
+      const finish = () => { tms.forEach(clearTimeout); tms = []; typing(false); $$('.mp-hid', log).forEach(m => m.classList.remove('mp-hid')); busy = false; form.classList.remove('is-busy'); mood('idle'); };
+      function ask(q) {
+        q = String(q || '').trim(); if (!q || busy) return;
+        if (!(A.assistant && A.assistant.session)) { if (A.stella && A.stella.ask) A.stella.ask(q); return; }
+        if (!touched) { touched = true; finish(); }
+        track('house_magazine_stella_ask', {len: q.length}); busy = true; form.classList.add('is-busy'); inp.value = '';
+        log.appendChild(userEl(q)); cut(); bottom(); mood('think');
+        let res = null; try { sess = sess || A.assistant.session(); res = sess.ask(q); } catch (e) { res = null; }
+        if (!res) { busy = false; form.classList.remove('is-busy'); mood('idle'); if (A.stella && A.stella.ask) A.stella.ask(q); return; }
+        at(300, () => typing(true));
+        at(800 + Math.min(700, res.text.length * 2.5), () => { typing(false); log.appendChild(botEl(res)); cut(); bottom(); mood('talk'); setChips(res.chips); });
+        at(1300 + Math.min(700, res.text.length * 2.5), () => { busy = false; form.classList.remove('is-busy'); mood('happy'); at(1400, () => mood('idle')); });
+      }
+      on(form, 'submit', e => { e.preventDefault(); ask(inp.value); });
+      on(chipsEl, 'click', e => { const b = e.target.closest && e.target.closest('.mp-chip'); if (b) ask(b.getAttribute('data-q')); });
+      live.hidden = false; setChips(initial);
+      /* проигрывание: все реплики прячутся и появляются по очереди; если пользователь уже спрашивал сам — переписку не трогаем */
+      function play() {
+        if (touched) return; finish();
+        const msgs = $$('.mp-m', log); msgs.forEach(m => m.classList.add('mp-hid')); log.scrollTop = 0; busy = true; form.classList.add('is-busy'); mood('idle');
+        let t = 380;
+        msgs.forEach(m => {
+          const bot = m.classList.contains('mp-s'), len = m.textContent.length;
+          if (bot) { at(t, () => { typing(true); mood('think'); }); t += 500 + Math.min(700, len * 2.5); at(t, () => { typing(false); m.classList.remove('mp-hid'); m.classList.add('mp-new'); bottom(); mood('talk'); }); t += 450; }
+          else { at(t, () => { m.classList.remove('mp-hid'); m.classList.add('mp-new'); bottom(); }); t += 450; }
+        });
+        at(t, () => { busy = false; form.classList.remove('is-busy'); mood('happy'); at(1300, () => mood('idle')); });
+      }
+      return {el, play, stop: () => { if (!touched) finish(); }, ask};
+    })();
+
+    /* ---------- вход на разворот: страницы «въезжают» блоками, чат Стеллы проигрывает переписку ----------
+       Запускается, когда лист остановился (книга в покое) и журнал открыт; на телефоне и в плоском режиме — только чат. Состояние после анимации — обычная вёрстка (слои не остаются) */
+    /* маскот на каменной арке (страница 13) радуется, когда на него наводят курсор */
+    { const big = $('.mp-pe-big', mag), stone = big && big.closest('.mp-stone'); let bt = 0;
+      if (stone) on(stone, 'pointerenter', () => { const pe = $('.pe', big); if (!pe) return; pe.setAttribute('data-m', 'happy'); clearTimeout(bt); bt = setTimeout(() => pe.setAttribute('data-m', 'idle'), 1700); }); }
+    function pageIn() {
+      if (phone() || flat()) return;
+      const pgs = $$('.leaf.is-cur .face.front .pg, .leaf.is-prev .face.back .pg', mag); if (!pgs.length) return;
+      pgs.forEach(pg => {
+        pg.classList.remove('pg-in'); let i = 0;
+        Array.prototype.forEach.call(pg.children, c => { if (c.classList.contains('run') || c.classList.contains('pg-f') || c.classList.contains('fx')) return; c.style.setProperty('--d', Math.round(i++ * 55) + 'ms'); });
+        void pg.offsetWidth; pg.classList.add('pg-in');
+      });
+      clearTimeout(pgTimer); pgTimer = setTimeout(() => pgs.forEach(pg => pg.classList.remove('pg-in')), 1500);
+      if (chat && pgs.some(pg => chat.el.closest('.pg') === pg)) chat.play();
+    }
+    off.push(() => clearTimeout(pgTimer));
     /* картинки страниц журнала раскодируются заранее, по две за такт простоя: иначе первый поворот листа с фото и нишами брендов ждал загрузки и декодирования прямо в кадре анимации (подвисание в момент листания) */
     let warmedImgs = false;
     function warmPages() {
@@ -394,7 +503,7 @@
       step();
     }
     setTimeout(warmPages, 5000);
-    A.house = {busy: () => !!glideRaf, go: id => go(id, {via: 'api'}), hall: () => hall({via: 'api'}), openMagazine: v => { if (flat() || phone()) { jump(readerBox().top); render(v === undefined ? 1 : v, {instant: true}); } else toState(v === undefined ? 1 : v); }, state: () => ({room: current, magazine: true, page: s, rooms: ids, reader: true}), readerState: () => { const f = A.jar && A.jar.fly, st = f && f.state ? f.state() : null; return {t: readerT(), s, p, fly: {on: !!FLd, n: st ? st.N : 0, loaded: st ? st.loaded : 0, drawn: !!(st && st.firstDrawn), p: st ? st.p : 0, jarOk: st ? st.jarOk : null, size: st ? st.size : null, sprites: st ? st.jar : null}}; }};
+    A.house = {busy: () => !!glideRaf, home: () => home('api'), go: id => go(id, {via: 'api'}), hall: () => hall({via: 'api'}), openMagazine: v => { if (flat() || phone()) { jump(readerBox().top); render(v === undefined ? 1 : v, {instant: true}); } else toState(v === undefined ? 1 : v); }, state: () => ({room: current, magazine: true, page: s, rooms: ids, reader: true}), readerState: () => { const f = A.jar && A.jar.fly, st = f && f.state ? f.state() : null; return {t: readerT(), s, p, fly: {on: !!FLd, n: st ? st.N : 0, loaded: st ? st.loaded : 0, drawn: !!(st && st.firstDrawn), p: st ? st.p : 0, jarOk: st ? st.jarOk : null, size: st ? st.size : null, sprites: st ? st.jar : null}}; }};
   }
 
   init();

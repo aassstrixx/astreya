@@ -32,6 +32,7 @@ module.exports = function magSpreads(ctx, C, P, deps) {
   const lnk = (h, label, track, extra = '') => `<a class="mp-lnk" href="${esc(h)}" data-track="${track}" data-place="magazine"${extra}>${esc(label)} ${go}</a>`;
   const hh = (lines, cls = '') => `<h3 class="mp-h${cls ? ' ' + cls : ''}">${esc(lines[0])}<em>${esc(lines[1])}</em></h3>`;
   const srcText = b => b.src ? ((getPath(content, b.src[0]) || [])[b.src[1]] || {}).text || '' : b.text || '';
+  const hq = src => src.replace(/^assets\/teachers\/([^/]+)$/, 'assets/teachers/hq/$1');           // портреты 280×300 — в журнале версия ×2 (Lanczos + нерезкая маска): браузер сам растягивал бы их билинейно и мягче
   const img = (src, alt = '', cls = '') => `<img${cls ? ` class="${cls}"` : ''} src="${esc(C.u(P, src))}" alt="${esc(alt)}" loading="lazy" decoding="async">`;
   const dmy = d => S.dparts(d);
   const brandName = id => (ctx.brandById[id] || {}).name || id;
@@ -91,7 +92,7 @@ module.exports = function magSpreads(ctx, C, P, deps) {
     L: n => `<div class="pg pg-l pg-tx pg-exl">${run}<p class="mg-kick">${esc(pg.expertise.kick)}</p>${hh(pg.expertise.hl)}
       <div class="mp-collage"><figure class="mp-c1">${pimg('expertise')}</figure><figure class="mp-c2">${pimg('about3')}</figure></div>
       <p class="mp-lede">${esc(ed.lead.join(' '))} <em>${esc(ed.accent.join(' '))}</em></p>
-      <ul class="mp-tch">${tch.map(t => `<li><a href="${href('training.html#teachers')}" data-track="house_magazine_page" data-room="expertise" data-place="magazine">${t.photo ? img(t.photo, `${t.first} ${t.last}`) : ''}<span><strong>${esc(t.last)} ${esc(t.first.split(' ')[0])}</strong><em>${esc(t.role.split(',')[0])}</em></span></a></li>`).join('')}</ul>${foot(n, 'l')}</div>`,
+      <ul class="mp-tch">${tch.map(t => `<li><a href="${href('training.html#teachers')}" data-track="house_magazine_page" data-room="expertise" data-place="magazine">${t.photo ? img(hq(t.photo), `${t.first} ${t.last}`) : ''}<span><strong>${esc(t.last)} ${esc(t.first.split(' ')[0])}</strong><em>${esc(t.role.split(',')[0])}</em></span></a></li>`).join('')}</ul>${foot(n, 'l')}</div>`,
     R: n => `<div class="pg pg-r pg-tx pg-exr" id="room-expertise" data-room="expertise">${run}<p class="mg-kick">${esc(pg.expertise.kick)}</p>${hh(pg.expertise.hr)}
       <ul class="mp-grid4 mp-sup">${pg.expertise.support.map(b => `<li>${ic(b.icon)}<strong>${esc(b.t)}</strong><span>${esc(srcText(b))}</span></li>`).join('')}</ul>
       <p class="mp-sub">${esc(pg.expertise.journey.t)}</p>
@@ -102,6 +103,7 @@ module.exports = function magSpreads(ctx, C, P, deps) {
   /* ------------------------------------------------ 12–13. Стелла */
   const st = pg.stella, pearl = '<svg class="mp-pearl" viewBox="0 0 48 48" aria-hidden="true" focusable="false"><circle cx="24" cy="26" r="19" fill="#dfe6f6" stroke="#8ea3d8" stroke-opacity=".6" stroke-width=".8"/><ellipse cx="16.4" cy="17.4" rx="6.2" ry="3.1" transform="rotate(-32 16.4 17.4)" fill="#fff" opacity=".9"/><ellipse cx="18" cy="26.6" rx="2.1" ry="2.9" fill="#0b1a33"/><ellipse cx="30" cy="26.6" rx="2.1" ry="2.9" fill="#0b1a33"/><circle cx="18.8" cy="25.4" r=".85" fill="#fff"/><circle cx="30.8" cy="25.4" r=".85" fill="#fff"/><path d="M24 2.5l1.5 4 4 1.5-4 1.5-1.5 4-1.5-4-4-1.5 4-1.5z" fill="#b08e4e"/></svg>';
   const pearlSlot = (cls = '') => `<span class="mp-pe${cls ? ' ' + cls : ''}" data-pe="idle">${pearl}</span>`;          // настоящий маскот Стеллы (js/assistant.js → Astreya.pearl) подставляет js/house.js; без JS остаётся упрощённый рисунок
+  const lv = Object.assign({label: '', placeholder: '', send: '', typing: '', chips: [], foot: ''}, st.live || {});
   const dlg = st.dialog.map(d => {
     const pr = d.product ? productBy(d.product) : null;
     return `<div class="mp-m mp-u"><p>${esc(d.q)}</p></div>
@@ -110,7 +112,11 @@ module.exports = function magSpreads(ctx, C, P, deps) {
   const stella = {
     L: n => `<div class="pg pg-l pg-tx pg-stl">${run}<p class="mg-kick">${esc(st.kick)}</p>${hh(st.hl)}
       <p class="mp-sub2">${esc(st.sub)}</p>
-      <div class="mp-chat" role="img" aria-label="Пример диалога со Стеллой: настоящие ответы помощника сайта"><div class="mp-chat-top">${pearlSlot()}<b>Стелла</b><span>помощник ASTREYA</span></div>${dlg}</div>${foot(n, 'l')}</div>`,
+      <div class="mp-chat" role="group" aria-label="Диалог со Стеллой: настоящие ответы помощника сайта"><div class="mp-chat-top">${pearlSlot()}<b>Стелла</b><span>помощник ASTREYA</span></div>
+        <div class="mp-chat-log" role="log" aria-live="polite" aria-label="${esc(lv.label)}" tabindex="-1">${dlg}</div>
+        <div class="mp-chat-live" hidden><div class="mp-chat-chips" role="group" aria-label="${esc(lv.label)}">${lv.chips.map(c => `<button type="button" class="mp-chip" data-q="${esc(c.q)}">${esc(c.l)}</button>`).join('')}</div>
+          <form class="mp-chat-in" autocomplete="off"><input type="text" name="q" maxlength="200" placeholder="${esc(lv.placeholder)}" aria-label="${esc(lv.label)}"><button type="submit" aria-label="${esc(lv.send)}">${I.arrow}</button></form>
+          <p class="mp-chat-foot">${esc(lv.foot)}</p><template class="mp-tpl-go">${go}</template><span class="mp-chat-typing" data-l="${esc(lv.typing)}" hidden></span></div></div>${foot(n, 'l')}</div>`,
     R: n => `<div class="pg pg-r pg-tx pg-str" id="room-stella" data-room="stella">${run}<div class="mp-stone" aria-hidden="true">${pearlSlot('mp-pe-big')}<b>STELLA</b></div>${hh(st.hr)}
       <ol class="mp-steps3 mp-steps-s">${st.steps.map(s => `<li><span class="mp-sn">${s.n}</span>${ic(s.icon)}<strong>${esc(s.t)}</strong><span>${esc(s.p)}</span></li>`).join('')}</ol>
       <div class="mp-why"><p class="mp-sub">${esc(st.why)}</p><ul>${st.why_list.map(t => `<li>${esc(t)}</li>`).join('')}</ul></div>

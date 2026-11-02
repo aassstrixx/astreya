@@ -566,6 +566,24 @@
       A.track && A.track('stella_compare', {count: ids.length}); this.ask(tpl.replace('{names}', names), {cmp: ids});
     }
   };
-  A.assistant = {answer: t => { ensureBrain(); return brain.reply(t, brain.newState(), ctxOf()); }};          // для проверок (tools/check-extras.js)
+  /* answer — для проверок (tools/check-extras.js). session — мини-диалог на странице журнала (js/house.js): тот же «мозг», что и в окне чата, но с памятью разговора
+     (уточняющие вопросы понимают, о чём речь) и готовым к показу ответом: текст с ссылками на каталог, карточки товаров, ссылки, кнопки-формы, подсказки. Сетевых запросов нет */
+  A.assistant = {
+    answer: t => { ensureBrain(); return brain.reply(t, brain.newState(), ctxOf()); },
+    session() {
+      ensureBrain(); const st = brain.newState();
+      return {
+        ask(t) {
+          const r = brain.reply(String(t || '').trim().slice(0, MAXIN), st, ctxOf()); if (!r) return null;
+          return {
+            text: r.text, html: fmtL(r.text), html2: r.text2 ? fmt(r.text2) : '', intent: r.intent, chips: (r.chips || []).slice(0, 6),
+            cards: (r.cards || []).filter(id => P[id]).map(id => ({id, name: P[id].name, brand: (B[P[id].brand] || {}).name || '', im: P[id].im ? root() + P[id].im : '', url: pUrl(P[id])})),
+            links: (r.links || []).map(l => ({l: l.l, h: /^(tel:|mailto:|https?:)/.test(l.h) ? l.h : root() + l.h})),
+            actions: (r.actions || []).filter(x => x.act === 'form' || x.act === 'asst-ask').map(x => ({l: x.l, act: x.act, type: x.type || '', ref: x.ref || '', q: x.q || ''}))
+          };
+        }
+      };
+    }
+  };
   const prev = A.initPage; A.initPage = function () { if (prev) prev.apply(this, arguments); init(); };
 })();

@@ -296,7 +296,16 @@ void main() {
       o.glow = tr.glow ? tr.glow[i] + (tr.glow[i + 1] - tr.glow[i]) * t : 0;
       return o;
     }
-    return {at, M, raw: tr};
+    /* вид: та же поза, но камера отодвинута назад вдоль оси взгляда на tr.back[i] (tools/jar-render/fly_soft.py). Позы КЛЮЧЕЙ берутся из at() — кадры нарисованы по исходной дорожке,
+       а текущий кадр перепроецируется в вид: так ближний край книги в конце пролёта не раздувается и не откатывается («выпрыгивание вперёд»). Нет tr.back — вид совпадает с at() */
+    function view(p, out) {
+      const o = at(p, out);
+      if (!tr.back) return o;
+      const x = clamp(p, 0, 1) * (M - 1), i = Math.min(M - 2, Math.floor(x)), t = x - i, b = tr.back[i] + (tr.back[i + 1] - tr.back[i]) * t;
+      if (b) { o.pos[0] -= o.f[0] * b; o.pos[1] -= o.f[1] * b; o.pos[2] -= o.f[2] * b; }
+      return o;
+    }
+    return {at, view, M, raw: tr};
   }
 
   /* баночку на заставке нужно держать ровно по центру экрана: сдвигаем её вдоль оси «вверх» камеры (глубина не меняется — на экране это чистый сдвиг вверх на dv высоты кадра) */
@@ -534,7 +543,7 @@ void main() {
       let t = ka === kb ? 0 : clamp((p - Phi[ka]) / (Phi[kb] - Phi[ka]), 0, 1);
       const r = clamp(rest || 0, 0, 1);
       t = t * (1 - r) + (t < 0.5 ? 0 : 1) * r;
-      track.at(p, camT); liftJar(camT, sh.lift, asp[1], jCz);
+      (track.view || track.at)(p, camT); liftJar(camT, sh.lift, asp[1], jCz);
       const single = ka === kb || t <= 0.0005 || t >= 0.9995;
       const one = ka === kb ? ka : t <= 0.0005 ? ka : kb;
       const f1 = single ? 0 : 1;                                                 // кадр один (покой на кадре): второй слой не рисуем
@@ -577,11 +586,13 @@ void main() {
   const VS_J = `#version 300 es
 precision highp float;
 uniform vec4 uRect;            // куда рисовать спрайт: левый верхний угол и размер в долях кадра
+uniform float uShear;          // наклон оси баночки относительно кадра спрайта: верх сдвигается по горизонтали на uShear долей высоты рамки (в долях ширины кадра)
 out vec2 vUv; out vec2 vFr;
 void main() {
   vec2 c = vec2(float(gl_VertexID & 1), float((gl_VertexID >> 1) & 1));
   vUv = c;
   vFr = uRect.xy + uRect.zw * c;
+  vFr.x += uShear * (1.0 - c.y) * uRect.w;
   gl_Position = vec4(vFr.x * 2.0 - 1.0, 1.0 - vFr.y * 2.0, 0.0, 1.0);
 }`;
 
@@ -722,6 +733,16 @@ void main() {
       const L = proj(cam, [j[0] - Rj * sx, j[1] - Rj * sy, zc]), Rr = proj(cam, [j[0] + Rj * sx, j[1] + Rj * sy, zc]), B = proj(cam, [j[0] + Rj * ux, j[1] + Rj * uy, j[2]]), T = proj(cam, [j[0] - Rj * ux, j[1] - Rj * uy, j[2] + 2 * cz]);
       return {l: Math.min(L.u, Rr.u), r: Math.max(L.u, Rr.u), b: B.v, t: T.v};
     }
+    /* наклон оси баночки на экране: tan угла между осью (центр основания → центр крышки) и вертикалью кадра, в одинаковых единицах по обеим осям */
+    function axisTan(cam) {
+      const j = cam.jar, B = proj(cam, [j[0], j[1], j[2]]), T = proj(cam, [j[0], j[1], j[2] + 2 * cz]);
+      return ((T.u - B.u) * asp[0]) / (((B.v - T.v) * asp[1]) || 1e-6);
+    }
+    /* спрайт снят при камере ключа k: ось в нём наклонена на tk; при текущей камере она наклонена на tc. Разницу добираем сдвигом верха (shear) — иначе при повороте камеры баночка стоит «прямо», а подиум и стол уходят в перспективу */
+    function shearFor(k, cp) {
+      track.at(Phi[k], camK); const tk = axisTan(camK), tc = axisTan(cp), d = (tc - tk) / (1 + tc * tk);
+      return d * asp[1] / asp[0];
+    }
     function placeFrozen(k, cp) {
       track.at(Phi[k], camK); const ek = ext(camK), ec = ext(cp), r = rects[k];
       const sx = (ec.r - ec.l) / (ek.r - ek.l), sy = (ec.b - ec.t) / (ek.b - ek.t);
@@ -742,7 +763,7 @@ void main() {
         if (best < 0) return false;
         ka = kb = best; t = 0;
       } else if (!spr(ka)) { ka = kb; t = 0; } else if (!spr(kb)) { kb = ka; t = 0; }
-      track.at(p, camP); liftJar(camP, opt.lift, asp[1], cz);
+      (track.view || track.at)(p, camP); liftJar(camP, opt.lift, asp[1], cz);
       gl.useProgram(PJ.p); const u = PJ.u;
       gl.enable(gl.BLEND); gl.blendFunc(gl.ONE, gl.ONE); gl.disable(gl.DEPTH_TEST);
       gl.uniform2f(u.uAsp, asp[0], asp[1]);
@@ -763,7 +784,7 @@ void main() {
           gl.uniform3f(u.uJar, camK.jar[0], camK.jar[1], camK.jar[2]); gl.uniform1f(u.uYaw, camK.yaw * Math.PI / 180);
           const hk = rects[k]; gl.uniform4f(u.uHK, hk[0], hk[1], hk[2], hk[3]); gl.uniform1f(u.uFz, 1);
         } else { rc = place(k, camP, jk); gl.uniform1f(u.uFz, 0); }
-        gl.uniform4f(u.uRect, rc[0], rc[1], rc[2], rc[3]); gl.uniform1f(u.uW, w);
+        gl.uniform4f(u.uRect, rc[0], rc[1], rc[2], rc[3]); gl.uniform1f(u.uW, w); gl.uniform1f(u.uShear, opt.base && !window.__ASTREYA_NOSHEAR ? shearFor(k, camP) : 0);
         gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, spr(k)); gl.uniform1i(u.uSprite, 0);
         gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
       }

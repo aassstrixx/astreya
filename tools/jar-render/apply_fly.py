@@ -103,6 +103,9 @@ def main():
     json.loads(t)
     open(red, 'w', encoding='utf8').write(t)
     print('house.fly записан: ключей', K, 'F', F)
+    # мягкий вход в журнал: массив back в дорожке камеры (нужен блок house.fly.book, поэтому после записи блока)
+    if os.path.exists(os.path.join(A, 'cam-f.json')):
+        subprocess.check_call([sys.executable, os.path.join(HERE, 'fly_soft.py'), '--cam', os.path.join(A, 'cam-f.json'), '--data', red], cwd=ROOT)
 
 
 if __name__ == '__main__':

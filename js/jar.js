@@ -353,7 +353,7 @@
       if (!firstDrawn) { firstDrawn = true; if (cp < 0.02 && !FLY) root.classList.add('ar-intro'); root.classList.add('ready'); }
       if (jar) {
         const ok = jar.draw(pc, pair, {jk, lift, ground, halo, fixed: FLY ? 0 : -1, base: FLY}); lastJarOk = ok;
-        if (FLY && A.flyOnDraw && flyCam && jar.proj) { try { A.flyOnDraw(pc, flyCam.at(pc), jar.proj); } catch (e) { /* — */ } }       // живая книга встаёт по той же камере, что и кадр
+        if (FLY && A.flyOnDraw && flyCam && jar.proj) { try { A.flyOnDraw(pc, flyCam.view(pc), jar.proj); } catch (e) { /* — */ } }       // живая книга встаёт по той же камере, что и кадр
         if (ok && !jarShown) { jarShown = true; if (cp < 0.02 && !FLY) root.classList.add('ar-intro'); root.classList.add('jar-ready'); }
       }
       return true;

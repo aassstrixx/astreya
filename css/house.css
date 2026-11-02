@@ -65,13 +65,13 @@ body[data-page="home"]{--hs-paper:#fbf7ec;--hs-paper-2:#f3ebd9;--hs-ink:#0b1a33;
   .leaves{filter:none}
   .mag-book::before{content:"";position:absolute;left:0;right:0;top:3%;bottom:-1%;border-radius:6px;box-shadow:0 44px 46px -6px rgba(20,12,4,.5),0 14px 18px rgba(20,12,4,.28);pointer-events:none;z-index:-1}
   .mag-book[data-s="0"]::before{left:50%}
-  .leaf{transform:translate3d(0,0,calc(var(--lt,0) * 60px + ((1 - var(--f,0)) * var(--zr,0) + var(--f,0) * var(--zl,0)) * .4px)) rotateZ(calc(var(--lt,0) * 2.6deg)) rotateY(calc(var(--f,0) * -180deg)) rotateZ(calc(var(--lt,0) * -2.6deg))}          /* ось поворота чуть наклонена, пока лист в движении: нижний угол идёт впереди, верхний отстаёт — так бумагу тянет рука, а не жёсткую доску */
+  .leaf{transform:translate3d(0,0,calc(var(--lt,0) * 60px + ((1 - var(--f,0)) * var(--zr,0) + var(--f,0) * var(--zl,0)) * .4px)) rotateY(calc(var(--f,0) * -180deg))}
   .mag-book.is-still .leaf{transform:rotateY(calc(var(--f,0) * -180deg))}          /* разворот стоит: листы без смещения по Z (перспектива 2000 px масштабировала страницу на ≈ 0,2 % и пересэмплировала текст — «мыло»); видны только правая страница и оборот левой */
   .mag-book.is-still .leaf:not(.is-cur):not(.is-prev){visibility:hidden}
   /* разворот стоит — обычная плоская вёрстка без 3D: левая страница — оборот листа s−1 без поворота и без отражения (раньше rotateY(−180°) листа и rotateY(180°) стороны давали составное 3D-преобразование: текст левой страницы размазывался билинейной выборкой текстуры); при начале поворота всё возвращается в 3D с тем же положением */
   .mag-book.is-still{perspective:none}
   .mag-book.is-still .leaves,.mag-book.is-still .leaf{transform-style:flat}
-  .mag-book.is-still .leaf{transform:none}
+  .mag-book.is-still .leaf{transform:none;will-change:auto}          /* в покое слой листа не держит will-change: transform — иначе Chrome оставляет растр в масштабе пролёта и текст правой страницы выходит мягче левой (замер при DPR 1: 1539 → 6417) */
   .mag-book.is-still .leaf.is-prev{left:0}
   .mag-book.is-still .leaf.is-prev .face.front,.mag-book.is-still .leaf.is-cur .face.back{visibility:hidden}
   .mag-book.is-still .leaf .face.back{transform:none}
@@ -168,6 +168,7 @@ body[data-page="home"]{--hs-paper:#fbf7ec;--hs-paper-2:#f3ebd9;--hs-ink:#0b1a33;
 .mag-ctl button:disabled{opacity:.35;cursor:default}
 .mag-ctl svg{width:16px;height:16px}
 .mag-pv svg{transform:scaleX(-1)}
+.mag-hm svg{transform:rotate(-90deg)}
 .mag-book[data-hover="l"],.mag-book[data-hover="r"]{cursor:pointer}
 
 /* ============ 4б. Переход скролла к раскрытому журналу ============ */
