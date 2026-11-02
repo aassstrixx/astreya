@@ -76,11 +76,11 @@ module.exports = function homeHouse(ctx, C, P, deps) {
   const pageL = (r, n) => SP[r.id] ? SP[r.id].L(n) : pageL0(r, n), pageR = (r, n) => SP[r.id] ? SP[r.id].R(n) : pageR0(r, n);
   const pagesR = [pCover, pToc, ...rooms.map((r, i) => pageR(r, (i + 1) * 2 + 3)), SP.contacts.R((rooms.length + 1) * 2 + 3)];
   const pagesL = [pWelcome, ...rooms.map((r, i) => pageL(r, (i + 1) * 2 + 2)), SP.contacts.L((rooms.length + 1) * 2 + 2), pBack];
-  const leaves = pagesR.map((f, k) => `<div class="leaf" data-k="${k}" style="--zr:${pagesR.length - k};--zl:${k + 1}"><div class="face front">${f}</div><div class="face back">${pagesL[k] || ''}</div></div>`).join('');
+  const leaves = pagesR.map((f, k) => `<div class="leaf" data-k="${k}" style="--zr:${pagesR.length - k};--zl:${k + 1}"><div class="face front">${f}<i class="fx" aria-hidden="true"><b></b></i></div><div class="face back">${pagesL[k] || ''}<i class="fx" aria-hidden="true"><b></b></i></div></div>`).join('');
   const magazine = `<div class="mag" id="mag" role="region" aria-label="Журнал ASTREYA" data-n="${pagesR.length}">
     <div class="mag-wrap">
       <div class="mag-bar"><p class="mag-st" aria-live="polite"></p></div>
-      <div class="mag-book" tabindex="-1"><div class="mag-spine" aria-hidden="true"></div><div class="leaves">${leaves}</div></div>
+      <div class="mag-book" tabindex="-1"><div class="mag-spine" aria-hidden="true"></div><div class="leaves">${leaves}<i class="mag-sh r" aria-hidden="true"></i><i class="mag-sh l" aria-hidden="true"></i></div><i class="mag-dim" aria-hidden="true"></i></div>
       <div class="mag-ctl"><button class="mag-pv" type="button" data-mag-step="-1">${I.arrow}<span>${esc(mc.prevLabel)}</span></button><button class="mag-nx" type="button" data-mag-step="1"><span>${esc(mc.nextLabel)}</span>${I.arrow}</button></div>
     </div>
   </div>`;

@@ -37,13 +37,19 @@
     const hallY = () => story.classList.contains('jar-off') ? Math.max(0, abs(story)) : Math.max(0, abs(story) + story.offsetHeight - window.innerHeight);       // конец закреплённой сцены: герой стоит в готовом кадре зала
     const jump = y => window.scrollTo({top: Math.round(y), behavior: 'instant'});                // «instant» — мимо html{scroll-behavior:smooth}
     const readerBox = () => { const r = reader.getBoundingClientRect(); return {top: r.top + window.pageYOffset, total: Math.max(0, r.height - window.innerHeight)}; };
-    const readerT = () => { const r = reader.getBoundingClientRect(), tot = r.height - window.innerHeight; return tot > 0 ? clamp(-r.top / tot, 0, 1) : 1; };
+    /* положение читалки в документе меряем один раз и пересчитываем, только когда поменялась вёрстка (ResizeObserver, resize): раньше каждый кадр читал getBoundingClientRect() сразу после записей стилей предыдущего кадра — это принудительный пересчёт стилей и вёрстки прямо в обработчике прокрутки */
+    let rbox = null;
+    const rbx = () => rbox || (rbox = readerBox());
+    const readerT = () => { const b = rbx(); return b.total > 0 ? clamp((window.pageYOffset - b.top) / b.total, 0, 1) : 1; };
+    try { const ro = new ResizeObserver(() => { rbox = null; }); ro.observe(document.documentElement); ro.observe(reader); } catch (e) { /* без ResizeObserver — меряем заново на resize */ }
+    window.addEventListener('resize', () => { rbox = null; }, {passive: true});
     const flat = () => reduce() || reader.classList.contains('is-flat');
 
     /* ---------- журнал: p — «сколько листов перевёрнуто» (дробное — лист в движении); s — ближайший целый разворот ---------- */
     let s = 0, p = 0, current = null, stillNow = null;
     const inertOf = (el, onn) => { if ('inert' in el) el.inert = onn; else $$('a,button', el).forEach(f => { if (onn) f.setAttribute('tabindex', '-1'); else f.removeAttribute('tabindex'); }); el.setAttribute('aria-hidden', onn ? 'true' : 'false'); };
     const fs = leaves.map(() => -1), faces = leaves.map(l => [$('.front', l), $('.back', l)]), cache = {};
+    const fx = leaves.map(l => [$('.front .fx', l), $('.back .fx', l)]), shR = $('.mag-sh.r', mag), shL = $('.mag-sh.l', mag);                    // тень и блик поворачивающегося листа и тень на страницах под ним — настоящие элементы: им пишутся только opacity и transform
     const setVar = (el, k, v) => { const c = cache[k] || (cache[k] = new Map()); if (c.get(el) === v) return; c.set(el, v); el.style.setProperty(k, v); };          // то же значение второй раз не пишем: каждая запись пользовательского свойства — пересчёт стилей поддерева
     function setP(v) {
       v = clamp(v, 0, N - 1); p = v;
@@ -53,12 +59,13 @@
         if (q === fs[k]) return; fs[k] = q;
         const lt = Math.sin(Math.PI * q), qs = q.toFixed(3), ls = lt.toFixed(3);
         l.style.setProperty('--f', qs); l.style.setProperty('--lt', ls);                      // --f/--lt объявлены через @property без наследования (css/house.css): стороны листа получают их напрямую, а страницы внутри — нет
-        for (const fc of faces[k]) { fc.style.setProperty('--f', qs); fc.style.setProperty('--lt', ls); }
+        const bx = fx[k]; if (bx[0]) { bx[0].style.opacity = ls; bx[0].firstChild.style.transform = 'translate3d(' + (q * 384.6 - 50).toFixed(1) + '%,0,0)'; }                // блик бежит по лицу листа слева направо, по обороту — справа налево (центр полосы: 200 % ширины × доля поворота)
+        if (bx[1]) { bx[1].style.opacity = ls; bx[1].firstChild.style.transform = 'translate3d(' + (50 - (1 - q) * 384.6).toFixed(1) + '%,0,0)'; }
         l.classList.toggle('is-flipped', q > .5);
         l.classList.toggle('is-turning', q > 0 && q < 1);
       });
       for (let k = 0; k < N; k++) { const f = clamp(v - k, 0, 1); if (f > 0 && f < 1) { const lt = Math.sin(Math.PI * f); sr = Math.max(sr, lt * clamp((.64 - f) / .3, 0, 1)); sl = Math.max(sl, lt * clamp((f - .36) / .3, 0, 1)); } }
-      if (scroller) { setVar(scroller, '--sr', sr.toFixed(3)); setVar(scroller, '--sl', sl.toFixed(3)); }
+      if (shR) { const a = sr.toFixed(3), b2 = sl.toFixed(3); if (shR._v !== a) { shR._v = a; shR.style.opacity = a; } if (shL._v !== b2) { shL._v = b2; shL.style.opacity = b2; } }
       const still = fs.every(q => q === 0 || q === 1); if (still !== stillNow) { stillNow = still; book.classList.toggle('is-still', still); }          // разворот стоит (ни один лист не в движении) — страницы рисуются без 3D-смещения, текст резкий
       if (book) setVar(book, '--bx', (-.5 * (1 - Math.min(1, v))).toFixed(3));       // закрытый журнал стоит по центру, раскрытый — разворотом
       const ns = Math.round(v);
@@ -121,6 +128,20 @@
     const wrapEl = $('.mag-wrap', mag);
     const HOM = {rb: [.46, .6], bd: [.5, .97], bdMax: .30};                       // лин. доля пролёта: журнал появляется / приглушение снимается; наибольшее приглушение
     const hm = {key: '', on: false};
+    /* значения читалки (--fu, --ra, --rb, --bd) каждый кадр пишутся прямо в элементы, которые от них зависят (opacity / transform): раньше они лежали на читалке как наследуемые переменные,
+       и каждая запись заставляла браузер пересчитывать стили всех элементов журнала (тысячи), причём принудительно — следом шло чтение положения прокрутки. Сами переменные остаются (не наследуются) для отладки и проверок. */
+    const RS = {fu: 0, ra: 0, rb: 0, bd: 0}, pv = {fu: '', ra: '', rb: '', bd: '', veil: '', wrap: '', ctl: ''};
+    const bgEl = $('.hr-bg', reader), veilEl = $('.hr-veil', reader), ctlEl = $('.mag-ctl', mag), barEl = $('.mag-bar', mag), dimEl = $('.mag-dim', mag);
+    function paintReader() {
+      const fu = RS.fu.toFixed(4), ra = RS.ra.toFixed(4), rb = RS.rb.toFixed(4), bd = RS.bd.toFixed(4);
+      if (pv.fu !== fu) { pv.fu = fu; reader.style.setProperty('--fu', fu); if (bgEl) bgEl.style.transform = 'scale(' + (1 + RS.fu * .55).toFixed(4) + ')'; }
+      if (pv.ra !== ra) { pv.ra = ra; reader.style.setProperty('--ra', ra); }
+      if (pv.rb !== rb) { pv.rb = rb; reader.style.setProperty('--rb', rb); }
+      if (pv.bd !== bd) { pv.bd = bd; reader.style.setProperty('--bd', bd); if (dimEl) dimEl.style.opacity = bd; }
+      const vo = (RS.fu * .55 + RS.ra * .30).toFixed(4); if (pv.veil !== vo) { pv.veil = vo; if (veilEl) veilEl.style.opacity = vo; }
+      const live = !!(FLd && !phone() && A.flyDrawn && BKd), wo = (live ? RS.rb : RS.ra).toFixed(4); if (pv.wrap !== wo) { pv.wrap = wo; wrapEl.style.opacity = wo; }
+      const co = clamp((RS.ra - .6) * 2.5, 0, 1).toFixed(3); if (pv.ctl !== co) { pv.ctl = co; if (ctlEl) ctlEl.style.opacity = co; if (barEl) barEl.style.opacity = co; }
+    }
     function homography(src, dst) {                                               // проективное преобразование 4 точек → 4 точки (метод прямых линейных уравнений, 8×8)
       const A8 = [], b8 = [];
       for (let i = 0; i < 4; i++) {
@@ -142,8 +163,7 @@
       if (!BKd || !FLd || !fbox || !sbox || !sbox.w || phone() || flat()) return;
       A.flyDrawn = true;
       const fp = pc / FLd.F;
-      setVar(reader, '--rb', clamp((fp - HOM.rb[0]) / (HOM.rb[1] - HOM.rb[0]), 0, 1).toFixed(4));
-      setVar(reader, '--bd', (HOM.bdMax * (1 - ease(clamp((fp - HOM.bd[0]) / (HOM.bd[1] - HOM.bd[0]), 0, 1)))).toFixed(4));
+      RS.rb = Math.max(fp > .22 ? .002 : 0, clamp((fp - HOM.rb[0]) / (HOM.rb[1] - HOM.rb[0]), 0, 1)); RS.bd = HOM.bdMax * (1 - ease(clamp((fp - HOM.bd[0]) / (HOM.bd[1] - HOM.bd[0]), 0, 1))); paintReader();
       if (fp < HOM.rb[0] - .02 || fp > .9995) { if (hm.key) { wrapEl.style.transform = ''; wrapEl.style.willChange = ''; hm.key = ''; } return; }
       const W = sbox.w, Hh = sbox.h, ww = Math.max(W, Hh * 16 / 9), wh = ww * 9 / 16;
       const yaw = BKd.yaw * Math.PI / 180, ux = Math.cos(yaw), uy = Math.sin(yaw), vx = -uy, vy = ux, hw = BKd.pw, hh = BKd.ph / 2, c = BKd.c;
@@ -180,24 +200,25 @@
     const lv = {live: null, gone: null, hf: '', hy: ''};
     function setLive(live, hf) {                                               // герой и журнал — одна сцена (css/house.css, 3б): читалка встаёт на тот же экран под героем, холсты героя гаснут
       if (lv.live !== live) { lv.live = live; reader.classList.toggle('is-live', live); story.classList.toggle('rd-live', live); }
-      const hfs = hf.toFixed(3), gone = live && hf >= .985, hys = (live ? Math.max(0, Math.min(window.innerHeight * 1.2, -reader.getBoundingClientRect().top)) : 0).toFixed(1) + 'px';
+      const hfs = hf.toFixed(3), gone = live && hf >= .985, hys = (live ? Math.max(0, Math.min(window.innerHeight * 1.2, window.pageYOffset - rbx().top)) : 0).toFixed(1) + 'px';
       if (lv.hf !== hfs) { lv.hf = hfs; story.style.setProperty('--hf', hfs); }
       if (lv.gone !== gone) { lv.gone = gone; story.classList.toggle('rd-gone', gone); }
       if (lv.hy !== hys && (live || lv.hy !== '0.0px')) { lv.hy = hys; story.style.setProperty('--hy', hys); }          // холсты героя стоят на месте, пока гаснут: сцена уезжает вверх, а они — вниз на столько же (в журнале, когда героя не видно, не пишем: это пересчёт стилей всей сцены героя)
     }
     function readerUpdate() {
-      if (flat()) { reader.classList.add('is-flat'); reader.style.setProperty('--ra', '1'); reader.style.setProperty('--fu', '1'); setLive(false, 0); if (s === 0 && p === 0) render(1, {instant: true, noScroll: true}); return; }
+      if (flat()) { reader.classList.add('is-flat'); RS.fu = RS.ra = RS.rb = 1; RS.bd = 0; paintReader(); setLive(false, 0); if (s === 0 && p === 0) render(1, {instant: true, noScroll: true}); return; }
       reader.classList.remove('is-flat');
-      const rr = reader.getBoundingClientRect(), t = readerT();
-      if (!fbox || Math.abs(rr.top + window.pageYOffset - fbox.top) > 2) measureFly();
+      const rb0 = rbx(), rrTop = rb0.top - window.pageYOffset, t = readerT();
+      if (!fbox || Math.abs(rb0.top - fbox.top) > 2) measureFly();
       const lin = flyLin(t), fu = phone() ? ease(clamp(t / .5, 0, 1)) : lin;                  // телефон: журнал встаёт без пролёта, как раньше
       const ra = phone() ? clamp((fu - .86) / .14, 0, 1) : clamp((lin - RD.fade[0]) / (RD.fade[1] - RD.fade[0]), 0, 1);
       if (!A.flyWarm && (t > 0 || window.pageYOffset > fbox.top * .4)) warmFly();                  // подъезжаем к концу героя — пролёт начинает грузиться сразу
-      if (phone()) setLive(false, 0); else setLive(rr.top < -1, ease(clamp(t / RD.hold, 0, 1)));
-      setVar(reader, '--fu', fu.toFixed(4)); setVar(reader, '--ra', ra.toFixed(4));
+      if (phone()) setLive(false, 0); else setLive(rrTop < -1, ease(clamp(t / RD.hold, 0, 1)));
+      RS.fu = fu; RS.ra = ra;
       if (FLd && !phone()) {                                                                    // живой журнал входит в полёте: прозрачность и приглушение под нарисованный (если движок не рисует — как раньше, от --ra)
-        if (!(A.flyDrawn && BKd)) { setVar(reader, '--rb', ra.toFixed(4)); setVar(reader, '--bd', '0'); }              // движок не рисует (нет WebGL2/ключей): журнал проявляется как раньше; иначе --rb и --bd ведёт сам кадр (flyOnDraw), чтобы прозрачность была привязана к той позиции камеры, где журнал стоит на самом деле
+        if (!(A.flyDrawn && BKd)) { RS.rb = ra; RS.bd = 0; }              // движок не рисует (нет WebGL2/ключей): журнал проявляется как раньше; иначе --rb и --bd ведёт сам кадр (flyOnDraw), чтобы прозрачность была привязана к той позиции камеры, где журнал стоит на самом деле
       }
+      paintReader();
       if (phone()) { const target = ra > .94 ? Math.max(s, 1) : 0; if (target !== s && !(s > 0 && target > 0)) render(target, {noScroll: target === 0, instant: true}); return; }
       setP(pOf(t));
     }
@@ -383,6 +404,18 @@
       $$('.mp-pe[data-pe]', mag).forEach(el => { if (el.getAttribute('data-done')) return; el.setAttribute('data-done', '1'); el.innerHTML = A.pearl(el.getAttribute('data-pe') || 'idle', true, ''); });
     }
     paintPearls(); on(window, 'load', paintPearls, {once: true});
+    /* картинки страниц журнала раскодируются заранее, по две за такт простоя: иначе первый поворот листа с фото и нишами брендов ждал загрузки и декодирования прямо в кадре анимации (подвисание в момент листания) */
+    let warmedImgs = false;
+    function warmPages() {
+      if (warmedImgs) return; warmedImgs = true;
+      const imgs = $$('img', mag); let i = 0;
+      const step = () => {
+        for (let n = 0; n < 2 && i < imgs.length; n++) { const im = imgs[i++]; try { im.loading = 'eager'; if (im.decode) im.decode().catch(() => {}); } catch (e) { /* — */ } }
+        if (i < imgs.length) { if (window.requestIdleCallback) window.requestIdleCallback(step, {timeout: 400}); else setTimeout(step, 80); }
+      };
+      step();
+    }
+    setTimeout(warmPages, 5000);
     A.house = {go: id => go(id, {via: 'api'}), hall: () => hall({via: 'api'}), openMagazine: v => { if (flat() || phone()) { jump(readerBox().top); render(v === undefined ? 1 : v, {instant: true}); } else toState(v === undefined ? 1 : v); }, state: () => ({room: current, magazine: true, page: s, rooms: ids, reader: true}), readerState: () => { const f = A.jar && A.jar.fly, st = f && f.state ? f.state() : null; return {t: readerT(), s, p, fly: {on: !!FLd, n: st ? st.N : 0, loaded: st ? st.loaded : 0, drawn: !!(st && st.firstDrawn), p: st ? st.p : 0, jarOk: st ? st.jarOk : null, size: st ? st.size : null, sprites: st ? st.jar : null}}; }};
   }
 
