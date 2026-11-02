@@ -77,7 +77,7 @@
     }
 
     /* ---------- читалка: состояние журнала задаёт прокрутка ---------- */
-    const RD = {open: .30, from: .34, span: .62, hold: .05, align: [.45, .9], fade: [.9, .98]};          // hold — первые 5 % пути камера стоит: холсты героя гаснут над тем же кадром (баночка не мигает)                               // доли пути сцены: пролёт камеры 0….30, журнал стоит на первом развороте, с .34 разворот за разворотом до .96
+    const RD = {open: .30, from: .34, span: .62, hold: .05, fade: [.9, .98]};          // hold — первые 5 % пути камера стоит: холсты героя гаснут над тем же кадром (баночка не мигает)                               // доли пути сцены: пролёт камеры 0….30, журнал стоит на первом развороте, с .34 разворот за разворотом до .96
     const WIN = [.14, .86];                                                    // окно поворота внутри отрезка одного разворота (остальное — страница стоит и читается)
     const ease = x => x * x * (3 - 2 * x);
     const pOf = t => {
@@ -89,10 +89,10 @@
     /* ---------- пролёт камеры: тот же движок зала, что у героя (js/jar.js, режим data-fly) ----------
        Это не набор картинок: ключевые кадры + карты глубины + дорожка камеры + спрайты баночки; для любого положения прокрутки движок строит вид перепроекцией двух соседних ключей (60 к/с, без «шагов»)
        и рисует поверх живой шар и баночку — тот же свет, фон, тени, зерно и резкость, что на главной. Здесь — только положение (Astreya.flyP) и совмещение нарисованного журнала с живым. */
-    const stageEl = $('.hr-stage', reader), hrFly = $('.hr-fly', reader);
+    const stageEl = $('.hr-stage', reader);
     const FLd = reader.hasAttribute('data-fly') ? {F: parseFloat(reader.getAttribute('data-fly-f')) || .3, rect: (() => { try { return JSON.parse(reader.getAttribute('data-fly-rect')); } catch (e) { return null; } })()} : null;
     let fbox = null, sbox = null, bbox = null;                                  // границы читалки в документе, размер сцены, где стоит живой журнал: меряем при размере окна, в кадре вёрстку не читаем
-    const measureFly = () => { fbox = readerBox(); sbox = {w: stageEl.clientWidth, h: stageEl.clientHeight}; bbox = null; };
+    const measureFly = () => { fbox = readerBox(); sbox = {w: stageEl.clientWidth, h: stageEl.clientHeight}; bbox = null; fitBook(); };
     const flyLin = t => clamp((t - RD.hold) / (RD.open - RD.hold), 0, 1);       // доля пролёта: 0 — кадр зала, 1 — камера над журналом
     A.flyP = () => {
       if (!FLd || !fbox || phone() || flat()) return 0;
@@ -100,19 +100,15 @@
       return flyLin(tt) * FLd.F;                                                // положение на дорожке камеры пролёта (путь 0…1, ключи лежат на его первой части 0…F)
     };
     const bookBox = () => { if (!bbox) { const w = $('.mag-wrap', mag); bbox = {x: w.offsetLeft + book.offsetLeft, y: w.offsetTop + book.offsetTop, w: book.offsetWidth, h: book.offsetHeight}; } return bbox; };
-    let fTf = '';
-    function alignFly(fp) {                                                     // к концу пролёта слой сдвигается и масштабируется так, чтобы нарисованный журнал лёг ровно на живой (его размер зависит от экрана)
-      if (!hrFly || !FLd || !FLd.rect) return;
-      const wA = ease(clamp((fp - RD.align[0]) / (RD.align[1] - RD.align[0]), 0, 1));
-      let tf = '';
-      if (wA > 0 && sbox && sbox.w && book.offsetWidth) {
-        const W = sbox.w, Hh = sbox.h, ww = Math.max(W, Hh * 16 / 9), wh = ww * 9 / 16, wx = (W - ww) / 2, wy = (Hh - wh) / 2, r = FLd.rect;
-        const sx = wx + r[0] * ww, sy = wy + r[1] * wh, sw = (r[2] - r[0]) * ww, sh = (r[3] - r[1]) * wh, b = bookBox();
-        const S = 1 + (b.w / sw - 1) * wA, scx = sx + sw / 2, scy = sy + sh / 2;
-        tf = 'translate(' + ((b.x + b.w / 2 - scx) * wA).toFixed(2) + 'px,' + ((b.y + b.h / 2 - scy) * wA).toFixed(2) + 'px) scale(' + S.toFixed(5) + ')';
-        if (!hrFly._o || hrFly._o !== scx.toFixed(1) + scy.toFixed(1)) { hrFly._o = scx.toFixed(1) + scy.toFixed(1); hrFly.style.transformOrigin = scx.toFixed(1) + 'px ' + scy.toFixed(1) + 'px'; }
-      }
-      if (tf !== fTf) { fTf = tf; hrFly.style.transform = tf; }
+    /* Живой журнал подгоняется под нарисованный (а не наоборот): ширина разворота и положение берутся из рамки журнала в последнем ключе пролёта (house.fly.rect) и размера сцены.
+       Слой пролёта при этом не двигается и не масштабируется — раньше его сдвигали и сжимали под живой журнал, и на широком экране по краям открывалась полоса другого цвета, а картинка мылилась от пересэмплирования. */
+    function fitBook() {
+      if (!FLd || !FLd.rect || !sbox || !sbox.w || phone() || flat()) return;
+      const W = sbox.w, Hh = sbox.h, ww = Math.max(W, Hh * 16 / 9), wh = ww * 9 / 16, r = FLd.rect;
+      const cx = W / 2 + ((r[0] + r[2]) / 2 - .5) * ww, cy = Hh / 2 + ((r[1] + r[3]) / 2 - .5) * wh;          // центр нарисованного журнала на экране
+      reader.style.setProperty('--fly-pw', ((r[2] - r[0]) * ww / 2).toFixed(2) + 'px'); reader.style.setProperty('--fly-dx', '0px'); reader.style.setProperty('--fly-dy', '0px');
+      bbox = null; const b = bookBox();
+      reader.style.setProperty('--fly-dx', (cx - (b.x + b.w / 2)).toFixed(2) + 'px'); reader.style.setProperty('--fly-dy', (cy - (b.y + b.h / 2)).toFixed(2) + 'px'); bbox = null;
     }
     /* ?flydebug в адресе — в углу экрана состояние пролёта (для разбора, если у кого-то вместо пролёта запасной «наезд») */
     if (FLd && /flydebug/.test(location.search + location.hash)) {
@@ -149,7 +145,6 @@
       if (!A.flyWarm && (t > 0 || window.pageYOffset > fbox.top * .4)) warmFly();                  // подъезжаем к концу героя — пролёт начинает грузиться сразу
       if (phone()) setLive(false, 0); else setLive(rr.top < -1, ease(clamp(t / RD.hold, 0, 1)));
       setVar(reader, '--fu', fu.toFixed(4)); setVar(reader, '--ra', ra.toFixed(4));
-      if (!phone()) alignFly(lin);
       if (phone()) { const target = ra > .94 ? Math.max(s, 1) : 0; if (target !== s && !(s > 0 && target > 0)) render(target, {noScroll: target === 0, instant: true}); return; }
       setP(pOf(t));
     }
@@ -253,7 +248,7 @@
       const v = clamp(Math.round(p), 1, N - 1);
       if (Math.abs(p - v) > .03) toState(v);
     }
-    on(window, 'scroll', onScroll, {passive: true}); on(window, 'resize', () => { fbox = null; fTf = ''; onScroll(); }, {passive: true});
+    on(window, 'scroll', onScroll, {passive: true}); on(window, 'resize', () => { fbox = null; onScroll(); }, {passive: true});
 
     /* ---------- события: клики, клавиатура, свайп ---------- */
     on(document, 'click', e => {

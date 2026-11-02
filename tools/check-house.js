@@ -107,7 +107,16 @@ const t = (cond, name, info) => { if (cond) ok++; else bad.push(name + (info !==
     const a0 = await fp(.06), a1 = await fp(.15), a2 = await fp(.29), a3 = await fp(.31);
     t(a0.ready && a0.shown && a1.p > a0.p + .02 && a2.p > a1.p + .02, 'пролёт камеры: картинку строит движок, положение идёт вместе с прокруткой (в начале, посередине, в конце)', {a0, a1, a2});
     t(Math.abs(a3.p - fl.F) < 2e-3 && Math.abs(a3.pT - fl.F) < 1e-6, 'пролёт камеры: в конце камера стоит над журналом (конец дорожки пролёта)', a3);
-    t(!!a2.tr && /scale/.test(a2.tr), 'пролёт камеры: в конце слой совмещён с живым журналом (сдвиг и масштаб)', a2.tr);
+    /* живой журнал подогнан под нарисованный (а не слой под живой): слой пролёта не двигается и не сжимается, по краям экрана полос нет; размер и центр совпадают на любом экране */
+    const fit = async () => p.evaluate(() => { const r = JSON.parse(document.getElementById('house-reader').getAttribute('data-fly-rect')), st = document.querySelector('.hr-stage').getBoundingClientRect(), W = st.width, Hh = st.height, ww = Math.max(W, Hh * 16 / 9), wh = ww * 9 / 16, b = document.querySelector('#mag .mag-book').getBoundingClientRect(), cv = document.querySelector('.hr-fly .js-cv').getBoundingClientRect(), fly = document.querySelector('.hr-fly');
+      return {dw: +(b.width - (r[2] - r[0]) * ww).toFixed(2), dx: +(b.left + b.width / 2 - (W / 2 + ((r[0] + r[2]) / 2 - .5) * ww)).toFixed(2), dy: +(b.top + b.height / 2 - (Hh / 2 + ((r[1] + r[3]) / 2 - .5) * wh)).toFixed(2), tr: fly.style.transform, cover: cv.left <= 0.5 && cv.top <= 0.5 && cv.right >= W - 0.5 && cv.bottom >= Hh - 0.5}; });
+    await at(p, .31); const f0 = await fit();
+    t(Math.abs(f0.dw) < 1.5 && Math.abs(f0.dx) < 1.5 && Math.abs(f0.dy) < 1.5 && !f0.tr && f0.cover, 'пролёт камеры: живой журнал ровно на месте нарисованного (размер и центр, ≤ 1,5 px), слой пролёта не сдвинут и не сжат, края экрана закрыты картинкой (1440×900)', f0);
+    const vp0 = p.viewportSize();
+    for (const [vw, vh] of [[1868, 960], [1280, 720], [1100, 900]]) {
+      await p.setViewportSize({width: vw, height: vh}); await p.waitForTimeout(500); await at(p, .31); await p.waitForTimeout(300); const fw = await fit();
+      t(Math.abs(fw.dw) < 1.5 && Math.abs(fw.dx) < 1.5 && Math.abs(fw.dy) < 1.5 && !fw.tr && fw.cover, 'пролёт камеры: то же на другом экране — журнал на месте нарисованного, по краям полос нет (' + vw + '×' + vh + ')', fw); }
+    await p.setViewportSize(vp0); await p.waitForTimeout(500);
     const cmp = await p.evaluate(() => { const b = document.querySelector('#mag .mag-book').getBoundingClientRect(), w = document.querySelector('#mag .mag-wrap'); return {bw: Math.round(b.width), op: +getComputedStyle(w).opacity}; });
     t(cmp.bw > 300 && cmp.op === 1, 'пролёт камеры: живой журнал на месте, виден (' + cmp.bw + ' px)', cmp);
     /* двоения нет: пока живой журнал не начал проявляться (--ra = 0), нарисованный уже совмещён с ним; проявление короткое */

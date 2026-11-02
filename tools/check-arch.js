@@ -146,7 +146,7 @@ if (!J || !J.enabled || !A || !A.enabled) { console.log('Первый экран
     else ok(sh.l0 >= 0 && sh.l0 < sh.l30 * 0.65, 'прежние кадры: первый кадр закрыт светлым размытием: резкость на заставке (p = 0) ниже, чем после того, как оно сошло (p = 0,3)', sh);
     for (const k of [14, 26, 40]) {
       await p.evaluate(([a, b]) => Astreya.jar.ctrl.prefetch(a, b), [k - 1, k + 2]);
-      const r = await p.evaluate(([a, b]) => { const c = Astreya.jar.ctrl, L = () => window.__lap('.js-cv'); c.jump(a); const l0 = L(); c.jump((a + b) / 2); const lm = L(), dr = c.state().drawn; c.jump(b); return {l0, lm, l1: L(), dr}; }, [Pk[k], Pk[k + 1]]);
+      const r = await p.evaluate(([a, b]) => { window.__ASTREYA_NOAA = true; const c = Astreya.jar.ctrl, L = () => window.__lap('.js-cv'); c.jump(a); const l0 = L(); c.jump((a + b) / 2); const lm = L(), dr = c.state().drawn; c.jump(b); window.__ASTREYA_NOAA = false; return {l0, lm, l1: L(), dr}; }, [Pk[k], Pk[k + 1]]);          // без сглаживания кромок: проверяем сами кадры (не смешиваются «картинка в картинку»); сглаживание «лесенки» кромок по глубине в покое между ключами — отдельно
       ok(r.lm >= 0.7 * Math.min(r.l0, r.l1) && r.dr && !r.dr.single && Math.abs(r.dr.t - 0.5) < 0.02, `чёткость между ключевыми кадрами ${k}–${k + 1}: в середине шага не ниже 70 % резкости кадров (кадры не смешиваются «картинка в картинку»)`, r);
     }
     await p.evaluate(([a, b]) => Astreya.jar.ctrl.prefetch(a, b), [24, 35]);

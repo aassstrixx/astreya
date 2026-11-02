@@ -75,6 +75,7 @@
     let hall = null, jar = null, track = null, set = '', gen = 0, labelReady = false, lastDraw = null, resScale = 1;
     let lastJarOk = null, dtEma = 16.7, minDt = 16.7, slowRun = 0, govChanges = 0;
     const perfRing = new Float32Array(240); let perfN = 0;
+    const ALLRES = FLY && RICH;                                                     // пролёт: на мощном устройстве (≥ 8 ГБ) все ключи лежат в видеопамяти целиком, быстрого режима с уменьшенными копиями нет — картинка в движении такая же резкая, как в покое
     let dirSign = 1, gate = !FLY;                                                      // gate — пролёт грузит ключи, когда читалка разрешит (self.warm): пока герой не доехал до конца, трафик нужен ему
 
     /* ---- живой шар: вращается сам (≈ 7,5°/с, 60 fps) только в статике — на финальном экране героя с текстом (cp ≥ 0,995); на курсор не реагирует; во всей скролл-анимации (и когда её остановили посередине) стоит на месте: раньше вращение продолжалось на паузах и баночка подлагивала от лишних проходов шара (js/jar-gl.js рисует его поверх кадра зала с учётом глубины) ---- */
@@ -145,7 +146,7 @@
 
     /* что грузить следующим: первый кадр → пара у положения → окно впереди по ходу движения → остальное от грубого к тонкому */
     function pickNext() {
-      const need = k => { for (const key of ['c', 'z', 'j']) if (!busy[key][k]) return key; return null; };
+      const need = k => { for (const key of ['c', 'z', 'j']) { if (FLY && key === 'j' && k > 0) continue; if (!busy[key][k]) return key; } return null; };               // пролёт: баночка — один спрайт (ключ 0, тот же, что на главной), остальные не нужны
       const tryK = k => { if (k < 0 || k >= NH) return null; const key = need(k); return key ? {key, k} : null; };
       let r;
       if ((r = tryK(0))) return r;
@@ -197,7 +198,7 @@
     }
     function pumpLows() {
       const LD = LOWDEC[isPortrait() ? 1 : 0];
-      if (decL >= LD || !hall || !firstDrawn) return;
+      if (ALLRES || decL >= LD || !hall || !firstDrawn) return;                  // пролёт на мощном устройстве держит в видеопамяти все ключи целиком — уменьшенные копии ему не нужны
       const u = locate(cp), c = u.k + u.t;
       for (let d = 0; d < NH && decL < LD; d++) {
         for (const k of [Math.round(c) + dirSign * d, Math.round(c) - dirSign * d]) {
@@ -227,7 +228,7 @@
       if (dead || !hall) return;
       pumpLows();
       if (fast) return;
-      const R = RES[isPortrait() ? 1 : 0], l = locate(cp);
+      const R = ALLRES ? NH : RES[isPortrait() ? 1 : 0], l = locate(cp);
       const need = [];
       for (let d = 0; d <= R; d++) { for (const k of [l.k + d, l.k + 1 - d]) if (k >= 0 && k < NH && need.indexOf(k) < 0) need.push(k); }
       need.sort((a, b) => Math.abs(a - (l.k + l.t)) - Math.abs(b - (l.k + l.t)));
@@ -253,7 +254,7 @@
       }
     }
     function evict() {                                                // дальше окна — выгружаем текстуры (файлы остаются в памяти и разворачиваются снова по требованию)
-      if (!hall || fast) return;
+      if (!hall || fast || ALLRES) return;
       const R = RES[isPortrait() ? 1 : 0], l = locate(cp), c = l.k + l.t;
       const ka = lastDraw ? lastDraw.ka : -1, kb = lastDraw ? lastDraw.kb : -1;       // кадры, по которым нарисовано то, что на экране сейчас, не выгружаем: иначе при нехватке новых картинка скачет назад к чужому кадру
       for (let k = 0; k < NH; k++) {
@@ -345,12 +346,12 @@
       const jk = FLY ? 1 : jarK(pc), lift = FLY ? 0 : jarLift(pc), ground = FLY ? 0 : jarGround(pc), halo = FLY ? 0 : jarHalo(pc);
       if (FLY && typeof A.sphYaw === 'number') sph.yaw = A.sphYaw;                // шар стоит так же, как он стоял на последнем экране героя (там он вращался сам)
       sphPush();
-      const pair = hall.draw(pc, 0, speed > MOVING, {jk, lift});
+      const pair = hall.draw(pc, 0, !window.__ASTREYA_NOAA, {jk, lift});                          // сглаживание кромок — всегда, когда кадр строится перепроекцией (между ключами): раньше только в движении, а в покое сцену подтягивало к ключу (без перепроекции); теперь покой бывает между ключами, и без сглаживания кромки по глубине шли «лесенкой»
       if (!pair) return false;
       lastDraw = {ka: pair.ka, kb: pair.kb, t: pair.t, single: !!pair.single};
       if (!firstDrawn) { firstDrawn = true; if (cp < 0.02 && !FLY) root.classList.add('ar-intro'); root.classList.add('ready'); }
       if (jar) {
-        const ok = jar.draw(pc, pair, {jk, lift, ground, halo}); lastJarOk = ok;
+        const ok = jar.draw(pc, pair, {jk, lift, ground, halo, fixed: FLY ? 0 : -1}); lastJarOk = ok;
         if (ok && !jarShown) { jarShown = true; if (cp < 0.02 && !FLY) root.classList.add('ar-intro'); root.classList.add('jar-ready'); }
       }
       return true;
@@ -407,7 +408,7 @@
       cp = clamp(cp, 0, 1);
       if (Math.abs(vp) > 1e-3) dirSign = vp > 0 ? 1 : -1;
       { const spd = Math.max(Math.abs(vp), Math.abs(cp - cpTick) / dt) * KS; cpTick = cp;      // скорость: и пружины, и реально пройденное за кадр (при редких кадрах скорость пружины к концу шага уже мала)                                   // «взмах»: пока он идёт, полные кадры не разворачиваем и не грузим (уменьшенных копий хватает)
-        if (!fast && spd > FAST_ON && lowN >= NH * 0.9 && (!jar || lowJN >= NH * 0.9)) fast = true;
+        if (!FLY && !fast && spd > FAST_ON && lowN >= NH * 0.9 && (!jar || lowJN >= NH * 0.9)) fast = true;
         else if (fast && spd < FAST_OFF) { fast = false; pumpDecode(); } }
       const inView = y + vh > sTop && y < sTop + sH;
       if (inView !== sph.view) sph.view = inView;
@@ -473,7 +474,7 @@
     const self = {
       root,
       /* для проверок: держать кадры a…b в видеопамяти и дождаться, пока они развернутся (все — и зал, и спрайты) */
-      prefetch(a, b) { pin = [Math.max(0, a), Math.min(NH - 1, b)]; return new Promise(res => { const t = setInterval(() => { let ok = !!hall; for (let k = pin[0]; k <= pin[1]; k++) if (!resident[k] || !resJ[k]) ok = false; if (ok || dead) { clearInterval(t); res(ok); } else pumpDecode(); }, 80); }); },
+      prefetch(a, b) { pin = [Math.max(0, a), Math.min(NH - 1, b)]; return new Promise(res => { const t = setInterval(() => { let ok = !!hall; for (let k = pin[0]; k <= pin[1]; k++) if (!resident[k] || (!resJ[k] && !(FLY && k > 0))) ok = false; if (ok || dead) { clearInterval(t); res(ok); } else pumpDecode(); }, 80); }); },
       unpin() { pin = null; },
       /* для проверок: только уменьшенные копии (полные кадры и спрайты выгружены и не разворачиваются) — так выглядит прокрутка, пока рядом нет полных кадров */
       lowOnly(on) { lowOnlyF = !!on; if (on && hall) { for (let k = 0; k < NH; k++) { if (resident[k]) { hall.dropKey(k); resident[k] = 0; } if (resJ[k] && jar) { jar.dropSprite(k); resJ[k] = 0; } } } dirty = true; schedule(); },
@@ -489,7 +490,7 @@
       },
       destroy() { dead = true; destroyGL(); for (const k in blobs) blobs[k].fill(null); }
     };
-    self.complete = () => loadedKeys >= NH && blobs.z.every(Boolean) && blobs.j.every(Boolean);
+    self.complete = () => loadedKeys >= NH && blobs.z.every(Boolean) && (FLY ? !!blobs.j[0] : blobs.j.every(Boolean));
     return self;
   }
 

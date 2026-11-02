@@ -563,6 +563,42 @@ def flykeys(argv):
         cam = S['cam']; sc = bpy.context.scene
         cam.matrix_world = Matrix.Translation(pos) @ m3.to_4x4(); cam.data.lens = lens; cam.data.shift_x = cam.data.shift_y = 0.0
         bpy.context.view_layer.update()
+    if layer == 'objs':                                                                    # flykeys objs <n> <i> x,y — какие объекты стоят в точке кадра пролёта i (доли кадра: x вправо, y вниз)
+        i = int(rest[3]); px, py = [float(v) for v in rest[4].split(',')]
+        set_cam(i / float(n)); cam = S['cam']; cm = cam.matrix_world; dg = bpy.context.evaluated_depsgraph_get(); W0, H0 = o['res']; hits = {}
+        for gx in range(-30, 31):
+            for gy in range(-30, 31):
+                fx, fy = px + gx * .0016, py + gy * .0045
+                d = cm.to_3x3() @ Vector(((fx - .5) * 2 * tanh, (.5 - fy) * 2 * tanh * H0 / W0, -1.0)); d.normalize()
+                ok, loc, nrm, idx, hob, mt = bpy.context.scene.ray_cast(dg, cm.translation, d)
+                if ok:
+                    hits.setdefault(hob.name, []).append((round(fx, 3), round(fy, 3), round((loc - cm.translation).length, 3)))
+        sc_ = bpy.context.scene                                                                   # объекты, скрытые во вьюпорте (рендер их видит, ray_cast — нет): по проекции габаритной рамки
+        for ob in bpy.data.objects:
+            if ob.type not in H.MESHY or ob.hide_render:
+                continue
+            pts_ = [H.proj(sc_, cam, ob.matrix_world @ Vector(c)) for c in ob.bound_box]
+            xs2, ys2 = [q[0] for q in pts_], [q[1] for q in pts_]
+            if min(xs2) - .004 <= px <= max(xs2) + .004 and min(ys2) - .004 <= py <= max(ys2) + .004 and (max(xs2) - min(xs2)) < .25:
+                print('РАМКА', ob.name, 'родитель', ob.parent.name if ob.parent else None, 'размеры', [round(v, 3) for v in ob.dimensions], 'центр', [round(v, 3) for v in ob.matrix_world.translation], 'скрыт во вьюпорте', ob.hide_viewport, 'виден камере', ob.visible_camera, 'материалы', [m.name for m in ob.data.materials] if ob.data and hasattr(ob.data, 'materials') else None, 'рамка', [round(min(xs2), 3), round(max(xs2), 3), round(min(ys2), 3), round(max(ys2), 3)])
+        for ob in bpy.data.objects:                                                                  # все надписи/этикетки: где стоят (центр габаритной рамки в мире) и чьи
+            if ob.name.startswith('label') and ob.type in H.MESHY:
+                cc_ = sum((ob.matrix_world @ Vector(c) for c in ob.bound_box), Vector((0, 0, 0))) / 8.0
+                print('ЭТИКЕТКА', ob.name, [round(v, 3) for v in cc_], [round(v, 3) for v in ob.dimensions], 'родитель', ob.parent.name if ob.parent else None, 'скрыт', ob.hide_render, 'камере', ob.visible_camera, 'в jar_objs', ob in S['jar_objs'])
+        lb = bpy.data.objects.get(os.environ.get('FLY_NEAR', 'label.011'))                           # соседи объекта (его упаковка целиком): по центру габаритной рамки в мире
+        if lb is not None:
+            cen = lambda ob_: sum((ob_.matrix_world @ Vector(c) for c in ob_.bound_box), Vector((0, 0, 0))) / 8.0
+            c0 = cen(lb); print('ЦЕНТР', lb.name, [round(v, 4) for v in c0])
+            for ob in bpy.data.objects:
+                if ob.type in H.MESHY and not ob.hide_render:
+                    d_ = (cen(ob) - c0).length
+                    if d_ < .07:
+                        print('СОСЕД', ob.name, 'расст', round(d_, 4), 'размеры', [round(v, 3) for v in ob.dimensions], 'родитель', ob.parent.name if ob.parent else None, 'материалы', [m.name for m in ob.data.materials] if ob.data and hasattr(ob.data, 'materials') else None, 'виден камере', ob.visible_camera)
+        for nm, pts in sorted(hits.items(), key=lambda kv: -len(kv[1])):
+            ob = bpy.data.objects[nm]
+            xs_, ys_, ds_ = [q[0] for q in pts], [q[1] for q in pts], [q[2] for q in pts]
+            print('ЛУЧ', nm, len(pts), 'родитель', ob.parent.name if ob.parent else None, 'размеры', [round(v, 3) for v in ob.dimensions], 'центр', [round(v, 3) for v in ob.matrix_world.translation], 'материалы', [m.name for m in ob.data.materials] if ob.data and hasattr(ob.data, 'materials') else None, 'x', (min(xs_), max(xs_)), 'y', (min(ys_), max(ys_)), 'расст', (min(ds_), max(ds_)))
+        return
     if layer == 'track':
         M = int(os.environ.get('FLY_M', 361))
         base = json.load(open(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..', 'assets', 'house-hall', 'cam-m.json' if port else 'cam-d.json')))
@@ -577,17 +613,48 @@ def flykeys(argv):
             tr_[k] = base[k]
         json.dump(tr_, open(outp, 'w')); print('дорожка пролёта записана', outp, M, 'F =', Fp)
         return
+    if layer == 'sched':                                                                   # flykeys sched <K> 1 out.json — положения ключей w (0…1) так, чтобы между соседними ключами картинка менялась одинаково (камера летит с разной скоростью: в середине быстрее, ключи там гуще)
+        K = int(n); S_ = 1440; cum = [0.0]; prev = state(0.0)
+        for j in range(1, S_ + 1):
+            cur = state(j / float(S_))
+            f0 = (prev[1] - prev[0]).normalized(); f1 = (cur[1] - cur[0]).normalized()
+            ang = math.acos(max(-1.0, min(1.0, f0.dot(f1)))); roll = math.acos(max(-1.0, min(1.0, prev[2].dot(cur[2]))))
+            cum.append(cum[-1] + (cur[0] - prev[0]).length / 2.0 + ang * 1.0 + roll * .4); prev = cur
+        ws = []
+        for k in range(K):
+            goal = cum[-1] * k / float(K - 1); j = 0
+            while j < S_ and cum[j + 1] < goal:
+                j += 1
+            j = min(j, S_ - 1); seg = cum[j + 1] - cum[j]; ws.append(round((j + ((goal - cum[j]) / seg if seg > 0 else 0.0)) / S_, 6))
+        json.dump({'ws': ws, 'metric_total': cum[-1]}, open(outp, 'w')); print('расписание ключей:', K, 'всего', round(cum[-1], 3), 'шаг', round(cum[-1] / (K - 1), 4)); print(ws)
+        return
     os.makedirs(outp, exist_ok=True)
     sc = bpy.context.scene
     if layer == 'z':
         H.setup_depth()
-    for i in range(step, n + 1, step):
+    hide = [x for x in os.environ.get('FLY_HIDE', '').split(',') if x]                       # объекты, которых в пролёте быть не должно (скрыты целиком, вместе с тенью)
+    for nm in hide:
+        ob = bpy.data.objects.get(nm)
+        if ob is not None:
+            ob.hide_render = True
+    if layer == 'color':
+        H.set_layer('all'); sc.render.use_border = False
+        for ob in S['jar_objs']:
+            if ob.type in H.MESHY:
+                ob.visible_camera = False                                                      # баночка невидима камере (её рисует сайт спрайтом), но отбрасывает тень и отражается в полу
+    wsf = os.environ.get('FLY_WS')                                                          # файл расписания (flykeys sched): ключи по номеру k, w из файла
+    keys = [(k, w) for k, w in enumerate(json.load(open(wsf))['ws'])] if wsf else [(i, i / float(n)) for i in range(step, n + 1, step)]
+    for i, w_key in keys:
         path = os.path.abspath(os.path.join(outp, '%03d.png' % i))
-        if os.path.exists(path):
+        if os.path.exists(path) or (wsf and i == 0):                                       # ключ 0 — готовый кадр зала
             continue
-        set_cam(i / float(n))
+        if os.environ.get('FLY_ONLY') and str(i) not in os.environ['FLY_ONLY'].split(','):                  # только эти ключи (проверки)
+            continue
+        set_cam(w_key)
         if layer == 'z':
             H.set_layer('bg'); sc.render.use_border = False; sc.render.film_transparent = False
+            sc.render.filepath = path; bpy.ops.render.render(write_still=True)
+        elif layer == 'color':
             sc.render.filepath = path; bpy.ops.render.render(write_still=True)
         else:                                                                              # jar
             H.set_layer('bg')                                                              # (положение рамки считаем при камере кадра)

@@ -720,6 +720,7 @@ void main() {
       gl.clearColor(0, 0, 0, 0); gl.clear(gl.COLOR_BUFFER_BIT);
       if (!pair) return false;
       let ka = pair.ka, kb = pair.kb, t = pair.t;
+      if (opt.fixed >= 0) { ka = kb = opt.fixed; t = 0; }                       // один спрайт на весь путь (пролёт: тот же спрайт, что у героя; камера лишь переносит и масштабирует его)
       if (!spr(ka) && !spr(kb)) {                       // нужных спрайтов ещё нет — ближайший загруженный
         let best = -1, bd = 1e9;
         for (let k = 0; k < N; k++) if (spr(k)) { const d = Math.abs(Phi[k] - p); if (d < bd) { bd = d; best = k; } }
