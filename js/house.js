@@ -251,50 +251,24 @@
        (≈ 150 пикселей колеса — один разворот), а страницу ведёт пружина с критическим затуханием по реальному времени кадра (60 fps): за один щелчок колеса — один разворот, за быстрый взмах — несколько. Рука остановилась —
        через 140 мс цель встаёт на ближайший разворот и лист доворачивается сам. Край журнала (первый/последний разворот) колесо не перехватывает: вверх идёт обратный пролёт камеры, вниз — прокрутка к подвалу.
        До журнала и на телефоне — обычная прокрутка */
-    /* Листание колесом — как с бумагой: лист идёт вслед за рукой и, как только рука остановилась, доворачивается в ту сторону, куда её вели; обратно он не возвращается (назад — только если сами крутнули назад).
-       Два щелчка (≈ 200 px) — один разворот в темпе руки; одиночный щелчок — лист подхватывается и быстро переворачивается до конца (жёсткая пружина). Пауза в 150 мс после последнего щелчка отделяет жест от следующего. */
-    const WHEEL_PX = 200, NAV_W = 13, NAV_END = 16, NAV_FAST = 28, HOLD = 150;          // пикселей колеса на разворот; жёсткость пружины, 1/с: вслед за рукой / доворот / быстрый доворот после короткого жеста
-    const nav = {raf: 0, y: 0, v: 0, goal: 0, last: 0, at: 0, hold: HOLD, settled: true, w: NAV_W, anchor: 1, yAnchor: 0, ev: []};
-    const tOfY = y => { const b = readerBox(); return b.total > 0 ? (y - b.top) / b.total : 1; };
-    const yOfSpread = v => { const b = readerBox(), tt = v <= 1 ? RD.from : RD.from + (v - 1) / (N - 2) * RD.span; return b.top + b.total * tt; };
-    const spreadAt = y => clamp(Math.round(pOf(tOfY(y))), 1, N - 1);
-    const navStop = () => { if (nav.raf) { cancelAnimationFrame(nav.raf); nav.raf = 0; } nav.settled = true; };
-    function navFrame(ts) {
-      nav.raf = 0;
-      const dt = nav.last ? clamp((ts - nav.last) / 1000, .001, .05) : .0167; nav.last = ts;
-      if (!nav.settled && ts - nav.at > nav.hold) {                                                                              // рука остановилась: лист доворачивается до следующего разворота в сторону движения (хоть чуть сдвинули — перевернётся, обратно не ляжет)
-        const sp0 = yOfSpread(2) - yOfSpread(1), pr = (nav.goal - nav.yAnchor) / sp0, mg = Math.abs(pr), n = mg < .04 ? 0 : Math.ceil(mg - 1e-6);
-        nav.goal = yOfSpread(clamp(nav.anchor + (pr < 0 ? -1 : 1) * n, 1, N - 1)); nav.settled = true; nav.w = n > 0 && mg < 1 ? NAV_FAST : NAV_END;
-      }
-      const W = nav.settled ? nav.w : NAV_W, e = Math.exp(-W * dt), d = nav.y - nav.goal, c = nav.v + W * d;
-      nav.y = nav.goal + (d + c * dt) * e; nav.v = (nav.v - W * c * dt) * e;
-      const done = nav.settled && Math.abs(nav.y - nav.goal) < .45 && Math.abs(nav.v) < 6;
-      if (done) { nav.y = nav.goal; nav.v = 0; }
-      window.scrollTo({top: Math.round(nav.y), behavior: 'instant'}); readerUpdate();
-      if (done) { nav.last = 0; track('house_magazine_flip', {page: spreadAt(nav.y), via: 'wheel'}); } else nav.raf = requestAnimationFrame(navFrame);
-    }
+    /* Листание колесом — то же движение, что при нажатии «Далее»/«Назад» (glide: тот же ход, та же длительность, не быстрее и не медленнее): один жест колеса — один разворот.
+       Жест — серия событий с паузами меньше 130 мс (щелчки подряд, инерция трекпада); пока лист идёт, события колеса гасятся; следующий разворот — после паузы в 130 мс и после остановки листа.
+       Край журнала (первый разворот вверх, последний вниз) колесо не перехватывает. */
+    const GESTURE_GAP = 130;
+    const wg = {t: 0, fired: false};
+    const navStop = () => {};
     on(window, 'wheel', e => {
       if (e.ctrlKey || e.defaultPrevented || flat() || phone() || !reader.classList.contains('is-live') || Math.abs(e.deltaX) > Math.abs(e.deltaY)) return;
       const t = readerT(); if (t < RD.open - .002 || t > RD.from + RD.span + .02) return;
       let dy = e.deltaY; if (e.deltaMode === 1) dy *= 34; else if (e.deltaMode === 2) dy *= window.innerHeight;
-      if (Math.abs(dy) < 3) return;                                              // хвост инерции трекпада — шум: журнал не дёргает
-      const dir = dy > 0 ? 1 : -1, y0 = nav.raf ? nav.goal : window.pageYOffset, yFirst = yOfSpread(1), yLast = yOfSpread(N - 1);
-      if ((dir > 0 && y0 >= yLast - 1) || (dir < 0 && y0 <= yFirst + 1)) return;       // край журнала — обычная прокрутка
+      if (Math.abs(dy) < 3) return;                                              // хвост инерции трекпада — шум
+      const dir = dy > 0 ? 1 : -1, base = goal !== null ? goal : s;
+      if ((dir > 0 && base >= N - 1) || (dir < 0 && base <= 1)) return;          // край журнала — обычная прокрутка (вверх с первого разворота — назад к пролёту камеры)
       e.preventDefault(); e.__houseStep = true;
       if (A.motion && A.motion.cancelSmooth) A.motion.cancelSmooth();
-      if (glideRaf) { cancelAnimationFrame(glideRaf); glideRaf = 0; goal = null; }
-      const sp = yOfSpread(2) - yFirst;                                          // пикселей прокрутки страницы на один разворот
-      if (!nav.raf) { nav.y = window.pageYOffset; nav.v = 0; nav.last = 0; nav.goal = nav.y; }
-      if (nav.settled) { nav.anchor = clamp(Math.round(pOf(tOfY(nav.y))), 1, N - 1); nav.yAnchor = yOfSpread(nav.anchor); nav.ev.length = 0; }       // новый жест: от какого разворота считаем
-      const now = performance.now(); nav.ev.push([now, Math.abs(dy)]); while (nav.ev.length && now - nav.ev[0][0] > 300) nav.ev.shift();
-      const vel = nav.ev.reduce((s, x) => s + x[1], 0) / .3;                      // скорость колеса, px/с: быстрые щелчки подряд листают быстрее (до двух раз), медленные — по два щелчка на разворот
-      const gain = 1 + clamp((vel - 800) / 1000, 0, 1);
-      let g = (nav.settled ? nav.y : nav.goal);
-      if (dir > 0 && g < yFirst) g = yFirst;                                      // журнал ещё «открывается» (камера над ним): первый щелчок сразу ведёт к первому повороту
-      g = clamp(g + dy / WHEEL_PX * gain * sp, yFirst, yLast);
-      g = clamp(g, nav.y - 2.5 * sp, nav.y + 2.5 * sp);                           // цель не убегает от страницы дальше чем на 2,5 разворота
-      nav.goal = g; nav.at = now; nav.settled = false; nav.hold = HOLD;
-      if (!nav.raf) nav.raf = requestAnimationFrame(navFrame);
+      const now = performance.now(); if (now - wg.t > GESTURE_GAP) wg.fired = false; wg.t = now;
+      if (wg.fired || glideRaf) return;                                          // этот жест уже листнул разворот / лист ещё идёт
+      wg.fired = true; step(dir);
     }, {passive: false, capture: true});
 
     on(window, 'keydown', e => { if (glideRaf && /^(ArrowUp|ArrowDown|PageUp|PageDown|Home|End| )$/.test(e.key) && !(e.target && e.target.closest && e.target.closest('#mag'))) glideStop(); });
@@ -330,7 +304,7 @@
     }
     /* прокрутка остановилась посередине поворота (инерция колеса, полоса прокрутки, клавиши) — лист доворачивается до ближайшего разворота сам, как при «Далее»: страница не «застревает» на полустранице */
     function snapCheck() {
-      if (glideRaf || nav.raf || window.__HOUSE_SNAP === false || flat() || phone() || !reader.classList.contains('is-live')) return;          // __HOUSE_SNAP === false — только для проверок точных промежуточных положений
+      if (glideRaf || window.__HOUSE_SNAP === false || flat() || phone() || !reader.classList.contains('is-live')) return;          // __HOUSE_SNAP === false — только для проверок точных промежуточных положений
       const t = readerT(); if (t < RD.from - .005 || t > RD.from + RD.span + .005) return;
       const v = clamp(sdir > 0 ? Math.ceil(p - .03) : sdir < 0 ? Math.floor(p + .03) : Math.round(p), 1, N - 1);          // листок, оставленный посреди поворота (полоса прокрутки, клавиши), доворачивается туда, куда его вели, а не к ближайшему: назад он не уходит
       if (Math.abs(p - v) > .03) toState(v);

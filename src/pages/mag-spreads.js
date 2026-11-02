@@ -152,7 +152,7 @@ module.exports = function magSpreads(ctx, C, P, deps) {
   /* словарь ухода: определения — из мини-справочника Стеллы (data/stella/glossary.json: общая справка, не рекомендация); берётся первое предложение */
   let gl = []; try { gl = JSON.parse(fs.readFileSync(path.join(__dirname, '..', '..', 'data', 'stella', 'glossary.json'), 'utf8')).topics || []; } catch (e) { gl = []; }
   const terms = (pg.editorial.glossary || []).map(id => gl.find(x => x.id === id)).filter(Boolean).map(x => { const a = String(x.a[0]).replace(/\*\*/g, '').replace(/\s+/g, ' ').trim(), m = /^(.+?)\s+—\s+(.+?[.!?])(\s|$)/.exec(a); return m ? {t: m[1].replace(/\s*\(.*\)$/, ''), d: m[2]} : null; }).filter(Boolean);
-  const glossary = terms.length ? `<p class="mp-sub">${esc(pg.editorial.glossaryTitle)}</p><dl class="mp-gl">${terms.map(x => `<div><dt>${esc(x.t)}</dt><dd>${esc(x.d)}</dd></div>`).join('')}</dl>` : '';
+  const glossary = terms.length ? `<div class="mp-glw"><p class="mp-sub">${esc(pg.editorial.glossaryTitle)}</p><dl class="mp-gl">${terms.map(x => `<div><dt>${esc(x.t)}</dt><dd>${esc(x.d)}</dd></div>`).join('')}</dl></div>` : '';
   const [n0, n1, n2] = news, cat = n => (newsCat[n.category] || {}).name || '';
   const nPhoto = n => { const b = (n.related || {}).brands && n.related.brands[0] || (/dermatime|keenwell|iraltone|heliocare|eva|neoretin|endocare|biretix|elancyl/.exec(n.title.toLowerCase()) || [])[0]; return b && ctx.brandById[b] ? `assets/brands/niche-${b}.webp` : 'assets/brands/niche-dermatime.webp'; };
   const editorial = {

@@ -168,32 +168,26 @@ const t = (cond, name, info) => { if (cond) ok++; else bad.push(name + (info !==
     await p.click('#mag .mag-nx'); await p.waitForTimeout(150); await p.click('#mag .mag-nx'); await settle(p); const b2 = (await rs(p)).p;
     t(Math.abs(b2 - b1 - 2) < .02, 'два быстрых нажатия «Далее» подряд листают на два разворота', {b1, b2});
     await p.click('#mag .mag-pv'); await settle(p); await p.click('#mag .mag-pv'); await settle(p);
-    /* колесо: лист идёт за рукой и доворачивается в сторону движения; обратно не возвращается; одиночный щелчок — быстрый переворот, два щелчка — один разворот */
+    /* колесо: один жест — один разворот, тем же ходом, что кнопка «Далее» (не быстрее и не медленнее); пока лист идёт, колесо не мешает; назад лист не уходит */
     await p.evaluate(() => window.Astreya.house.openMagazine(1)); await settle(p); await p.mouse.move(700, 450);
     const w0 = await rs(p);
-    const sampler = p.evaluate(() => new Promise(res => { const a = []; const t0 = performance.now(); const f = () => { a.push(+window.Astreya.house.readerState().p.toFixed(3)); if (performance.now() - t0 < 1500) setTimeout(f, 25); else res(a); }; f(); }));
-    await p.mouse.wheel(0, 100); const trace = await sampler; await settle(p); const w1 = await rs(p);
-    const back = trace.some((v, i) => i && v < trace[i - 1] - .004), tFlip = trace.findIndex(v => v >= w0.p + .98) * 25;
-    t(w0.s === 1 && w1.s === 2 && Math.abs(w1.p - 2) < .02, 'колесо: одиночный щелчок листает разворот (лист не возвращается обратно)', {w0: w0.s, w1: w1.s, p: w1.p});
-    t(!back, 'колесо: лист на пути только вперёд — в сторону движения, назад не уходит ни на кадр', trace.slice(0, 30));
-    t(tFlip > 0 && tFlip < 900, 'колесо: одиночный щелчок переворачивает лист быстро (меньше 0,9 с)', {ms: tFlip});
-    await p.mouse.wheel(0, 100); await p.waitForTimeout(100); await p.mouse.wheel(0, 100); await settle(p); const w1b = await rs(p);
-    t(w1b.s === 3 && Math.abs(w1b.p - 3) < .02, 'колесо: два щелчка подряд листают ровно один разворот', {s: w1b.s, p: w1b.p});
-    await p.evaluate(() => { for (let i = 0; i < 3; i++) document.body.dispatchEvent(new WheelEvent('wheel', {deltaY: 45, bubbles: true, cancelable: true})); }); await settle(p); const w2 = await rs(p);
-    t(w2.s === 4, 'серия событий колеса в одном жесте (трекпад, инерция, 135 px) листает один разворот, а не три', {s: w2.s});
-    await p.mouse.wheel(0, -100); await p.waitForTimeout(100); await p.mouse.wheel(0, -100); await settle(p); const w3 = await rs(p);
-    t(w3.s === 3, 'два щелчка колеса вверх листают назад на один разворот', {s: w3.s});
-    { /* скорость листания равна скорости прокрутки: медленно крутишь — лист поворачивается медленно (посреди жеста он на полпути), быстро — быстро */
-      await p.evaluate(() => window.Astreya.house.openMagazine(2)); await settle(p); const sl0 = await rs(p);
-      const sl = await p.evaluate(() => new Promise(res => { let i = 0, mid = null; const f = () => { document.body.dispatchEvent(new WheelEvent('wheel', {deltaY: 12, bubbles: true, cancelable: true})); i++; if (i === 7) setTimeout(() => { mid = window.Astreya.house.readerState().p; }, 60); if (i < 12) setTimeout(f, 90); else setTimeout(() => res(mid), 120); }; f(); }));
-      await settle(p); const sl1 = await rs(p);
-      t(sl !== null && sl > sl0.p + .12 && sl < sl0.p + .88, 'медленная прокрутка: посреди жеста лист на полпути (поворот идёт вслед за рукой, а не прыгает целиком)', {from: sl0.p, mid: sl});
-      t(sl1.s === sl0.s + 1 && Math.abs(sl1.p - sl1.s) < .02, 'медленная прокрутка: рука остановилась — лист доворачивается до разворота (листнулся один)', {from: sl0.s, to: sl1.s, p: sl1.p}); }
-    { /* быстрая прокрутка не «застревает»: непрерывный поток колеса листает несколько разворотов (не чаще раза в 380 мс), а не один на весь жест */
+    const sampler = p.evaluate(() => new Promise(res => { const a = []; const t0 = performance.now(); const f = () => { a.push([Math.round(performance.now() - t0), +window.Astreya.house.readerState().p.toFixed(3)]); if (performance.now() - t0 < 2600) setTimeout(f, 25); else res(a); }; f(); }));
+    await p.mouse.wheel(0, 100); await p.waitForTimeout(60); await p.mouse.wheel(0, 100); await p.waitForTimeout(300); await p.mouse.wheel(0, 100);          // жест из щелчков + ещё щелчок посреди хода листа
+    const trace = await sampler; await settle(p); const w1 = await rs(p);
+    const back = trace.some((v, i) => i && v[1] < trace[i - 1][1] - .004), tEnd = (trace.find(v => v[1] >= w0.p + .98) || [0])[0];
+    t(w0.s === 1 && w1.s === 2 && Math.abs(w1.p - 2) < .02, 'колесо: жест листает ровно один разворот (лишние щелчки посреди хода листа гасятся)', {w0: w0.s, w1: w1.s, p: w1.p});
+    t(!back, 'колесо: лист идёт только вперёд — назад не уходит ни на кадр', trace.slice(0, 20));
+    t(tEnd > 700 && tEnd < 2300, 'колесо: ход листа такой же, как у кнопки «Далее» (≈ 1,2–2 с), не быстрее и не медленнее', {ms: tEnd});
+    await p.evaluate(() => window.Astreya.house.openMagazine(2)); await settle(p); await p.click('#mag .mag-nx'); const bt0 = Date.now(); await settle(p); const btnMs = Date.now() - bt0;
+    await p.evaluate(() => window.Astreya.house.openMagazine(2)); await settle(p); await p.mouse.wheel(0, 100); const wt0 = Date.now(); await settle(p); const wheelMs = Date.now() - wt0;
+    t(Math.abs(wheelMs - btnMs) < 450, 'колесо: время перелистывания равно времени кнопки «Далее»', {wheelMs, btnMs});
+    await p.waitForTimeout(300); await p.mouse.wheel(0, -100); await settle(p); const w3 = await rs(p);
+    t(w3.s === 2, 'колесо вверх листает назад на один разворот', {s: w3.s});
+    { /* непрерывный поток колеса (быстрые щелчки подряд, пауз ≥ 130 мс нет) — один жест: листает один разворот, а не «пролетает» журнал */
       await p.evaluate(() => window.Astreya.house.openMagazine(2)); await settle(p); const f0 = await rs(p);
-      await p.evaluate(() => new Promise(res => { let i = 0; const f = () => { document.body.dispatchEvent(new WheelEvent('wheel', {deltaY: 100, bubbles: true, cancelable: true})); if (++i < 16) setTimeout(f, 55); else res(); }; f(); }));
+      await p.evaluate(() => new Promise(res => { let i = 0; const f = () => { document.body.dispatchEvent(new WheelEvent('wheel', {deltaY: 100, bubbles: true, cancelable: true})); if (++i < 16) setTimeout(f, 90); else res(); }; f(); }));
       await settle(p); const f1 = await rs(p);
-      t(f1.s >= f0.s + 2, 'быстрая прокрутка колесом листает дальше (≥ 2 разворотов за непрерывный жест), страница не застревает', {from: f0.s, to: f1.s}); }
+      t(f1.s === f0.s + 1, 'непрерывный поток колеса — один жест: листнулся один разворот (журнал не пролетает)', {from: f0.s, to: f1.s}); }
     { /* прокрутку остановили посередине поворота листа — лист сам доворачивается до ближайшего разворота */
       await p.evaluate(() => { window.__HOUSE_SNAP = true; window.Astreya.house.openMagazine(2); }); await settle(p);
       const bx = await p.evaluate(() => { const r = document.getElementById('house-reader'); return {top: r.getBoundingClientRect().top + scrollY, tot: r.offsetHeight - innerHeight}; });

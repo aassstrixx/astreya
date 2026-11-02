@@ -595,6 +595,8 @@ uniform vec3 uJar; uniform float uYaw, uScale;             // основание
 uniform float uInk;            // насколько чернила темнят корпус на полном покрытии (множитель яркости)
 uniform float uInkOn;
 uniform vec2 uBias;            // смещение уровня мип-карт (спрайт, этикетка): меньше нуля — чётче, но больше риск мерцания кромок
+uniform vec4 uHK;              // рамка спрайта в кадре, с которого он снят (кадр зала), долями кадра
+uniform float uFz;             // 1 — пролёт: надпись ложится в системе кадра спрайта (камера и баночка — как в кадре зала), поэтому не искажается при полёте камеры
 in vec2 vUv; in vec2 vFr;
 out vec4 o;
 const float R = 3.65, ZMIN = 0.5, ZMAX = 3.35, H = 3.6, TAU = 6.28318530718;
@@ -602,7 +604,7 @@ void main() {
   vec4 s = texture(uSprite, vUv, uBias.x);
   vec3 c = s.rgb;
   if (uInkOn > 0.5 && s.a > 0.002) {
-    vec2 n = vFr - 0.5;
+    vec2 n = (uFz > 0.5 ? uHK.xy + vUv * uHK.zw : vFr) - 0.5;
     float k = 36.0 / uCL;
     vec3 d = normalize(uCF + uCR * (n.x * k * uAsp.x) + uCU * (-n.y * k * uAsp.y));
     vec2 oc = uCP.xy - uJar.xy;
@@ -700,13 +702,8 @@ void main() {
     }
     const camP = {}, camK = {};
     const center = cam => [cam.jar[0], cam.jar[1], cam.jar[2] + cz];
-    /* где рисовать спрайт кадра k при камере p: его рамка переносится так, чтобы центр баночки встал на проекцию её настоящего центра, а размер изменился во столько же раз, во сколько изменился видимый размер */
-    /* экранная высота нижней кромки основания (ближней к камере точки окружности дна) — баночка должна стоять на подиуме, а не парить над ним: при взгляде сверху ближний край дна уходит ниже центра сильнее, чем при взгляде с уровня глаз, у которого снят спрайт */
-    function rimV(cam, rj) {
-      const dx = cam.pos[0] - cam.jar[0], dy = cam.pos[1] - cam.jar[1], d = Math.hypot(dx, dy) || 1;
-      return proj(cam, [cam.jar[0] + rj * dx / d, cam.jar[1] + rj * dy / d, cam.jar[2]]).v;
-    }
-    function place(k, cp, jk, base) {
+    /* где рисовать спрайт кадра k при камере p (общий случай — заставка): рамка переносится так, чтобы центр баночки встал на проекцию её настоящего центра, а размер изменился во столько же раз, во сколько изменился бы размер самой баночки */
+    function place(k, cp, jk) {
       track.at(Phi[k], camK);
       const ck = proj(camK, center(camK)), cc = proj(cp, center(cp));
       const rho = (cp.lens / cc.z) / (camK.lens / ck.z), r = rects[k];            // jk — во сколько раз баночка уменьшена на заставке (см. js/jar.js)
@@ -715,12 +712,20 @@ void main() {
       if (jk && jk !== 1) {                                                                       // уменьшение вокруг центра баночки на экране (в заставке она парит), как если бы она стала меньше физически
         x = cc.u + (x - cc.u) * jk; y = cc.v + (y - cc.v) * jk; w *= jk; h *= jk;
       }
-      let dv = 0;
-      if (base && (!jk || jk === 1)) {                                                            // пролёт: низ спрайта — на настоящей кромке основания, а не по центру (иначе при взгляде сверху баночка «поднимается», и под ней открывается тёмная тень от ключа)
-        const Rj = 3.65 * scale;
-        dv = (rimV(cp, Rj) - cc.v) - (rimV(camK, Rj) - ck.v) * rho; y += dv;
-      }
-      return [x, y, w, h, dv];
+      return [x, y, w, h];
+    }
+    /* Пролёт: баночка — спрайт кадра зала, жёстко привязанный к подиуму. Рамку спрайта переносим по настоящим экранным границам баночки при камере p: левый и правый край на высоте центра, низ — ближняя кромка основания,
+       верх — дальняя кромка крышки (всё считается по размерам баночки, поэтому при взгляде сверху и у края кадра спрайт растягивается и по ширине, и по высоте ровно так, как «растёт» настоящая баночка).
+       Проверено по настоящим рендерам баночки на ключах пролёта: границы совпадают с точностью до 0,3–4 % (прежнее положение «по центру» давало до 12 %: баночка висела над подиумом, а тёмный провал в нём оставался открытым). */
+    function ext(cam) {
+      const dx = cam.pos[0] - cam.jar[0], dy = cam.pos[1] - cam.jar[1], d = Math.hypot(dx, dy) || 1, ux = dx / d, uy = dy / d, sx = -uy, sy = ux, Rj = 3.65 * scale, j = cam.jar, zc = j[2] + cz;
+      const L = proj(cam, [j[0] - Rj * sx, j[1] - Rj * sy, zc]), Rr = proj(cam, [j[0] + Rj * sx, j[1] + Rj * sy, zc]), B = proj(cam, [j[0] + Rj * ux, j[1] + Rj * uy, j[2]]), T = proj(cam, [j[0] - Rj * ux, j[1] - Rj * uy, j[2] + 2 * cz]);
+      return {l: Math.min(L.u, Rr.u), r: Math.max(L.u, Rr.u), b: B.v, t: T.v};
+    }
+    function placeFrozen(k, cp) {
+      track.at(Phi[k], camK); const ek = ext(camK), ec = ext(cp), r = rects[k];
+      const sx = (ec.r - ec.l) / (ek.r - ek.l), sy = (ec.b - ec.t) / (ek.b - ek.t);
+      return [ec.l + (r[0] - ek.l) * sx, ec.t + (r[1] - ek.t) * sy, r[2] * sx, r[3] * sy];
     }
     /* рисует баночку для положения p; pair = {ka, kb, t} из hall.draw (те же кадры и доля), чтобы баночка и зал смешивались одинаково */
     function draw(p, pair, opt) {
@@ -751,11 +756,13 @@ void main() {
       const items = ka === kb ? [[ka, 1]] : [[ka, 1 - t], [kb, t]];
       for (const [k, w] of items) {
         if (w <= 0.0005) continue;
-        const rc = place(k, camP, jk, opt.base);
-        if (opt.base) {                                                                          // этикетка ложится лучом на цилиндр: цилиндр сдвигается вместе со спрайтом (вдоль «верха» камеры — на экране это чистый сдвиг), иначе надпись осталась бы на прежнем месте
-          const cq = proj(camP, center(camP)), sh = rc[4] * 36 / camP.lens * cq.z * asp[1];
-          gl.uniform3f(u.uJar, camP.jar[0] - camP.u[0] * sh, camP.jar[1] - camP.u[1] * sh, camP.jar[2] + cz * (1 - jk) - camP.u[2] * sh);
-        }
+        let rc;
+        if (opt.base) {                                                                          // пролёт: рамка по настоящим границам баночки, надпись — в системе кадра спрайта (камера и положение баночки как в кадре зала): не искажается и не «плывёт»
+          rc = placeFrozen(k, camP);
+          gl.uniform3fv(u.uCP, camK.pos); gl.uniform3fv(u.uCF, camK.f); gl.uniform3fv(u.uCR, camK.r); gl.uniform3fv(u.uCU, camK.u); gl.uniform1f(u.uCL, camK.lens);
+          gl.uniform3f(u.uJar, camK.jar[0], camK.jar[1], camK.jar[2]); gl.uniform1f(u.uYaw, camK.yaw * Math.PI / 180);
+          const hk = rects[k]; gl.uniform4f(u.uHK, hk[0], hk[1], hk[2], hk[3]); gl.uniform1f(u.uFz, 1);
+        } else { rc = place(k, camP, jk); gl.uniform1f(u.uFz, 0); }
         gl.uniform4f(u.uRect, rc[0], rc[1], rc[2], rc[3]); gl.uniform1f(u.uW, w);
         gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, spr(k)); gl.uniform1i(u.uSprite, 0);
         gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
