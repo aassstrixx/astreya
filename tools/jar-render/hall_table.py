@@ -648,6 +648,10 @@ def flight(argv):
                     ob.visible_camera = False                                                        # баночка невидима камере, но отбрасывает тень и отражается в полу
             bpy.ops.render.render(write_still=True)
             rect = H.jar_rect()                                                                      # спрайт: слой баночки, экспозиция и ss как у кадров зала
+            if rect[2] * o['res'][0] < 4 or rect[3] * o['res'][1] < 4:                                # баночка вышла из кадра (камера опустилась к столику): спрайта нет
+                print('кадр пролёта (баночки в кадре нет)', i, '/', n, flush=True)
+                H.set_layer('all')
+                continue
             H.set_layer('jar')
             sc.view_settings.exposure = float(os.environ.get('HALL_EXP', -.85)) + H.JAR_EXP
             ss = max(2.0, min(6.0, 1000.0 / max(1.0, rect[2] * o['res'][0])))
