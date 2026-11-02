@@ -128,11 +128,12 @@ const t = (cond, name, info) => { if (cond) ok++; else bad.push(name + (info !==
     await at(p, .5); await p.click('#house-reader .hr-skip'); await p.waitForTimeout(1000);
     t(await p.evaluate(() => { const e = document.getElementById('house-end').getBoundingClientRect(); return e.top < innerHeight + 4; }), '«К контактам» из читалки приводит к концу страницы (подвал)');
     const tocN = await p.evaluate(() => document.querySelectorAll('.mg-toc button').length); t(tocN === ROOMS.length + 1, 'оглавление: строка на каждую комнату и контакты', tocN); }
-  { /* журнал на столике: клик/Enter подъезжает сценой к раскрытому журналу */
+  { /* подсказка внизу зала — кнопка: Enter с клавиатуры запускает автоход к раскрытому журналу; кнопки «Откройте журнал» на столике нет */
     await p.evaluate(() => window.Astreya.house.hall()); await p.waitForTimeout(900);
-    await p.focus('.mag-prev'); t(await p.evaluate(() => document.activeElement.classList.contains('mag-prev')), 'журнал на столике доступен с клавиатуры (кнопка получает фокус)');
+    t(await p.evaluate(() => !document.querySelector('.mag-prev, .mag-hint, .hall-mag')), 'на столике нет кнопки «Откройте журнал ASTREYA» и зоны клика (по решению заказчика убрана)');
+    await p.focus('.hs-cue'); t(await p.evaluate(() => document.activeElement.classList.contains('hs-cue')), 'подсказка «Листайте ниже…» доступна с клавиатуры (кнопка получает фокус)');
     await p.keyboard.press('Enter'); await p.waitForFunction(() => window.Astreya.house.readerState().t > .25, null, {timeout: 12000}).catch(() => {}); await settle(p); const o = await rs(p);
-    t(o.s >= 1 && o.t > .25, 'Enter на столике прокручивает к раскрытому журналу (первый разворот)', o); }
+    t(o.s >= 1 && o.t > .25, 'Enter на подсказке прокручивает к раскрытому журналу (первый разворот)', o); }
 
   /* ---- единая сцена: герой и журнал без стыка; автоход к журналу; листание кнопками анимируется; шар стоит при прокрутке ---- */
   { await p.evaluate(() => window.Astreya.house.hall()); await p.waitForTimeout(900);

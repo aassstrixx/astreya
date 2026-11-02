@@ -16,14 +16,9 @@ module.exports = function homeHouse(ctx, C, P, deps) {
   const next = events[0];
   const pct = n => (Math.round(n * 1000) / 10) + '%';
 
-  /* ---------------------------------------------------------------- зал: журнал на столике (проходов-арок с табличками больше нет — комнаты открывает журнал) */
-  const tb = H.hall.table;
-  /* журнал на столике нарисован в кадрах зала (3D-модель, tools/jar-render/mag_model.py); поверх — невидимая зона клика и подсказка */
-  const mc = H.mag;
-  const magTable = `<div class="hall-mag" style="--tx:${tb.d[0]};--ty:${tb.d[1]};--tw:${tb.d[2]};--txm:${tb.m[0]};--tym:${tb.m[1]};--twm:${tb.m[2]}">
-      <button class="mag-prev" type="button" data-house-mag data-track="house_magazine" data-place="table"><span class="mag-hint">${esc(H.hall.hint)}</span><span class="sr">Журнал ASTREYA: открыть и листать — оглавление и переходы к разделам</span></button>
-    </div>`;
-  const hallWorld = magTable;
+  /* ---------------------------------------------------------------- зал: журнал стоит на столике в кадрах (3D-модель, tools/jar-render/mag_model.py); кнопки на нём нет — вход в журнал только прокруткой и подсказкой внизу */
+  const mc = H.mag, tb = H.hall.table;          // tb — точка, из которой «наезжает» запасной кадр читалки (house.hall.table)
+  const hallWorld = '';
   const hallRooms = `<nav class="hall-rooms" aria-label="${esc(H.hall.doorsLabel)}"><ol>${rooms.map(r => `<li><a href="#room-${r.id}" data-house-go="${r.id}" data-track="house_room" data-place="hall"><b>${r.n2}</b><span>${esc(r.short)}</span></a></li>`).join('')}</ol></nav>`;
 
   /* ---------------------------------------------------------------- журнал: настоящие страницы, содержимое — из данных */

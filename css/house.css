@@ -18,16 +18,6 @@ body[data-page="home"]{--hs-paper:#f6f0e3;--hs-paper-2:#efe6d3;--hs-ink:#0b1a33;
 .hall-rooms a:hover,.hall-rooms a:focus-visible{color:var(--hs-ink);border-bottom-color:var(--hs-gold)}
 
 
-.hall-mag{left:calc(var(--tx) * 100%);top:calc(var(--ty) * 100%);right:auto;bottom:auto;width:calc(var(--tw) * 100%);aspect-ratio:3.6;translate:-50% -50%;opacity:var(--h3,0);position:absolute}
-.mag-prev{position:absolute;inset:0;display:block;margin:0;padding:0;border:0;background:none;cursor:pointer;pointer-events:none;color:inherit;font:inherit;text-align:left;-webkit-tap-highlight-color:transparent}
-.js-stage.ar-live .mag-prev{pointer-events:auto}
-.mag-prev:focus-visible{outline:3px solid var(--hs-ink);outline-offset:6px;border-radius:12px}
-.mag-prev::after{content:"";position:absolute;inset:-22% -10%;border-radius:50%;background:radial-gradient(closest-side,rgba(255,238,200,.5),rgba(255,238,200,0));opacity:0;transition:opacity .5s var(--ease);pointer-events:none}
-.mag-prev:hover::after,.mag-prev:focus-visible::after{opacity:1}
-.mag-hint{position:absolute;left:104%;top:30%;translate:0 -50%;display:inline-flex;align-items:center;gap:10px;padding:9px 16px;border-radius:999px;white-space:nowrap;background:var(--hs-ink);color:#f7f1e3;font:600 clamp(10.5px,.82vw,13.5px)/1 var(--sans);letter-spacing:.06em;box-shadow:0 12px 28px -12px rgba(11,26,51,.65);transition:transform .4s var(--ease)}
-.mag-hint::before{content:"";width:7px;height:7px;border-radius:50%;background:#f3d9a0;box-shadow:0 0 0 0 rgba(243,217,160,.7);animation:hsPulse 2.4s ease-out infinite}
-@keyframes hsPulse{0%{box-shadow:0 0 0 0 rgba(243,217,160,.7)}70%,100%{box-shadow:0 0 0 12px rgba(243,217,160,0)}}
-.mag-prev:hover .mag-hint,.mag-prev:focus-visible .mag-hint{transform:translateX(4px)}
 
 /* текст героя читается поверх интерьера зала: мягкое молочное свечение за колонкой (без плашки и без размытия) */
 .is-house .ar-copy::before{content:"";position:absolute;z-index:-1;inset:-14% -24% -20% -16%;pointer-events:none;background:radial-gradient(closest-side at 46% 50%,rgba(246,240,227,.92),rgba(246,240,227,.8) 60%,rgba(246,240,227,0) 100%);opacity:var(--h1,0)}
@@ -39,7 +29,7 @@ body[data-page="home"]{--hs-paper:#f6f0e3;--hs-paper-2:#efe6d3;--hs-ink:#0b1a33;
 .is-house.is-static .js-cv,.is-house.is-static .ar-jar-cv,.is-house.is-static .ar-cue,.is-house.is-static .ar-vig,.is-house.jar-off .js-cv,.is-house.jar-off .ar-jar-cv,.is-house.jar-off .ar-cue,.is-house.jar-off .ar-vig,html:not(.js) .is-house .js-cv,html:not(.js) .is-house .ar-jar-cv,html:not(.js) .is-house .ar-cue,html:not(.js) .is-house .ar-vig{display:none}
 .is-house.is-static .ar-poster,.is-house.jar-off .ar-poster,html:not(.js) .is-house .ar-poster{display:block;position:absolute;inset:0;width:100%;height:100%;z-index:0}
 .ar-poster img{display:block;width:100%;height:100%;object-fit:cover}
-.is-house.is-static .ar-cta .btn,.is-house.jar-off .ar-cta .btn,html:not(.js) .is-house .ar-cta .btn,.is-house.is-static .mag-prev,.is-house.jar-off .mag-prev,html:not(.js) .is-house .mag-prev,.is-house.is-static .hall-rooms a,.is-house.jar-off .hall-rooms a,html:not(.js) .is-house .hall-rooms a{pointer-events:auto;cursor:pointer}
+.is-house.is-static .ar-cta .btn,.is-house.jar-off .ar-cta .btn,html:not(.js) .is-house .ar-cta .btn,.is-house.is-static .hall-rooms a,.is-house.jar-off .hall-rooms a,html:not(.js) .is-house .hall-rooms a{pointer-events:auto;cursor:pointer}
 .is-house.is-static .ar-e,.is-house.is-static .ar-h,.is-house.is-static .ar-lead,.is-house.is-static .ar-cta{transform:none}
 .is-house.is-static .js-stage::before,.is-house.jar-off .js-stage::before{opacity:1}
 
@@ -215,8 +205,6 @@ html:not(.js) .face::after{display:none}
   .hall-rooms ol::-webkit-scrollbar{display:none}
   .js-stage.ar-live .hall-rooms ol,.is-house.is-static .hall-rooms ol,.is-house.jar-off .hall-rooms ol{pointer-events:auto}
   .hall-rooms a{flex:0 0 auto;padding:9px 13px;border-radius:999px;background:var(--hs-glass);box-shadow:inset 0 0 0 1px rgba(255,255,255,.7),0 6px 16px -10px rgba(60,40,18,.5);border-bottom:0;white-space:nowrap;font-size:10.5px;color:var(--hs-ink)}
-  .hall-mag{left:calc(var(--txm) * 100%);top:calc(var(--tym) * 100%);width:calc(var(--twm) * 100%)}
-  .mag-hint{left:50%;top:-10%;translate:-50% -100%;padding:8px 13px;font-size:11px}
   .house-reader{height:var(--hrhm,190vh)}
   .hr-bg{transform-origin:calc(var(--txm) * 100%) calc(var(--tym) * 100%)}
   .hr-skip{top:76px}
@@ -235,11 +223,9 @@ html:not(.js) .face::after{display:none}
 }
 
 @media (prefers-reduced-motion:reduce) and (min-width:100000px){
-  .leaf,.mag-book,.mag,.mag-prev::after{transition:none!important}
-  .mag-hint::before{animation:none}
-  .mag-prev-b{transform:rotateX(58deg) rotateZ(-7deg)!important}
+  .leaf,.mag-book,.mag{transition:none!important}
 }
 html.lite .leaf,html.lite .mag-book{transition-duration:.01s!important}
-@media print{.hall-mag,.hr-cue,.hr-skip{display:none!important}}
+@media print{.hr-skip,.hs-cue{display:none!important}}
 
 /* журнал открыт: кнопка Стеллы не перекрывает страницы */
