@@ -421,7 +421,7 @@
       }
       if (inView && hall) { pumpDecode(); }
       if (!FLY) ui(cp, inView);
-      if (FLY && !gate && (A.flyWarm || pT > 0)) { gate = true; pump(); }              // читалка подошла (или разрешила заранее) — ключи пролёта грузятся
+      if (FLY && !gate && (A.flyWarm || pT > 0)) openGate();              // читалка подошла (или разрешила заранее) — ключи пролёта грузятся
       perfRing[perfN++ % perfRing.length] = performance.now() - w0;
       if (cp !== target || vp !== 0 || upQ.length || (dirty && !firstDrawn) || (inView && (t - lastMove <= IDLE_TAIL || Math.abs(target - cp) > 1e-7))) requestAnimationFrame(tick); else running = false;
     }
@@ -461,8 +461,9 @@
     set = dirOf();
     measureStatic();
     sizeCanvas();
-    pump();
-    initGL().then(() => { if (!dead) { pumpDecode(); schedule(); } }).catch(() => { root.classList.add('jar-off'); dead = true; });
+    const boot = () => initGL().then(() => { if (!dead) { pumpDecode(); schedule(); } }).catch(() => { root.classList.add('jar-off'); dead = true; });
+    function openGate() { if (gate) return; gate = true; boot(); pump(); schedule(); }          // пролёт поднимается (контексты WebGL, шейдеры, загрузка ключей), только когда читалка его позвала: страница при открытии не платит за вторую сцену
+    pump(); if (!FLY) boot();
     schedule();
     const uOf = () => { const l = locate(cp); return l.k + l.t; };
     const self = {
@@ -472,7 +473,7 @@
       unpin() { pin = null; },
       /* для проверок: только уменьшенные копии (полные кадры и спрайты выгружены и не разворачиваются) — так выглядит прокрутка, пока рядом нет полных кадров */
       lowOnly(on) { lowOnlyF = !!on; if (on && hall) { for (let k = 0; k < NH; k++) { if (resident[k]) { hall.dropKey(k); resident[k] = 0; } if (resJ[k] && jar) { jar.dropSprite(k); resJ[k] = 0; } } } dirty = true; schedule(); },
-      fly: FLY, warm() { if (FLY && !gate) { gate = true; pump(); pumpDecode(); schedule(); } },
+      fly: FLY, warm() { if (FLY) openGate(); },
       jump(p, moving) { cp = pT = p; cpTick = p; pPrev = p; vp = moving ? 0.05 : 0; started = true; lastMove = performance.now(); flushUploads(1e9); if (hall) paint(performance.now()); vp = 0; if (!FLY) ui(p, true); },      // moving — для проверок: нарисовать так, как рисуется в движении (со сглаживанием кромок)
       state() {
         const ring = Array.prototype.slice.call(perfRing, 0, Math.min(perfN, perfRing.length)).sort((a, b) => a - b);
