@@ -52,7 +52,10 @@
     let look = {}; try { look = JSON.parse(ds.look || '{}') || {}; } catch (e) { look = {}; }
     const LS = look.scale || {}, LSH = look.shadow || null, LG = look.ground || null, LH = look.halo || null;
     const dead0 = () => { root.classList.add('jar-off'); return {root, complete: () => true, destroy() {}, state: () => ({})}; };
-    if (!A.ArchGL || !stage || !cv || !jcv || typeof fetch !== 'function' || typeof createImageBitmap !== 'function' || !glOk() || (FLY && portraitMQ.matches)) return dead0();
+    if (!A.ArchGL || !stage || !cv || !jcv || typeof fetch !== 'function' || typeof createImageBitmap !== 'function' || !glOk() || (FLY && portraitMQ.matches)) {
+      if (FLY) root.setAttribute('data-fly-why', !A.ArchGL ? 'нет jar-gl.js' : (!stage || !cv || !jcv) ? 'нет холстов в читалке' : typeof createImageBitmap !== 'function' ? 'нет createImageBitmap' : !glOk() ? 'нет WebGL2' : 'узкое окно (высота больше ширины): пролёт только на широком экране');         // для ?flydebug (js/house.js)
+      return dead0();
+    }
     const nums = s => String(s || '').split(',').filter(x => x !== '').map(Number);
     let Phi = nums(ds.p);
     if (Phi.length !== NH || Phi.some(isNaN)) { Phi = []; for (let i = 0; i < NH; i++) Phi.push(NH > 1 ? i / (NH - 1) : 0); }
@@ -146,6 +149,7 @@
       const tryK = k => { if (k < 0 || k >= NH) return null; const key = need(k); return key ? {key, k} : null; };
       let r;
       if ((r = tryK(0))) return r;
+      if (FLY && (r = tryK(NH - 1))) return r;                                  // пролёту нужны оба конца дорожки сразу: даже с двумя ключами камера летит (перепроекцией), остальные ключи добавляют точности
       const l = locate(cp), kc = kNear(cp);
       if ((r = tryK(l.k)) || (r = tryK(Math.min(NH - 1, l.k + 1)))) return r;
       for (let d = 1; d <= 6; d++) { if ((r = tryK(kc + dirSign * d)) || (r = tryK(kc - dirSign * d))) return r; }
@@ -159,7 +163,7 @@
         const j = pickNext(); if (!j) return;
         const {key, k} = j, g = gen;
         busy[key][k] = 1; inflight++;
-        fetch(urls(key, k), {priority: k === 0 || Math.abs(k - kNear(cp)) < 3 ? 'high' : 'low'}).then(r => { if (!r.ok) throw new Error('http'); return r.blob(); })
+        fetch(urls(key, k), {priority: k === 0 || Math.abs(k - kNear(cp)) < 3 || (FLY && (k === NH - 1 || pT > 0)) ? 'high' : 'low'}).then(r => { if (!r.ok) throw new Error('http'); return r.blob(); })
           .then(b => { if (g !== gen) return; blobs[key][k] = b; busy[key][k] = 2; inflight--; if (key === 'c') loadedKeys++; dirty = true; schedule(); pumpDecode(); pump(); })
           .catch(() => { if (g !== gen) return; busy[key][k] = 3; inflight--; pump(); });
       }
@@ -271,7 +275,7 @@
         veil: LSH && +LSH.veil || 0, veilCut: LSH && +LSH.veilCut || 0});
       const rects = JR[key === 'm' ? 1 : 0];
       jar = rects.length === NH ? A.ArchGL.createJar(jcv, {track: tr, phi: Phi, rects, portrait: key === 'm', frameAspect: fa, ink: +ds.ink || 0.43, preserve: PRESERVE}) : null;
-      if (!hall) { root.classList.add('jar-off'); dead = true; return; }
+      if (!hall) { root.classList.add('jar-off'); if (FLY) root.setAttribute('data-fly-why', 'createHall вернул null (WebGL2 / шейдеры)'); dead = true; return; }
       hall.setSize(W, H); JW = JH = 0; sizeJar();
       loadSphere();
       if (jar && ds.lbl) bmp(await (await fetch(urlOf(ds.lbl))).blob(), false).then(b => { if (jar) { jar.setLabel(b); labelReady = true; dirty = true; schedule(); } }).catch(() => {});
@@ -461,7 +465,7 @@
     set = dirOf();
     measureStatic();
     sizeCanvas();
-    const boot = () => initGL().then(() => { if (!dead) { pumpDecode(); schedule(); } }).catch(() => { root.classList.add('jar-off'); dead = true; });
+    const boot = () => initGL().then(() => { if (!dead) { pumpDecode(); schedule(); } }).catch(e => { root.classList.add('jar-off'); if (FLY) root.setAttribute('data-fly-why', 'ошибка запуска: ' + (e && e.message || e)); dead = true; });
     function openGate() { if (gate) return; gate = true; boot(); pump(); schedule(); }          // пролёт поднимается (контексты WebGL, шейдеры, загрузка ключей), только когда читалка его позвала: страница при открытии не платит за вторую сцену
     pump(); if (!FLY) boot();
     schedule();

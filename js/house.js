@@ -114,13 +114,20 @@
       }
       if (tf !== fTf) { fTf = tf; hrFly.style.transform = tf; }
     }
-    /* ключи пролёта грузим, когда герой уже загрузил свои кадры (или через 12 с): трафик нужен сперва ему */
+    /* ?flydebug в адресе — в углу экрана состояние пролёта (для разбора, если у кого-то вместо пролёта запасной «наезд») */
+    if (FLd && /flydebug/.test(location.search + location.hash)) {
+      const dbg = document.createElement('pre'); dbg.style.cssText = 'position:fixed;left:8px;bottom:8px;z-index:9999;margin:0;padding:8px 10px;background:rgba(0,0,0,.78);color:#9f9;font:11px/1.35 monospace;max-width:92vw;white-space:pre-wrap;pointer-events:none'; document.body.appendChild(dbg);
+      const iv = setInterval(() => { if (!dbg.isConnected) { clearInterval(iv); return; } const f = A.jar && A.jar.fly, st = f && f.state && f.state(), h = A.jar && A.jar.arch && A.jar.arch.state && A.jar.arch.state();
+        dbg.textContent = 'пролёт: ' + (f ? (st && st.gl !== undefined ? 'движок есть' : 'мёртв') : 'нет экземпляра') + (reader.getAttribute('data-fly-why') ? ' — причина: ' + reader.getAttribute('data-fly-why') : '') + '\n' + (st && st.N ? 'ключей ' + st.loaded + '/' + st.N + ', в видеопамяти ' + st.resident + ', gl=' + st.gl + ', нарисован=' + !!st.firstDrawn + ', p=' + st.p.toFixed(3) + ', баночка=' + !!(st.jar && st.jar.shown) : '') + '\n' + 'warm=' + !!A.flyWarm + ' ready=' + reader.classList.contains('ready') + ' live=' + reader.classList.contains('is-live') + ' t=' + readerT().toFixed(3) + '\n' + 'герой: ' + (h && h.N ? h.loaded + '/' + h.N : '—') + ' | окно ' + innerWidth + '×' + innerHeight + ' dpr ' + devicePixelRatio; }, 300);
+    }
+
+    /* ключи пролёта грузим заранее и не ждём героя: пролёт нужен сразу, как только страница доехала до читалки (если ключей ещё нет, остаётся запасной «наезд» на постер — это худший случай, а не норма).
+       Старт — через 3 с после загрузки страницы (после вступления заставки: компиляция шейдеров второй сцены не должна рвать её анимацию), но раньше, если страницу уже прокручивают к концу героя */
     let warmN = 0;
     function warmFly() {
-      if (!FLd) return;
-      const h = A.jar && A.jar.arch, f = A.jar && A.jar.fly;
-      if (!f) { if (warmN++ < 40) setTimeout(warmFly, 500); return; }
-      if (h && h.complete && !h.complete() && warmN++ < 24) { setTimeout(warmFly, 500); return; }
+      if (!FLd || A.flyWarm) return;
+      const f = A.jar && A.jar.fly;
+      if (!f) { if (warmN++ < 60) setTimeout(warmFly, 300); return; }
       A.flyWarm = true; f.warm();
     }
 
@@ -139,7 +146,7 @@
       if (!fbox || Math.abs(rr.top + window.pageYOffset - fbox.top) > 2) measureFly();
       const lin = flyLin(t), fu = phone() ? ease(clamp(t / .5, 0, 1)) : lin;                  // телефон: журнал встаёт без пролёта, как раньше
       const ra = phone() ? clamp((fu - .86) / .14, 0, 1) : clamp((lin - RD.fade[0]) / (RD.fade[1] - RD.fade[0]), 0, 1);
-      if (t > 0) warmFly();
+      if (!A.flyWarm && (t > 0 || window.pageYOffset > fbox.top * .4)) warmFly();                  // подъезжаем к концу героя — пролёт начинает грузиться сразу
       if (phone()) setLive(false, 0); else setLive(rr.top < -1, ease(clamp(t / RD.hold, 0, 1)));
       setVar(reader, '--fu', fu.toFixed(4)); setVar(reader, '--ra', ra.toFixed(4));
       if (!phone()) alignFly(lin);
@@ -310,7 +317,7 @@
     if ('requestIdleCallback' in window) setTimeout(() => requestIdleCallback(warm, {timeout: 4000}), 2500); else setTimeout(warm, 3500);
     mag.removeAttribute('hidden');
     if (phone() || flat()) { setS(0); setP(0); } else setP(1);
-    readerUpdate(); if ('requestIdleCallback' in window) setTimeout(() => requestIdleCallback(warmFly), 1800); else setTimeout(warmFly, 2500);
+    readerUpdate(); setTimeout(warmFly, 3000);
     on(window, 'load', () => { bbox = null; measureFly(); }, {once: true});
 
     A.house = {go: id => go(id, {via: 'api'}), hall: () => hall({via: 'api'}), openMagazine: v => { if (flat() || phone()) { jump(readerBox().top); render(v === undefined ? 1 : v, {instant: true}); } else toState(v === undefined ? 1 : v); }, state: () => ({room: current, magazine: true, page: s, rooms: ids, reader: true}), readerState: () => { const f = A.jar && A.jar.fly, st = f && f.state ? f.state() : null; return {t: readerT(), s, p, fly: {on: !!FLd, n: st ? st.N : 0, loaded: st ? st.loaded : 0, drawn: !!(st && st.firstDrawn), p: st ? st.p : 0, jarOk: st ? st.jarOk : null, size: st ? st.size : null, sprites: st ? st.jar : null}}; }};
