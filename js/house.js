@@ -164,7 +164,10 @@
       A.flyDrawn = true;
       const fp = pc / FLd.F;
       RS.rb = Math.max(fp > .22 ? .002 : 0, clamp((fp - HOM.rb[0]) / (HOM.rb[1] - HOM.rb[0]), 0, 1)); RS.bd = HOM.bdMax * (1 - ease(clamp((fp - HOM.bd[0]) / (HOM.bd[1] - HOM.bd[0]), 0, 1))); paintReader();
-      if (fp < HOM.rb[0] - .02 || fp > .9995) { if (hm.key) { wrapEl.style.transform = ''; wrapEl.style.willChange = ''; hm.key = ''; } return; }
+      /* слой книги поднимается (will-change) на ровном месте, до первой матрицы, и снимается на последнем шаге: пока подсказка стоит, Chrome не пересчитывает масштаб растра — слой, впервые нарисованный уменьшенным, остался бы мягким и в покое;
+         после снятия он растеризуется заново в натуральную величину (резкий текст) */
+      if (fp > .2 && fp < .9995 && !hm.wc) { hm.wc = true; wrapEl.style.willChange = 'transform'; }
+      if (fp < HOM.rb[0] - .02 || fp > .9995) { if (hm.key) { wrapEl.style.transform = ''; hm.key = ''; } if (hm.wc && (fp > .9995 || fp < .2)) { hm.wc = false; wrapEl.style.willChange = ''; } return; }
       const W = sbox.w, Hh = sbox.h, ww = Math.max(W, Hh * 16 / 9), wh = ww * 9 / 16;
       const yaw = BKd.yaw * Math.PI / 180, ux = Math.cos(yaw), uy = Math.sin(yaw), vx = -uy, vy = ux, hw = BKd.pw, hh = BKd.ph / 2, c = BKd.c;
       const P = [[-1, 1], [1, 1], [1, -1], [-1, -1]].map(q => {                                                // левый верх, правый верх, правый низ, левый низ разворота (верх страницы — «вдаль»)
@@ -248,9 +251,10 @@
        (≈ 150 пикселей колеса — один разворот), а страницу ведёт пружина с критическим затуханием по реальному времени кадра (60 fps): за один щелчок колеса — один разворот, за быстрый взмах — несколько. Рука остановилась —
        через 140 мс цель встаёт на ближайший разворот и лист доворачивается сам. Край журнала (первый/последний разворот) колесо не перехватывает: вверх идёт обратный пролёт камеры, вниз — прокрутка к подвалу.
        До журнала и на телефоне — обычная прокрутка */
-    const WHEEL_PX = 200, NAV_W = 13;                                          // пикселей колеса на разворот (два щелчка по 100 px — один разворот); жёсткость пружины, 1/с (отставание от руки ≈ 2/13 ≈ 0,15 с)
-    const FLIP_AT = .6;                                                        // с какой доли разворота лист доворачивается до конца (иначе возвращается: одиночный щелчок — лист приподнялся и лёг обратно)
-    const nav = {raf: 0, y: 0, v: 0, goal: 0, last: 0, at: 0, hold: 140, settled: true, anchor: 1, yAnchor: 0, ev: []};
+    /* Листание колесом — как с бумагой: лист идёт вслед за рукой и, как только рука остановилась, доворачивается в ту сторону, куда её вели; обратно он не возвращается (назад — только если сами крутнули назад).
+       Два щелчка (≈ 200 px) — один разворот в темпе руки; одиночный щелчок — лист подхватывается и быстро переворачивается до конца (жёсткая пружина). Пауза в 150 мс после последнего щелчка отделяет жест от следующего. */
+    const WHEEL_PX = 200, NAV_W = 13, NAV_END = 16, NAV_FAST = 28, HOLD = 150;          // пикселей колеса на разворот; жёсткость пружины, 1/с: вслед за рукой / доворот / быстрый доворот после короткого жеста
+    const nav = {raf: 0, y: 0, v: 0, goal: 0, last: 0, at: 0, hold: HOLD, settled: true, w: NAV_W, anchor: 1, yAnchor: 0, ev: []};
     const tOfY = y => { const b = readerBox(); return b.total > 0 ? (y - b.top) / b.total : 1; };
     const yOfSpread = v => { const b = readerBox(), tt = v <= 1 ? RD.from : RD.from + (v - 1) / (N - 2) * RD.span; return b.top + b.total * tt; };
     const spreadAt = y => clamp(Math.round(pOf(tOfY(y))), 1, N - 1);
@@ -258,12 +262,12 @@
     function navFrame(ts) {
       nav.raf = 0;
       const dt = nav.last ? clamp((ts - nav.last) / 1000, .001, .05) : .0167; nav.last = ts;
-      if (!nav.settled && ts - nav.at > nav.hold) {                                                                              // рука остановилась: лист доворачивается до разворота (от FLIP_AT доли) или возвращается на прежний
-        const sp0 = yOfSpread(2) - yOfSpread(1), pr = (nav.goal - nav.yAnchor) / sp0;
-        nav.goal = yOfSpread(clamp(nav.anchor + (pr < 0 ? -1 : 1) * Math.floor(Math.abs(pr) + 1 - FLIP_AT), 1, N - 1)); nav.settled = true;
+      if (!nav.settled && ts - nav.at > nav.hold) {                                                                              // рука остановилась: лист доворачивается до следующего разворота в сторону движения (хоть чуть сдвинули — перевернётся, обратно не ляжет)
+        const sp0 = yOfSpread(2) - yOfSpread(1), pr = (nav.goal - nav.yAnchor) / sp0, mg = Math.abs(pr), n = mg < .04 ? 0 : Math.ceil(mg - 1e-6);
+        nav.goal = yOfSpread(clamp(nav.anchor + (pr < 0 ? -1 : 1) * n, 1, N - 1)); nav.settled = true; nav.w = n > 0 && mg < 1 ? NAV_FAST : NAV_END;
       }
-      const e = Math.exp(-NAV_W * dt), d = nav.y - nav.goal, c = nav.v + NAV_W * d;
-      nav.y = nav.goal + (d + c * dt) * e; nav.v = (nav.v - NAV_W * c * dt) * e;
+      const W = nav.settled ? nav.w : NAV_W, e = Math.exp(-W * dt), d = nav.y - nav.goal, c = nav.v + W * d;
+      nav.y = nav.goal + (d + c * dt) * e; nav.v = (nav.v - W * c * dt) * e;
       const done = nav.settled && Math.abs(nav.y - nav.goal) < .45 && Math.abs(nav.v) < 6;
       if (done) { nav.y = nav.goal; nav.v = 0; }
       window.scrollTo({top: Math.round(nav.y), behavior: 'instant'}); readerUpdate();
@@ -289,8 +293,7 @@
       if (dir > 0 && g < yFirst) g = yFirst;                                      // журнал ещё «открывается» (камера над ним): первый щелчок сразу ведёт к первому повороту
       g = clamp(g + dy / WHEEL_PX * gain * sp, yFirst, yLast);
       g = clamp(g, nav.y - 2.5 * sp, nav.y + 2.5 * sp);                           // цель не убегает от страницы дальше чем на 2,5 разворота
-      const pr2 = (g - nav.yAnchor) / sp, fr = Math.abs(pr2) % 1;
-      nav.goal = g; nav.at = now; nav.settled = false; nav.hold = fr > 0 && fr < FLIP_AT ? 520 : 140;          // лист приподнят, но ещё не пошёл — ждём второй щелчок ≈ 0,5 с; дальше — доворот сразу
+      nav.goal = g; nav.at = now; nav.settled = false; nav.hold = HOLD;
       if (!nav.raf) nav.raf = requestAnimationFrame(navFrame);
     }, {passive: false, capture: true});
 
@@ -319,8 +322,9 @@
       track('house_hall', {via: o.via || 'link'});
     }
 
-    let ticking = false, snapT = 0;
+    let ticking = false, snapT = 0, sdir = 0, sY = window.pageYOffset;
     function onScroll() {
+      const yy = window.pageYOffset; if (Math.abs(yy - sY) > 1) sdir = yy > sY ? 1 : -1; sY = yy;
       if (!ticking) { ticking = true; requestAnimationFrame(() => { ticking = false; readerUpdate(); }); }
       clearTimeout(snapT); snapT = setTimeout(snapCheck, 170);
     }
@@ -328,7 +332,7 @@
     function snapCheck() {
       if (glideRaf || nav.raf || window.__HOUSE_SNAP === false || flat() || phone() || !reader.classList.contains('is-live')) return;          // __HOUSE_SNAP === false — только для проверок точных промежуточных положений
       const t = readerT(); if (t < RD.from - .005 || t > RD.from + RD.span + .005) return;
-      const v = clamp(Math.round(p), 1, N - 1);
+      const v = clamp(sdir > 0 ? Math.ceil(p - .03) : sdir < 0 ? Math.floor(p + .03) : Math.round(p), 1, N - 1);          // листок, оставленный посреди поворота (полоса прокрутки, клавиши), доворачивается туда, куда его вели, а не к ближайшему: назад он не уходит
       if (Math.abs(p - v) > .03) toState(v);
     }
     on(window, 'scroll', onScroll, {passive: true}); on(window, 'resize', () => { fbox = null; onScroll(); }, {passive: true});

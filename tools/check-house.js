@@ -168,16 +168,21 @@ const t = (cond, name, info) => { if (cond) ok++; else bad.push(name + (info !==
     await p.click('#mag .mag-nx'); await p.waitForTimeout(150); await p.click('#mag .mag-nx'); await settle(p); const b2 = (await rs(p)).p;
     t(Math.abs(b2 - b1 - 2) < .02, 'два быстрых нажатия «Далее» подряд листают на два разворота', {b1, b2});
     await p.click('#mag .mag-pv'); await settle(p); await p.click('#mag .mag-pv'); await settle(p);
-    /* колесо: два щелчка (по 100 px) — один разворот; одиночный щелчок лист приподнимает и возвращает */
+    /* колесо: лист идёт за рукой и доворачивается в сторону движения; обратно не возвращается; одиночный щелчок — быстрый переворот, два щелчка — один разворот */
     await p.evaluate(() => window.Astreya.house.openMagazine(1)); await settle(p); await p.mouse.move(700, 450);
-    const w0 = await rs(p); await p.mouse.wheel(0, 100); await p.waitForTimeout(1500); await settle(p); const w1 = await rs(p);
-    t(w0.s === 1 && w1.s === 1 && Math.abs(w1.p - 1) < .02, 'колесо: одиночный щелчок разворот не листает — лист приподнимается и ложится обратно', {w0: w0.s, w1: w1.s, p: w1.p});
-    await p.mouse.wheel(0, 100); await p.waitForTimeout(220); await p.mouse.wheel(0, 100); await settle(p); const w1b = await rs(p);
-    t(w1b.s === 2 && Math.abs(w1b.p - 2) < .02, 'колесо: два щелчка подряд листают ровно один разворот', {s: w1b.s, p: w1b.p});
+    const w0 = await rs(p);
+    const sampler = p.evaluate(() => new Promise(res => { const a = []; const t0 = performance.now(); const f = () => { a.push(+window.Astreya.house.readerState().p.toFixed(3)); if (performance.now() - t0 < 1500) setTimeout(f, 25); else res(a); }; f(); }));
+    await p.mouse.wheel(0, 100); const trace = await sampler; await settle(p); const w1 = await rs(p);
+    const back = trace.some((v, i) => i && v < trace[i - 1] - .004), tFlip = trace.findIndex(v => v >= w0.p + .98) * 25;
+    t(w0.s === 1 && w1.s === 2 && Math.abs(w1.p - 2) < .02, 'колесо: одиночный щелчок листает разворот (лист не возвращается обратно)', {w0: w0.s, w1: w1.s, p: w1.p});
+    t(!back, 'колесо: лист на пути только вперёд — в сторону движения, назад не уходит ни на кадр', trace.slice(0, 30));
+    t(tFlip > 0 && tFlip < 900, 'колесо: одиночный щелчок переворачивает лист быстро (меньше 0,9 с)', {ms: tFlip});
+    await p.mouse.wheel(0, 100); await p.waitForTimeout(100); await p.mouse.wheel(0, 100); await settle(p); const w1b = await rs(p);
+    t(w1b.s === 3 && Math.abs(w1b.p - 3) < .02, 'колесо: два щелчка подряд листают ровно один разворот', {s: w1b.s, p: w1b.p});
     await p.evaluate(() => { for (let i = 0; i < 3; i++) document.body.dispatchEvent(new WheelEvent('wheel', {deltaY: 45, bubbles: true, cancelable: true})); }); await settle(p); const w2 = await rs(p);
-    t(w2.s === 3, 'серия событий колеса в одном жесте (трекпад, инерция, 135 px) листает один разворот, а не три', {s: w2.s});
-    await p.mouse.wheel(0, -100); await p.waitForTimeout(220); await p.mouse.wheel(0, -100); await settle(p); const w3 = await rs(p);
-    t(w3.s === 2, 'два щелчка колеса вверх листают назад на один разворот', {s: w3.s});
+    t(w2.s === 4, 'серия событий колеса в одном жесте (трекпад, инерция, 135 px) листает один разворот, а не три', {s: w2.s});
+    await p.mouse.wheel(0, -100); await p.waitForTimeout(100); await p.mouse.wheel(0, -100); await settle(p); const w3 = await rs(p);
+    t(w3.s === 3, 'два щелчка колеса вверх листают назад на один разворот', {s: w3.s});
     { /* скорость листания равна скорости прокрутки: медленно крутишь — лист поворачивается медленно (посреди жеста он на полпути), быстро — быстро */
       await p.evaluate(() => window.Astreya.house.openMagazine(2)); await settle(p); const sl0 = await rs(p);
       const sl = await p.evaluate(() => new Promise(res => { let i = 0, mid = null; const f = () => { document.body.dispatchEvent(new WheelEvent('wheel', {deltaY: 12, bubbles: true, cancelable: true})); i++; if (i === 7) setTimeout(() => { mid = window.Astreya.house.readerState().p; }, 60); if (i < 12) setTimeout(f, 90); else setTimeout(() => res(mid), 120); }; f(); }));
