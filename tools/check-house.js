@@ -150,6 +150,18 @@ const t = (cond, name, info) => { if (cond) ok++; else bad.push(name + (info !==
     await p.click('#mag .mag-nx'); await p.waitForTimeout(150); await p.click('#mag .mag-nx'); await settle(p); const b2 = (await rs(p)).p;
     t(Math.abs(b2 - b1 - 2) < .02, 'два быстрых нажатия «Далее» подряд листают на два разворота', {b1, b2});
     await p.click('#mag .mag-pv'); await settle(p); await p.click('#mag .mag-pv'); await settle(p);
+    /* колесо листает как «Далее»: один небольшой прокрут — один разворот (а не 3–4 прокрута подряд) */
+    await p.evaluate(() => window.Astreya.house.openMagazine(1)); await settle(p); await p.mouse.move(700, 450);
+    const w0 = await rs(p); await p.mouse.wheel(0, 100); await settle(p); const w1 = await rs(p);
+    t(w0.s === 1 && w1.s === 2 && Math.abs(w1.p - 2) < .02, 'колесо: один небольшой прокрут листает ровно один разворот (как «Далее»)', {w0: w0.s, w1: w1.s, p: w1.p});
+    await p.evaluate(() => { for (let i = 0; i < 3; i++) document.body.dispatchEvent(new WheelEvent('wheel', {deltaY: 40, bubbles: true, cancelable: true})); }); await settle(p); const w2 = await rs(p);
+    t(w2.s === 3, 'серия событий колеса в одном жесте (трекпад, инерция) листает один разворот, а не три', {s: w2.s});
+    await p.mouse.wheel(0, -100); await settle(p); const w3 = await rs(p);
+    t(w3.s === 2, 'колесо вверх листает назад на один разворот', {s: w3.s});
+    await p.evaluate(() => window.Astreya.house.openMagazine(1)); await settle(p); const e0 = await rs(p);
+    await p.mouse.wheel(0, -100); await p.waitForTimeout(900); const e1 = await rs(p);
+    t(e0.s === 1 && e1.t < e0.t - .001, 'на первом развороте колесо вверх не перехвачено: страница идёт назад к пролёту камеры', {e0: e0.t, e1: e1.t});
+    await p.evaluate(() => window.Astreya.house.openMagazine(1)); await settle(p);
     /* возврат из читалки к герою: вступительные анимации заставки (arBg — «наезд» фона с 1,05, arJar — проявление баночки) не перезапускаются */
     await p.evaluate(() => window.Astreya.house.hall()); await p.waitForTimeout(250);
     const rt = await p.evaluate(() => ({an: document.getAnimations().filter(a => /^(arBg|arJar)$/.test(a.animationName || '')).length, jo: getComputedStyle(document.querySelector('#arch-story .ar-jar-cv')).opacity, live: document.getElementById('arch-story').classList.contains('rd-live')}));

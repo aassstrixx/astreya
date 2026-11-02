@@ -166,7 +166,28 @@
       };
       glideRaf = requestAnimationFrame(frame);
     }
-    ['wheel', 'touchstart'].forEach(ev => on(window, ev, glideStop, {passive: true}));          // рука на колесе или экране — автоход уступает
+    on(window, 'wheel', e => { if (!e.__houseStep) glideStop(); }, {passive: true});               // рука на колесе — автоход уступает (кроме колеса, которым листают журнал: оно само запускает следующий ход)
+    on(window, 'touchstart', glideStop, {passive: true});
+    /* колесо в журнале листает как кнопка «Далее»: один небольшой прокрут — один разворот (лист поворачивается сам, ≈ 1,2 с), а не 3–4 прокрута подряд.
+       Жест — серия событий колеса с паузами меньше 90 мс (у трекпада — вместе с инерцией): за жест листается один разворот. Край журнала (первый/последний разворот) колесо не перехватывает:
+       вверх идёт обратный пролёт камеры, вниз — прокрутка к подвалу. До журнала и на телефоне — обычная прокрутка */
+    let wAt = 0, wAcc = 0, wDone = false;
+    on(window, 'wheel', e => {
+      if (e.ctrlKey || e.defaultPrevented || flat() || phone() || !reader.classList.contains('is-live') || Math.abs(e.deltaX) > Math.abs(e.deltaY)) return;
+      const t = readerT(); if (t < RD.open - .002 || t > RD.from + RD.span + .02) return;
+      let dy = e.deltaY; if (e.deltaMode === 1) dy *= 34; else if (e.deltaMode === 2) dy *= window.innerHeight;
+      if (!dy) return;
+      const dir = dy > 0 ? 1 : -1, base = goal !== null ? goal : s;
+      if ((dir > 0 && base >= N - 1) || (dir < 0 && base <= 1)) return;
+      e.preventDefault(); e.__houseStep = true;
+      const now = performance.now(); if (now - wAt > 90) { wAcc = 0; wDone = false; } wAt = now;
+      if (wDone) return;
+      wAcc += dy; if (Math.abs(wAcc) < 14) return;
+      wDone = true; wAcc = 0;
+      if (A.motion && A.motion.cancelSmooth) A.motion.cancelSmooth();
+      step(dir);
+    }, {passive: false, capture: true});
+
     on(window, 'keydown', e => { if (glideRaf && /^(ArrowUp|ArrowDown|PageUp|PageDown|Home|End| )$/.test(e.key) && !(e.target && e.target.closest && e.target.closest('#mag'))) glideStop(); });
     on(window, 'pointerdown', e => { if (e.target === document.documentElement) glideStop(); });         // полоса прокрутки
 
