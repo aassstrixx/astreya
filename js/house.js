@@ -41,7 +41,7 @@
     const flat = () => reduce() || reader.classList.contains('is-flat');
 
     /* ---------- журнал: p — «сколько листов перевёрнуто» (дробное — лист в движении); s — ближайший целый разворот ---------- */
-    let s = 0, p = 0, current = null;
+    let s = 0, p = 0, current = null, stillNow = null;
     const inertOf = (el, onn) => { if ('inert' in el) el.inert = onn; else $$('a,button', el).forEach(f => { if (onn) f.setAttribute('tabindex', '-1'); else f.removeAttribute('tabindex'); }); el.setAttribute('aria-hidden', onn ? 'true' : 'false'); };
     const fs = leaves.map(() => -1), faces = leaves.map(l => [$('.front', l), $('.back', l)]), cache = {};
     const setVar = (el, k, v) => { const c = cache[k] || (cache[k] = new Map()); if (c.get(el) === v) return; c.set(el, v); el.style.setProperty(k, v); };          // то же значение второй раз не пишем: каждая запись пользовательского свойства — пересчёт стилей поддерева
@@ -59,13 +59,14 @@
       });
       for (let k = 0; k < N; k++) { const f = clamp(v - k, 0, 1); if (f > 0 && f < 1) { const lt = Math.sin(Math.PI * f); sr = Math.max(sr, lt * clamp((.64 - f) / .3, 0, 1)); sl = Math.max(sl, lt * clamp((f - .36) / .3, 0, 1)); } }
       if (scroller) { setVar(scroller, '--sr', sr.toFixed(3)); setVar(scroller, '--sl', sl.toFixed(3)); }
+      const still = fs.every(q => q === 0 || q === 1); if (still !== stillNow) { stillNow = still; book.classList.toggle('is-still', still); }          // разворот стоит (ни один лист не в движении) — страницы рисуются без 3D-смещения, текст резкий
       if (book) setVar(book, '--bx', (-.5 * (1 - Math.min(1, v))).toFixed(3));       // закрытый журнал стоит по центру, раскрытый — разворотом
       const ns = Math.round(v);
       if (ns !== s || !book.hasAttribute('data-s')) setS(ns);
     }
     function setS(ns) {
       s = ns;
-      leaves.forEach((l, k) => { inertOf($('.front', l), !(k === s)); inertOf($('.back', l), !(k === s - 1)); });         // справа читается лицевая сторона листа s, слева — оборот листа s−1
+      leaves.forEach((l, k) => { inertOf($('.front', l), !(k === s)); inertOf($('.back', l), !(k === s - 1)); l.classList.toggle('is-cur', k === s); l.classList.toggle('is-prev', k === s - 1); });         // справа читается лицевая сторона листа s, слева — оборот листа s−1
       book.setAttribute('data-s', String(s));
       if (stEl) stEl.textContent = s === 0 ? 'Обложка' : s >= N - 1 ? 'Контакты' : 'Страницы ' + (2 * s) + '–' + (2 * s + 1);
       if (pvB) pvB.disabled = s <= 1 && !phone() && !flat(); if (nxB) nxB.disabled = s >= N - 1;
@@ -106,10 +107,59 @@
       if (!FLd || !FLd.rect || !sbox || !sbox.w || phone() || flat()) return;
       const W = sbox.w, Hh = sbox.h, ww = Math.max(W, Hh * 16 / 9), wh = ww * 9 / 16, r = FLd.rect;
       const cx = W / 2 + ((r[0] + r[2]) / 2 - .5) * ww, cy = Hh / 2 + ((r[1] + r[3]) / 2 - .5) * wh;          // центр нарисованного журнала на экране
-      reader.style.setProperty('--fly-pw', ((r[2] - r[0]) * ww / 2).toFixed(2) + 'px'); reader.style.setProperty('--fly-dx', '0px'); reader.style.setProperty('--fly-dy', '0px');
-      bbox = null; const b = bookBox();
-      reader.style.setProperty('--fly-dx', (cx - (b.x + b.w / 2)).toFixed(2) + 'px'); reader.style.setProperty('--fly-dy', (cy - (b.y + b.h / 2)).toFixed(2) + 'px'); bbox = null;
+      const pw = Math.round((r[2] - r[0]) * ww / 2);                                                          // целое: страницы по целым пикселям, иначе текст пересэмплируется и мылится
+      reader.style.setProperty('--fly-pw', pw + 'px'); reader.style.setProperty('--fly-dx', '0px'); reader.style.setProperty('--fly-dy', '0px'); wrapEl.style.transform = ''; hm.key = ''; hm.box = null;
+      const bb = $('.mag-book', mag).getBoundingClientRect(), sb = stageEl.getBoundingClientRect();
+      const L = Math.round(cx - pw), T = Math.round(cy - bb.height / 2);                                      // левый верх книги — в целых пикселях сцены (дробный сдвиг слоя = размытый текст)
+      reader.style.setProperty('--fly-dx', (L - (bb.left - sb.left)).toFixed(3) + 'px'); reader.style.setProperty('--fly-dy', (T - (bb.top - sb.top)).toFixed(3) + 'px'); bbox = null;
     }
+    /* Живой журнал входит в кадр по той же камере, что нарисованный: углы разворота известны в мире (house.fly.book, tools/jar-render/hall_table.py flykeys bookq), движок после каждого кадра
+       отдаёт камеру (Astreya.flyOnDraw), страница проецирует углы и ставит журнал проективным преобразованием (matrix3d: гомография прямоугольника книги в четырёхугольник на экране). Журнал
+       появляется ещё в полёте (--rb), сначала приглушённый под нарисованный (--bd), и по мере подъезда светлеет и твердеет: рывка от «тусклого и мягкого» к «яркому и чёткому» нет — это один и тот же
+       журнал, который просто становится резким. Матрица снимается, когда камера встала (fp ≥ 0,9995): последний шаг — чистая вёрстка по целым пикселям. */
+    const BKd = (() => { try { return JSON.parse(reader.getAttribute('data-fly-book')); } catch (e) { return null; } })();
+    const wrapEl = $('.mag-wrap', mag);
+    const HOM = {rb: [.46, .6], bd: [.5, .97], bdMax: .30};                       // лин. доля пролёта: журнал появляется / приглушение снимается; наибольшее приглушение
+    const hm = {key: '', on: false};
+    function homography(src, dst) {                                               // проективное преобразование 4 точек → 4 точки (метод прямых линейных уравнений, 8×8)
+      const A8 = [], b8 = [];
+      for (let i = 0; i < 4; i++) {
+        const [x, y] = src[i], [u, v] = dst[i];
+        A8.push([x, y, 1, 0, 0, 0, -u * x, -u * y]); b8.push(u);
+        A8.push([0, 0, 0, x, y, 1, -v * x, -v * y]); b8.push(v);
+      }
+      for (let c = 0; c < 8; c++) {
+        let m = c; for (let r = c + 1; r < 8; r++) if (Math.abs(A8[r][c]) > Math.abs(A8[m][c])) m = r;
+        [A8[c], A8[m]] = [A8[m], A8[c]]; [b8[c], b8[m]] = [b8[m], b8[c]];
+        const d = A8[c][c]; if (Math.abs(d) < 1e-12) return null;
+        for (let r = c + 1; r < 8; r++) { const f = A8[r][c] / d; if (!f) continue; for (let k = c; k < 8; k++) A8[r][k] -= f * A8[c][k]; b8[r] -= f * b8[c]; }
+      }
+      const h = new Array(8);
+      for (let r = 7; r >= 0; r--) { let s2 = b8[r]; for (let k = r + 1; k < 8; k++) s2 -= A8[r][k] * h[k]; h[r] = s2 / A8[r][r]; }
+      return h;
+    }
+    A.flyOnDraw = (pc, cam, proj) => {
+      if (!BKd || !FLd || !fbox || !sbox || !sbox.w || phone() || flat()) return;
+      A.flyDrawn = true;
+      const fp = pc / FLd.F;
+      setVar(reader, '--rb', clamp((fp - HOM.rb[0]) / (HOM.rb[1] - HOM.rb[0]), 0, 1).toFixed(4));
+      setVar(reader, '--bd', (HOM.bdMax * (1 - ease(clamp((fp - HOM.bd[0]) / (HOM.bd[1] - HOM.bd[0]), 0, 1)))).toFixed(4));
+      if (fp < HOM.rb[0] - .02 || fp > .9995) { if (hm.key) { wrapEl.style.transform = ''; wrapEl.style.willChange = ''; hm.key = ''; } return; }
+      const W = sbox.w, Hh = sbox.h, ww = Math.max(W, Hh * 16 / 9), wh = ww * 9 / 16;
+      const yaw = BKd.yaw * Math.PI / 180, ux = Math.cos(yaw), uy = Math.sin(yaw), vx = -uy, vy = ux, hw = BKd.pw, hh = BKd.ph / 2, c = BKd.c;
+      const P = [[-1, 1], [1, 1], [1, -1], [-1, -1]].map(q => {                                                // левый верх, правый верх, правый низ, левый низ разворота (верх страницы — «вдаль»)
+        const o = proj(cam, [c[0] + q[0] * hw * ux + q[1] * hh * vx, c[1] + q[0] * hw * uy + q[1] * hh * vy, BKd.z]);
+        return [W / 2 + (o.u - .5) * ww, Hh / 2 + (o.v - .5) * wh];
+      });
+      if (!hm.box) {                                                                                             // прямоугольник книги в слое (без преобразования) и положение слоя в сцене: меряем один раз на размер окна, в кадре вёрстку не читаем
+        wrapEl.style.transform = ''; const w2 = wrapEl.getBoundingClientRect(), b2 = $('.mag-book', mag).getBoundingClientRect(), sr = stageEl.getBoundingClientRect();
+        hm.box = {ox: b2.left - w2.left, oy: b2.top - w2.top, bw: b2.width, bh: b2.height, wx: w2.left - sr.left, wy: w2.top - sr.top};
+      }
+      const B = hm.box, src = [[B.ox, B.oy], [B.ox + B.bw, B.oy], [B.ox + B.bw, B.oy + B.bh], [B.ox, B.oy + B.bh]], dst = P.map(q => [q[0] - B.wx, q[1] - B.wy]);
+      const h = homography(src, dst); if (!h) return;
+      const m = [h[0], h[3], 0, h[6], h[1], h[4], 0, h[7], 0, 0, 1, 0, h[2], h[5], 0, 1].map(v => +v.toFixed(7)).join(',');
+      if (m !== hm.key) { hm.key = m; wrapEl.style.willChange = 'transform'; wrapEl.style.transform = 'matrix3d(' + m + ')'; }
+    };
     /* ?flydebug в адресе — в углу экрана состояние пролёта (для разбора, если у кого-то вместо пролёта запасной «наезд») */
     if (FLd && /flydebug/.test(location.search + location.hash)) {
       const dbg = document.createElement('pre'); dbg.style.cssText = 'position:fixed;left:8px;bottom:8px;z-index:9999;margin:0;padding:8px 10px;background:rgba(0,0,0,.78);color:#9f9;font:11px/1.35 monospace;max-width:92vw;white-space:pre-wrap;pointer-events:none'; document.body.appendChild(dbg);
@@ -145,6 +195,9 @@
       if (!A.flyWarm && (t > 0 || window.pageYOffset > fbox.top * .4)) warmFly();                  // подъезжаем к концу героя — пролёт начинает грузиться сразу
       if (phone()) setLive(false, 0); else setLive(rr.top < -1, ease(clamp(t / RD.hold, 0, 1)));
       setVar(reader, '--fu', fu.toFixed(4)); setVar(reader, '--ra', ra.toFixed(4));
+      if (FLd && !phone()) {                                                                    // живой журнал входит в полёте: прозрачность и приглушение под нарисованный (если движок не рисует — как раньше, от --ra)
+        if (!(A.flyDrawn && BKd)) { setVar(reader, '--rb', ra.toFixed(4)); setVar(reader, '--bd', '0'); }              // движок не рисует (нет WebGL2/ключей): журнал проявляется как раньше; иначе --rb и --bd ведёт сам кадр (flyOnDraw), чтобы прозрачность была привязана к той позиции камеры, где журнал стоит на самом деле
+      }
       if (phone()) { const target = ra > .94 ? Math.max(s, 1) : 0; if (target !== s && !(s > 0 && target > 0)) render(target, {noScroll: target === 0, instant: true}); return; }
       setP(pOf(t));
     }
@@ -174,8 +227,9 @@
        (≈ 150 пикселей колеса — один разворот), а страницу ведёт пружина с критическим затуханием по реальному времени кадра (60 fps): за один щелчок колеса — один разворот, за быстрый взмах — несколько. Рука остановилась —
        через 140 мс цель встаёт на ближайший разворот и лист доворачивается сам. Край журнала (первый/последний разворот) колесо не перехватывает: вверх идёт обратный пролёт камеры, вниз — прокрутка к подвалу.
        До журнала и на телефоне — обычная прокрутка */
-    const WHEEL_PX = 150, NAV_W = 13;                                          // пикселей колеса на разворот; жёсткость пружины, 1/с (отставание от руки ≈ 2/13 ≈ 0,15 с)
-    const nav = {raf: 0, y: 0, v: 0, goal: 0, last: 0, at: 0, settled: true};
+    const WHEEL_PX = 200, NAV_W = 13;                                          // пикселей колеса на разворот (два щелчка по 100 px — один разворот); жёсткость пружины, 1/с (отставание от руки ≈ 2/13 ≈ 0,15 с)
+    const FLIP_AT = .6;                                                        // с какой доли разворота лист доворачивается до конца (иначе возвращается: одиночный щелчок — лист приподнялся и лёг обратно)
+    const nav = {raf: 0, y: 0, v: 0, goal: 0, last: 0, at: 0, hold: 140, settled: true, anchor: 1, yAnchor: 0, ev: []};
     const tOfY = y => { const b = readerBox(); return b.total > 0 ? (y - b.top) / b.total : 1; };
     const yOfSpread = v => { const b = readerBox(), tt = v <= 1 ? RD.from : RD.from + (v - 1) / (N - 2) * RD.span; return b.top + b.total * tt; };
     const spreadAt = y => clamp(Math.round(pOf(tOfY(y))), 1, N - 1);
@@ -183,7 +237,10 @@
     function navFrame(ts) {
       nav.raf = 0;
       const dt = nav.last ? clamp((ts - nav.last) / 1000, .001, .05) : .0167; nav.last = ts;
-      if (!nav.settled && ts - nav.at > 140) { nav.goal = yOfSpread(spreadAt(nav.goal)); nav.settled = true; }                     // рука остановилась — доворачиваем до ближайшего разворота
+      if (!nav.settled && ts - nav.at > nav.hold) {                                                                              // рука остановилась: лист доворачивается до разворота (от FLIP_AT доли) или возвращается на прежний
+        const sp0 = yOfSpread(2) - yOfSpread(1), pr = (nav.goal - nav.yAnchor) / sp0;
+        nav.goal = yOfSpread(clamp(nav.anchor + (pr < 0 ? -1 : 1) * Math.floor(Math.abs(pr) + 1 - FLIP_AT), 1, N - 1)); nav.settled = true;
+      }
       const e = Math.exp(-NAV_W * dt), d = nav.y - nav.goal, c = nav.v + NAV_W * d;
       nav.y = nav.goal + (d + c * dt) * e; nav.v = (nav.v - NAV_W * c * dt) * e;
       const done = nav.settled && Math.abs(nav.y - nav.goal) < .45 && Math.abs(nav.v) < 6;
@@ -203,11 +260,16 @@
       if (glideRaf) { cancelAnimationFrame(glideRaf); glideRaf = 0; goal = null; }
       const sp = yOfSpread(2) - yFirst;                                          // пикселей прокрутки страницы на один разворот
       if (!nav.raf) { nav.y = window.pageYOffset; nav.v = 0; nav.last = 0; nav.goal = nav.y; }
+      if (nav.settled) { nav.anchor = clamp(Math.round(pOf(tOfY(nav.y))), 1, N - 1); nav.yAnchor = yOfSpread(nav.anchor); nav.ev.length = 0; }       // новый жест: от какого разворота считаем
+      const now = performance.now(); nav.ev.push([now, Math.abs(dy)]); while (nav.ev.length && now - nav.ev[0][0] > 300) nav.ev.shift();
+      const vel = nav.ev.reduce((s, x) => s + x[1], 0) / .3;                      // скорость колеса, px/с: быстрые щелчки подряд листают быстрее (до двух раз), медленные — по два щелчка на разворот
+      const gain = 1 + clamp((vel - 800) / 1000, 0, 1);
       let g = (nav.settled ? nav.y : nav.goal);
       if (dir > 0 && g < yFirst) g = yFirst;                                      // журнал ещё «открывается» (камера над ним): первый щелчок сразу ведёт к первому повороту
-      g = clamp(g + dy / WHEEL_PX * sp, yFirst, yLast);
+      g = clamp(g + dy / WHEEL_PX * gain * sp, yFirst, yLast);
       g = clamp(g, nav.y - 2.5 * sp, nav.y + 2.5 * sp);                           // цель не убегает от страницы дальше чем на 2,5 разворота
-      nav.goal = g; nav.at = performance.now(); nav.settled = false;
+      const pr2 = (g - nav.yAnchor) / sp, fr = Math.abs(pr2) % 1;
+      nav.goal = g; nav.at = now; nav.settled = false; nav.hold = fr > 0 && fr < FLIP_AT ? 520 : 140;          // лист приподнят, но ещё не пошёл — ждём второй щелчок ≈ 0,5 с; дальше — доворот сразу
       if (!nav.raf) nav.raf = requestAnimationFrame(navFrame);
     }, {passive: false, capture: true});
 
@@ -315,6 +377,12 @@
     readerUpdate(); setTimeout(warmFly, 3000);
     on(window, 'load', () => { bbox = null; measureFly(); }, {once: true});
 
+    /* маскот Стеллы на страницах журнала: тот самый, что на кнопке чата и в окне диалога (js/assistant.js → Astreya.pearl; градиенты — #pe-defs, анимация моргания — css/extras.css) */
+    function paintPearls() {
+      if (!A.pearl) return;
+      $$('.mp-pe[data-pe]', mag).forEach(el => { if (el.getAttribute('data-done')) return; el.setAttribute('data-done', '1'); el.innerHTML = A.pearl(el.getAttribute('data-pe') || 'idle', true, ''); });
+    }
+    paintPearls(); on(window, 'load', paintPearls, {once: true});
     A.house = {go: id => go(id, {via: 'api'}), hall: () => hall({via: 'api'}), openMagazine: v => { if (flat() || phone()) { jump(readerBox().top); render(v === undefined ? 1 : v, {instant: true}); } else toState(v === undefined ? 1 : v); }, state: () => ({room: current, magazine: true, page: s, rooms: ids, reader: true}), readerState: () => { const f = A.jar && A.jar.fly, st = f && f.state ? f.state() : null; return {t: readerT(), s, p, fly: {on: !!FLd, n: st ? st.N : 0, loaded: st ? st.loaded : 0, drawn: !!(st && st.firstDrawn), p: st ? st.p : 0, jarOk: st ? st.jarOk : null, size: st ? st.size : null, sprites: st ? st.jar : null}}; }};
   }
 

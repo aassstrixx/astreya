@@ -83,7 +83,7 @@ def zone_mats():
     g = bpy.data.materials.new('zt_glass'); g.use_nodes = True; nt = g.node_tree; nt.nodes.clear()
     out = nt.nodes.new('ShaderNodeOutputMaterial')
     tr1 = nt.nodes.new('ShaderNodeBsdfTransparent'); tr1.inputs['Color'].default_value = (_f('ZONE_GLASS_TR', .86), _f('ZONE_GLASS_TG', .95), _f('ZONE_GLASS_TB', .90), 1)
-    gs = nt.nodes.new('ShaderNodeBsdfGlossy'); gs.inputs['Roughness'].default_value = .015; gs.inputs['Color'].default_value = (.97, 1.0, .98, 1)
+    gs = nt.nodes.new('ShaderNodeBsdfGlossy'); gs.inputs['Roughness'].default_value = _f('ZONE_GLASS_ROUGH', .015); gs.inputs['Color'].default_value = (.97, 1.0, .98, 1)
     fr = nt.nodes.new('ShaderNodeFresnel'); fr.inputs['IOR'].default_value = 1.5
     mx = nt.nodes.new('ShaderNodeMath'); mx.operation = 'MAXIMUM'; mx.inputs[1].default_value = _f('ZONE_GLASS_MINR', .16)
     nt.links.new(fr.outputs['Fac'], mx.inputs[0])
@@ -563,6 +563,17 @@ def flykeys(argv):
         cam = S['cam']; sc = bpy.context.scene
         cam.matrix_world = Matrix.Translation(pos) @ m3.to_4x4(); cam.data.lens = lens; cam.data.shift_x = cam.data.shift_y = 0.0
         bpy.context.view_layer.update()
+    if layer == 'bookq':                                                                   # flykeys bookq 1 1 out.json — углы разворота журнала в мире (для живого журнала: сайт проецирует их камерой пролёта и ставит книгу по месту)
+        info = {}
+        for ob in bpy.data.objects:
+            if ob.name.startswith('mag_') and ob.type in H.MESHY:
+                cs = [ob.matrix_world @ Vector(c) for c in ob.bound_box]
+                info[ob.name] = {'min': [round(min(c[i] for c in cs), 5) for i in range(3)], 'max': [round(max(c[i] for c in cs), 5) for i in range(3)]}
+        for k, v in sorted(info.items()):
+            print('КНИГА', k, v)
+        print('КНИГА центр', [round(v, 5) for v in (cx, cy)], 'pw', round(pw, 5), 'yaw', round(math.degrees(yaw), 3), 'TABLE_TOP', TABLE_TOP)
+        json.dump({'objs': info, 'center': [cx, cy], 'pw': pw, 'yaw_deg': math.degrees(yaw), 'table_top': TABLE_TOP}, open(outp, 'w'))
+        return
     if layer == 'objs':                                                                    # flykeys objs <n> <i> x,y — какие объекты стоят в точке кадра пролёта i (доли кадра: x вправо, y вниз)
         i = int(rest[3]); px, py = [float(v) for v in rest[4].split(',')]
         set_cam(i / float(n)); cam = S['cam']; cm = cam.matrix_world; dg = bpy.context.evaluated_depsgraph_get(); W0, H0 = o['res']; hits = {}

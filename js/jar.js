@@ -73,6 +73,7 @@
     let sTop = 0, sTot = 1, sH = 1, yNow = 0;
     const born = performance.now();
     let hall = null, jar = null, track = null, set = '', gen = 0, labelReady = false, lastDraw = null, resScale = 1;
+    let flyCam = null;                                                              // дорожка камеры пролёта (для живой книги: js/house.js проецирует углы журнала камерой, которой нарисован кадр)
     let lastJarOk = null, dtEma = 16.7, minDt = 16.7, slowRun = 0, govChanges = 0;
     const perfRing = new Float32Array(240); let perfN = 0;
     const ALLRES = FLY && RICH;                                                     // пролёт: на мощном устройстве (≥ 8 ГБ) все ключи лежат в видеопамяти целиком, быстрого режима с уменьшенными копиями нет — картинка в движении такая же резкая, как в покое
@@ -269,7 +270,7 @@
       const key = dirOf();
       const tr = await (await fetch(urlOf(key === 'm' ? ds.camm : ds.cam))).json();
       if (dead || key !== dirOf()) return;
-      track = tr;
+      track = tr; if (FLY) flyCam = A.ArchGL.camTrack(tr);
       const fa = key === 'm' ? 9 / 16 : 16 / 9;
       hall = A.ArchGL.createHall(cv, {track: tr, sphere: tr.sphere3d && ds.sa && ds.sn ? {c: tr.sphere3d.slice(0, 3), r: tr.sphere3d[3]} : null, phi: Phi, portrait: key === 'm', frameAspect: fa, grid: (key === 'm' ? [450, 800] : [960, 540]).map(v => Math.max(60, Math.round(v * (window.__ASTREYA_GL_GRID || 1)))), stretch: 0.4, preserve: PRESERVE,
         shadowFrom: LSH ? +(LSH.from && typeof LSH.from === 'object' ? LSH.from[key === 'm' ? 'mobile' : 'desktop'] : LSH.from) || 0 : 0, shadowAmount: LSH && LSH.amount !== undefined ? +LSH.amount : 1, contact: LSH && LSH.contact !== undefined ? +LSH.contact : 0.42,
@@ -351,7 +352,8 @@
       lastDraw = {ka: pair.ka, kb: pair.kb, t: pair.t, single: !!pair.single};
       if (!firstDrawn) { firstDrawn = true; if (cp < 0.02 && !FLY) root.classList.add('ar-intro'); root.classList.add('ready'); }
       if (jar) {
-        const ok = jar.draw(pc, pair, {jk, lift, ground, halo, fixed: FLY ? 0 : -1}); lastJarOk = ok;
+        const ok = jar.draw(pc, pair, {jk, lift, ground, halo, fixed: FLY ? 0 : -1, base: FLY}); lastJarOk = ok;
+        if (FLY && A.flyOnDraw && flyCam && jar.proj) { try { A.flyOnDraw(pc, flyCam.at(pc), jar.proj); } catch (e) { /* — */ } }       // живая книга встаёт по той же камере, что и кадр
         if (ok && !jarShown) { jarShown = true; if (cp < 0.02 && !FLY) root.classList.add('ar-intro'); root.classList.add('jar-ready'); }
       }
       return true;

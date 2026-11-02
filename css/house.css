@@ -3,7 +3,7 @@
    листы поворачиваются вслед за прокруткой; 3) читалка: закреплённая сцена после зала; 4) телефон; 5) без JS страницы журнала идут подряд.
    Двигаются только opacity и transform. При prefers-reduced-motion переходы мгновенные, журнал — обычный экран. */
 
-body[data-page="home"]{--hs-paper:#f6f0e3;--hs-paper-2:#efe6d3;--hs-ink:#0b1a33;--hs-navy:#101f37;--hs-line:rgba(86,60,30,.16);--hs-gold:#b08e4e;--hs-stone:#e9dcc5;--hs-glass:rgba(250,246,238,.82)}
+body[data-page="home"]{--hs-paper:#fbf7ec;--hs-paper-2:#f3ebd9;--hs-ink:#0b1a33;--hs-navy:#101f37;--hs-line:rgba(86,60,30,.16);--hs-gold:#b08e4e;--hs-stone:#e9dcc5;--hs-glass:rgba(250,246,238,.82)}
 
 /* ============ 1. Зал: проходы, журнал на столике, приветствие ============ */
 .hall-anchor{position:absolute;left:0;bottom:100lvh;width:1px;height:1px;pointer-events:none}
@@ -39,7 +39,7 @@ body[data-page="home"]{--hs-paper:#f6f0e3;--hs-paper-2:#efe6d3;--hs-ink:#0b1a33;
 .mag-bar{position:absolute;left:0;right:0;top:-58px;display:flex;align-items:center;gap:12px;color:#f7f1e3}
 .mag-st{margin:0;font:600 12px/1 var(--sans);letter-spacing:.14em;text-transform:uppercase;color:rgba(247,241,227,.78)}
 .mag-book{position:relative;width:calc(var(--pw) * 2);height:calc(var(--pw) * 1.333);perspective:2000px;margin:0 auto;transform:translateX(calc(var(--pw) * var(--bx,-.5)));outline:0}
-.mag-spine{position:absolute;left:50%;top:1%;bottom:1%;width:2px;translate:-50% 0;background:rgba(0,0,0,.25);box-shadow:0 0 60px 26px rgba(30,20,10,.45);pointer-events:none}
+.mag-spine{position:absolute;left:50%;top:1%;bottom:1%;width:2px;translate:-50% 0;background:rgba(0,0,0,.18);box-shadow:0 0 40px 14px rgba(30,20,10,.26);pointer-events:none}
 .mag-book[data-s="0"] .mag-spine{opacity:0}
 .leaves{position:absolute;inset:0;transform-style:preserve-3d;filter:drop-shadow(0 40px 38px rgba(20,12,4,.55))}
 .leaf{position:absolute;left:50%;top:0;width:50%;height:100%;transform-origin:left center;transform-style:preserve-3d;z-index:var(--zr);transform:translate3d(0,0,calc(var(--lt,0) * 48px)) rotateY(calc(var(--f,0) * -180deg));will-change:transform}
@@ -49,7 +49,7 @@ body[data-page="home"]{--hs-paper:#f6f0e3;--hs-paper-2:#efe6d3;--hs-ink:#0b1a33;
 /* лист в движении темнеет — уходит от света: тёмный слой в ::after стороны вместо filter (filter на всей стороне с фото — лишняя поверхность и перерисовка на каждом кадре) */
 .face{position:absolute;inset:0;overflow:hidden;backface-visibility:hidden;-webkit-backface-visibility:hidden;background:var(--hs-paper)}
 .face.back{transform:rotateY(180deg)}
-.face::before{content:"";position:absolute;inset:0;background:url(../assets/bg/stone-grain.webp) 0 0/420px 420px;opacity:.10;pointer-events:none;z-index:3}
+.face::before{content:"";position:absolute;inset:0;background:url(../assets/bg/stone-grain.webp) 0 0/420px 420px;opacity:.035;pointer-events:none;z-index:3}
 .face.front::after,.face.back::after{content:"";position:absolute;top:0;bottom:0;width:14%;pointer-events:none;z-index:3}
 .face.front::after{left:0;background:linear-gradient(90deg,rgba(60,40,18,.28),rgba(60,40,18,0))}
 .face.back::after{right:0;background:linear-gradient(270deg,rgba(60,40,18,.28),rgba(60,40,18,0))}
@@ -61,6 +61,8 @@ body[data-page="home"]{--hs-paper:#f6f0e3;--hs-paper-2:#efe6d3;--hs-ink:#0b1a33;
   .mag-book::before{content:"";position:absolute;left:0;right:0;top:3%;bottom:-1%;border-radius:6px;box-shadow:0 44px 46px -6px rgba(20,12,4,.5),0 14px 18px rgba(20,12,4,.28);pointer-events:none;z-index:-1}
   .mag-book[data-s="0"]::before{left:50%}
   .leaf{transform:translate3d(0,0,calc(var(--lt,0) * 60px + ((1 - var(--f,0)) * var(--zr,0) + var(--f,0) * var(--zl,0)) * .4px)) rotateY(calc(var(--f,0) * -180deg))}
+  .mag-book.is-still .leaf{transform:rotateY(calc(var(--f,0) * -180deg))}          /* разворот стоит: листы без смещения по Z (перспектива 2000 px масштабировала страницу на ≈ 0,2 % и пересэмплировала текст — «мыло»); видны только правая страница и оборот левой */
+  .mag-book.is-still .leaf:not(.is-cur):not(.is-prev){visibility:hidden}
   .leaves::before,.leaves::after{content:"";position:absolute;top:0;bottom:0;width:50%;pointer-events:none;transform:translateZ(5px)}
   .leaves::before{left:50%;background:linear-gradient(90deg,rgba(18,10,4,.5),rgba(18,10,4,.2) 42%,rgba(18,10,4,0) 86%);opacity:var(--sr,0)}
   .leaves::after{left:0;background:linear-gradient(270deg,rgba(18,10,4,.5),rgba(18,10,4,.2) 42%,rgba(18,10,4,0) 86%);opacity:var(--sl,0)}
@@ -173,7 +175,7 @@ html:not(.js) .face::after{display:none}
 .house-reader .ar-world{width:max(100%,calc(100lvh * 16 / 9));aspect-ratio:16/9}          /* кадры пролёта всегда 16:9 (на высоком окне — тот же «cover», что у героя) */
 .house-reader.ready .hr-bg{visibility:hidden}
 .hr-bg img{display:block;width:100%;height:100%;object-fit:cover}
-.hr-veil{position:absolute;inset:0;z-index:1;pointer-events:none;background:radial-gradient(82% 72% at 50% 46%,rgba(50,34,18,.34),rgba(30,20,10,.74));opacity:calc(var(--fu) * .45 + var(--ra) * .35)}
+.hr-veil{position:absolute;inset:0;z-index:1;pointer-events:none;background:radial-gradient(70% 64% at 50% 50%,rgba(50,34,18,0) 0 52%,rgba(40,27,14,.30) 78%,rgba(30,20,10,.74));opacity:calc(var(--fu) * .55 + var(--ra) * .30)}          /* середина прозрачна — на область книги завеса не ложится: рисованный разворот не темнее живого, перехода «тусклый → яркий» нет */
 .hr-skip{position:absolute;top:clamp(78px,10vh,112px);right:clamp(16px,3vw,44px);z-index:4;display:inline-flex;align-items:center;gap:8px;padding:10px 16px;border-radius:999px;background:var(--hs-glass);box-shadow:inset 0 0 0 1px rgba(255,255,255,.75),0 8px 22px -10px rgba(40,26,10,.6);font:600 12px/1 var(--sans);letter-spacing:.06em;color:var(--hs-ink);opacity:clamp(0,calc(var(--ra) * 3 - .3),1);transition:background-color .25s,transform .3s var(--ease)}
 .hr-skip:hover,.hr-skip:focus-visible{background:#fffaf0;transform:translateY(-1px)}
 .hr-skip svg{width:15px;height:15px}
@@ -182,7 +184,7 @@ html:not(.js) .face::after{display:none}
 .house-reader .mag .mag-bar{justify-content:center;top:-46px}
 .house-reader .mag .mag-st{margin:0;color:rgba(255,250,238,.82)}
 .house-reader .mag .mag-wrap{transform:none;opacity:var(--ra)}
-@media (min-width:701px){html.js .house-reader[data-fly]:not(.is-flat) .mag-wrap{--pw:min(var(--fly-pw,44vw),47.5vw);translate:var(--fly-dx,0px) var(--fly-dy,0px)}}          /* размер и положение живого журнала — ровно как у нарисованного в последнем ключе пролёта */          /* живой журнал проявляется ровно поверх нарисованного, когда камера встала над ним */
+@media (min-width:701px){html.js .house-reader[data-fly]:not(.is-flat) .mag-wrap{--pw:min(var(--fly-pw,44vw),47.5vw);translate:var(--fly-dx,0px) var(--fly-dy,0px);transform-origin:0 0;opacity:var(--rb,var(--ra))}html.js .house-reader[data-fly]:not(.is-flat) .mag-book::after{content:"";position:absolute;inset:0;background:rgb(58,42,26);opacity:var(--bd,0);pointer-events:none;z-index:30}}          /* размер и положение живого журнала — ровно как у нарисованного в последнем ключе пролёта */          /* живой журнал проявляется ровно поверх нарисованного, когда камера встала над ним */
 .house-reader .mag .mag-ctl{opacity:clamp(0,calc((var(--ra) - .6) * 2.5),1)}
 .house-reader .mag .mag-bar{opacity:clamp(0,calc((var(--ra) - .6) * 2.5),1)}
 .house-reader.is-flat{height:auto;--ra:1;--fu:1}
@@ -236,7 +238,7 @@ body[data-page="home"] .hdr{transition:transform .6s var(--ease-out),background-
   /* журнал: одна страница на экране, листаем пальцем (scroll-snap); те же настоящие страницы */
   .mag-wrap{--pw:min(88vw,calc((100svh - 190px) * .75));width:var(--pw);max-width:none}
   .mag-bar{top:-50px}
-  .mag-book{width:var(--pw);height:calc(var(--pw) * 1.333);perspective:none;transform:none!important}
+  .mag-book{width:var(--pw);height:max(calc(var(--pw) * 1.333),min(calc(100svh - 200px),calc(var(--pw) * 1.75)));perspective:none;transform:none!important}          /* страницы насыщеннее прежних: на телефоне книга вытянута по высоте экрана (до 1:1,75), чтобы текст читался крупно и всё помещалось */
   .mag-spine{display:none}
   .leaves{display:flex;overflow-x:auto;overflow-y:hidden;scroll-snap-type:x mandatory;scrollbar-width:none;filter:drop-shadow(0 24px 24px rgba(20,12,4,.5));transform-style:flat;border-radius:4px}
   .leaves::-webkit-scrollbar{display:none}

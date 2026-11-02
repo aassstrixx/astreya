@@ -40,7 +40,10 @@ def main():
     sched = json.load(open(s2 if os.path.exists(s2) else os.path.join(zone, 'fk2', 'sched.json')))['ws']        # sched2 — расписание, подогнанное по замеру ошибки (ключи гуще там, где перепроекция ошибается сильнее)
     old = json.load(open(os.path.join(zone, 'fk2', 'sched.json')))['ws']
     K = len(sched)
+    cdir = opt('--cdir')                                                                                  # полный перерасчёт цвета (например, со стеклом другого вида): все ключи по номерам расписания sched2 лежат в этой папке
     def src(kind, j):                                                                                    # файл цвета/глубины ключа j: из первого расчёта (по совпадению w) или из дорасчёта (c2/z2, номер — по новому расписанию)
+        if kind == 'c' and cdir:
+            return os.path.join(cdir, '%03d.png' % j)
         for o, w0 in enumerate(old):
             if abs(w0 - sched[j]) < 2e-5:
                 return os.path.join(zone, 'fk2', kind, '%03d.png' % o)
@@ -82,6 +85,13 @@ def main():
     meta = json.load(open(os.path.join(zone, 'fl_d72', 'flight.json')))
     fly = {'enabled': True, 'n': K, 'ext': 'webp', 'dir': 'assets/house-hall/ff/', 'depth': 'assets/house-hall/fz/', 'jar': 'assets/house-hall/fj/', 'cam': 'assets/house-hall/cam-f.json',
            'p': [round(w * F, 6) for w in sched], 'rects': [[round(v, 5) for v in jr]] * K, 'F': F, 'rect': meta['rect']}
+    bk = (d['house'].get('fly') or {}).get('book')                                                        # углы разворота журнала в мире (flykeys bookq): для живой книги в полёте — берём прежние, если не пересчитывали
+    bj = os.path.join(zone, 'fk2', 'book.json')
+    if os.path.exists(bj):
+        b = json.load(open(bj)); bk = {'c': [round(v, 5) for v in b['center']], 'yaw': round(b['yaw_deg'], 3), 'pw': round(b['pw'], 5), 'ph': (bk or {}).get('ph', 0.1914),
+                                       'z': round((b['objs']['mag_pg_l']['max'][2] + b['objs']['mag_pg_r']['max'][2]) / 2, 5)}
+    if bk:
+        fly['book'] = bk
     d['house']['fly'] = fly
     m = re.search(r'\n    "fly": \{[^\n]*\},?', t)
     line = '\n    "fly": ' + json.dumps(fly, ensure_ascii=False) + ','

@@ -701,7 +701,12 @@ void main() {
     const camP = {}, camK = {};
     const center = cam => [cam.jar[0], cam.jar[1], cam.jar[2] + cz];
     /* где рисовать спрайт кадра k при камере p: его рамка переносится так, чтобы центр баночки встал на проекцию её настоящего центра, а размер изменился во столько же раз, во сколько изменился видимый размер */
-    function place(k, cp, jk) {
+    /* экранная высота нижней кромки основания (ближней к камере точки окружности дна) — баночка должна стоять на подиуме, а не парить над ним: при взгляде сверху ближний край дна уходит ниже центра сильнее, чем при взгляде с уровня глаз, у которого снят спрайт */
+    function rimV(cam, rj) {
+      const dx = cam.pos[0] - cam.jar[0], dy = cam.pos[1] - cam.jar[1], d = Math.hypot(dx, dy) || 1;
+      return proj(cam, [cam.jar[0] + rj * dx / d, cam.jar[1] + rj * dy / d, cam.jar[2]]).v;
+    }
+    function place(k, cp, jk, base) {
       track.at(Phi[k], camK);
       const ck = proj(camK, center(camK)), cc = proj(cp, center(cp));
       const rho = (cp.lens / cc.z) / (camK.lens / ck.z), r = rects[k];            // jk — во сколько раз баночка уменьшена на заставке (см. js/jar.js)
@@ -710,7 +715,12 @@ void main() {
       if (jk && jk !== 1) {                                                                       // уменьшение вокруг центра баночки на экране (в заставке она парит), как если бы она стала меньше физически
         x = cc.u + (x - cc.u) * jk; y = cc.v + (y - cc.v) * jk; w *= jk; h *= jk;
       }
-      return [x, y, w, h];
+      let dv = 0;
+      if (base && (!jk || jk === 1)) {                                                            // пролёт: низ спрайта — на настоящей кромке основания, а не по центру (иначе при взгляде сверху баночка «поднимается», и под ней открывается тёмная тень от ключа)
+        const Rj = 3.65 * scale;
+        dv = (rimV(cp, Rj) - cc.v) - (rimV(camK, Rj) - ck.v) * rho; y += dv;
+      }
+      return [x, y, w, h, dv];
     }
     /* рисует баночку для положения p; pair = {ka, kb, t} из hall.draw (те же кадры и доля), чтобы баночка и зал смешивались одинаково */
     function draw(p, pair, opt) {
@@ -741,7 +751,11 @@ void main() {
       const items = ka === kb ? [[ka, 1]] : [[ka, 1 - t], [kb, t]];
       for (const [k, w] of items) {
         if (w <= 0.0005) continue;
-        const rc = place(k, camP, jk);
+        const rc = place(k, camP, jk, opt.base);
+        if (opt.base) {                                                                          // этикетка ложится лучом на цилиндр: цилиндр сдвигается вместе со спрайтом (вдоль «верха» камеры — на экране это чистый сдвиг), иначе надпись осталась бы на прежнем месте
+          const cq = proj(camP, center(camP)), sh = rc[4] * 36 / camP.lens * cq.z * asp[1];
+          gl.uniform3f(u.uJar, camP.jar[0] - camP.u[0] * sh, camP.jar[1] - camP.u[1] * sh, camP.jar[2] + cz * (1 - jk) - camP.u[2] * sh);
+        }
         gl.uniform4f(u.uRect, rc[0], rc[1], rc[2], rc[3]); gl.uniform1f(u.uW, w);
         gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, spr(k)); gl.uniform1i(u.uSprite, 0);
         gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);

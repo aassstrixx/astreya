@@ -4,6 +4,8 @@
    Ничего не выдумано: цифры, бренды, задачи, события, новости, преподаватели, контакты — из data/*.json; здесь только компоновка. */
 const S = require('../../js/shared.js');
 const {esc, I} = S;
+const magSpreads = require('./mag-spreads.js');
+const {nicheCardMaker} = require('./brands.js');
 
 module.exports = function homeHouse(ctx, C, P, deps) {
   const rd = ctx.redesign, H = rd.house, content = ctx.content, h = content.home, site = ctx.site, brands = ctx.brands, tasks = ctx.tasks;
@@ -23,7 +25,7 @@ module.exports = function homeHouse(ctx, C, P, deps) {
 
   /* ---------------------------------------------------------------- журнал: настоящие страницы, содержимое — из данных */
   const ph = k => rd.photos[k];
-  const pimg = (k, cls = '') => { const f = ph(k); return `<img${cls ? ` class="${cls}"` : ''} src="${C.u(P, f.src)}" alt="${esc(f.alt)}" width="${f.w}" height="${f.h}" loading="lazy" decoding="async">`; };
+  const pimg = (k, cls = '') => { const f = ph(k), hq = (H.mag.hq || {})[k]; return `<img${cls ? ` class="${cls}"` : ''} src="${C.u(P, hq || f.src)}" alt="${esc(f.alt)}" width="${f.w}" height="${f.h}" loading="lazy" decoding="async">`; };
   const foot = (n, side) => `<footer class="pg-f ${side}"><span>ASTREYA</span><b>${n}</b></footer>`;
   const run = `<p class="mg-run" aria-hidden="true"><span>ASTREYA</span><span>${esc(mc.kicker)}</span></p>`;       // бегущий колонтитул текстовых страниц
   const pageBtn = r => `<a class="btn btn-fill btn-sm mg-open" href="${href(r.href)}" data-track="house_magazine_page" data-room="${r.id}">${esc(r.cta)} ${I.arrow}</a>`;
@@ -51,8 +53,8 @@ module.exports = function homeHouse(ctx, C, P, deps) {
     expertise: () => pimg('expertise'), academy: () => pimg('about2'), partners: () => pimg('about3'),
     editorial: () => `<img src="${C.u(P, 'assets/photos/keenwell-mask.webp')}" alt="" class="mg-prod" loading="lazy" decoding="async">`
   };
-  const pageL = (r, n) => `<div class="pg pg-l pg-ph pg-${r.id}"><div class="mg-ph">${leftPhoto[r.id]()}</div><p class="mg-no" aria-hidden="true">${r.n2}</p><p class="mg-kick">${esc(r.short)}</p>${foot(n, 'l')}</div>`;
-  const pageR = (r, n) => { const c = rightOf[r.id](); return `<div class="pg pg-r pg-tx pg-${r.id}" id="room-${r.id}" data-room="${r.id}">${run}<p class="mg-kick">${esc(r.name)}</p><h3 class="mg-h">${esc(c.head)}</h3>${c.text ? `<p class="mg-p${c.text.length > 130 ? ' mg-drop' : ''}">${esc(c.text)}</p>` : ''}${c.extra || ''}<div class="mg-act">${pageBtn(r)}</div>${foot(n, 'r')}</div>`; };
+  const pageL0 = (r, n) => `<div class="pg pg-l pg-ph pg-${r.id}"><div class="mg-ph">${leftPhoto[r.id]()}</div><p class="mg-no" aria-hidden="true">${r.n2}</p><p class="mg-kick">${esc(r.short)}</p>${foot(n, 'l')}</div>`;
+  const pageR0 = (r, n) => { const c = rightOf[r.id](); return `<div class="pg pg-r pg-tx pg-${r.id}" id="room-${r.id}" data-room="${r.id}">${run}<p class="mg-kick">${esc(r.name)}</p><h3 class="mg-h">${esc(c.head)}</h3>${c.text ? `<p class="mg-p${c.text.length > 130 ? ' mg-drop' : ''}">${esc(c.text)}</p>` : ''}${c.extra || ''}<div class="mg-act">${pageBtn(r)}</div>${foot(n, 'r')}</div>`; };
   const logoSvg = '<svg class="lgo" viewBox="46 338 836 436" aria-hidden="true"><use href="#logo-art"/></svg>';
   const pCover = `<div class="pg pg-cover"><span class="cv-kick">${esc(mc.kicker)}</span><p class="cv-title" role="heading" aria-level="2">${esc(mc.title)}</p><figure class="cv-ph">${pimg('hero')}</figure><span class="cv-year">${site.year}</span>${logoSvg}</div>`;
   /* разворот 2–3 (на нём журнал раскрыт на столике): слева — фото на всю страницу с крупным заголовком, справа — содержание в журнальной вёрстке */
@@ -67,10 +69,13 @@ module.exports = function homeHouse(ctx, C, P, deps) {
     <ul class="mg-contacts"><li><a href="tel:${site.contacts.phoneRaw}" data-track="phone_click">${esc(site.contacts.phone)}</a></li><li><a href="mailto:${site.contacts.email}" data-track="email_click">${esc(site.contacts.email)}</a></li><li>${esc(site.contacts.address)}</li><li>${esc(site.contacts.hours)}</li></ul>
     <div class="mg-act"><a class="btn btn-fill btn-sm" href="${C.u(P, 'partners.html')}" data-track="partner_cta" data-place="magazine">Стать партнёром ${I.arrow}</a><a class="mg-deep" href="${C.u(P, 'catalog.html')}" data-track="catalog_click" data-place="magazine">Каталог ${I.arrow}</a></div>${foot(n, 'r')}</div>`;
   const pBack = `<div class="pg pg-l pg-back"><p class="mg-colophon">${esc(site.legalName)} · ${esc(site.tagline)}</p>${logoSvg}</div>`;
+  /* развороты 4–21: заголовки и подписи — data/redesign.json → house.mag.pages, тексты и данные — из data/*.json (src/pages/mag-spreads.js); у каждой комнаты свои левая и правая страницы */
+  const SP = magSpreads(ctx, C, P, {rd, H, content, site, brands, tasks, products: ctx.products, events, pimg, foot, run, href, pc, ab, nicheCard: nicheCardMaker(ctx, C, P), mc, logoSvg});
 
   /* листы: лист k — спереди правая страница, сзади левая страница следующего разворота; порядок в DOM = порядок страниц при чтении */
-  const pagesR = [pCover, pToc, ...rooms.map((r, i) => pageR(r, (i + 1) * 2 + 3)), pContactsR((rooms.length + 1) * 2 + 3)];
-  const pagesL = [pWelcome, ...rooms.map((r, i) => pageL(r, (i + 1) * 2 + 2)), pContactsL((rooms.length + 1) * 2 + 2), pBack];
+  const pageL = (r, n) => SP[r.id] ? SP[r.id].L(n) : pageL0(r, n), pageR = (r, n) => SP[r.id] ? SP[r.id].R(n) : pageR0(r, n);
+  const pagesR = [pCover, pToc, ...rooms.map((r, i) => pageR(r, (i + 1) * 2 + 3)), SP.contacts.R((rooms.length + 1) * 2 + 3)];
+  const pagesL = [pWelcome, ...rooms.map((r, i) => pageL(r, (i + 1) * 2 + 2)), SP.contacts.L((rooms.length + 1) * 2 + 2), pBack];
   const leaves = pagesR.map((f, k) => `<div class="leaf" data-k="${k}" style="--zr:${pagesR.length - k};--zl:${k + 1}"><div class="face front">${f}</div><div class="face back">${pagesL[k] || ''}</div></div>`).join('');
   const magazine = `<div class="mag" id="mag" role="region" aria-label="Журнал ASTREYA" data-n="${pagesR.length}">
     <div class="mag-wrap">
@@ -86,7 +91,7 @@ module.exports = function homeHouse(ctx, C, P, deps) {
   /* пролёт камеры к журналу — вторая сцена того же движка, что у героя (js/jar.js, js/jar-gl.js): ключевые кадры + карты глубины + дорожка камеры + спрайты баночки (house.fly, tools/jar-render/apply_fly.py);
      читалка — второй корень .jar-story с атрибутом data-fly: ключи пролёта берутся вместо кадров героя, положение задаёт прокрутка читалки (js/house.js → Astreya.flyP). Нет ключей / нет WebGL2 — запасной «наезд» постера */
   const fy = H.fly && H.fly.enabled ? H.fly : null, ar = rd.house.arch || {}, st = ar.sphereTex;
-  const flyAttrs = fy ? ` data-fly data-fly-f="${fy.F}" data-fly-rect="${esc(JSON.stringify(fy.rect))}" data-n="${fy.n}" data-ext="${fy.ext}" data-v="${esc(ctx.assetVersion || '')}" data-d="${fy.dir}" data-zd="${fy.depth}" data-zx="${(ar.depth || {}).ext || 'webp'}" data-cam="${fy.cam}" data-lbl="${ar.label}" ${st ? `data-sa="${st.a}" data-sn="${st.n}" ` : ''}data-ink="${ar.ink}" data-p="${fy.p.join(',')}" data-jd="${fy.jar}" data-jx="${(ar.jar || {}).ext || 'webp'}" data-jr="${esc(JSON.stringify(fy.rects))}"` : '';
+  const flyAttrs = fy ? ` data-fly data-fly-f="${fy.F}" data-fly-rect="${esc(JSON.stringify(fy.rect))}"${fy.book ? ` data-fly-book="${esc(JSON.stringify(fy.book))}"` : ''} data-n="${fy.n}" data-ext="${fy.ext}" data-v="${esc(ctx.assetVersion || '')}" data-d="${fy.dir}" data-zd="${fy.depth}" data-zx="${(ar.depth || {}).ext || 'webp'}" data-cam="${fy.cam}" data-lbl="${ar.label}" ${st ? `data-sa="${st.a}" data-sn="${st.n}" ` : ''}data-ink="${ar.ink}" data-p="${fy.p.join(',')}" data-jd="${fy.jar}" data-jx="${(ar.jar || {}).ext || 'webp'}" data-jr="${esc(JSON.stringify(fy.rects))}"` : '';
   const flyMark = fy ? `<div class="hr-fly" aria-hidden="true"><canvas class="js-cv"></canvas><div class="ar-world"><canvas class="ar-jar-cv"></canvas></div></div>` : '';
   const reader = `<section class="house-reader${fy ? ' jar-story' : ''}" id="house-reader" aria-label="${esc(mc.readerLabel || 'Журнал ASTREYA: листайте прокруткой')}"${flyAttrs || ` data-n="${pagesR.length}"`} style="--hrh:${(H.reader || {}).heightVh || 560}vh;--hrhm:${(H.reader || {}).heightVhMobile || 190}vh;--tx:${tb.d[0]};--ty:${tb.d[1]};--txm:${tb.m[0]};--tym:${tb.m[1]}">
     <div class="hr-stage">
