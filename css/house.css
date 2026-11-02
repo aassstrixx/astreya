@@ -52,6 +52,22 @@ body[data-page="home"]{--hs-paper:#f6f0e3;--hs-paper-2:#efe6d3;--hs-ink:#0b1a33;
 .face.front::after{left:0;background:linear-gradient(90deg,rgba(60,40,18,.28),rgba(60,40,18,0))}
 .face.back::after{right:0;background:linear-gradient(270deg,rgba(60,40,18,.28),rgba(60,40,18,0))}
 .leaf:first-child .face.front{border-radius:0 4px 4px 0}
+/* ПК: настоящая трёхмерная сцена листания (без filter на .leaves — он «сплющивал» перспективу): лист поворачивается вокруг корешка с перспективой, страницы стопок разведены по глубине (--zr/--zl),
+   падающая тень книги — отдельный слой, тень поднятого листа ложится на страницу под ним (--sr/--sl от js/house.js), по бумаге бежит блик (--f, --lt) */
+@media (min-width:701px){
+  .leaves{filter:none}
+  .mag-book::before{content:"";position:absolute;left:0;right:0;top:3%;bottom:-1%;border-radius:6px;box-shadow:0 44px 46px -6px rgba(20,12,4,.5),0 14px 18px rgba(20,12,4,.28);pointer-events:none;z-index:-1}
+  .mag-book[data-s="0"]::before{left:50%}
+  .leaf{transform:translate3d(0,0,calc(var(--lt,0) * 60px + ((1 - var(--f,0)) * var(--zr,0) + var(--f,0) * var(--zl,0)) * .4px)) rotateY(calc(var(--f,0) * -180deg))}
+  .leaves::before,.leaves::after{content:"";position:absolute;top:0;bottom:0;width:50%;pointer-events:none;transform:translateZ(5px)}
+  .leaves::before{left:50%;background:linear-gradient(90deg,rgba(18,10,4,.5),rgba(18,10,4,.2) 42%,rgba(18,10,4,0) 86%);opacity:var(--sr,0)}
+  .leaves::after{left:0;background:linear-gradient(270deg,rgba(18,10,4,.5),rgba(18,10,4,.2) 42%,rgba(18,10,4,0) 86%);opacity:var(--sl,0)}
+  .face.front::after,.face.back::after{inset:0;width:auto}
+  .face.front::after{background:linear-gradient(90deg,rgba(60,40,18,.28),rgba(60,40,18,0)) 0 0/14% 100% no-repeat,
+    linear-gradient(98deg,rgba(255,250,238,0) calc(var(--f,0) * 200% - 26%),rgba(255,250,238,calc(var(--lt,0) * .42)) calc(var(--f,0) * 200%),rgba(255,250,238,0) calc(var(--f,0) * 200% + 26%))}
+  .face.back::after{background:linear-gradient(270deg,rgba(60,40,18,.28),rgba(60,40,18,0)) 100% 0/14% 100% no-repeat,
+    linear-gradient(262deg,rgba(255,250,238,0) calc((1 - var(--f,0)) * 200% - 26%),rgba(255,250,238,calc(var(--lt,0) * .42)) calc((1 - var(--f,0)) * 200%),rgba(255,250,238,0) calc((1 - var(--f,0)) * 200% + 26%))}
+}
 .pg{position:absolute;inset:0;padding:calc(var(--pw) * .09) calc(var(--pw) * .085) calc(var(--pw) * .085);color:var(--hs-ink);font-size:calc(var(--pw) * .028)}
 .pg-l{padding-right:calc(var(--pw) * .1)}
 .pg-r{padding-left:calc(var(--pw) * .1)}
@@ -189,11 +205,13 @@ html:not(.js) .face::after{display:none}
   html.js .arch-story.is-house{z-index:2}
   html.js .house-reader{z-index:1}
   html.js .arch-story.is-house.rd-live,html.js .arch-story.is-house.rd-live .js-stage{background:transparent;pointer-events:none}
-  html.js .arch-story.is-house.rd-live .js-cv,html.js .arch-story.is-house.rd-live .ar-jar-cv{opacity:calc(1 - var(--hf,0));transition:none;animation:none;transform:translate3d(0,var(--hy,0px),0)}
+  html.js .arch-story.is-house.rd-live .js-cv{opacity:calc(1 - var(--hf,0));transition:none;animation:none;transform:translate3d(0,var(--hy,0px),0)}
+  html.js .arch-story.is-house.rd-live .ar-jar-cv{transition:none;animation:none;transform:translate3d(0,var(--hy,0px),0)}
   html.js .arch-story.is-house.rd-live .ar-vig{opacity:0}
   html.js .arch-story.is-house.rd-live .js-stage::after{opacity:calc(.34 * var(--h2,0) * (1 - var(--hf,0)))}
-  html.js .arch-story.is-house.rd-live .ar-hero{opacity:calc(1 - var(--hf,0))}
-  html.js .arch-story.is-house.rd-gone .ar-hero{visibility:hidden}
+  html.js .arch-story.is-house.rd-live .ar-copy,html.js .arch-story.is-house.rd-live .ar-orb{opacity:calc(1 - var(--hf,0))}
+  html.js .arch-story.is-house.rd-live .hs-cue{opacity:calc(var(--h3,0) * (1 - var(--hf,0)))}
+  html.js .arch-story.is-house.rd-gone .ar-hero{visibility:hidden}               /* баночка-спрайт не гаснет сама: пока кадры героя уходят, она стоит поверх тех же пикселей кадра пролёта; убирается, когда они ушли совсем */
   html.js .arch-story.is-house.rd-live .ar-hero *{pointer-events:none!important}
 }
 @media (prefers-reduced-motion:reduce) and (min-width:100000px){.house-reader{height:auto;--ra:1;--fu:1}.hr-seq{display:none!important}.house-reader .hr-stage{position:relative;height:auto;min-height:100svh;padding:clamp(70px,10vh,120px) 0 clamp(40px,6vh,70px)}.house-reader .mag{position:relative;inset:auto;display:grid;min-height:calc(100svh - 120px)}.hr-bg,.house-reader .mag .mag-wrap{transform:none!important}.hr-cue{display:none}}

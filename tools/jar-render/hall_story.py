@@ -567,14 +567,16 @@ LAB_GLASS = () if os.environ.get('HALL_GLASS', '0') != '1' else ((.27, .53, .385
 
 def build_lab(M):
     """«световая лаборатория»: линии точности на подиуме и полу, матовые стеклянные панели за подиумом (позади баночки — перед ней стекла нет), упаковки в нише, узкий луч света"""
-    mr = mat_ring()
-    for i, r in enumerate(LAB_RINGS_FLOOR):
-        ring('ring_f%d' % i, POD['x'], POD['y'], .0016, r, .0014, mr)
-    for i, r in enumerate(LAB_RINGS_TOP):
-        ring('ring_t%d' % i, POD['x'], POD['y'], POD['h'] + .0007, r, .0011, mr, flat=.4)
-    fm = mat_frost()
-    for i, (x0, x1, y0, y1, z0, z1) in enumerate(LAB_GLASS):
-        SC.box('glass%d' % i, fm, x0, x1, y0, y1, z0, z1, 'p', .002)
+    only_packs = os.environ.get('HALL_LAB_PARTS', 'all') == 'packs'                 # packs — только упаковки на пороге ниши (без линий на полу и стеклянной панели): так в зале дома
+    if not only_packs:
+        mr = mat_ring()
+        for i, r in enumerate(LAB_RINGS_FLOOR):
+            ring('ring_f%d' % i, POD['x'], POD['y'], .0016, r, .0014, mr)
+        for i, r in enumerate(LAB_RINGS_TOP):
+            ring('ring_t%d' % i, POD['x'], POD['y'], POD['h'] + .0007, r, .0011, mr, flat=.4)
+        fm = mat_frost()
+        for i, (x0, x1, y0, y1, z0, z1) in enumerate(LAB_GLASS):
+            SC.box('glass%d' % i, fm, x0, x1, y0, y1, z0, z1, 'p', .002)
     pm = PK.M()
     for i, (kind, noir, x, y, rot) in enumerate(LAB_PACKS):
         objs, _ = PK.build(kind, noir, pm)

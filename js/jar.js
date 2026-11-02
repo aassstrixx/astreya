@@ -72,34 +72,26 @@
     const perfRing = new Float32Array(240); let perfN = 0;
     let dirSign = 1;
 
-    /* ---- живой шар: сам медленно вращается, за курсором поворачивается и «скользит» свет по порам (js/jar-gl.js рисует его поверх кадра зала) ---- */
+    /* ---- живой шар: сам медленно вращается (≈ 7,5°/с, 60 fps); на курсор не реагирует; пока страница прокручивается — стоит на месте (js/jar-gl.js рисует его поверх кадра зала с учётом глубины) ---- */
     const reduceMQ = window.matchMedia('(prefers-reduced-motion: reduce) and (min-width: 100000px)');
-    const sph = {yaw: 0.6, pitch: -0.12, vy: 0.13, tp: 0, vp: 0, hx: 0, hy: 0, lx: 0, ly: 0, ox: 0, oy: 0, hot: false, drag: null, px: 0, py: 0, sy: -1, raf: 0, last: 0, view: false, fed: false};
-    const SPH_IDLE = 0.13;                                                   // ≈ 7,5°/с — собственное вращение, пока шар никто не трогает
+    const sph = {yaw: 0.6, pitch: -0.12, hx: 0, hy: 0, lx: 0, ly: 0, sy: -1, raf: 0, last: 0, view: false, fed: false};
+    const SPH_IDLE = 0.13;                                                   // ≈ 7,5°/с — собственное вращение
     let lastScrollT = 0;
-    const scrolling = () => performance.now() - lastScrollT < 380;           // идёт прокрутка (скролл-анимация): шар стоит на месте, не вращается и не откликается на курсор
+    let quiet = 99;                                                          // сколько кадров подряд страница не двигалась
+    const scrolling = () => performance.now() - lastScrollT < 380 || quiet < 4;          // (и по кадрам: на медленном устройстве кадр бывает дольше 0,4 с)           // идёт прокрутка (скролл-анимация): шар стоит на месте и не вращается
     function sphMat() {                                                      // объект → мир: сначала вращение вокруг вертикали (полюс шара стоит вертикально), затем наклон
-      const y = sph.yaw, p = sph.pitch + sph.tp, cy = Math.cos(y), sy = Math.sin(y), cp_ = Math.cos(p), sp_ = Math.sin(p);
+      const y = sph.yaw, p = sph.pitch, cy = Math.cos(y), sy = Math.sin(y), cp_ = Math.cos(p), sp_ = Math.sin(p);
       return [cy, sy * cp_, sy * sp_,   -sy, cy * cp_, cy * sp_,   0, -sp_, cp_];      // Rx(p)·Rz(y), по столбцам
     }
     function sphPush() { if (hall) hall.setSphere(sphMat(), sph.lx, sph.ly); }
-    /* шаг по времени кадра (60 fps: dt — реальное время между кадрами, всё считается по нему, а не по числу кадров) */
-    function sphStep(dt) {
-      if (!sph.drag) {
-        sph.yaw += sph.vy * dt;                                              // раскрутка рукой гаснет сама и возвращается к собственному вращению
-        sph.vy += (SPH_IDLE - sph.vy) * (1 - Math.exp(-dt / 1.15));
-      }
-      if (!sph.drag) { sph.vp += (-sph.tp * 14 - sph.vp * 7) * dt; sph.tp += sph.vp * dt; }      // наклон от толчка возвращается пружиной без перелёта
-      const hot = sph.hot || sph.drag, tx = hot ? sph.ox * 1.35 : sph.hx * 0.8, ty = hot ? sph.oy * 1.35 : sph.hy * 0.8, k = 1 - Math.exp(-dt * (hot ? 11 : 2.4));
-      sph.lx += (tx - sph.lx) * k; sph.ly += (ty - sph.ly) * k;             // свет скользит по камню за курсором: над шаром — точно под курсором, вдали — слабо
-      sphPush();
-    }
+    /* шаг по времени кадра (60 fps: dt — реальное время между кадрами, всё считается по нему, а не по числу кадров). От курсора шар не зависит — ни поворота, ни света (по решению заказчика) */
+    function sphStep(dt) { sph.yaw += SPH_IDLE * dt; sphPush(); }
     function sphWanted() { return !!hall && hall.sphereReady && sph.view && !document.hidden && cp > 0.3 && !reduceMQ.matches && !root.classList.contains('rd-live') && !document.documentElement.classList.contains('anim-off'); }
     function sphLoop(t) {
       sph.raf = 0;
       if (!sphWanted() || dead) { sph.last = 0; return; }
-      { const sy = window.pageYOffset; if (sy !== sph.sy) { sph.sy = sy; lastScrollT = performance.now(); } }          // страница сдвинулась в этом кадре — шар не двигается (не ждём события scroll)
-      if (scrolling()) { sph.last = 0; sph.vy = 0; sph.vp = 0; }              // прокрутка: шар неподвижен (пока она идёт); после остановки плавно набирает ход
+      { const sy = window.pageYOffset; if (sy !== sph.sy) { sph.sy = sy; lastScrollT = performance.now(); quiet = 0; } else if (quiet < 99) quiet++; }          // страница сдвинулась в этом кадре — шар не двигается (не ждём события scroll)
+      if (scrolling()) sph.last = 0;                                           // прокрутка: шар неподвижен (пока она идёт); после остановки продолжает с того же места
       else {
         const gap = isPortrait() ? 33 : 0;                                    // ПК — каждый кадр экрана (60 fps), телефон — через кадр
         if (!sph.last || t - sph.last >= gap) {
@@ -120,52 +112,6 @@
         .then(([a, n]) => { if (g === gen && hall && !dead && hall.setSphereTex(a, n)) { sphPush(); dirty = true; schedule(); sphStart(); } try { a.close(); n.close(); } catch (e) { /* — */ } })
         .catch(() => {});
     }
-    /* взаимодействие с курсором: шар — тяжёлый каменный глобус под рукой.
-       • проведите курсором по шару — он подталкивается в сторону движения и крутится по инерции; свет скользит по камню точно за курсором;
-       • зажмите левую кнопку и потяните — шар «берётся в руку», поворачивается вслед за пальцем, отпустите — раскручивается и медленно возвращается к собственному вращению;
-       • пока страница прокручивается, шар не двигается совсем. На сенсорных экранах прокрутка страницы важнее — шар только вращается сам. */
-    const interactive = el => !!(el && el.closest && el.closest('a,button,input,select,textarea,label,summary,[role="button"],[data-act]'));
-    function sphHit(e) {
-      if (!hall || !hall.sphereReady || !hall.sphereScreen || !sph.view) return null;
-      const s = hall.sphereScreen(), r = cv.getBoundingClientRect(); if (!s || !r.width) return null;
-      const dx = e.clientX - (r.left + s.x * r.width), dy = e.clientY - (r.top + s.y * r.height), pr = s.r * r.height;
-      return pr > 8 ? {dx, dy, pr, inside: dx * dx + dy * dy <= pr * pr * 0.97} : null;
-    }
-    const setHot = on => { if (sph.hot !== on) { sph.hot = on; root.classList.toggle('sph-hot', on); } };
-    const onPointer = e => {
-      if (e.pointerType && e.pointerType !== 'mouse') return;
-      sph.hx = clamp(e.clientX / innerWidth * 2 - 1, -1, 1); sph.hy = clamp(e.clientY / innerHeight * 2 - 1, -1, 1);
-      const mx = e.clientX - sph.px, my = e.clientY - sph.py; sph.px = e.clientX; sph.py = e.clientY;
-      if (scrolling() || !sphWanted()) { setHot(false); sphStart(); return; }
-      const h = sphHit(e);
-      if (sph.drag) {
-        const pr = sph.drag.pr, dtm = Math.max(4, e.timeStamp - sph.drag.t) / 1000; sph.drag.t = e.timeStamp;
-        const dy = mx / pr, dp = my / pr;
-        sph.yaw += dy; sph.tp = clamp(sph.tp + dp, -0.9, 0.9);
-        sph.vy = clamp(0.55 * (dy / dtm) + 0.45 * sph.vy, -16, 16);            // скорость руки: после отпускания шар продолжает по инерции
-        if (h) { sph.ox = clamp(h.dx / h.pr, -1.3, 1.3); sph.oy = clamp(h.dy / h.pr, -1.3, 1.3); }
-        sphStart(); return;
-      }
-      const hot = !!(h && h.inside && !interactive(e.target));
-      setHot(hot);
-      if (hot) {
-        sph.ox = clamp(h.dx / h.pr, -1.3, 1.3); sph.oy = clamp(h.dy / h.pr, -1.3, 1.3);
-        sph.vy = clamp(sph.vy + clamp(mx / h.pr, -0.4, 0.4) * 2.6, -14, 14);   // проводим по камню — шар подталкивается в сторону движения
-        sph.vp = clamp(sph.vp + clamp(my / h.pr, -0.4, 0.4) * 1.6, -5, 5);
-      }
-      sphStart();
-    };
-    const onDown = e => {
-      if (e.button !== 0 || (e.pointerType && e.pointerType !== 'mouse') || scrolling() || !sphWanted() || interactive(e.target)) return;
-      const h = sphHit(e); if (!h || !h.inside) return;
-      sph.drag = {t: e.timeStamp, pr: h.pr}; sph.vp = 0; root.classList.add('sph-grab'); document.documentElement.classList.add('sph-dragging'); e.preventDefault();
-    };
-    const onUp = () => { if (!sph.drag) return; sph.drag = null; root.classList.remove('sph-grab'); document.documentElement.classList.remove('sph-dragging'); sphStart(); };
-    const onLeave = () => { setHot(false); };
-    addEventListener('pointermove', onPointer, {passive: true});
-    addEventListener('pointerdown', onDown);
-    addEventListener('pointerup', onUp); addEventListener('pointercancel', onUp); addEventListener('blur', onUp);
-    document.addEventListener('mouseleave', onLeave);
     document.addEventListener('visibilitychange', sphStart);
 
     /* ---- данные ключевых кадров: сжатые файлы (Blob) всегда, текстуры — только рядом с положением ---- */
@@ -478,7 +424,7 @@
     let lastGov = -1e9;
     const now = () => performance.now();
 
-    const onScroll = () => { lastScrollT = performance.now(); schedule(); };
+    const onScroll = () => { lastScrollT = performance.now(); quiet = 0; schedule(); };
     const onResize = () => { clearTimeout(rzTimer); rzTimer = setTimeout(() => { measureStatic(); sizeCanvas(); schedule(); }, 120); schedule(); };
     /* поменялась ориентация экрана (телефон ↔ компьютер): другой набор кадров, другая дорожка камеры — данные загружаем заново, холсты остаются теми же */
     const onMQ = () => {
@@ -502,7 +448,7 @@
     function destroyGL() {
       gen++; upQ.length = 0; clearTimeout(upTimer); upTimer = 0; clearTimeout(rzTimer); if (ro) ro.disconnect();
       removeEventListener('scroll', onScroll); removeEventListener('resize', onResize); removeEventListener('load', onLoad);
-      removeEventListener('pointermove', onPointer); removeEventListener('pointerdown', onDown); removeEventListener('pointerup', onUp); removeEventListener('pointercancel', onUp); removeEventListener('blur', onUp); document.removeEventListener('mouseleave', onLeave); document.removeEventListener('visibilitychange', sphStart); if (sph.raf) cancelAnimationFrame(sph.raf); sph.raf = 0;
+      document.removeEventListener('visibilitychange', sphStart); if (sph.raf) cancelAnimationFrame(sph.raf); sph.raf = 0;
       portraitMQ.removeEventListener && portraitMQ.removeEventListener('change', onMQ);
       if (hall) hall.destroy(false); if (jar) jar.destroy(false); hall = jar = null;
       document.body.classList.remove('arch-hide', 'arch-nav', 'arch-live', 'arch-top');
@@ -528,7 +474,7 @@
         let res = 0, resj = 0, lo = 0, loj = 0; for (let k = 0; k < NH; k++) { res += resident[k]; resj += resJ[k]; lo += lowDone[k] === 1 ? 1 : 0; loj += lowJDone[k] === 1 ? 1 : 0; }
         return {p: cp, pTarget: pT, u: uOf(), N: NH, loaded: loadedKeys, set, gl: !!hall, drawn: lastDraw, firstDrawn, resident: res, residentJar: resj, lows: lo, lowSprites: loj, resScale, govChanges, fast, up: {full: upN.full, low: upN.low, queued: upQ.length}, snapped: vp === 0 && Math.abs(cp - Phi[kNear(cp)]) < 1e-5,
           jar: {loaded: blobs.j.filter(Boolean).length, n: NH, shown: jarShown, sprites: resj, label: labelReady},
-          sphere: {ready: !!(hall && hall.sphereReady), yaw: sph.yaw, cur: [sph.hx, sph.hy], running: !!sph.raf, hot: sph.hot, drag: !!sph.drag, vy: sph.vy, screen: hall && hall.sphereScreen ? hall.sphereScreen() : null},
+          sphere: {ready: !!(hall && hall.sphereReady), yaw: sph.yaw, cur: [sph.hx, sph.hy], running: !!sph.raf, still: scrolling()},
           size: [W, H, JW, JH], perf: {n: perfN, mean: ring.length ? ring.reduce((s, v) => s + v, 0) / ring.length : 0, p95: ring.length ? ring[Math.floor(ring.length * 0.95)] : 0, max: ring.length ? ring[ring.length - 1] : 0}};
       },
       destroy() { dead = true; destroyGL(); for (const k in blobs) blobs[k].fill(null); }

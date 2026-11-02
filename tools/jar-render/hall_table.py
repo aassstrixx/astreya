@@ -479,6 +479,45 @@ def vase_patch(argv):
         print('участок кадра', i, [round(v, 3) for v in box], flush=True)
 
 
+def lab_box():
+    """область кадра (x0, x1, y0, y1), где видны упаковки на пороге ниши (бутылка, флакон с пипеткой, баночка): ограничивающие параллелепипеды с запасом"""
+    sc = bpy.context.scene; cam = S['cam']; xs, ys = [], []
+    for kind, noir, x, y, rot in H.LAB_PACKS:
+        for dx in (-.11, .11):
+            for dy in (-.11, .11):
+                for z in (.0, .34):
+                    q = H.proj(sc, cam, Vector((x + dx, y + dy, z))); xs.append(q[0]); ys.append(q[1])
+    return (min(xs) - .02, max(xs) + .02, min(ys) - .03, max(ys) + .02)
+
+
+def lab_patch(argv):
+    """labpatch <с> <по> outdir [--res WxH] [--samples N] [--portrait] — вернуть в кадры зала упаковки на пороге ниши (бутылка, флакон, баночка из «световой лаборатории» прежней версии; линий на полу и стеклянной панели нет): дорисовать их область, те же файлы, что у magpatch; склейка — paste_mag.py"""
+    rest, o = H.parse(argv)
+    os.environ['ZONE_MAG'] = '1'
+    os.environ['HALL_LAB_PARTS'] = 'packs'
+    H.LAB = True
+    a, b, outdir = int(rest[1]), int(rest[2]), rest[3]
+    os.makedirs(outdir, exist_ok=True)
+    global PORTRAIT_PATCH
+    PORTRAIT_PATCH = bool(o['portrait'])
+    if o['portrait'] and o['res'] == (1920, 1080):
+        o['res'] = (900, 1600)
+    H.build_scene(o['res'], o['samples'], o['portrait'])
+    hold_i = int(math.ceil(H.HOLD * (o['total'] - 1) - 1e-9))
+    for i in range(a, min(b, hold_i) + 1):
+        path = os.path.abspath(os.path.join(outdir, '%03d.png' % i))
+        if os.path.exists(path):
+            continue
+        H.apply_frame(i, o['total'], o['portrait'])
+        box = lab_box()
+        if box[1] <= 0 or box[0] >= 1 or box[3] <= 0 or box[2] >= 1:
+            continue
+        box = tuple(min(1.0, max(0.0, v)) for v in box)
+        H.render_bg_crop(i, o['total'], path, o['portrait'], box)
+        json.dump({'box': box, 'res': list(o['res'])}, open(path.replace('.png', '.json'), 'w'))
+        print('участок кадра', i, [round(v, 3) for v in box], flush=True)
+
+
 def find_objs(argv):
     """objs <кадр> x,y [--portrait] — какие объекты сцены стоят в точке кадра (доли кадра x, y сверху вниз): имя, размеры, положение, материалы — чтобы найти лишний предмет"""
     rest, o = H.parse(argv)
@@ -542,6 +581,13 @@ def flight(argv):
     n, outdir = int(rest[1]), rest[2]
     os.makedirs(outdir, exist_ok=True)
     port = o['portrait']
+    lab = os.environ.get('ZONE_FLIGHT_LAB') == '1'                                                    # дорисовать в готовых кадрах пролёта только область с упаковками на пороге ниши (labpatch для кадров зала)
+    sprite = os.environ.get('ZONE_FLIGHT_SPRITE') == '1'                                              # баночка — отдельным слоем-спрайтом (как на сайте в зале: те же лампы, экспозиция и этикетка), кадр — без неё: баночка в пролёте не тускнеет; композит — composite_flight.py
+    if lab or sprite or os.environ.get('ZONE_FLIGHT_PACKS') == '1':
+        os.environ['HALL_LAB_PARTS'] = 'packs'; H.LAB = True                                         # упаковки на пороге ниши (как в живой версии)
+    if sprite:
+        os.environ['HALL_JAR_LABEL'] = '1'
+        os.makedirs(os.path.join(outdir, 'jar'), exist_ok=True)
     H.build_scene(o['res'], o['samples'], port)
     H.apply_frame(o['total'] - 1, o['total'], port)
     st = H.frame_state(1.0, port); pos0, tgt0, lens = st['pos'].copy(), st['tgt'].copy(), st['lens']
@@ -583,8 +629,45 @@ def flight(argv):
         cam.data.lens = lens; cam.data.shift_x = cam.data.shift_y = 0.0
         bpy.context.view_layer.update()
         sc.render.filepath = path
-        bpy.ops.render.render(write_still=True)
-        print('кадр пролёта', i, '/', n, flush=True)
+        if lab:
+            box = lab_box()
+            if box[1] <= 0 or box[0] >= 1 or box[3] <= 0 or box[2] >= 1:
+                continue
+            box = tuple(min(1.0, max(0.0, v)) for v in box)
+            sc.render.use_border = True; sc.render.use_crop_to_border = True
+            sc.render.border_min_x, sc.render.border_max_x = box[0], box[1]
+            sc.render.border_min_y, sc.render.border_max_y = 1 - box[3], 1 - box[2]
+            bpy.ops.render.render(write_still=True)
+            json.dump({'box': box, 'res': list(o['res'])}, open(path.replace('.png', '.json'), 'w'))
+            print('участок кадра пролёта', i, [round(v, 3) for v in box], flush=True)
+            continue
+        if sprite:
+            H.set_layer('all')
+            for ob in S['jar_objs']:
+                if ob.type in H.MESHY:
+                    ob.visible_camera = False                                                        # баночка невидима камере, но отбрасывает тень и отражается в полу
+            bpy.ops.render.render(write_still=True)
+            rect = H.jar_rect()                                                                      # спрайт: слой баночки, экспозиция и ss как у кадров зала
+            H.set_layer('jar')
+            sc.view_settings.exposure = float(os.environ.get('HALL_EXP', -.85)) + H.JAR_EXP
+            ss = max(2.0, min(6.0, 1000.0 / max(1.0, rect[2] * o['res'][0])))
+            sc.render.resolution_x = int(round(o['res'][0] * ss)); sc.render.resolution_y = int(round(o['res'][1] * ss))
+            sc.render.use_border = True; sc.render.use_crop_to_border = True
+            sc.render.border_min_x, sc.render.border_max_x = rect[0], rect[0] + rect[2]
+            sc.render.border_min_y, sc.render.border_max_y = 1 - (rect[1] + rect[3]), 1 - rect[1]
+            sc.render.film_transparent = True; sc.render.image_settings.color_mode = 'RGBA'
+            jp = os.path.abspath(os.path.join(outdir, 'jar', '%03d.png' % i)); sc.render.filepath = jp
+            bpy.ops.render.render(write_still=True)
+            json.dump({'rect': rect, 'ss': ss}, open(jp.replace('.png', '.json'), 'w'))
+            sc.render.resolution_x, sc.render.resolution_y = o['res']                                # обратно к кадру
+            sc.render.use_border = False; sc.render.use_crop_to_border = False
+            sc.view_settings.exposure = float(os.environ.get('HALL_EXP', -.85))
+            sc.render.film_transparent = False; sc.render.image_settings.color_mode = 'RGB'
+            H.set_layer('all')
+            print('кадр пролёта (с отдельной баночкой)', i, '/', n, flush=True)
+        else:
+            bpy.ops.render.render(write_still=True)
+            print('кадр пролёта', i, '/', n, flush=True)
         if i == n:                                                                       # рамка журнала (ПК — разворот, телефон — левая страница) в последнем кадре
             corners = [(-pw, -ph / 2), (pw, -ph / 2), (pw, ph / 2), (-pw, ph / 2)] if not port else [(-pw, -ph / 2), (0.0, -ph / 2), (0.0, ph / 2), (-pw, ph / 2)]
             pts = [H.proj(sc, cam, Vector((rot(x, y)[0], rot(x, y)[1], z0 + .012))) for x, y in corners]
@@ -604,6 +687,8 @@ if __name__ == '__main__':
         flight(sys.argv[1:])
     elif len(sys.argv) > 1 and sys.argv[1] == 'objs':
         find_objs(sys.argv[1:])
+    elif len(sys.argv) > 1 and sys.argv[1] == 'labpatch':
+        lab_patch(sys.argv[1:])
     elif len(sys.argv) > 1 and sys.argv[1] == 'vasepatch':
         vase_patch(sys.argv[1:])
     elif len(sys.argv) > 1 and sys.argv[1] == 'jarvase':

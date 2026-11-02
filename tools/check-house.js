@@ -142,31 +142,27 @@ const t = (cond, name, info) => { if (cond) ok++; else bad.push(name + (info !==
     t(/Листайте ниже/.test(g.cue || '') && !g.panel, 'вместо панели «Почему выбирают Астрею?» внизу — подсказка «Листайте ниже — откроется журнал»', g);
     const y0 = await p.evaluate(() => scrollY); await p.click('.hs-cue'); await p.waitForTimeout(450); const ym = await p.evaluate(() => scrollY); await settle(p); const o = await rs(p), y1 = await p.evaluate(() => scrollY);
     t(ym > y0 && ym < y1 - 5 && o.s === 1 && o.t > .25 && o.t < .4, 'клик по подсказке: страница сама плавно едет к журналу (не прыжок), камера пролетает к раскрытому журналу', {y0, ym, y1, o});
-    const lv = await p.evaluate(() => ({live: document.getElementById('house-reader').classList.contains('is-live'), story: document.getElementById('arch-story').classList.contains('rd-live'), hero: +getComputedStyle(document.querySelector('#arch-story .ar-hero')).opacity}));
-    t(lv.live && lv.story && lv.hero < .05, 'после стыка читалка «живая», холсты и текст героя погасли', lv);
+    const lv = await p.evaluate(() => ({live: document.getElementById('house-reader').classList.contains('is-live'), story: document.getElementById('arch-story').classList.contains('rd-live'), hero: +getComputedStyle(document.querySelector('#arch-story .ar-copy')).opacity, jar: getComputedStyle(document.querySelector('#arch-story .ar-jar-cv')).visibility}));
+    t(lv.live && lv.story && lv.hero < .05, 'после стыка читалка «живая», кадр и текст героя погасли (спрайт баночки не гаснет сам — он убирается, когда кадр героя ушёл)', lv);
     const b0 = (await rs(p)).p; await p.evaluate(() => { window.__pr = []; const f = () => { window.__pr.push(window.Astreya.house.readerState().p); if (window.__pr.length < 600) requestAnimationFrame(f); }; requestAnimationFrame(f); });
     await p.click('#mag .mag-nx'); await settle(p); const b1 = (await rs(p)).p, pr = await p.evaluate(() => window.__pr), part = pr.filter(v => v > b0 + .05 && v < b1 - .05);
     t(part.length >= 2 && Math.abs(b1 - b0 - 1) < .02, '«Далее» листает плавно: лист поворачивается на виду (через промежуточные положения), а не перескакивает', {b0, b1, frames: part.length});
     await p.click('#mag .mag-nx'); await p.waitForTimeout(150); await p.click('#mag .mag-nx'); await settle(p); const b2 = (await rs(p)).p;
     t(Math.abs(b2 - b1 - 2) < .02, 'два быстрых нажатия «Далее» подряд листают на два разворота', {b1, b2});
     await p.click('#mag .mag-pv'); await settle(p); await p.click('#mag .mag-pv'); await settle(p);
-    t(await p.evaluate(() => { const s = window.Astreya.jar && window.Astreya.jar.arch && window.Astreya.jar.arch.state && window.Astreya.jar.arch.state(); return !s || !s.sphere || s.sphere.drag === false; }), 'шар не «залипает» в захвате после листания'); }
+  }
 
-  { /* шар: во время прокрутки не двигается совсем; когда прокрутка стоит — вращается сам; над шаром курсор «рука», потянули — шар поворачивается */
+  { /* шар: во время прокрутки не двигается совсем; когда прокрутка стоит — вращается сам; на курсор не реагирует (по решению заказчика) */
     await p.evaluate(() => window.Astreya.house.hall()); await p.evaluate(() => window.scrollBy({top: -8, behavior: 'instant'})); await p.waitForTimeout(2500);
-    const sp = () => p.evaluate(() => { const s = window.Astreya.jar.arch.state().sphere; return {yaw: s.yaw, ready: s.ready, run: s.running, scr: s.screen}; });
+    const sp = () => p.evaluate(() => { const s = window.Astreya.jar.arch.state().sphere; return {yaw: s.yaw, ready: s.ready, run: s.running, cur: s.cur}; });
     const a = await sp();
     if (!a.ready) t(true, 'шар: текстуры ещё не загрузились (проверка пропущена)');
     else {
       const seq = []; for (let i = 0; i < 5; i++) { await p.evaluate(() => window.scrollBy({top: -25, behavior: 'instant'})); await p.waitForTimeout(50); seq.push((await sp()).yaw); }
       t(Math.max(...seq) - Math.min(...seq) < .004, 'во время прокрутки шар не двигается (угол не меняется)', seq);
-      await p.waitForTimeout(1600); const b = await sp(); t(b.run && b.yaw > seq[4], 'остановили прокрутку — шар снова вращается сам', {a: seq[4], b: b.yaw});
-      const sc = (await sp()).scr, cx = Math.round(sc.x * 1440), cy = Math.round(sc.y * 900), pr = Math.round(sc.r * 900);
-      await p.mouse.move(cx - pr - 80, cy); await p.mouse.move(cx - Math.round(pr * .4), cy, {steps: 6}); await p.waitForTimeout(250);
-      t(await p.evaluate(() => document.getElementById('arch-story').classList.contains('sph-hot')), 'над шаром курсор становится «рукой» (класс sph-hot)');
-      const y0 = (await sp()).yaw; await p.mouse.down(); await p.mouse.move(cx + Math.round(pr * .4), cy, {steps: 8}); await p.waitForTimeout(150);
-      const g = await p.evaluate(() => ({grab: document.getElementById('arch-story').classList.contains('sph-grab')})); const y1 = (await sp()).yaw; await p.mouse.up();
-      t(g.grab && y1 - y0 > .25, 'потянули шар зажатой кнопкой — он поворачивается вслед (вправо)', {g, y0, y1});
+      await p.waitForFunction(y => window.Astreya.jar.arch.state().sphere.yaw > y, seq[4], {timeout: 20000}).catch(() => {}); const b = await sp(); t(b.run && b.yaw > seq[4], 'остановили прокрутку — шар снова вращается сам', {a: seq[4], b: b.yaw});
+      await p.mouse.move(1060, 300); await p.mouse.move(1200, 330, {steps: 6}); await p.mouse.down(); await p.mouse.move(900, 330, {steps: 8}); await p.mouse.up(); await p.waitForTimeout(300);
+      const c = await sp(); t(c.cur[0] === 0 && c.cur[1] === 0 && !(await p.evaluate(() => /sph-/.test(document.getElementById('arch-story').className))), 'курсор не вращает шар и не сдвигает свет: ни наведение, ни протяжка мышью не меняют шар (только собственное вращение)', c);
       await p.mouse.move(20, 20);
     } }
 

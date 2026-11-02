@@ -233,7 +233,7 @@ if (!J || !J.enabled || !A || !A.enabled) { console.log('Первый экран
     const jc = await p.evaluate(() => { const c = document.querySelector('.ar-jar-cv'), w = document.querySelector('.ar-world'); return {cw: c.width, ww: w.clientWidth, dpr: window.devicePixelRatio || 1, pearl: [...document.querySelectorAll('.ar-pearl, .ar-gl, .ar-poster')].some(e => getComputedStyle(e).display !== 'none')}; });          // запасной постер (режим без анимации) в разметке есть, но скрыт
     ok(jc.cw >= jc.ww * Math.min(jc.dpr, 2) * 0.99, 'баночка: холст рисуется в полном разрешении экрана (не мельче, чем пиксели устройства)', jc);
     ok(!jc.pearl, 'отдельных холстов и картинок шара на странице нет: живой шар рисуется в том же холсте зала', jc);
-    /* живой шар: текстуры загружены, он сам медленно поворачивается, а курсор поворачивает его и двигает свет (на телефоне курсора нет — только собственное вращение) */
+    /* живой шар: текстуры загружены, он сам медленно поворачивается; на курсор не реагирует (по решению заказчика) */
     await wait(1500);
     const sp0 = await p.evaluate(() => { const s = window.Astreya.jar.arch.state(); return s.sphere; });
     ok(!camD.sphere3d || (sp0 && sp0.ready), 'живой шар: карты загружены, шар включён', sp0);
@@ -241,10 +241,7 @@ if (!J || !J.enabled || !A || !A.enabled) { console.log('Первый экран
       const sh1 = await p.evaluate(() => { const s = window.Astreya.jar.arch.state().sphere; return {yaw: s.yaw}; });
       await p.mouse.move(W * 0.15, H * 0.8); await p.mouse.move(W * 0.2, H * 0.78); await wait(1300);
       const sp1 = await p.evaluate(() => window.Astreya.jar.arch.state().sphere);
-      ok(sp1.cur[0] < -0.4 && sp1.cur[1] > 0.3 && Math.abs(sp1.yaw - sh1.yaw) > 0.02, 'живой шар: от курсора поворачивается и сдвигается свет (шар «подвижный»)', {sh1, sp1});
-      await p.mouse.move(W * 0.85, H * 0.2); await wait(900);
-      const sp2 = await p.evaluate(() => window.Astreya.jar.arch.state().sphere);
-      ok(sp2.cur[0] > 0.4 && sp2.cur[1] < -0.3, 'живой шар: курсор справа-вверху — шар отзывается в другую сторону', sp2);
+      ok(sp1.cur[0] > -0.01 && sp1.cur[0] < 0.01 && Math.abs(sp1.yaw - sh1.yaw) > 0.02, 'живой шар: вращается сам, а курсор на него не действует (свет и угол не следуют за мышью)', {sh1, sp1});
     }
     await shot(p, `arch-97-final-${mobile ? 'phone' : 'desktop'}`);
 

@@ -54,6 +54,9 @@
         l.classList.toggle('is-flipped', q > .5);
         l.classList.toggle('is-turning', q > 0 && q < 1);
       });
+      { let sr = 0, sl = 0;                                                                   // тень поднятого листа на страницу под ним: пока лист стоит над правой стопкой — на правую, за серединой — на левую
+        for (let k = 0; k < N; k++) { const f = clamp(v - k, 0, 1); if (f > 0 && f < 1) { const lt = Math.sin(Math.PI * f); sr = Math.max(sr, lt * clamp((.64 - f) / .3, 0, 1)); sl = Math.max(sl, lt * clamp((f - .36) / .3, 0, 1)); } }
+        if (scroller) { scroller.style.setProperty('--sr', sr.toFixed(3)); scroller.style.setProperty('--sl', sl.toFixed(3)); } }
       if (book) book.style.setProperty('--bx', (-.5 * (1 - Math.min(1, v))).toFixed(3));       // закрытый журнал стоит по центру, раскрытый — разворотом
       const ns = Math.round(v);
       if (ns !== s || !book.hasAttribute('data-s')) setS(ns);
@@ -72,7 +75,7 @@
     }
 
     /* ---------- читалка: состояние журнала задаёт прокрутка ---------- */
-    const RD = {open: .30, from: .34, span: .62};                               // доли пути сцены: пролёт камеры 0….30, журнал стоит на первом развороте, с .34 разворот за разворотом до .96
+    const RD = {open: .30, from: .34, span: .62, hold: .05};          // hold — первые 5 % пути камера стоит: холсты героя гаснут над тем же кадром (баночка не мигает)                               // доли пути сцены: пролёт камеры 0….30, журнал стоит на первом развороте, с .34 разворот за разворотом до .96
     const WIN = [.14, .86];                                                    // окно поворота внутри отрезка одного разворота (остальное — страница стоит и читается)
     const ease = x => x * x * (3 - 2 * x);
     const pOf = t => {
@@ -86,14 +89,13 @@
     let FL = null; try { FL = JSON.parse(reader.getAttribute('data-flight') || 'null'); } catch (e) {}
     let flImgs = [], flLoaded = 0, flStarted = false;
     const flCfg = () => FL ? (phone() ? FL.mobile : FL.desktop) : null;
-    const ctz = i => { if (!i) return 99; let c = 0; while (!(i & 1)) { i >>= 1; c++; } return c; };
     function loadFlight() {
       const c = flCfg(); if (flStarted || !c || !cvS || reduce()) return;
       flStarted = true; flImgs = new Array(FL.n + 1); flImgs[0] = poster;       // нулевой кадр — готовый кадр зала (постер)
       const order = []; for (let i = 1; i <= FL.n; i++) order.push(i);
-      order.sort((a, b) => (ctz(b) - ctz(a)) || (a - b));                        // «от грубого к тонкому»: кадры через равные промежутки раньше соседних — пролёт можно играть, пока дозагружается остальное
+      /* по порядку полёта: кадры нужны ровно в этом порядке; последний — первым (по нему живой журнал совмещается с нарисованным) */
       order.splice(order.indexOf(FL.n), 1); order.unshift(FL.n);                  // последний кадр — первым: по нему живой журнал совмещается с нарисованным
-      let k = 0, act = 0; const need = Math.min(FL.n, 9);
+      let k = 0, act = 0; const need = Math.min(FL.n, 6);
       const pump = () => {
         while (act < 4 && k < order.length) {
           const i = order[k++], im = new Image(); act++; im.decoding = 'async';
@@ -114,10 +116,10 @@
       const W = cvS.clientWidth, Hh = cvS.clientHeight, c = flCfg(); if (!W || !Hh || !c) return;
       const dpr = Math.min(window.devicePixelRatio || 1, 1.5), cw = Math.round(W * dpr), ch = Math.round(Hh * dpr);
       if (cvS.width !== cw || cvS.height !== ch) { cvS.width = cw; cvS.height = ch; }
-      const cx = cvS.getContext('2d'), x = u * FL.n, f0 = Math.min(FL.n, Math.floor(x)), f1 = Math.min(FL.n, f0 + 1), i0 = flNear(f0, -1), i1 = flNear(f1, 1), a = i1 === i0 ? 0 : clamp((x - i0) / (i1 - i0), 0, 1);
+      const cx = cvS.getContext('2d'), x = u * FL.n, f = Math.max(0, Math.min(FL.n, Math.round(x))), lo = flNear(f, -1), hi = flNear(f, 1), i0 = (f - lo <= hi - f) ? lo : hi;          // ближайший кадр без смешения: смешение двух кадров «двоило» бы баночку (она ближе всего к камере и сдвигается сильнее всего)
       const fit = im => { const iw = im.naturalWidth || im.width, ih = im.naturalHeight || im.height, k = Math.max(W / iw, Hh / ih); return {iw, ih, k, ox: (W - iw * k) / 2, oy: (Hh - ih * k) / 2}; };
       const draw = (im, al) => { if (!im || !(im.naturalWidth || im.width)) return; const f = fit(im); cx.globalAlpha = al; cx.drawImage(im, f.ox * dpr, f.oy * dpr, f.iw * f.k * dpr, f.ih * f.k * dpr); };
-      cx.globalAlpha = 1; cx.clearRect(0, 0, cw, ch); draw(flImgs[i0], 1); if (a > .001 && i1 !== i0) draw(flImgs[i1], a);
+      cx.globalAlpha = 1; cx.clearRect(0, 0, cw, ch); draw(flImgs[i0], 1);
       /* к концу пролёта кадр сдвигается и масштабируется так, чтобы нарисованный журнал лёг ровно на живой (его размер зависит от экрана) */
       const wA = ease(clamp((u - .6) / .4, 0, 1)), last = flImgs[FL.n];                        // (последний кадр нужен для совмещения; пока он не загрузился — совмещения нет)
       if (wA > 0 && last && c.rect && book.offsetWidth) {
@@ -136,7 +138,7 @@
     function readerUpdate() {
       if (flat()) { reader.classList.add('is-flat'); reader.style.setProperty('--ra', '1'); reader.style.setProperty('--fu', '1'); setLive(false, 0); if (s === 0 && p === 0) render(1, {instant: true, noScroll: true}); return; }
       reader.classList.remove('is-flat');
-      const rr = reader.getBoundingClientRect(), t = readerT(), open = phone() ? .5 : RD.open, fu = ease(clamp(t / open, 0, 1)), ra = clamp((fu - .86) / .14, 0, 1);
+      const rr = reader.getBoundingClientRect(), t = readerT(), open = phone() ? .5 : RD.open, hold = phone() ? 0 : RD.hold, fu = ease(clamp((t - hold) / (open - hold), 0, 1)), ra = clamp((fu - .86) / .14, 0, 1);
       if (t > 0 && !flStarted) loadFlight();
       if (phone()) setLive(false, 0); else setLive(rr.top < -1, ease(clamp(t / .05, 0, 1)));
       reader.style.setProperty('--fu', fu.toFixed(4)); reader.style.setProperty('--ra', ra.toFixed(4));
@@ -258,7 +260,7 @@
     if (phone() || flat()) { setS(0); setP(0); } else setP(1);
     readerUpdate(); if ('requestIdleCallback' in window) setTimeout(() => requestIdleCallback(loadFlight), 1800); else setTimeout(loadFlight, 2500);
 
-    A.house = {go: id => go(id, {via: 'api'}), hall: () => hall({via: 'api'}), openMagazine: v => { if (flat() || phone()) { jump(readerBox().top); render(v === undefined ? 1 : v, {instant: true}); } else toState(v === undefined ? 1 : v); }, state: () => ({room: current, magazine: true, page: s, rooms: ids, reader: true}), readerState: () => ({t: readerT(), s, p})};
+    A.house = {go: id => go(id, {via: 'api'}), hall: () => hall({via: 'api'}), openMagazine: v => { if (flat() || phone()) { jump(readerBox().top); render(v === undefined ? 1 : v, {instant: true}); } else toState(v === undefined ? 1 : v); }, state: () => ({room: current, magazine: true, page: s, rooms: ids, reader: true}), readerState: () => ({t: readerT(), s, p, flight: {loaded: flLoaded, n: FL ? FL.n : 0}})};
   }
 
   init();
