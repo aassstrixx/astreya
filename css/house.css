@@ -158,7 +158,7 @@ body[data-page="home"]{--hs-paper:#f6f0e3;--hs-paper-2:#efe6d3;--hs-ink:#0b1a33;
 .house-reader{position:relative;height:var(--hrh,560vh);background:#d9ccb2;--ra:0;--fu:0}
 html:not(.js) .house-reader{height:auto;--ra:1;--fu:1}
 html:not(.js) .house-reader .hr-stage{position:relative;height:auto;overflow:visible;padding:clamp(76px,10vh,110px) 0 clamp(40px,6vh,70px)}
-html:not(.js) .hr-seq,html:not(.js) .hr-bg,html:not(.js) .hr-veil,html:not(.js) .hr-cue,html:not(.js) .hr-skip,html:not(.js) .mag-bar,html:not(.js) .mag-ctl,html:not(.js) .mag-spine{display:none}
+html:not(.js) .hr-fly,html:not(.js) .hr-bg,html:not(.js) .hr-veil,html:not(.js) .hr-cue,html:not(.js) .hr-skip,html:not(.js) .mag-bar,html:not(.js) .mag-ctl,html:not(.js) .mag-spine{display:none}
 html:not(.js) .house-reader .mag{position:relative;inset:auto;display:block}
 html:not(.js) .mag-wrap{--pw:min(92vw,560px);width:var(--pw);margin:0 auto;transform:none}
 html:not(.js) .mag-book{width:var(--pw);height:auto;perspective:none;transform:none}
@@ -168,9 +168,10 @@ html:not(.js) .face,html:not(.js) .face.back{position:relative;width:var(--pw);h
 html:not(.js) .face::after{display:none}
 .hr-stage{position:sticky;top:0;height:100vh;height:100svh;overflow:clip}
 .hr-bg{position:absolute;inset:0;z-index:0;display:block;transform-origin:calc(var(--tx) * 100%) calc(var(--ty) * 100%);transform:scale(calc(1 + var(--fu) * .55));will-change:transform}          /* запасной «наезд», пока кадры пролёта не загрузились */
-.hr-seq{position:absolute;inset:0;z-index:0;width:100%;height:100%;display:none;transform-origin:0 0;will-change:transform}          /* кадры пролёта камеры к журналу (js/house.js) */
-.house-reader.has-seq .hr-seq{display:block}
-.house-reader.has-seq .hr-bg{visibility:hidden}
+.hr-fly{position:absolute;inset:0;z-index:0;transform-origin:0 0;will-change:transform}          /* пролёт камеры к журналу: холсты движка зала (js/jar.js, режим data-fly); в конце пролёта js/house.js сдвигает и масштабирует слой так, чтобы нарисованный журнал лёг ровно на живой */
+.hr-fly .js-cv,.hr-fly .ar-jar-cv{transition:none}
+.house-reader .ar-world{width:max(100%,calc(100lvh * 16 / 9));aspect-ratio:16/9}          /* кадры пролёта всегда 16:9 (на высоком окне — тот же «cover», что у героя) */
+.house-reader.ready .hr-bg{visibility:hidden}
 .hr-bg img{display:block;width:100%;height:100%;object-fit:cover}
 .hr-veil{position:absolute;inset:0;z-index:1;pointer-events:none;background:radial-gradient(82% 72% at 50% 46%,rgba(50,34,18,.34),rgba(30,20,10,.74));opacity:calc(var(--fu) * .45 + var(--ra) * .35)}
 .hr-skip{position:absolute;top:clamp(78px,10vh,112px);right:clamp(16px,3vw,44px);z-index:4;display:inline-flex;align-items:center;gap:8px;padding:10px 16px;border-radius:999px;background:var(--hs-glass);box-shadow:inset 0 0 0 1px rgba(255,255,255,.75),0 8px 22px -10px rgba(40,26,10,.6);font:600 12px/1 var(--sans);letter-spacing:.06em;color:var(--hs-ink);opacity:clamp(0,calc(var(--ra) * 3 - .3),1);transition:background-color .25s,transform .3s var(--ease)}
@@ -184,7 +185,7 @@ html:not(.js) .face::after{display:none}
 .house-reader .mag .mag-ctl{opacity:clamp(0,calc((var(--ra) - .6) * 2.5),1)}
 .house-reader .mag .mag-bar{opacity:clamp(0,calc((var(--ra) - .6) * 2.5),1)}
 .house-reader.is-flat{height:auto;--ra:1;--fu:1}
-.house-reader.is-flat .hr-seq{display:none}
+.house-reader.is-flat .hr-fly{display:none}
 .house-reader.is-flat .hr-stage{position:relative;height:auto;min-height:100svh;padding:clamp(70px,10vh,120px) 0 clamp(40px,6vh,70px)}
 .house-reader.is-flat .mag{position:relative;inset:auto;display:grid;min-height:calc(100svh - 120px)}
 
@@ -201,6 +202,7 @@ html:not(.js) .face::after{display:none}
 .hs-cue i::before{content:"";position:absolute;left:2px;top:1px;width:8px;height:8px;border-right:2px solid currentColor;border-bottom:2px solid currentColor;transform:rotate(45deg);animation:hsCue 1.9s cubic-bezier(.45,0,.35,1) infinite}
 @keyframes hsCue{0%{transform:translate3d(0,-5px,0) rotate(45deg);opacity:0}35%{opacity:1}75%,100%{transform:translate3d(0,5px,0) rotate(45deg);opacity:0}}
 .arch-story.is-house .js-stage::before{opacity:0}                                                /* нижний «мостик» к молочной странице нужен, только если под героем она; под героем журнал */
+html.js body[data-page="home"] .hdr{opacity:.999}          /* шапка поверх WebGL-холстов сцены: полностью непрозрачная она давала сборщику страницы «отсечь» закрытую шапкой часть холста — в программном рендере (headless Chromium) внизу экрана на высоту шапки появлялась полоса шума; чуть прозрачная шапка выглядит так же, а отсечения нет */
 body[data-page="home"] .hdr{transition:transform .6s var(--ease-out),background-color .55s var(--ease-out),border-color .55s var(--ease-out)}          /* шапка из прозрачной на герое в плотную на журнале переходит плавно, а не щелчком */
 @media (min-width:701px){
   html.js .arch-story.is-house:not(.is-static):not(.jar-off) ~ .house-reader{margin-top:-100lvh}
@@ -217,7 +219,7 @@ body[data-page="home"] .hdr{transition:transform .6s var(--ease-out),background-
   html.js .arch-story.is-house.rd-gone .ar-hero{visibility:hidden}               /* баночка-спрайт не гаснет сама: пока кадры героя уходят, она стоит поверх тех же пикселей кадра пролёта; убирается, когда они ушли совсем */
   html.js .arch-story.is-house.rd-live .ar-hero *{pointer-events:none!important}
 }
-@media (prefers-reduced-motion:reduce) and (min-width:100000px){.house-reader{height:auto;--ra:1;--fu:1}.hr-seq{display:none!important}.house-reader .hr-stage{position:relative;height:auto;min-height:100svh;padding:clamp(70px,10vh,120px) 0 clamp(40px,6vh,70px)}.house-reader .mag{position:relative;inset:auto;display:grid;min-height:calc(100svh - 120px)}.hr-bg,.house-reader .mag .mag-wrap{transform:none!important}.hr-cue{display:none}}
+@media (prefers-reduced-motion:reduce) and (min-width:100000px){.house-reader{height:auto;--ra:1;--fu:1}.hr-fly{display:none!important}.house-reader .hr-stage{position:relative;height:auto;min-height:100svh;padding:clamp(70px,10vh,120px) 0 clamp(40px,6vh,70px)}.house-reader .mag{position:relative;inset:auto;display:grid;min-height:calc(100svh - 120px)}.hr-bg,.house-reader .mag .mag-wrap{transform:none!important}.hr-cue{display:none}}
 
 /* ============ 5. Телефон ============ */
 @media (max-width:700px){

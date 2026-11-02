@@ -83,11 +83,15 @@ module.exports = function homeHouse(ctx, C, P, deps) {
   /* переход скролла к раскрытому журналу: после зала — закреплённая сцена; тот же кадр зала уходит вглубь, журнал вырастает со столика, обложка раскрывается, дальше прокрутка листает разворот за разворотом
      (журнал — единственное, что идёт после зала: комнаты — его страницы; прокрутка не блокируется; без JS страницы идут подряд, при уменьшенном движении — обычный блок с раскрытым журналом) */
   const pst = (rd.house.arch && rd.house.arch.poster) || {};
-  const fl = (H.reader || {}).flight;                                              // кадры пролёта камеры к журналу: {n, ext, desktop: {dir, rect}, mobile: {dir, rect}} (tools/jar-render/hall_table.py flight)
-  const reader = `<section class="house-reader" id="house-reader" aria-label="${esc(mc.readerLabel || 'Журнал ASTREYA: листайте прокруткой')}" data-n="${pagesR.length}"${fl ? ` data-flight="${esc(JSON.stringify(fl))}"` : ''} style="--hrh:${(H.reader || {}).heightVh || 560}vh;--hrhm:${(H.reader || {}).heightVhMobile || 190}vh;--tx:${tb.d[0]};--ty:${tb.d[1]};--txm:${tb.m[0]};--tym:${tb.m[1]}">
+  /* пролёт камеры к журналу — вторая сцена того же движка, что у героя (js/jar.js, js/jar-gl.js): ключевые кадры + карты глубины + дорожка камеры + спрайты баночки (house.fly, tools/jar-render/apply_fly.py);
+     читалка — второй корень .jar-story с атрибутом data-fly: ключи пролёта берутся вместо кадров героя, положение задаёт прокрутка читалки (js/house.js → Astreya.flyP). Нет ключей / нет WebGL2 — запасной «наезд» постера */
+  const fy = H.fly && H.fly.enabled ? H.fly : null, ar = rd.house.arch || {}, st = ar.sphereTex;
+  const flyAttrs = fy ? ` data-fly data-fly-f="${fy.F}" data-fly-rect="${esc(JSON.stringify(fy.rect))}" data-n="${fy.n}" data-ext="${fy.ext}" data-v="${esc(ctx.assetVersion || '')}" data-d="${fy.dir}" data-zd="${fy.depth}" data-zx="${(ar.depth || {}).ext || 'webp'}" data-cam="${fy.cam}" data-lbl="${ar.label}" ${st ? `data-sa="${st.a}" data-sn="${st.n}" ` : ''}data-ink="${ar.ink}" data-p="${fy.p.join(',')}" data-jd="${fy.jar}" data-jx="${(ar.jar || {}).ext || 'webp'}" data-jr="${esc(JSON.stringify(fy.rects))}"` : '';
+  const flyMark = fy ? `<div class="hr-fly" aria-hidden="true"><canvas class="js-cv"></canvas><div class="ar-world"><canvas class="ar-jar-cv"></canvas></div></div>` : '';
+  const reader = `<section class="house-reader${fy ? ' jar-story' : ''}" id="house-reader" aria-label="${esc(mc.readerLabel || 'Журнал ASTREYA: листайте прокруткой')}"${flyAttrs || ` data-n="${pagesR.length}"`} style="--hrh:${(H.reader || {}).heightVh || 560}vh;--hrhm:${(H.reader || {}).heightVhMobile || 190}vh;--tx:${tb.d[0]};--ty:${tb.d[1]};--txm:${tb.m[0]};--tym:${tb.m[1]}">
     <div class="hr-stage">
       <picture class="hr-bg" aria-hidden="true"><source media="(max-aspect-ratio: 11/10)" srcset="${C.u(P, pst.mobile || 'assets/house-hall/poster-m.webp')}"><img src="${C.u(P, pst.desktop || 'assets/house-hall/poster-d.webp')}" alt="" width="1920" height="1080" decoding="async" loading="lazy"></picture>
-      <canvas class="hr-seq" aria-hidden="true"></canvas>
+      ${flyMark}
       <div class="hr-veil" aria-hidden="true"></div>
       <a class="hr-skip" href="#house-end" data-track="house_reader_skip">${esc((H.reader || {}).skip || 'К контактам')} ${I.arrow}</a>
       ${magazine}

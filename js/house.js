@@ -77,7 +77,7 @@
     }
 
     /* ---------- читалка: состояние журнала задаёт прокрутка ---------- */
-    const RD = {open: .30, from: .34, span: .62, hold: .05};          // hold — первые 5 % пути камера стоит: холсты героя гаснут над тем же кадром (баночка не мигает)                               // доли пути сцены: пролёт камеры 0….30, журнал стоит на первом развороте, с .34 разворот за разворотом до .96
+    const RD = {open: .30, from: .34, span: .62, hold: .05, align: [.45, .9], fade: [.9, .98]};          // hold — первые 5 % пути камера стоит: холсты героя гаснут над тем же кадром (баночка не мигает)                               // доли пути сцены: пролёт камеры 0….30, журнал стоит на первом развороте, с .34 разворот за разворотом до .96
     const WIN = [.14, .86];                                                    // окно поворота внутри отрезка одного разворота (остальное — страница стоит и читается)
     const ease = x => x * x * (3 - 2 * x);
     const pOf = t => {
@@ -86,50 +86,42 @@
       return 1 + j + ease(clamp((u - WIN[0]) / (WIN[1] - WIN[0]), 0, 1));
     };
 
-    /* ---------- пролёт камеры: кадры от зала к журналу, проигрываются прокруткой ---------- */
-    const cvS = $('.hr-seq', reader), poster = $('.hr-bg img', reader);
-    let FL = null; try { FL = JSON.parse(reader.getAttribute('data-flight') || 'null'); } catch (e) {}
-    let flImgs = [], flLoaded = 0, flStarted = false, fdrawn = -1;
-    const flCfg = () => FL ? (phone() ? FL.mobile : FL.desktop) : null;
-    function loadFlight() {
-      const c = flCfg(); if (flStarted || !c || !cvS || reduce()) return;
-      flStarted = true; flImgs = new Array(FL.n + 1); flImgs[0] = poster;       // нулевой кадр — готовый кадр зала (постер)
-      const order = []; for (let i = 1; i <= FL.n; i++) order.push(i);
-      /* по порядку полёта: кадры нужны ровно в этом порядке; последний — первым (по нему живой журнал совмещается с нарисованным) */
-      order.splice(order.indexOf(FL.n), 1); order.unshift(FL.n);                  // последний кадр — первым: по нему живой журнал совмещается с нарисованным
-      let k = 0, act = 0; const need = Math.min(FL.n, 6);
-      const pump = () => {
-        while (act < 4 && k < order.length) {
-          const i = order[k++], im = new Image(); act++; im.decoding = 'async';
-          im.onload = im.onerror = () => {
-            act--;
-            if (im.naturalWidth) { flImgs[i] = im; flLoaded++; fdrawn = -1; try { if (im.decode) im.decode().catch(() => {}); } catch (e) {} if (flLoaded === need) { reader.classList.add('has-seq'); } readerUpdate(true); }
-            pump();
-          };
-          im.src = c.dir + String(i).padStart(3, '0') + '.' + (FL.ext || 'webp');
-        }
-      };
-      pump();
-    }
-    const flNear = (i, dir) => { for (let j = i; j >= 0 && j <= FL.n; j += dir) if (flImgs[j] && (flImgs[j].naturalWidth || flImgs[j].width)) return j; return dir > 0 ? FL.n : 0; };
-    const bookBox = () => { const w = $('.mag-wrap', mag); return {x: w.offsetLeft + book.offsetLeft, y: w.offsetTop + book.offsetTop, w: book.offsetWidth, h: book.offsetHeight}; };
-    function drawFlight(u) {
-      if (!cvS || !reader.classList.contains('has-seq')) return;
-      const W = cvS.clientWidth, Hh = cvS.clientHeight, c = flCfg(); if (!W || !Hh || !c) return;
-      const dpr = Math.min(window.devicePixelRatio || 1, 1.5), cw = Math.round(W * dpr), ch = Math.round(Hh * dpr);
-      if (cvS.width !== cw || cvS.height !== ch) { cvS.width = cw; cvS.height = ch; }
-      const cx = cvS.getContext('2d'), x = u * FL.n, f = Math.max(0, Math.min(FL.n, Math.round(x))), lo = flNear(f, -1), hi = flNear(f, 1), i0 = (f - lo <= hi - f) ? lo : hi;          // ближайший кадр без смешения: смешение двух кадров «двоило» бы баночку (она ближе всего к камере и сдвигается сильнее всего)
-      const fit = im => { const iw = im.naturalWidth || im.width, ih = im.naturalHeight || im.height, k = Math.max(W / iw, Hh / ih); return {iw, ih, k, ox: (W - iw * k) / 2, oy: (Hh - ih * k) / 2}; };
-      const draw = (im, al) => { if (!im || !(im.naturalWidth || im.width)) return; const f = fit(im); cx.globalAlpha = al; cx.drawImage(im, f.ox * dpr, f.oy * dpr, f.iw * f.k * dpr, f.ih * f.k * dpr); };
-      cx.globalAlpha = 1; cx.clearRect(0, 0, cw, ch); draw(flImgs[i0], 1);
-      /* к концу пролёта кадр сдвигается и масштабируется так, чтобы нарисованный журнал лёг ровно на живой (его размер зависит от экрана) */
-      const wA = ease(clamp((u - .6) / .4, 0, 1)), last = flImgs[FL.n];                        // (последний кадр нужен для совмещения; пока он не загрузился — совмещения нет)
-      if (wA > 0 && last && c.rect && book.offsetWidth) {
-        const f = fit(last), r = c.rect, sx = f.ox + r[0] * f.iw * f.k, sy = f.oy + r[1] * f.ih * f.k, sw = (r[2] - r[0]) * f.iw * f.k, sh = (r[3] - r[1]) * f.ih * f.k, b = bookBox();
+    /* ---------- пролёт камеры: тот же движок зала, что у героя (js/jar.js, режим data-fly) ----------
+       Это не набор картинок: ключевые кадры + карты глубины + дорожка камеры + спрайты баночки; для любого положения прокрутки движок строит вид перепроекцией двух соседних ключей (60 к/с, без «шагов»)
+       и рисует поверх живой шар и баночку — тот же свет, фон, тени, зерно и резкость, что на главной. Здесь — только положение (Astreya.flyP) и совмещение нарисованного журнала с живым. */
+    const stageEl = $('.hr-stage', reader), hrFly = $('.hr-fly', reader);
+    const FLd = reader.hasAttribute('data-fly') ? {F: parseFloat(reader.getAttribute('data-fly-f')) || .3, rect: (() => { try { return JSON.parse(reader.getAttribute('data-fly-rect')); } catch (e) { return null; } })()} : null;
+    let fbox = null, sbox = null, bbox = null;                                  // границы читалки в документе, размер сцены, где стоит живой журнал: меряем при размере окна, в кадре вёрстку не читаем
+    const measureFly = () => { fbox = readerBox(); sbox = {w: stageEl.clientWidth, h: stageEl.clientHeight}; bbox = null; };
+    const flyLin = t => clamp((t - RD.hold) / (RD.open - RD.hold), 0, 1);       // доля пролёта: 0 — кадр зала, 1 — камера над журналом
+    A.flyP = () => {
+      if (!FLd || !fbox || phone() || flat()) return 0;
+      const tt = fbox.total > 0 ? clamp((window.pageYOffset - fbox.top) / fbox.total, 0, 1) : 1;
+      return flyLin(tt) * FLd.F;                                                // положение на дорожке камеры пролёта (путь 0…1, ключи лежат на его первой части 0…F)
+    };
+    const bookBox = () => { if (!bbox) { const w = $('.mag-wrap', mag); bbox = {x: w.offsetLeft + book.offsetLeft, y: w.offsetTop + book.offsetTop, w: book.offsetWidth, h: book.offsetHeight}; } return bbox; };
+    let fTf = '';
+    function alignFly(fp) {                                                     // к концу пролёта слой сдвигается и масштабируется так, чтобы нарисованный журнал лёг ровно на живой (его размер зависит от экрана)
+      if (!hrFly || !FLd || !FLd.rect) return;
+      const wA = ease(clamp((fp - RD.align[0]) / (RD.align[1] - RD.align[0]), 0, 1));
+      let tf = '';
+      if (wA > 0 && sbox && sbox.w && book.offsetWidth) {
+        const W = sbox.w, Hh = sbox.h, ww = Math.max(W, Hh * 16 / 9), wh = ww * 9 / 16, wx = (W - ww) / 2, wy = (Hh - wh) / 2, r = FLd.rect;
+        const sx = wx + r[0] * ww, sy = wy + r[1] * wh, sw = (r[2] - r[0]) * ww, sh = (r[3] - r[1]) * wh, b = bookBox();
         const S = 1 + (b.w / sw - 1) * wA, scx = sx + sw / 2, scy = sy + sh / 2;
-        cvS.style.transformOrigin = scx.toFixed(1) + 'px ' + scy.toFixed(1) + 'px';
-        cvS.style.transform = 'translate(' + ((b.x + b.w / 2 - scx) * wA).toFixed(1) + 'px,' + ((b.y + b.h / 2 - scy) * wA).toFixed(1) + 'px) scale(' + S.toFixed(4) + ')';
-      } else cvS.style.transform = '';
+        tf = 'translate(' + ((b.x + b.w / 2 - scx) * wA).toFixed(2) + 'px,' + ((b.y + b.h / 2 - scy) * wA).toFixed(2) + 'px) scale(' + S.toFixed(5) + ')';
+        if (!hrFly._o || hrFly._o !== scx.toFixed(1) + scy.toFixed(1)) { hrFly._o = scx.toFixed(1) + scy.toFixed(1); hrFly.style.transformOrigin = scx.toFixed(1) + 'px ' + scy.toFixed(1) + 'px'; }
+      }
+      if (tf !== fTf) { fTf = tf; hrFly.style.transform = tf; }
+    }
+    /* ключи пролёта грузим, когда герой уже загрузил свои кадры (или через 12 с): трафик нужен сперва ему */
+    let warmN = 0;
+    function warmFly() {
+      if (!FLd) return;
+      const h = A.jar && A.jar.arch, f = A.jar && A.jar.fly;
+      if (!f) { if (warmN++ < 40) setTimeout(warmFly, 500); return; }
+      if (h && h.complete && !h.complete() && warmN++ < 24) { setTimeout(warmFly, 500); return; }
+      A.flyWarm = true; f.warm();
     }
 
     const lv = {live: null, gone: null, hf: '', hy: ''};
@@ -143,12 +135,14 @@
     function readerUpdate() {
       if (flat()) { reader.classList.add('is-flat'); reader.style.setProperty('--ra', '1'); reader.style.setProperty('--fu', '1'); setLive(false, 0); if (s === 0 && p === 0) render(1, {instant: true, noScroll: true}); return; }
       reader.classList.remove('is-flat');
-      const rr = reader.getBoundingClientRect(), t = readerT(), open = phone() ? .5 : RD.open, hold = phone() ? 0 : RD.hold, fu = ease(clamp((t - hold) / (open - hold), 0, 1)), ra = clamp((fu - .86) / .14, 0, 1);
-      if (t > 0 && !flStarted) loadFlight();
-      if (phone()) setLive(false, 0); else setLive(rr.top < -1, ease(clamp(t / .05, 0, 1)));
+      const rr = reader.getBoundingClientRect(), t = readerT();
+      if (!fbox || Math.abs(rr.top + window.pageYOffset - fbox.top) > 2) measureFly();
+      const lin = flyLin(t), fu = phone() ? ease(clamp(t / .5, 0, 1)) : lin;                  // телефон: журнал встаёт без пролёта, как раньше
+      const ra = phone() ? clamp((fu - .86) / .14, 0, 1) : clamp((lin - RD.fade[0]) / (RD.fade[1] - RD.fade[0]), 0, 1);
+      if (t > 0) warmFly();
+      if (phone()) setLive(false, 0); else setLive(rr.top < -1, ease(clamp(t / RD.hold, 0, 1)));
       setVar(reader, '--fu', fu.toFixed(4)); setVar(reader, '--ra', ra.toFixed(4));
-      if (fu < 1 || fdrawn < 1) drawFlight(fu);                                   // дальше пролёта (журнал на экране) кадр уже стоит и не меняется — холст не перерисовываем
-      fdrawn = fu;
+      if (!phone()) alignFly(lin);
       if (phone()) { const target = ra > .94 ? Math.max(s, 1) : 0; if (target !== s && !(s > 0 && target > 0)) render(target, {noScroll: target === 0, instant: true}); return; }
       setP(pOf(t));
     }
@@ -158,10 +152,10 @@
     let glideRaf = 0, goal = null;
     const eIO = x => x < .5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2;           // долгий ход: мягкий старт и мягкая остановка
     const eSoft = x => .5 * x + .5 * x * x * (3 - 2 * x);                                // листание: почти равномерно — лист успевает повернуться на виду
-    const glideStop = () => { if (glideRaf) { cancelAnimationFrame(glideRaf); glideRaf = 0; } goal = null; };
+    const glideStop = () => { if (glideRaf) { cancelAnimationFrame(glideRaf); glideRaf = 0; } goal = null; navStop(); };
     function glide(y, g) {
       const mx = Math.max(0, document.documentElement.scrollHeight - window.innerHeight); y = Math.round(clamp(y, 0, mx));
-      const y0 = window.pageYOffset, dist = y - y0; if (glideRaf) { cancelAnimationFrame(glideRaf); glideRaf = 0; }
+      const y0 = window.pageYOffset, dist = y - y0; if (glideRaf) { cancelAnimationFrame(glideRaf); glideRaf = 0; } navStop();
       if (Math.abs(dist) < 2) { goal = null; return; }
       const far = Math.abs(dist) > window.innerHeight * 1.2, dur = clamp(1050 + Math.abs(dist) / window.innerHeight * 330, 1200, 4200), ease = far ? eIO : eSoft; let t0 = 0;
       goal = g === undefined ? null : g;
@@ -174,26 +168,45 @@
     }
     on(window, 'wheel', e => { if (!e.__houseStep) glideStop(); }, {passive: true});               // рука на колесе — автоход уступает (кроме колеса, которым листают журнал: оно само запускает следующий ход)
     on(window, 'touchstart', glideStop, {passive: true});
-    /* колесо в журнале листает как кнопка «Далее»: один небольшой прокрут — один разворот (лист поворачивается сам, ≈ 1,2 с), а не 3–4 прокрута подряд.
-       Жест — серия событий колеса с паузами меньше 90 мс (у трекпада — вместе с инерцией): за жест листается один разворот. Край журнала (первый/последний разворот) колесо не перехватывает:
-       вверх идёт обратный пролёт камеры, вниз — прокрутка к подвалу. До журнала и на телефоне — обычная прокрутка */
-    let wAt = 0, wAcc = 0, wStepAt = 0, wFirst = true;
+    /* колесо в журнале ведёт листы вслед за рукой: скорость листания равна скорости прокрутки — медленно крутишь, лист поворачивается медленно, быстро — быстро. Прокрутка колеса переводится в «развороты»
+       (≈ 150 пикселей колеса — один разворот), а страницу ведёт пружина с критическим затуханием по реальному времени кадра (60 fps): за один щелчок колеса — один разворот, за быстрый взмах — несколько. Рука остановилась —
+       через 140 мс цель встаёт на ближайший разворот и лист доворачивается сам. Край журнала (первый/последний разворот) колесо не перехватывает: вверх идёт обратный пролёт камеры, вниз — прокрутка к подвалу.
+       До журнала и на телефоне — обычная прокрутка */
+    const WHEEL_PX = 150, NAV_W = 13;                                          // пикселей колеса на разворот; жёсткость пружины, 1/с (отставание от руки ≈ 2/13 ≈ 0,15 с)
+    const nav = {raf: 0, y: 0, v: 0, goal: 0, last: 0, at: 0, settled: true};
+    const tOfY = y => { const b = readerBox(); return b.total > 0 ? (y - b.top) / b.total : 1; };
+    const yOfSpread = v => { const b = readerBox(), tt = v <= 1 ? RD.from : RD.from + (v - 1) / (N - 2) * RD.span; return b.top + b.total * tt; };
+    const spreadAt = y => clamp(Math.round(pOf(tOfY(y))), 1, N - 1);
+    const navStop = () => { if (nav.raf) { cancelAnimationFrame(nav.raf); nav.raf = 0; } nav.settled = true; };
+    function navFrame(ts) {
+      nav.raf = 0;
+      const dt = nav.last ? clamp((ts - nav.last) / 1000, .001, .05) : .0167; nav.last = ts;
+      if (!nav.settled && ts - nav.at > 140) { nav.goal = yOfSpread(spreadAt(nav.goal)); nav.settled = true; }                     // рука остановилась — доворачиваем до ближайшего разворота
+      const e = Math.exp(-NAV_W * dt), d = nav.y - nav.goal, c = nav.v + NAV_W * d;
+      nav.y = nav.goal + (d + c * dt) * e; nav.v = (nav.v - NAV_W * c * dt) * e;
+      const done = nav.settled && Math.abs(nav.y - nav.goal) < .45 && Math.abs(nav.v) < 6;
+      if (done) { nav.y = nav.goal; nav.v = 0; }
+      window.scrollTo({top: Math.round(nav.y), behavior: 'instant'}); readerUpdate();
+      if (done) { nav.last = 0; track('house_magazine_flip', {page: spreadAt(nav.y), via: 'wheel'}); } else nav.raf = requestAnimationFrame(navFrame);
+    }
     on(window, 'wheel', e => {
       if (e.ctrlKey || e.defaultPrevented || flat() || phone() || !reader.classList.contains('is-live') || Math.abs(e.deltaX) > Math.abs(e.deltaY)) return;
       const t = readerT(); if (t < RD.open - .002 || t > RD.from + RD.span + .02) return;
       let dy = e.deltaY; if (e.deltaMode === 1) dy *= 34; else if (e.deltaMode === 2) dy *= window.innerHeight;
-      if (!dy) return;
-      const dir = dy > 0 ? 1 : -1, base = goal !== null ? goal : s;
-      if ((dir > 0 && base >= N - 1) || (dir < 0 && base <= 1)) return;
+      if (Math.abs(dy) < 3) return;                                              // хвост инерции трекпада — шум: журнал не дёргает
+      const dir = dy > 0 ? 1 : -1, y0 = nav.raf ? nav.goal : window.pageYOffset, yFirst = yOfSpread(1), yLast = yOfSpread(N - 1);
+      if ((dir > 0 && y0 >= yLast - 1) || (dir < 0 && y0 <= yFirst + 1)) return;       // край журнала — обычная прокрутка
       e.preventDefault(); e.__houseStep = true;
-      const now = performance.now(); if (now - wAt > 90) { wAcc = 0; wFirst = true; } wAt = now;
-      if (wAcc * dy < 0) wAcc = 0; wAcc += dy;
-      /* первый разворот жеста — от небольшого прокрута; если крутят дальше (быстрая прокрутка) — следующий не раньше чем через 380 мс (лист успевает повернуться) и только от «живых» событий (хвост инерции трекпада затухает и новых разворотов не листает) */
-      if (wFirst) { if (Math.abs(wAcc) < 14) return; wFirst = false; }
-      else if (now - wStepAt < 380 || Math.abs(wAcc) < 90 || Math.abs(dy) < 20) return;
-      wStepAt = now; wAcc = 0;
       if (A.motion && A.motion.cancelSmooth) A.motion.cancelSmooth();
-      step(dir);
+      if (glideRaf) { cancelAnimationFrame(glideRaf); glideRaf = 0; goal = null; }
+      const sp = yOfSpread(2) - yFirst;                                          // пикселей прокрутки страницы на один разворот
+      if (!nav.raf) { nav.y = window.pageYOffset; nav.v = 0; nav.last = 0; nav.goal = nav.y; }
+      let g = (nav.settled ? nav.y : nav.goal);
+      if (dir > 0 && g < yFirst) g = yFirst;                                      // журнал ещё «открывается» (камера над ним): первый щелчок сразу ведёт к первому повороту
+      g = clamp(g + dy / WHEEL_PX * sp, yFirst, yLast);
+      g = clamp(g, nav.y - 2.5 * sp, nav.y + 2.5 * sp);                           // цель не убегает от страницы дальше чем на 2,5 разворота
+      nav.goal = g; nav.at = performance.now(); nav.settled = false;
+      if (!nav.raf) nav.raf = requestAnimationFrame(navFrame);
     }, {passive: false, capture: true});
 
     on(window, 'keydown', e => { if (glideRaf && /^(ArrowUp|ArrowDown|PageUp|PageDown|Home|End| )$/.test(e.key) && !(e.target && e.target.closest && e.target.closest('#mag'))) glideStop(); });
@@ -228,12 +241,12 @@
     }
     /* прокрутка остановилась посередине поворота (инерция колеса, полоса прокрутки, клавиши) — лист доворачивается до ближайшего разворота сам, как при «Далее»: страница не «застревает» на полустранице */
     function snapCheck() {
-      if (glideRaf || window.__HOUSE_SNAP === false || flat() || phone() || !reader.classList.contains('is-live')) return;          // __HOUSE_SNAP === false — только для проверок точных промежуточных положений
+      if (glideRaf || nav.raf || window.__HOUSE_SNAP === false || flat() || phone() || !reader.classList.contains('is-live')) return;          // __HOUSE_SNAP === false — только для проверок точных промежуточных положений
       const t = readerT(); if (t < RD.from - .005 || t > RD.from + RD.span + .005) return;
       const v = clamp(Math.round(p), 1, N - 1);
       if (Math.abs(p - v) > .03) toState(v);
     }
-    on(window, 'scroll', onScroll, {passive: true}); on(window, 'resize', () => { fdrawn = -1; onScroll(); }, {passive: true});
+    on(window, 'scroll', onScroll, {passive: true}); on(window, 'resize', () => { fbox = null; fTf = ''; onScroll(); }, {passive: true});
 
     /* ---------- события: клики, клавиатура, свайп ---------- */
     on(document, 'click', e => {
@@ -297,9 +310,10 @@
     if ('requestIdleCallback' in window) setTimeout(() => requestIdleCallback(warm, {timeout: 4000}), 2500); else setTimeout(warm, 3500);
     mag.removeAttribute('hidden');
     if (phone() || flat()) { setS(0); setP(0); } else setP(1);
-    readerUpdate(); if ('requestIdleCallback' in window) setTimeout(() => requestIdleCallback(loadFlight), 1800); else setTimeout(loadFlight, 2500);
+    readerUpdate(); if ('requestIdleCallback' in window) setTimeout(() => requestIdleCallback(warmFly), 1800); else setTimeout(warmFly, 2500);
+    on(window, 'load', () => { bbox = null; measureFly(); }, {once: true});
 
-    A.house = {go: id => go(id, {via: 'api'}), hall: () => hall({via: 'api'}), openMagazine: v => { if (flat() || phone()) { jump(readerBox().top); render(v === undefined ? 1 : v, {instant: true}); } else toState(v === undefined ? 1 : v); }, state: () => ({room: current, magazine: true, page: s, rooms: ids, reader: true}), readerState: () => ({t: readerT(), s, p, flight: {loaded: flLoaded, n: FL ? FL.n : 0}})};
+    A.house = {go: id => go(id, {via: 'api'}), hall: () => hall({via: 'api'}), openMagazine: v => { if (flat() || phone()) { jump(readerBox().top); render(v === undefined ? 1 : v, {instant: true}); } else toState(v === undefined ? 1 : v); }, state: () => ({room: current, magazine: true, page: s, rooms: ids, reader: true}), readerState: () => { const f = A.jar && A.jar.fly, st = f && f.state ? f.state() : null; return {t: readerT(), s, p, fly: {on: !!FLd, n: st ? st.N : 0, loaded: st ? st.loaded : 0, drawn: !!(st && st.firstDrawn), p: st ? st.p : 0, jarOk: st ? st.jarOk : null, size: st ? st.size : null, sprites: st ? st.jar : null}}; }};
   }
 
   init();

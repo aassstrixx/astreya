@@ -285,7 +285,9 @@ void main() {
       const pos = [pa[0] + (pb[0] - pa[0]) * t, pa[1] + (pb[1] - pa[1]) * t, pa[2] + (pb[2] - pa[2]) * t];
       const tgt = [ta[0] + (tb[0] - ta[0]) * t, ta[1] + (tb[1] - ta[1]) * t, ta[2] + (tb[2] - ta[2]) * t];
       const f = norm([tgt[0] - pos[0], tgt[1] - pos[1], tgt[2] - pos[2]]);
-      const r = norm(cross(f, [0, 0, 1])), u = cross(r, f);
+      let upv = [0, 0, 1];                                                         // «верх» кадра: у дорожки пролёта к журналу (взгляд сверху вниз) он задан в каждом отсчёте — из вертикали его не вывести
+      if (tr.up) { const ua = tr.up[i], ub = tr.up[i + 1]; upv = [ua[0] + (ub[0] - ua[0]) * t, ua[1] + (ub[1] - ua[1]) * t, ua[2] + (ub[2] - ua[2]) * t]; }
+      const r = norm(cross(f, upv)), u = cross(r, f);
       const ja = tr.jar[i], jb = tr.jar[i + 1];
       const o = out || {};
       o.pos = pos; o.f = f; o.r = r; o.u = u; o.lens = tr.lens[i] + (tr.lens[i + 1] - tr.lens[i]) * t;

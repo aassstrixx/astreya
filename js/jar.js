@@ -7,7 +7,7 @@
    • зал — ключевые кадры (60 штук, 1920×1080 / 900×1600) с картами глубины; для любого положения прокрутки два соседних кадра перепроецируются на камеру этого положения (дорожка камеры из Blender)
      и сливаются. Никакого смешивания «картинка в картинку»: предметы не раздваиваются, кромки резкие, камера движется непрерывно, а не шагает от кадра к кадру. Набор кадров один, без «лёгких»
      уровней: в движении тот же резкий кадр, что и в покое;
-   • в покое прокрутка мягко «примагничивается» к ближайшему ключевому кадру: показывается сам отрендеренный кадр пиксель в пиксель (чёткость Cycles без пересчёта);
+   • в покое сцена стоит там, где остановили прокрутку (к ближайшему ключевому кадру её не подтягивает: это «подталкивало» баночку сразу после остановки; резкость между ключами — 95–100 % от резкости на самом кадре);
    • баночка — отдельный слой (canvas .ar-jar-cv, второй WebGL-контекст): спрайт баночки без этикетки (Blender) ставится по настоящей проекции её центра на камеру, а надписи этикетки рисуются поверх
      по геометрии цилиндра — баночка вращается плавно при любом положении прокрутки, не шагает от спрайта к спрайту и не ползёт относительно фона;
    • каменный шар — часть кадров зала (запечён из того же камня, что и гора); на сайте от него остаётся только положение в готовом кадре — вокруг него встают орбиты логотипов (jar.arch.sphere);
@@ -25,7 +25,7 @@
   const pad = i => String(i).padStart(3, '0');
   const portraitMQ = window.matchMedia('(max-aspect-ratio: 11/10)');
   const OMEGA = 24;           // жёсткость пружины, 1/с: отставание при равномерной прокрутке ≈ 2/OMEGA ≈ 0,08 с, остановка (до 2 %) ≈ 0,25 с
-  const SNAP_DELAY = 110;     // мс без движения прокрутки, после которых плейхед мягко встаёт на ближайший ключевой кадр
+  const IDLE_TAIL = 150;      // мс после остановки прокрутки, пока цикл ещё идёт (пружина доводит кадр до точного положения)
   const FAST_ON = 30, FAST_OFF = 12;   // ключевых кадров в секунду: быстрее FAST_ON — «взмах»: тяжёлые полные кадры не разворачиваем и не грузим в видеопамять (их уже не успеть, а загрузка гасит кадры анимации), картинка идёт по уменьшенным копиям; медленнее FAST_OFF — снова обычная работа
   const MOVING = 0.04;        // ключевых кадров в секунду: быстрее — идёт движение (включается сглаживание кромок)
   const LANES = [14, 8];      // запросов одновременно: [компьютер, телефон] (HTTP/2)
@@ -43,7 +43,8 @@
   }
 
   function create(root) {
-    const stage = root.querySelector('.js-stage');
+    const FLY = root.hasAttribute('data-fly');               // второй экземпляр на странице-доме: пролёт камеры от зала к журналу (ключи пролёта вместо кадров героя); положение берёт у читалки (A.flyP), а не из прокрутки секции
+    const stage = root.querySelector('.js-stage') || root.querySelector('.hr-stage');
     const cv = root.querySelector('.js-cv');
     const jcv = root.querySelector('.ar-jar-cv'), world = root.querySelector('.ar-world');
     const ds = root.dataset, NH = +ds.n || 1, ext = ds.ext || 'webp', ver = ds.v ? '?v=' + ds.v : '';
@@ -51,26 +52,27 @@
     let look = {}; try { look = JSON.parse(ds.look || '{}') || {}; } catch (e) { look = {}; }
     const LS = look.scale || {}, LSH = look.shadow || null, LG = look.ground || null, LH = look.halo || null;
     const dead0 = () => { root.classList.add('jar-off'); return {root, complete: () => true, destroy() {}, state: () => ({})}; };
-    if (!A.ArchGL || !cv || !jcv || typeof fetch !== 'function' || typeof createImageBitmap !== 'function' || !glOk()) return dead0();
+    if (!A.ArchGL || !stage || !cv || !jcv || typeof fetch !== 'function' || typeof createImageBitmap !== 'function' || !glOk() || (FLY && portraitMQ.matches)) return dead0();
     const nums = s => String(s || '').split(',').filter(x => x !== '').map(Number);
     let Phi = nums(ds.p);
     if (Phi.length !== NH || Phi.some(isNaN)) { Phi = []; for (let i = 0; i < NH; i++) Phi.push(NH > 1 ? i / (NH - 1) : 0); }
     const jsonOf = t => { try { const a = JSON.parse(t || '[]'); return Array.isArray(a) ? a : []; } catch (e) { return []; } };
     const JR = [jsonOf(ds.jr), jsonOf(ds.jrm)];                                     // рамки баночки по кадрам (доли кадра: x, y, w, h) — [компьютер, телефон]
-    const isPortrait = () => portraitMQ.matches;
+    const isPortrait = () => FLY ? false : portraitMQ.matches;                       // пролёт — только широкий экран (на телефоне журнал встаёт сразу)
+    const KS = (NH - 1) / Math.max(1e-6, Phi[NH - 1] - Phi[0]);                        // ключевых кадров на единицу пути (у героя ключи по всему пути 0…1, у пролёта — на его части)
     const urlOf = p => (A.assetUrl ? A.assetUrl(p) : p) + ver;
     const canFetch = true;
     const PRESERVE = !!window.__ASTREYA_GL_PRESERVE;                                // проверки читают пиксели холстов
 
     /* ---- состояние ---- */
     let W = 0, H = 0, JW = 0, JH = 0, dead = false, firstDrawn = false, jarShown = false, running = false, last = 0, dirty = true, started = false;
-    let cp = 0, vp = 0, pT = 0, pPrev = -1, lastMove = 0, paintedP = -2, rzTimer = 0, snapped = false;
+    let cp = 0, vp = 0, pT = 0, pPrev = -1, lastMove = 0, paintedP = -2, rzTimer = 0;
     let sTop = 0, sTot = 1, sH = 1, yNow = 0;
     const born = performance.now();
     let hall = null, jar = null, track = null, set = '', gen = 0, labelReady = false, lastDraw = null, resScale = 1;
     let lastJarOk = null, dtEma = 16.7, minDt = 16.7, slowRun = 0, govChanges = 0;
     const perfRing = new Float32Array(240); let perfN = 0;
-    let dirSign = 1;
+    let dirSign = 1, gate = !FLY;                                                      // gate — пролёт грузит ключи, когда читалка разрешит (self.warm): пока герой не доехал до конца, трафик нужен ему
 
     /* ---- живой шар: вращается сам (≈ 7,5°/с, 60 fps) только в статике — на финальном экране героя с текстом (cp ≥ 0,995); на курсор не реагирует; во всей скролл-анимации (и когда её остановили посередине) стоит на месте: раньше вращение продолжалось на паузах и баночка подлагивала от лишних проходов шара (js/jar-gl.js рисует его поверх кадра зала с учётом глубины) ---- */
     const reduceMQ = window.matchMedia('(prefers-reduced-motion: reduce) and (min-width: 100000px)');
@@ -85,8 +87,8 @@
     }
     function sphPush() { if (hall) hall.setSphere(sphMat(), sph.lx, sph.ly); }
     /* шаг по времени кадра (60 fps: dt — реальное время между кадрами, всё считается по нему, а не по числу кадров). От курсора шар не зависит — ни поворота, ни света (по решению заказчика) */
-    function sphStep(dt) { sph.yaw += SPH_IDLE * dt; sphPush(); }
-    function sphWanted() { return !!hall && hall.sphereReady && sph.view && !document.hidden && cp >= 0.995 && !reduceMQ.matches && !root.classList.contains('rd-live') && !document.documentElement.classList.contains('anim-off'); }
+    function sphStep(dt) { sph.yaw += SPH_IDLE * dt; A.sphYaw = sph.yaw; sphPush(); }
+    function sphWanted() { return !FLY && !!hall && hall.sphereReady && sph.view && !document.hidden && cp >= 0.995 && !reduceMQ.matches && !root.classList.contains('rd-live') && !document.documentElement.classList.contains('anim-off'); }
     function sphLoop(t) {
       sph.raf = 0;
       if (!sphWanted() || dead) { sph.last = 0; return; }
@@ -151,7 +153,7 @@
       return null;
     }
     function pump() {
-      if (dead || !canFetch) return;
+      if (dead || !canFetch || !gate) return;
       const lanes = LANES[isPortrait() ? 1 : 0];
       while (inflight < lanes) {
         const j = pickNext(); if (!j) return;
@@ -331,20 +333,21 @@
     /* ---- отрисовка ---- */
     function paint(now) {
       if (!hall) return false;
-      const speed = Math.abs(vp) * (NH - 1);
+      const speed = Math.abs(vp) * KS;
       let pc = hall.plan(cp);                                                      // рисуем это положение: обычно cp. Если рядом нет ни полных кадров, ни уменьшенных копий (страница только открыта), — ближайший загруженный кадр как есть
       /* пока кадров рядом нет, картинка не должна идти против прокрутки: «ближайший» кадр бывает позади только что показанного — тогда остаёмся на показанном (оно ещё рисуется чисто) */
       if (pc !== cp && shownP >= 0) { const mv = cp - lastCp; if (((mv > 0 && pc < shownP) || (mv < 0 && pc > shownP)) && hall.plan(shownP) === shownP) pc = shownP; }
       lastCp = cp; shownP = pc;
-      const jk = jarK(pc), lift = jarLift(pc), ground = jarGround(pc), halo = jarHalo(pc);
+      const jk = FLY ? 1 : jarK(pc), lift = FLY ? 0 : jarLift(pc), ground = FLY ? 0 : jarGround(pc), halo = FLY ? 0 : jarHalo(pc);
+      if (FLY && typeof A.sphYaw === 'number') sph.yaw = A.sphYaw;                // шар стоит так же, как он стоял на последнем экране героя (там он вращался сам)
       sphPush();
       const pair = hall.draw(pc, 0, speed > MOVING, {jk, lift});
       if (!pair) return false;
       lastDraw = {ka: pair.ka, kb: pair.kb, t: pair.t, single: !!pair.single};
-      if (!firstDrawn) { firstDrawn = true; if (cp < 0.02) root.classList.add('ar-intro'); root.classList.add('ready'); }
+      if (!firstDrawn) { firstDrawn = true; if (cp < 0.02 && !FLY) root.classList.add('ar-intro'); root.classList.add('ready'); }
       if (jar) {
         const ok = jar.draw(pc, pair, {jk, lift, ground, halo}); lastJarOk = ok;
-        if (ok && !jarShown) { jarShown = true; if (cp < 0.02) root.classList.add('ar-intro'); root.classList.add('jar-ready'); }
+        if (ok && !jarShown) { jarShown = true; if (cp < 0.02 && !FLY) root.classList.add('ar-intro'); root.classList.add('jar-ready'); }
       }
       return true;
     }
@@ -385,13 +388,13 @@
       const w0 = performance.now();
       const dtRaw = last ? t - last : 0, dt = last ? clamp(dtRaw / 1000, 0.001, 0.35) : 0.016; last = t;          // пружина считается точным решением — устойчива при любом шаге; потолок лишь не даёт сцене «прыгнуть» после долгого простоя вкладки
       const y = window.scrollY || window.pageYOffset || 0, vh = innerHeight; yNow = y;
-      pT = clamp((y - sTop) / sTot, 0, 1);
+      pT = FLY ? clamp(A.flyP ? A.flyP() : 0, 0, 1) : clamp((y - sTop) / sTot, 0, 1);          // пролёт: путь задаёт читалка (js/house.js), а не прокрутка секции
       /* страница открыта посреди сцены (восстановление прокрутки после перезагрузки) — без «разгона» с нуля */
       if (!started || (w0 - born < 900 && Math.abs(pT - cp) > 0.08)) { started = true; cp = pT; vp = 0; pPrev = pT; lastMove = t; }
       if (Math.abs(pT - pPrev) > 1e-6) { pPrev = pT; lastMove = t; }
-      /* цель пружины: куда показывает прокрутка; если она стоит — ближайший ключевой кадр (там картинка — сам отрендеренный кадр) */
-      let target = pT;
-      if (t - lastMove > SNAP_DELAY && hall) { const kn = kNear(pT); if (resident[kn] || keyDone(kn)) target = Phi[kn]; }
+      /* цель пружины — то, куда показывает прокрутка. «Примагничивания» к ближайшему ключевому кадру в покое нет: оно подтягивало сцену на полкадра сразу после остановки (баночку «подталкивало»),
+         а резкость между ключами та же (замер: лапласиан между кадрами 95–100 % от резкости на самом кадре) */
+      const target = pT;
       // критически затухающая пружина (точное решение на шаг dt): x'' = −2ω x' − ω² (x − цель)
       const e = Math.exp(-OMEGA * dt);
       let d = cp - target, c = vp + OMEGA * d;
@@ -399,27 +402,28 @@
       if (Math.abs(cp - target) < 2e-6 && Math.abs(vp) < 1e-4) { cp = target; vp = 0; }
       cp = clamp(cp, 0, 1);
       if (Math.abs(vp) > 1e-3) dirSign = vp > 0 ? 1 : -1;
-      { const spd = Math.max(Math.abs(vp), Math.abs(cp - cpTick) / dt) * (NH - 1); cpTick = cp;      // скорость: и пружины, и реально пройденное за кадр (при редких кадрах скорость пружины к концу шага уже мала)                                   // «взмах»: пока он идёт, полные кадры не разворачиваем и не грузим (уменьшенных копий хватает)
+      { const spd = Math.max(Math.abs(vp), Math.abs(cp - cpTick) / dt) * KS; cpTick = cp;      // скорость: и пружины, и реально пройденное за кадр (при редких кадрах скорость пружины к концу шага уже мала)                                   // «взмах»: пока он идёт, полные кадры не разворачиваем и не грузим (уменьшенных копий хватает)
         if (!fast && spd > FAST_ON && lowN >= NH * 0.9 && (!jar || lowJN >= NH * 0.9)) fast = true;
         else if (fast && spd < FAST_OFF) { fast = false; pumpDecode(); } }
       const inView = y + vh > sTop && y < sTop + sH;
       if (inView !== sph.view) sph.view = inView;
       if (inView && !sph.raf) sphStart();                                    // шар вращается сам, даже если курсор не двигают (цикл запускается, как только герой в кадре и сцена дошла до зала)
       /* регулятор нагрузки: кадры идут дольше бюджета — холст чуть меньше (не чаще раза в 1,5 с) */
-      if (inView && Math.abs(vp) * (NH - 1) > MOVING && dtRaw > 0) {
+      if (inView && Math.abs(vp) * KS > MOVING && dtRaw > 0) {
         const dtc = Math.min(dtRaw, 80); minDt = Math.max(5, Math.min(minDt + 0.004, dtc));
         const base = minDt < 19 ? minDt : minDt < 28 ? 16.67 : 33.33; dtEma += (dtc - dtEma) * 0.15;
         if (dtEma > base * 1.35 + 0.5) slowRun++; else slowRun = 0;
         if (slowRun >= 24 && resScale > 0.6 && now() - lastGov > 1500) { resScale = resScale > 0.8 ? 0.8 : 0.65; govChanges++; slowRun = 0; lastGov = now(); if (resScale < 0.7 && hall) hall.setGridScale(0.5); sizeCanvas(); }
       }
-      if (upQ.length) flushUploads(Math.abs(vp) * (NH - 1) > MOVING ? 2.5 : 8);                // по одной-две тяжёлые текстуры за кадр; в покое — быстрее
+      if (upQ.length) flushUploads(Math.abs(vp) * KS > MOVING ? 2.5 : 8);                // по одной-две тяжёлые текстуры за кадр; в покое — быстрее
       if ((inView || !firstDrawn) && hall && (dirty || Math.abs(cp - paintedP) > 1e-7)) {
         if (paint(t)) { paintedP = cp; dirty = false; } else dirty = true;
       }
       if (inView && hall) { pumpDecode(); }
-      ui(cp, inView);
+      if (!FLY) ui(cp, inView);
+      if (FLY && !gate && (A.flyWarm || pT > 0)) { gate = true; pump(); }              // читалка подошла (или разрешила заранее) — ключи пролёта грузятся
       perfRing[perfN++ % perfRing.length] = performance.now() - w0;
-      if (cp !== target || vp !== 0 || upQ.length || (dirty && !firstDrawn) || (inView && (t - lastMove <= SNAP_DELAY + 40 || Math.abs(target - cp) > 1e-7))) requestAnimationFrame(tick); else running = false;
+      if (cp !== target || vp !== 0 || upQ.length || (dirty && !firstDrawn) || (inView && (t - lastMove <= IDLE_TAIL || Math.abs(target - cp) > 1e-7))) requestAnimationFrame(tick); else running = false;
     }
     let lastGov = -1e9;
     const now = () => performance.now();
@@ -428,7 +432,7 @@
     const onResize = () => { clearTimeout(rzTimer); rzTimer = setTimeout(() => { measureStatic(); sizeCanvas(); schedule(); }, 120); schedule(); };
     /* поменялась ориентация экрана (телефон ↔ компьютер): другой набор кадров, другая дорожка камеры — данные загружаем заново, холсты остаются теми же */
     const onMQ = () => {
-      if (dead || set === dirOf()) return;
+      if (dead || FLY || set === dirOf()) return;
       gen++; set = dirOf(); inflight = 0; decN = 0; hierPos = 0; loadedKeys = 0; labelReady = false;
       for (const k in blobs) blobs[k].fill(null); for (const k in busy) busy[k].fill(0);
       resident.fill(0); resJ.fill(0); decoding.fill(0); lowDone.fill(0); lowJDone.fill(0); lowBusy.fill(0); decL = 0; upQ.length = 0; shownP = -1; fast = false; lowN = lowJN = 0;
@@ -451,7 +455,7 @@
       document.removeEventListener('visibilitychange', sphStart); if (sph.raf) cancelAnimationFrame(sph.raf); sph.raf = 0;
       portraitMQ.removeEventListener && portraitMQ.removeEventListener('change', onMQ);
       if (hall) hall.destroy(false); if (jar) jar.destroy(false); hall = jar = null;
-      document.body.classList.remove('arch-hide', 'arch-nav', 'arch-live', 'arch-top');
+      if (!FLY) document.body.classList.remove('arch-hide', 'arch-nav', 'arch-live', 'arch-top');
     }
 
     set = dirOf();
@@ -468,11 +472,12 @@
       unpin() { pin = null; },
       /* для проверок: только уменьшенные копии (полные кадры и спрайты выгружены и не разворачиваются) — так выглядит прокрутка, пока рядом нет полных кадров */
       lowOnly(on) { lowOnlyF = !!on; if (on && hall) { for (let k = 0; k < NH; k++) { if (resident[k]) { hall.dropKey(k); resident[k] = 0; } if (resJ[k] && jar) { jar.dropSprite(k); resJ[k] = 0; } } } dirty = true; schedule(); },
-      jump(p, moving) { cp = pT = p; cpTick = p; pPrev = p; vp = moving ? 0.05 : 0; started = true; lastMove = performance.now(); flushUploads(1e9); if (hall) paint(performance.now()); vp = 0; ui(p, true); },      // moving — для проверок: нарисовать так, как рисуется в движении (со сглаживанием кромок)
+      fly: FLY, warm() { if (FLY && !gate) { gate = true; pump(); pumpDecode(); schedule(); } },
+      jump(p, moving) { cp = pT = p; cpTick = p; pPrev = p; vp = moving ? 0.05 : 0; started = true; lastMove = performance.now(); flushUploads(1e9); if (hall) paint(performance.now()); vp = 0; if (!FLY) ui(p, true); },      // moving — для проверок: нарисовать так, как рисуется в движении (со сглаживанием кромок)
       state() {
         const ring = Array.prototype.slice.call(perfRing, 0, Math.min(perfN, perfRing.length)).sort((a, b) => a - b);
         let res = 0, resj = 0, lo = 0, loj = 0; for (let k = 0; k < NH; k++) { res += resident[k]; resj += resJ[k]; lo += lowDone[k] === 1 ? 1 : 0; loj += lowJDone[k] === 1 ? 1 : 0; }
-        return {p: cp, pTarget: pT, u: uOf(), N: NH, loaded: loadedKeys, set, gl: !!hall, drawn: lastDraw, firstDrawn, resident: res, residentJar: resj, lows: lo, lowSprites: loj, resScale, govChanges, fast, up: {full: upN.full, low: upN.low, queued: upQ.length}, snapped: vp === 0 && Math.abs(cp - Phi[kNear(cp)]) < 1e-5,
+        return {p: cp, pTarget: pT, u: uOf(), N: NH, loaded: loadedKeys, set, gl: !!hall, drawn: lastDraw, firstDrawn, resident: res, residentJar: resj, lows: lo, lowSprites: loj, resScale, govChanges, fast, up: {full: upN.full, low: upN.low, queued: upQ.length}, rest: vp === 0 && Math.abs(cp - pT) < 1e-5,
           jar: {loaded: blobs.j.filter(Boolean).length, n: NH, shown: jarShown, sprites: resj, label: labelReady},
           sphere: {ready: !!(hall && hall.sphereReady), yaw: sph.yaw, cur: [sph.hx, sph.hy], running: !!sph.raf, still: scrolling()}, jarOk: lastJarOk, fastNow: fast,
           size: [W, H, JW, JH], perf: {n: perfN, mean: ring.length ? ring.reduce((s, v) => s + v, 0) / ring.length : 0, p95: ring.length ? ring[Math.floor(ring.length * 0.95)] : 0, max: ring.length ? ring[ring.length - 1] : 0}};
@@ -490,7 +495,7 @@
     roots.forEach(root => { try { ctrls.push(create(root)); } catch (e) { root.classList.add('jar-off'); } });
     ctrl = ctrls[0] || null;
   }
-  window.Astreya = A; A.jar = {init, get ctrl() { return ctrl; }, get ctrls() { return ctrls; }, get arch() { return ctrl; }};
+  window.Astreya = A; A.jar = {init, get ctrl() { return ctrl; }, get ctrls() { return ctrls; }, get arch() { return ctrl; }, get fly() { return ctrls.find(c => c.fly) || null; }};
   /* где в документе «покой» героя (его верх под шапкой): от этой прокрутки считается уход текста героя (js/motion.js). Сцена есть — это конец её закреплённой части
      (кадры доиграли, текст и панель на месте); нет сцены (выключена, нет WebGL) — верх запасного героя под шапкой */
   A.heroBase = function () {

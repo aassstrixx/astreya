@@ -518,6 +518,99 @@ def lab_patch(argv):
         print('участок кадра', i, [round(v, 3) for v in box], flush=True)
 
 
+def flykeys(argv):
+    """flykeys <track|z|jar> <n> <шаг> out [--res WxH] [--samples N] [--F .30] — пролёт камеры к журналу как продолжение сцены зала (тот же движок js/jar-gl.js): ключи пролёта — каждый <шаг>-й кадр из n (w = i / n).
+    track — out.json: плотная дорожка камеры (с креном «верха»: при взгляде сверху вниз его нельзя вывести из вертикали), положение баночки и шара — как в конце зала; p сцены = w · F до F, дальше камера стоит (читается журнал);
+    z — карты глубины ключей (PNG, затем encode_depth.py); jar — спрайты баночки в ключах (без этикетки: её рисует сайт; пустые, где баночки в кадре нет) и рамки в json.
+    Цвет ключей берётся из уже посчитанных кадров пролёта (flight): тот же слой bg, шар запечён (поверх рисует живой), баночка невидима камере."""
+    rest, o = H.parse(argv)
+    layer, n, step, outp = rest[1], int(rest[2]), int(rest[3]), rest[4]
+    Fp = float(argv[argv.index('--F') + 1]) if '--F' in argv else .30
+    os.environ['ZONE_MAG'] = '1'; os.environ['HALL_LAB_PARTS'] = 'packs'; H.LAB = True
+    os.environ['HALL_JAR_LABEL'] = '0'
+    port = o['portrait']
+    H.build_scene(o['res'], o['samples'], port)
+    H.apply_frame(o['total'] - 1, o['total'], port)
+    st = H.frame_state(1.0, port); pos0, tgt0, lens = st['pos'].copy(), st['tgt'].copy(), st['lens']
+    cx, cy = S['zone_xy']['magazine']; tr = S['table_xyr'][2]
+    pw = _f('ZONE_MAG_PW_K', .72) * tr
+    yaw = math.radians(_f('ZONE_MAG_YAW', 7.0)); ca, sa = math.cos(yaw), math.sin(yaw)
+    rot = lambda x, y: (cx + x * ca - y * sa, cy + x * sa + y * ca)
+    w_px, h_px = o['res']
+    tanh = 18.0 / lens * (1.0 if w_px >= h_px else w_px / float(h_px))
+    if port:
+        ex, ey = rot(-pw / 2, 0.0); dist = pw / (_f('ZONE_FLIGHT_W_P', .86) * 2 * tanh)
+    else:
+        ex, ey = cx, cy; dist = 2 * pw / (_f('ZONE_FLIGHT_W', .62) * 2 * tanh)
+    z0 = TABLE_TOP + .004
+    pos1 = Vector((ex, ey, z0 + dist)); tgt1 = Vector((ex, ey, z0))
+    up_mag = Vector((-sa, ca, 0.0)); zup = Vector((0.0, 0.0, 1.0))
+    sm = lambda x: x * x * (3 - 2 * x)
+    from mathutils import Matrix
+
+    def state(w):                                                                          # то же, что в flight(): положение, точка взгляда, «верх» кадра
+        e = sm(w); pos = pos0.lerp(pos1, e)
+        tw = sm(min(1.0, e / .72)); tg = tgt0.lerp(tgt1, tw)
+        f = (tg - pos).normalized()
+        ew = sm(min(1.0, max(0.0, (e - .30) / .62)))
+        up = zup.lerp(up_mag, ew); up = (up - f * up.dot(f)).normalized()
+        return pos, tg, up
+
+    def set_cam(w):
+        pos, tg, up = state(w)
+        f = (tg - pos).normalized(); right = f.cross(up).normalized(); up = right.cross(f).normalized()
+        m3 = Matrix((right, up, -f)).transposed()
+        cam = S['cam']; sc = bpy.context.scene
+        cam.matrix_world = Matrix.Translation(pos) @ m3.to_4x4(); cam.data.lens = lens; cam.data.shift_x = cam.data.shift_y = 0.0
+        bpy.context.view_layer.update()
+    if layer == 'track':
+        M = int(os.environ.get('FLY_M', 361))
+        base = json.load(open(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..', 'assets', 'house-hall', 'cam-m.json' if port else 'cam-d.json')))
+        jarp, jyaw = base['jar'][-1], base['yaw'][-1]
+        tr_ = {'p': [], 'pos': [], 'tgt': [], 'up': [], 'lens': [], 'jar': [], 'yaw': [], 'glow': []}
+        for j in range(M):
+            pp = j / (M - 1); w = min(1.0, pp / Fp)
+            pos, tg, up = state(w)
+            tr_['p'].append(round(pp, 6)); tr_['pos'].append([round(v, 5) for v in pos]); tr_['tgt'].append([round(v, 5) for v in tg]); tr_['up'].append([round(v, 5) for v in up])
+            tr_['lens'].append(round(lens, 4)); tr_['jar'].append(list(jarp)); tr_['yaw'].append(jyaw); tr_['glow'].append(0.0)
+        for k in ('sphere3d', 'jarScale', 'jarCenterZ', 'dispRange'):
+            tr_[k] = base[k]
+        json.dump(tr_, open(outp, 'w')); print('дорожка пролёта записана', outp, M, 'F =', Fp)
+        return
+    os.makedirs(outp, exist_ok=True)
+    sc = bpy.context.scene
+    if layer == 'z':
+        H.setup_depth()
+    for i in range(step, n + 1, step):
+        path = os.path.abspath(os.path.join(outp, '%03d.png' % i))
+        if os.path.exists(path):
+            continue
+        set_cam(i / float(n))
+        if layer == 'z':
+            H.set_layer('bg'); sc.render.use_border = False; sc.render.film_transparent = False
+            sc.render.filepath = path; bpy.ops.render.render(write_still=True)
+        else:                                                                              # jar
+            H.set_layer('bg')                                                              # (положение рамки считаем при камере кадра)
+            rect = H.jar_rect()
+            if rect[2] * o['res'][0] < 4 or rect[3] * o['res'][1] < 4:
+                json.dump({'rect': None}, open(path.replace('.png', '.json'), 'w')); print('ключ', i, ': баночки в кадре нет', flush=True); continue
+            H.set_layer('jar')
+            sc.view_settings.exposure = float(os.environ.get('HALL_EXP', -.85)) + H.JAR_EXP
+            ss = max(2.0, min(8.0, 1200.0 / max(1.0, rect[2] * o['res'][0])))
+            sc.render.resolution_x = int(round(o['res'][0] * ss)); sc.render.resolution_y = int(round(o['res'][1] * ss))
+            sc.render.use_border = True; sc.render.use_crop_to_border = True
+            sc.render.border_min_x, sc.render.border_max_x = rect[0], rect[0] + rect[2]
+            sc.render.border_min_y, sc.render.border_max_y = 1 - (rect[1] + rect[3]), 1 - rect[1]
+            sc.render.film_transparent = True; sc.render.image_settings.color_mode = 'RGBA'
+            sc.render.filepath = path; bpy.ops.render.render(write_still=True)
+            json.dump({'rect': rect}, open(path.replace('.png', '.json'), 'w'))
+            sc.render.resolution_x, sc.render.resolution_y = o['res']
+            sc.render.use_border = False; sc.render.use_crop_to_border = False
+            sc.view_settings.exposure = float(os.environ.get('HALL_EXP', -.85))
+            sc.render.film_transparent = False; sc.render.image_settings.color_mode = 'RGB'
+        print('ключ', i, flush=True)
+
+
 def find_objs(argv):
     """objs <кадр> x,y [--portrait] — какие объекты сцены стоят в точке кадра (доли кадра x, y сверху вниз): имя, размеры, положение, материалы — чтобы найти лишний предмет"""
     rest, o = H.parse(argv)
@@ -691,6 +784,8 @@ if __name__ == '__main__':
         flight(sys.argv[1:])
     elif len(sys.argv) > 1 and sys.argv[1] == 'objs':
         find_objs(sys.argv[1:])
+    elif len(sys.argv) > 1 and sys.argv[1] == 'flykeys':
+        flykeys(sys.argv[1:])
     elif len(sys.argv) > 1 and sys.argv[1] == 'labpatch':
         lab_patch(sys.argv[1:])
     elif len(sys.argv) > 1 and sys.argv[1] == 'vasepatch':

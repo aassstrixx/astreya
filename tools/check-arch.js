@@ -103,7 +103,7 @@ if (!J || !J.enabled || !A || !A.enabled) { console.log('Первый экран
   const view = p => p.evaluate(() => {
     const q = s => document.querySelector(s), rc = e => { if (!e) return null; const r = e.getBoundingClientRect(); return {l: Math.round(r.left), t: Math.round(r.top), r: Math.round(r.right), b: Math.round(r.bottom)}; };
     const op = e => e ? +getComputedStyle(e).opacity : -1, c = Astreya.jar.arch, s = c && c.state(), hdr = q('#hdr'), cta = q('.ar-cta a'), cr = cta && cta.getBoundingClientRect();
-    return {p: s ? +s.p.toFixed(3) : -1, drawn: !!(s && s.drawn), loaded: s ? s.loaded : 0, resident: s ? s.resident : 0, gl: !!(s && s.gl), snapped: !!(s && s.snapped), single: !!(s && s.drawn && s.drawn.single), jar: s ? s.jar : null, h1: op(q('.ar-h')), lead: op(q('.ar-lead')), cta: op(q('.ar-cta')), panel: op(q('.ar-panel') || q('.hs-cue')), cue: op(q('.ar-cue')), orbit: op(q('.ar-orbit')),
+    return {p: s ? +s.p.toFixed(3) : -1, drawn: !!(s && s.drawn), loaded: s ? s.loaded : 0, resident: s ? s.resident : 0, gl: !!(s && s.gl), rest: !!(s && s.rest), single: !!(s && s.drawn && s.drawn.single), jar: s ? s.jar : null, h1: op(q('.ar-h')), lead: op(q('.ar-lead')), cta: op(q('.ar-cta')), panel: op(q('.ar-panel') || q('.hs-cue')), cue: op(q('.ar-cue')), orbit: op(q('.ar-orbit')),
       hdrB: hdr ? Math.round(hdr.getBoundingClientRect().bottom) : 0, bodyCls: document.body.className, hr: rc(q('.ar-h')), er: rc(q('.ar-e')), lr: rc(q('.ar-lead')), cr: rc(q('.ar-cta')), pr: rc(q('.ar-panel')), orb: rc(q('.ar-orbit')), facts: rc(q('.ar-facts')), more: rc(q('.ar-more')), moreTxt: (q('.ar-more') || {}).textContent || '',
       hit: cr ? (() => { const e = document.elementFromPoint(cr.left + cr.width / 2, cr.top + cr.height / 2); return !!(e && e.closest('.ar-cta a')); })() : false,
       stageTop: Math.round(q('#arch-story').getBoundingClientRect().top), h1count: document.querySelectorAll('h1').length, hero: getComputedStyle(q('.hero')).display, sw: document.documentElement.scrollWidth,
@@ -160,9 +160,11 @@ if (!J || !J.enabled || !A || !A.enabled) { console.log('Первый экран
       const m = mean(walk.mad);
       ok(Math.min(...walk.mad) > 0.3 * m && Math.max(...walk.mad) < 2.2 * m, 'камера идёт без «стоящих» кадров и скачков: разница между соседними шагами равномерна', {min: Math.min(...walk.mad).toFixed(2), mean: m.toFixed(2), max: Math.max(...walk.mad).toFixed(2)}); }
     await p.evaluate(() => Astreya.jar.ctrl.unpin());
-    /* в покое прокрутка встаёт на ключевой кадр: показан сам отрендеренный кадр, без пересчёта */
-    await p.evaluate(y => window.scrollTo({top: y, behavior: 'instant'}), Math.round(g.top + (Pk[30] + (Pk[31] - Pk[30]) * 0.37) * g.tot)); await wait(1300); await p.waitForFunction(() => Astreya.jar.ctrl.state().snapped, null, {timeout: 20000, polling: 200}).catch(() => {}); v = await view(p);
-    ok(v.snapped && v.single && Math.abs(v.p - Pk[30]) < 2e-3, 'в покое картинка встаёт на ближайший ключевой кадр (пиксель в пиксель)', {p: v.p, key: Pk[30], snapped: v.snapped, single: v.single});
+    /* в покое сцена остаётся ровно там, где остановили прокрутку: к ближайшему ключевому кадру её не подтягивает (это «подталкивало» баночку после остановки) */
+    const yRest = Math.round(g.top + (Pk[30] + (Pk[31] - Pk[30]) * 0.37) * g.tot), pRest = (yRest - g.top) / g.tot;
+    await p.evaluate(y => window.scrollTo({top: y, behavior: 'instant'}), yRest); await wait(1300); await p.waitForFunction(() => Astreya.jar.ctrl.state().rest, null, {timeout: 20000, polling: 200}).catch(() => {}); v = await view(p);
+    const p1 = v.p; await wait(700); v = await view(p);
+    ok(v.rest && Math.abs(v.p - pRest) < 1.5e-3 && Math.abs(v.p - p1) < 1e-6 && Math.abs(v.p - Pk[30]) > 2e-3, 'в покое сцена стоит там, где остановили прокрутку: к ключевому кадру не подтягивается, после остановки не «подталкивает»', {p: v.p, wanted: +pRest.toFixed(4), key: Pk[30], rest: v.rest});
 
     /* ---- движение: двигается только камера — баночка стоит на подиуме, шар въезжает в кадр ---- */
     const boxes = [], PV = [0.15, 0.3, 0.45, 0.6, 0.8, 0.97], wW = Math.max(W, mobile ? H * 9 / 16 : H * 16 / 9);

@@ -92,21 +92,28 @@ const t = (cond, name, info) => { if (cond) ok++; else bad.push(name + (info !==
   await p.waitForFunction(() => document.querySelector('.js-stage.ar-live'), null, {timeout: 25000}).catch(() => {});
   t(await p.evaluate(() => !!document.querySelector('.js-stage.ar-live')), 'кадры зала загрузились: сцена «живая» (журнал на столике кликабелен)');
   { const o = await box(p); t(o.tot > 1500, 'читалка: после зала закреплённая сцена достаточной длины для листания', o);
-    const seq = []; for (const f of [.1, .2, .26, .36, .52, .7, .96]) { const s = await at(p, f); const ra = await p.evaluate(() => +document.getElementById('house-reader').style.getPropertyValue('--ra')); seq.push([f, s.s, +s.p.toFixed(2), +ra.toFixed(2)]); }
+    const seq = []; for (const f of [.1, .2, .285, .36, .52, .7, .96]) { const s = await at(p, f); const ra = await p.evaluate(() => +document.getElementById('house-reader').style.getPropertyValue('--ra')); seq.push([f, s.s, +s.p.toFixed(2), +ra.toFixed(2)]); }
     t(seq[0][3] === 0 && seq[2][3] > 0 && seq[3][3] === 1 && seq.every(x => x[1] >= 1), 'читалка: пролёт камеры к журналу (0…30 % пути), в конце живой журнал проявляется на первом развороте (разворот 2–3), обложка не показывается', seq);
     t(seq.slice(3).every((x, i, a) => i === 0 || x[2] >= a[i - 1][2]) && seq[6][1] >= 8, 'читалка: дальше прокрутка листает развороты вперёд (до контактов)', seq);
     t(await p.evaluate(() => { const r = document.getElementById('house-reader'); return parseFloat(r.style.getPropertyValue('--ra')) === 1; }), 'читалка: к концу пролёта журнал на полном размере (--ra = 1)'); }
-  if (((H.reader || {}).flight || {}).n) { /* пролёт камеры: кадры подгружены и рисуются, нарисованный журнал совмещается с живым */
-    const fl = H.reader.flight;
-    await p.waitForFunction(() => document.getElementById('house-reader').classList.contains('has-seq'), null, {timeout: 25000}).catch(() => {});
-    t(await p.evaluate(() => document.getElementById('house-reader').classList.contains('has-seq')), 'пролёт камеры: все кадры (' + fl.n + ') подгружены, холст включён');
-    const px = async f => { await at(p, f); return p.evaluate(() => { const c = document.querySelector('.hr-seq'), g = c.getContext('2d'), d = g.getImageData(0, 0, c.width, c.height).data; let sum = 0, n = 0; for (let i = 0; i < d.length; i += 4 * 97) { sum += d[i] + d[i + 1] + d[i + 2]; n++; } return {w: c.width, h: c.height, mean: Math.round(sum / n / 3), tr: c.style.transform}; }); };
-    const a1 = await px(.04), a2 = await px(.15), a3 = await px(.29);
-    t(a1.w > 300 && a1.mean > 60 && a2.mean > 60 && a3.mean > 60, 'пролёт камеры: холст рисует кадры на всём пути (не пустой)', {a1, a2, a3});
-    t(a1.mean !== a3.mean || a1.tr !== a3.tr, 'пролёт камеры: картинка меняется с прокруткой', {a1, a3});
-    t(!!a3.tr && /scale/.test(a3.tr), 'пролёт камеры: в конце кадр совмещён с живым журналом (сдвиг и масштаб)', a3.tr);
+  if ((H.fly || {}).enabled) { /* пролёт камеры — второй экземпляр движка зала (js/jar.js, data-fly): ключи пролёта + глубина + дорожка камеры + спрайты баночки */
+    const fl = H.fly;
+    await p.evaluate(() => { const f = window.Astreya.jar.fly; if (f) { window.Astreya.flyWarm = true; f.warm(); } });
+    await p.waitForFunction(n => { const f = window.Astreya.jar.fly; return f && f.state().loaded >= n && f.complete(); }, fl.n, {timeout: 60000}).catch(() => {});
+    const fs0 = await p.evaluate(() => { const f = window.Astreya.jar.fly; return f ? f.state() : null; });
+    t(!!fs0 && fs0.gl && fs0.loaded >= fl.n, 'пролёт камеры: движок зала (второй экземпляр) загрузил все ключи пролёта (' + fl.n + ' из ' + fl.n + ': цвет, глубина, спрайты баночки)', fs0 && {loaded: fs0.loaded, n: fs0.N});
+    t(!(await p.evaluate(() => !!document.querySelector('.hr-seq'))), 'пролёт камеры: старого набора картинок (холст .hr-seq) нет — кадр строит движок перепроекцией по глубине');
+    const fp = async f => { await at(p, f); await p.waitForFunction(() => { const s = window.Astreya.jar.fly.state(); return s.firstDrawn && Math.abs(s.p - s.pTarget) < 3e-4; }, null, {timeout: 12000}).catch(() => {}); return p.evaluate(() => { const s = window.Astreya.jar.fly.state(), h = document.querySelector('.hr-fly'); return {p: +s.p.toFixed(4), pT: +s.pTarget.toFixed(4), tr: h.style.transform, ok: s.jarOk, shown: s.jar.shown, ready: document.getElementById('house-reader').classList.contains('ready')}; }); };
+    const a0 = await fp(.06), a1 = await fp(.15), a2 = await fp(.29), a3 = await fp(.31);
+    t(a0.ready && a0.shown && a1.p > a0.p + .02 && a2.p > a1.p + .02, 'пролёт камеры: картинку строит движок, положение идёт вместе с прокруткой (в начале, посередине, в конце)', {a0, a1, a2});
+    t(Math.abs(a3.p - fl.F) < 2e-3 && Math.abs(a3.pT - fl.F) < 1e-6, 'пролёт камеры: в конце камера стоит над журналом (конец дорожки пролёта)', a3);
+    t(!!a2.tr && /scale/.test(a2.tr), 'пролёт камеры: в конце слой совмещён с живым журналом (сдвиг и масштаб)', a2.tr);
     const cmp = await p.evaluate(() => { const b = document.querySelector('#mag .mag-book').getBoundingClientRect(), w = document.querySelector('#mag .mag-wrap'); return {bw: Math.round(b.width), op: +getComputedStyle(w).opacity}; });
-    t(cmp.bw > 300, 'пролёт камеры: живой журнал на месте, виден (' + cmp.bw + ' px)', cmp);
+    t(cmp.bw > 300 && cmp.op === 1, 'пролёт камеры: живой журнал на месте, виден (' + cmp.bw + ' px)', cmp);
+    /* двоения нет: пока живой журнал не начал проявляться (--ra = 0), нарисованный уже совмещён с ним; проявление короткое */
+    const ghost = await p.evaluate(() => { const g = x => { const r = document.getElementById('house-reader'); return +r.style.getPropertyValue(x); }; return {ra: g('--ra')}; });
+    await at(p, .05 + .25 * .8); const rA = await p.evaluate(() => +document.getElementById('house-reader').style.getPropertyValue('--ra'));
+    t(rA === 0, 'пролёт камеры: на первых 90 % пролёта живой журнал ещё не виден — двоения картинки на входе нет', {rA, ghost});
   }
   { /* эффект перелистывания: лист поворачивается вслед за прокруткой, а не прыгает */
     const f1 = await at(p, PL(0, .375));
@@ -159,6 +166,12 @@ const t = (cond, name, info) => { if (cond) ok++; else bad.push(name + (info !==
     t(w2.s === 3, 'серия событий колеса в одном жесте (трекпад, инерция) листает один разворот, а не три', {s: w2.s});
     await p.mouse.wheel(0, -100); await settle(p); const w3 = await rs(p);
     t(w3.s === 2, 'колесо вверх листает назад на один разворот', {s: w3.s});
+    { /* скорость листания равна скорости прокрутки: медленно крутишь — лист поворачивается медленно (посреди жеста он на полпути), быстро — быстро */
+      await p.evaluate(() => window.Astreya.house.openMagazine(2)); await settle(p); const sl0 = await rs(p);
+      const sl = await p.evaluate(() => new Promise(res => { let i = 0, mid = null; const f = () => { document.body.dispatchEvent(new WheelEvent('wheel', {deltaY: 12, bubbles: true, cancelable: true})); i++; if (i === 7) setTimeout(() => { mid = window.Astreya.house.readerState().p; }, 60); if (i < 12) setTimeout(f, 90); else setTimeout(() => res(mid), 120); }; f(); }));
+      await settle(p); const sl1 = await rs(p);
+      t(sl !== null && sl > sl0.p + .12 && sl < sl0.p + .88, 'медленная прокрутка: посреди жеста лист на полпути (поворот идёт вслед за рукой, а не прыгает целиком)', {from: sl0.p, mid: sl});
+      t(sl1.s === sl0.s + 1 && Math.abs(sl1.p - sl1.s) < .02, 'медленная прокрутка: рука остановилась — лист доворачивается до разворота (листнулся один)', {from: sl0.s, to: sl1.s, p: sl1.p}); }
     { /* быстрая прокрутка не «застревает»: непрерывный поток колеса листает несколько разворотов (не чаще раза в 380 мс), а не один на весь жест */
       await p.evaluate(() => window.Astreya.house.openMagazine(2)); await settle(p); const f0 = await rs(p);
       await p.evaluate(() => new Promise(res => { let i = 0; const f = () => { document.body.dispatchEvent(new WheelEvent('wheel', {deltaY: 100, bubbles: true, cancelable: true})); if (++i < 16) setTimeout(f, 55); else res(); }; f(); }));
