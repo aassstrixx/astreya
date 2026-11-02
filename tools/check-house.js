@@ -150,6 +150,10 @@ const t = (cond, name, info) => { if (cond) ok++; else bad.push(name + (info !==
     await p.click('#mag .mag-nx'); await p.waitForTimeout(150); await p.click('#mag .mag-nx'); await settle(p); const b2 = (await rs(p)).p;
     t(Math.abs(b2 - b1 - 2) < .02, 'два быстрых нажатия «Далее» подряд листают на два разворота', {b1, b2});
     await p.click('#mag .mag-pv'); await settle(p); await p.click('#mag .mag-pv'); await settle(p);
+    /* возврат из читалки к герою: вступительные анимации заставки (arBg — «наезд» фона с 1,05, arJar — проявление баночки) не перезапускаются */
+    await p.evaluate(() => window.Astreya.house.hall()); await p.waitForTimeout(250);
+    const rt = await p.evaluate(() => ({an: document.getAnimations().filter(a => /^(arBg|arJar)$/.test(a.animationName || '')).length, jo: getComputedStyle(document.querySelector('#arch-story .ar-jar-cv')).opacity, live: document.getElementById('arch-story').classList.contains('rd-live')}));
+    t(rt.an === 0 && +rt.jo === 1 && !rt.live, 'возврат из читалки к герою не перезапускает вступительные анимации: фон не «наезжает» с 1,05, баночка не проявляется заново (раньше она пропадала и возвращалась)', rt);
   }
 
   { /* шар: во время прокрутки не двигается совсем; когда прокрутка стоит — вращается сам; на курсор не реагирует (по решению заказчика) */

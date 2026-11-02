@@ -206,8 +206,8 @@ body[data-page="home"] .hdr{transition:transform .6s var(--ease-out),background-
   html.js .arch-story.is-house{z-index:2}
   html.js .house-reader{z-index:1}
   html.js .arch-story.is-house.rd-live,html.js .arch-story.is-house.rd-live .js-stage{background:transparent;pointer-events:none}
-  html.js .arch-story.is-house.rd-live .js-cv{opacity:calc(1 - var(--hf,0));transition:none;animation:none;transform:translate3d(0,var(--hy,0px),0)}
-  html.js .arch-story.is-house.rd-live .ar-jar-cv{transition:none;animation:none;transform:translate3d(0,var(--hy,0px),0)}
+  html.js .arch-story.is-house.rd-live .js-cv{opacity:calc(1 - var(--hf,0));transition:none;transform:translate3d(0,var(--hy,0px),0)}
+  html.js .arch-story.is-house.rd-live .ar-jar-cv{transition:none;transform:translate3d(0,var(--hy,0px),0)}          /* animation здесь трогать нельзя: смена animation:none → arBg/arJar перезапускает вступительные анимации заставки (фон «наезжает» с 1,05, баночка проявляется с нуля) — так было при возврате из читалки к герою */
   html.js .arch-story.is-house.rd-live .ar-vig{opacity:0}
   html.js .arch-story.is-house.rd-live .js-stage::after{opacity:calc(.34 * var(--h2,0) * (1 - var(--hf,0)))}
   html.js .arch-story.is-house.rd-live .ar-copy,html.js .arch-story.is-house.rd-live .ar-orb{opacity:calc(1 - var(--hf,0))}

@@ -68,7 +68,7 @@
     let sTop = 0, sTot = 1, sH = 1, yNow = 0;
     const born = performance.now();
     let hall = null, jar = null, track = null, set = '', gen = 0, labelReady = false, lastDraw = null, resScale = 1;
-    let dtEma = 16.7, minDt = 16.7, slowRun = 0, govChanges = 0;
+    let lastJarOk = null, dtEma = 16.7, minDt = 16.7, slowRun = 0, govChanges = 0;
     const perfRing = new Float32Array(240); let perfN = 0;
     let dirSign = 1;
 
@@ -343,7 +343,7 @@
       lastDraw = {ka: pair.ka, kb: pair.kb, t: pair.t, single: !!pair.single};
       if (!firstDrawn) { firstDrawn = true; if (cp < 0.02) root.classList.add('ar-intro'); root.classList.add('ready'); }
       if (jar) {
-        const ok = jar.draw(pc, pair, {jk, lift, ground, halo});
+        const ok = jar.draw(pc, pair, {jk, lift, ground, halo}); lastJarOk = ok;
         if (ok && !jarShown) { jarShown = true; if (cp < 0.02) root.classList.add('ar-intro'); root.classList.add('jar-ready'); }
       }
       return true;
@@ -474,7 +474,7 @@
         let res = 0, resj = 0, lo = 0, loj = 0; for (let k = 0; k < NH; k++) { res += resident[k]; resj += resJ[k]; lo += lowDone[k] === 1 ? 1 : 0; loj += lowJDone[k] === 1 ? 1 : 0; }
         return {p: cp, pTarget: pT, u: uOf(), N: NH, loaded: loadedKeys, set, gl: !!hall, drawn: lastDraw, firstDrawn, resident: res, residentJar: resj, lows: lo, lowSprites: loj, resScale, govChanges, fast, up: {full: upN.full, low: upN.low, queued: upQ.length}, snapped: vp === 0 && Math.abs(cp - Phi[kNear(cp)]) < 1e-5,
           jar: {loaded: blobs.j.filter(Boolean).length, n: NH, shown: jarShown, sprites: resj, label: labelReady},
-          sphere: {ready: !!(hall && hall.sphereReady), yaw: sph.yaw, cur: [sph.hx, sph.hy], running: !!sph.raf, still: scrolling()},
+          sphere: {ready: !!(hall && hall.sphereReady), yaw: sph.yaw, cur: [sph.hx, sph.hy], running: !!sph.raf, still: scrolling()}, jarOk: lastJarOk, fastNow: fast,
           size: [W, H, JW, JH], perf: {n: perfN, mean: ring.length ? ring.reduce((s, v) => s + v, 0) / ring.length : 0, p95: ring.length ? ring[Math.floor(ring.length * 0.95)] : 0, max: ring.length ? ring[ring.length - 1] : 0}};
       },
       destroy() { dead = true; destroyGL(); for (const k in blobs) blobs[k].fill(null); }
