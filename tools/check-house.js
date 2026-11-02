@@ -340,17 +340,19 @@ const t = (cond, name, info) => { if (cond) ok++; else bad.push(name + (info !==
     const live = await q.evaluate(() => ({vis: !!document.querySelector('.mp-chat-live') && !document.querySelector('.mp-chat-live').hidden, chips: [...document.querySelectorAll('.mp-chat-chips .mp-chip')].map(b => b.getAttribute('data-q')), inp: !!document.querySelector('.mp-chat-in input')}));
     t(live.vis && live.chips.length >= 2 && live.inp, 'Стелла: под перепиской подсказки-кнопки и поле ввода', live);
     const chatN = () => q.evaluate(() => { const m = [...document.querySelectorAll('.mp-chat-log .mp-m:not(.mp-typing)')]; return {n: m.length, u: m.length > 1 ? m[m.length - 2].textContent.trim() : '', a: m.length ? m[m.length - 1].textContent.replace(/\s+/g, ' ').trim() : '', chips: [...document.querySelectorAll('.mp-chat-chips .mp-chip')].map(b => b.textContent.trim())}; });
-    const n0 = (await chatN()).n, r1 = await q.evaluate(x => window.Astreya.assistant.answer(x).text, live.chips[0]);
-    await q.evaluate(() => document.querySelector('.mp-chat-chips .mp-chip').click()); await q.waitForTimeout(300);
-    const typingSeen = await q.evaluate(() => !!document.querySelector('.mp-chat-log .mp-typing')); await q.waitForTimeout(3600); const c1 = await chatN();
-    t(c1.n === n0 + 2 && c1.u === live.chips[0] && norm(c1.a).startsWith(norm(r1).slice(0, 40)) && typingSeen, 'Стелла: клик по подсказке — вопрос в переписке, точки набора, затем настоящий ответ помощника', {n0, c1: c1.n, u: c1.u, a: c1.a.slice(0, 60), typingSeen});
+    const n0 = (await chatN()).n, r1 = await q.evaluate(x => { const r = window.Astreya.assistant.answer(x); return {text: r.text, cards: r.cards}; }, live.chips[0]);
+    await q.evaluate(() => document.querySelector('.mp-chat-chips .mp-chip').click()); await q.waitForTimeout(650);
+    const typingSeen = await q.evaluate(() => !!document.querySelector('.mp-chat-log .mp-typing')); await q.waitForTimeout(3400); const c1 = await chatN();
+    const cardIds = await q.evaluate(() => [...document.querySelectorAll('.mp-chat-log .mp-m:not(.mp-typing):last-child .mp-pc')].map(a => a.getAttribute('data-product')));
+    /* формулировку помощник варьирует (не повторяет прошлую), поэтому сверяем суть: тема, число позиций и карточки товаров — те же, что у настоящего ответа */
+    t(c1.n === n0 + 2 && c1.u === live.chips[0] && typingSeen && /Фотозащит/i.test(c1.a) && cardIds.length >= 1 && cardIds.every((id, i) => id === r1.cards[i]), 'Стелла: клик по подсказке — вопрос в переписке, точки набора, затем настоящий ответ помощника (те же товары каталога)', {n0, c1: c1.n, u: c1.u, a: c1.a.slice(0, 60), typingSeen, cardIds, real: r1.cards});
     t(c1.chips.length >= 1 && c1.chips.every(x => x !== live.chips[0]) , 'Стелла: после ответа подсказки меняются на уточняющие вопросы помощника', c1.chips);
     const fu = c1.chips[0];
     await q.evaluate(f => [...document.querySelectorAll('.mp-chat-chips .mp-chip')].find(b => b.textContent.trim() === f).click(), fu); await q.waitForTimeout(3800); const c2 = await chatN();
     t(c2.n === c1.n + 2 && c2.u === fu && !/\(\)/.test(c2.a) && c2.a.length > 40, 'Стелла: уточняющий вопрос понят из контекста разговора, в ответе нет пустых скобок', {u: c2.u, a: c2.a.slice(0, 120)});
     const r3 = await q.evaluate(x => window.Astreya.assistant.answer(x).text, 'Как связаться с менеджером?');
     await q.evaluate(() => { const f = document.querySelector('.mp-chat-in'); f.querySelector('input').value = 'Как связаться с менеджером?'; f.dispatchEvent(new Event('submit', {cancelable: true, bubbles: true})); }); await q.waitForTimeout(3800); const c3 = await chatN();
-    t(c3.n === c2.n + 2 && c3.u === 'Как связаться с менеджером?' && norm(c3.a).includes(norm(r3).slice(0, 30)), 'Стелла: вопрос из поля ввода — настоящий ответ (контакты менеджера из данных сайта)', {u: c3.u, a: c3.a.slice(0, 100)});
+    t(c3.n === c2.n + 2 && c3.u === 'Как связаться с менеджером?' && /925-51-62/.test(r3) && /925-51-62/.test(c3.a), 'Стелла: вопрос из поля ввода — настоящий ответ (телефон менеджера из данных сайта)', {u: c3.u, a: c3.a.slice(0, 100)});
     await q._ctx.close();
     // 7.5 всё помещается: на каждой странице содержимое выше колонтитула и не выходит за страницу (ПК-окна и телефон)
     for (const [w, h] of [[1440, 900], [1868, 960], [1280, 720], [390, 844], [360, 640]]) {

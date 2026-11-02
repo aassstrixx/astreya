@@ -482,12 +482,13 @@
     function pageIn() {
       if (phone() || flat()) return;
       const pgs = $$('.leaf.is-cur .face.front .pg, .leaf.is-prev .face.back .pg', mag); if (!pgs.length) return;
+      $$('.pg-in', mag).forEach(pg => { if (pgs.indexOf(pg) < 0) pg.classList.remove('pg-in'); });                // прежний разворот уже не показан — класс с него снимаем (таймер ниже чистит только текущий)
       pgs.forEach(pg => {
         pg.classList.remove('pg-in'); let i = 0;
         Array.prototype.forEach.call(pg.children, c => { if (c.classList.contains('run') || c.classList.contains('pg-f') || c.classList.contains('fx')) return; c.style.setProperty('--d', Math.round(i++ * 55) + 'ms'); });
         void pg.offsetWidth; pg.classList.add('pg-in');
       });
-      clearTimeout(pgTimer); pgTimer = setTimeout(() => pgs.forEach(pg => pg.classList.remove('pg-in')), 1500);
+      clearTimeout(pgTimer); pgTimer = setTimeout(() => $$('.pg-in', mag).forEach(pg => pg.classList.remove('pg-in')), 1500);
       if (chat && pgs.some(pg => chat.el.closest('.pg') === pg)) chat.play();
     }
     off.push(() => clearTimeout(pgTimer));
