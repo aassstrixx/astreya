@@ -187,11 +187,11 @@ module.exports = function homeRedesign(ctx, C, P, parts, {events, val}) {
           <ul class="ar-facts">${h.facts.map(f => `<li>${esc(f)}</li>`).join('')}<li>${esc(auto.offices)}</li></ul>
           ${houseOn ? HOUSE.hall.rooms : ''}
         </div>
-        <div class="ar-panel" role="group" aria-label="${esc(pn.title)}">
+        ${houseOn ? HOUSE.hall.cue : `<div class="ar-panel" role="group" aria-label="${esc(pn.title)}">
           <p class="ar-pt">${esc(pn.title)}</p>
           <ul>${items.map(it => `<li><span class="ar-ic" aria-hidden="true">${I[it.icon] || I.check}</span><span class="ar-tx"><b>${esc(it.title)}</b><em>${esc(it.text)}</em></span></li>`).join('')}</ul>
           <a class="btn btn-ghost btn-sm ar-more" href="${C.u(P, 'company.html')}">Подробнее ${I.arrow}</a>
-        </div>
+        </div>`}
       </div>
     </div>
     ${houseOn ? '<i class="hall-anchor" id="hall" aria-hidden="true"></i>' : ''}

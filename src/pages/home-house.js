@@ -94,14 +94,17 @@ module.exports = function homeHouse(ctx, C, P, deps) {
       <picture class="hr-bg" aria-hidden="true"><source media="(max-aspect-ratio: 11/10)" srcset="${C.u(P, pst.mobile || 'assets/house-hall/poster-m.webp')}"><img src="${C.u(P, pst.desktop || 'assets/house-hall/poster-d.webp')}" alt="" width="1920" height="1080" decoding="async" loading="lazy"></picture>
       <canvas class="hr-seq" aria-hidden="true"></canvas>
       <div class="hr-veil" aria-hidden="true"></div>
-      <p class="hr-cue" aria-hidden="true"><span>${esc((H.reader || {}).cue || 'Листайте — журнал откроется')}</span><i></i></p>
       <a class="hr-skip" href="#house-end" data-track="house_reader_skip">${esc((H.reader || {}).skip || 'К контактам')} ${I.arrow}</a>
       ${magazine}
     </div>
   </section>`;
 
+  /* вместо панели «Почему выбирают Астрею?» внизу зала — подсказка: она же кнопка, по клику сцена сама плавно летит к журналу */
+  const cueTxt = (H.reader || {}).cue || 'Листайте ниже — откроется журнал';
+  const hallCue = `<button type="button" class="hs-cue" data-house-mag data-from="cue" aria-label="${esc(cueTxt)}"><span>${esc(cueTxt)}</span><i aria-hidden="true"></i></button>`;
+
   return {
-    hall: {world: hallWorld, rooms: hallRooms},
+    hall: {world: hallWorld, rooms: hallRooms, cue: hallCue},
     compose: arch => [arch, heroX, reader, '<div id="house-end" aria-hidden="true"></div>'].join('\n\n  ')
   };
 };

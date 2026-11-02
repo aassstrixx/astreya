@@ -547,6 +547,7 @@
   function mountEntry() {
     const key = entryKey(), cfg = G.entry && G.entry.pages && G.entry.pages[key]; if (!cfg || $('.g-entry')) return;
     let a = null; try { a = $(cfg.anchor); } catch (e) {} if (!a) return;
+    if (key === 'home' && $('.arch-story.is-house')) a = document.getElementById('house-end') || a;          // главная-дом: после героя сразу журнал — полоска помощника не стоит между ними, а идёт после журнала
     const el = document.createElement('aside'); el.className = 'g-entry'; el.setAttribute('aria-label', 'Помощник Стелла'); el.setAttribute('data-style', (G.entry && G.entry.style) || 'strip');          // strip · slim · card
     el.innerHTML = '<span class="g-e-pe" aria-hidden="true">' + (A.pearl ? A.pearl('happy', true) : '') + '</span><div class="g-e-t"><b>' + esc(pickV(cfg.title)) + '</b><p>' + esc(pickV(cfg.text)) + '</p></div>' +
       '<div class="g-e-ch">' + chipsHTML(cfg.chips, 4) + '</div>' +

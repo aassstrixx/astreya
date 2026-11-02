@@ -584,7 +584,7 @@
       "doorsLabel": "Разделы журнала",
       "table": {"d": [0.4, 0.8, 0.225], "m": [0.371, 0.8, 0.29]}
     },
-    "reader": {"heightVh": 560, "heightVhMobile": 240, "cue": "Листайте — журнал откроется", "skip": "К контактам", "flight": {"n": 36, "ext": "webp", "desktop": {"dir": "assets/house-hall/fd/", "rect": [0.1818, 0.1228, 0.8182, 0.8772]}}},
+    "reader": {"heightVh": 560, "heightVhMobile": 240, "cue": "Листайте ниже — откроется журнал", "skip": "К контактам", "flight": {"n": 36, "ext": "webp", "desktop": {"dir": "assets/house-hall/fd/", "rect": [0.1818, 0.1228, 0.8182, 0.8772]}}},
     "rooms": [
       {"id": "about", "img": "assets/house/room-about.webp", "name": "Галерея доверия", "short": "О компании", "href": "company.html", "cta": "Страница «О компании»"},
       {"id": "brands", "img": "assets/brands/hero.webp", "name": "Галерея брендов", "short": "Бренды", "href": "brands.html", "cta": "Все бренды"},

@@ -164,9 +164,7 @@ html:not(.js) .face::after{display:none}
 .house-reader.has-seq .hr-seq{display:block}
 .house-reader.has-seq .hr-bg{visibility:hidden}
 .hr-bg img{display:block;width:100%;height:100%;object-fit:cover}
-.hr-veil{position:absolute;inset:0;z-index:1;pointer-events:none;background:radial-gradient(82% 72% at 50% 46%,rgba(50,34,18,.34),rgba(30,20,10,.74));opacity:calc(.1 + var(--fu) * .45 + var(--ra) * .35)}
-.hr-cue{position:absolute;left:50%;bottom:clamp(22px,5vh,48px);z-index:3;translate:-50% 0;margin:0;display:grid;justify-items:center;gap:10px;pointer-events:none;font:600 12px/1 var(--sans);letter-spacing:.18em;text-transform:uppercase;color:#fffaf0;text-shadow:0 1px 12px rgba(30,20,8,.6);opacity:calc(1 - var(--ra) * 3)}
-.hr-cue i{display:block;width:1px;height:34px;background:linear-gradient(180deg,rgba(255,250,240,.9),rgba(255,250,240,0))}
+.hr-veil{position:absolute;inset:0;z-index:1;pointer-events:none;background:radial-gradient(82% 72% at 50% 46%,rgba(50,34,18,.34),rgba(30,20,10,.74));opacity:calc(var(--fu) * .45 + var(--ra) * .35)}
 .hr-skip{position:absolute;top:clamp(78px,10vh,112px);right:clamp(16px,3vw,44px);z-index:4;display:inline-flex;align-items:center;gap:8px;padding:10px 16px;border-radius:999px;background:var(--hs-glass);box-shadow:inset 0 0 0 1px rgba(255,255,255,.75),0 8px 22px -10px rgba(40,26,10,.6);font:600 12px/1 var(--sans);letter-spacing:.06em;color:var(--hs-ink);opacity:clamp(0,calc(var(--ra) * 3 - .3),1);transition:background-color .25s,transform .3s var(--ease)}
 .hr-skip:hover,.hr-skip:focus-visible{background:#fffaf0;transform:translateY(-1px)}
 .hr-skip svg{width:15px;height:15px}
@@ -181,7 +179,33 @@ html:not(.js) .face::after{display:none}
 .house-reader.is-flat .hr-seq{display:none}
 .house-reader.is-flat .hr-stage{position:relative;height:auto;min-height:100svh;padding:clamp(70px,10vh,120px) 0 clamp(40px,6vh,70px)}
 .house-reader.is-flat .mag{position:relative;inset:auto;display:grid;min-height:calc(100svh - 120px)}
-.house-reader.is-flat .hr-cue{display:none}
+
+/* ============ 3б. Герой и журнал — одна сцена ============
+   Читалка заходит на последний экран героя (отрицательный отступ), её сцена скрыта, пока герой стоит; как только прокрутка доходит до конца закреплённой сцены (класс is-live — js/house.js),
+   сцена читалки встаёт на тот же экран под героем, холсты героя гаснут (--hf), а текст и подсказка героя уезжают вверх вместе с прокруткой — камера продолжает полёт на тех же кадрах, без стыка и «второй страницы» снизу. */
+.hs-cue{position:absolute;z-index:4;left:50%;bottom:clamp(18px,4.4vh,44px);translate:-50% 0;display:inline-flex;align-items:center;gap:14px;margin:0;padding:13px 22px 13px 26px;border:0;border-radius:999px;background:var(--hs-glass);
+  box-shadow:inset 0 0 0 1px rgba(255,255,255,.8),0 14px 34px -16px rgba(60,40,18,.55);color:var(--hs-ink);cursor:pointer;pointer-events:none;-webkit-tap-highlight-color:transparent;
+  font:600 clamp(10.5px,.82vw,13px)/1 var(--sans);letter-spacing:.2em;text-transform:uppercase;white-space:nowrap;opacity:var(--h3,0);transform:translate3d(0,calc((1 - var(--h3,0)) * 30px),0)}
+.js-stage.ar-live .hs-cue{pointer-events:auto}
+.hs-cue:hover,.hs-cue:focus-visible{background:#fffaf0}
+.hs-cue:focus-visible{outline:3px solid var(--hs-ink);outline-offset:3px}
+.hs-cue i{position:relative;display:block;width:14px;height:14px;flex:none}
+.hs-cue i::before{content:"";position:absolute;left:2px;top:1px;width:8px;height:8px;border-right:2px solid currentColor;border-bottom:2px solid currentColor;transform:rotate(45deg);animation:hsCue 1.9s cubic-bezier(.45,0,.35,1) infinite}
+@keyframes hsCue{0%{transform:translate3d(0,-5px,0) rotate(45deg);opacity:0}35%{opacity:1}75%,100%{transform:translate3d(0,5px,0) rotate(45deg);opacity:0}}
+.arch-story.is-house .js-stage::before{opacity:0}                                                /* нижний «мостик» к молочной странице нужен, только если под героем она; под героем журнал */
+@media (min-width:701px){
+  html.js .arch-story.is-house:not(.is-static):not(.jar-off) ~ .house-reader{margin-top:-100lvh}
+  html.js .arch-story.is-house:not(.is-static):not(.jar-off) ~ .house-reader:not(.is-live):not(.is-flat) .hr-stage{visibility:hidden}
+  html.js .arch-story.is-house{z-index:2}
+  html.js .house-reader{z-index:1}
+  html.js .arch-story.is-house.rd-live,html.js .arch-story.is-house.rd-live .js-stage{background:transparent;pointer-events:none}
+  html.js .arch-story.is-house.rd-live .js-cv,html.js .arch-story.is-house.rd-live .ar-jar-cv{opacity:calc(1 - var(--hf,0));transition:none;animation:none;transform:translate3d(0,var(--hy,0px),0)}
+  html.js .arch-story.is-house.rd-live .ar-vig{opacity:0}
+  html.js .arch-story.is-house.rd-live .js-stage::after{opacity:calc(.34 * var(--h2,0) * (1 - var(--hf,0)))}
+  html.js .arch-story.is-house.rd-live .ar-hero{opacity:calc(1 - var(--hf,0))}
+  html.js .arch-story.is-house.rd-gone .ar-hero{visibility:hidden}
+  html.js .arch-story.is-house.rd-live .ar-hero *{pointer-events:none!important}
+}
 @media (prefers-reduced-motion:reduce) and (min-width:100000px){.house-reader{height:auto;--ra:1;--fu:1}.hr-seq{display:none!important}.house-reader .hr-stage{position:relative;height:auto;min-height:100svh;padding:clamp(70px,10vh,120px) 0 clamp(40px,6vh,70px)}.house-reader .mag{position:relative;inset:auto;display:grid;min-height:calc(100svh - 120px)}.hr-bg,.house-reader .mag .mag-wrap{transform:none!important}.hr-cue{display:none}}
 
 /* ============ 5. Телефон ============ */

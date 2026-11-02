@@ -13,6 +13,11 @@
 /* заставка: тёплая виньетка по краям (как у студийной съёмки) — уходит с первой же прокруткой; кадр зала, баночка и шар от неё не зависят */
 .ar-vig{position:absolute;inset:0;z-index:1;pointer-events:none;opacity:var(--cue,1);background:radial-gradient(115% 100% at 50% 48%,rgba(60,40,20,0) 54%,rgba(60,40,20,.2) 100%)}
 
+/* шар под рукой (js/jar.js): над шаром курсор — «рука»; зажали — «берём»; пока тянем, текст не выделяется */
+.arch-story.sph-hot .js-stage{cursor:grab}
+.arch-story.sph-grab .js-stage,html.sph-dragging .js-stage{cursor:grabbing}
+html.sph-dragging,html.sph-dragging *{-webkit-user-select:none;user-select:none}
+
 /* герой поверх сцены: слой на весь экран; внутри — «мир» (рамка 16:9 по размеру кадра, чтобы шар, баночка и орбиты стояли на тех же местах сцены, что и в кадре), текст слева и панель снизу */
 .ar-hero{position:absolute;inset:0;z-index:3;pointer-events:none;--ar-x:max(var(--gut),calc((100% - var(--maxw)) / 2 + var(--gut)));--ww:max(100%,calc(100lvh * 16 / 9));--wwv:max(100vw,calc(100lvh * 16 / 9))}      /* --ww / --wwv — ширина кадра зала на экране; надпись героя лежит на светлой стене: левее правого края проёма с комнатой (--arch-r — его положение в долях кадра, в финальном кадре ≈ .193) плюс отступ --arch-m она не заходит — слева стоят стеллаж и растение; размер заголовка привязан к ширине кадра, чтобы строки умещались между проёмом и косой гранью горы */
 .ar-world{position:absolute;left:50%;top:50%;width:max(100%,calc(100lvh * 16 / 9));aspect-ratio:16/9;transform:translate(-50%,-50%);z-index:1}

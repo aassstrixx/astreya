@@ -86,31 +86,40 @@
     let FL = null; try { FL = JSON.parse(reader.getAttribute('data-flight') || 'null'); } catch (e) {}
     let flImgs = [], flLoaded = 0, flStarted = false;
     const flCfg = () => FL ? (phone() ? FL.mobile : FL.desktop) : null;
+    const ctz = i => { if (!i) return 99; let c = 0; while (!(i & 1)) { i >>= 1; c++; } return c; };
     function loadFlight() {
       const c = flCfg(); if (flStarted || !c || !cvS || reduce()) return;
       flStarted = true; flImgs = new Array(FL.n + 1); flImgs[0] = poster;       // нулевой кадр — готовый кадр зала (постер)
-      let k = 1, act = 0;
+      const order = []; for (let i = 1; i <= FL.n; i++) order.push(i);
+      order.sort((a, b) => (ctz(b) - ctz(a)) || (a - b));                        // «от грубого к тонкому»: кадры через равные промежутки раньше соседних — пролёт можно играть, пока дозагружается остальное
+      order.splice(order.indexOf(FL.n), 1); order.unshift(FL.n);                  // последний кадр — первым: по нему живой журнал совмещается с нарисованным
+      let k = 0, act = 0; const need = Math.min(FL.n, 9);
       const pump = () => {
-        while (act < 4 && k <= FL.n) {
-          const i = k++, im = new Image(); act++; im.decoding = 'async';
-          im.onload = im.onerror = () => { act--; if (im.naturalWidth) { flImgs[i] = im; flLoaded++; if (flLoaded === FL.n) { reader.classList.add('has-seq'); readerUpdate(); } } pump(); };
+        while (act < 4 && k < order.length) {
+          const i = order[k++], im = new Image(); act++; im.decoding = 'async';
+          im.onload = im.onerror = () => {
+            act--;
+            if (im.naturalWidth) { flImgs[i] = im; flLoaded++; try { if (im.decode) im.decode().catch(() => {}); } catch (e) {} if (flLoaded === need) { reader.classList.add('has-seq'); } readerUpdate(true); }
+            pump();
+          };
           im.src = c.dir + String(i).padStart(3, '0') + '.' + (FL.ext || 'webp');
         }
       };
       pump();
     }
+    const flNear = (i, dir) => { for (let j = i; j >= 0 && j <= FL.n; j += dir) if (flImgs[j] && (flImgs[j].naturalWidth || flImgs[j].width)) return j; return dir > 0 ? FL.n : 0; };
     const bookBox = () => { const w = $('.mag-wrap', mag); return {x: w.offsetLeft + book.offsetLeft, y: w.offsetTop + book.offsetTop, w: book.offsetWidth, h: book.offsetHeight}; };
     function drawFlight(u) {
       if (!cvS || !reader.classList.contains('has-seq')) return;
       const W = cvS.clientWidth, Hh = cvS.clientHeight, c = flCfg(); if (!W || !Hh || !c) return;
       const dpr = Math.min(window.devicePixelRatio || 1, 1.5), cw = Math.round(W * dpr), ch = Math.round(Hh * dpr);
       if (cvS.width !== cw || cvS.height !== ch) { cvS.width = cw; cvS.height = ch; }
-      const cx = cvS.getContext('2d'), x = u * FL.n, i0 = Math.min(FL.n, Math.floor(x)), i1 = Math.min(FL.n, i0 + 1), a = x - i0;
+      const cx = cvS.getContext('2d'), x = u * FL.n, f0 = Math.min(FL.n, Math.floor(x)), f1 = Math.min(FL.n, f0 + 1), i0 = flNear(f0, -1), i1 = flNear(f1, 1), a = i1 === i0 ? 0 : clamp((x - i0) / (i1 - i0), 0, 1);
       const fit = im => { const iw = im.naturalWidth || im.width, ih = im.naturalHeight || im.height, k = Math.max(W / iw, Hh / ih); return {iw, ih, k, ox: (W - iw * k) / 2, oy: (Hh - ih * k) / 2}; };
       const draw = (im, al) => { if (!im || !(im.naturalWidth || im.width)) return; const f = fit(im); cx.globalAlpha = al; cx.drawImage(im, f.ox * dpr, f.oy * dpr, f.iw * f.k * dpr, f.ih * f.k * dpr); };
       cx.globalAlpha = 1; cx.clearRect(0, 0, cw, ch); draw(flImgs[i0], 1); if (a > .001 && i1 !== i0) draw(flImgs[i1], a);
       /* к концу пролёта кадр сдвигается и масштабируется так, чтобы нарисованный журнал лёг ровно на живой (его размер зависит от экрана) */
-      const wA = ease(clamp((u - .6) / .4, 0, 1)), last = flImgs[FL.n];
+      const wA = ease(clamp((u - .6) / .4, 0, 1)), last = flImgs[FL.n];                        // (последний кадр нужен для совмещения; пока он не загрузился — совмещения нет)
       if (wA > 0 && last && c.rect && book.offsetWidth) {
         const f = fit(last), r = c.rect, sx = f.ox + r[0] * f.iw * f.k, sy = f.oy + r[1] * f.ih * f.k, sw = (r[2] - r[0]) * f.iw * f.k, sh = (r[3] - r[1]) * f.ih * f.k, b = bookBox();
         const S = 1 + (b.w / sw - 1) * wA, scx = sx + sw / 2, scy = sy + sh / 2;
@@ -119,23 +128,53 @@
       } else cvS.style.transform = '';
     }
 
+    function setLive(live, hf) {                                               // герой и журнал — одна сцена (css/house.css, 3б): читалка встаёт на тот же экран под героем, холсты героя гаснут
+      reader.classList.toggle('is-live', live); story.classList.toggle('rd-live', live);
+      story.style.setProperty('--hf', hf.toFixed(3)); story.classList.toggle('rd-gone', live && hf >= .985);
+      story.style.setProperty('--hy', (live ? Math.max(0, Math.min(window.innerHeight * 1.2, -reader.getBoundingClientRect().top)) : 0).toFixed(1) + 'px');          // холсты героя стоят на месте, пока гаснут: сцена уезжает вверх, а они — вниз на столько же
+    }
     function readerUpdate() {
-      if (flat()) { reader.classList.add('is-flat'); reader.style.setProperty('--ra', '1'); reader.style.setProperty('--fu', '1'); if (s === 0 && p === 0) render(1, {instant: true, noScroll: true}); return; }
+      if (flat()) { reader.classList.add('is-flat'); reader.style.setProperty('--ra', '1'); reader.style.setProperty('--fu', '1'); setLive(false, 0); if (s === 0 && p === 0) render(1, {instant: true, noScroll: true}); return; }
       reader.classList.remove('is-flat');
-      const t = readerT(), open = phone() ? .5 : RD.open, fu = ease(clamp(t / open, 0, 1)), ra = clamp((fu - .86) / .14, 0, 1);
+      const rr = reader.getBoundingClientRect(), t = readerT(), open = phone() ? .5 : RD.open, fu = ease(clamp(t / open, 0, 1)), ra = clamp((fu - .86) / .14, 0, 1);
       if (t > 0 && !flStarted) loadFlight();
+      if (phone()) setLive(false, 0); else setLive(rr.top < -1, ease(clamp(t / .05, 0, 1)));
       reader.style.setProperty('--fu', fu.toFixed(4)); reader.style.setProperty('--ra', ra.toFixed(4));
       drawFlight(fu);
       if (phone()) { const target = ra > .94 ? Math.max(s, 1) : 0; if (target !== s && !(s > 0 && target > 0)) render(target, {noScroll: target === 0, instant: true}); return; }
       setP(pOf(t));
     }
-    function toState(v, o) {                                                   // прокрутить страницу так, чтобы журнал стоял на развороте v
+
+    /* ---------- автоматический плавный ход страницы: клик по «Откройте журнал», «Далее/Назад», оглавление, список разделов.
+       Страницу ведёт одна кривая (rAF, по реальному времени кадра), журнал и камера считаются от прокрутки так же, как при колесе, — лист поворачивается тем же способом ---------- */
+    let glideRaf = 0, goal = null;
+    const eIO = x => x < .5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2;           // долгий ход: мягкий старт и мягкая остановка
+    const eSoft = x => .5 * x + .5 * x * x * (3 - 2 * x);                                // листание: почти равномерно — лист успевает повернуться на виду
+    const glideStop = () => { if (glideRaf) { cancelAnimationFrame(glideRaf); glideRaf = 0; } goal = null; };
+    function glide(y, g) {
+      const mx = Math.max(0, document.documentElement.scrollHeight - window.innerHeight); y = Math.round(clamp(y, 0, mx));
+      const y0 = window.pageYOffset, dist = y - y0; if (glideRaf) { cancelAnimationFrame(glideRaf); glideRaf = 0; }
+      if (Math.abs(dist) < 2) { goal = null; return; }
+      const far = Math.abs(dist) > window.innerHeight * 1.2, dur = clamp(1050 + Math.abs(dist) / window.innerHeight * 330, 1200, 4200), ease = far ? eIO : eSoft; let t0 = 0;
+      goal = g === undefined ? null : g;
+      const frame = ts => {
+        if (!t0) t0 = ts; const k = clamp((ts - t0) / dur, 0, 1);
+        window.scrollTo({top: y0 + dist * ease(k), behavior: 'instant'}); readerUpdate();
+        if (k < 1) glideRaf = requestAnimationFrame(frame); else { glideRaf = 0; goal = null; window.scrollTo({top: y, behavior: 'instant'}); readerUpdate(); }
+      };
+      glideRaf = requestAnimationFrame(frame);
+    }
+    ['wheel', 'touchstart'].forEach(ev => on(window, ev, glideStop, {passive: true}));          // рука на колесе или экране — автоход уступает
+    on(window, 'keydown', e => { if (glideRaf && /^(ArrowUp|ArrowDown|PageUp|PageDown|Home|End| )$/.test(e.key) && !(e.target && e.target.closest && e.target.closest('#mag'))) glideStop(); });
+    on(window, 'pointerdown', e => { if (e.target === document.documentElement) glideStop(); });         // полоса прокрутки
+
+    function toState(v, o) {                                                   // вести страницу так, чтобы журнал встал на разворот v
       v = clamp(v, 1, N - 1); const b = readerBox();
       const t = v <= 1 ? (RD.open + RD.from) / 2 : RD.from + (v - 1) / (N - 2) * RD.span, y = Math.round(b.top + b.total * t);
-      const far = Math.abs(y - window.pageYOffset) > window.innerHeight * 3.2;
-      window.scrollTo({top: y, behavior: (o && o.instant) || reduce() || far ? 'instant' : 'smooth'});
+      if ((o && o.instant) || reduce()) { glideStop(); jump(y); readerUpdate(); return; }
+      glide(y, v);
     }
-    const step = d => { track('house_magazine_flip', {page: s + d}); if (flat() || phone()) render(s + d); else toState(s + d); };
+    const step = d => { const base = goal !== null ? goal : s; track('house_magazine_flip', {page: base + d}); if (flat() || phone()) render(s + d); else toState(base + d); };
 
     function go(id, o) {                                                       // к развороту комнаты: те же адреса #room-…, что и раньше
       o = o || {}; const v = stateOfRoom(id);
@@ -145,7 +184,7 @@
     }
     function hall(o) {
       o = o || {};
-      jump(hallY());
+      glideStop(); jump(hallY());
       const f = $('.mag-prev'); if (f) setTimeout(() => { try { f.focus({preventScroll: true}); } catch (e) {} }, 60);
       if (!o.fromHash) { try { history.replaceState(history.state, '', '#hall'); } catch (e) {} }
       track('house_hall', {via: o.via || 'link'});
@@ -165,8 +204,8 @@
       if (t.hasAttribute('data-mag-page')) { e.preventDefault(); const v = parseInt(t.getAttribute('data-mag-page'), 10); track('house_magazine_toc', {page: v}); if (flat() || phone()) render(v); else toState(v); return; }
       if (t.hasAttribute('data-house-go')) { e.preventDefault(); go(t.getAttribute('data-house-go'), {via: t.closest('.hall-rooms') ? 'hall-list' : 'link'}); return; }
       if (t.hasAttribute('data-house-mag')) {                                                  // журнал на столике: сцена «подъезжает» к нему и раскрывает
-        e.preventDefault(); track('house_magazine_open', {from: 'table', page: 1});
-        if (flat()) { jump(readerBox().top); render(1, {instant: true, noScroll: true}); } else if (phone()) { jump(readerBox().top + readerBox().total * .6); } else toState(1);
+        e.preventDefault(); track('house_magazine_open', {from: t.getAttribute('data-from') || 'table', page: 1});
+        if (flat()) { jump(readerBox().top); render(1, {instant: true, noScroll: true}); } else if (phone()) { jump(readerBox().top + readerBox().total * .6); } else toState(1);          // ПК: камера сама плавно летит к журналу
       }
     });
     on(mag, 'keydown', e => {

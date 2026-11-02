@@ -478,6 +478,17 @@ void main() {
       gl.bindVertexArray(null);
       return true;
     }
+    /* где шар на экране: центр и радиус в долях холста (x вправо, y вниз, r — доля высоты) — по той же камере и тем же формулам, что и в шейдере шара; null — шара в кадре нет */
+    function sphereScreen() {
+      if (!cfg.sphere || !W || !H) return null;
+      const c = cfg.sphere.c, R = cfg.sphere.r, p = camL.pos, d = [c[0] - p[0], c[1] - p[1], c[2] - p[2]];
+      const dot = (u, v) => u[0] * v[0] + u[1] * v[1] + u[2] * v[2], df = dot(d, camL.f);
+      if (df < 0.3) return null;
+      const cb = W / H, cvx = Math.max(1, fAspect / cb), cvy = Math.max(1, cb / fAspect), kt = 2 * camL.lens / 36;
+      const nx = dot(d, camL.r) / df * kt * cvx / asp[0], ny = dot(d, camL.u) / df * kt * cvy / asp[1];
+      const dist = Math.sqrt(dot(d, d)), ang = Math.asin(Math.min(0.99, R / dist));
+      return {x: (nx + 1) / 2, y: 1 - (ny + 1) / 2, r: Math.tan(ang) * kt * cvy / asp[1] / 2};
+    }
     function setSphereTex(a, n) {
       if (!P4 || dead) return false;
       const mk2 = img => { const t = gl.createTexture(); gl.bindTexture(gl.TEXTURE_2D, t);
@@ -564,7 +575,7 @@ void main() {
       if (ibo) gl.deleteBuffer(ibo); [P0, P1, P2, P3, P4].forEach(q => q && gl.deleteProgram(q.p));
       if (!keepContext) { try { const ext = gl.getExtension('WEBGL_lose_context'); if (ext) ext.loseContext(); } catch (e) { /* — */ } }
     }
-    return {gl, setSize, setKey, setKeyShared, dropKey, hasKey, setLow, dropLow, hasLow, plan, draw, drawSphere, setSphereTex, setSphere, destroy, setGridScale, get sphereReady() { return !!(P4 && sph.ready); }, get hasSphere() { return !!P4; }, camAt: p => track.at(p, {}), keys, get size() { return [W, H]; }};
+    return {gl, setSize, setKey, setKeyShared, dropKey, hasKey, setLow, dropLow, hasLow, plan, draw, drawSphere, sphereScreen, setSphereTex, setSphere, destroy, setGridScale, get sphereReady() { return !!(P4 && sph.ready); }, get hasSphere() { return !!P4; }, camAt: p => track.at(p, {}), keys, get size() { return [W, H]; }};
   }
 
 
