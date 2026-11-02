@@ -43,21 +43,23 @@
     /* ---------- журнал: p — «сколько листов перевёрнуто» (дробное — лист в движении); s — ближайший целый разворот ---------- */
     let s = 0, p = 0, current = null;
     const inertOf = (el, onn) => { if ('inert' in el) el.inert = onn; else $$('a,button', el).forEach(f => { if (onn) f.setAttribute('tabindex', '-1'); else f.removeAttribute('tabindex'); }); el.setAttribute('aria-hidden', onn ? 'true' : 'false'); };
-    const fs = leaves.map(() => -1);
+    const fs = leaves.map(() => -1), faces = leaves.map(l => [$('.front', l), $('.back', l)]), cache = {};
+    const setVar = (el, k, v) => { const c = cache[k] || (cache[k] = new Map()); if (c.get(el) === v) return; c.set(el, v); el.style.setProperty(k, v); };          // то же значение второй раз не пишем: каждая запись пользовательского свойства — пересчёт стилей поддерева
     function setP(v) {
       v = clamp(v, 0, N - 1); p = v;
+      let sr = 0, sl = 0;
       leaves.forEach((l, k) => {
         const f = clamp(v - k, 0, 1), q = Math.round(f * 1000) / 1000;
         if (q === fs[k]) return; fs[k] = q;
-        l.style.setProperty('--f', q.toFixed(3));
-        l.style.setProperty('--lt', Math.sin(Math.PI * q).toFixed(3));                       // «подъём» листа в движении: тень и приподнятость
+        const lt = Math.sin(Math.PI * q), qs = q.toFixed(3), ls = lt.toFixed(3);
+        l.style.setProperty('--f', qs); l.style.setProperty('--lt', ls);                      // --f/--lt объявлены через @property без наследования (css/house.css): стороны листа получают их напрямую, а страницы внутри — нет
+        for (const fc of faces[k]) { fc.style.setProperty('--f', qs); fc.style.setProperty('--lt', ls); }
         l.classList.toggle('is-flipped', q > .5);
         l.classList.toggle('is-turning', q > 0 && q < 1);
       });
-      { let sr = 0, sl = 0;                                                                   // тень поднятого листа на страницу под ним: пока лист стоит над правой стопкой — на правую, за серединой — на левую
-        for (let k = 0; k < N; k++) { const f = clamp(v - k, 0, 1); if (f > 0 && f < 1) { const lt = Math.sin(Math.PI * f); sr = Math.max(sr, lt * clamp((.64 - f) / .3, 0, 1)); sl = Math.max(sl, lt * clamp((f - .36) / .3, 0, 1)); } }
-        if (scroller) { scroller.style.setProperty('--sr', sr.toFixed(3)); scroller.style.setProperty('--sl', sl.toFixed(3)); } }
-      if (book) book.style.setProperty('--bx', (-.5 * (1 - Math.min(1, v))).toFixed(3));       // закрытый журнал стоит по центру, раскрытый — разворотом
+      for (let k = 0; k < N; k++) { const f = clamp(v - k, 0, 1); if (f > 0 && f < 1) { const lt = Math.sin(Math.PI * f); sr = Math.max(sr, lt * clamp((.64 - f) / .3, 0, 1)); sl = Math.max(sl, lt * clamp((f - .36) / .3, 0, 1)); } }
+      if (scroller) { setVar(scroller, '--sr', sr.toFixed(3)); setVar(scroller, '--sl', sl.toFixed(3)); }
+      if (book) setVar(book, '--bx', (-.5 * (1 - Math.min(1, v))).toFixed(3));       // закрытый журнал стоит по центру, раскрытый — разворотом
       const ns = Math.round(v);
       if (ns !== s || !book.hasAttribute('data-s')) setS(ns);
     }
@@ -87,7 +89,7 @@
     /* ---------- пролёт камеры: кадры от зала к журналу, проигрываются прокруткой ---------- */
     const cvS = $('.hr-seq', reader), poster = $('.hr-bg img', reader);
     let FL = null; try { FL = JSON.parse(reader.getAttribute('data-flight') || 'null'); } catch (e) {}
-    let flImgs = [], flLoaded = 0, flStarted = false;
+    let flImgs = [], flLoaded = 0, flStarted = false, fdrawn = -1;
     const flCfg = () => FL ? (phone() ? FL.mobile : FL.desktop) : null;
     function loadFlight() {
       const c = flCfg(); if (flStarted || !c || !cvS || reduce()) return;
@@ -101,7 +103,7 @@
           const i = order[k++], im = new Image(); act++; im.decoding = 'async';
           im.onload = im.onerror = () => {
             act--;
-            if (im.naturalWidth) { flImgs[i] = im; flLoaded++; try { if (im.decode) im.decode().catch(() => {}); } catch (e) {} if (flLoaded === need) { reader.classList.add('has-seq'); } readerUpdate(true); }
+            if (im.naturalWidth) { flImgs[i] = im; flLoaded++; fdrawn = -1; try { if (im.decode) im.decode().catch(() => {}); } catch (e) {} if (flLoaded === need) { reader.classList.add('has-seq'); } readerUpdate(true); }
             pump();
           };
           im.src = c.dir + String(i).padStart(3, '0') + '.' + (FL.ext || 'webp');
@@ -130,10 +132,13 @@
       } else cvS.style.transform = '';
     }
 
+    const lv = {live: null, gone: null, hf: '', hy: ''};
     function setLive(live, hf) {                                               // герой и журнал — одна сцена (css/house.css, 3б): читалка встаёт на тот же экран под героем, холсты героя гаснут
-      reader.classList.toggle('is-live', live); story.classList.toggle('rd-live', live);
-      story.style.setProperty('--hf', hf.toFixed(3)); story.classList.toggle('rd-gone', live && hf >= .985);
-      story.style.setProperty('--hy', (live ? Math.max(0, Math.min(window.innerHeight * 1.2, -reader.getBoundingClientRect().top)) : 0).toFixed(1) + 'px');          // холсты героя стоят на месте, пока гаснут: сцена уезжает вверх, а они — вниз на столько же
+      if (lv.live !== live) { lv.live = live; reader.classList.toggle('is-live', live); story.classList.toggle('rd-live', live); }
+      const hfs = hf.toFixed(3), gone = live && hf >= .985, hys = (live ? Math.max(0, Math.min(window.innerHeight * 1.2, -reader.getBoundingClientRect().top)) : 0).toFixed(1) + 'px';
+      if (lv.hf !== hfs) { lv.hf = hfs; story.style.setProperty('--hf', hfs); }
+      if (lv.gone !== gone) { lv.gone = gone; story.classList.toggle('rd-gone', gone); }
+      if (lv.hy !== hys && (live || lv.hy !== '0.0px')) { lv.hy = hys; story.style.setProperty('--hy', hys); }          // холсты героя стоят на месте, пока гаснут: сцена уезжает вверх, а они — вниз на столько же (в журнале, когда героя не видно, не пишем: это пересчёт стилей всей сцены героя)
     }
     function readerUpdate() {
       if (flat()) { reader.classList.add('is-flat'); reader.style.setProperty('--ra', '1'); reader.style.setProperty('--fu', '1'); setLive(false, 0); if (s === 0 && p === 0) render(1, {instant: true, noScroll: true}); return; }
@@ -141,8 +146,9 @@
       const rr = reader.getBoundingClientRect(), t = readerT(), open = phone() ? .5 : RD.open, hold = phone() ? 0 : RD.hold, fu = ease(clamp((t - hold) / (open - hold), 0, 1)), ra = clamp((fu - .86) / .14, 0, 1);
       if (t > 0 && !flStarted) loadFlight();
       if (phone()) setLive(false, 0); else setLive(rr.top < -1, ease(clamp(t / .05, 0, 1)));
-      reader.style.setProperty('--fu', fu.toFixed(4)); reader.style.setProperty('--ra', ra.toFixed(4));
-      drawFlight(fu);
+      setVar(reader, '--fu', fu.toFixed(4)); setVar(reader, '--ra', ra.toFixed(4));
+      if (fu < 1 || fdrawn < 1) drawFlight(fu);                                   // дальше пролёта (журнал на экране) кадр уже стоит и не меняется — холст не перерисовываем
+      fdrawn = fu;
       if (phone()) { const target = ra > .94 ? Math.max(s, 1) : 0; if (target !== s && !(s > 0 && target > 0)) render(target, {noScroll: target === 0, instant: true}); return; }
       setP(pOf(t));
     }
@@ -171,7 +177,7 @@
     /* колесо в журнале листает как кнопка «Далее»: один небольшой прокрут — один разворот (лист поворачивается сам, ≈ 1,2 с), а не 3–4 прокрута подряд.
        Жест — серия событий колеса с паузами меньше 90 мс (у трекпада — вместе с инерцией): за жест листается один разворот. Край журнала (первый/последний разворот) колесо не перехватывает:
        вверх идёт обратный пролёт камеры, вниз — прокрутка к подвалу. До журнала и на телефоне — обычная прокрутка */
-    let wAt = 0, wAcc = 0, wDone = false;
+    let wAt = 0, wAcc = 0, wStepAt = 0, wFirst = true;
     on(window, 'wheel', e => {
       if (e.ctrlKey || e.defaultPrevented || flat() || phone() || !reader.classList.contains('is-live') || Math.abs(e.deltaX) > Math.abs(e.deltaY)) return;
       const t = readerT(); if (t < RD.open - .002 || t > RD.from + RD.span + .02) return;
@@ -180,10 +186,12 @@
       const dir = dy > 0 ? 1 : -1, base = goal !== null ? goal : s;
       if ((dir > 0 && base >= N - 1) || (dir < 0 && base <= 1)) return;
       e.preventDefault(); e.__houseStep = true;
-      const now = performance.now(); if (now - wAt > 90) { wAcc = 0; wDone = false; } wAt = now;
-      if (wDone) return;
-      wAcc += dy; if (Math.abs(wAcc) < 14) return;
-      wDone = true; wAcc = 0;
+      const now = performance.now(); if (now - wAt > 90) { wAcc = 0; wFirst = true; } wAt = now;
+      if (wAcc * dy < 0) wAcc = 0; wAcc += dy;
+      /* первый разворот жеста — от небольшого прокрута; если крутят дальше (быстрая прокрутка) — следующий не раньше чем через 380 мс (лист успевает повернуться) и только от «живых» событий (хвост инерции трекпада затухает и новых разворотов не листает) */
+      if (wFirst) { if (Math.abs(wAcc) < 14) return; wFirst = false; }
+      else if (now - wStepAt < 380 || Math.abs(wAcc) < 90 || Math.abs(dy) < 20) return;
+      wStepAt = now; wAcc = 0;
       if (A.motion && A.motion.cancelSmooth) A.motion.cancelSmooth();
       step(dir);
     }, {passive: false, capture: true});
@@ -213,12 +221,19 @@
       track('house_hall', {via: o.via || 'link'});
     }
 
-    let ticking = false;
+    let ticking = false, snapT = 0;
     function onScroll() {
-      if (ticking) return; ticking = true;
-      requestAnimationFrame(() => { ticking = false; readerUpdate(); });
+      if (!ticking) { ticking = true; requestAnimationFrame(() => { ticking = false; readerUpdate(); }); }
+      clearTimeout(snapT); snapT = setTimeout(snapCheck, 170);
     }
-    on(window, 'scroll', onScroll, {passive: true}); on(window, 'resize', onScroll, {passive: true});
+    /* прокрутка остановилась посередине поворота (инерция колеса, полоса прокрутки, клавиши) — лист доворачивается до ближайшего разворота сам, как при «Далее»: страница не «застревает» на полустранице */
+    function snapCheck() {
+      if (glideRaf || window.__HOUSE_SNAP === false || flat() || phone() || !reader.classList.contains('is-live')) return;          // __HOUSE_SNAP === false — только для проверок точных промежуточных положений
+      const t = readerT(); if (t < RD.from - .005 || t > RD.from + RD.span + .005) return;
+      const v = clamp(Math.round(p), 1, N - 1);
+      if (Math.abs(p - v) > .03) toState(v);
+    }
+    on(window, 'scroll', onScroll, {passive: true}); on(window, 'resize', () => { fdrawn = -1; onScroll(); }, {passive: true});
 
     /* ---------- события: клики, клавиатура, свайп ---------- */
     on(document, 'click', e => {
@@ -277,6 +292,9 @@
     }
     on(window, 'popstate', () => applyHash(false));
     if (location.hash) { const run = () => setTimeout(() => applyHash(true), 350); if (document.readyState === 'complete') run(); else on(window, 'load', run, {once: true}); }
+    /* фото страниц журнала лениво не ждём: к моменту первого поворота они загружены и разобраны (иначе лист при быстром листании «моргает» пустой страницей) */
+    const warm = () => $$('img', mag).forEach(im => { try { im.loading = 'eager'; if (im.decode) im.decode().catch(() => {}); } catch (e) {} });
+    if ('requestIdleCallback' in window) setTimeout(() => requestIdleCallback(warm, {timeout: 4000}), 2500); else setTimeout(warm, 3500);
     mag.removeAttribute('hidden');
     if (phone() || flat()) { setS(0); setP(0); } else setP(1);
     readerUpdate(); if ('requestIdleCallback' in window) setTimeout(() => requestIdleCallback(loadFlight), 1800); else setTimeout(loadFlight, 2500);

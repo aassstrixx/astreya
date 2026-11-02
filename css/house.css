@@ -44,7 +44,9 @@ body[data-page="home"]{--hs-paper:#f6f0e3;--hs-paper-2:#efe6d3;--hs-ink:#0b1a33;
 .leaves{position:absolute;inset:0;transform-style:preserve-3d;filter:drop-shadow(0 40px 38px rgba(20,12,4,.55))}
 .leaf{position:absolute;left:50%;top:0;width:50%;height:100%;transform-origin:left center;transform-style:preserve-3d;z-index:var(--zr);transform:translate3d(0,0,calc(var(--lt,0) * 48px)) rotateY(calc(var(--f,0) * -180deg));will-change:transform}
 .leaf.is-flipped{z-index:var(--zl)}
-.leaf.is-turning .face{filter:brightness(calc(1 - var(--lt,0) * .22))}          /* лист в движении темнеет — уходит от света */
+@property --f{syntax:"<number>";inherits:false;initial-value:0}          /* без наследования: запись --f/--lt листа не заставляет браузер пересчитывать стили всех элементов страницы внутри него (на быстром листании это и давало лаги) */
+@property --lt{syntax:"<number>";inherits:false;initial-value:0}
+/* лист в движении темнеет — уходит от света: тёмный слой в ::after стороны вместо filter (filter на всей стороне с фото — лишняя поверхность и перерисовка на каждом кадре) */
 .face{position:absolute;inset:0;overflow:hidden;backface-visibility:hidden;-webkit-backface-visibility:hidden;background:var(--hs-paper)}
 .face.back{transform:rotateY(180deg)}
 .face::before{content:"";position:absolute;inset:0;background:url(../assets/bg/stone-grain.webp) 0 0/420px 420px;opacity:.10;pointer-events:none;z-index:3}
@@ -63,9 +65,9 @@ body[data-page="home"]{--hs-paper:#f6f0e3;--hs-paper-2:#efe6d3;--hs-ink:#0b1a33;
   .leaves::before{left:50%;background:linear-gradient(90deg,rgba(18,10,4,.5),rgba(18,10,4,.2) 42%,rgba(18,10,4,0) 86%);opacity:var(--sr,0)}
   .leaves::after{left:0;background:linear-gradient(270deg,rgba(18,10,4,.5),rgba(18,10,4,.2) 42%,rgba(18,10,4,0) 86%);opacity:var(--sl,0)}
   .face.front::after,.face.back::after{inset:0;width:auto}
-  .face.front::after{background:linear-gradient(90deg,rgba(60,40,18,.28),rgba(60,40,18,0)) 0 0/14% 100% no-repeat,
+  .face.front::after{background:linear-gradient(rgba(24,14,6,calc(var(--lt,0) * .22)),rgba(24,14,6,calc(var(--lt,0) * .22))),linear-gradient(90deg,rgba(60,40,18,.28),rgba(60,40,18,0)) 0 0/14% 100% no-repeat,
     linear-gradient(98deg,rgba(255,250,238,0) calc(var(--f,0) * 200% - 26%),rgba(255,250,238,calc(var(--lt,0) * .42)) calc(var(--f,0) * 200%),rgba(255,250,238,0) calc(var(--f,0) * 200% + 26%))}
-  .face.back::after{background:linear-gradient(270deg,rgba(60,40,18,.28),rgba(60,40,18,0)) 100% 0/14% 100% no-repeat,
+  .face.back::after{background:linear-gradient(rgba(24,14,6,calc(var(--lt,0) * .22)),rgba(24,14,6,calc(var(--lt,0) * .22))),linear-gradient(270deg,rgba(60,40,18,.28),rgba(60,40,18,0)) 100% 0/14% 100% no-repeat,
     linear-gradient(262deg,rgba(255,250,238,0) calc((1 - var(--f,0)) * 200% - 26%),rgba(255,250,238,calc(var(--lt,0) * .42)) calc((1 - var(--f,0)) * 200%),rgba(255,250,238,0) calc((1 - var(--f,0)) * 200% + 26%))}
 }
 .pg{position:absolute;inset:0;padding:calc(var(--pw) * .09) calc(var(--pw) * .085) calc(var(--pw) * .085);color:var(--hs-ink);font-size:calc(var(--pw) * .028)}

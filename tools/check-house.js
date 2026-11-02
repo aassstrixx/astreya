@@ -29,6 +29,7 @@ const t = (cond, name, info) => { if (cond) ok++; else bad.push(name + (info !==
 
   const open = async (w, h, o = {}) => {
     const ctx = await b.newContext({viewport: {width: w, height: h}, locale: 'ru-RU', isMobile: !!o.touch, hasTouch: !!o.touch, reducedMotion: o.reduce ? 'reduce' : 'no-preference', javaScriptEnabled: o.nojs ? false : true});
+    await ctx.addInitScript(() => { window.__HOUSE_SNAP = false; });          // доворот листа после остановки отключён: проверки ставят точные промежуточные положения (его проверка — отдельная, включает на время)
     await ctx.route(/^https:\/\/fonts\./, r => r.abort());
     if (!o.nojs) await ctx.addInitScript(() => { try { localStorage.setItem('astreya:consent', JSON.stringify({v: 1, a: false, t: Date.now()})); } catch (e) {} window.__ASTREYA_GL_GRID = 0.2; });
     const p = await ctx.newPage(), errs = [], fails = [];
@@ -158,6 +159,17 @@ const t = (cond, name, info) => { if (cond) ok++; else bad.push(name + (info !==
     t(w2.s === 3, 'серия событий колеса в одном жесте (трекпад, инерция) листает один разворот, а не три', {s: w2.s});
     await p.mouse.wheel(0, -100); await settle(p); const w3 = await rs(p);
     t(w3.s === 2, 'колесо вверх листает назад на один разворот', {s: w3.s});
+    { /* быстрая прокрутка не «застревает»: непрерывный поток колеса листает несколько разворотов (не чаще раза в 380 мс), а не один на весь жест */
+      await p.evaluate(() => window.Astreya.house.openMagazine(2)); await settle(p); const f0 = await rs(p);
+      await p.evaluate(() => new Promise(res => { let i = 0; const f = () => { document.body.dispatchEvent(new WheelEvent('wheel', {deltaY: 100, bubbles: true, cancelable: true})); if (++i < 16) setTimeout(f, 55); else res(); }; f(); }));
+      await settle(p); const f1 = await rs(p);
+      t(f1.s >= f0.s + 2, 'быстрая прокрутка колесом листает дальше (≥ 2 разворотов за непрерывный жест), страница не застревает', {from: f0.s, to: f1.s}); }
+    { /* прокрутку остановили посередине поворота листа — лист сам доворачивается до ближайшего разворота */
+      await p.evaluate(() => { window.__HOUSE_SNAP = true; window.Astreya.house.openMagazine(2); }); await settle(p);
+      const bx = await p.evaluate(() => { const r = document.getElementById('house-reader'); return {top: r.getBoundingClientRect().top + scrollY, tot: r.offsetHeight - innerHeight}; });
+      await p.evaluate(y => window.scrollTo({top: y, behavior: 'instant'}), bx.top + bx.tot * (.34 + .62 * 1.55 / 8)); await p.waitForTimeout(100);
+      const mid = await rs(p); await settle(p); await p.waitForTimeout(400); await settle(p); const fin = await rs(p);
+      t(mid.p > 2.3 && mid.p < 2.8 && Math.abs(fin.p - Math.round(fin.p)) < .02, 'остановка посередине поворота: лист доворачивается до ближайшего разворота сам', {mid: mid.p, fin: fin.p}); await p.evaluate(() => { window.__HOUSE_SNAP = false; }); }
     await p.evaluate(() => window.Astreya.house.openMagazine(1)); await settle(p); const e0 = await rs(p);
     await p.mouse.wheel(0, -100); await p.waitForTimeout(900); const e1 = await rs(p);
     t(e0.s === 1 && e1.t < e0.t - .001, 'на первом развороте колесо вверх не перехвачено: страница идёт назад к пролёту камеры', {e0: e0.t, e1: e1.t});
