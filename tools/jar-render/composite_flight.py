@@ -22,7 +22,7 @@ def main():
     os.makedirs(out, exist_ok=True)
     meta = json.load(open(os.path.join(src, 'flight.json')))
     n = meta['n']
-    for i in range(1, n + 1):
+    for i in range(0, n + 1):                                                                # 0 — вид зала в конце сцены героя (если он считался): постер
         bp = os.path.join(src, '%03d.png' % i); jp = os.path.join(src, 'jar', '%03d.png' % i); jj = jp.replace('.png', '.json')
         if not os.path.exists(bp):
             continue

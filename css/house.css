@@ -199,6 +199,7 @@ html:not(.js) .face::after{display:none}
 .hs-cue i::before{content:"";position:absolute;left:2px;top:1px;width:8px;height:8px;border-right:2px solid currentColor;border-bottom:2px solid currentColor;transform:rotate(45deg);animation:hsCue 1.9s cubic-bezier(.45,0,.35,1) infinite}
 @keyframes hsCue{0%{transform:translate3d(0,-5px,0) rotate(45deg);opacity:0}35%{opacity:1}75%,100%{transform:translate3d(0,5px,0) rotate(45deg);opacity:0}}
 .arch-story.is-house .js-stage::before{opacity:0}                                                /* нижний «мостик» к молочной странице нужен, только если под героем она; под героем журнал */
+body[data-page="home"] .hdr{transition:transform .6s var(--ease-out),background-color .55s var(--ease-out),border-color .55s var(--ease-out)}          /* шапка из прозрачной на герое в плотную на журнале переходит плавно, а не щелчком */
 @media (min-width:701px){
   html.js .arch-story.is-house:not(.is-static):not(.jar-off) ~ .house-reader{margin-top:-100lvh}
   html.js .arch-story.is-house:not(.is-static):not(.jar-off) ~ .house-reader:not(.is-live):not(.is-flat) .hr-stage{visibility:hidden}

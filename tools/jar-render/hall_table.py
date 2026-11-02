@@ -609,12 +609,12 @@ def flight(argv):
     cam = S['cam']; sc = bpy.context.scene
     from mathutils import Matrix
     H.set_layer('all'); sc.render.use_border = False
-    for i in range(1, n + 1):
+    for i in range(int(os.environ.get('ZONE_FLIGHT_START', 1)), n + 1):                              # ZONE_FLIGHT_START=0 — ещё и нулевой кадр (вид зала в конце сцены героя): из него собирается постер
         path = os.path.abspath(os.path.join(outdir, '%03d.png' % i))
         w = i / float(n); e = sm(w)
         if os.path.exists(path) and i < n:
             continue
-        if i > int(os.environ.get('ZONE_FLIGHT_MAX', n)) and i < n:                                    # перерисовка только начала пролёта (где видна ваза)
+        if i > int(os.environ.get('ZONE_FLIGHT_MAX', n)) and (i < n or os.environ.get('ZONE_FLIGHT_NO_LAST') == '1'):                                    # перерисовка только начала пролёта (где видна ваза)
             continue
         pos = pos0.lerp(pos1, e)
 
