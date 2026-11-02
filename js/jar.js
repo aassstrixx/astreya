@@ -72,7 +72,7 @@
     const perfRing = new Float32Array(240); let perfN = 0;
     let dirSign = 1;
 
-    /* ---- живой шар: сам медленно вращается (≈ 7,5°/с, 60 fps); на курсор не реагирует; пока страница прокручивается — стоит на месте (js/jar-gl.js рисует его поверх кадра зала с учётом глубины) ---- */
+    /* ---- живой шар: вращается сам (≈ 7,5°/с, 60 fps) только в статике — на финальном экране героя с текстом (cp ≥ 0,995); на курсор не реагирует; во всей скролл-анимации (и когда её остановили посередине) стоит на месте: раньше вращение продолжалось на паузах и баночка подлагивала от лишних проходов шара (js/jar-gl.js рисует его поверх кадра зала с учётом глубины) ---- */
     const reduceMQ = window.matchMedia('(prefers-reduced-motion: reduce) and (min-width: 100000px)');
     const sph = {yaw: 0.6, pitch: -0.12, hx: 0, hy: 0, lx: 0, ly: 0, sy: -1, raf: 0, last: 0, view: false, fed: false};
     const SPH_IDLE = 0.13;                                                   // ≈ 7,5°/с — собственное вращение
@@ -86,7 +86,7 @@
     function sphPush() { if (hall) hall.setSphere(sphMat(), sph.lx, sph.ly); }
     /* шаг по времени кадра (60 fps: dt — реальное время между кадрами, всё считается по нему, а не по числу кадров). От курсора шар не зависит — ни поворота, ни света (по решению заказчика) */
     function sphStep(dt) { sph.yaw += SPH_IDLE * dt; sphPush(); }
-    function sphWanted() { return !!hall && hall.sphereReady && sph.view && !document.hidden && cp > 0.3 && !reduceMQ.matches && !root.classList.contains('rd-live') && !document.documentElement.classList.contains('anim-off'); }
+    function sphWanted() { return !!hall && hall.sphereReady && sph.view && !document.hidden && cp >= 0.995 && !reduceMQ.matches && !root.classList.contains('rd-live') && !document.documentElement.classList.contains('anim-off'); }
     function sphLoop(t) {
       sph.raf = 0;
       if (!sphWanted() || dead) { sph.last = 0; return; }

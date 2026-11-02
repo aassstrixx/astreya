@@ -238,10 +238,15 @@ if (!J || !J.enabled || !A || !A.enabled) { console.log('Первый экран
     const sp0 = await p.evaluate(() => { const s = window.Astreya.jar.arch.state(); return s.sphere; });
     ok(!camD.sphere3d || (sp0 && sp0.ready), 'живой шар: карты загружены, шар включён', sp0);
     if (!mobile && camD.sphere3d) {
-      const sh1 = await p.evaluate(() => { const s = window.Astreya.jar.arch.state().sphere; return {yaw: s.yaw}; });
-      await p.mouse.move(W * 0.15, H * 0.8); await p.mouse.move(W * 0.2, H * 0.78); await wait(1300);
+      /* в стадии скролл-анимации (даже если прокрутку остановили посередине) шар стоит на месте — иначе лишние проходы шара на паузах давали подлагивание баночки; вращается только в статике, на экране героя с текстом */
+      const sh1 = await p.evaluate(() => window.Astreya.jar.arch.state().sphere.yaw);
+      await p.mouse.move(W * 0.15, H * 0.8); await p.mouse.move(W * 0.2, H * 0.78); await wait(1500);
       const sp1 = await p.evaluate(() => window.Astreya.jar.arch.state().sphere);
-      ok(sp1.cur[0] > -0.01 && sp1.cur[0] < 0.01 && Math.abs(sp1.yaw - sh1.yaw) > 0.02, 'живой шар: вращается сам, а курсор на него не действует (свет и угол не следуют за мышью)', {sh1, sp1});
+      ok(Math.abs(sp1.yaw - sh1) < 0.005 && sp1.cur[0] === 0 && !sp1.running, 'живой шар: пока идёт скролл-анимация (прокрутку остановили на 0,97) шар не вращается, цикл шара не работает, курсор на него не действует', {sh1, sp1});
+      await at(p, g, 1.0, 2500);
+      const sh2 = await p.evaluate(() => window.Astreya.jar.arch.state().sphere.yaw); await wait(1300);
+      const sp2 = await p.evaluate(() => window.Astreya.jar.arch.state().sphere);
+      ok(sp2.running && sp2.yaw - sh2 > 0.02, 'живой шар: на экране героя с текстом (статика) вращается сам, на курсор не реагирует', {sh2, sp2});
     }
     await shot(p, `arch-97-final-${mobile ? 'phone' : 'desktop'}`);
 

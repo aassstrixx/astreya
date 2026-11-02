@@ -176,7 +176,9 @@ const t = (cond, name, info) => { if (cond) ok++; else bad.push(name + (info !==
     else {
       const seq = []; for (let i = 0; i < 5; i++) { await p.evaluate(() => window.scrollBy({top: -25, behavior: 'instant'})); await p.waitForTimeout(50); seq.push((await sp()).yaw); }
       t(Math.max(...seq) - Math.min(...seq) < .004, 'во время прокрутки шар не двигается (угол не меняется)', seq);
-      await p.waitForFunction(y => window.Astreya.jar.arch.state().sphere.yaw > y, seq[4], {timeout: 20000}).catch(() => {}); const b = await sp(); t(b.run && b.yaw > seq[4], 'остановили прокрутку — шар снова вращается сам', {a: seq[4], b: b.yaw});
+      await p.waitForTimeout(1500); const b = await sp(); t(!b.run && Math.abs(b.yaw - seq[4]) < .004, 'прокрутку остановили посередине скролл-анимации — шар по-прежнему стоит (вращается только в статике, на экране героя с текстом)', {a: seq[4], b: b.yaw, run: b.run});
+      await p.evaluate(() => window.Astreya.house.hall()); await p.waitForTimeout(400); const c0 = (await sp()).yaw;
+      await p.waitForFunction(y => window.Astreya.jar.arch.state().sphere.yaw > y + .01, c0, {timeout: 25000}).catch(() => {}); const d = await sp(); t(d.run && d.yaw > c0 + .01, 'на экране героя с текстом (статика) шар вращается сам', {c0, d: d.yaw});
       await p.mouse.move(1060, 300); await p.mouse.move(1200, 330, {steps: 6}); await p.mouse.down(); await p.mouse.move(900, 330, {steps: 8}); await p.mouse.up(); await p.waitForTimeout(300);
       const c = await sp(); t(c.cur[0] === 0 && c.cur[1] === 0 && !(await p.evaluate(() => /sph-/.test(document.getElementById('arch-story').className))), 'курсор не вращает шар и не сдвигает свет: ни наведение, ни протяжка мышью не меняют шар (только собственное вращение)', c);
       await p.mouse.move(20, 20);
