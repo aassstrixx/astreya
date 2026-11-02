@@ -162,7 +162,7 @@ body[data-page="home"]{--hs-paper:#fbf7ec;--hs-paper-2:#f3ebd9;--hs-ink:#0b1a33;
 .pg-back{background:linear-gradient(160deg,#162744,#0b1a33);color:#f4ecda;display:grid;place-content:center;gap:1.4em;text-align:center}
 .mg-colophon{margin:0;font:600 .9em/1.6 var(--sans);letter-spacing:.14em;text-transform:uppercase;color:rgba(244,236,218,.7)}
 .pg-back .lgo{width:calc(var(--pw) * .3);margin:0 auto;opacity:.85}
-.mag-ctl{display:flex;justify-content:space-between;margin-top:18px}
+.mag-ctl{display:flex;justify-content:space-between;margin-top:18px;position:relative;z-index:50}          /* кнопки «Назад»/«Далее» всегда над листом: приподнятый лист в движении заходит за нижний край книги */
 .mag-ctl button{display:inline-flex;align-items:center;gap:10px;padding:12px 20px;border-radius:999px;border:0;background:rgba(255,250,238,.16);color:#fff;font:600 13px/1 var(--sans);letter-spacing:.06em;cursor:pointer;transition:background-color .25s,opacity .25s}
 .mag-ctl button:hover:not(:disabled){background:rgba(255,250,238,.3)}
 .mag-ctl button:disabled{opacity:.35;cursor:default}

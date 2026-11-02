@@ -43,7 +43,7 @@ const t = (cond, name, info) => { if (cond) ok++; else bad.push(name + (info !==
   };
   const noOverflow = p => p.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1);
   const rs = p => p.evaluate(() => window.Astreya.house.readerState());
-  const settle = async (p, ms) => { let last = -1, same = 0; const t0 = Date.now(); while (Date.now() - t0 < (ms || 9000)) { const y = await p.evaluate(() => Math.round(scrollY)); if (y === last) { if (++same >= 5) return; } else { same = 0; last = y; } await p.waitForTimeout(110); } await p.waitForTimeout(80); };          // автоход страницы (плавное листание) закончился: прокрутка стоит
+  const settle = async (p, ms) => { let last = -1, same = 0; const t0 = Date.now(); while (Date.now() - t0 < (ms || 9000)) { const y = await p.evaluate(() => Math.round(scrollY)); if (y === last && !(await p.evaluate(() => window.Astreya.house.busy && window.Astreya.house.busy()))) { if (++same >= 5) return; } else { if (y !== last) same = 0; last = y; } await p.waitForTimeout(110); } await p.waitForTimeout(80); };          // автоход страницы (плавное листание) закончился: прокрутка стоит
   const box = p => p.evaluate(() => { const r = document.getElementById('house-reader'), b = r.getBoundingClientRect(); return {top: b.top + scrollY, tot: r.offsetHeight - innerHeight}; });
   const at = async (p, f) => { const o = await box(p); await p.evaluate(y => window.scrollTo({top: y, behavior: 'instant'}), o.top + o.tot * f); await p.waitForTimeout(450); return rs(p); };
   const PL = (j, u) => .34 + .62 * (j + u) / (ROOMS.length + 1);                    // положение прокрутки: j — сколько разворотов после первого пройдено, u — доля пути внутри отрезка; см. RD и WIN в js/house.js (p = 1 + j + поворот)
