@@ -252,13 +252,14 @@
       glideRaf = requestAnimationFrame(frame);
     }
     /* в самое начало страницы (герой с баночкой): кнопка «В начало» и быстрая серия прокруток вверх. Ход один, плавный (косинусная кривая), 4,5–8,5 с: камера пролёта и герой едут назад на виду; пока идёт, колесо вверх его не обрывает */
+    let homeAt = 0;
     function home(via) {
       glideStop(); if (A.motion && A.motion.cancelSmooth) A.motion.cancelSmooth();
       track('house_magazine_home', {via: via || 'button'});
-      homing = true; glide(0, null, {dur: clamp(3200 + window.pageYOffset / window.innerHeight * 380, 4500, 8500), ease: x => .5 - .5 * Math.cos(Math.PI * x)});
+      homing = true; homeAt = performance.now(); glide(0, null, {dur: clamp(3200 + window.pageYOffset / window.innerHeight * 380, 4500, 8500), ease: x => .5 - .5 * Math.cos(Math.PI * x)});
       if (!glideRaf) homing = false;
     }
-    on(window, 'wheel', e => { if (e.__houseStep || (homing && e.deltaY < 0)) return; glideStop(); }, {passive: true});               // рука на колесе — автоход уступает (кроме колеса, которым листают журнал: оно само запускает следующий ход)
+    on(window, 'wheel', e => { if (e.__houseStep || (homing && e.deltaY < 0 && performance.now() - homeAt < 900)) return; glideStop(); }, {passive: true});          // хвост того же размаха колеса возврат не обрывает, а новое движение рукой (через ≈ 1 с) — обрывает: управление всегда возвращается               // рука на колесе — автоход уступает (кроме колеса, которым листают журнал: оно само запускает следующий ход)
     on(window, 'touchstart', glideStop, {passive: true});
     /* колесо в журнале ведёт листы вслед за рукой: скорость листания равна скорости прокрутки — медленно крутишь, лист поворачивается медленно, быстро — быстро. Прокрутка колеса переводится в «развороты»
        (≈ 150 пикселей колеса — один разворот), а страницу ведёт пружина с критическим затуханием по реальному времени кадра (60 fps): за один щелчок колеса — один разворот, за быстрый взмах — несколько. Рука остановилась —
@@ -282,8 +283,9 @@
       e.preventDefault(); e.__houseStep = true;
       if (A.motion && A.motion.cancelSmooth) A.motion.cancelSmooth();
       const now = performance.now();
-      /* быстрая серия вверх (≥ 2400 px и ≥ 8 событий за секунду — колесо мыши крутят подряд, трекпад сильно «бросили») — не листаем по развороту, а возвращаемся в самое начало */
-      if (dir < 0) { fq.push([now, -dy]); while (fq.length && now - fq[0][0] > 1000) fq.shift(); if (fq.length >= 8 && fq.reduce((a, q) => a + q[1], 0) >= 2400) { fq.length = 0; wg.t = now; wg.fired = true; home('wheel'); return; } } else fq.length = 0;
+      /* быстрая серия вверх: не меньше 10 «щелчков» колеса (по ≥ 90 px каждый) за 0,7 с — колесо мыши раскручено; обычный жест и трекпад (мелкие дельты, инерция) сюда не попадают, их листание не уносит в начало.
+         Возврат — тот же долгий ход, что у кнопки «В начало» */
+      if (dir < 0) { if (-dy >= 90) { fq.push([now, -dy]); while (fq.length && now - fq[0][0] > 700) fq.shift(); if (fq.length >= 10) { fq.length = 0; wg.t = now; wg.fired = true; home('wheel'); return; } } } else fq.length = 0;
       if (now - wg.t > GESTURE_GAP) wg.fired = false; wg.t = now;
       if (wg.fired || glideRaf) return;                                          // этот жест уже листнул разворот / лист ещё идёт
       wg.fired = true; step(dir);

@@ -273,7 +273,7 @@
       if (dead || key !== dirOf()) return;
       track = tr; if (FLY) flyCam = A.ArchGL.camTrack(tr);
       const fa = key === 'm' ? 9 / 16 : 16 / 9;
-      hall = A.ArchGL.createHall(cv, {track: tr, sphere: tr.sphere3d && ds.sa && ds.sn ? {c: tr.sphere3d.slice(0, 3), r: tr.sphere3d[3]} : null, phi: Phi, portrait: key === 'm', frameAspect: fa, grid: (key === 'm' ? [450, 800] : [960, 540]).map(v => Math.max(60, Math.round(v * (window.__ASTREYA_GL_GRID || 1)))), stretch: 0.4, preserve: PRESERVE,
+      hall = A.ArchGL.createHall(cv, {track: tr, sphere: tr.sphere3d && ds.sa && ds.sn ? {c: tr.sphere3d.slice(0, 3), r: tr.sphere3d[3]} : null, phi: Phi, portrait: key === 'm', frameAspect: fa, grid: (key === 'm' ? [450, 800] : [960, 540]).map(v => Math.max(60, Math.round(v * (window.__ASTREYA_GL_GRID || 1)))), stretch: 0.4, smoothBlend: FLY, preserve: PRESERVE,
         shadowFrom: LSH ? +(LSH.from && typeof LSH.from === 'object' ? LSH.from[key === 'm' ? 'mobile' : 'desktop'] : LSH.from) || 0 : 0, shadowAmount: LSH && LSH.amount !== undefined ? +LSH.amount : 1, contact: LSH && LSH.contact !== undefined ? +LSH.contact : 0.42,
         veil: LSH && +LSH.veil || 0, veilCut: LSH && +LSH.veilCut || 0});
       const rects = JR[key === 'm' ? 1 : 0];

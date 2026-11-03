@@ -555,7 +555,7 @@ void main() {
       gl.activeTexture(gl.TEXTURE1); gl.bindTexture(gl.TEXTURE_2D, fb[f1].color); gl.uniform1i(u.uCB, 1);
       gl.activeTexture(gl.TEXTURE2); gl.bindTexture(gl.TEXTURE_2D, fb[0].depth); gl.uniform1i(u.uDA, 2);
       gl.activeTexture(gl.TEXTURE3); gl.bindTexture(gl.TEXTURE_2D, fb[f1].depth); gl.uniform1i(u.uDB, 3);
-      gl.uniform2f(u.uRes, W, H); gl.uniform2f(u.uNF, NF[0], NF[1]); gl.uniform1f(u.uT, t);
+      gl.uniform2f(u.uRes, W, H); gl.uniform2f(u.uNF, NF[0], NF[1]); gl.uniform1f(u.uT, cfg.smoothBlend ? t * t * (3 - 2 * t) : t);          // пролёт: вес второго кадра идёт «ступенькой» (кубическая кривая): ближний ключ дольше держит картинку, дальний с его перепроекционной ошибкой (двоение краёв у близких предметов) не подмешивается раньше времени, на стыке ключей вес без излома
       gl.bindVertexArray(vao); gl.drawArrays(gl.TRIANGLES, 0, 3);
       for (const k of ['pos', 'f', 'r', 'u']) camL[k] = camT[k].slice(); camL.lens = camT.lens;
       lastP = {f1, useAA, sphereOn};
