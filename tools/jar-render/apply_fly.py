@@ -15,6 +15,7 @@
 
     python3 apply_fly.py [--zone /tmp/zone] [--F .30]
 
+Запечённая баночка: python3 bake_jar.py, затем --cdir <out>/c --zdir <out>/z --key0 <out>/key0.png --z0 <out>/z0.png (house.fly.bake).
 Пишет assets/house-hall/{ff,fz,fj}/, cam-f.json (дорожка, если лежит в зоне) и блок house.fly в data/redesign.json.
 """
 import json
@@ -40,10 +41,13 @@ def main():
     sched = json.load(open(s2 if os.path.exists(s2) else os.path.join(zone, 'fk2', 'sched.json')))['ws']        # sched2 — расписание, подогнанное по замеру ошибки (ключи гуще там, где перепроекция ошибается сильнее)
     old = json.load(open(os.path.join(zone, 'fk2', 'sched.json')))['ws']
     K = len(sched)
+    zdir, key0, z0 = opt('--zdir'), opt('--key0'), opt('--z0')                                          # запечённая баночка (bake_jar.py): глубина ключей 1…, цвет и глубина ключа 0
     cdir = opt('--cdir')                                                                                  # полный перерасчёт цвета (например, со стеклом другого вида): все ключи по номерам расписания sched2 лежат в этой папке
     def src(kind, j):                                                                                    # файл цвета/глубины ключа j: из первого расчёта (по совпадению w) или из дорасчёта (c2/z2, номер — по новому расписанию)
         if kind == 'c' and cdir:
             return os.path.join(cdir, '%03d.png' % j)
+        if kind == 'z' and zdir:
+            return os.path.join(zdir, '%03d.png' % j)
         for o, w0 in enumerate(old):
             if abs(w0 - sched[j]) < 2e-5:
                 return os.path.join(zone, 'fk2', kind, '%03d.png' % o)
@@ -58,12 +62,13 @@ def main():
     for sub in ('ff', 'fz', 'fj'):
         shutil.rmtree(os.path.join(A, sub), ignore_errors=True)
     # цвет: ключ 0 — файл последнего кадра зала, остальные кодируем (зерно 1,0, резкость 0,5 — как у героя)
-    hero_png = os.path.join(zone, 'bg_d_final3', '059.png')
+    hero_png = key0 or os.path.join(zone, 'bg_d_final3', '059.png')
     shutil.copyfile(hero_png, os.path.join(tmp, 'png', '000.png'))
     for k in range(1, K):
         shutil.copyfile(src('c', k), os.path.join(tmp, 'png', '%03d.png' % k))
     subprocess.check_call([sys.executable, os.path.join(HERE, 'encode_arch.py'), os.path.join(tmp, 'png'), os.path.join(A, 'ff'), '--size', '1920x1080', '--end', '1.0', '--q', '90'])
-    shutil.copyfile(os.path.join(A, 'd', '059.webp'), os.path.join(A, 'ff', '000.webp'))                  # ключ 0 — тот самый файл кадра зала
+    if not key0:
+        shutil.copyfile(os.path.join(A, 'd', '059.webp'), os.path.join(A, 'ff', '000.webp'))              # ключ 0 — тот самый файл кадра зала (с баночкой-спрайтом поверх); при запекании — кадр зала с баночкой внутри
     try:
         os.remove(os.path.join(A, 'p-ff.json'))                                                          # encode_arch пишет p-<папка>.json (положения кадров) — у пролёта их задаёт house.fly.p
     except OSError:
@@ -71,8 +76,11 @@ def main():
     # глубина: ключ 0 — глубина последнего кадра зала
     for k in range(1, K):
         shutil.copyfile(src('z', k), os.path.join(tmp, 'z', '%03d.png' % k))
+    if z0:
+        shutil.copyfile(z0, os.path.join(tmp, 'z', '000.png'))
     subprocess.check_call([sys.executable, os.path.join(HERE, 'encode_depth.py'), 'depth', os.path.join(tmp, 'z'), os.path.join(A, 'fz')])
-    shutil.copyfile(os.path.join(A, 'zd', '059.webp'), os.path.join(A, 'fz', '000.webp'))
+    if not z0:
+        shutil.copyfile(os.path.join(A, 'zd', '059.webp'), os.path.join(A, 'fz', '000.webp'))
     # баночка: один спрайт — спрайт последнего кадра зала (ключ 0)
     os.makedirs(os.path.join(A, 'fj'))
     shutil.copyfile(os.path.join(A, 'j', '059.webp'), os.path.join(A, 'fj', '000.webp'))
@@ -85,6 +93,8 @@ def main():
     meta = json.load(open(os.path.join(zone, 'fl_d72', 'flight.json')))
     fly = {'enabled': True, 'n': K, 'ext': 'webp', 'dir': 'assets/house-hall/ff/', 'depth': 'assets/house-hall/fz/', 'jar': 'assets/house-hall/fj/', 'cam': 'assets/house-hall/cam-f.json',
            'p': [round(w * F, 6) for w in sched], 'rects': [[round(v, 5) for v in jr]] * K, 'F': F, 'rect': meta['rect']}
+    if key0 and z0 and zdir:
+        fly['bake'] = True                                                                              # баночка запечена в ключи (bake_jar.py): живой спрайт в пролёте не рисуется
     bk = (d['house'].get('fly') or {}).get('book')                                                        # углы разворота журнала в мире (flykeys bookq): для живой книги в полёте — берём прежние, если не пересчитывали
     bj = os.path.join(zone, 'fk2', 'book.json')
     if os.path.exists(bj):

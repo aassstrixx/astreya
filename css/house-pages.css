@@ -354,7 +354,7 @@
 
 /* ===================================================================== */
 /* Чат Стеллы на развороте 12–13: переписка прокручивается, под ней подсказки и поле ввода */
-.mp-chat-log{display:flex;flex-direction:column;gap:.5em;height:15.6em;overflow-y:auto;overscroll-behavior:contain;scrollbar-width:none;scroll-behavior:smooth;margin:0 -.2em;padding:.15em .2em;transition:box-shadow .3s}
+.mp-chat-log{display:flex;flex-direction:column;gap:.5em;height:15.6em;overflow-y:auto;overscroll-behavior:contain;scrollbar-width:none;margin:0 -.2em;padding:.15em .2em;transition:box-shadow .3s}
 .mp-chat-log::-webkit-scrollbar{display:none}
 .mp-chat-log.is-sc{box-shadow:inset 0 .9em .8em -.8em rgba(20,12,4,.22)}
 .mp-chat-log>.mp-m{flex:none}
@@ -392,15 +392,13 @@ html:not(.js) .mp-chat-live{display:none}
 @media (hover:none){.mp-chat-in input{font-size:16px}}
 
 /* ===================================================================== */
-/* Живые мелочи страниц журнала: наведение, нажатие, въезд блоков при остановке листа. Только transform/opacity (без перерасчёта вёрстки); сдвиги — на целые пиксели, чтобы текст оставался резким */
-.pg-in>:not(.run):not(.pg-f):not(.fx){animation:mpRise .6s cubic-bezier(.2,.75,.25,1) backwards;animation-delay:var(--d,0ms)}
-@keyframes mpRise{from{opacity:0;transform:translate3d(0,10px,0)}to{opacity:1;transform:none}}
+/* Живые мелочи страниц журнала: наведение и нажатие. Только transform/opacity (без перерасчёта вёрстки); сдвиги — на целые пиксели, чтобы текст оставался резким */
 @media (hover:hover){
   .mg-toc b,.mg-toc i{transition:transform .3s cubic-bezier(.2,.8,.25,1),color .3s}
   .mg-toc button:hover b{transform:translate3d(2px,0,0);color:var(--hs-ink)}
   .mg-toc button:hover i{transform:translate3d(-2px,0,0);color:var(--hs-gold)}
-  .mp-logos a,.mp-bgal a,.mp-tch a,.mp-pc,.mp-prods a,.mp-ev,.mp-journey a,.mp-nws a,.mp-feat a,.mp-aud li,.mp-fmt li,.mp-steps3 li,.mp-grid4 li,.mp-path li,.mp-stat3 li,.mp-tasks a,.mp-rp{transition:transform .3s cubic-bezier(.2,.8,.25,1),box-shadow .3s,background-color .25s,filter .3s}
-  .mp-logos a:hover,.mp-logos a:focus-visible{transform:translate3d(0,-3px,0);filter:drop-shadow(0 .45em .4em rgba(58,38,16,.28))}
+  .mp-logos a,.mp-bgal a,.mp-tch a,.mp-pc,.mp-prods a,.mp-ev,.mp-journey a,.mp-nws a,.mp-feat a,.mp-aud li,.mp-fmt li,.mp-steps3 li,.mp-grid4 li,.mp-path li,.mp-stat3 li,.mp-tasks a,.mp-rp{transition:transform .3s cubic-bezier(.2,.8,.25,1),box-shadow .3s,background-color .25s}
+  .mp-logos a:hover,.mp-logos a:focus-visible{transform:translate3d(0,-2px,0)}          /* без filter/drop-shadow: на логотипах он давал серый «блюр» */
   .mp-bgal a:hover,.mp-bgal a:focus-visible{transform:translate3d(0,-3px,0)}
   .mp-bgal a:hover .mp-nw,.mp-bgal a:focus-visible .mp-nw{box-shadow:0 .9em 1.4em -.8em rgba(58,38,16,.75)}
   .mp-tch a:hover,.mp-tch a:focus-visible{transform:translate3d(0,-3px,0)}
@@ -418,8 +416,6 @@ html:not(.js) .mp-chat-live{display:none}
   .mp-nws a:hover,.mp-feat a:hover,.mp-nws a:focus-visible,.mp-feat a:focus-visible{transform:translate3d(0,-2px,0)}
   .mp-aud li:hover,.mp-fmt li:hover{transform:translate3d(0,-3px,0);background:rgba(176,142,78,.14);box-shadow:0 .7em 1.1em -.8em rgba(58,38,16,.55)}
   .mp-steps3 li:hover,.mp-grid4 li:hover,.mp-path li:hover,.mp-stat3 li:hover{transform:translate3d(0,-2px,0)}
-  .mp-steps3 li:hover .mp-ic,.mp-fmt li:hover .mp-ic{animation:mpWig .6s ease-in-out}
-  @keyframes mpWig{30%{transform:rotate(-8deg) scale(1.1)}65%{transform:rotate(6deg) scale(1.05)}}
   .mp-cta,.mp-ctas .btn,.mp-closing .btn{transition:transform .25s cubic-bezier(.2,.8,.25,1),box-shadow .25s,background-color .25s}
   .mp-cta:hover,.mp-ctas .btn:hover,.mp-closing .btn:hover{transform:translate3d(0,-2px,0);box-shadow:0 .8em 1.2em -.7em rgba(11,26,51,.7)}
   .mp-cta:active,.mp-ctas .btn:active{transform:translate3d(0,0,0)}
@@ -440,4 +436,4 @@ html:not(.js) .mp-chat-live{display:none}
   .mp-u,.mp-s>div{transition:transform .25s cubic-bezier(.2,.8,.25,1),box-shadow .25s}
   .mp-s>div:hover{box-shadow:0 .5em .9em -.7em rgba(58,38,16,.5)}
 }
-@media (prefers-reduced-motion:reduce) and (min-width:100000px){.pg-in>*,.mp-new{animation:none}}
+@media (prefers-reduced-motion:reduce) and (min-width:100000px){.mp-new{animation:none}}

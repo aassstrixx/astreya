@@ -43,7 +43,8 @@
   }
 
   function create(root) {
-    const FLY = root.hasAttribute('data-fly');               // второй экземпляр на странице-доме: пролёт камеры от зала к журналу (ключи пролёта вместо кадров героя); положение берёт у читалки (A.flyP), а не из прокрутки секции
+    const FLY = root.hasAttribute('data-fly');
+    const FLYBAKE = FLY && root.hasAttribute('data-fly-bake');            // баночка запечена в ключи пролёта (tools/jar-render/bake_jar.py): как камень на фоне, живой спрайт не рисуем               // второй экземпляр на странице-доме: пролёт камеры от зала к журналу (ключи пролёта вместо кадров героя); положение берёт у читалки (A.flyP), а не из прокрутки секции
     const stage = root.querySelector('.js-stage') || root.querySelector('.hr-stage');
     const cv = root.querySelector('.js-cv');
     const jcv = root.querySelector('.ar-jar-cv'), world = root.querySelector('.ar-world');
@@ -352,7 +353,7 @@
       lastDraw = {ka: pair.ka, kb: pair.kb, t: pair.t, single: !!pair.single};
       if (!firstDrawn) { firstDrawn = true; if (cp < 0.02 && !FLY) root.classList.add('ar-intro'); root.classList.add('ready'); }
       if (jar) {
-        const ok = jar.draw(pc, pair, {jk, lift, ground, halo, fixed: FLY ? 0 : -1, base: FLY}); lastJarOk = ok;
+        const ok = jar.draw(pc, pair, {jk, lift, ground, halo, fixed: FLY ? 0 : -1, base: FLY, skip: FLYBAKE}); lastJarOk = ok;
         if (FLY && A.flyOnDraw && flyCam && jar.proj) { try { A.flyOnDraw(pc, flyCam.view(pc), jar.proj); } catch (e) { /* — */ } }       // живая книга встаёт по той же камере, что и кадр
         if (ok && !jarShown) { jarShown = true; if (cp < 0.02 && !FLY) root.classList.add('ar-intro'); root.classList.add('jar-ready'); }
       }

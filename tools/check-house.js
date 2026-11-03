@@ -210,12 +210,18 @@ const t = (cond, name, info) => { if (cond) ok++; else bad.push(name + (info !==
       t(s5.s === 5 && y2 < 3, 'быстрая серия прокруток вверх (14 щелчков за 0,7 с) возвращает в самое начало страницы', {from: s5.s, y: y2});
       await p.evaluate(() => window.Astreya.house.openMagazine(5)); await settle(p); const s6 = await rs(p); await p.mouse.move(700, 450); await p.mouse.wheel(0, -100); await settle(p); const s7 = await rs(p);
       t(s6.s === 5 && s7.s === 4, 'обычный жест вверх по-прежнему листает назад на один разворот (в начало не уносит)', {from: s6.s, to: s7.s}); }
-    { /* вход на разворот со Стеллой: страницы «въезжают», переписка проигрывается по очереди и заканчивается полной перепиской; слои анимации после неё не остаются */
+    { /* журнал в сцене: верхней панели нет — ни на развороте, ни после прокрутки вверх (листаем назад), ни при прокрутке вниз */
+      const hb = () => p.evaluate(() => document.getElementById('hdr').getBoundingClientRect().bottom);
+      await p.evaluate(() => window.Astreya.house.openMagazine(5)); await settle(p); await p.waitForTimeout(800); const h1 = await hb();
+      await p.mouse.move(700, 450); await p.mouse.wheel(0, -100); await settle(p); await p.waitForTimeout(800); const h2 = await hb();
+      await p.mouse.wheel(0, 100); await settle(p); await p.waitForTimeout(800); const h3 = await hb();
+      t(h1 <= 1 && h2 <= 1 && h3 <= 1, 'в просмотре журнала верхней панели нет: ни на развороте, ни при прокрутке вверх, ни вниз', {h1, h2, h3}); }
+    { /* вход на разворот со Стеллой: переписка проигрывается по очереди и заканчивается полной перепиской; слои анимации после неё не остаются */
       await p.evaluate(() => window.Astreya.house.openMagazine(6)); await settle(p); await p.waitForTimeout(800);
-      const early = await p.evaluate(() => ({hid: document.querySelectorAll('.mp-chat-log .mp-hid').length, pgin: document.querySelectorAll('.pg-in').length}));
+      const early = await p.evaluate(() => ({hid: document.querySelectorAll('.mp-chat-log .mp-hid').length}));
       await p.waitForTimeout(7000);
-      const late = await p.evaluate(() => ({hid: document.querySelectorAll('.mp-chat-log .mp-hid').length, n: document.querySelectorAll('.mp-chat-log .mp-m').length, busy: document.querySelector('.mp-chat-in').classList.contains('is-busy'), pgin: document.querySelectorAll('.pg-in').length, anim: document.getAnimations().filter(a => /^(mpRise|mpPop)$/.test(a.animationName || '')).length}));
-      t(early.hid > 0 && early.pgin > 0 && late.hid === 0 && late.n === 4 && !late.busy && late.pgin === 0 && late.anim === 0, 'Стелла: при входе на разворот переписка проигрывается (реплики по очереди) и завершается полной перепиской; анимации страниц не остаются', {early, late}); }
+      const late = await p.evaluate(() => ({hid: document.querySelectorAll('.mp-chat-log .mp-hid').length, n: document.querySelectorAll('.mp-chat-log .mp-m').length, busy: document.querySelector('.mp-chat-in').classList.contains('is-busy'), anim: document.getAnimations().filter(a => /^mpPop$/.test(a.animationName || '')).length}));
+      t(early.hid > 0 && late.hid === 0 && late.n === 4 && !late.busy && late.anim === 0, 'Стелла: при входе на разворот переписка проигрывается (реплики по очереди) и завершается полной перепиской; анимации не остаются', {early, late}); }
     await p.evaluate(() => window.Astreya.house.openMagazine(1)); await settle(p);
     /* возврат из читалки к герою: вступительные анимации заставки (arBg — «наезд» фона с 1,05, arJar — проявление баночки) не перезапускаются */
     await p.evaluate(() => window.Astreya.house.hall()); await p.waitForTimeout(250);

@@ -755,6 +755,7 @@ void main() {
       gl.bindFramebuffer(gl.FRAMEBUFFER, null); gl.viewport(0, 0, W, H);
       gl.clearColor(0, 0, 0, 0); gl.clear(gl.COLOR_BUFFER_BIT);
       if (!pair) return false;
+      if (opt.skip) return true;                                                  // баночка запечена в ключи пролёта: холст очищен, рисовать нечего (положение для живой книги даёт proj)
       let ka = pair.ka, kb = pair.kb, t = pair.t;
       if (opt.fixed >= 0) { ka = kb = opt.fixed; t = 0; }                       // один спрайт на весь путь (пролёт: тот же спрайт, что у героя; камера лишь переносит и масштабирует его)
       if (!spr(ka) && !spr(kb)) {                       // нужных спрайтов ещё нет — ближайший загруженный
@@ -784,7 +785,7 @@ void main() {
           gl.uniform3f(u.uJar, camK.jar[0], camK.jar[1], camK.jar[2]); gl.uniform1f(u.uYaw, camK.yaw * Math.PI / 180);
           const hk = rects[k]; gl.uniform4f(u.uHK, hk[0], hk[1], hk[2], hk[3]); gl.uniform1f(u.uFz, 1);
         } else { rc = place(k, camP, jk); gl.uniform1f(u.uFz, 0); }
-        gl.uniform4f(u.uRect, rc[0], rc[1], rc[2], rc[3]); gl.uniform1f(u.uW, w); gl.uniform1f(u.uShear, opt.base && !window.__ASTREYA_NOSHEAR ? shearFor(k, camP) : 0);
+        gl.uniform4f(u.uRect, rc[0], rc[1], rc[2], rc[3]); gl.uniform1f(u.uW, w); gl.uniform1f(u.uShear, opt.base ? shearFor(k, camP) : 0);
         gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, spr(k)); gl.uniform1i(u.uSprite, 0);
         gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
       }

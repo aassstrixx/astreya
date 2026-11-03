@@ -22,6 +22,7 @@
     const story = document.getElementById('arch-story');
     if (!story || !story.classList.contains('is-house')) return;
     const on = (t, ev, fn, o) => { t.addEventListener(ev, fn, o); off.push(() => t.removeEventListener(ev, fn, o)); };
+    off.push(() => document.body.classList.remove('house-reading'));
     const reader = $('#house-reader'), mag = $('#mag');
     if (!reader || !mag) return;
 
@@ -51,7 +52,7 @@
     const fs = leaves.map(() => -1), faces = leaves.map(l => [$('.front', l), $('.back', l)]), cache = {};
     const fx = leaves.map(l => [$('.front .fx', l), $('.back .fx', l)]), shR = $('.mag-sh.r', mag), shL = $('.mag-sh.l', mag);                    // тень и блик поворачивающегося листа и тень на страницах под ним — настоящие элементы: им пишутся только opacity и transform
     const setVar = (el, k, v) => { const c = cache[k] || (cache[k] = new Map()); if (c.get(el) === v) return; c.set(el, v); el.style.setProperty(k, v); };          // то же значение второй раз не пишем: каждая запись пользовательского свойства — пересчёт стилей поддерева
-    let chat = null, entered = false, pgTimer = 0;                                 // чат Стеллы и вход на разворот объявлены ниже (setP их вызывает раньше по тексту)
+    let chat = null, entered = false;                                 // чат Стеллы и вход на разворот объявлены ниже (setP их вызывает раньше по тексту)
     function setP(v) {
       v = clamp(v, 0, N - 1); p = v;
       let sr = 0, sl = 0;
@@ -206,7 +207,7 @@
 
     const lv = {live: null, gone: null, hf: '', hy: ''};
     function setLive(live, hf) {                                               // герой и журнал — одна сцена (css/house.css, 3б): читалка встаёт на тот же экран под героем, холсты героя гаснут
-      if (lv.live !== live) { lv.live = live; reader.classList.toggle('is-live', live); story.classList.toggle('rd-live', live); }
+      if (lv.live !== live) { lv.live = live; reader.classList.toggle('is-live', live); story.classList.toggle('rd-live', live); document.body.classList.toggle('house-reading', live); }          // пока журнал в сцене, верхней панели нет (и при прокрутке вверх она не выезжает)
       const hfs = hf.toFixed(3), gone = live && hf >= .985, hys = (live ? Math.max(0, Math.min(window.innerHeight * 1.2, window.pageYOffset - rbx().top)) : 0).toFixed(1) + 'px';
       if (lv.hf !== hfs) { lv.hf = hfs; story.style.setProperty('--hf', hfs); }
       if (lv.gone !== gone) { lv.gone = gone; story.classList.toggle('rd-gone', gone); }
@@ -241,7 +242,7 @@
       const mx = Math.max(0, document.documentElement.scrollHeight - window.innerHeight); y = Math.round(clamp(y, 0, mx));
       const y0 = window.pageYOffset, dist = y - y0; if (glideRaf) { cancelAnimationFrame(glideRaf); glideRaf = 0; } navStop();
       if (Math.abs(dist) < 2) { goal = null; return; }
-      const far = Math.abs(dist) > window.innerHeight * 1.2, dur = o && o.dur ? o.dur : clamp(1050 + Math.abs(dist) / window.innerHeight * 330, 1200, 4200), ease = far ? eIO : eSoft; let t0 = 0;
+      const far = Math.abs(dist) > window.innerHeight * 1.2, dur = o && o.dur ? o.dur : clamp(1050 + Math.abs(dist) / window.innerHeight * 330, 1200, 4200), ease = o && o.ease ? o.ease : far ? eIO : eSoft; let t0 = 0;
       goal = g === undefined ? null : g;
       const frame = ts => {
         if (!t0) t0 = ts; const k = clamp((ts - t0) / dur, 0, 1);
@@ -250,11 +251,11 @@
       };
       glideRaf = requestAnimationFrame(frame);
     }
-    /* в самое начало страницы (герой с баночкой): кнопка «В начало» и быстрая серия прокруток вверх. Ход один, плавный, длительность 1,6–2,8 с (дальше — не быстрее); пока идёт, колесо вверх его не обрывает */
+    /* в самое начало страницы (герой с баночкой): кнопка «В начало» и быстрая серия прокруток вверх. Ход один, плавный (косинусная кривая), 4,5–8,5 с: камера пролёта и герой едут назад на виду; пока идёт, колесо вверх его не обрывает */
     function home(via) {
       glideStop(); if (A.motion && A.motion.cancelSmooth) A.motion.cancelSmooth();
       track('house_magazine_home', {via: via || 'button'});
-      homing = true; glide(0, null, {dur: clamp(900 + window.pageYOffset / window.innerHeight * 150, 1600, 2800)});
+      homing = true; glide(0, null, {dur: clamp(3200 + window.pageYOffset / window.innerHeight * 380, 4500, 8500), ease: x => .5 - .5 * Math.cos(Math.PI * x)});
       if (!glideRaf) homing = false;
     }
     on(window, 'wheel', e => { if (e.__houseStep || (homing && e.deltaY < 0)) return; glideStop(); }, {passive: true});               // рука на колесе — автоход уступает (кроме колеса, которым листают журнал: оно само запускает следующий ход)
@@ -272,11 +273,10 @@
     const navStop = () => {};
     on(window, 'wheel', e => {
       if (e.ctrlKey || e.defaultPrevented || flat() || phone() || !reader.classList.contains('is-live') || Math.abs(e.deltaX) > Math.abs(e.deltaY)) return;
+      if (e.target.closest && e.target.closest('.mp-chat')) return;                // над чатом Стеллы колесо принадлежит переписке (js ниже: плавная прокрутка), журнал не листается — даже у края переписки
       const t = readerT(); if (t < RD.open - .002 || t > RD.from + RD.span + .02) return;
       let dy = e.deltaY; if (e.deltaMode === 1) dy *= 34; else if (e.deltaMode === 2) dy *= window.innerHeight;
       if (Math.abs(dy) < 3) return;                                              // хвост инерции трекпада — шум
-      const lg = e.target.closest && e.target.closest('.mp-chat-log');            // переписка в чате Стеллы прокручивается своим колесом, пока есть куда (края — листаем журнал)
-      if (lg && ((dy < 0 && lg.scrollTop > 1) || (dy > 0 && lg.scrollTop + lg.clientHeight < lg.scrollHeight - 1))) return;
       const dir = dy > 0 ? 1 : -1, base = goal !== null ? goal : s;
       if ((dir > 0 && base >= N - 1) || (dir < 0 && base <= 1)) return;          // край журнала — обычная прокрутка (вверх с первого разворота — назад к пролёту камеры)
       e.preventDefault(); e.__houseStep = true;
@@ -456,6 +456,23 @@
         at(800 + Math.min(700, res.text.length * 2.5), () => { typing(false); log.appendChild(botEl(res)); cut(); bottom(); mood('talk'); setChips(res.chips); });
         at(1300 + Math.min(700, res.text.length * 2.5), () => { busy = false; form.classList.remove('is-busy'); mood('happy'); at(1400, () => mood('idle')); });
       }
+      /* колесо над чатом: область «залочена» — прокручивается только переписка, и плавно (пружина с критическим затуханием, как у страницы в js/motion.js); журнал не листается */
+      let wt = 0, wc = 0, wv = 0, wr = 0, wl = 0;
+      const wmax = () => Math.max(0, log.scrollHeight - log.clientHeight);
+      const wstep = ts => {
+        const dt = wl ? Math.min(.05, Math.max(.004, (ts - wl) / 1000)) : .0167; wl = ts;
+        const e = Math.exp(-11 * dt), d = wc - wt, c = wv + 11 * d; wc = wt + (d + c * dt) * e; wv = (wv - 11 * c * dt) * e;
+        if (Math.abs(wt - wc) < .4 && Math.abs(wv) < 4) { wc = wt; wv = 0; wr = 0; wl = 0; } else wr = requestAnimationFrame(wstep);
+        log.scrollTop = wc;
+      };
+      on(el, 'wheel', e => {
+        if (e.ctrlKey || Math.abs(e.deltaX) > Math.abs(e.deltaY)) return;
+        e.preventDefault(); if (A.motion && A.motion.cancelSmooth) A.motion.cancelSmooth();
+        let dy = e.deltaY; if (e.deltaMode === 1) dy *= 34; else if (e.deltaMode === 2) dy *= log.clientHeight;
+        if (!wr) { wc = wt = log.scrollTop; wv = 0; }
+        if (dy * wv < 0) wv = 0;
+        wt = clamp(wt + dy, 0, wmax()); if (!wr) wr = requestAnimationFrame(wstep);
+      }, {passive: false});
       on(form, 'submit', e => { e.preventDefault(); ask(inp.value); });
       on(chipsEl, 'click', e => { const b = e.target.closest && e.target.closest('.mp-chip'); if (b) ask(b.getAttribute('data-q')); });
       live.hidden = false; setChips(initial);
@@ -474,24 +491,12 @@
       return {el, play, stop: () => { if (!touched) finish(); }, ask};
     })();
 
-    /* ---------- вход на разворот: страницы «въезжают» блоками, чат Стеллы проигрывает переписку ----------
-       Запускается, когда лист остановился (книга в покое) и журнал открыт; на телефоне и в плоском режиме — только чат. Состояние после анимации — обычная вёрстка (слои не остаются) */
-    /* маскот на каменной арке (страница 13) радуется, когда на него наводят курсор */
-    { const big = $('.mp-pe-big', mag), stone = big && big.closest('.mp-stone'); let bt = 0;
-      if (stone) on(stone, 'pointerenter', () => { const pe = $('.pe', big); if (!pe) return; pe.setAttribute('data-m', 'happy'); clearTimeout(bt); bt = setTimeout(() => pe.setAttribute('data-m', 'idle'), 1700); }); }
+    /* ---------- вход на разворот: на развороте со Стеллой проигрывается переписка ----------
+       Запускается, когда лист остановился и журнал открыт. Страницы сами при остановке не анимируются (раньше блоки «въезжали» — это мерцало и прятало текст на каждом развороте) */
     function pageIn() {
       if (phone() || flat()) return;
-      const pgs = $$('.leaf.is-cur .face.front .pg, .leaf.is-prev .face.back .pg', mag); if (!pgs.length) return;
-      $$('.pg-in', mag).forEach(pg => { if (pgs.indexOf(pg) < 0) pg.classList.remove('pg-in'); });                // прежний разворот уже не показан — класс с него снимаем (таймер ниже чистит только текущий)
-      pgs.forEach(pg => {
-        pg.classList.remove('pg-in'); let i = 0;
-        Array.prototype.forEach.call(pg.children, c => { if (c.classList.contains('run') || c.classList.contains('pg-f') || c.classList.contains('fx')) return; c.style.setProperty('--d', Math.round(i++ * 55) + 'ms'); });
-        void pg.offsetWidth; pg.classList.add('pg-in');
-      });
-      clearTimeout(pgTimer); pgTimer = setTimeout(() => $$('.pg-in', mag).forEach(pg => pg.classList.remove('pg-in')), 1500);
-      if (chat && pgs.some(pg => chat.el.closest('.pg') === pg)) chat.play();
+      const pg = chat && chat.el.closest('.pg'); if (pg && (pg.closest('.leaf.is-cur') || pg.closest('.leaf.is-prev'))) chat.play();
     }
-    off.push(() => clearTimeout(pgTimer));
     /* картинки страниц журнала раскодируются заранее, по две за такт простоя: иначе первый поворот листа с фото и нишами брендов ждал загрузки и декодирования прямо в кадре анимации (подвисание в момент листания) */
     let warmedImgs = false;
     function warmPages() {

@@ -226,6 +226,8 @@ html:not(.js) .house-reader .mag .mag-ctl,html:not(.js) .house-reader .mag .mag-
 @keyframes hsCue{0%{transform:translate3d(0,-5px,0) rotate(45deg);opacity:0}35%{opacity:1}75%,100%{transform:translate3d(0,5px,0) rotate(45deg);opacity:0}}
 .arch-story.is-house .js-stage::before{opacity:0}                                                /* нижний «мостик» к молочной странице нужен, только если под героем она; под героем журнал */
 html.js body[data-page="home"] .hdr{opacity:.999}          /* шапка поверх WebGL-холстов сцены: полностью непрозрачная она давала сборщику страницы «отсечь» закрытую шапкой часть холста — в программном рендере (headless Chromium) внизу экрана на высоту шапки появлялась полоса шума; чуть прозрачная шапка выглядит так же, а отсечения нет */
+body.house-reading .hdr,body.house-reading.arch-nav .hdr,body.house-reading.arch-nav .hdr.hide{transform:translateY(-101%)!important;pointer-events:none}
+body[data-page="home"].arch-nav:not(.menu-open) .hdr,body[data-page="home"].arch-top:not(.menu-open) .hdr{background:transparent!important;border-bottom-color:transparent!important;-webkit-backdrop-filter:none!important;backdrop-filter:none!important;box-shadow:none!important}          /* на сцене героя шапка без белого фона: пункты меню лежат прямо на кадре */          /* журнал в сцене: верхней панели нет, даже при прокрутке вверх */
 body[data-page="home"] .hdr{transition:transform .6s var(--ease-out),background-color .55s var(--ease-out),border-color .55s var(--ease-out)}          /* шапка из прозрачной на герое в плотную на журнале переходит плавно, а не щелчком */
 @media (min-width:701px){
   html.js .arch-story.is-house:not(.is-static):not(.jar-off) ~ .house-reader{margin-top:-100lvh}
