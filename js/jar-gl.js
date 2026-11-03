@@ -472,7 +472,7 @@ void main() {
     const has = k => !!(keys[k] || lows[k]);
 
     const camS = {}, camT = {};
-    const refineN = () => { const o = window.__ASTREYA_GL_REFINE; return o !== undefined ? +o : (cfg.refine === undefined ? 20 : cfg.refine); };          // число шагов поиска пересечения на кромках (0 — прежний режим); __ASTREYA_GL_REFINE — только для сравнений
+    const refineN = () => { const o = window.__ASTREYA_GL_REFINE; return o !== undefined ? +o : (cfg.refine === undefined ? (portrait ? 14 : 20) : cfg.refine); };          // число шагов поиска пересечения на кромках (0 — прежний режим); __ASTREYA_GL_REFINE — только для сравнений
     const jScale = (cfg.track.jarScale || 0.02), jCz = (cfg.track.jarCenterZ || 0.057);
     function layer(i, k, t, sh) {
       const e = keys[k] || lows[k]; track.at(Phi[k], camS);
