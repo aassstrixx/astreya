@@ -42,7 +42,7 @@ let bad = [];
 for (const rel of pages) {
   const html = fs.readFileSync(pth.join(ROOT, rel), 'utf8'), k = keyOf(rel), skip = (cfg.skipPages || []).includes(k), has = /data-bd=|bd-fill/.test(html);
   if (skip && has) bad.push(rel + ': вставки на странице из skipPages');
-  if (!skip && plans[k] && !has) bad.push(rel + ': по плану вставки есть, в разметке нет');
+  if (!skip && plans[k] && !has && !(HOUSE && k === 'home')) bad.push(rel + ': по плану вставки есть, в разметке нет');
   if (/class="[^"]*\bjar-(story|outro)\b[^"]*"[^>]*data-bd=|data-bd="[^"]*"[^>]*class="[^"]*\bjar-(story|outro)\b/.test(html)) bad.push(rel + ': вставка на блоке вступления');
 }
 ok(!bad.length, 'вставки только там, где задано: не на главной и не на вступлении с баночкой', bad.slice(0, 5));
@@ -61,7 +61,7 @@ const wait = ms => new Promise(r => setTimeout(r, ms));
 const OUT = process.env.CHECK_OUT || '';
 
 /* по одной странице каждого вида (ключ) + главная как отрицательный пример */
-const pick = [...new Set([...(HOUSE ? [] : ['home']), ...Object.keys(plans).filter(k => !(cfg.skipPages || []).includes(k))])].filter(k => byKey[k] && (!ONLY.length || k === 'home' && !HOUSE && ONLY.includes('home') || ONLY.includes(k))).map(k => ({k, rel: byKey[k][0]}));
+const pick = [...new Set([...(HOUSE ? [] : ['home']), ...Object.keys(plans).filter(k => !(cfg.skipPages || []).includes(k) && !(HOUSE && k === 'home'))])].filter(k => byKey[k] && (!ONLY.length || k === 'home' && !HOUSE && ONLY.includes('home') || ONLY.includes(k))).map(k => ({k, rel: byKey[k][0]}));
 
 /* контраст: в браузере прячем текст, снимаем страницу целиком и для каждого текстового элемента берём самое тёмное место его рамки на фоне */
 const TEXTS = () => {

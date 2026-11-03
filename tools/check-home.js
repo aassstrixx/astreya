@@ -37,7 +37,7 @@ const t = (cond, name, info) => { if (cond) ok++; else bad.push(name + (info !==
   if (await p.evaluate(() => !!document.querySelector('#arch-story.is-house'))) {         // главная-дом (зал и журнал): секции прежней главной заменены журналом — их проверяет tools/check-house.js
     console.log('  i  главная собрана как дом: секции прежней главной (роли, доверие, бренды, подбор, обучение, новости, шаги, призыв) заменены журналом — их проверяет tools/check-house.js; здесь общие проверки');
     t(await p.evaluate(() => document.querySelectorAll('h1').length === 1), 'на странице один заголовок первого уровня');
-    t(await p.evaluate(() => { const a = document.getElementById('arch-story'); return !!(a && a.querySelector('.js-stage canvas.js-cv') && a.querySelector('.ar-copy h1') && a.querySelector('.ar-orb') && a.querySelector('.ar-panel')); }), 'сцена первого экрана, герой, орбиты и панель на месте');
+    t(await p.evaluate(() => { const a = document.getElementById('arch-story'); return !!(a && a.querySelector('.js-stage canvas.js-cv') && a.querySelector('.ar-copy h1') && a.querySelector('.ar-orb') && a.querySelector('.hs-cue') && !a.querySelector('.ar-cta, .ar-panel')); }), 'сцена первого экрана, герой, орбиты и подсказка про журнал на месте (кнопок героя и панели в доме нет)');
     for (const [w, h, touch] of [[1440, 900], [1100, 800], [820, 1100], [390, 844, true]]) {
       if (w !== 1440) { await p._ctx.close(); p = await open(w, h, touch); }
       t(await noOverflow(p), 'нет горизонтальной прокрутки на ' + w); t(p._errs.length === 0, 'нет ошибок JS (' + w + ')', p._errs);

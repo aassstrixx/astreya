@@ -10,6 +10,7 @@
 'use strict';
 let pw; for (const p of ['playwright', '/opt/node22/lib/node_modules/playwright']) { try { pw = require(p); break; } catch (e) {} }
 if (!pw) { console.log('Playwright не найден — проверка пропущена.'); process.exit(0); }
+const HOUSE = (() => { try { const r = JSON.parse(require('fs').readFileSync(require('path').join(__dirname, '..', 'data', 'redesign.json'), 'utf8')); return !!(r.house && r.house.enabled); } catch (e) { return false; } })();          // главная-дом включена
 const fs = require('fs'), path = require('path'), http = require('http');
 const ROOT = path.join(__dirname, '..'), CHROME = process.env.CHROMIUM || ['/opt/pw-browsers/chromium-1194/chrome-linux/chrome'].find(p => fs.existsSync(p));
 const MIME = {'.html': 'text/html', '.css': 'text/css', '.js': 'application/javascript', '.json': 'application/json', '.webp': 'image/webp', '.png': 'image/png', '.svg': 'image/svg+xml', '.woff2': 'font/woff2'};
@@ -55,7 +56,8 @@ const median = a => { const b = a.slice().sort((x, y) => x - y); return b[Math.f
     }
     const touch = lis.filter(x => /touch/.test(x)), wheel = lis.filter(x => /wheel/.test(x));
     ok(touch.length === 0, name + ' (' + pg + '): блокирующих слушателей touchstart/touchmove нет', touch);
-    ok(wheel.length <= (o.isMobile ? 1 : 1), name + ' (' + pg + '): блокирующих слушателей колеса не больше одного — инерция колеса на компьютере (' + wheel.length + ')', wheel);
+    const wl = (pg === 'index.html' && HOUSE) ? 2 : 1;          // на главной-доме второй слушатель — листание журнала колесом (js/house.js): вне журнала сразу выходит, внутри — один разворот за жест
+    ok(wheel.length <= wl, name + ' (' + pg + '): блокирующих слушателей колеса не больше ' + (wl === 2 ? 'двух (инерция страницы + листание журнала на главной-доме)' : 'одного — инерция колеса на компьютере') + ' (' + wheel.length + ')', wheel);
     await p.ctx.close();
   }
 
