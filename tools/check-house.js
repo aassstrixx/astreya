@@ -217,7 +217,10 @@ const t = (cond, name, info) => { if (cond) ok++; else bad.push(name + (info !==
       const hb = await p.evaluate(() => { const b = document.querySelector('#mag .mag-hm'); return b ? {txt: b.textContent.trim(), y: scrollY} : null; });
       t(!!hb && /На главную/.test(hb.txt) && hb.y > 1500, 'в журнале есть кнопка «На главную»', hb);
       const pTrace = p.evaluate(() => new Promise(res => { const a = []; const t0 = performance.now(); const f = () => { a.push(+window.Astreya.house.readerState().p.toFixed(2)); if (performance.now() - t0 < 4200) setTimeout(f, 40); else res(a); }; f(); }));
-      await p.click('#mag .mag-hm'); const y1 = await home(), H1 = await hy(); const tr = await pTrace;
+      const tH0 = Date.now(); await p.click('#mag .mag-hm'); const y1 = await home(), H1 = await hy(); const tHome = Date.now() - tH0; const tr = await pTrace;
+      t(tHome < 3600, 'возврат «На главную» быстрый: до экрана героя меньше 3,6 с (ход 1,4–2,4 с; раньше 2,6–5 с)', tHome);
+      { const sp0 = await p.evaluate(() => window.Astreya.jar.arch.state().sphere); await p.waitForTimeout(1400); const sp1 = await p.evaluate(() => window.Astreya.jar.arch.state().sphere);
+        t(!sp1.running && Math.abs(sp1.yaw - sp0.yaw) < .002, 'после возврата из журнала шар на экране героя стоит и не крутится', {a: sp0.yaw, b: sp1.yaw, run: sp1.running}); }
       t(Math.abs(y1 - H1) < 4, 'кнопка «На главную» плавно ведёт к экрану героя с заголовком (последний экран сцены героя), а не на самый верх', {y: y1, hy: H1});
       t(tr.slice(0, 20).every(v => Math.abs(v - 5) < .02) && !tr.some(v => v > 1.3 && v < 4.7), 'переход на главную: журнал остаётся на развороте, где остановился читатель (не листается назад и не перекидывает на первый)', tr.filter((_, i) => i % 6 === 0));
       await p.evaluate(() => window.Astreya.house.openMagazine(5)); await settle(p); const s5 = await rs(p);

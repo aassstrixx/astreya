@@ -53,6 +53,10 @@ uniform float uStretch;   // треугольники, растянутые си
 uniform vec4 uJ;          // живая тень баночки: центр (м) и радиус (м) сплюснутого шара-заместителя
 uniform vec3 uJS;         // x — сила тени (0 — тень уже запечена в кадр), y — полувысота / радиус, z — сила затемнения у касания
 uniform vec3 uCamP;       // положение камеры (для ориентации нормали)
+uniform vec3 uSP, uSF, uSR, uSU; uniform float uSL;   // камера кадра (как в вершинном шейдере)
+uniform vec3 uTP, uTF, uTR, uTU; uniform float uTL;   // текущая камера
+uniform vec2 uAsp, uCover, uNF, uRes;
+uniform float uRM;        // число шагов поиска пересечения у кромок (0 — уточнение выключено)
 in vec2 vUv; in vec3 vW;
 out vec4 o;
 /* мягкая тень шара радиуса R в начале координат на точку ro по лучу rd к источнику (Иниго Килес: физически правдоподобный вариант): k — резкость границы (чем больше, тем резче) */
@@ -81,17 +85,61 @@ vec3 jarShade() {
   /* цвет тени взят из тени, которую рисовал Blender (кадры 0…48 версии со «вшитой» тенью): прямой свет выключен, остаётся тёплое заполнение — красный темнеет меньше всего */
   return clamp(vec3(1.0) - uJS.x * (0.30 * sun * vec3(0.53, 0.77, 1.0) + (0.15 * win + uJS.z * ao) * vec3(0.9, 1.0, 1.06)), 0.0, 1.0);
 }
+/* где точка мира P видна на кадре: обратное к вершинному шейдеру; zs — её глубина в камере кадра */
+vec2 srcUv(vec3 P, out float zs) {
+  vec3 q = P - uSP; zs = dot(q, uSF);
+  float S = 36.0 / uSL * max(zs, 0.02);
+  return vec2(0.5 + dot(q, uSR) / (S * uAsp.x), 0.5 - dot(q, uSU) / (S * uAsp.y));
+}
+float zOfUv(vec2 uv) { return zAt(ivec2(floor(clamp(uv, vec2(0.0), vec2(0.99999)) * vec2(uDSize)))); }
 void main() {
   vec3 shade = jarShade();
   vec2 gx = dFdx(vUv * uTexSize), gy = dFdy(vUv * uTexSize);
   float det = abs(gx.x * gy.y - gx.y * gy.x);
+  vec2 dUx = dFdx(vUv), dUy = dFdy(vUv);                       // для выборки цвета в неоднородной ветке (textureGrad): уровень детализации по сетке, а не по уточнённой точке
   bool bad = det < uExpect * uStretch;
   ivec2 tc = ivec2(vUv * vec2(uDSize));
-  float z0 = zAt(tc);
-  float m = max(max(abs(zAt(tc + ivec2(1, 0)) - z0), abs(zAt(tc - ivec2(1, 0)) - z0)), max(abs(zAt(tc + ivec2(0, 1)) - z0), abs(zAt(tc - ivec2(0, 1)) - z0)));
-  bad = bad || m > uEdge * z0;
-  o = vec4(texture(uColor, vUv).rgb * shade, 1.0);
-  gl_FragDepth = bad ? 0.99995 : gl_FragCoord.z;
+  float z0 = zAt(tc), zmn = z0, zmx = z0;
+  for (int j = -1; j <= 1; j++) for (int i = -1; i <= 1; i++) { float zz = zAt(tc + ivec2(i, j)); zmn = min(zmn, zz); zmx = max(zmx, zz); }
+  bool edge = (zmx - zmn) > uEdge * z0;                      // рядом (в 1 текселе карты глубины, с диагоналями) скачок глубины — кромка предмета
+  vec2 uvc = vUv; float zdepth = gl_FragCoord.z;
+  if (edge && uRM > 0.5) {
+    /* Кромка. Сетка режет кадр на ячейки 2×2 пикселя, и силуэт по ней идёт ступеньками, а полоса вдоль него выбрасывалась целиком. Вместо этого для пикселя ищем настоящее пересечение его луча
+       с картой глубины кадра: идём вдоль луча от ближнего к дальнему, смотрим, где он заходит «за» видимую в кадре поверхность, и уточняем деление пополам. Силуэт получается по пикселям,
+       а если луч уходит за край предмета (открывшееся место, которого кадр не видел) — пиксель отбрасывается, его закроет второй кадр. */
+    vec2 ndc = gl_FragCoord.xy / uRes * 2.0 - 1.0;
+    float kk = 2.0 * uTL / 36.0;
+    vec3 dv = uTF + uTR * (ndc.x * uAsp.x / (kk * uCover.x)) + uTU * (ndc.y * uAsp.y / (kk * uCover.y));
+    float dc = length(uTP - uSP) * 1.2 + 0.03;                  // глубина в камере кадра и в текущей камере отличается не больше, чем на сдвиг камеры
+    float zlo = max(zmn - dc, 0.05), zhi = zmx + dc;
+    float dhi = 1.0 / zlo, dlo = 1.0 / zhi;                      // ищем равномерно по обратной глубине: у ближних предметов шаг мельче
+    int NS = int(uRM);
+    float tA = zlo, tB = zhi; bool found = false;
+    for (int k = 0; k <= 64; k++) {
+      if (k > NS) break;
+      float zt = 1.0 / (dhi + (dlo - dhi) * (float(k) / float(NS)));
+      float zsP; vec2 uvk = srcUv(uTP + dv * zt, zsP);
+      if (zsP >= zOfUv(uvk)) { tB = zt; found = true; break; }
+      tA = zt;
+    }
+    bool okh = false;
+    if (found) {
+      for (int k = 0; k < 6; k++) {
+        float tm = 0.5 * (tA + tB); float zsP; vec2 uvk = srcUv(uTP + dv * tm, zsP);
+        if (zsP >= zOfUv(uvk)) tB = tm; else tA = tm;
+      }
+      float zsH; vec2 uvh = srcUv(uTP + dv * tB, zsH);
+      float zS = zOfUv(uvh);
+      okh = abs(zsH - zS) < 0.045 * zS + 0.01;                    // луч вошёл в поверхность, а не прошёл далеко за краем предмета
+      if (okh) {
+        uvc = uvh; float a = (uNF.y + uNF.x) / (uNF.y - uNF.x), b = -2.0 * uNF.y * uNF.x / (uNF.y - uNF.x);
+        zdepth = ((a * tB + b) / tB) * 0.5 + 0.5; bad = false;
+      }
+    }
+    if (!okh) bad = true;
+  } else bad = bad || edge;
+  o = vec4(textureGrad(uColor, uvc, dUx, dUy).rgb * shade, 1.0);
+  gl_FragDepth = bad ? 0.99995 : zdepth;
 }`;
 
   /* заполнитель: где камера смотрит за край кадра или открывается место, не видимое ни одному из двух кадров, показывается сам кадр, повёрнутый на текущую камеру (как бесконечно далёкий фон);
@@ -237,19 +285,12 @@ void main() {
   vec2 px = 1.0 / uRes, uv = gl_FragCoord.xy * px;
   vec4 sM = texture(uTex, uv); vec3 cM = sM.rgb;
   if (uMode < 0.5) { o = vec4(cas(cM, uv, px), 1.0); return; }
-  if (sM.a > 0.5) {                                                   // кромка силуэта: ступеньки карты глубины (2–4 px) сглаживаем небольшим размытием 5×5 (только здесь; остальная картинка не трогается)
-    vec3 acc = vec3(0.0); float ws = 0.0;
-    for (int j = -2; j <= 2; j++) for (int i = -2; i <= 2; i++) {
-      float w = (i == 0 ? 6.0 : (abs(i) == 1 ? 4.0 : 1.0)) * (j == 0 ? 6.0 : (abs(j) == 1 ? 4.0 : 1.0));
-      acc += texture(uTex, uv + vec2(float(i), float(j)) * px).rgb * w; ws += w;
-    }
-    o = vec4(acc / ws, 1.0); return;
-  }
+  bool onEdge = sM.a > 0.5;                                           // кромка силуэта: ступеньки в 1–2 px глубины сглаживаем вдоль кромки (направленно), а не размытием — детали рядом с кромкой остаются чёткими
   vec3 cNW = texture(uTex, uv + vec2(-1.0, 1.0) * px).rgb, cNE = texture(uTex, uv + vec2(1.0, 1.0) * px).rgb;
   vec3 cSW = texture(uTex, uv + vec2(-1.0, -1.0) * px).rgb, cSE = texture(uTex, uv + vec2(1.0, -1.0) * px).rgb;
   float lM = lm(cM), lNW = lm(cNW), lNE = lm(cNE), lSW = lm(cSW), lSE = lm(cSE);
   float lMin = min(lM, min(min(lNW, lNE), min(lSW, lSE))), lMax = max(lM, max(max(lNW, lNE), max(lSW, lSE)));
-  if (lMax - lMin < max(uAAT.x, lMax * uAAT.y)) { o = vec4(cas(cM, uv, px), 1.0); return; }
+  if (!onEdge && lMax - lMin < max(uAAT.x, lMax * uAAT.y)) { o = vec4(cas(cM, uv, px), 1.0); return; }
   vec2 dir = vec2(-((lNW + lNE) - (lSW + lSE)), (lNW + lSW) - (lNE + lSE));
   float red = max((lNW + lNE + lSW + lSE) * 0.25 * 0.125, 1.0 / 128.0);
   float rcp = 1.0 / (min(abs(dir.x), abs(dir.y)) + red);
@@ -425,6 +466,7 @@ void main() {
     const has = k => !!(keys[k] || lows[k]);
 
     const camS = {}, camT = {};
+    const refineN = () => { const o = window.__ASTREYA_GL_REFINE; return o !== undefined ? +o : (cfg.refine === undefined ? 20 : cfg.refine); };          // число шагов поиска пересечения на кромках (0 — прежний режим); __ASTREYA_GL_REFINE — только для сравнений
     const jScale = (cfg.track.jarScale || 0.02), jCz = (cfg.track.jarCenterZ || 0.057);
     function layer(i, k, t, sh) {
       const e = keys[k] || lows[k]; track.at(Phi[k], camS);
@@ -455,6 +497,7 @@ void main() {
         if (on && cfg.veil) { const t = 1 - k / Math.max(1, cfg.veil * (N - 1)); if (t > 0) on *= 1 - (cfg.veilCut || 0) * t * t * (3 - 2 * t); }      // на кадрах под светлой завесой тень слабее: резкие края тени по геометрии не должны проявлять то, что завеса скрывает
         gl.uniform4f(u.uJ, camT.jar[0], camT.jar[1], camT.jar[2] + jCz, R); gl.uniform3f(u.uJS, on, Hz / R, cfg.contact === undefined ? 0.42 : cfg.contact); gl.uniform3fv(u.uCamP, camT.pos); }
       gl.uniform2i(u.uDSize, e.dw, e.dh); gl.uniform2f(u.uDisp, disp[0], disp[1]); gl.uniform1f(u.uEdge, cfg.edge === undefined ? 0.08 : cfg.edge);
+      gl.uniform2f(u.uRes, W, H); gl.uniform1f(u.uRM, refineN());
       gl.bindVertexArray(vao); gl.drawElements(gl.TRIANGLES, nIdx, gl.UNSIGNED_INT, 0); gl.bindVertexArray(null);
     }
 

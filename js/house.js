@@ -207,7 +207,7 @@
 
     const lv = {live: null, gone: null, hf: '', hy: ''};
     function setLive(live, hf) {                                               // герой и журнал — одна сцена (css/house.css, 3б): читалка встаёт на тот же экран под героем, холсты героя гаснут
-      if (lv.live !== live) { lv.live = live; reader.classList.toggle('is-live', live); story.classList.toggle('rd-live', live); document.body.classList.toggle('house-reading', live); }          // пока журнал в сцене, верхней панели нет (и при прокрутке вверх она не выезжает)
+      if (lv.live !== live) { if (lv.live && !live) A.sphereHold = true; lv.live = live; reader.classList.toggle('is-live', live); story.classList.toggle('rd-live', live); document.body.classList.toggle('house-reading', live); }          // пока журнал в сцене, верхней панели нет (и при прокрутке вверх она не выезжает)
       const hfs = hf.toFixed(3), gone = live && hf >= .985, hys = (live ? Math.max(0, Math.min(window.innerHeight * 1.2, window.pageYOffset - rbx().top)) : 0).toFixed(1) + 'px';
       if (lv.hf !== hfs) { lv.hf = hfs; story.style.setProperty('--hf', hfs); }
       if (lv.gone !== gone) { lv.gone = gone; story.classList.toggle('rd-gone', gone); }
@@ -266,7 +266,7 @@
       const yh = homeY(), y0 = window.pageYOffset, vh = window.innerHeight;
       if (!flat() && !phone() && reader.classList.contains('is-live') && readerT() >= RD.from - .002) holdP = Math.round(p);
       homing = true;
-      glide(yh, null, {home: true, dur: clamp(2200 + Math.abs(y0 - yh) / vh * 380, 2600, 5000), ease: x => .5 - .5 * Math.cos(Math.PI * x)});
+      glide(yh, null, {home: true, dur: clamp(1000 + Math.abs(y0 - yh) / vh * 170, 1400, 2400), ease: x => .5 - .5 * Math.cos(Math.PI * x)});          // возврат быстрый: 1,4–2,4 с (раньше 2,6–5 с); косинусная кривая — мягкий старт и остановка
       if (!glideRaf) { homing = false; releaseHold(); }
     }
     on(window, 'wheel', e => { if (!e.__houseStep) glideStop(); }, {passive: true});          // хвост того же размаха колеса возврат не обрывает, а новое движение рукой (через ≈ 1 с) — обрывает: управление всегда возвращается               // рука на колесе — автоход уступает (кроме колеса, которым листают журнал: оно само запускает следующий ход)

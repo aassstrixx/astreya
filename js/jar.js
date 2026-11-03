@@ -94,7 +94,7 @@
     function sphPush() { if (hall) hall.setSphere(sphMat(), sph.lx, sph.ly); }
     /* шаг по времени кадра (60 fps: dt — реальное время между кадрами, всё считается по нему, а не по числу кадров). От курсора шар не зависит — ни поворота, ни света (по решению заказчика) */
     function sphStep(dt) { sph.yaw += SPH_IDLE * dt; A.sphYaw = sph.yaw; sphPush(); }
-    function sphWanted() { return !FLY && !!hall && hall.sphereReady && sph.view && !document.hidden && cp >= 0.995 && !reduceMQ.matches && !root.classList.contains('rd-live') && !document.documentElement.classList.contains('anim-off'); }
+    function sphWanted() { return !FLY && !!hall && hall.sphereReady && sph.view && !document.hidden && cp >= 0.995 && !A.sphereHold && !reduceMQ.matches && !root.classList.contains('rd-live') && !document.documentElement.classList.contains('anim-off'); }
     function sphLoop(t) {
       sph.raf = 0;
       if (!sphWanted() || dead) { sph.last = 0; return; }
@@ -415,6 +415,7 @@
         else if (fast && spd < FAST_OFF) { fast = false; pumpDecode(); } }
       const inView = y + vh > sTop && y < sTop + sH;
       if (inView !== sph.view) sph.view = inView;
+      if (A.sphereHold && cp < 0.99) A.sphereHold = false;                  // после возврата из журнала шар стоит; когда посетитель уходит с экрана героя вверх, вращение в статике снова разрешено
       if (inView && !sph.raf) sphStart();                                    // шар вращается сам, даже если курсор не двигают (цикл запускается, как только герой в кадре и сцена дошла до зала)
       /* регулятор нагрузки: кадры идут дольше бюджета — холст чуть меньше (не чаще раза в 1,5 с) */
       if (inView && Math.abs(vp) * KS > MOVING && dtRaw > 0) {
