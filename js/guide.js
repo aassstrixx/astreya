@@ -407,10 +407,12 @@
     navPending = Date.now(); saveTour(T.id, i, true); el.click();
     setTimeout(() => { if (alive(id)) go(pg.href, {keepTour: true}); }, 4200);          // нажатие не привело к переходу — переходим сами
   }
+  /* alt: {when — селектор, при котором шаг показывается в другом виде, …поля шага, которые заменяются} — например, на главной-доме вместо кнопок героя (их там нет) подсвечивается пункт «Каталог» в меню */
+  const altStep = st => st && st.alt && st.alt.when && $(st.alt.when) ? Object.assign({}, st, st.alt) : st;
   function tourStep(T, i, dir) {
     dir = dir || 1; const key = pageKey(), n = T.steps.length;
     if (i >= n) { tourEnd(T, true); return true; } if (i < 0) i = 0;
-    const st = T.steps[i], id = ++runId;
+    const st = altStep(T.steps[i]), id = ++runId;          // alt — вариант шага для главной-дома (кнопок героя там нет)
     if (!stepMatches(st, key)) {                                                       // шаг относится к другой странице — переходим и продолжаем после загрузки
       const pg = PAGES.find(p => p.id === st.page);
       if (pg) { runCleanup(true); saveTour(T.id, i, true); if (dir > 0 && i > 0 && (pg.nav || pg.go)) travel(T, i, st, pg, id); else go(pg.href, {keepTour: true}); return true; }
