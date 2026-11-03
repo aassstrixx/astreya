@@ -128,3 +128,14 @@ python3 paste_mag.py /tmp/zone/bg_d /tmp/zone/mag_d /tmp/zone/bg_d_mag          
 `fly_soft.py`: он добавляет в дорожку массив `back` — на сколько камера текущего вида отодвигается назад вдоль оси взгляда, чтобы книга в конце пролёта не «выпрыгивала»
 (ближний край раздувался до +6 % и откатывался). Позы ключей этим не меняются: кадры нарисованы по исходной дорожке. Запуск вручную:
 `python3 tools/jar-render/fly_soft.py [--check]` (идемпотентно; `--check` только печатает ширину книги до и после).
+
+## Пролёт камеры к журналу — телефон (`house.fly.mobile`)
+Тот же конвейер с флагом `--portrait`, кадр 900×1600; камера заканчивает над левой страницей разворота (`ZONE_FLIGHT_W_P`, страница ≈ 72–73 % ширины кадра).
+```
+OUT=/tmp/zone/pff bash tools/jar-render/phone_fly_render.sh            # расписание, дорожка, углы журнала, цвет и глубина 48 ключей (в фоне, ≈ 1,5 ч)
+node tools/jar-render/cap_hero_jar.js . 2 390 844 /tmp/zone/jarbake/hero_jar_m_dpr2.png --mobile      # баночка с телефонной главной (DPR 2)
+python3 tools/jar-render/bake_jar.py --mobile --fly /tmp/zone/pff --cdir /tmp/zone/pff/c --jar /tmp/zone/jarbake/hero_jar_m_dpr2.png --dpr 2 --out /tmp/zone/jarbake_m \
+        --hero /tmp/zone/pf/bg_p/059.png --hero-z assets/house-hall/zm/059.webp --vw 390 --vh 844
+python3 tools/jar-render/apply_fly_m.py --fly /tmp/zone/pff --bake /tmp/zone/jarbake_m     # ffm/fzm/fjm, cam-fm.json, house.fly.mobile, fly_soft.py --mobile
+```
+
