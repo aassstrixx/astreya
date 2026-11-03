@@ -252,6 +252,7 @@ body[data-page="home"] .hdr{transition:transform .6s var(--ease-out),background-
 
 /* ============ 5. Телефон ============ */
 @media (max-width:700px){
+  .hs-cue{bottom:calc(84px + env(safe-area-inset-bottom,0px));padding:10px 14px;gap:10px;letter-spacing:.14em;font-size:10.5px}                                                                    /* над круглой кнопкой Стеллы (справа внизу), а не под ней: подпись не заходит под неё */
   .hall-rooms{position:static;width:auto;height:auto;overflow:visible;clip-path:none;white-space:normal;display:block;margin:14px -20px 0 0}                                         /* на телефоне список комнат — лента «пилюль» под кнопками: путь в комнаты без двери и журнала */
   .hall-rooms ol{flex-wrap:nowrap;overflow-x:auto;gap:8px;padding:2px 20px 6px 0;scrollbar-width:none;overscroll-behavior-x:contain}
   .hall-rooms ol::-webkit-scrollbar{display:none}
