@@ -250,6 +250,7 @@ if (!J || !J.enabled || !A || !A.enabled) { console.log('Первый экран
       ok(Math.abs(sp1.yaw - sh1) < 0.005 && sp1.cur[0] === 0 && !sp1.running, 'живой шар: пока идёт скролл-анимация (прокрутку остановили на 0,97) шар не вращается, цикл шара не работает, курсор на него не действует', {sh1, sp1});
       await at(p, g, 1.0, 2500);
       const sh2 = await p.evaluate(() => window.Astreya.jar.arch.state().sphere.yaw); await wait(1300);
+      await p.waitForFunction(y => window.Astreya.jar.arch.state().sphere.yaw - y > 0.02, sh2, {timeout: 25000, polling: 300}).catch(() => {});          // угол идёт по реальному времени кадра: на медленной машине (программный GL) кадров мало — ждём, а не гадаем по таймеру
       const sp2 = await p.evaluate(() => window.Astreya.jar.arch.state().sphere);
       ok(sp2.running && sp2.yaw - sh2 > 0.02, 'живой шар: на экране героя с текстом (статика) вращается сам, на курсор не реагирует', {sh2, sp2});
     }
