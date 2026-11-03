@@ -123,7 +123,7 @@ if (!J || !J.enabled || !A || !A.enabled) { console.log('Первый экран
     let v = await view(p);
     ok(v.h1count === 1, 'на странице один заголовок первого уровня', v.h1count); ok(v.hero === 'none', 'запасной герой скрыт, пока работает сцена', v.hero);
     ok(v.old.length === 0, 'нет старого вступления, лозунга, плашек, флакона и молочного слоя', v.old);
-    ok(p.reqs.length > 0 && p.reqs.every(u => HOUSE ? (mobile ? /(house-hall\/(m|zm|jm|cam-m|poster-m)|jar-arch\/(label|sphere))/ : /(house-hall\/(d|zd|j|cam-d|fz|ff|fj|cam-f|poster)|jar-arch\/(label|sphere))/).test(u) : (mobile ? /jar-arch\/(m|zm|jm|cam-m|label)/.test(u) : /jar-arch\/(d|zd|j|cam-d|label)/.test(u))), 'грузятся наборы под размер экрана (десктоп — d/zd/j, телефон — m/zm/jm), лёгких наборов нет', p.reqs.slice(0, 3));
+    ok(p.reqs.length > 0 && p.reqs.every(u => HOUSE ? (mobile ? /(house-hall\/(m|zm|jm|cam-m|poster-m|ffm|fzm|fjm|cam-fm)|jar-arch\/(label|sphere))/ : /(house-hall\/(d|zd|j|cam-d|fz|ff|fj|cam-f|poster)|jar-arch\/(label|sphere))/).test(u) : (mobile ? /jar-arch\/(m|zm|jm|cam-m|label)/.test(u) : /jar-arch\/(d|zd|j|cam-d|label)/.test(u))), 'грузятся наборы под размер экрана (десктоп — d/zd/j, телефон — m/zm/jm), лёгких наборов нет', p.reqs.slice(0, 3));
 
     /* ---- заставка ---- */
     await at(p, g, 0); v = await view(p);
