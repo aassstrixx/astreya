@@ -81,7 +81,7 @@ module.exports = function homeHouse(ctx, C, P, deps) {
     <div class="mag-wrap">
       <div class="mag-bar"><p class="mag-st" aria-live="polite"></p></div>
       <div class="mag-book" tabindex="-1"><div class="mag-spine" aria-hidden="true"></div><div class="leaves">${leaves}<i class="mag-sh r" aria-hidden="true"></i><i class="mag-sh l" aria-hidden="true"></i></div><i class="mag-dim" aria-hidden="true"></i></div>
-      <div class="mag-ctl"><button class="mag-pv" type="button" data-mag-step="-1">${I.arrow}<span>${esc(mc.prevLabel)}</span></button><button class="mag-hm" type="button" data-mag-home aria-label="${esc(mc.homeLabel || 'В начало')}">${I.arrow}<span>${esc(mc.homeLabel || 'В начало')}</span></button><button class="mag-nx" type="button" data-mag-step="1"><span>${esc(mc.nextLabel)}</span>${I.arrow}</button></div>
+      <div class="mag-ctl"><button class="mag-pv" type="button" data-mag-step="-1">${I.arrow}<span>${esc(mc.prevLabel)}</span></button><button class="mag-hm" type="button" data-mag-home aria-label="${esc(mc.homeLabel || 'На главную')}">${I.arrow}<span>${esc(mc.homeLabel || 'На главную')}</span></button><button class="mag-nx" type="button" data-mag-step="1"><span>${esc(mc.nextLabel)}</span>${I.arrow}</button></div>
     </div>
   </div>`;
 

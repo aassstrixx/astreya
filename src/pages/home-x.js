@@ -180,10 +180,10 @@ module.exports = function homeRedesign(ctx, C, P, parts, {events, val}) {
           <span class="eyebrow ar-e">${esc(h.eyebrow)}</span>
           <h1 class="ar-h">${h.h1}</h1>
           <p class="lead ar-lead">${esc(h.lead)}</p>
-          <div class="row ar-cta">
+          ${houseOn ? '' : `          <div class="row ar-cta">
             <a class="btn btn-fill" href="${C.u(P, 'catalog.html')}" data-track="catalog_click" data-place="hero">Перейти в каталог ${I.arrow}</a>
             <a class="btn btn-ghost" href="${C.u(P, 'partners.html')}" data-track="partner_cta" data-place="hero">Стать партнёром</a>
-          </div>
+          </div>`}
           <ul class="ar-facts">${h.facts.map(f => `<li>${esc(f)}</li>`).join('')}<li>${esc(auto.offices)}</li></ul>
           ${houseOn ? HOUSE.hall.rooms : ''}
         </div>

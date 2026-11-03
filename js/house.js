@@ -234,10 +234,10 @@
 
     /* ---------- автоматический плавный ход страницы: клик по «Откройте журнал», «Далее/Назад», оглавление, список разделов.
        Страницу ведёт одна кривая (rAF, по реальному времени кадра), журнал и камера считаются от прокрутки так же, как при колесе, — лист поворачивается тем же способом ---------- */
-    let glideRaf = 0, goal = null, homing = false;
+    let glideRaf = 0, goal = null, homing = false, homeTimer = 0;
     const eIO = x => x < .5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2;           // долгий ход: мягкий старт и мягкая остановка
     const eSoft = x => .5 * x + .5 * x * x * (3 - 2 * x);                                // листание: почти равномерно — лист успевает повернуться на виду
-    const glideStop = () => { if (glideRaf) { cancelAnimationFrame(glideRaf); glideRaf = 0; } goal = null; homing = false; navStop(); };
+    const glideStop = () => { if (glideRaf) { cancelAnimationFrame(glideRaf); glideRaf = 0; } goal = null; homing = false; if (homeTimer) { clearTimeout(homeTimer); homeTimer = 0; } if (reader.classList.contains('is-leaving')) reader.classList.remove('is-leaving'); navStop(); };
     function glide(y, g, o) {
       const mx = Math.max(0, document.documentElement.scrollHeight - window.innerHeight); y = Math.round(clamp(y, 0, mx));
       const y0 = window.pageYOffset, dist = y - y0; if (glideRaf) { cancelAnimationFrame(glideRaf); glideRaf = 0; } navStop();
@@ -247,17 +247,27 @@
       const frame = ts => {
         if (!t0) t0 = ts; const k = clamp((ts - t0) / dur, 0, 1);
         window.scrollTo({top: y0 + dist * ease(k), behavior: 'instant'}); readerUpdate();
-        if (k < 1) glideRaf = requestAnimationFrame(frame); else { glideRaf = 0; goal = null; homing = false; window.scrollTo({top: y, behavior: 'instant'}); readerUpdate(); }
+        if (k < 1) glideRaf = requestAnimationFrame(frame); else { glideRaf = 0; goal = null; homing = false; reader.classList.remove('is-leaving'); window.scrollTo({top: y, behavior: 'instant'}); readerUpdate(); }
       };
       glideRaf = requestAnimationFrame(frame);
     }
     /* в самое начало страницы (герой с баночкой): кнопка «В начало» и быстрая серия прокруток вверх. Ход один, плавный (косинусная кривая), 4,5–8,5 с: камера пролёта и герой едут назад на виду; пока идёт, колесо вверх его не обрывает */
     let homeAt = 0;
+    /* «На главную»: к экрану героя с заголовком (последний экран сцены героя). Из раскрытого журнала — без перелистывания страниц назад: журнал на миг гаснет (под ним нарисованный
+       разворот из ключа пролёта — тот же), встаёт на первый разворот и камера едет назад к залу одним ходом (≈ 2,6–4 с, косинусная кривая) */
+    const homeY = () => { const a = $('#arch-story'); const hy = a ? Math.round(a.getBoundingClientRect().top + window.pageYOffset + a.offsetHeight - window.innerHeight) : 0; return Math.max(0, Math.min(hy, Math.round(readerBox().top))); };
     function home(via) {
       glideStop(); if (A.motion && A.motion.cancelSmooth) A.motion.cancelSmooth();
       track('house_magazine_home', {via: via || 'button'});
-      homing = true; homeAt = performance.now(); glide(0, null, {dur: clamp(3200 + window.pageYOffset / window.innerHeight * 380, 4500, 8500), ease: x => .5 - .5 * Math.cos(Math.PI * x)});
-      if (!glideRaf) homing = false;
+      const yh = homeY(), y0 = window.pageYOffset, ease = x => .5 - .5 * Math.cos(Math.PI * x), vh = window.innerHeight;
+      const startGlide = from => { homing = true; homeAt = performance.now(); glide(yh, null, {dur: clamp(2200 + Math.abs(from - yh) / vh * 500, 2600, 4200), ease}); if (!glideRaf) { homing = false; reader.classList.remove('is-leaving'); } };
+      const inBook = !flat() && !phone() && reader.classList.contains('is-live') && readerT() >= RD.open - .002;
+      if (!inBook || y0 <= yh + 2) { startGlide(y0); return; }
+      reader.classList.add('is-leaving'); homing = true; homeAt = performance.now();
+      homeTimer = setTimeout(() => {
+        homeTimer = 0; const b = readerBox(), y1 = Math.round(b.top + b.total * (RD.open + RD.from) / 2);
+        jump(y1); readerUpdate(); startGlide(y1);                                       // журнал уже скрыт: сразу первый разворот, без листания назад
+      }, 240);
     }
     on(window, 'wheel', e => { if (e.__houseStep || (homing && e.deltaY < 0 && performance.now() - homeAt < 900)) return; glideStop(); }, {passive: true});          // хвост того же размаха колеса возврат не обрывает, а новое движение рукой (через ≈ 1 с) — обрывает: управление всегда возвращается               // рука на колесе — автоход уступает (кроме колеса, которым листают журнал: оно само запускает следующий ход)
     on(window, 'touchstart', glideStop, {passive: true});
@@ -511,7 +521,7 @@
       step();
     }
     setTimeout(warmPages, 5000);
-    A.house = {busy: () => !!glideRaf, home: () => home('api'), go: id => go(id, {via: 'api'}), hall: () => hall({via: 'api'}), openMagazine: v => { if (flat() || phone()) { jump(readerBox().top); render(v === undefined ? 1 : v, {instant: true}); } else toState(v === undefined ? 1 : v); }, state: () => ({room: current, magazine: true, page: s, rooms: ids, reader: true}), readerState: () => { const f = A.jar && A.jar.fly, st = f && f.state ? f.state() : null; return {t: readerT(), s, p, fly: {on: !!FLd, n: st ? st.N : 0, loaded: st ? st.loaded : 0, drawn: !!(st && st.firstDrawn), p: st ? st.p : 0, jarOk: st ? st.jarOk : null, size: st ? st.size : null, sprites: st ? st.jar : null}}; }};
+    A.house = {busy: () => !!glideRaf || !!homeTimer, home: () => home('api'), go: id => go(id, {via: 'api'}), hall: () => hall({via: 'api'}), openMagazine: v => { if (flat() || phone()) { jump(readerBox().top); render(v === undefined ? 1 : v, {instant: true}); } else toState(v === undefined ? 1 : v); }, state: () => ({room: current, magazine: true, page: s, rooms: ids, reader: true}), readerState: () => { const f = A.jar && A.jar.fly, st = f && f.state ? f.state() : null; return {t: readerT(), s, p, fly: {on: !!FLd, n: st ? st.N : 0, loaded: st ? st.loaded : 0, drawn: !!(st && st.firstDrawn), p: st ? st.p : 0, jarOk: st ? st.jarOk : null, size: st ? st.size : null, sprites: st ? st.jar : null}}; }};
   }
 
   init();
