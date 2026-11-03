@@ -23,7 +23,9 @@ const wait = ms => new Promise(r => setTimeout(r, ms));
 let pass = 0, fail = 0;
 const ok = (c, name, info) => { if (c) { pass++; console.log('  ✓ ' + name); } else { fail++; console.log('  ✗ ' + name + (info !== undefined ? ' — ' + JSON.stringify(info) : '')); } };
 
-const rd = JSON.parse(fs.readFileSync(pth.join(ROOT, 'data/redesign.json'), 'utf8')), J = rd.jar, A = J && J.arch;
+const rd = JSON.parse(fs.readFileSync(pth.join(ROOT, 'data/redesign.json'), 'utf8')), J = rd.jar;
+/* HOUSE — на главной включён «дом» (house.enabled): первый экран — зал ASTREYA HOUSE со своим набором кадров (house.arch), без кнопок героя и панели «Почему выбирают…», с подсказкой «Листайте ниже — откроется журнал» */
+const HOUSE = !!(rd.house && rd.house.enabled && rd.house.arch && rd.house.arch.enabled), A = HOUSE ? rd.house.arch : J && J.arch;
 if (!J || !J.enabled || !A || !A.enabled) { console.log('Первый экран со сценой выключен (jar.enabled / jar.arch.enabled = false) — проверка пропущена.'); process.exit(0); }
 
 (async () => {
@@ -47,10 +49,10 @@ if (!J || !J.enabled || !A || !A.enabled) { console.log('Первый экран
   const camD = JSON.parse(fs.readFileSync(pth.join(ROOT, A.cam.desktop), 'utf8'));
   ok(!camD.sphere3d || (Math.abs(S.desktop[1] - 0.426) < 0.03 && Math.abs(S.desktop[2] - 0.255) < 0.02), 'шар на ПК в готовом кадре стоит как в кадре-эталоне заказчика: центр по высоте ≈ 0,43, диаметр ≈ 0,255 ширины (проверяется, когда в дорожке камеры есть положение шара — кадры новой сцены)', S.desktop);
   ok(!camD.sphere3d || (camD.sphere3d.length === 4 && camD.sphere3d[3] > 0.1 && camD.sphere3d[3] < 0.4), 'дорожка камеры хранит положение и радиус шара (м) для живого шара', camD.sphere3d);
-  ok(A.panel.items.length >= 3 && A.panel.title && J.cue, 'панель «Почему выбирают…» и подпись «Листайте» заполнены');
+  ok(HOUSE || (A.panel.items.length >= 3 && A.panel.title && J.cue), 'панель «Почему выбирают…» и подпись «Листайте» заполнены (в режиме дома вместо панели — подсказка про журнал)');
   ok(!fs.existsSync(pth.join(ROOT, 'assets/jar')) && !fs.existsSync(pth.join(ROOT, 'css/jar.css')) && !J.outro && !J.captions, 'старого вступления и экрана с лозунгом нет ни в файлах, ни в настройках');
   const html = fs.readFileSync(pth.join(ROOT, 'index.html'), 'utf8');
-  const arch = (html.match(/<section class="jar-story arch-story"[\s\S]*?<\/section>/) || [''])[0];
+  const arch = (html.match(/<section class="jar-story arch-story[^"]*"[\s\S]*?<\/section>/) || [''])[0];
   ok(arch.length > 500 && !/ar-chip|ar-card|ar-fg|js-milk|Запись на семинары|Дистрибьютор Dermatime/i.test(arch) && !/id="jar-story"|id="jar-outro"|js-cap|jo-title|Кожа чувствует разницу/.test(html.replace(/<script[\s\S]*?<\/script>/g, '')), 'в разметке главной нет старого вступления, лозунга, плашек и флакона');
 
   const srv = http.createServer((q, r) => { let f = pth.join(ROOT, decodeURIComponent(q.url.split('?')[0])); if (f.endsWith('/')) f += 'index.html'; fs.readFile(f, (e, d) => { if (e) { r.writeHead(404); return r.end(); } r.writeHead(200, {'Content-Type': MIME[pth.extname(f)] || 'application/octet-stream'}); r.end(d); }); });
@@ -81,7 +83,7 @@ if (!J || !J.enabled || !A || !A.enabled) { console.log('Первый экран
     const p = await ctx.newPage(); p.errs = []; p.reqs = [];
     p.on('pageerror', e => p.errs.push(String(e.message).slice(0, 160)));
     p.on('console', m => { if (m.type() === 'error' && !/fonts\.|404|ERR_FAILED/.test(m.text())) p.errs.push(m.text().slice(0, 160)); });
-    p.on('request', r => { if (/assets\/jar-arch\//.test(r.url())) p.reqs.push(r.url()); });
+    p.on('request', r => { if ((HOUSE ? /assets\/(jar-arch|house-hall)\// : /assets\/jar-arch\//).test(r.url())) p.reqs.push(r.url()); });
     await p.route('**/api/assistant/status', r => r.fulfill({status: 200, contentType: 'application/json', body: '{"ai":false}'}));
     return {ctx, p};
   };
@@ -121,7 +123,7 @@ if (!J || !J.enabled || !A || !A.enabled) { console.log('Первый экран
     let v = await view(p);
     ok(v.h1count === 1, 'на странице один заголовок первого уровня', v.h1count); ok(v.hero === 'none', 'запасной герой скрыт, пока работает сцена', v.hero);
     ok(v.old.length === 0, 'нет старого вступления, лозунга, плашек, флакона и молочного слоя', v.old);
-    ok(p.reqs.length > 0 && p.reqs.every(u => mobile ? /jar-arch\/(m|zm|jm|cam-m|label)/.test(u) : /jar-arch\/(d|zd|j|cam-d|label)/.test(u)), 'грузятся наборы под размер экрана (десктоп — d/zd/j, телефон — m/zm/jm), лёгких наборов нет', p.reqs.slice(0, 3));
+    ok(p.reqs.length > 0 && p.reqs.every(u => HOUSE ? (mobile ? /(house-hall\/(m|zm|jm|cam-m|poster-m)|jar-arch\/(label|sphere))/ : /(house-hall\/(d|zd|j|cam-d|fz|ff|fj|cam-f|poster)|jar-arch\/(label|sphere))/).test(u) : (mobile ? /jar-arch\/(m|zm|jm|cam-m|label)/.test(u) : /jar-arch\/(d|zd|j|cam-d|label)/.test(u))), 'грузятся наборы под размер экрана (десктоп — d/zd/j, телефон — m/zm/jm), лёгких наборов нет', p.reqs.slice(0, 3));
 
     /* ---- заставка ---- */
     await at(p, g, 0); v = await view(p);
@@ -187,19 +189,20 @@ if (!J || !J.enabled || !A || !A.enabled) { console.log('Первый экран
     /* ---- финал ---- */
     await at(p, g, 0.7); v = await view(p); ok(v.h1 > 0.05 && v.h1 < 0.95, 'камера почти отъехала — заголовок проявляется (не мгновенно)', v.h1);
     await at(p, g, 0.97, 2200); v = await view(p);
-    ok(v.h1 > 0.97 && v.lead > 0.97 && v.cta > 0.97 && v.panel > 0.97, 'финал: заголовок, текст, кнопки и панель проявились', {h1: v.h1, lead: v.lead, cta: v.cta, panel: v.panel});
+    ok(v.h1 > 0.97 && v.lead > 0.97 && (HOUSE || (v.cta > 0.97 && v.panel > 0.97)), 'финал: заголовок и текст проявились' + (HOUSE ? ' (в режиме дома кнопок героя и панели нет)' : ', кнопки и панель'), {h1: v.h1, lead: v.lead, cta: v.cta, panel: v.panel});
     ok(!/arch-hide/.test(v.bodyCls) && v.hdrB >= 40, 'финал: шапка вернулась', {cls: v.bodyCls, hdrB: v.hdrB});
     ok(v.hr && v.hr.l >= 0 && v.hr.r <= W && v.er.t >= v.hdrB - 2, 'финал: заголовок целиком в экране и под шапкой', [v.hr, v.er, v.hdrB]);
-    ok(v.cr && v.cr.b <= H && v.pr && v.pr.b <= H + 1 && v.pr.t >= v.cr.b - 2, 'финал: кнопки и панель в экране и не налезают друг на друга', [v.cr, v.pr]);
+    if (!HOUSE) ok(v.cr && v.cr.b <= H && v.pr && v.pr.b <= H + 1 && v.pr.t >= v.cr.b - 2, 'финал: кнопки и панель в экране и не налезают друг на друга', [v.cr, v.pr]);
     if (!mobile) {
       ok(v.hr.r <= W * 0.6, 'финал: текст слева, ниша справа свободна', v.hr);
       ok(v.hr.l >= W * 0.08 && v.hr.l <= W * 0.2, 'финал: надписи слева — правее проёма с комнатой и стеллажом (не заходят на него), но не дальше пятой части экрана (слева не остаётся пустой полосы)', {l: v.hr.l});
       ok(v.orbit > 0.97 && v.facts !== null, 'финал: орбиты с логотипами вокруг шара проявились', {orbit: v.orbit});
     }
     ok(v.z.world <= v.z.copy && v.z.jar > 0 && v.z.orbit > v.z.jar, 'слои: кадры зала → баночка → орбиты (внутри мира), мир → текст: баночка не закрывает надписи', v.z);
-    ok(v.hit, 'финал: кнопка «Перейти в каталог» нажимается (ничто не перекрывает)');
-    ok(/Подробнее/.test(v.moreTxt) && v.more && v.more.b <= H + 1, 'финал: в нижней панели есть кнопка «Подробнее» и она в экране', {t: v.moreTxt, r: v.more});
+    if (!HOUSE) ok(v.hit, 'финал: кнопка «Перейти в каталог» нажимается (ничто не перекрывает)');
+    if (!HOUSE) ok(/Подробнее/.test(v.moreTxt) && v.more && v.more.b <= H + 1, 'финал: в нижней панели есть кнопка «Подробнее» и она в экране', {t: v.moreTxt, r: v.more});
     ok(v.sw <= W + 1, 'нет горизонтальной прокрутки', [v.sw, W]);
+    if (v.resident === 0) { await p.waitForFunction(() => Astreya.jar.arch.state().resident > 0, null, {timeout: 20000, polling: 300}).catch(() => {}); v = await view(p); }          /* текстуры в видеопамять уходят постепенно — ждём, а не гадаем по таймеру */
     ok(v.gl && v.resident > 0 && v.loaded > 10, 'WebGL-движок работает: ключевые кадры загружены, текстуры в видеопамяти', {gl: v.gl, resident: v.resident, loaded: v.loaded});
     /* быстрая прокрутка: рядом с любым положением есть уменьшенные копии кадров и спрайтов, поэтому картинка не рвётся «зубцами» и не идёт против прокрутки */
     if (v.lows !== undefined || (await p.evaluate(() => Astreya.jar.arch.state().lows !== undefined))) {
@@ -275,12 +278,12 @@ if (!J || !J.enabled || !A || !A.enabled) { console.log('Первый экран
 
   console.log('\n[запасной вариант]');
   { const {ctx, p} = await open(1440, 900, {noCanvas: true}); await p.goto(base + 'index.html'); await skipSplash(p);
-    const r = await p.evaluate(() => { const q = s => document.querySelector(s), vis = e => { if (!e) return false; const r = e.getBoundingClientRect(); return r.width > 0 && r.height > 0 && getComputedStyle(e).display !== 'none'; }; return {arch: vis(q('#arch-story')), hero: vis(q('.hero')), cta: vis(q('.hero-copy .row a')), h: !!q('.hero .h1x'), h1: document.querySelectorAll('h1').length}; });
-    ok(!r.arch && r.hero && r.cta, 'canvas недоступен: сцены нет, показан прежний герой с кнопками', r); ok(r.h1 === 1, 'и один заголовок первого уровня', r);
+    const r = await p.evaluate(() => { const q = s => document.querySelector(s), vis = e => { if (!e) return false; const r = e.getBoundingClientRect(); return r.width > 0 && r.height > 0 && getComputedStyle(e).display !== 'none'; }; return {arch: vis(q('#arch-story')), hero: vis(q('.hero')), cta: vis(q('.hero-copy .row a')), h: !!q('.hero .h1x'), ah1: vis(q('#arch-story h1')), poster: vis(q('#arch-story .ar-poster')), h1: document.querySelectorAll('h1').length}; });
+    if (HOUSE) ok(r.arch && !r.hero && r.ah1, 'canvas недоступен: зал показан неподвижным кадром, заголовок на месте, прежнего героя нет', r); else ok(!r.arch && r.hero && r.cta, 'canvas недоступен: сцены нет, показан прежний герой с кнопками', r); ok(r.h1 === 1, 'и один заголовок первого уровня', r);
     await ctx.close(); }
   { const {ctx, p} = await open(1440, 900, {js: false}); await p.goto(base + 'index.html'); await wait(800);
-    const r = await p.evaluate(() => { const q = s => document.querySelector(s), vis = e => { if (!e) return false; const r = e.getBoundingClientRect(); return r.width > 0 && r.height > 0 && getComputedStyle(e).display !== 'none'; }; return {arch: vis(q('#arch-story')), hero: vis(q('.hero'))}; });
-    ok(!r.arch && r.hero, 'без JavaScript: сцены нет, виден прежний герой', r); await ctx.close(); }
+    const r = await p.evaluate(() => { const q = s => document.querySelector(s), vis = e => { if (!e) return false; const r = e.getBoundingClientRect(); return r.width > 0 && r.height > 0 && getComputedStyle(e).display !== 'none'; }; return {arch: vis(q('#arch-story')), hero: vis(q('.hero')), ah1: vis(q('#arch-story h1'))}; });
+    if (HOUSE) ok(r.arch && !r.hero && r.ah1, 'без JavaScript: виден заголовок первого экрана (прежнего героя нет)', r); else ok(!r.arch && r.hero, 'без JavaScript: сцены нет, виден прежний герой', r); await ctx.close(); }
 
   console.log(`\nИтого: ✓ ${pass}  ✗ ${fail}`); await b.close(); srv.close(); process.exit(fail ? 1 : 0);
 })().catch(e => { console.error(e); process.exit(2); });
