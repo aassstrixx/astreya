@@ -416,7 +416,7 @@
         else if (fast && spd < FAST_OFF) { fast = false; pumpDecode(); } }
       const inView = y + vh > sTop && y < sTop + sH;
       if (inView !== sph.view) sph.view = inView;
-      if (A.sphereHold && cp < 0.99) A.sphereHold = false;                  // после возврата из журнала шар стоит; когда посетитель уходит с экрана героя вверх, вращение в статике снова разрешено
+      if (!FLY && A.sphereHold && cp < 0.99) A.sphereHold = false;                  // после возврата из журнала шар стоит; когда посетитель уходит с экрана героя вверх, вращение в статике снова разрешено
       if (inView && !sph.raf) sphStart();                                    // шар вращается сам, даже если курсор не двигают (цикл запускается, как только герой в кадре и сцена дошла до зала)
       /* регулятор нагрузки: кадры идут дольше бюджета — холст чуть меньше (не чаще раза в 1,5 с) */
       if (inView && Math.abs(vp) * KS > MOVING && dtRaw > 0) {
