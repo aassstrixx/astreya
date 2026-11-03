@@ -131,6 +131,12 @@ void main() {
       float zsH; vec2 uvh = srcUv(uTP + dv * tB, zsH);
       float zS = zOfUv(uvh);
       okh = abs(zsH - zS) < 0.045 * zS + 0.01;                    // луч вошёл в поверхность, а не прошёл далеко за краем предмета
+      if (okh) {                                                   // дальняя сторона кромки: тексель, рядом с которым (в 1 текселе) стоит предмет заметно ближе, — его цвет пополам с цветом ближнего (ореол): такой пиксель не берём, его даст второй кадр
+        ivec2 th = ivec2(floor(clamp(uvh, vec2(0.0), vec2(0.99999)) * vec2(uDSize)));
+        float zn = zS;
+        for (int j = -1; j <= 1; j++) for (int i = -1; i <= 1; i++) zn = min(zn, zAt(th + ivec2(i, j)));
+        if (zS > zn * (1.0 + uEdge)) okh = false;
+      }
       if (okh) {
         uvc = uvh; float a = (uNF.y + uNF.x) / (uNF.y - uNF.x), b = -2.0 * uNF.y * uNF.x / (uNF.y - uNF.x);
         zdepth = ((a * tB + b) / tB) * 0.5 + 0.5; bad = false;
