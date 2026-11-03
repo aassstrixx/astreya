@@ -53,16 +53,17 @@
     let look = {}; try { look = JSON.parse(ds.look || '{}') || {}; } catch (e) { look = {}; }
     const LS = look.scale || {}, LSH = look.shadow || null, LG = look.ground || null, LH = look.halo || null;
     const dead0 = () => { root.classList.add('jar-off'); return {root, complete: () => true, destroy() {}, state: () => ({})}; };
-    if (!A.ArchGL || !stage || !cv || !jcv || typeof fetch !== 'function' || typeof createImageBitmap !== 'function' || !glOk() || (FLY && portraitMQ.matches)) {
+    if (!A.ArchGL || !stage || !cv || !jcv || typeof fetch !== 'function' || typeof createImageBitmap !== 'function' || !glOk() || (FLY && portraitMQ.matches && !root.hasAttribute('data-m'))) {
       if (FLY) root.setAttribute('data-fly-why', !A.ArchGL ? 'нет jar-gl.js' : (!stage || !cv || !jcv) ? 'нет холстов в читалке' : typeof createImageBitmap !== 'function' ? 'нет createImageBitmap' : !glOk() ? 'нет WebGL2' : 'узкое окно (высота больше ширины): пролёт только на широком экране');         // для ?flydebug (js/house.js)
       return dead0();
     }
     const nums = s => String(s || '').split(',').filter(x => x !== '').map(Number);
-    let Phi = nums(ds.p);
+    const fm0 = FLY && !!ds.m && portraitMQ.matches;                                 // пролёт на телефоне: свой набор (портретные ключи, глубина, дорожка, расписание)
+    let Phi = nums(fm0 && ds.pm ? ds.pm : ds.p);
     if (Phi.length !== NH || Phi.some(isNaN)) { Phi = []; for (let i = 0; i < NH; i++) Phi.push(NH > 1 ? i / (NH - 1) : 0); }
     const jsonOf = t => { try { const a = JSON.parse(t || '[]'); return Array.isArray(a) ? a : []; } catch (e) { return []; } };
     const JR = [jsonOf(ds.jr), jsonOf(ds.jrm)];                                     // рамки баночки по кадрам (доли кадра: x, y, w, h) — [компьютер, телефон]
-    const isPortrait = () => FLY ? false : portraitMQ.matches;                       // пролёт — только широкий экран (на телефоне журнал встаёт сразу)
+    const isPortrait = () => FLY ? fm0 : portraitMQ.matches;                          // пролёт: портретный набор только если он есть в данных (иначе пролёт — только широкий экран)
     const KS = (NH - 1) / Math.max(1e-6, Phi[NH - 1] - Phi[0]);                        // ключевых кадров на единицу пути (у героя ключи по всему пути 0…1, у пролёта — на его части)
     const urlOf = p => (A.assetUrl ? A.assetUrl(p) : p) + ver;
     const canFetch = true;

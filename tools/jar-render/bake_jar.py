@@ -23,14 +23,29 @@ ap.add_argument('--dpr', type=float, default=2.0)
 ap.add_argument('--out', default='/tmp/zone/jarbake')
 ap.add_argument('--only', default=None, help='номера ключей через запятую (проверка)')
 ap.add_argument('--ropen', type=float, default=1.12, help='радиус закрываемой ниши в радиусах баночки')
+ap.add_argument('--mobile', action='store_true', help='телефон: портретный кадр 900×1600; снимок баночки — экран 390×844 (cover: кадр растянут по высоте, края обрезаны); дорожка/ключи — из --zone/--fly (см. phone_fly_render.sh)')
+ap.add_argument('--fly', default=None, help='телефон: папка с cam-f.json, sched.json, c/, z/ (по умолчанию <zone>)')
+ap.add_argument('--vw', type=float, default=390.0); ap.add_argument('--vh', type=float, default=844.0)
+ap.add_argument('--hero', default=None, help='цвет ключа 0: PNG последнего кадра зала')
+ap.add_argument('--hero-z', default=None, help='глубина ключа 0 (закодированная RG)')
 a = ap.parse_args()
 ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
 HOUSE = json.load(open(os.path.join(ROOT, 'data', 'redesign.json'), encoding='utf8'))['house']['fly']
 F = HOUSE['F']
-cam = json.load(open(os.path.join(ROOT, 'assets', 'house-hall', 'cam-f.json')))
-ws = json.load(open(os.path.join(a.zone, 'fk2', 'sched2.json')))['ws']; K = len(ws)
-cdir = a.cdir or os.path.join(a.zone, 'fk2', 'cg')
-W, H = 1920, 1080
+MOB = a.mobile
+FLYD = a.fly or a.zone
+if MOB:
+    cam = json.load(open(os.path.join(FLYD, 'cam-f.json')))
+    ws = json.load(open(os.path.join(FLYD, 'sched.json')))['ws']; K = len(ws)
+    cdir = a.cdir or os.path.join(FLYD, 'c')
+    W, H = 900, 1600
+    SC = a.vh / H; CROPX = (W * SC - a.vw) / 2.0                                  # css-пикселей на пиксель кадра; сколько css-пикселей кадра срезано слева (cover)
+else:
+    cam = json.load(open(os.path.join(ROOT, 'assets', 'house-hall', 'cam-f.json')))
+    ws = json.load(open(os.path.join(a.zone, 'fk2', 'sched2.json')))['ws']; K = len(ws)
+    cdir = a.cdir or os.path.join(a.zone, 'fk2', 'cg')
+    W, H = 1920, 1080
+    SC = 1.0; CROPX = 0.0
 PP, POS, TGT, UP, LENS, JAR = cam['p'], cam['pos'], cam['tgt'], cam['up'], cam['lens'], cam['jar']
 cz, scale = cam['jarCenterZ'], cam['jarScale']; R = 3.65 * scale
 dmin, dmax = cam.get('dispRange', [0.08, 4.0])
@@ -49,6 +64,8 @@ def at(p):
     return dict(pos=pos, f=f, r=r, u=u, lens=lens, jar=jar)
 def proj(c, P):
     q = sub(P, c['pos']); zt = dot(q, c['f']); xt = dot(q, c['r']); yt = dot(q, c['u']); S = 36.0 / c['lens'] * zt
+    if MOB:                                                                  # портрет: ширина кадра в долях высоты 9/16
+        return ((0.5 + xt / (S * W / H)) * W, (0.5 - yt / S) * H, zt)
     return ((0.5 + xt / S) * W, (0.5 - yt / (S * H / W)) * H, zt)         # px кадра 1920×1080 и глубина вдоль оси
 def axes(c):
     j = c['jar']; dx, dy = c['pos'][0] - j[0], c['pos'][1] - j[1]; d = math.hypot(dx, dy) or 1.0; sx, sy = -dy / d, dx / d
@@ -64,14 +81,15 @@ rgb, al = spr[..., :3], spr[..., 3:4]
 if (rgb <= al + 1e-3).all(): prem = rgb.copy()                       # уже умножено на альфу
 else: prem = rgb * al
 sp = np.dstack([prem, al])                                           # премультиплицированный RGBA
-ox, oy = x0 / a.dpr, y0 / a.dpr                                      # левый верх снимка в px кадра
+ox, oy = (x0 / a.dpr + CROPX) / SC, (y0 / a.dpr) / SC                  # левый верх снимка в px кадра (телефон: снимок — экран, кадр растянут cover)
+PXK = a.dpr * SC                                                       # пикселей снимка на пиксель кадра
 
 KC = axes(at(0.0))                                                   # камера главной (ключ 0 = p 0)
 Minv = np.linalg.inv(np.column_stack([KC['a'], KC['w']]))
 
 def place(k):
     C = axes(at(ws[k] * F)); T = np.column_stack([C['a'], C['w']]) @ Minv            # линейная часть K → C
-    sc = max(np.hypot(*T[:, 0]), np.hypot(*T[:, 1])) / a.dpr
+    sc = max(np.hypot(*T[:, 0]), np.hypot(*T[:, 1])) / PXK
     return C, T, sc
 
 def warp(k):
@@ -79,7 +97,7 @@ def warp(k):
     f = min(1.0, max(0.2, sc))                                       # заранее уменьшаем до нужного масштаба (площадью), затем дозаворачиваем
     small = cv2.resize(sp, None, fx=f, fy=f, interpolation=cv2.INTER_AREA if f < 1 else cv2.INTER_LINEAR)
     # точка малого снимка (xs, ys) → кадр K: (xs/f/dpr + ox, ys/f/dpr + oy) → кадр C: B_C + T·(p − B_K)
-    Mq = np.array([[1.0 / (f * a.dpr), 0, ox], [0, 1.0 / (f * a.dpr), oy]])
+    Mq = np.array([[1.0 / (f * PXK), 0, ox], [0, 1.0 / (f * PXK), oy]])
     Aff = np.hstack([T @ Mq[:, :2], (C['b'] + T @ (Mq[:, 2] - KC['b'])).reshape(2, 1)])
     out = cv2.warpAffine(small, Aff.astype(np.float64), (W, H), flags=cv2.INTER_LINEAR, borderMode=cv2.BORDER_CONSTANT, borderValue=(0, 0, 0, 0))
     return out, C
@@ -114,15 +132,17 @@ def dec_depth(rgb):
 os.makedirs(os.path.join(a.out, 'c'), exist_ok=True); os.makedirs(os.path.join(a.out, 'z'), exist_ok=True)
 only = set(int(x) for x in a.only.split(',')) if a.only else None
 srcz = lambda k: [os.path.join(a.zone, 'fk2', d, '%03d.png' % o) for d, o in (('z', k),)]
-old = json.load(open(os.path.join(a.zone, 'fk2', 'sched.json')))['ws']
+old = [] if MOB else json.load(open(os.path.join(a.zone, 'fk2', 'sched.json')))['ws']
 def zsrc(k):
+    if MOB: return os.path.join(FLYD, 'z', '%03d.png' % k)
     for o, w0 in enumerate(old):
         if abs(w0 - ws[k]) < 2e-5: return os.path.join(a.zone, 'fk2', 'z', '%03d.png' % o)
     return os.path.join(a.zone, 'fk2', 'z2', '%03d.png' % k)
 for k in range(K):
     if only is not None and k not in only: continue
-    col = np.asarray(Image.open(os.path.join(a.zone, 'bg_d_final3', '059.png') if k == 0 else os.path.join(cdir, '%03d.png' % k)).convert('RGB'))
-    zp = os.path.join(ROOT, 'assets', 'house-hall', 'zd', '059.webp') if k == 0 else zsrc(k)
+    hero = a.hero or os.path.join(a.zone, 'bg_d_final3', '059.png')
+    col = np.asarray(Image.open(hero if k == 0 else os.path.join(cdir, '%03d.png' % k)).convert('RGB'))
+    zp = (a.hero_z or os.path.join(ROOT, 'assets', 'house-hall', 'zd', '059.webp')) if k == 0 else zsrc(k)
     dep = dec_depth(np.asarray(Image.open(zp).convert('RGB')))
     col, dep = plug(col, dep, k)
     jar, C = warp(k)

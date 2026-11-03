@@ -18,11 +18,14 @@ ap.add_argument('--data', default='data/redesign.json')
 ap.add_argument('--w', type=float, default=1920.0)
 ap.add_argument('--smooth', type=int, default=10, help='полуширина скругления цели, отсчётов')
 ap.add_argument('--check', action='store_true')
+ap.add_argument('--mobile', action='store_true', help='телефон: портретный кадр 900×1600, данные — house.fly.mobile, зона клика не пишется (её считает hall_table.py hot --portrait)')
 a = ap.parse_args()
 
 cam = json.load(open(a.cam, encoding='utf8'))
 fly = json.load(open(a.data, encoding='utf8'))['house']['fly']
+if a.mobile: fly = dict(fly['mobile'], F=fly['F'])
 B, F = fly['book'], fly['F']
+PW, PH = (900.0, 1600.0) if a.mobile else (a.w, a.w * 9 / 16)
 P, POS, TGT, UP, LENS = cam['p'], cam['pos'], cam['tgt'], cam['up'], cam['lens']
 M = len(P)
 sub = lambda x, y: [x[i] - y[i] for i in range(3)]
@@ -47,7 +50,7 @@ def width(i, back):
     for Pw in CORN:
         q = sub(Pw, pos); zt = dot(q, f); xt = dot(q, r)
         S = 36.0 / LENS[i] * zt
-        xs.append((0.5 + xt / S) * a.w)
+        xs.append((0.5 + xt / (S * PW / PH)) * PW if a.mobile else (0.5 + xt / S) * a.w)
     return max(xs) - min(xs)
 
 n_end = min(M - 1, int(round(F * (M - 1))))               # отсчёт конца пролёта (p = F)
@@ -95,7 +98,7 @@ def write_hot():
     else:
         m = re.search(r'"fly": \{', t); t = t[:m.end()] + '"hot": ' + json.dumps(hot) + ', ' + t[m.end():]
     json.loads(t); open(a.data, 'w', encoding='utf8').write(t)
-if not a.check: write_hot()
+if not a.check and not a.mobile: write_hot()
 if a.check:
     for i in range(0, n_end + 1, 4): print('p=%.3f  w=%.0f -> %.0f  back=%.4f' % (P[i], w0[i], w1[i], back[i]))
 else:
