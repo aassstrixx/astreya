@@ -34,7 +34,7 @@ SPOT = {
 SOFA_BACK = {False: dict(xy=_xy('ZONE_SOFA_BACK_XY', '-.28,-.585'), w=_f('ZONE_SOFA_BACK_W', .56), yaw=_f('ZONE_SOFA_BACK_YAW', .30), hk=1.0),            # ПК: перед ножкой горы (гора стоит на y = −0,42), спинкой к ней, лицом к столику и зрителю
              True: dict(xy=_xy('ZONE_SOFA_BACK_XY_P', '.54,-1.1'), w=_f('ZONE_SOFA_BACK_W_P', .32), yaw=_f('ZONE_SOFA_BACK_YAW_P', .35), hk=_f('ZONE_SOFA_BACK_HK_P', .7))}     # телефон: перед вазой с деревом
 TABLE_R_P = _f('ZONE_TABLE_R_P', .14)
-os.environ.setdefault('HALL_DXP_P', '.10')                                                                                               # на телефоне вазу с деревом чуть вправо: прежняя (−0,15) стояла ровно перед подиумом и закрывала баночку
+os.environ.setdefault('HALL_DXP_P', '.15')                                                                                               # на телефоне вазу с деревом чуть вправо: прежняя (−0,15) стояла ровно перед подиумом и закрывала баночку
 TEXT_W = {False: _f('ZONE_TEXT_W', .24), True: _f('ZONE_TEXT_W_P', .46)}            # ширина надписи, доли ширины кадра
 TABLE_TOP = _f('ZONE_TABLE_TOP', .105)                                               # высота стекла над полом, м
 TABLE_R = _f('ZONE_TABLE_R', .20)                                                    # радиус стекла, м
@@ -689,6 +689,27 @@ def flykeys(argv):
         print('ключ', i, flush=True)
 
 
+def hot_rect_cmd(argv):
+    """hot out.json [--portrait] — рамка клика по журналу на столике в последнем кадре зала (доли кадра, с запасом): углы разворота (две страницы, формат 3:4) на стекле
+    в камере кадра зала. ПК считает fly_soft.py по дорожке пролёта; для телефона (нет пролёта) — эта команда, результат — house.fly.hotM"""
+    rest, o = H.parse(argv)
+    os.environ['ZONE_MAG'] = '1'
+    outp = rest[1]
+    H.build_scene((270, 480) if o['portrait'] else (480, 270), 4, o['portrait'])
+    H.apply_frame(o['total'] - 1, o['total'], o['portrait'])
+    sc = bpy.context.scene; cam = S['cam']
+    cx, cy = S['zone_xy']['magazine']; tr = S['table_xyr'][2]
+    pw = _f('ZONE_MAG_PW_K', .72) * tr; ph = pw * 4.0 / 3.0
+    yaw = math.radians(_f('ZONE_MAG_YAW', 7.0)); ca, sa = math.cos(yaw), math.sin(yaw)
+    rot = lambda x, y: (cx + x * ca - y * sa, cy + x * sa + y * ca)
+    pts = [H.proj(sc, cam, Vector((rot(x, y)[0], rot(x, y)[1], TABLE_TOP + .012))) for x, y in ((-pw, -ph / 2), (pw, -ph / 2), (pw, ph / 2), (-pw, ph / 2))]
+    xs, ys = [q[0] for q in pts], [q[1] for q in pts]
+    pad_x, pad_y = (.02, .012) if o['portrait'] else (.012, .022)
+    rect = [round(min(xs) - pad_x, 4), round(min(ys) - pad_y, 4), round(max(xs) + pad_x, 4), round(max(ys) + pad_y, 4)]
+    json.dump({'hot': rect, 'corners': [[round(q[0], 4), round(q[1], 4)] for q in pts]}, open(outp, 'w'))
+    print('рамка клика по журналу', rect)
+
+
 def find_objs(argv):
     """objs <кадр> x,y [--portrait] — какие объекты сцены стоят в точке кадра (доли кадра x, y сверху вниз): имя, размеры, положение, материалы — чтобы найти лишний предмет"""
     rest, o = H.parse(argv)
@@ -860,6 +881,8 @@ if __name__ == '__main__':
         mag_patch(sys.argv[1:])
     elif len(sys.argv) > 1 and sys.argv[1] == 'flight':
         flight(sys.argv[1:])
+    elif len(sys.argv) > 1 and sys.argv[1] == 'hot':
+        hot_rect_cmd(sys.argv[1:])
     elif len(sys.argv) > 1 and sys.argv[1] == 'objs':
         find_objs(sys.argv[1:])
     elif len(sys.argv) > 1 and sys.argv[1] == 'flykeys':

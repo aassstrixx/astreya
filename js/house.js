@@ -221,7 +221,7 @@
       const lin = flyLin(t), fu = phone() ? ease(clamp(t / .5, 0, 1)) : lin;                  // телефон: журнал встаёт без пролёта, как раньше
       const ra = phone() ? clamp((fu - .86) / .14, 0, 1) : clamp((lin - RD.fade[0]) / (RD.fade[1] - RD.fade[0]), 0, 1);
       if (!A.flyWarm && (t > 0 || window.pageYOffset > fbox.top * .4)) warmFly();                  // подъезжаем к концу героя — пролёт начинает грузиться сразу
-      if (phone()) setLive(false, 0); else setLive(rrTop < -1, ease(clamp(t / RD.hold, 0, 1)));
+      if (phone()) { setLive(false, 0); const hid = rrTop < 4 && rrTop + rb0.total + window.innerHeight > window.innerHeight * .4; if (hid !== lv.phoneHide) { lv.phoneHide = hid; document.body.classList.toggle('house-reading', hid); } } else setLive(rrTop < -1, ease(clamp(t / RD.hold, 0, 1)));
       RS.fu = fu; RS.ra = ra;
       if (FLd && !phone()) {                                                                    // живой журнал входит в полёте: прозрачность и приглушение под нарисованный (если движок не рисует — как раньше, от --ra)
         if (!(A.flyDrawn && BKd)) { RS.rb = ra; RS.bd = 0; }              // движок не рисует (нет WebGL2/ключей): журнал проявляется как раньше; иначе --rb и --bd ведёт сам кадр (flyOnDraw), чтобы прозрачность была привязана к той позиции камеры, где журнал стоит на самом деле
