@@ -20,7 +20,11 @@ module.exports = function homeHouse(ctx, C, P, deps) {
 
   /* ---------------------------------------------------------------- зал: журнал стоит на столике в кадрах (3D-модель, tools/jar-render/mag_model.py); кнопки на нём нет — вход в журнал только прокруткой и подсказкой внизу */
   const mc = H.mag, tb = H.hall.table;          // tb — точка, из которой «наезжает» запасной кадр читалки (house.hall.table)
-  const hallWorld = '';
+  /* журнал на столике в кадре героя нажимается: невидимая кнопка по рамке нарисованного разворота (house.fly.hot, tools/jar-render/fly_soft.py) запускает тот же плавный ход камеры к журналу, что и подсказка внизу.
+     Лежит в .ar-world (кадр 16:9), поэтому положение задано долями кадра и совпадает с нарисованным журналом на любом размере окна; на телефоне кадры другие — там её нет */
+  const hot = H.fly && H.fly.enabled && Array.isArray(H.fly.hot) ? H.fly.hot : null;
+  const bookLbl = ((H.mag || {}).bookLabel) || 'Открыть журнал';
+  const hallWorld = hot ? `<button type="button" class="hs-book" data-house-mag data-from="book" aria-label="${esc(bookLbl)}" title="${esc(bookLbl)}" style="left:${(hot[0] * 100).toFixed(2)}%;top:${(hot[1] * 100).toFixed(2)}%;width:${((hot[2] - hot[0]) * 100).toFixed(2)}%;height:${((hot[3] - hot[1]) * 100).toFixed(2)}%"></button>` : '';
   const hallRooms = `<nav class="hall-rooms" aria-label="${esc(H.hall.doorsLabel)}"><ol>${rooms.map(r => `<li><a href="#room-${r.id}" data-house-go="${r.id}" data-track="house_room" data-place="hall"><b>${r.n2}</b><span>${esc(r.short)}</span></a></li>`).join('')}</ol></nav>`;
 
   /* ---------------------------------------------------------------- журнал: настоящие страницы, содержимое — из данных */

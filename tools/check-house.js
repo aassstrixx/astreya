@@ -62,6 +62,9 @@ const t = (cond, name, info) => { if (cond) ok++; else bad.push(name + (info !==
   t(await p.evaluate(n => document.querySelectorAll('#mag .leaf').length >= n + 2, ROOMS.length), 'журнал: обложка, оглавление, развороты всех комнат и контакты');
   t(await p.evaluate(() => { const m = document.getElementById('mag'), r = document.getElementById('house-reader'); return !!m && !!r && r.contains(m) && m.getAttribute('role') === 'region' && !m.hidden && !m.classList.contains('is-modal') && !m.querySelector('[data-mag-close]'); }), 'журнал стоит в читалке как обычный блок страницы (не диалог, закрывать нечего)');
   t(await p.evaluate(() => !!document.querySelector('#arch-story .ar-orb') && !document.querySelector('#arch-story .ar-panel') && !!document.querySelector('#arch-story .hs-cue[data-house-mag]') && !document.querySelector('.hall-greet')), 'прежняя анимация и герой на месте: орбиты логотипов; вместо панели «Почему выбирают Астрею?» внизу — подсказка «Листайте ниже — откроется журнал» (она же кнопка)');
+  { const bgs = []; for (const f of [0, .12, .3, .5, .7, .9, 1]) { await p.evaluate(fr => { const a = document.getElementById('arch-story'); window.scrollTo({top: Math.round((a.getBoundingClientRect().top + scrollY + a.offsetHeight - innerHeight) * fr), behavior: 'instant'}); }, f); await p.waitForTimeout(220); bgs.push(await p.evaluate(() => { const c = getComputedStyle(document.getElementById('hdr')); return c.backgroundColor + '|' + c.backdropFilter; })); }
+    await p.evaluate(() => window.scrollTo({top: 0, behavior: 'instant'}));
+    t(bgs.every(x => x.startsWith('rgba(0, 0, 0, 0)') && /none$/.test(x)), 'шапка на главной везде без белого фона и размытия: на заставке с баночкой, в середине анимации и на кадре зала', bgs); }
   t(await p.evaluate(() => { const c = document.querySelector('#arch-story .hs-cue'), cs = c && getComputedStyle(c); return !document.querySelector('#arch-story .ar-cta') && !!cs && cs.backgroundColor === 'rgba(0, 0, 0, 0)' && cs.boxShadow === 'none'; }), 'на сцене героя нет кнопок «Перейти в каталог» / «Стать партнёром», подсказка «Листайте ниже…» без фона и тени');
   t(await p.evaluate(() => [...document.querySelectorAll('section[aria-labelledby]')].every(s => document.getElementById(s.getAttribute('aria-labelledby')))), 'у разделов есть заголовок (aria-labelledby ведёт на существующий)');
   t(await p.evaluate(() => { const a = document.getElementById('arch-story'); return !!(a.querySelector('.js-stage canvas.js-cv') && a.querySelector('.ar-copy h1') && a.querySelector('.ar-cue')); }), 'сцена первого экрана и герой на месте (холст, заголовок, «Листайте»)');
@@ -161,6 +164,14 @@ const t = (cond, name, info) => { if (cond) ok++; else bad.push(name + (info !==
     t(/Листайте ниже/.test(g.cue || '') && !g.panel, 'вместо панели «Почему выбирают Астрею?» внизу — подсказка «Листайте ниже — откроется журнал»', g);
     const y0 = await p.evaluate(() => scrollY); await p.click('.hs-cue'); await p.waitForTimeout(450); const ym = await p.evaluate(() => scrollY); await settle(p); const o = await rs(p), y1 = await p.evaluate(() => scrollY);
     t(ym > y0 && ym < y1 - 5 && o.s === 1 && o.t > .25 && o.t < .4, 'клик по подсказке: страница сама плавно едет к журналу (не прыжок), камера пролетает к раскрытому журналу', {y0, ym, y1, o});
+    { /* клик по самому журналу на столике (невидимая зона по нарисованному развороту в кадре героя) запускает тот же плавный ход камеры, что подсказка внизу */
+      await p.evaluate(() => window.Astreya.house.hall()); await p.waitForTimeout(900);
+      const hit = await p.evaluate(() => { const b = document.querySelector('#arch-story .hs-book'); if (!b) return null; const r = b.getBoundingClientRect(); const e = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2); return {w: Math.round(r.width), h: Math.round(r.height), top: !!(e && e.closest('.hs-book')), cur: getComputedStyle(b).cursor, lbl: b.getAttribute('aria-label')}; });
+      t(!!hit && hit.w > 150 && hit.h > 30 && hit.top && hit.cur === 'pointer' && /журнал/i.test(hit.lbl || ''), 'журнал на столике в кадре героя нажимается: зона клика по нарисованному развороту, ничто её не перекрывает', hit);
+      const yb0 = await p.evaluate(() => scrollY); await p.click('#arch-story .hs-book'); await p.waitForTimeout(450); const ybm = await p.evaluate(() => scrollY); await settle(p); const ob = await rs(p), yb1 = await p.evaluate(() => scrollY);
+      t(ybm > yb0 && ybm < yb1 - 5 && ob.s === 1 && ob.t > .25 && ob.t < .4, 'клик по журналу на столике: страница сама плавно едет к журналу (анимация пролёта сохранена)', {yb0, ybm, yb1, ob});
+      await p.evaluate(() => window.Astreya.house.hall()); await p.waitForTimeout(900);
+      await p.click('.hs-cue'); await p.waitForTimeout(300); await settle(p); }
     const lv = await p.evaluate(() => ({live: document.getElementById('house-reader').classList.contains('is-live'), story: document.getElementById('arch-story').classList.contains('rd-live'), hero: +getComputedStyle(document.querySelector('#arch-story .ar-copy')).opacity, jar: getComputedStyle(document.querySelector('#arch-story .ar-jar-cv')).visibility}));
     t(lv.live && lv.story && lv.hero < .05, 'после стыка читалка «живая», кадр и текст героя погасли (спрайт баночки не гаснет сам — он убирается, когда кадр героя ушёл)', lv);
     const b0 = (await rs(p)).p; await p.evaluate(() => { window.__pr = []; const f = () => { window.__pr.push(window.Astreya.house.readerState().p); if (window.__pr.length < 600) requestAnimationFrame(f); }; requestAnimationFrame(f); });
@@ -199,7 +210,7 @@ const t = (cond, name, info) => { if (cond) ok++; else bad.push(name + (info !==
     await p.mouse.wheel(0, -100); await p.waitForTimeout(900); const e1 = await rs(p);
     t(e0.s === 1 && e1.t < e0.t - .001, 'на первом развороте колесо вверх не перехвачено: страница идёт назад к пролёту камеры', {e0: e0.t, e1: e1.t});
     await p.evaluate(() => window.Astreya.house.openMagazine(1)); await settle(p);
-    { /* «На главную»: кнопка и быстрая серия прокруток вверх ведут к экрану героя с заголовком (последний экран сцены героя) без перелистывания страниц назад; обычный жест вверх по-прежнему листает назад на один разворот */
+    { /* «На главную»: кнопка (а не прокрутка) ведёт к экрану героя с заголовком (последний экран сцены героя) без перелистывания страниц назад; обычный жест вверх по-прежнему листает назад на один разворот */
       const hy = () => p.evaluate(() => { const a = document.getElementById('arch-story'); return Math.round(a.getBoundingClientRect().top + scrollY + a.offsetHeight - innerHeight); });
       const home = async () => { await p.waitForFunction(h => Math.abs(scrollY - h) < 4 && !window.Astreya.house.busy(), await hy(), {timeout: 14000}).catch(() => {}); return p.evaluate(() => scrollY); };
       await p.evaluate(() => window.Astreya.house.openMagazine(5)); await settle(p);
@@ -208,11 +219,11 @@ const t = (cond, name, info) => { if (cond) ok++; else bad.push(name + (info !==
       const pTrace = p.evaluate(() => new Promise(res => { const a = []; const t0 = performance.now(); const f = () => { a.push(+window.Astreya.house.readerState().p.toFixed(2)); if (performance.now() - t0 < 4200) setTimeout(f, 40); else res(a); }; f(); }));
       await p.click('#mag .mag-hm'); const y1 = await home(), H1 = await hy(); const tr = await pTrace;
       t(Math.abs(y1 - H1) < 4, 'кнопка «На главную» плавно ведёт к экрану героя с заголовком (последний экран сцены героя), а не на самый верх', {y: y1, hy: H1});
-      t(!tr.some(v => v > 1.3 && v < 4.7), 'переход на главную без перелистывания страниц назад: журнал не проходит через промежуточные развороты, сразу встаёт на первый', tr.filter((_, i) => i % 6 === 0));
+      t(tr.slice(0, 20).every(v => Math.abs(v - 5) < .02) && !tr.some(v => v > 1.3 && v < 4.7), 'переход на главную: журнал остаётся на развороте, где остановился читатель (не листается назад и не перекидывает на первый)', tr.filter((_, i) => i % 6 === 0));
       await p.evaluate(() => window.Astreya.house.openMagazine(5)); await settle(p); const s5 = await rs(p);
       await p.evaluate(() => new Promise(res => { let i = 0; const f = () => { document.body.dispatchEvent(new WheelEvent('wheel', {deltaY: -200, bubbles: true, cancelable: true})); if (++i < 14) setTimeout(f, 50); else res(); }; f(); }));
-      const y2 = await home(), H2 = await hy();
-      t(s5.s === 5 && Math.abs(y2 - H2) < 4, 'быстрая серия прокруток вверх (14 щелчков за 0,7 с) возвращает на главную (экран героя)', {from: s5.s, y: y2, hy: H2});
+      await settle(p); await p.waitForTimeout(400); const y2 = await p.evaluate(() => scrollY), H2 = await hy(), s5b = await rs(p);
+      t(s5.s === 5 && y2 > H2 + 800 && s5b.s >= 3, 'быстрая серия прокруток вверх (14 щелчков за 0,7 с) не возвращает на главную: журнал просто листается назад, на главную ведёт только кнопка', {from: s5.s, to: s5b.s, y: y2, hy: H2});
       await p.evaluate(() => window.Astreya.house.openMagazine(5)); await settle(p); const s6 = await rs(p); await p.mouse.move(700, 450); await p.mouse.wheel(0, -100); await settle(p); const s7 = await rs(p);
       t(s6.s === 5 && s7.s === 4, 'обычный жест вверх по-прежнему листает назад на один разворот (на главную не уносит)', {from: s6.s, to: s7.s}); }
     await p.evaluate(() => window.Astreya.house.openMagazine(1)); await settle(p);

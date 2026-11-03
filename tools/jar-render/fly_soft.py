@@ -10,7 +10,7 @@
 Запуск:  python3 tools/jar-render/fly_soft.py [--cam assets/house-hall/cam-f.json] [--data data/redesign.json] [--check]   (apply_fly.py вызывает его сам)
 Идемпотентен: `back` пересчитывается заново по исходным pos/tgt/up/lens.
 """
-import json, math, sys, argparse
+import json, math, re, sys, argparse
 
 ap = argparse.ArgumentParser()
 ap.add_argument('--cam', default='assets/house-hall/cam-f.json')
@@ -78,6 +78,24 @@ w1 = [width(i, back[i]) for i in range(M)]
 mono = all(w1[i + 1] >= w1[i] - 0.6 for i in range(n_end))
 print('Wf=%.1f px  макс. ширина до: %.1f (%.1f%%)  после: %.1f (%.1f%%)  отодвигание макс. %.4f (дистанция ≈ %.3f)  монотонно: %s' % (
     Wf, max(w0), (max(w0) / Wf - 1) * 100, max(w1[:n_end + 1]), (max(w1[:n_end + 1]) / Wf - 1) * 100, max(back), dot(sub([B['c'][0], B['c'][1], B['z']], POS[n_end]), basis(n_end)[0]), mono))
+# зона клика по журналу на столике в кадре героя (ключ 0): рамка углов разворота в долях кадра 16:9 с запасом — сайт кладёт на неё кнопку (house.fly.hot)
+def hot_rect(pad_u=.012, pad_v=.022):
+    f, r, u = basis(0)
+    us, vs = [], []
+    for Pw in CORN:
+        q = sub(Pw, POS[0]); zt = dot(q, f); xt = dot(q, r); yt = dot(q, u); S = 36.0 / LENS[0] * zt
+        us.append(0.5 + xt / S); vs.append(0.5 - yt / (S * 9.0 / 16.0))
+    return [round(min(us) - pad_u, 4), round(min(vs) - pad_v, 4), round(max(us) + pad_u, 4), round(max(vs) + pad_v, 4)]
+hot = hot_rect()
+print('зона клика по журналу в кадре героя (u0, v0, u1, v1):', hot)
+def write_hot():
+    t = open(a.data, encoding='utf8').read()
+    m = re.search(r'("fly": \{[^\n]*?)"hot": \[[^\]]*\], ', t)
+    if m: t = t[:m.start()] + m.group(1) + '"hot": ' + json.dumps(hot) + ', ' + t[m.end():]
+    else:
+        m = re.search(r'"fly": \{', t); t = t[:m.end()] + '"hot": ' + json.dumps(hot) + ', ' + t[m.end():]
+    json.loads(t); open(a.data, 'w', encoding='utf8').write(t)
+if not a.check: write_hot()
 if a.check:
     for i in range(0, n_end + 1, 4): print('p=%.3f  w=%.0f -> %.0f  back=%.4f' % (P[i], w0[i], w1[i], back[i]))
 else:

@@ -52,7 +52,7 @@
     const fs = leaves.map(() => -1), faces = leaves.map(l => [$('.front', l), $('.back', l)]), cache = {};
     const fx = leaves.map(l => [$('.front .fx', l), $('.back .fx', l)]), shR = $('.mag-sh.r', mag), shL = $('.mag-sh.l', mag);                    // тень и блик поворачивающегося листа и тень на страницах под ним — настоящие элементы: им пишутся только opacity и transform
     const setVar = (el, k, v) => { const c = cache[k] || (cache[k] = new Map()); if (c.get(el) === v) return; c.set(el, v); el.style.setProperty(k, v); };          // то же значение второй раз не пишем: каждая запись пользовательского свойства — пересчёт стилей поддерева
-    let chat = null, entered = false;                                 // чат Стеллы и вход на разворот объявлены ниже (setP их вызывает раньше по тексту)
+    let chat = null, entered = false, holdP = null;                           // holdP — разворот, на котором журнал держится при возврате «На главную» (иначе страницы листались бы назад вслед за прокруткой)                                 // чат Стеллы и вход на разворот объявлены ниже (setP их вызывает раньше по тексту)
     function setP(v) {
       v = clamp(v, 0, N - 1); p = v;
       let sr = 0, sl = 0;
@@ -229,16 +229,21 @@
       paintReader();
       if (!phone()) { const openNow = t >= RD.open - .001; if (openNow !== entered) { entered = openNow; if (entered) setTimeout(pageIn, 140); } }
       if (phone()) { const target = ra > .94 ? Math.max(s, 1) : 0; if (target !== s && !(s > 0 && target > 0)) render(target, {noScroll: target === 0, instant: true}); return; }
-      setP(pOf(t));
+      setP(holdP !== null ? holdP : pOf(t));                                    // «На главную»: пока камера едет назад, журнал остаётся на развороте, где остановился читатель
     }
 
     /* ---------- автоматический плавный ход страницы: клик по «Откройте журнал», «Далее/Назад», оглавление, список разделов.
        Страницу ведёт одна кривая (rAF, по реальному времени кадра), журнал и камера считаются от прокрутки так же, как при колесе, — лист поворачивается тем же способом ---------- */
-    let glideRaf = 0, goal = null, homing = false, homeTimer = 0;
+    let glideRaf = 0, goal = null, homing = false;
     const eIO = x => x < .5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2;           // долгий ход: мягкий старт и мягкая остановка
     const eSoft = x => .5 * x + .5 * x * x * (3 - 2 * x);                                // листание: почти равномерно — лист успевает повернуться на виду
-    const glideStop = () => { if (glideRaf) { cancelAnimationFrame(glideRaf); glideRaf = 0; } goal = null; homing = false; if (homeTimer) { clearTimeout(homeTimer); homeTimer = 0; } if (reader.classList.contains('is-leaving')) reader.classList.remove('is-leaving'); navStop(); };
+    const glideStop = () => { if (glideRaf) { cancelAnimationFrame(glideRaf); glideRaf = 0; } goal = null; homing = false; releaseHold(); navStop(); };
+    function releaseHold() {                                                   // конец/обрыв возврата: если страница осталась в зоне журнала — ставим её на разворот, который показан, чтобы листы не перескочили
+      if (holdP === null) return; const v = Math.round(holdP); holdP = null;
+      if (!flat() && !phone() && reader.classList.contains('is-live') && readerT() >= RD.from - .002) { const b = readerBox(); jump(b.top + b.total * (RD.from + (clamp(v, 1, N - 1) - 1) / (N - 2) * RD.span)); }
+    }
     function glide(y, g, o) {
+      if (holdP !== null && !(o && o.home)) releaseHold();                    // другой ход (Далее/Назад, оглавление) — журнал снова идёт за прокруткой
       const mx = Math.max(0, document.documentElement.scrollHeight - window.innerHeight); y = Math.round(clamp(y, 0, mx));
       const y0 = window.pageYOffset, dist = y - y0; if (glideRaf) { cancelAnimationFrame(glideRaf); glideRaf = 0; } navStop();
       if (Math.abs(dist) < 2) { goal = null; return; }
@@ -247,29 +252,24 @@
       const frame = ts => {
         if (!t0) t0 = ts; const k = clamp((ts - t0) / dur, 0, 1);
         window.scrollTo({top: y0 + dist * ease(k), behavior: 'instant'}); readerUpdate();
-        if (k < 1) glideRaf = requestAnimationFrame(frame); else { glideRaf = 0; goal = null; homing = false; reader.classList.remove('is-leaving'); window.scrollTo({top: y, behavior: 'instant'}); readerUpdate(); }
+        if (k < 1) glideRaf = requestAnimationFrame(frame); else { glideRaf = 0; goal = null; homing = false; releaseHold(); window.scrollTo({top: y, behavior: 'instant'}); readerUpdate(); }
       };
       glideRaf = requestAnimationFrame(frame);
     }
     /* в самое начало страницы (герой с баночкой): кнопка «В начало» и быстрая серия прокруток вверх. Ход один, плавный (косинусная кривая), 4,5–8,5 с: камера пролёта и герой едут назад на виду; пока идёт, колесо вверх его не обрывает */
-    let homeAt = 0;
-    /* «На главную»: к экрану героя с заголовком (последний экран сцены героя). Из раскрытого журнала — без перелистывания страниц назад: журнал на миг гаснет (под ним нарисованный
-       разворот из ключа пролёта — тот же), встаёт на первый разворот и камера едет назад к залу одним ходом (≈ 2,6–4 с, косинусная кривая) */
+    /* «На главную»: к экрану героя с заголовком (последний экран сцены героя). Журнал остаётся на том развороте, где остановился читатель (страницы не листаются ни вперёд, ни назад, и на первый
+       не перекидывает): камера едет назад к залу одним ходом (2,6–5 с, косинусная кривая), живой журнал к концу пролёта сменяется нарисованным, как при входе */
     const homeY = () => { const a = $('#arch-story'); const hy = a ? Math.round(a.getBoundingClientRect().top + window.pageYOffset + a.offsetHeight - window.innerHeight) : 0; return Math.max(0, Math.min(hy, Math.round(readerBox().top))); };
     function home(via) {
       glideStop(); if (A.motion && A.motion.cancelSmooth) A.motion.cancelSmooth();
       track('house_magazine_home', {via: via || 'button'});
-      const yh = homeY(), y0 = window.pageYOffset, ease = x => .5 - .5 * Math.cos(Math.PI * x), vh = window.innerHeight;
-      const startGlide = from => { homing = true; homeAt = performance.now(); glide(yh, null, {dur: clamp(2200 + Math.abs(from - yh) / vh * 500, 2600, 4200), ease}); if (!glideRaf) { homing = false; reader.classList.remove('is-leaving'); } };
-      const inBook = !flat() && !phone() && reader.classList.contains('is-live') && readerT() >= RD.open - .002;
-      if (!inBook || y0 <= yh + 2) { startGlide(y0); return; }
-      reader.classList.add('is-leaving'); homing = true; homeAt = performance.now();
-      homeTimer = setTimeout(() => {
-        homeTimer = 0; const b = readerBox(), y1 = Math.round(b.top + b.total * (RD.open + RD.from) / 2);
-        jump(y1); readerUpdate(); startGlide(y1);                                       // журнал уже скрыт: сразу первый разворот, без листания назад
-      }, 240);
+      const yh = homeY(), y0 = window.pageYOffset, vh = window.innerHeight;
+      if (!flat() && !phone() && reader.classList.contains('is-live') && readerT() >= RD.from - .002) holdP = Math.round(p);
+      homing = true;
+      glide(yh, null, {home: true, dur: clamp(2200 + Math.abs(y0 - yh) / vh * 380, 2600, 5000), ease: x => .5 - .5 * Math.cos(Math.PI * x)});
+      if (!glideRaf) { homing = false; releaseHold(); }
     }
-    on(window, 'wheel', e => { if (e.__houseStep || (homing && e.deltaY < 0 && performance.now() - homeAt < 900)) return; glideStop(); }, {passive: true});          // хвост того же размаха колеса возврат не обрывает, а новое движение рукой (через ≈ 1 с) — обрывает: управление всегда возвращается               // рука на колесе — автоход уступает (кроме колеса, которым листают журнал: оно само запускает следующий ход)
+    on(window, 'wheel', e => { if (!e.__houseStep) glideStop(); }, {passive: true});          // хвост того же размаха колеса возврат не обрывает, а новое движение рукой (через ≈ 1 с) — обрывает: управление всегда возвращается               // рука на колесе — автоход уступает (кроме колеса, которым листают журнал: оно само запускает следующий ход)
     on(window, 'touchstart', glideStop, {passive: true});
     /* колесо в журнале ведёт листы вслед за рукой: скорость листания равна скорости прокрутки — медленно крутишь, лист поворачивается медленно, быстро — быстро. Прокрутка колеса переводится в «развороты»
        (≈ 150 пикселей колеса — один разворот), а страницу ведёт пружина с критическим затуханием по реальному времени кадра (60 fps): за один щелчок колеса — один разворот, за быстрый взмах — несколько. Рука остановилась —
@@ -280,7 +280,6 @@
        Край журнала (первый разворот вверх, последний вниз) колесо не перехватывает. */
     const GESTURE_GAP = 130;
     const wg = {t: 0, fired: false};
-    const fq = [];                                                            // недавние события колеса вверх: [время, px]
     const navStop = () => {};
     on(window, 'wheel', e => {
       if (e.ctrlKey || e.defaultPrevented || flat() || phone() || !reader.classList.contains('is-live') || Math.abs(e.deltaX) > Math.abs(e.deltaY)) return;
@@ -293,9 +292,6 @@
       e.preventDefault(); e.__houseStep = true;
       if (A.motion && A.motion.cancelSmooth) A.motion.cancelSmooth();
       const now = performance.now();
-      /* быстрая серия вверх: не меньше 10 «щелчков» колеса (по ≥ 90 px каждый) за 0,7 с — колесо мыши раскручено; обычный жест и трекпад (мелкие дельты, инерция) сюда не попадают, их листание не уносит в начало.
-         Возврат — тот же долгий ход, что у кнопки «В начало» */
-      if (dir < 0) { if (-dy >= 90) { fq.push([now, -dy]); while (fq.length && now - fq[0][0] > 700) fq.shift(); if (fq.length >= 10) { fq.length = 0; wg.t = now; wg.fired = true; home('wheel'); return; } } } else fq.length = 0;
       if (now - wg.t > GESTURE_GAP) wg.fired = false; wg.t = now;
       if (wg.fired || glideRaf) return;                                          // этот жест уже листнул разворот / лист ещё идёт
       wg.fired = true; step(dir);
@@ -521,7 +517,7 @@
       step();
     }
     setTimeout(warmPages, 5000);
-    A.house = {busy: () => !!glideRaf || !!homeTimer, home: () => home('api'), go: id => go(id, {via: 'api'}), hall: () => hall({via: 'api'}), openMagazine: v => { if (flat() || phone()) { jump(readerBox().top); render(v === undefined ? 1 : v, {instant: true}); } else toState(v === undefined ? 1 : v); }, state: () => ({room: current, magazine: true, page: s, rooms: ids, reader: true}), readerState: () => { const f = A.jar && A.jar.fly, st = f && f.state ? f.state() : null; return {t: readerT(), s, p, fly: {on: !!FLd, n: st ? st.N : 0, loaded: st ? st.loaded : 0, drawn: !!(st && st.firstDrawn), p: st ? st.p : 0, jarOk: st ? st.jarOk : null, size: st ? st.size : null, sprites: st ? st.jar : null}}; }};
+    A.house = {busy: () => !!glideRaf, home: () => home('api'), go: id => go(id, {via: 'api'}), hall: () => hall({via: 'api'}), openMagazine: v => { if (flat() || phone()) { jump(readerBox().top); render(v === undefined ? 1 : v, {instant: true}); } else toState(v === undefined ? 1 : v); }, state: () => ({room: current, magazine: true, page: s, rooms: ids, reader: true}), readerState: () => { const f = A.jar && A.jar.fly, st = f && f.state ? f.state() : null; return {t: readerT(), s, p, fly: {on: !!FLd, n: st ? st.N : 0, loaded: st ? st.loaded : 0, drawn: !!(st && st.firstDrawn), p: st ? st.p : 0, jarOk: st ? st.jarOk : null, size: st ? st.size : null, sprites: st ? st.jar : null}}; }};
   }
 
   init();
