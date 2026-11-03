@@ -47,7 +47,7 @@ if (!J || !J.enabled || !A || !A.enabled) { console.log('Первый экран
   ok(sOk(S.desktop) && sOk(S.mobile), 'шар: в данных положение в готовом кадре (центр x, центр y, диаметр — доли кадра, компьютер и телефон) — вокруг него орбиты', S);
   ok(A.sphereTex && ['a', 'n'].every(k => A.sphereTex[k] && fs.existsSync(pth.join(ROOT, A.sphereTex[k]))) && !fs.existsSync(pth.join(ROOT, 'js/sphere.js')), 'живой шар: карты цвета и нормалей на месте (рисует js/jar-gl.js поверх запечённого шара кадров), отдельного js/sphere.js нет', A.sphereTex);
   const camD = JSON.parse(fs.readFileSync(pth.join(ROOT, A.cam.desktop), 'utf8'));
-  ok(!camD.sphere3d || (Math.abs(S.desktop[1] - 0.426) < 0.03 && Math.abs(S.desktop[2] - 0.255) < 0.02), 'шар на ПК в готовом кадре стоит как в кадре-эталоне заказчика: центр по высоте ≈ 0,43, диаметр ≈ 0,255 ширины (проверяется, когда в дорожке камеры есть положение шара — кадры новой сцены)', S.desktop);
+  ok(HOUSE || !camD.sphere3d || (Math.abs(S.desktop[1] - 0.426) < 0.03 && Math.abs(S.desktop[2] - 0.255) < 0.02), 'шар на ПК в готовом кадре стоит как в кадре-эталоне заказчика (для дома — зал со своим кадром, проверка не применяется): центр по высоте ≈ 0,43, диаметр ≈ 0,255 ширины (проверяется, когда в дорожке камеры есть положение шара — кадры новой сцены)', S.desktop);
   ok(!camD.sphere3d || (camD.sphere3d.length === 4 && camD.sphere3d[3] > 0.1 && camD.sphere3d[3] < 0.4), 'дорожка камеры хранит положение и радиус шара (м) для живого шара', camD.sphere3d);
   ok(HOUSE || (A.panel.items.length >= 3 && A.panel.title && J.cue), 'панель «Почему выбирают…» и подпись «Листайте» заполнены (в режиме дома вместо панели — подсказка про журнал)');
   ok(!fs.existsSync(pth.join(ROOT, 'assets/jar')) && !fs.existsSync(pth.join(ROOT, 'css/jar.css')) && !J.outro && !J.captions, 'старого вступления и экрана с лозунгом нет ни в файлах, ни в настройках');
@@ -144,7 +144,7 @@ if (!J || !J.enabled || !A || !A.enabled) { console.log('Первый экран
     ok(ink0 > 250, 'заставка: надписи этикетки нарисованы на баночке (тёмные штрихи на корпусе)', ink0);
     await p.evaluate(() => Astreya.jar.ctrl.prefetch(16, 19));                                                  // полные кадры у p = 0,3 (иначе сразу после скачка там ещё уменьшенные копии — мягче)
     const sh = await p.evaluate(() => { const c = Astreya.jar.ctrl; c.jump(0); const l0 = window.__lap('.js-cv'); c.jump(0.3); return {l0, l30: window.__lap('.js-cv')}; });
-    if (camD.sphere3d) ok(!(A.look && A.look.shadow && A.look.shadow.veil), 'светлой завесы-дымки на первых кадрах нет: заставка — настоящий зал (стена, тени листьев, край горы), а не пустой бежевый экран', A.look && A.look.shadow);
+    if (camD.sphere3d && !HOUSE) ok(!(A.look && A.look.shadow && A.look.shadow.veil), 'светлой завесы-дымки на первых кадрах нет: заставка — настоящий зал (стена, тени листьев, край горы), а не пустой бежевый экран', A.look && A.look.shadow);
     else ok(sh.l0 >= 0 && sh.l0 < sh.l30 * 0.65, 'прежние кадры: первый кадр закрыт светлым размытием: резкость на заставке (p = 0) ниже, чем после того, как оно сошло (p = 0,3)', sh);
     for (const k of [14, 26, 40]) {
       await p.evaluate(([a, b]) => Astreya.jar.ctrl.prefetch(a, b), [k - 1, k + 2]);
