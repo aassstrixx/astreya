@@ -22,14 +22,15 @@
   const A = window.Astreya || {};
   /* Защита от цикла падений: iOS убивает вкладку по нехватке памяти и тут же перезагружает её (после нескольких раз — страница «Возникла повторяющаяся проблема»).
      Пока вкладка на экране, в sessionStorage лежит «идёт» (run); при уходе со страницы или в фон — «закончено». Если при загрузке осталось «идёт» — прошлая загрузка оборвалась на экране:
-     включаем облегчённый режим на всю сессию (A.lite): пролёт камеры не создаётся (журнал встаёт на постер, листается по страницам как обычно), у героя окно кадров минимальное и холст меньше.
+     включаем облегчённый режим на всю сессию (A.lite): пролёт остаётся, но кадры — окном (по 1 с каждой стороны) вместо всех 49, у героя окно кадров минимальное и холст меньше; память вдвое меньше, траектория та же.
      ?lite=1 включает режим для проверки, ?lite=0 снимает. */
   (function guard() {
     let lite = false;
     try {
       const ss = window.sessionStorage, q = /[?&]lite=([01])/.exec(location.search), st = JSON.parse(ss.getItem('astreya-boot') || 'null') || {};
       lite = ss.getItem('astreya-lite') === '1';
-      if (!lite && st.run && Date.now() - (st.t || 0) < 600000) lite = true;
+      A.crashed = !!(st.run && Date.now() - (st.t || 0) < 600000);          // прошлая загрузка оборвалась на экране (читает журнал вылетов ниже: к этому моменту «идёт» уже перезаписано)
+      if (!lite && A.crashed) lite = true;
       if (q) lite = q[1] === '1';
       if (lite) ss.setItem('astreya-lite', '1'); else ss.removeItem('astreya-lite');
       const mark = run => { try { ss.setItem('astreya-boot', JSON.stringify({run, t: Date.now()})); } catch (e) { /* — */ } };
@@ -38,6 +39,49 @@
       window.addEventListener('pagehide', () => mark(false));
     } catch (e) { /* без sessionStorage — защиты нет */ }
     A.lite = lite;
+  })();
+  /* Журнал для разбора вылетов: короткая лента последних действий (тапы, свайпы, позиции прокрутки, состояние движков, потеря контекста WebGL) в sessionStorage. Если вкладка оборвалась на экране
+     (то же условие, что у облегчённого режима), лента прошлого запуска переезжает в localStorage (astreya:crashlog, последние 3 вылета) и уходит событием crash_prev. Показать: адрес с ?diag=1 —
+     вверху страницы появляется текст (журнал вылетов и текущего запуска), его можно сфотографировать или скопировать. На работу страницы не влияет: запись — раз в 0,4 с, до 70 строк. */
+  (function diag() {
+    let ss = null, ls = null; try { ss = window.sessionStorage; ls = window.localStorage; } catch (e) { /* — */ }
+    const KEY = 'astreya-bc', CL = 'astreya:crashlog', t0 = performance.now();
+    let buf = [], crashed = false;
+    try {
+      crashed = !!A.crashed;
+      const prev = JSON.parse(ss.getItem(KEY) || '[]');
+      if (crashed && prev.length && ls) { const l = JSON.parse(ls.getItem(CL) || '[]'); l.push({at: new Date().toISOString(), ev: prev.slice(-70)}); ls.setItem(CL, JSON.stringify(l.slice(-3))); if (A.track) A.track('crash_prev', {last: JSON.stringify(prev.slice(-6)).slice(0, 400)}); }
+    } catch (e) { /* — */ }
+    let ft = 0;
+    const flush = () => { ft = 0; try { ss && ss.setItem(KEY, JSON.stringify(buf)); } catch (e) { /* — */ } };
+    const bc = A.bc = (tag, d) => { buf.push([Math.round((performance.now() - t0) / 100) / 10, tag, d === undefined ? '' : String(d).slice(0, 48)]); if (buf.length > 70) buf.splice(0, buf.length - 70); if (!ft) ft = setTimeout(flush, 400); };
+    bc('boot', [innerWidth + 'x' + innerHeight, 'dpr' + (window.devicePixelRatio || 1), 'dm' + (navigator.deviceMemory || '?'), A.lite ? 'lite' : 'full', crashed ? 'after-crash' : ''].join(' '));
+    document.addEventListener('visibilitychange', () => { bc('vis', document.visibilityState); flush(); });
+    window.addEventListener('pagehide', () => { bc('pagehide'); flush(); });
+    window.addEventListener('error', e => bc('err', (e.message || '') + ' ' + ((e.filename || '').split('/').pop()) + ':' + (e.lineno || '')));
+    const lab = el => { const e = el && el.closest && el.closest('button,a,[data-act],.leaf,.hr-stage,canvas,input'); return e ? (e.tagName.toLowerCase() + (e.id ? '#' + e.id : e.className && typeof e.className === 'string' ? '.' + e.className.split(' ')[0] : '') + (e.getAttribute('data-act') ? '[' + e.getAttribute('data-act') + ']' : '')) : (el && el.tagName ? el.tagName.toLowerCase() : '?'); };
+    document.addEventListener('click', e => bc('tap', lab(e.target)), true);
+    let tx = 0, ty = 0, tt = 0;
+    document.addEventListener('touchstart', e => { const t = e.touches[0]; if (t) { tx = t.clientX; ty = t.clientY; tt = performance.now(); } }, {passive: true, capture: true});
+    document.addEventListener('touchend', e => { const t = e.changedTouches[0]; if (!t) return; const dx = Math.round(t.clientX - tx), dy = Math.round(t.clientY - ty); if (Math.abs(dx) > 40 || Math.abs(dy) > 40) bc('swipe', dx + ',' + dy + ' ' + Math.round(performance.now() - tt) + 'ms ' + lab(e.target)); }, {passive: true, capture: true});
+    let sT = 0;
+    window.addEventListener('scroll', () => {
+      const n = performance.now(); if (n - sT < 600) return; sT = n;
+      let r = ''; try { const j = A.jar, a = j && j.arch && j.arch.state && j.arch.state(), f = j && j.fly && j.fly.state && j.fly.state(); r = ' h' + (a ? a.resident + '/' + a.lows : '-') + ' f' + (f ? f.resident + '/' + f.lows : '-'); } catch (e) { /* — */ }
+      bc('y', Math.round(window.pageYOffset) + r);
+    }, {passive: true});
+    if (/[?&]diag=1/.test(location.search)) {
+      const show = () => {
+        if (document.getElementById('astreya-diag')) return;
+        const pre = document.createElement('pre'); pre.id = 'astreya-diag';
+        pre.style.cssText = 'position:fixed;left:0;right:0;top:0;max-height:62vh;overflow:auto;margin:0;padding:8px 10px;z-index:2147483647;background:rgba(0,0,0,.86);color:#9fe;font:10px/1.35 ui-monospace,Menlo,monospace;white-space:pre-wrap;word-break:break-all';
+        const fmt = ev => ev.map(r => r.join(' ')).join('\n');
+        const render = () => { let o = 'Астрея · журнал · ' + (A.lite ? 'облегчённый' : 'полный') + '\n'; try { const l = JSON.parse(ls.getItem(CL) || '[]'); o += l.length ? 'ВЫЛЕТЫ (' + l.length + '):\n' + l.map(c => '— ' + c.at + '\n' + fmt(c.ev.slice(-30))).join('\n') + '\n' : 'вылетов не записано\n'; } catch (e) { /* — */ } pre.textContent = o + 'ТЕКУЩИЙ ЗАПУСК:\n' + fmt(buf.slice(-40)); };
+        render(); const x = document.createElement('button'); x.textContent = 'закрыть'; x.style.cssText = 'position:sticky;float:right;top:0;font:11px sans-serif'; x.onclick = () => { clearInterval(iv); pre.remove(); }; pre.prepend(x);
+        const iv = setInterval(() => { const sc = pre.scrollTop; render(); pre.prepend(x); pre.scrollTop = sc; }, 1500); document.body.appendChild(pre);
+      };
+      if (document.body) show(); else document.addEventListener('DOMContentLoaded', show);
+    }
   })();
   const clamp = (x, a, b) => Math.max(a, Math.min(b, x));
   /* «хвост» сцены героя: на телефоне читалка наезжает на конец сцены не на 100lvh, а на 100lvh + хвост (css/house.css), и сцена героя стоит на месте, пока её холсты гаснут над кадром пролёта.
@@ -60,10 +104,12 @@
   const MOVING = 0.04;        // ключевых кадров в секунду: быстрее — идёт движение (включается сглаживание кромок)
   const LANES = [14, 8];      // запросов одновременно: [компьютер, телефон] (HTTP/2)
   const RES = [5, A.lite ? 1 : 3];         // сколько ключевых кадров по обе стороны от положения держим в видеопамяти: [компьютер, телефон]
+  const K1 = 12;                              // телефон, пролёт: столько первых ключей грузится и во время прокрутки героя, остальные — в паузах (и сразу, как читалка входит в сцену)
   const DECODERS = 3, DECODERS_P = 2;         // одновременных разворачиваний картинок в текстуры
   /* уменьшенные копии всех кадров (всегда в видеопамяти; во взмах картинка идёт по ним): ширина цвета, высота цвета, ширина и высота глубины (0 — глубина в натуральном размере: тогда полный кадр берёт её же и держит только цвет), ширина спрайта баночки.
      Они должны быть почти неотличимы от полных кадров (мелкие копии давали «мыло» и ступеньки на кромках): на мощных устройствах (≥ 8 ГБ памяти) цвет 1280×720 и глубина целиком (≈ 350 МБ), иначе 960×540 и глубина 640×360 (≈ 180 МБ); телефон — 450×800 / 540×960 */
   const DM = navigator.deviceMemory || 4, RICH = DM >= 8;
+  const PHONE = (() => { try { return matchMedia('(pointer: coarse)').matches && Math.min(screen.width, screen.height) <= 520; } catch (e) { return false; } })();          // телефон (в том числе повёрнутый набок): холст не больше портретного бюджета — ориентация экрана не должна удваивать видеопамять
   const LOWSZ = [RICH ? [1280, 720, 0, 0, 640] : [960, 540, 640, 360, 480], RICH ? [540, 960, 0, 0, 480] : [450, 800, 300, 533, 360]];      // телефон: на 8 ГБ — цвет 540×960 и вся глубина (≈ 210 МБ), иначе 450×800 и глубина 300×533 (≈ 125 МБ)
   const LOWDEC = [2, 1];           // одновременных разворачиваний уменьшенных копий (они мелкие, идут в стороне от основной очереди)
   let ctrl = null, ctrls = [];       // ctrls — все сцены страницы (на главной одна: #arch-story), ctrl — она же
@@ -222,6 +268,11 @@
     /* телефон (герой и пролёт): у уменьшенных копий глубина натуральная (450×800, общая с полным кадром): с глубиной 300×533 на кромках дивана, плит и журнала в движении были видны
        ступеньки-квадраты (видео заказчика). Цена — +0,8 МБ на кадр (≈ +90 МБ на оба движка), но память отдаётся (trim), когда читатель далеко от движка */
     const lowSz = () => { const L = LOWSZ[isPortrait() ? 1 : 0]; return isPortrait() && !RICH ? [L[0], L[1], 0, 0, L[4]] : L; };
+    /* телефон: полный кадр разворачиваем сразу в ширину холста (744 px при бюджете 1,2 млн пикселей), а не в натуральные 900: на экране он всё равно показывается 1:1 с холстом,
+       а в видеопамяти занимает на треть меньше (цвет 3,9 МБ вместо 5,8 МБ; на 49 ключей пролёта ≈ −90 МБ). 0 — натуральный размер (ПК, мощные устройства, браузер размер не применил) */
+    let WF = 0;
+    const keyW = () => (isPortrait() && !RICH && WF > 0) ? Math.min(900, Math.max(560, Math.round(WF))) : 0;
+    const bmpKey = blob => { const w = keyW(); return w && w < 880 ? bmpR(blob, false, w, 0, 'medium').then(b => b || bmp(blob, false)) : bmp(blob, false); };
     function decodeLow(k, sprite) {
       const L = lowSz(), g = gen, bi = sprite ? NH + k : k;
       lowBusy[bi] = 1; decL++;
@@ -239,7 +290,8 @@
       const LD = LOWDEC[isPortrait() ? 1 : 0];
       if ((ALLRES && !PHALL) || decL >= LD || !hall || !firstDrawn || trimmed) return;                  // пролёт на мощном устройстве держит в видеопамяти все ключи целиком — уменьшенные копии ему не нужны
       const u = locate(cp), c = u.k + u.t;
-      for (let d = 0; d < NH && decL < LD; d++) {
+      if (PHALL && pT <= 0) return;                                    // пролёт на телефоне: пока герой на экране, копии не нужны (полные ключи подгрузятся в паузе)
+      for (let d = 0; d < (PHALL ? 8 : NH) && decL < LD; d++) {          // PHALL: копии — только страховка на ±8 ключей вокруг положения, пока полные ещё грузятся
         for (const k of [Math.round(c) + dirSign * d, Math.round(c) - dirSign * d]) {
           if (k < 0 || k >= NH || decL >= LD) continue;
           if (!lowDone[k] && !lowBusy[k] && keyDone(k)) { if (PHALL && resident[k]) lowDone[k] = 3; else decodeLow(k, false); }          // PHALL: полный кадр уже лежит — копия не нужна
@@ -273,12 +325,14 @@
       for (let d = 0; d <= R; d++) { for (const k of [l.k + d, l.k + 1 - d]) if (k >= 0 && k < NH && need.indexOf(k) < 0) need.push(k); }
       need.sort((a, b) => Math.abs(a - (l.k + l.t)) - Math.abs(b - (l.k + l.t)));
       if (pin) for (let k = pin[0]; k <= pin[1]; k++) if (need.indexOf(k) < 0) need.push(k);
+      const holdFar = FLY && PHALL && pT <= 0 && scrolling();          // герой ещё листают пальцем: дальше первых K1 ключей пролёта не разворачиваем и не грузим в видеопамять — сделаем это в паузе (onScroll → wakeT), иначе каждый кадр скролла героя делит поток с загрузкой 49 ключей
       for (const k of need) {
         if (decN >= (isPortrait() ? DECODERS_P : DECODERS) || lowOnlyF) break;
+        if (holdFar && k >= K1) continue;
         if (!resident[k] && keyDone(k) && !decoding[k]) {
           decoding[k] = 1; decN++; const g = gen;
           const shared = lowDone[k] === 1 && !lowSz()[2];                 // глубина уменьшенной копии — натуральная: второй раз её не разворачиваем
-          Promise.all([bmp(blobs.c[k], false), shared ? null : bmp(blobs.z[k], false)]).then(([c, z]) => {
+          Promise.all([bmpKey(blobs.c[k]), shared ? null : bmp(blobs.z[k], false)]).then(([c, z]) => {
             if (g === gen && hall && !dead) pushUp(() => {
               if (g === gen) decoding[k] = 0;
               if (g === gen && hall && !dead && !trimmed) { if (shared && hall.hasLow(k)) hall.setKeyShared(k, c, c.width, c.height); else if (z) hall.setKey(k, c, z, c.width, c.height, z.width, z.height); else { closeB(c); return; } resident[k] = 1; dirty = true; if (PHALL && hall.hasLow(k)) { hall.adoptDepth(k); hall.dropLow(k); if (lowDone[k] === 1) lowN--; lowDone[k] = 3; } }          // PHALL: цвет копии больше не нужен (полный кадр лежит), глубину забирает полный кадр
@@ -320,7 +374,7 @@
       hall.setSize(W, H); JW = JH = 0; sizeJar();
       loadSphere();
       if (jar && ds.lbl) bmp(await (await fetch(urlOf(ds.lbl))).blob(), false).then(b => { if (jar) { jar.setLabel(b); labelReady = true; dirty = true; schedule(); } }).catch(() => {});
-      cv.addEventListener('webglcontextlost', e => { e.preventDefault(); hall = null; jar = null; resident.fill(0); resJ.fill(0); lowDone.fill(0); lowJDone.fill(0); lowBusy.fill(0); decL = 0; upQ.length = 0; shownP = -1; fast = false; lowN = lowJN = 0; }, false);
+      cv.addEventListener('webglcontextlost', e => { e.preventDefault(); A.bc && A.bc('ctxlost', FLY ? 'fly' : 'hero'); hall = null; jar = null; resident.fill(0); resJ.fill(0); lowDone.fill(0); lowJDone.fill(0); lowBusy.fill(0); decL = 0; upQ.length = 0; shownP = -1; fast = false; lowN = lowJN = 0; }, false);
       cv.addEventListener('webglcontextrestored', () => { if (!dead) initGL().catch(() => {}); }, false);
       pumpDecode(); schedule();
     }
@@ -329,8 +383,9 @@
     function sizeCanvas() {
       const w = stage.clientWidth || innerWidth, h = stage.clientHeight || innerHeight;
       /* пикселей на холсте — не больше, чем в самом кадре (1920×1080 ≈ 2,1 млн): больше деталей на экране всё равно не появится; при слабом устройстве регулятор нагрузки снижает ещё (resScale) */
-      const dpr = Math.min(window.devicePixelRatio || 1, 2), s = Math.min(dpr, Math.sqrt((isPortrait() ? (A.lite ? 8e5 : 1.2e6) : 2.1e6) / Math.max(1, w * h))) * resScale;          // телефон: ≈ 1,2 млн пикселей — слабые видеокарты не тянут больше; сетка реже, кромки решаются поточечно (jar-gl.js)
+      const dpr = Math.min(window.devicePixelRatio || 1, 2), s = Math.min(dpr, Math.sqrt((isPortrait() || PHONE ? (A.lite ? 8e5 : 1.2e6) : 2.1e6) / Math.max(1, w * h))) * resScale;          // телефон: ≈ 1,2 млн пикселей — слабые видеокарты не тянут больше; сетка реже, кромки решаются поточечно (jar-gl.js)
       const nw = trimmed && !FLY ? 2 : Math.round(w * s), nh = trimmed && !FLY ? 2 : Math.round(h * s);          // герой погас — его холст не держим в полном размере
+      if (nw > 8) WF = nw;                                                              // ширина «живого» холста (когда герой погас, он 2×2): по ней выбирается размер разворачиваемых кадров
       if (hall && (nw !== W || nh !== H)) { W = nw; H = nh; hall.setSize(W, H); }
       else if (!hall) { W = nw; H = nh; }
       sizeJar();
@@ -463,9 +518,9 @@
         const dtc = Math.min(dtRaw, 80); minDt = Math.max(5, Math.min(minDt + 0.004, dtc));
         const base = isPortrait() ? 16.67 : minDt < 19 ? minDt : minDt < 28 ? 16.67 : 33.33;          // телефон: цель всегда 60 кадров/с (из минимума по кадрам цель «ползла» к 30 и регулятор переставал снижать качество) dtEma += (dtc - dtEma) * 0.15;
         if (dtEma > base * 1.35 + 0.5) slowRun++; else slowRun = 0;
-        if (slowRun >= (isPortrait() ? 12 : 24) && resScale > 0.6 && now() - lastGov > 1500) { resScale = resScale > 0.8 ? 0.8 : 0.65; govChanges++; slowRun = 0; lastGov = now(); if (resScale < 0.7 && hall) hall.setGridScale(0.5); sizeCanvas(); }
+        if (slowRun >= (isPortrait() ? 12 : 24) && resScale > 0.6 && now() - lastGov > 1500) { resScale = resScale > 0.8 ? 0.8 : 0.65; govChanges++; A.bc && A.bc('gov', (FLY ? 'fly ' : 'hero ') + resScale + ' dt' + Math.round(dtEma)); slowRun = 0; lastGov = now(); if (resScale < 0.7 && hall) hall.setGridScale(0.5); sizeCanvas(); }
       }
-      if (upQ.length) { const mv = Math.abs(vp) * KS > MOVING; if (!mv || !isPortrait() || performance.now() - lastUp >= (fast ? UP_GAP_LOW : UP_GAP_P)) flushUploads(mv ? 2.5 : 8); }          // телефон: в движении тяжёлая загрузка не чаще раза в UP_GAP_P мс (иначе каждый кадр с хвостом)                // по одной-две тяжёлые текстуры за кадр; в покое — быстрее
+      if (upQ.length) { const mv = Math.abs(vp) * KS > MOVING || (FLY && PHALL && scrolling()); if (!mv || !isPortrait() || performance.now() - lastUp >= (fast ? UP_GAP_LOW : UP_GAP_P)) flushUploads(mv ? 2.5 : 8); }          // телефон: в движении тяжёлая загрузка не чаще раза в UP_GAP_P мс (иначе каждый кадр с хвостом)                // по одной-две тяжёлые текстуры за кадр; в покое — быстрее
       if ((inView || !firstDrawn) && hall && (dirty || Math.abs(cp - paintedP) > 1e-7)) {
         if (paint(t)) { paintedP = cp; dirty = false; } else dirty = true;
       }
@@ -478,7 +533,8 @@
     let lastGov = -1e9;
     const now = () => performance.now();
 
-    const onScroll = () => { lastScrollT = performance.now(); quiet = 0; schedule(); };
+    let wakeT = 0;
+    const onScroll = () => { lastScrollT = performance.now(); quiet = 0; schedule(); if (FLY && PHALL) { clearTimeout(wakeT); wakeT = setTimeout(() => { if (!dead && hall && !trimmed && !scrolling()) { pumpDecode(); schedule(); } }, 420); } };          // пауза в прокрутке — догружаем отложенные ключи пролёта
     const onResize = () => { clearTimeout(rzTimer); rzTimer = setTimeout(() => { measureStatic(); sizeCanvas(); schedule(); }, 120); schedule(); };
     /* поменялась ориентация экрана (телефон ↔ компьютер): другой набор кадров, другая дорожка камеры — данные загружаем заново, холсты остаются теми же */
     const onMQ = () => {
@@ -527,7 +583,7 @@
       /* телефон: пока читатель далеко от этого движка (герой — когда он погас, пролёт — когда журнал уже открыт), его видеопамять отдаётся: полные кадры, уменьшенные копии, спрайты, холсты в 2×2.
          Пролёт оставляет последний кадр целиком и три последних уменьшенных (подложка под журналом). trim(false) — всё разворачивается снова от положения (первыми — ближайшие кадры); ready() — можно ли нарисовать текущее положение */
       trim(on) {
-        on = !!on; if (on === trimmed) return; trimmed = on;
+        on = !!on; if (on === trimmed) return; trimmed = on; A.bc && A.bc('trim', (FLY ? 'fly ' : 'hero ') + (on ? 'вкл' : 'выкл'));
         if (on) {
           fast = false; flushUploads(1e9);                                              // очередь отрабатывает вхолостую (при trimmed она только закрывает ImageBitmap и снимает отметки «разворачивается»)
           if (hall) for (let k = 0; k < NH; k++) {

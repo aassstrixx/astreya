@@ -301,7 +301,7 @@
     function trimEngines(t) {
       if (!pm()) return;
       const j = A.jar, h = j && j.arch, f = j && j.fly;
-      const wantH = tr.hero ? t >= RD.open - .06 : t >= RD.open + .02,                      // герой: отдаём память, когда пролёт закончился; возвращаем за ≈ 70 vh до экрана героя (разворачивается ~1–2 с)
+      const wantH = tr.hero ? t >= RD.hold + .28 : t >= RD.hold + .09,                      // герой: отдаём память сразу после того, как он погас над кадром пролёта (t ≥ удержание + 9 % пути ≈ 34 vh); возвращаем, когда прокрутка вернулась выше 28 % за удержанием (≈ 106 vh до экрана героя — разворачивается за ~1 с, ближайшие к концу героя кадры первыми)
             wantF = tr.fly ? !(t < RD.open - .01 || Q < 3.5) : (t >= RD.open && Q >= 4.5);  // пролёт: отдаём на 5-й странице и дальше; возвращаем на 3-й или когда прокрутка пошла назад в пролёт
       if (h && h.trim && !h.fly && wantH !== tr.hero) { tr.hero = wantH; if (wantH) tr.heroEver = true; h.trim(wantH); }
       if (f && f.trim && wantF !== tr.fly) { tr.fly = wantF; f.trim(wantF); }
