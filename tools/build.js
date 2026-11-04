@@ -48,7 +48,7 @@ ctx.assetVersion = (() => {
   const list = d => fs.readdirSync(path.join(__dirname, '..', d)).filter(f => /\.(css|js|json)$/.test(f) && f !== 'data.js' && f !== 'kb.js').sort().map(f => path.join(__dirname, '..', d, f));
   [...list('css'), ...list('js'), ...list('data')].forEach(f => h.update(fs.readFileSync(f)));
   const walk = d => fs.readdirSync(d, {withFileTypes: true}).sort((a, b) => a.name < b.name ? -1 : 1).forEach(e => e.isDirectory() ? walk(path.join(d, e.name)) : h.update(fs.readFileSync(path.join(d, e.name))));
-  ['brands', 'photos', 'teachers', 'jar-arch', 'bg'].filter(d => fs.existsSync(path.join(__dirname, '..', 'assets', d))).forEach(d => walk(path.join(__dirname, '..', 'assets', d)));
+  ['brands', 'photos', 'teachers', 'jar-arch', 'bg', 'house-hall', 'house'].filter(d => fs.existsSync(path.join(__dirname, '..', 'assets', d))).forEach(d => walk(path.join(__dirname, '..', 'assets', d)));
   return h.digest('hex').slice(0, 8);
 })();
 /* тексты форм из data/content.json → forms (админка: «Тексты и SEO → Тексты форм»): применяются и на страницах, и в браузере (js/data.js → forms); поля и обязательность менять нельзя */
@@ -170,7 +170,8 @@ if (C.xon('agentReady')) { const af = agentFiles(ctx, L, ctx.kb); fs.writeFileSy
 /* база знаний помощника: js/kb.js подгружается браузером при первом открытии чата; нет флага extras.assistant — файла нет */
 const KB_FILE = path.join(ROOT, 'js', 'kb.js');
 if (C.xon('assistant')) fs.writeFileSync(KB_FILE, `/* Сгенерировано tools/build.js из data/*.json — не редактировать вручную. */\nwindow.ASTREYA_KB = ${JSON.stringify(buildKb(ctx))};\n`); else fs.rmSync(KB_FILE, {force: true});
-fs.writeFileSync(path.join(ROOT, 'js', 'data.js'), `/* Сгенерировано tools/build.js из data/*.json — не редактировать вручную. */\nwindow.ASTREYA_DATA = ${JSON.stringify(data)};\n`);
+fs.writeFileSync(path.join(ROOT, 'js', 'data.js'), `/* Сгенерировано tools/build.js из data/*.json — не редактировать вручную. */\nwindow.ASTREYA_BUILD = ${JSON.stringify(ctx.assetVersion)};\nwindow.ASTREYA_DATA = ${JSON.stringify(data)};\n`);
+fs.writeFileSync(path.join(ROOT, 'build.json'), JSON.stringify({v: ctx.assetVersion}) + '\n');          // версия выкладки: js/core.js сверяет её с версией загруженной страницы и берёт свежую, если страница в кеше устарела
 
 /* ---- sitemap.xml и robots.txt ---- */
 const base = L.base;

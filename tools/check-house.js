@@ -380,6 +380,21 @@ const t = (cond, name, info) => { if (cond) ok++; else bad.push(name + (info !==
     t(q._errs.length === 0, 'нет ошибок JS в облегчённом режиме', q._errs.slice(0, 5));
     await q._ctx.close();
   }
+  { /* свежесть страницы: версия в build.json не совпадает с версией загруженной страницы (устаревший кеш) → страница открывается заново (не больше двух раз), параметр ?b= из адреса убирается; совпадает — ничего не происходит */
+    const ctx = await b.newContext({viewport: {width: 800, height: 700}, locale: 'ru-RU'});
+    await ctx.addInitScript(() => { try { localStorage.setItem('astreya:consent', JSON.stringify({v: 1, a: false, t: Date.now()})); } catch (e) { /* — */ } });
+    await ctx.route(/^https:\/\/fonts\./, r => r.abort());
+    let nav = 0; const pg = await ctx.newPage(); pg.on('framenavigated', f => { if (f === pg.mainFrame()) nav++; });
+    await pg.route('**/api/assistant/status', r => r.fulfill({status: 200, contentType: 'application/json', body: '{"ai":false}'}));
+    await pg.goto(base + '/' + page + '#hall'); await pg.waitForTimeout(1500);
+    const fresh = {nav, n: await pg.evaluate(() => window.sessionStorage.getItem('astreya:fresh')), q: await pg.evaluate(() => location.search)};
+    t(fresh.n === null && fresh.q === '', 'свежесть: версия в build.json совпадает со страницей — повторной загрузки нет', fresh);
+    await pg.route('**/build.json', r => r.fulfill({status: 200, contentType: 'application/json', body: '{"v":"zzzzzzzz"}'}));
+    nav = 0; await pg.goto(base + '/' + page); await pg.waitForTimeout(4500);
+    const stale = {nav, n: await pg.evaluate(() => window.sessionStorage.getItem('astreya:fresh')), q: await pg.evaluate(() => location.search)};
+    t(stale.n === '2' && stale.nav >= 3 && stale.nav <= 4 && stale.q === '', 'свежесть: версия устарела — страница заново открыта (ровно два раза, без цикла), ?b= из адреса убран', stale);
+    await ctx.close();
+  }
 
   /* ================= 6. уменьшенное движение, без WebGL и без JS ================= */
   p = await open(1440, 900, {reduce: true});
