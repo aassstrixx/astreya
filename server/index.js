@@ -25,7 +25,7 @@ const vault = require('./lib/vault');
 const {httpErr} = A;
 
 const ADMIN_DIR = path.join(__dirname, 'admin');
-const SITE_ALLOW = rel => /^[^/]+\.(html|xml|txt|ico|webmanifest)$/.test(rel) || /^\.well-known\/security\.txt$/.test(rel) || /^(assets|css|js|brands|products|training|news|pages)\//.test(rel);
+const SITE_ALLOW = rel => /^[^/]+\.(html|xml|txt|ico|webmanifest)$/.test(rel) || rel === 'build.json' || /^\.well-known\/security\.txt$/.test(rel) || /^(assets|css|js|brands|products|training|news|pages)\//.test(rel);
 const ADMIN_CSP = "default-src 'self'; img-src 'self' data: blob:; style-src 'self' 'unsafe-inline'; script-src 'self'; connect-src 'self'; frame-ancestors 'none'; base-uri 'none'; object-src 'none'; form-action 'self'";
 const SECRET_MASK = '••••••••';
 
@@ -307,7 +307,7 @@ function createServer() {
         return H.serveStatic(req, res, ADMIN_DIR, url.pathname.slice('/admin/'.length), {allow: r => /^[\w.-]+\.(html|css|js)$/.test(r), noCache: true, headers: (r, ext) => Object.assign({'Cache-Control': 'no-store', 'Cross-Origin-Resource-Policy': 'same-origin'}, ext === '.html' ? {'Content-Security-Policy': ADMIN_CSP, 'X-Frame-Options': 'DENY'} : {}), notFoundFile: null});
       }
       if (url.pathname === '/.well-known/security.txt' && !fs.existsSync(path.join(C.ROOT, '.well-known', 'security.txt'))) return H.send(res, 200, SECURITY_TXT(), {'Content-Type': 'text/plain; charset=utf-8', 'Cache-Control': 'no-cache'});
-      return H.serveStatic(req, res, C.ROOT, url.pathname.slice(1), {allow: SITE_ALLOW, headers: (r, ext, f) => Object.assign({'Cache-Control': ext === '.html' || ext === '.xml' || ext === '.txt' ? 'no-cache' : 'public, max-age=3600', 'X-Frame-Options': 'SAMEORIGIN'}, ext === '.html' && sitePolicy(f) ? {'Content-Security-Policy': sitePolicy(f)} : {}), cleanUrls: true, notFoundFile: path.join(C.ROOT, '404.html')});
+      return H.serveStatic(req, res, C.ROOT, url.pathname.slice(1), {allow: SITE_ALLOW, headers: (r, ext, f) => Object.assign({'Cache-Control': ext === '.html' || ext === '.xml' || ext === '.txt' || r === 'build.json' ? 'no-cache' : 'public, max-age=3600', 'X-Frame-Options': 'SAMEORIGIN'}, ext === '.html' && sitePolicy(f) ? {'Content-Security-Policy': sitePolicy(f)} : {}), cleanUrls: true, notFoundFile: path.join(C.ROOT, '404.html')});
     } catch (e) { console.error(e); try { H.send(res, 500, 'error'); } catch (x) {} }
   });
   srv.headersTimeout = 20000; srv.requestTimeout = 120000; srv.keepAliveTimeout = 5000;            // медленные «висящие» соединения не копятся
