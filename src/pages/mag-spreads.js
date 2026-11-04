@@ -72,11 +72,12 @@ module.exports = function magSpreads(ctx, C, P, deps) {
   };
 
   /* ------------------------------------------------ 8–9. От задачи к решению */
+  /* плитки задач показываются ≈ 150 px шириной: берём уменьшенные текстуры 560×385 (-t), а не 1600×1100 — восемь больших текстур в раскодированном виде давали ≈ 56 МБ и вместе с соседними листами выбивали память iPhone на 6–7-й странице */
   const tex = ['water', 'cream', 'silk', 'pipette', 'swatch', 'film', 'molecules', 'smear'];
   const finder = {
     L: n => `<div class="pg pg-l pg-tx pg-fnl">${run}<p class="mg-kick">${esc(pg.finder.kick)}</p>${hh(pg.finder.hl)}
       <p class="mg-p mp-intro">${esc(rd.solutions.lead)}</p>
-      <ul class="mp-tasks">${tasks.map((t, i) => `<li><a href="${C.u(P, 'catalog.html')}?task=${t.id}" data-track="house_magazine_task" data-task="${t.id}"><img class="mp-tx" src="${esc(C.u(P, `assets/bg/${tex[i % tex.length]}.webp`))}" alt="" loading="lazy" decoding="async"><span class="mp-tn">${String(i + 1).padStart(2, '0')}</span><strong>${esc(t.label)}</strong><span class="mp-tl">${t.brands.map(id => logo(id, 'mp-tlg')).join('')}</span></a></li>`).join('')}</ul>${foot(n, 'l')}</div>`,
+      <ul class="mp-tasks">${tasks.map((t, i) => `<li><a href="${C.u(P, 'catalog.html')}?task=${t.id}" data-track="house_magazine_task" data-task="${t.id}"><img class="mp-tx" src="${esc(C.u(P, `assets/bg/${tex[i % tex.length]}-t.webp`))}" alt="" loading="lazy" decoding="async"><span class="mp-tn">${String(i + 1).padStart(2, '0')}</span><strong>${esc(t.label)}</strong><span class="mp-tl">${t.brands.map(id => logo(id, 'mp-tlg')).join('')}</span></a></li>`).join('')}</ul>${foot(n, 'l')}</div>`,
     R: n => `<div class="pg pg-r pg-tx pg-fnr" id="room-finder" data-room="finder">${run}<p class="mg-kick">${esc(pg.finder.kick)}</p>${hh(pg.finder.hr)}
       <ol class="mp-steps3">${pg.finder.steps.map(s => `<li><span class="mp-sn">${s.n}</span>${ic(s.icon)}<strong>${esc(s.t)}</strong><span>${esc(s.p)}</span></li>`).join('')}</ol>
       <p class="mp-sub">${esc(pg.finder.pick)}</p>

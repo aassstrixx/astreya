@@ -56,7 +56,7 @@
   const IDLE_TAIL = 150;      // мс после остановки прокрутки, пока цикл ещё идёт (пружина доводит кадр до точного положения)
   const FAST_ON = 30, FAST_OFF = 12;   // ключевых кадров в секунду: быстрее FAST_ON — «взмах»: тяжёлые полные кадры не разворачиваем и не грузим в видеопамять (их уже не успеть, а загрузка гасит кадры анимации), картинка идёт по уменьшенным копиям; медленнее FAST_OFF — снова обычная работа
   const FAST_ON_P = 9, FAST_OFF_P = 3;   // то же для телефона (портретный кадр): взмах начинается уже при ≈ 9 ключах в секунду — обычная прокрутка пальцем идёт по уменьшенным копиям, полные кадры подтягиваются, когда движение замедлилось (каждая загрузка полного кадра в видеопамять на iPhone — 10–30 мс главного потока, т. е. пропущенные кадры)
-  const UP_GAP_P = 70;        // мс: на телефоне в движении тяжёлые загрузки идут не чаще одной за этот промежуток
+  const UP_GAP_P = 70, UP_GAP_LOW = 40;        // мс: на телефоне в движении загрузка в видеопамять — не чаще одной за этот промежуток (полный кадр / уменьшенная копия во «взмахе»): раньше копии всех кадров пролёта грузились по одной за каждый кадр анимации ровно во время первого пролёта
   const MOVING = 0.04;        // ключевых кадров в секунду: быстрее — идёт движение (включается сглаживание кромок)
   const LANES = [14, 8];      // запросов одновременно: [компьютер, телефон] (HTTP/2)
   const RES = [5, A.lite ? 1 : 3];         // сколько ключевых кадров по обе стороны от положения держим в видеопамяти: [компьютер, телефон]
@@ -250,14 +250,14 @@
       if (low) f.low = true; upQ.push(f); schedule();
       if (!upTimer) upTimer = setTimeout(function again() { upTimer = 0; flushUploads(8); if (upQ.length) upTimer = setTimeout(again, 250); }, 250);
     }
-    let lastHeavy = 0;
+    let lastUp = 0;
     function flushUploads(budget) {
       if (!upQ.length) return;
       const t0 = performance.now();
       do {
         const i = fast ? upQ.findIndex(f => f.low) : 0;                      // во взмах тяжёлые загрузки ждут (в очереди их мало: новые не запускаются), уменьшенные копии идут
         if (i < 0) break;
-        const f = upQ.splice(i, 1)[0]; if (f.low) upN.low++; else { upN.full++; lastHeavy = performance.now(); } try { f(); } catch (e) { /* — */ }
+        const f = upQ.splice(i, 1)[0]; if (f.low) upN.low++; else upN.full++; lastUp = performance.now(); try { f(); } catch (e) { /* — */ }
       } while (upQ.length && performance.now() - t0 < budget);
     }
 
@@ -459,11 +459,11 @@
       /* регулятор нагрузки: кадры идут дольше бюджета — холст чуть меньше (не чаще раза в 1,5 с) */
       if (inView && Math.abs(vp) * KS > MOVING && dtRaw > 0) {
         const dtc = Math.min(dtRaw, 80); minDt = Math.max(5, Math.min(minDt + 0.004, dtc));
-        const base = minDt < 19 ? minDt : minDt < 28 ? 16.67 : 33.33; dtEma += (dtc - dtEma) * 0.15;
+        const base = isPortrait() ? 16.67 : minDt < 19 ? minDt : minDt < 28 ? 16.67 : 33.33;          // телефон: цель всегда 60 кадров/с (из минимума по кадрам цель «ползла» к 30 и регулятор переставал снижать качество) dtEma += (dtc - dtEma) * 0.15;
         if (dtEma > base * 1.35 + 0.5) slowRun++; else slowRun = 0;
-        if (slowRun >= 24 && resScale > 0.6 && now() - lastGov > 1500) { resScale = resScale > 0.8 ? 0.8 : 0.65; govChanges++; slowRun = 0; lastGov = now(); if (resScale < 0.7 && hall) hall.setGridScale(0.5); sizeCanvas(); }
+        if (slowRun >= (isPortrait() ? 12 : 24) && resScale > 0.6 && now() - lastGov > 1500) { resScale = resScale > 0.8 ? 0.8 : 0.65; govChanges++; slowRun = 0; lastGov = now(); if (resScale < 0.7 && hall) hall.setGridScale(0.5); sizeCanvas(); }
       }
-      if (upQ.length) { const mv = Math.abs(vp) * KS > MOVING; if (!mv || !isPortrait() || fast || performance.now() - lastHeavy >= UP_GAP_P) flushUploads(mv ? 2.5 : 8); }          // телефон: в движении тяжёлая загрузка не чаще раза в UP_GAP_P мс (иначе каждый кадр с хвостом)                // по одной-две тяжёлые текстуры за кадр; в покое — быстрее
+      if (upQ.length) { const mv = Math.abs(vp) * KS > MOVING; if (!mv || !isPortrait() || performance.now() - lastUp >= (fast ? UP_GAP_LOW : UP_GAP_P)) flushUploads(mv ? 2.5 : 8); }          // телефон: в движении тяжёлая загрузка не чаще раза в UP_GAP_P мс (иначе каждый кадр с хвостом)                // по одной-две тяжёлые текстуры за кадр; в покое — быстрее
       if ((inView || !firstDrawn) && hall && (dirty || Math.abs(cp - paintedP) > 1e-7)) {
         if (paint(t)) { paintedP = cp; dirty = false; } else dirty = true;
       }

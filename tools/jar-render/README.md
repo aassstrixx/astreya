@@ -150,3 +150,12 @@ python3 hall_table.py anim 0 59 /tmp/zone/pf/z_p --layer z --res 450x800 --total
 python3 paste_mag.py /tmp/zone/pf/bg_p /tmp/zone/pf/vase_patch /tmp/zone/pf/bg_p_fix                   # вклеить; дальше encode_arch.py / encode_depth.py, как в phone_build.sh
 ```
 `phone_render.sh` запускает съёмку с `ZONE_HIDE=extra` сразу.
+
+После `hidepatch` ключ 0 пролёта (он собран из последнего кадра героя) нужно пересобрать отдельно — иначе в нём остаётся старый объект:
+```
+python3 bake_jar.py --mobile --fly /tmp/zone/pff --jar /tmp/zone/jarbake/hero_jar_m_dpr2.png --dpr 2 --out /tmp/zone/jarbake_m_fix --only 0 \
+  --hero /tmp/zone/pf/bg_p_fix/059.png --hero-z assets/house-hall/zm/059.webp                       # key0.png и z0.png
+# encode_arch.py не принимает один кадр: положить key0.png дважды (000, 001), взять 000.webp; encode_depth.py depth <папка z0> <out> → 000.webp
+cp <out>/000.webp assets/house-hall/ffm/000.webp; cp <out_z>/000.webp assets/house-hall/fzm/000.webp
+```
+

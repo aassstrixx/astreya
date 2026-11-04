@@ -61,7 +61,7 @@ const t = (cond, name, info) => { if (cond) ok++; else bad.push(name + (info !==
   t(await p.evaluate(n => document.querySelectorAll('.hall-rooms a[data-house-go]').length === n, ROOMS.length), 'в зале есть список разделов ссылками (запасной путь для клавиатуры, телефона и режимов без анимации)');
   t(await p.evaluate(n => document.querySelectorAll('#mag .leaf').length >= n + 2, ROOMS.length), 'журнал: обложка, оглавление, развороты всех комнат и контакты');
   t(await p.evaluate(() => { const m = document.getElementById('mag'), r = document.getElementById('house-reader'); return !!m && !!r && r.contains(m) && m.getAttribute('role') === 'region' && !m.hidden && !m.classList.contains('is-modal') && !m.querySelector('[data-mag-close]'); }), 'журнал стоит в читалке как обычный блок страницы (не диалог, закрывать нечего)');
-  t(await p.evaluate(() => !!document.querySelector('#arch-story .ar-orb') && !document.querySelector('#arch-story .ar-panel') && !!document.querySelector('#arch-story .hs-cue[data-house-mag]') && !document.querySelector('.hall-greet')), 'прежняя анимация и герой на месте: орбиты логотипов; вместо панели «Почему выбирают Астрею?» внизу — подсказка «Листайте ниже — откроется журнал» (она же кнопка)');
+  t(await p.evaluate(() => !!document.querySelector('#arch-story .ar-orb') && !document.querySelector('#arch-story .ar-panel') && !!document.querySelector('#arch-story .hs-cue') && !document.querySelector('.hall-greet')), 'прежняя анимация и герой на месте: орбиты логотипов; вместо панели «Почему выбирают Астрею?» внизу — подсказка «Листайте ниже — откроется журнал» (только текст)');
   { const bgs = []; for (const f of [0, .12, .3, .5, .7, .9, 1]) { await p.evaluate(fr => { const a = document.getElementById('arch-story'); window.scrollTo({top: Math.round((a.getBoundingClientRect().top + scrollY + a.offsetHeight - innerHeight) * fr), behavior: 'instant'}); }, f); await p.waitForTimeout(220); bgs.push(await p.evaluate(() => { const c = getComputedStyle(document.getElementById('hdr')); return c.backgroundColor + '|' + c.backdropFilter; })); }
     await p.evaluate(() => window.scrollTo({top: 0, behavior: 'instant'}));
     t(bgs.every(x => x.startsWith('rgba(0, 0, 0, 0)') && /none$/.test(x)), 'шапка на главной везде без белого фона и размытия: на заставке с баночкой, в середине анимации и на кадре зала', bgs); }
@@ -150,28 +150,21 @@ const t = (cond, name, info) => { if (cond) ok++; else bad.push(name + (info !==
     await at(p, .5); await p.click('#house-reader .hr-skip'); await p.waitForTimeout(1000);
     t(await p.evaluate(() => { const e = document.getElementById('house-end').getBoundingClientRect(); return e.top < innerHeight + 4; }), '«К контактам» из читалки приводит к концу страницы (подвал)');
     const tocN = await p.evaluate(() => document.querySelectorAll('.mg-toc button').length); t(tocN === ROOMS.length + 1, 'оглавление: строка на каждую комнату и контакты', tocN); }
-  { /* подсказка внизу зала — кнопка: Enter с клавиатуры запускает автоход к раскрытому журналу; кнопки «Откройте журнал» на столике нет */
+  { /* с главного экрана журнал не открывается кликом (решение заказчика): подсказка «Листайте ниже…» — просто текст, зоны клика по журналу на столике нет; к журналу — только прокруткой */
     await p.evaluate(() => window.Astreya.house.hall()); await p.waitForTimeout(900);
-    t(await p.evaluate(() => !document.querySelector('.mag-prev, .mag-hint, .hall-mag')), 'на столике нет кнопки «Откройте журнал ASTREYA» и зоны клика (по решению заказчика убрана)');
-    await p.focus('.hs-cue'); t(await p.evaluate(() => document.activeElement.classList.contains('hs-cue')), 'подсказка «Листайте ниже…» доступна с клавиатуры (кнопка получает фокус)');
-    await p.keyboard.press('Enter'); await p.waitForFunction(() => window.Astreya.house.readerState().t > .25, null, {timeout: 12000}).catch(() => {}); await settle(p); const o = await rs(p);
-    t(o.s >= 1 && o.t > .25, 'Enter на подсказке прокручивает к раскрытому журналу (первый разворот)', o); }
+    t(await p.evaluate(() => !document.querySelector('.mag-prev, .mag-hint, .hall-mag, .hs-book, #arch-story [data-house-mag]')), 'на главном экране нет кнопок и зон клика по журналу (ни «Откройте журнал», ни зоны на столике, ни кнопки в подсказке)');
+    const cue = await p.evaluate(() => { const c = document.querySelector('#arch-story .hs-cue'), r = c.getBoundingClientRect(), e = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2); return {tag: c.tagName, pe: getComputedStyle(c).pointerEvents, tab: c.tabIndex, text: /Листайте ниже/.test(c.textContent), hit: !!(e && e.closest('.hs-cue')), cx: Math.round(r.left + r.width / 2), cy: Math.round(r.top + r.height / 2)}; });
+    t(cue.tag !== 'BUTTON' && cue.tag !== 'A' && cue.pe === 'none' && cue.tab < 0 && cue.text && !cue.hit, 'подсказка «Листайте ниже — откроется журнал» — только текст: не кнопка, не берёт клики и фокус', cue);
+    const yc0 = await p.evaluate(() => scrollY); await p.mouse.click(cue.cx, cue.cy); await p.waitForTimeout(700); await p.keyboard.press('Enter'); await p.waitForTimeout(500);
+    t(Math.abs((await p.evaluate(() => scrollY)) - yc0) < 3, 'клик по подсказке и Enter страницу не двигают: к журналу ведёт только прокрутка', {yc0}); }
 
   /* ---- единая сцена: герой и журнал без стыка; автоход к журналу; листание кнопками анимируется; шар стоит при прокрутке ---- */
   { await p.evaluate(() => window.Astreya.house.hall()); await p.waitForTimeout(900);
     const g = await p.evaluate(() => { const r = document.getElementById('house-reader'), s = document.getElementById('arch-story'); return {rt: Math.round(r.getBoundingClientRect().top), mt: getComputedStyle(r).marginTop, live: r.classList.contains('is-live'), vis: getComputedStyle(r.querySelector('.hr-stage')).visibility, cue: (document.querySelector('.hs-cue') || {}).textContent, panel: !!document.querySelector('.ar-panel'), between: [...s.parentElement.children].indexOf(r) - [...s.parentElement.children].indexOf(s)}; });
     t(Math.abs(g.rt) <= 2 && !g.live && g.vis === 'hidden', 'герой и журнал — одна сцена: читалка начинается ровно там, где герой заканчивает закрепление, пока герой стоит — её сцена скрыта', g);
     t(/Листайте ниже/.test(g.cue || '') && !g.panel, 'вместо панели «Почему выбирают Астрею?» внизу — подсказка «Листайте ниже — откроется журнал»', g);
-    const y0 = await p.evaluate(() => scrollY); await p.click('.hs-cue'); await p.waitForTimeout(450); const ym = await p.evaluate(() => scrollY); await settle(p); const o = await rs(p), y1 = await p.evaluate(() => scrollY);
-    t(ym > y0 && ym < y1 - 5 && o.s === 1 && o.t > .25 && o.t < .4, 'клик по подсказке: страница сама плавно едет к журналу (не прыжок), камера пролетает к раскрытому журналу', {y0, ym, y1, o});
-    { /* клик по самому журналу на столике (невидимая зона по нарисованному развороту в кадре героя) запускает тот же плавный ход камеры, что подсказка внизу */
-      await p.evaluate(() => window.Astreya.house.hall()); await p.waitForTimeout(900);
-      const hit = await p.evaluate(() => { const b = document.querySelector('#arch-story .hs-book'); if (!b) return null; const r = b.getBoundingClientRect(); const e = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2); return {w: Math.round(r.width), h: Math.round(r.height), top: !!(e && e.closest('.hs-book')), cur: getComputedStyle(b).cursor, lbl: b.getAttribute('aria-label')}; });
-      t(!!hit && hit.w > 150 && hit.h > 30 && hit.top && hit.cur === 'pointer' && /журнал/i.test(hit.lbl || ''), 'журнал на столике в кадре героя нажимается: зона клика по нарисованному развороту, ничто её не перекрывает', hit);
-      const yb0 = await p.evaluate(() => scrollY); await p.click('#arch-story .hs-book'); await p.waitForTimeout(450); const ybm = await p.evaluate(() => scrollY); await settle(p); const ob = await rs(p), yb1 = await p.evaluate(() => scrollY);
-      t(ybm > yb0 && ybm < yb1 - 5 && ob.s === 1 && ob.t > .25 && ob.t < .4, 'клик по журналу на столике: страница сама плавно едет к журналу (анимация пролёта сохранена)', {yb0, ybm, yb1, ob});
-      await p.evaluate(() => window.Astreya.house.hall()); await p.waitForTimeout(900);
-      await p.click('.hs-cue'); await p.waitForTimeout(300); await settle(p); }
+    await p.evaluate(() => window.Astreya.house.openMagazine(1)); await settle(p); const o = await rs(p);          // к журналу — прокруткой: тот же плавный ход (его запускает API, как и прокрутка колесом в разделе 3)
+    t(o.s === 1 && o.t > .25 && o.t < .4, 'ход к журналу: камера пролетает к раскрытому журналу (первый разворот)', o);
     const lv = await p.evaluate(() => ({live: document.getElementById('house-reader').classList.contains('is-live'), story: document.getElementById('arch-story').classList.contains('rd-live'), hero: +getComputedStyle(document.querySelector('#arch-story .ar-copy')).opacity, jar: getComputedStyle(document.querySelector('#arch-story .ar-jar-cv')).visibility}));
     t(lv.live && lv.story && lv.hero < .05, 'после стыка читалка «живая», кадр и текст героя погасли (спрайт баночки не гаснет сам — он убирается, когда кадр героя ушёл)', lv);
     const b0 = (await rs(p)).p; await p.evaluate(() => { window.__pr = []; const f = () => { window.__pr.push(window.Astreya.house.readerState().p); if (window.__pr.length < 600) requestAnimationFrame(f); }; requestAnimationFrame(f); });
@@ -432,6 +425,10 @@ const t = (cond, name, info) => { if (cond) ok++; else bad.push(name + (info !==
     const hrefs = await q.evaluate(() => [...document.querySelectorAll('#mag a[href]')].map(a => a.getAttribute('href')));
     const missing = hrefs.filter(h => !/^(tel:|mailto:|#)/.test(h)).map(h => h.split('#')[0].split('?')[0]).filter(h => h && !fs.existsSync(path.join(ROOT, h.replace(/^(\.\.\/)+/, '').replace(/^\.\//, ''))));
     t(missing.length === 0 && hrefs.length >= 60, 'все ссылки журнала ведут на существующие страницы сайта (' + hrefs.length + ' ссылок)', missing.slice(0, 6));
+    /* память: плитки задач показываются ≈ 150 px шириной — текстуры уменьшенные (-t, ≤ 600 px по ширине), а не 1600×1100 (восемь раскодированных больших текстур ≈ 56 МБ выбивали iPhone на 6–7-й странице) */
+    const tx = await q.evaluate(() => [...document.querySelectorAll('#mag img.mp-tx')].map(i => i.getAttribute('src').split('?')[0]));
+    const txBig = tx.filter(u => !/-t\.webp$/.test(u) || !fs.existsSync(path.join(ROOT, u.replace(/^(\.\.\/)+/, '')))).slice(0, 4);
+    t(tx.length >= 8 && txBig.length === 0, 'плитки задач в журнале берут уменьшенные текстуры (-t.webp), файлы на месте', {n: tx.length, txBig});
     for (const pre of ['brands/', 'products/', 'catalog.html?task=', 'training/', 'news/', 'partners.html', 'start.html', 'training.html#teachers']) t(hrefs.some(h => h.replace(/^\.\.?\//, '').startsWith(pre)), 'в журнале есть ссылка «' + pre + '…»');
     t(hrefs.includes('tel:' + SITE.contacts.phoneRaw) && hrefs.includes('mailto:' + SITE.contacts.email), 'контакты на последнем развороте — из data/site.json (телефон и почта ссылками)');
     // 7.2 логотипы брендов: в галерее у каждого бренда его файл логотипа

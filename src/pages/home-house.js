@@ -22,10 +22,7 @@ module.exports = function homeHouse(ctx, C, P, deps) {
   const mc = H.mag, tb = H.hall.table;          // tb — точка, из которой «наезжает» запасной кадр читалки (house.hall.table)
   /* журнал на столике в кадре героя нажимается: невидимая кнопка по рамке нарисованного разворота (house.fly.hot, tools/jar-render/fly_soft.py) запускает тот же плавный ход камеры к журналу, что и подсказка внизу.
      Лежит в .ar-world (кадр 16:9), поэтому положение задано долями кадра и совпадает с нарисованным журналом на любом размере окна; на телефоне кадры другие — там её нет */
-  const hot = H.fly && H.fly.enabled && Array.isArray(H.fly.hot) ? H.fly.hot : null, hotM = H.fly && Array.isArray(H.fly.hotM) ? H.fly.hotM : null;          // hotM — рамка в кадре телефона (9:16), считает hall_table.py hot --portrait
-  const bookLbl = ((H.mag || {}).bookLabel) || 'Открыть журнал';
-  const hotPct = v => (v * 100).toFixed(2) + '%';
-  const hallWorld = hot ? `<button type="button" class="hs-book${hotM ? '' : ' no-m'}" data-house-mag data-from="book" aria-label="${esc(bookLbl)}" title="${esc(bookLbl)}" style="--l:${hotPct(hot[0])};--t:${hotPct(hot[1])};--w:${hotPct(hot[2] - hot[0])};--h:${hotPct(hot[3] - hot[1])}${hotM ? `;--lm:${hotPct(hotM[0])};--tm:${hotPct(hotM[1])};--wm:${hotPct(hotM[2] - hotM[0])};--hm:${hotPct(hotM[3] - hotM[1])}` : ''}"></button>` : '';
+  const hallWorld = '';          // зоны клика по журналу на столике в кадре героя нет (решение заказчика): к журналу ведёт только прокрутка
   const hallRooms = `<nav class="hall-rooms" aria-label="${esc(H.hall.doorsLabel)}"><ol>${rooms.map(r => `<li><a href="#room-${r.id}" data-house-go="${r.id}" data-track="house_room" data-place="hall"><b>${r.n2}</b><span>${esc(r.short)}</span></a></li>`).join('')}</ol></nav>`;
 
   /* ---------------------------------------------------------------- журнал: настоящие страницы, содержимое — из данных */
@@ -111,7 +108,7 @@ module.exports = function homeHouse(ctx, C, P, deps) {
 
   /* вместо панели «Почему выбирают Астрею?» внизу зала — подсказка: она же кнопка, по клику сцена сама плавно летит к журналу */
   const cueTxt = (H.reader || {}).cue || 'Листайте ниже — откроется журнал';
-  const hallCue = `<button type="button" class="hs-cue" data-house-mag data-from="cue" aria-label="${esc(cueTxt)}"><span>${esc(cueTxt)}</span><i aria-hidden="true"></i></button>`;
+  const hallCue = `<p class="hs-cue"><span>${esc(cueTxt)}</span><i aria-hidden="true"></i></p>`;          // подсказка — текст, не кнопка: журнал открывается только прокруткой
 
   return {
     hall: {world: hallWorld, rooms: hallRooms, cue: hallCue},
