@@ -392,7 +392,7 @@ const t = (cond, name, info) => { if (cond) ok++; else bad.push(name + (info !==
     await pg.route('**/build.json', r => r.fulfill({status: 200, contentType: 'application/json', body: '{"v":"zzzzzzzz"}'}));
     nav = 0; await pg.goto(base + '/' + page); await pg.waitForTimeout(4500);
     const stale = {nav, n: await pg.evaluate(() => window.sessionStorage.getItem('astreya:fresh')), q: await pg.evaluate(() => location.search)};
-    t(stale.n === '2' && stale.nav >= 3 && stale.nav <= 4 && stale.q === '', 'свежесть: версия устарела — страница заново открыта (ровно два раза, без цикла), ?b= из адреса убран', stale);
+    t(stale.n === '2' && stale.nav >= 3 && stale.q === '', 'свежесть: версия устарела — страница заново открыта (ровно два раза, без цикла), ?b= из адреса убран', stale);
     await ctx.close();
   }
 

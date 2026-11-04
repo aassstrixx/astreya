@@ -170,7 +170,7 @@ if (C.xon('agentReady')) { const af = agentFiles(ctx, L, ctx.kb); fs.writeFileSy
 /* база знаний помощника: js/kb.js подгружается браузером при первом открытии чата; нет флага extras.assistant — файла нет */
 const KB_FILE = path.join(ROOT, 'js', 'kb.js');
 if (C.xon('assistant')) fs.writeFileSync(KB_FILE, `/* Сгенерировано tools/build.js из data/*.json — не редактировать вручную. */\nwindow.ASTREYA_KB = ${JSON.stringify(buildKb(ctx))};\n`); else fs.rmSync(KB_FILE, {force: true});
-fs.writeFileSync(path.join(ROOT, 'js', 'data.js'), `/* Сгенерировано tools/build.js из data/*.json — не редактировать вручную. */\nwindow.ASTREYA_BUILD = ${JSON.stringify(ctx.assetVersion)};\nwindow.ASTREYA_DATA = ${JSON.stringify(data)};\n`);
+fs.writeFileSync(path.join(ROOT, 'js', 'data.js'), `/* Сгенерировано tools/build.js из data/*.json — не редактировать вручную. */\nwindow.ASTREYA_DATA = ${JSON.stringify(Object.assign({build: ctx.assetVersion}, data))};\n`);
 fs.writeFileSync(path.join(ROOT, 'build.json'), JSON.stringify({v: ctx.assetVersion}) + '\n');          // версия выкладки: js/core.js сверяет её с версией загруженной страницы и берёт свежую, если страница в кеше устарела
 
 /* ---- sitemap.xml и robots.txt ---- */

@@ -10,11 +10,11 @@
   const ROOT = window.__ASTREYA_BUNDLE ? '' : (function () { try { return new URL(document.body.getAttribute('data-root') || './', location.href).href; } catch (e) { return document.body.getAttribute('data-root') || ''; } })();   // абсолютный адрес корня сайта: не меняется при подмене страниц
   Object.assign(A, {$, $$, wait, D, ROOT});
   /* Свежесть страницы. HTML на GitHub Pages живёт в кеше браузера до 10 минут, во встроенном браузере Telegram — иногда дольше: после выкладки открывается старая страница со старыми скриптами.
-     build.json (его пишет tools/build.js) лежит рядом с HTML и всегда запрашивается без кеша; если версия в нём не совпадает с версией загруженной страницы (ASTREYA_BUILD в js/data.js),
+     build.json (его пишет tools/build.js) лежит рядом с HTML и всегда запрашивается без кеша; если версия в нём не совпадает с версией загруженной страницы (ASTREYA_DATA.build в js/data.js),
      страница один раз открывается заново с ?b=версия (не более двух раз за сессию), а лишний параметр из адреса убирается. */
   (function () {
     try {
-      const B = window.ASTREYA_BUILD; if (!B || window.__ASTREYA_BUNDLE || !/^https?:$/.test(location.protocol)) return;
+      const B = window.ASTREYA_DATA && window.ASTREYA_DATA.build; if (!B || window.__ASTREYA_BUNDLE || !/^https?:$/.test(location.protocol)) return;
       if (/[?&]b=/.test(location.search)) { const u = new URL(location.href); u.searchParams.delete('b'); history.replaceState(history.state, '', u.pathname + u.search + u.hash); }
       fetch(ROOT + 'build.json', {cache: 'no-store'}).then(r => r.ok ? r.json() : null).then(j => {
         if (!j || !j.v || j.v === B) return;
