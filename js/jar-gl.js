@@ -624,7 +624,7 @@ void main() {
       if (ibo) gl.deleteBuffer(ibo); [P0, P1, P2, P3, P4].forEach(q => q && gl.deleteProgram(q.p));
       if (!keepContext) { try { const ext = gl.getExtension('WEBGL_lose_context'); if (ext) ext.loseContext(); } catch (e) { /* — */ } }
     }
-    return {gl, setSize, setKey, setKeyShared, dropKey, hasKey, setLow, dropLow, hasLow, plan, draw, drawSphere, setSphereTex, setSphere, destroy, setGridScale, get sphereReady() { return !!(P4 && sph.ready); }, get hasSphere() { return !!P4; }, camAt: p => track.at(p, {}), keys, get size() { return [W, H]; }};
+    return {gl, setSize, setKey, setKeyShared, dropKey, hasKey, adoptDepth(k) { const e = keys[k]; if (e) e.shared = false; }, setLow, dropLow, hasLow, plan, draw, drawSphere, setSphereTex, setSphere, destroy, setGridScale, get sphereReady() { return !!(P4 && sph.ready); }, get hasSphere() { return !!P4; }, camAt: p => track.at(p, {}), keys, get size() { return [W, H]; }};
   }
 
 

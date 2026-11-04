@@ -119,7 +119,13 @@
     }
 
     /* ---------- читалка: состояние журнала задаёт прокрутка ---------- */
-    const RD = {open: .30, from: .34, span: .62, hold: .05, fade: [.9, .98]};          // hold — первые 5 % пути камера стоит: холсты героя гаснут над тем же кадром (баночка не мигает)                               // доли пути сцены: пролёт камеры 0….30, журнал стоит на первом развороте, с .34 разворот за разворотом до .96
+    const RD_PC = {open: .30, from: .34, span: .62, hold: .05, fade: [.9, .98]};
+    /* Телефон: путь читалки — 50 vh удержания (холсты героя гаснут над кадром пролёта; = «хвост» сцены героя в css/house.css) + 250 vh пролёта + 80 vh выдержки у раскрытого журнала (380 vh при высоте читалки 480 vh).
+       Страницы журнала на телефоне прокруткой не листаются: свайп, «Далее/Назад», оглавление (qGo); прокрутка за пролётом только выводит из читалки к концу страницы */
+    const RD_PM = {open: 300 / 380, from: 300 / 380, span: 0, hold: 50 / 380, fade: [.9, .98]};
+    const RD = Object.assign({}, RD_PC);
+    const syncRD = () => { Object.assign(RD, pm() ? RD_PM : RD_PC); };
+    syncRD(); window.addEventListener('resize', syncRD, {passive: true});          // hold — первые 5 % пути камера стоит: холсты героя гаснут над тем же кадром (баночка не мигает)                               // доли пути сцены: пролёт камеры 0….30, журнал стоит на первом развороте, с .34 разворот за разворотом до .96
     const WIN = [.14, .86];                                                    // окно поворота внутри отрезка одного разворота (остальное — страница стоит и читается)
     const ease = x => x * x * (3 - 2 * x);
     const pOf = t => {
@@ -149,7 +155,7 @@
       const st = Math.round(v);
       if (st !== stopNow) {
         stopNow = st; if (stEl) stEl.textContent = 'Страница ' + (st + 1) + ' из ' + (2 * N - 1);
-        if (pvB) pvB.disabled = st <= 1; if (nxB) nxB.disabled = st >= M2; hm.box = null;
+        if (pvB) pvB.disabled = st <= 1; if (nxB) nxB.disabled = st >= M2; hm.box = null; trimEngines(readerT());
         if (entered && stillNow) setTimeout(pageIn, 60);
       }
     }
@@ -295,8 +301,8 @@
     function trimEngines(t) {
       if (!pm()) return;
       const j = A.jar, h = j && j.arch, f = j && j.fly;
-      const wantH = tr.hero ? t >= RD.open - .06 : t >= RD.open + .02,                      // герой: отдаём память, когда пролёт закончился; возвращаем за ≈ 1800 px до экрана героя (разворачивается ~1–2 с)
-            wantF = tr.fly ? t >= RD.open + .08 : t >= RD.open + .14;                         // пролёт: отдаём на 5–6-й странице; возвращаем на 3-й (кадры пролёта нужны, как только листают назад)
+      const wantH = tr.hero ? t >= RD.open - .06 : t >= RD.open + .02,                      // герой: отдаём память, когда пролёт закончился; возвращаем за ≈ 70 vh до экрана героя (разворачивается ~1–2 с)
+            wantF = tr.fly ? !(t < RD.open - .01 || Q < 3.5) : (t >= RD.open && Q >= 4.5);  // пролёт: отдаём на 5-й странице и дальше; возвращаем на 3-й или когда прокрутка пошла назад в пролёт
       if (h && h.trim && !h.fly && wantH !== tr.hero) { tr.hero = wantH; if (wantH) tr.heroEver = true; h.trim(wantH); }
       if (f && f.trim && wantF !== tr.fly) { tr.fly = wantF; f.trim(wantF); }
     }
@@ -316,7 +322,7 @@
       paintReader();
       if (!pflat()) { const openNow = t >= RD.open - .001; if (openNow !== entered) { entered = openNow; if (entered) setTimeout(pageIn, 140); } }
       if (pflat()) { const target = ra > .94 ? Math.max(s, 1) : 0; if (target !== s && !(s > 0 && target > 0)) render(target, {noScroll: target === 0, instant: true}); return; }
-      if (pm()) applyQ(holdQ !== null ? holdQ : qPm(t)); else setP(holdP !== null ? holdP : pOf(t));                                    // «На главную»: пока камера едет назад, журнал остаётся на развороте, где остановился читатель
+      if (pm()) applyQ(Q); else setP(holdP !== null ? holdP : pOf(t));                                    // «На главную»: пока камера едет назад, журнал остаётся на развороте, где остановился читатель
     }
 
     /* ---------- автоматический плавный ход страницы: клик по «Откройте журнал», «Далее/Назад», оглавление, список разделов.
@@ -353,7 +359,7 @@
       glideStop(); if (A.motion && A.motion.cancelSmooth) A.motion.cancelSmooth();
       track('house_magazine_home', {via: via || 'button'});
       const yh = homeY(), y0 = window.pageYOffset, vh = window.innerHeight;
-      if (!flat() && reader.classList.contains('is-live') && readerT() >= RD.from - .002) { if (pm()) holdQ = Math.round(Q); else if (!phone()) holdP = Math.round(p); }
+      if (!flat() && reader.classList.contains('is-live') && readerT() >= RD.from - .002) { if (!phone()) holdP = Math.round(p); }
       homing = true;
       glide(yh, null, {home: true, dur: clamp(1000 + Math.abs(y0 - yh) / vh * 170, 1400, 2400), ease: x => .5 - .5 * Math.cos(Math.PI * x)});          // возврат быстрый: 1,4–2,4 с (раньше 2,6–5 с); косинусная кривая — мягкий старт и остановка
       if (!glideRaf) { homing = false; releaseHold(); }
@@ -389,7 +395,30 @@
     on(window, 'keydown', e => { if (glideRaf && /^(ArrowUp|ArrowDown|PageUp|PageDown|Home|End| )$/.test(e.key) && !(e.target && e.target.closest && e.target.closest('#mag'))) glideStop(); });
     on(window, 'pointerdown', e => { if (e.target === document.documentElement) glideStop(); });         // полоса прокрутки
 
+    /* Телефон: страницу журнала ведёт не прокрутка, а жест / кнопка / оглавление. Журнал уже раскрыт — Q плавно едет к странице v (книга сдвигается, лист поворачивается), страница не прокручивается.
+       Камера ещё в пути (герой, пролёт) — журнал сразу ставится на страницу v, а страница прокручивается до раскрытого журнала: пролёт играет по дороге */
+    const easeC = x => .5 - .5 * Math.cos(Math.PI * x);
+    function qGo(v, o) {
+      v = clamp(v, 1, NS()); const instant = (o && o.instant) || reduce();
+      const inMag = reader.classList.contains('is-live') && readerT() >= RD.open - .004;
+      if (!inMag) {
+        glideStop(); applyQ(v); const b = readerBox(), y = Math.round(b.top + b.total * (RD.open + .03));
+        if (instant) { jump(y); readerUpdate(); return; }
+        glide(y, v); return;
+      }
+      const q0 = Q, dist = Math.abs(v - q0);
+      glideStop();
+      if (dist < .01 || instant) { applyQ(v); return; }
+      goal = v; const dur = clamp(720 + dist * 260, 800, 2200); let t0 = 0;
+      const frame = ts => {
+        if (!t0) t0 = ts; const k = clamp((ts - t0) / dur, 0, 1);
+        applyQ(q0 + (v - q0) * easeC(k));
+        if (k < 1) glideRaf = requestAnimationFrame(frame); else { glideRaf = 0; goal = null; applyQ(v); }
+      };
+      glideRaf = requestAnimationFrame(frame);
+    }
     function toState(v, o) {                                                   // вести страницу так, чтобы журнал встал на разворот v
+      if (pm()) return qGo(v, o);
       v = clamp(v, 1, NS()); const y = yOfStop(v);
       if ((o && o.instant) || reduce()) { glideStop(); jump(y); readerUpdate(); return; }
       glide(y, v);
@@ -418,7 +447,7 @@
     }
     /* прокрутка остановилась посередине поворота (инерция колеса, полоса прокрутки, клавиши) — лист доворачивается до ближайшего разворота сам, как при «Далее»: страница не «застревает» на полустранице */
     function snapCheck() {
-      if (glideRaf || window.__HOUSE_SNAP === false || flat() || pflat() || !reader.classList.contains('is-live')) return;          // __HOUSE_SNAP === false — только для проверок точных промежуточных положений
+      if (glideRaf || window.__HOUSE_SNAP === false || flat() || pflat() || pm() || !reader.classList.contains('is-live')) return;          // __HOUSE_SNAP === false — только для проверок точных промежуточных положений
       const t = readerT(); if (t < RD.from - .005 || t > RD.from + RD.span + .005) return;
       const cq = pm() ? Q : p;
       const v = clamp(sdir > 0 ? Math.ceil(cq - .03) : sdir < 0 ? Math.floor(cq + .03) : Math.round(cq), 1, NS());          // листок, оставленный посреди поворота (полоса прокрутки, клавиши), доворачивается туда, куда его вели, а не к ближайшему: назад он не уходит

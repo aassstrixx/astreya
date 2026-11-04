@@ -83,7 +83,6 @@
     let look = {}; try { look = JSON.parse(ds.look || '{}') || {}; } catch (e) { look = {}; }
     const LS = look.scale || {}, LSH = look.shadow || null, LG = look.ground || null, LH = look.halo || null;
     const dead0 = () => { root.classList.add('jar-off'); return {root, complete: () => true, destroy() {}, state: () => ({})}; };
-    if (A.lite && FLY && portraitMQ.matches) { root.setAttribute('data-fly-why', 'облегчённый режим'); return dead0(); }          // телефон после падения вкладки: второй движок (пролёт) не создаём
     if (!A.ArchGL || !stage || !cv || !jcv || typeof fetch !== 'function' || typeof createImageBitmap !== 'function' || !glOk() || (FLY && portraitMQ.matches && !root.hasAttribute('data-m'))) {
       if (FLY) root.setAttribute('data-fly-why', !A.ArchGL ? 'нет jar-gl.js' : (!stage || !cv || !jcv) ? 'нет холстов в читалке' : typeof createImageBitmap !== 'function' ? 'нет createImageBitmap' : !glOk() ? 'нет WebGL2' : 'узкое окно (высота больше ширины): пролёт только на широком экране');         // для ?flydebug (js/house.js)
       return dead0();
@@ -109,7 +108,10 @@
     let flyCam = null;                                                              // дорожка камеры пролёта (для живой книги: js/house.js проецирует углы журнала камерой, которой нарисован кадр)
     let lastJarOk = null, dtEma = 16.7, minDt = 16.7, slowRun = 0, govChanges = 0;
     const perfRing = new Float32Array(240); let perfN = 0;
-    const ALLRES = FLY && RICH;                                                     // пролёт: на мощном устройстве (≥ 8 ГБ) все ключи лежат в видеопамяти целиком, быстрого режима с уменьшенными копиями нет — картинка в движении такая же резкая, как в покое
+    /* пролёт на телефоне — как на ПК: все ключи лежат в видеопамяти целиком (900×1600 + глубина ≈ 7 МБ на ключ, ≈ 350 МБ на 49), без «быстрого режима» по уменьшенным копиям: картинка в движении такая же чёткая, как в покое.
+       Герой, пока журнал открыт, свою видеопамять отдаёт (trim). После падения вкладки (A.lite) — прежнее окно кадров + копии: память вдвое меньше, пролёт тот же */
+    const PHALL = FLY && fm0 && !A.lite && !RICH, ALLRES = FLY && (RICH || PHALL);
+    /* ALLRES: на мощном устройстве (≥ 8 ГБ) и на телефоне (PHALL) все ключи пролёта лежат в видеопамяти целиком — уменьшенных копий и быстрого режима нет */
     let dirSign = 1, gate = !FLY;                                                      // gate — пролёт грузит ключи, когда читалка разрешит (self.warm): пока герой не доехал до конца, трафик нужен ему
 
     /* ---- живой шар: вращается сам (≈ 7,5°/с, 60 fps) только в статике — на финальном экране героя с текстом (cp ≥ 0,995); на курсор не реагирует; во всей скролл-анимации (и когда её остановили посередине) стоит на месте: раньше вращение продолжалось на паузах и баночка подлагивала от лишних проходов шара (js/jar-gl.js рисует его поверх кадра зала с учётом глубины) ---- */
@@ -228,19 +230,19 @@
         if (g !== gen || !ok || dead || trimmed) { if (!ok && g === gen) (sprite ? lowJDone : lowDone)[k] = 2; if (g === gen) lowBusy[bi] = 0; a.forEach(closeB); return; }
         pushUp(() => {                                                       // busy снимается только после загрузки в видеопамять: иначе пока она в очереди, тот же кадр разворачивался бы снова и снова
           if (g === gen) lowBusy[bi] = 0;
-          if (g === gen && !dead && !trimmed && (sprite ? jar : hall)) { if (sprite) { jar.setSpriteLow(k, a[0]); if (lowJDone[k] !== 1) lowJN++; lowJDone[k] = 1; } else { hall.setLow(k, a[0], a[1], a[0].width, a[0].height, a[1].width, a[1].height); if (lowDone[k] !== 1) lowN++; lowDone[k] = 1; } dirty = true; }
+          if (g === gen && !dead && !trimmed && (sprite ? jar : hall)) { if (sprite) { jar.setSpriteLow(k, a[0]); if (lowJDone[k] !== 1) lowJN++; lowJDone[k] = 1; } else if (PHALL && resident[k]) { lowDone[k] = 3; } else { hall.setLow(k, a[0], a[1], a[0].width, a[0].height, a[1].width, a[1].height); if (lowDone[k] !== 1) lowN++; lowDone[k] = 1; } dirty = true; }
           a.forEach(closeB);
         }, true);
       }).catch(() => { if (g === gen) { (sprite ? lowJDone : lowDone)[k] = 2; lowBusy[bi] = 0; } }).then(() => { decL--; pumpDecode(); });
     }
     function pumpLows() {
       const LD = LOWDEC[isPortrait() ? 1 : 0];
-      if (ALLRES || decL >= LD || !hall || !firstDrawn || trimmed) return;                  // пролёт на мощном устройстве держит в видеопамяти все ключи целиком — уменьшенные копии ему не нужны
+      if ((ALLRES && !PHALL) || decL >= LD || !hall || !firstDrawn || trimmed) return;                  // пролёт на мощном устройстве держит в видеопамяти все ключи целиком — уменьшенные копии ему не нужны
       const u = locate(cp), c = u.k + u.t;
       for (let d = 0; d < NH && decL < LD; d++) {
         for (const k of [Math.round(c) + dirSign * d, Math.round(c) - dirSign * d]) {
           if (k < 0 || k >= NH || decL >= LD) continue;
-          if (!lowDone[k] && !lowBusy[k] && keyDone(k)) decodeLow(k, false);
+          if (!lowDone[k] && !lowBusy[k] && keyDone(k)) { if (PHALL && resident[k]) lowDone[k] = 3; else decodeLow(k, false); }          // PHALL: полный кадр уже лежит — копия не нужна
           else if (jar && !lowJDone[k] && !lowBusy[NH + k] && blobs.j[k]) decodeLow(k, true);
         }
       }
@@ -279,7 +281,7 @@
           Promise.all([bmp(blobs.c[k], false), shared ? null : bmp(blobs.z[k], false)]).then(([c, z]) => {
             if (g === gen && hall && !dead) pushUp(() => {
               if (g === gen) decoding[k] = 0;
-              if (g === gen && hall && !dead && !trimmed) { if (shared && hall.hasLow(k)) hall.setKeyShared(k, c, c.width, c.height); else if (z) hall.setKey(k, c, z, c.width, c.height, z.width, z.height); else { closeB(c); return; } resident[k] = 1; dirty = true; }
+              if (g === gen && hall && !dead && !trimmed) { if (shared && hall.hasLow(k)) hall.setKeyShared(k, c, c.width, c.height); else if (z) hall.setKey(k, c, z, c.width, c.height, z.width, z.height); else { closeB(c); return; } resident[k] = 1; dirty = true; if (PHALL && hall.hasLow(k)) { hall.adoptDepth(k); hall.dropLow(k); if (lowDone[k] === 1) lowN--; lowDone[k] = 3; } }          // PHALL: цвет копии больше не нужен (полный кадр лежит), глубину забирает полный кадр
               closeB(c); closeB(z);
             });
             else { if (g === gen) decoding[k] = 0; closeB(c); closeB(z); }
@@ -450,7 +452,7 @@
       if (Math.abs(vp) > 1e-3) dirSign = vp > 0 ? 1 : -1;
       { const spd = Math.max(Math.abs(vp), Math.abs(cp - cpTick) / dt) * KS; cpTick = cp;      // скорость: и пружины, и реально пройденное за кадр (при редких кадрах скорость пружины к концу шага уже мала)                                   // «взмах»: пока он идёт, полные кадры не разворачиваем и не грузим (уменьшенных копий хватает)
         const por = isPortrait(), fOn = por ? FAST_ON_P : FAST_ON, fOff = por ? FAST_OFF_P : FAST_OFF;          // пролёт на ПК без быстрого режима (все ключи рядом), на телефоне он есть и в пролёте
-        if ((!FLY || por) && !fast && spd > fOn && lowN >= NH * 0.9 && (!jar || lowJN >= NH * 0.9)) fast = true;
+        if ((!FLY || (por && !PHALL)) && !fast && spd > fOn && lowN >= NH * 0.9 && (!jar || lowJN >= NH * 0.9)) fast = true;
         else if (fast && spd < fOff) { fast = false; pumpDecode(); } }
       const inView = y + vh > sTop && y < sTop + sH;
       if (inView !== sph.view) sph.view = inView;

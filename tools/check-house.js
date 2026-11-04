@@ -301,14 +301,16 @@ const t = (cond, name, info) => { if (cond) ok++; else bad.push(name + (info !==
     t(m3.stop === 3 && m3.s === 2 && m3.bx > .45 && m3.leftVis >= 330 && /Страница 4 из 21/.test(m3.label), 'телефон: следующая «Далее» переворачивает лист и показывает левую страницу следующего разворота', m3);
     await p.click('#mag .mag-pv'); await settle(p); await p.waitForTimeout(500);
     t((await st()).stop === 2, 'телефон: «Назад» возвращает на страницу назад');
-    /* от прокрутки: посреди хода лист в движении, остановка доворачивает до ближайшей страницы */
-    const o2 = await box(p); const tOf = q => (.34 + (q - 1) / 19 * .62);
-    await p.evaluate(() => { window.__HOUSE_SNAP = false; });
-    await p.evaluate(y => window.scrollTo({top: y, behavior: 'instant'}), o2.top + o2.tot * tOf(2.5)); await p.waitForTimeout(900);
-    const m4 = await p.evaluate(() => ({turning: document.querySelectorAll('#mag .leaf.is-turning').length, q: +window.Astreya.house.readerState().q.toFixed(2), bx: parseFloat(document.querySelector('#mag .mag-book').style.getPropertyValue('--bx'))}));
-    t(m4.turning === 1 && m4.q > 2.2 && m4.q < 2.8 && Math.abs(m4.bx) < .3, 'телефон: прокрутка сама листает — посередине хода лист в движении, книга едет вслед за ним', m4);
-    await p.evaluate(() => { window.__HOUSE_SNAP = true; }); await p.evaluate(() => window.scrollBy(0, 2)); await p.waitForTimeout(1800); await settle(p);
-    const m5 = await st(); t(Number.isInteger(m5.q), 'телефон: остановка посередине хода доворачивается до страницы сама', m5);
+    /* страницы на телефоне прокруткой не листаются (просьба заказчика): прокрутка за пролётом страницу не меняет, листают свайп, «Далее/Назад», оглавление */
+    const o2 = await box(p); const stBefore = (await st()).stop;
+    const keep = [];
+    for (const f of [.84, .92, .98]) { await p.evaluate(y => window.scrollTo({top: y, behavior: 'instant'}), o2.top + o2.tot * f); await p.waitForTimeout(700); const q2 = await st(); keep.push([q2.stop, q2.q, await p.evaluate(() => document.querySelectorAll('#mag .leaf.is-turning').length)]); }
+    t(keep.every(k => k[0] === stBefore && k[1] === stBefore && k[2] === 0), 'телефон: прокрутка вниз за пролётом (у раскрытого журнала) страницы не листает', {stBefore, keep});
+    await p.evaluate(y => window.scrollTo({top: y, behavior: 'instant'}), o2.top + o2.tot * .84); await p.waitForTimeout(700);
+    await p.evaluate(() => window.Astreya.house.openMagazine(2)); await p.waitForTimeout(260);          // «Далее» с поворотом листа: посередине хода лист в движении, книга едет вслед за ним
+    const m4 = await p.evaluate(() => ({turning: document.querySelectorAll('#mag .leaf.is-turning').length, q: +window.Astreya.house.readerState().q.toFixed(2)}));
+    await settle(p); const m5 = await st();
+    t(m4.turning <= 1 && m5.stop === 3 && Number.isInteger(m5.q), 'телефон: оглавление / кнопка ведут к странице плавной анимацией и встают ровно на ней', {m4, m5});
   }
   for (const id of ['brands', 'finder', 'partners', 'editorial']) {
     await p.evaluate(() => window.Astreya.house.hall()); await p.waitForTimeout(500);
@@ -331,9 +333,10 @@ const t = (cond, name, info) => { if (cond) ok++; else bad.push(name + (info !==
     /* переход героя → пролёт без двойного изображения (видео заказчика на iPhone): сцена героя стоит на месте весь путь затухания (хвост), холсты не двигаются из JS; холст баночки пролёта крошечный */
     await p.evaluate(() => window.Astreya.house.hall()); await p.waitForTimeout(900);
     const o3 = await box(p), tl = await p.evaluate(() => window.Astreya.heroTail());
-    t(Math.abs(tl - o3.tot * .05) <= 3 && tl > 100, 'телефон: «хвост» сцены героя равен пути затухания героя (5 % пути читалки)', {tail: tl, want: Math.round(o3.tot * .05)});
+    const vh3 = await p.evaluate(() => innerHeight);
+    t(Math.abs(tl - vh3 * .5) <= 3 && Math.abs(tl - o3.tot * 50 / 380) <= 3, 'телефон: «хвост» сцены героя равен пути затухания героя (50 vh = 50/380 пути читалки)', {tail: tl, want: Math.round(vh3 * .5), tot: o3.tot});
     const pin = [];
-    for (const f of [.02, .045, .09]) { await p.evaluate(y => window.scrollTo({top: y, behavior: 'instant'}), o3.top + o3.tot * f); await p.waitForTimeout(450); pin.push(await p.evaluate(() => ({st: Math.round(document.querySelector('#arch-story .js-stage').getBoundingClientRect().top), hy: parseFloat(document.getElementById('arch-story').style.getPropertyValue('--hy')) || 0, hf: parseFloat(document.getElementById('arch-story').style.getPropertyValue('--hf'))}))); }
+    for (const f of [.04, .11, .17]) { await p.evaluate(y => window.scrollTo({top: y, behavior: 'instant'}), o3.top + o3.tot * f); await p.waitForTimeout(450); pin.push(await p.evaluate(() => ({st: Math.round(document.querySelector('#arch-story .js-stage').getBoundingClientRect().top), hy: parseFloat(document.getElementById('arch-story').style.getPropertyValue('--hy')) || 0, hf: parseFloat(document.getElementById('arch-story').style.getPropertyValue('--hf'))}))); }
     t(pin[0].st === 0 && pin[1].st === 0 && pin[0].hy === 0 && pin[1].hy === 0 && pin[0].hf > 0 && pin[1].hf > pin[0].hf && pin[2].st < -50, 'телефон: пока герой гаснет над пролётом, его сцена закреплена (смещения холстов нет), после затухания уезжает', pin);
     const jc = await p.evaluate(() => { const c = document.querySelector('.hr-fly .ar-jar-cv'); return {w: c.width, h: c.height}; });
     t(jc.w * jc.h <= 16, 'телефон: холст баночки пролёта крошечный (баночка запечена в кадры; раньше 6,2 млн пикселей собирались композитором каждый кадр)', jc);
@@ -363,7 +366,7 @@ const t = (cond, name, info) => { if (cond) ok++; else bad.push(name + (info !==
     await q._ctx.addInitScript(() => { try { sessionStorage.setItem('astreya-boot', JSON.stringify({run: true, t: Date.now()})); } catch (e) { /* — */ } });
     await q.reload(); await q.waitForSelector('html.ready', {timeout: 15000}).catch(() => {}); await q.waitForTimeout(1400);
     const l1 = await q.evaluate(() => ({lite: window.Astreya.lite, fly: !!(window.Astreya.jar && window.Astreya.jar.fly), saved: sessionStorage.getItem('astreya-lite')}));
-    t(l1.lite === true && !l1.fly && l1.saved === '1', 'телефон: после оборванной загрузки включается облегчённый режим (второй движок не создаётся), он держится всю сессию', l1);
+    t(l1.lite === true && l1.fly && l1.saved === '1', 'телефон: после оборванной загрузки включается режим экономии памяти (окно кадров вместо всех ключей; пролёт остаётся), он держится всю сессию', l1);
     await q.evaluate(() => window.Astreya.house.hall()); await q.waitForTimeout(500);
     await q.evaluate(() => window.Astreya.house.openMagazine(1)); await settle(q); await q.waitForTimeout(600);
     const l2 = await q.evaluate(() => { const r = window.Astreya.house.readerState(), b = document.querySelector('#mag .mag-book').getBoundingClientRect(); return {stop: r.stop, pm: r.pm, w: Math.round(b.width), ow: document.documentElement.scrollWidth}; });
