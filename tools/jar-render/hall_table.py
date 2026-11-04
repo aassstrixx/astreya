@@ -326,6 +326,27 @@ def zone_frame_state(p, portrait):
 
 H.frame_state = zone_frame_state
 
+# Лишние этикетки упаковок, созданные уже после скрытия «бродячих» (HALL_LAB=1 достраивает их с нулевой точки сцены): цилиндр со швом и диском слева от ниши («ваза» в кадрах телефона).
+# ZONE_HIDE=<имена через запятую> скрывает их при любой съёмке (цвет, глубина, спрайты); ZONE_HIDE=extra — набор по умолчанию (тот же, что FLY_HIDE у пролёта).
+ZONE_HIDE_EXTRA = 'label.011,label.012,label.013,labelh.022,labelh.023,labelh.024,labelh.025,labelh.026,labelh.027,labelm.011,labelm.012,labelm.013'
+_orig_build_scene = H.build_scene
+
+
+def zone_build_scene(*a, **k):
+    r = _orig_build_scene(*a, **k)
+    zh = os.environ.get('ZONE_HIDE', '')
+    names = ZONE_HIDE_EXTRA.split(',') if zh == 'extra' else [x for x in zh.split(',') if x]
+    S['hidden'] = []
+    for nm in names:
+        ob = bpy.data.objects.get(nm)
+        if ob is not None:
+            ob.hide_render = True; S['hidden'].append(ob)
+    return r
+
+
+H.build_scene = zone_build_scene
+
+
 def table_box(portrait):
     """область кадра, где столик и журнал: диск стекла, барабан, основание — по ним в кадрах дорисовывается журнал (доли кадра x0, x1, y0, y1; y сверху вниз), поля 2,5 %"""
     sc = bpy.context.scene; cam = S['cam']
@@ -393,6 +414,38 @@ def fix_patch(argv):
         H.apply_frame(i, o['total'], o['portrait'])
         box = stray_box()
         if box is None or box[1] <= 0 or box[0] >= 1 or box[3] <= 0 or box[2] >= 1:
+            continue
+        box = tuple(min(1.0, max(0.0, v)) for v in box)
+        H.render_bg_crop(i, o['total'], path, o['portrait'], box)
+        json.dump({'box': box, 'res': list(o['res'])}, open(path.replace('.png', '.json'), 'w'))
+        print('участок кадра', i, [round(v, 3) for v in box], flush=True)
+
+
+def hide_patch(argv):
+    """hidepatch <с> <по> outdir [--res WxH] [--samples N] [--portrait] — ZONE_HIDE=extra: дорисовать участок кадра, где стояли скрытые объекты (цилиндр с диском слева от ниши), в уже готовых кадрах зала;
+    те же файлы, что у magpatch/fixpatch (png + json с рамкой), склейка — paste_mag.py. Глубину (--layer z) и спрайты пересчитывают обычным anim с тем же ZONE_HIDE."""
+    rest, o = H.parse(argv)
+    if o['portrait'] and o['res'] == (1920, 1080):
+        o['res'] = (900, 1600)
+    os.environ['ZONE_MAG'] = '1'
+    os.environ.setdefault('ZONE_HIDE', 'extra')
+    a, b, outdir = int(rest[1]), int(rest[2]), rest[3]
+    os.makedirs(outdir, exist_ok=True)
+    H.build_scene(o['res'], o['samples'], o['portrait'])
+    hold_i = int(math.ceil(H.HOLD * (o['total'] - 1) - 1e-9))
+    for i in range(a, min(b, hold_i) + 1):
+        path = os.path.abspath(os.path.join(outdir, '%03d.png' % i))
+        if os.path.exists(path):
+            continue
+        H.apply_frame(i, o['total'], o['portrait'])
+        sc = bpy.context.scene; cam = S['cam']; xs, ys = [], []
+        for ob in S.get('hidden', []):
+            for c in ob.bound_box:
+                q = H.proj(sc, cam, ob.matrix_world @ Vector(c)); xs.append(q[0]); ys.append(q[1])
+        if not xs:
+            continue
+        box = (min(xs) - .04, max(xs) + .04, min(ys) - .06, max(ys) + .06)
+        if box[1] <= 0 or box[0] >= 1 or box[3] <= 0 or box[2] >= 1:
             continue
         box = tuple(min(1.0, max(0.0, v)) for v in box)
         H.render_bg_crop(i, o['total'], path, o['portrait'], box)
@@ -897,5 +950,7 @@ if __name__ == '__main__':
         lamp_block(sys.argv[1:])
     elif len(sys.argv) > 1 and sys.argv[1] == 'fixpatch':
         fix_patch(sys.argv[1:])
+    elif len(sys.argv) > 1 and sys.argv[1] == 'hidepatch':
+        hide_patch(sys.argv[1:])
     else:
         H.main()

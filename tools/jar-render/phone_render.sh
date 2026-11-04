@@ -5,7 +5,7 @@
 # Готовые кадры пропускаются: после сбоя скрипт просто запускают ещё раз. Дальше: phone_build.sh (кодирование в assets/house-hall и блок house.arch).
 cd "$(dirname "$0")" || exit 1
 O=${OUT:-/tmp/zone/pf}; S=${SAMPLES:-16}
-export ZONE_MAG=1 HALL_LAB=1 HALL_LAB_PARTS=packs
+export ZONE_MAG=1 HALL_LAB=1 HALL_LAB_PARTS=packs ZONE_HIDE=extra          # ZONE_HIDE=extra — без цилиндра с диском слева от ниши (лишние этикетки с нулевой точки сцены, hall_table.py)
 T="nice -n 5 python3 hall_table.py"
 mkdir -p "$O"
 [ -s "$O/track-p.json" ] || $T track "$O/track-p.json" --total 60 --portrait

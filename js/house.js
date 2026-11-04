@@ -35,9 +35,10 @@
 
     /* ---------- положение страницы ---------- */
     const abs = el => el.getBoundingClientRect().top + window.pageYOffset;
-    const hallY = () => story.classList.contains('jar-off') ? Math.max(0, abs(story)) : Math.max(0, abs(story) + story.offsetHeight - window.innerHeight);       // конец закреплённой сцены: герой стоит в готовом кадре зала
+    const stageH = el => { const st = el && (el.classList.contains('hr-stage') ? el : el.firstElementChild); return st && st.offsetHeight && getComputedStyle(st).position === 'sticky' ? st.offsetHeight : window.innerHeight; };          // высота закреплённой сцены (100lvh) — постоянная; innerHeight на телефоне прыгает с панелью браузера, от неё прогресс дёргался
+    const hallY = () => story.classList.contains('jar-off') ? Math.max(0, abs(story)) : Math.max(0, abs(story) + story.offsetHeight - stageH(story));       // конец закреплённой сцены: герой стоит в готовом кадре зала
     const jump = y => window.scrollTo({top: Math.round(y), behavior: 'instant'});                // «instant» — мимо html{scroll-behavior:smooth}
-    const readerBox = () => { const r = reader.getBoundingClientRect(); return {top: r.top + window.pageYOffset, total: Math.max(0, r.height - window.innerHeight)}; };
+    const readerBox = () => { const r = reader.getBoundingClientRect(); return {top: r.top + window.pageYOffset, total: Math.max(0, r.height - stageH($('.hr-stage', reader)))}; };
     /* положение читалки в документе меряем один раз и пересчитываем, только когда поменялась вёрстка (ResizeObserver, resize): раньше каждый кадр читал getBoundingClientRect() сразу после записей стилей предыдущего кадра — это принудительный пересчёт стилей и вёрстки прямо в обработчике прокрутки */
     let rbox = null;
     const rbx = () => rbox || (rbox = readerBox());
@@ -56,6 +57,23 @@
     const fx = leaves.map(l => [$('.front .fx', l), $('.back .fx', l)]), shR = $('.mag-sh.r', mag), shL = $('.mag-sh.l', mag);                    // тень и блик поворачивающегося листа и тень на страницах под ним — настоящие элементы: им пишутся только opacity и transform
     const setVar = (el, k, v) => { const c = cache[k] || (cache[k] = new Map()); if (c.get(el) === v) return; c.set(el, v); el.style.setProperty(k, v); };          // то же значение второй раз не пишем: каждая запись пользовательского свойства — пересчёт стилей поддерева
     let chat = null, entered = false, holdP = null, holdQ = null;                           // holdP — разворот, на котором журнал держится при возврате «На главную» (иначе страницы листались бы назад вслед за прокруткой)                                 // чат Стеллы и вход на разворот объявлены ниже (setP их вызывает раньше по тексту)
+    /* Телефон: в окне одна страница, а слоёв у листов — по два на каждый из 11 (3D, will-change) с растром в 3× пикселях экрана, плюс ~120 раскодированных фото: вместе это сотни МБ, и iOS убивала вкладку на 5-й странице
+       («Возникла повторяющаяся проблема»). Рядом с читаемым разворотом держим пять листов, остальные — display:none (css/house.css, .is-far): их слои и фото освобождаются, а подгружаются они за два листа до появления */
+    let nearK = -9, nearK0 = -9;
+    const chatLeaf = (() => { const el = $('.mp-chat', mag), l = el && el.closest('.leaf'); return l ? leaves.indexOf(l) : -1; })();
+    const warmedK = new Set();
+    function warmLeaf(k) {
+      if (k < 0 || k >= N || warmedK.has(k)) return; warmedK.add(k);
+      $$('img', leaves[k]).forEach(im => { try { im.loading = 'eager'; if (im.decode) im.decode().catch(() => {}); } catch (e) { /* — */ } });
+    }
+    function nearLeaves(k0) {
+      if (k0 === nearK) return; nearK = k0;
+      const was = chat && nearK0 > -9 ? chatLeaf < nearK0 - 2 || chatLeaf > nearK0 + 2 : false;
+      leaves.forEach((l, k) => l.classList.toggle('is-far', k < k0 - 2 || k > k0 + 2));
+      if (chat && chatLeaf >= 0 && !(chatLeaf < k0 - 2 || chatLeaf > k0 + 2) && (was || nearK0 === -9)) chat.refit();                       // лист с чатом снова рисуется: подсказки подгоняются под его ширину
+      nearK0 = k0;
+      for (let k = k0 - 1; k <= k0 + 3; k++) warmLeaf(k);                                                         // фото ближайших листов раскодированы заранее, дальних — нет
+    }
     function setP(v) {
       v = clamp(v, 0, N - 1); p = v;
       let sr = 0, sl = 0;
@@ -69,6 +87,7 @@
         l.classList.toggle('is-flipped', q > .5);
         l.classList.toggle('is-turning', q > 0 && q < 1);
       });
+      if (pm()) nearLeaves(Math.floor(v));
       for (let k = 0; k < N; k++) { const f = clamp(v - k, 0, 1); if (f > 0 && f < 1) { const lt = Math.sin(Math.PI * f); sr = Math.max(sr, lt * clamp((.64 - f) / .3, 0, 1)); sl = Math.max(sl, lt * clamp((f - .36) / .3, 0, 1)); } }
       if (shR) { const a = sr.toFixed(3), b2 = sl.toFixed(3); if (shR._v !== a) { shR._v = a; shR.style.opacity = a; } if (shL._v !== b2) { shL._v = b2; shL.style.opacity = b2; } }
       const still = fs.every(q => q === 0 || q === 1); if (still !== stillNow) { stillNow = still; book.classList.toggle('is-still', still); if (still && entered) setTimeout(pageIn, 60); else if (!still && chat) chat.stop(); }          // разворот стоит (ни один лист не в движении) — страницы рисуются без 3D-смещения, текст резкий
@@ -248,7 +267,10 @@
       if (lv.live !== live) { if (lv.live && !live) A.sphereHold = true; lv.live = live; reader.classList.toggle('is-live', live); story.classList.toggle('rd-live', live); document.body.classList.toggle('house-reading', live); }          // пока журнал в сцене, верхней панели нет (и при прокрутке вверх она не выезжает)
       const hfs = hf.toFixed(3), gone = live && hf >= .985, hys = (live ? Math.max(0, Math.min(window.innerHeight * 1.2, window.pageYOffset - rbx().top)) : 0).toFixed(1) + 'px';
       if (lv.hf !== hfs) { lv.hf = hfs; story.style.setProperty('--hf', hfs); }
-      if (lv.gone !== gone) { lv.gone = gone; story.classList.toggle('rd-gone', gone); }
+      if (lv.gone !== gone) {
+        lv.gone = gone; story.classList.toggle('rd-gone', gone);
+        if (pm()) { const h = A.jar && A.jar.arch; if (h && !h.fly && h.lowOnly) h.lowOnly(gone); }          // телефон: герой погас — его полные кадры и спрайты баночки не нужны, видеопамять отдаём журналу (вернулись к герою — разворачиваются снова)
+      }
       if (lv.hy !== hys && (live || lv.hy !== '0.0px')) { lv.hy = hys; story.style.setProperty('--hy', hys); }          // холсты героя стоят на месте, пока гаснут: сцена уезжает вверх, а они — вниз на столько же (в журнале, когда героя не видно, не пишем: это пересчёт стилей всей сцены героя)
     }
     function readerUpdate() {
@@ -299,7 +321,7 @@
     /* в самое начало страницы (герой с баночкой): кнопка «В начало» и быстрая серия прокруток вверх. Ход один, плавный (косинусная кривая), 4,5–8,5 с: камера пролёта и герой едут назад на виду; пока идёт, колесо вверх его не обрывает */
     /* «На главную»: к экрану героя с заголовком (последний экран сцены героя). Журнал остаётся на том развороте, где остановился читатель (страницы не листаются ни вперёд, ни назад, и на первый
        не перекидывает): камера едет назад к залу одним ходом (2,6–5 с, косинусная кривая), живой журнал к концу пролёта сменяется нарисованным, как при входе */
-    const homeY = () => { const a = $('#arch-story'); const hy = a ? Math.round(a.getBoundingClientRect().top + window.pageYOffset + a.offsetHeight - window.innerHeight) : 0; return Math.max(0, Math.min(hy, Math.round(readerBox().top))); };
+    const homeY = () => { const a = $('#arch-story'); const hy = a ? Math.round(a.getBoundingClientRect().top + window.pageYOffset + a.offsetHeight - stageH(a)) : 0; return Math.max(0, Math.min(hy, Math.round(readerBox().top))); };
     function home(via) {
       glideStop(); if (A.motion && A.motion.cancelSmooth) A.motion.cancelSmooth();
       track('house_magazine_home', {via: via || 'button'});
@@ -436,7 +458,7 @@
     on(window, 'popstate', () => applyHash(false));
     if (location.hash) { const run = () => setTimeout(() => applyHash(true), 350); if (document.readyState === 'complete') run(); else on(window, 'load', run, {once: true}); }
     /* фото страниц журнала лениво не ждём: к моменту первого поворота они загружены и разобраны (иначе лист при быстром листании «моргает» пустой страницей) */
-    const warm = () => $$('img', mag).forEach(im => { try { im.loading = 'eager'; if (im.decode) im.decode().catch(() => {}); } catch (e) {} });
+    const warm = () => pm() ? undefined : $$('img', mag).forEach(im => { try { im.loading = 'eager'; if (im.decode) im.decode().catch(() => {}); } catch (e) {} });
     if ('requestIdleCallback' in window) setTimeout(() => requestIdleCallback(warm, {timeout: 4000}), 2500); else setTimeout(warm, 3500);
     mag.removeAttribute('hidden');
     if (pflat() || flat()) { setS(0); setP(0); } else if (pm()) applyQ(1); else setP(1);
@@ -485,8 +507,9 @@
         r.actions.filter(a => a.act === 'form').slice(0, 1).forEach(a => { h += '<button type="button" class="mp-act" data-act="form" data-type="' + esc(a.type) + '"' + (a.ref ? ' data-ref="' + esc(a.ref) + '"' : '') + ' data-track="house_magazine_stella">' + esc(a.l) + '</button>'; });
         m.innerHTML = h + '</div>'; return m;
       };
+      let chipList = null;
       const setChips = list => {                                                 // подсказки: сколько влезает в одну строку
-        chipsEl.textContent = '';
+        chipList = list; chipsEl.textContent = '';
         (list || []).slice(0, 5).forEach(q => { const b = document.createElement('button'); b.type = 'button'; b.className = 'mp-chip'; b.setAttribute('data-q', q.q || q); b.textContent = q.l || q; chipsEl.appendChild(b); });
         let guard = 8; while (guard-- && chipsEl.scrollWidth > chipsEl.clientWidth + 1 && chipsEl.children.length > 1) chipsEl.lastElementChild.remove();
       };
@@ -536,11 +559,12 @@
         });
         at(t, () => { busy = false; form.classList.remove('is-busy'); mood('happy'); at(1300, () => mood('idle')); });
       }
-      return {el, play, stop: () => { if (!touched) finish(); }, ask};
+      return {el, play, stop: () => { if (!touched) finish(); }, ask, refit: () => { if (chipList) setChips(chipList); }};          // refit — подсказки заново «сколько влезает»: лист, где они стоят, был выключен (display:none, ширина 0) и подсказки не обрезались
     })();
 
     /* ---------- вход на разворот: на развороте со Стеллой проигрывается переписка ----------
        Запускается, когда лист остановился и журнал открыт. Страницы сами при остановке не анимируются (раньше блоки «въезжали» — это мерцало и прятало текст на каждом развороте) */
+    let rzT = 0; on(window, 'resize', () => { clearTimeout(rzT); rzT = setTimeout(() => { if (chat && chat.refit) chat.refit(); }, 160); }, {passive: true});          // поворот экрана / смена режима: подсказки чата заново подгоняются под ширину
     function pageIn() {
       if (pflat() || flat()) return;
       const pg = chat && chat.el.closest('.pg'); if (!pg) return;
@@ -550,7 +574,7 @@
     /* картинки страниц журнала раскодируются заранее, по две за такт простоя: иначе первый поворот листа с фото и нишами брендов ждал загрузки и декодирования прямо в кадре анимации (подвисание в момент листания) */
     let warmedImgs = false;
     function warmPages() {
-      if (warmedImgs) return; warmedImgs = true;
+      if (warmedImgs || pm()) return; warmedImgs = true;
       const imgs = $$('img', mag); let i = 0;
       const step = () => {
         for (let n = 0; n < 2 && i < imgs.length; n++) { const im = imgs[i++]; try { im.loading = 'eager'; if (im.decode) im.decode().catch(() => {}); } catch (e) { /* — */ } }

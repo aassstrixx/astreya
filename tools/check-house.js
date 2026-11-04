@@ -322,8 +322,41 @@ const t = (cond, name, info) => { if (cond) ok++; else bad.push(name + (info !==
     await p.evaluate(i => document.querySelector(`.hall-rooms a[data-house-go="${i}"]`).click(), id); await settle(p);
     t((await rs(p)).s === ROOMS.indexOf(id) + 2 && await noOverflow(p), `телефон: раздел ${id} открывает нужный разворот журнала, нет горизонтальной прокрутки`);
   }
+  { /* телефон (видео заказчика на iPhone): сцена журнала такой же высоты, как сцена героя (lvh: иначе при видимой панели браузера снизу оставалась полоса фона — «шторка»); дальние листы не рисуются (память: iOS убивала вкладку на 5-й странице) */
+    await p.evaluate(() => window.Astreya.house.hall()); await p.waitForTimeout(500);
+    const g = await p.evaluate(() => { let h = ''; for (const ss of document.styleSheets) { let rules; try { rules = ss.cssRules; } catch (e) { continue; } for (const r of rules) if (r.selectorText === '.hr-stage') h = r.style.height; } const a = document.querySelector('.hr-stage'), b = document.querySelector('.js-stage'); return {h, a: a.offsetHeight, b: b.offsetHeight}; });
+    t(g.h === '100lvh' && g.a === g.b, 'телефон: сцена журнала той же высоты (100lvh), что и сцена героя — без полосы фона снизу при видимой панели браузера', g);
+    await p.evaluate(() => window.Astreya.house.openMagazine(9)); await settle(p); await p.waitForTimeout(500);
+    const fr = await p.evaluate(() => { const L = [...document.querySelectorAll('#mag .leaf')], d = e => e ? getComputedStyle(e).display : '-'; return {n: L.length, shown: L.filter(l => d(l) !== 'none').length, cur: d(document.querySelector('#mag .leaf.is-cur')), prev: d(document.querySelector('#mag .leaf.is-prev')), first: d(L[0]), last: d(L[L.length - 1])}; });
+    t(fr.shown <= 5 && fr.cur !== 'none' && fr.prev !== 'none' && fr.first === 'none' && fr.last !== 'none', 'телефон: на 9-м развороте рисуются не больше пяти листов (читаемые и соседние), дальние выключены — память и слои', fr);
+    await p.evaluate(() => window.Astreya.house.openMagazine(1)); await settle(p); await p.waitForTimeout(500);
+    const fr2 = await p.evaluate(() => { const L = [...document.querySelectorAll('#mag .leaf')]; return {shown: L.filter(l => getComputedStyle(l).display !== 'none').length, last: getComputedStyle(L[L.length - 1]).display, cur: getComputedStyle(document.querySelector('#mag .leaf.is-cur')).display}; });
+    t(fr2.shown <= 5 && fr2.last === 'none' && fr2.cur !== 'none', 'телефон: вернулись к началу — листы у конца журнала снова выключены, читаемый на месте', fr2);
+    await p.evaluate(() => window.Astreya.house.go('stella')); await settle(p); await p.waitForTimeout(900);
+    const ch = await p.evaluate(() => { const r = document.querySelector('#mag .mp-chat-chips'); return {sw: r.scrollWidth, cw: r.clientWidth, n: r.children.length}; });
+    t(ch.cw > 0 && ch.sw <= ch.cw + 1 && ch.n >= 1, 'телефон: лист с чатом Стеллы был выключен, пока был далеко, — когда его снова рисуют, подсказки подогнаны по ширине (лишняя не торчит)', ch);
+  }
   t(p._errs.length === 0, 'нет ошибок JS на телефоне', p._errs.slice(0, 5));
   await p._ctx.close();
+  { /* защита от цикла падений: прошлая загрузка оборвалась на экране (в sessionStorage «идёт») → облегчённый режим: пролёт камеры не создаётся, журнал листается по страницам; обычная перезагрузка его не включает */
+    const q = await open(390, 844, {touch: true});
+    const n0 = await q.evaluate(() => ({lite: window.Astreya.lite, fly: !!(window.Astreya.jar && window.Astreya.jar.fly)}));
+    await q.reload(); await q.waitForSelector('html.ready', {timeout: 15000}).catch(() => {}); await q.waitForTimeout(900);
+    const n1 = await q.evaluate(() => window.Astreya.lite);
+    t(n0.lite === false && n0.fly && n1 === false, 'телефон: обычная загрузка и перезагрузка — полный режим (пролёт камеры есть)', {n0, n1});
+    await q._ctx.addInitScript(() => { try { sessionStorage.setItem('astreya-boot', JSON.stringify({run: true, t: Date.now()})); } catch (e) { /* — */ } });
+    await q.reload(); await q.waitForSelector('html.ready', {timeout: 15000}).catch(() => {}); await q.waitForTimeout(1400);
+    const l1 = await q.evaluate(() => ({lite: window.Astreya.lite, fly: !!(window.Astreya.jar && window.Astreya.jar.fly), saved: sessionStorage.getItem('astreya-lite')}));
+    t(l1.lite === true && !l1.fly && l1.saved === '1', 'телефон: после оборванной загрузки включается облегчённый режим (второй движок не создаётся), он держится всю сессию', l1);
+    await q.evaluate(() => window.Astreya.house.hall()); await q.waitForTimeout(500);
+    await q.evaluate(() => window.Astreya.house.openMagazine(1)); await settle(q); await q.waitForTimeout(600);
+    const l2 = await q.evaluate(() => { const r = window.Astreya.house.readerState(), b = document.querySelector('#mag .mag-book').getBoundingClientRect(); return {stop: r.stop, pm: r.pm, w: Math.round(b.width), ow: document.documentElement.scrollWidth}; });
+    t(l2.pm && l2.stop === 1 && l2.w > 100 && l2.ow <= 390, 'телефон, облегчённый режим: журнал открывается на странице 2 и листается по страницам, без горизонтальной прокрутки', l2);
+    await q.click('#mag .mag-nx'); await settle(q); await q.waitForTimeout(500);
+    t((await q.evaluate(() => window.Astreya.house.readerState().stop)) === 2, 'телефон, облегчённый режим: «Далее» работает');
+    t(q._errs.length === 0, 'нет ошибок JS в облегчённом режиме', q._errs.slice(0, 5));
+    await q._ctx.close();
+  }
 
   /* ================= 6. уменьшенное движение, без WebGL и без JS ================= */
   p = await open(1440, 900, {reduce: true});

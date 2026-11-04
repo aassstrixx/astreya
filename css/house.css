@@ -95,6 +95,7 @@ body[data-page="home"]{--hs-paper:#fbf7ec;--hs-paper-2:#f3ebd9;--hs-ink:#0b1a33;
   .house-reader[data-m]:not(.is-flat) .leaf{transform:translate3d(0,0,calc(var(--lt,0) * 60px + ((1 - var(--f,0)) * var(--zr,0) + var(--f,0) * var(--zl,0)) * .4px)) rotateY(calc(var(--f,0) * -180deg))}
   .house-reader[data-m]:not(.is-flat) .mag-book.is-still .leaf{transform:rotateY(calc(var(--f,0) * -180deg))}
   .house-reader[data-m]:not(.is-flat) .mag-book.is-still .leaf:not(.is-cur):not(.is-prev){visibility:hidden}
+  .house-reader[data-m]:not(.is-flat) .leaf.is-far{display:none}          /* дальние листы не рисуются вовсе: ни слоёв, ни декодированных фото (js/house.js → nearLeaves) */
   .house-reader[data-m]:not(.is-flat) .mag-book.is-still{perspective:none}
   .house-reader[data-m]:not(.is-flat) .mag-book.is-still .leaves, .house-reader[data-m]:not(.is-flat) .mag-book.is-still .leaf{transform-style:flat}
   .house-reader[data-m]:not(.is-flat) .mag-book.is-still .leaf{transform:none;will-change:auto}
@@ -210,7 +211,7 @@ html:not(.js) .leaves{position:static;display:block;filter:none}
 html:not(.js) .leaf{position:static;display:contents;transform:none}
 html:not(.js) .face,html:not(.js) .face.back{position:relative;width:var(--pw);height:calc(var(--pw) * 1.333);margin:0 auto 18px;transform:none;backface-visibility:visible;-webkit-backface-visibility:visible;box-shadow:0 18px 40px -22px rgba(30,20,10,.6)}
 html:not(.js) .face::after{display:none}
-.hr-stage{position:sticky;top:0;height:100vh;height:100svh;overflow:clip}
+.hr-stage{position:sticky;top:0;height:100vh;height:100lvh;overflow:clip}          /* lvh, как у сцены героя (.js-stage) и отступа читалки (margin-top:-100lvh): с svh на телефоне при видимой панели браузера снизу оставалась полоса фона («шторка») */
 .hr-bg{position:absolute;inset:0;z-index:0;display:block;transform-origin:calc(var(--tx) * 100%) calc(var(--ty) * 100%);transform:scale(1);will-change:transform}          /* запасной «наезд», пока кадры пролёта не загрузились */
 .hr-fly{position:absolute;inset:0;z-index:0}          /* пролёт камеры к журналу: холсты движка зала (js/jar.js, режим data-fly); слой пролёта не двигается и не масштабируется: живой журнал подгоняется под нарисованный (js/house.js → fitBook, --fly-pw/--fly-dx/--fly-dy) */
 .hr-fly .js-cv,.hr-fly .ar-jar-cv{transition:none}

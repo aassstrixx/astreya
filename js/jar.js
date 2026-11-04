@@ -20,6 +20,25 @@
 (function () {
   'use strict';
   const A = window.Astreya || {};
+  /* Защита от цикла падений: iOS убивает вкладку по нехватке памяти и тут же перезагружает её (после нескольких раз — страница «Возникла повторяющаяся проблема»).
+     Пока вкладка на экране, в sessionStorage лежит «идёт» (run); при уходе со страницы или в фон — «закончено». Если при загрузке осталось «идёт» — прошлая загрузка оборвалась на экране:
+     включаем облегчённый режим на всю сессию (A.lite): пролёт камеры не создаётся (журнал встаёт на постер, листается по страницам как обычно), у героя окно кадров минимальное и холст меньше.
+     ?lite=1 включает режим для проверки, ?lite=0 снимает. */
+  (function guard() {
+    let lite = false;
+    try {
+      const ss = window.sessionStorage, q = /[?&]lite=([01])/.exec(location.search), st = JSON.parse(ss.getItem('astreya-boot') || 'null') || {};
+      lite = ss.getItem('astreya-lite') === '1';
+      if (!lite && st.run && Date.now() - (st.t || 0) < 600000) lite = true;
+      if (q) lite = q[1] === '1';
+      if (lite) ss.setItem('astreya-lite', '1'); else ss.removeItem('astreya-lite');
+      const mark = run => { try { ss.setItem('astreya-boot', JSON.stringify({run, t: Date.now()})); } catch (e) { /* — */ } };
+      mark(document.visibilityState !== 'hidden');
+      document.addEventListener('visibilitychange', () => mark(document.visibilityState === 'visible'));
+      window.addEventListener('pagehide', () => mark(false));
+    } catch (e) { /* без sessionStorage — защиты нет */ }
+    A.lite = lite;
+  })();
   const clamp = (x, a, b) => Math.max(a, Math.min(b, x));
   const ease = x => x * x * (3 - 2 * x);
   const pad = i => String(i).padStart(3, '0');
@@ -27,10 +46,12 @@
   const OMEGA = 24;           // жёсткость пружины, 1/с: отставание при равномерной прокрутке ≈ 2/OMEGA ≈ 0,08 с, остановка (до 2 %) ≈ 0,25 с
   const IDLE_TAIL = 150;      // мс после остановки прокрутки, пока цикл ещё идёт (пружина доводит кадр до точного положения)
   const FAST_ON = 30, FAST_OFF = 12;   // ключевых кадров в секунду: быстрее FAST_ON — «взмах»: тяжёлые полные кадры не разворачиваем и не грузим в видеопамять (их уже не успеть, а загрузка гасит кадры анимации), картинка идёт по уменьшенным копиям; медленнее FAST_OFF — снова обычная работа
+  const FAST_ON_P = 9, FAST_OFF_P = 3;   // то же для телефона (портретный кадр): взмах начинается уже при ≈ 9 ключах в секунду — обычная прокрутка пальцем идёт по уменьшенным копиям, полные кадры подтягиваются, когда движение замедлилось (каждая загрузка полного кадра в видеопамять на iPhone — 10–30 мс главного потока, т. е. пропущенные кадры)
+  const UP_GAP_P = 70;        // мс: на телефоне в движении тяжёлые загрузки идут не чаще одной за этот промежуток
   const MOVING = 0.04;        // ключевых кадров в секунду: быстрее — идёт движение (включается сглаживание кромок)
   const LANES = [14, 8];      // запросов одновременно: [компьютер, телефон] (HTTP/2)
-  const RES = [5, 4];         // сколько ключевых кадров по обе стороны от положения держим в видеопамяти: [компьютер, телефон]
-  const DECODERS = 3;         // одновременных разворачиваний картинок в текстуры
+  const RES = [5, A.lite ? 1 : 3];         // сколько ключевых кадров по обе стороны от положения держим в видеопамяти: [компьютер, телефон]
+  const DECODERS = 3, DECODERS_P = 2;         // одновременных разворачиваний картинок в текстуры
   /* уменьшенные копии всех кадров (всегда в видеопамяти; во взмах картинка идёт по ним): ширина цвета, высота цвета, ширина и высота глубины (0 — глубина в натуральном размере: тогда полный кадр берёт её же и держит только цвет), ширина спрайта баночки.
      Они должны быть почти неотличимы от полных кадров (мелкие копии давали «мыло» и ступеньки на кромках): на мощных устройствах (≥ 8 ГБ памяти) цвет 1280×720 и глубина целиком (≈ 350 МБ), иначе 960×540 и глубина 640×360 (≈ 180 МБ); телефон — 450×800 / 540×960 */
   const DM = navigator.deviceMemory || 4, RICH = DM >= 8;
@@ -53,6 +74,7 @@
     let look = {}; try { look = JSON.parse(ds.look || '{}') || {}; } catch (e) { look = {}; }
     const LS = look.scale || {}, LSH = look.shadow || null, LG = look.ground || null, LH = look.halo || null;
     const dead0 = () => { root.classList.add('jar-off'); return {root, complete: () => true, destroy() {}, state: () => ({})}; };
+    if (A.lite && FLY && portraitMQ.matches) { root.setAttribute('data-fly-why', 'облегчённый режим'); return dead0(); }          // телефон после падения вкладки: второй движок (пролёт) не создаём
     if (!A.ArchGL || !stage || !cv || !jcv || typeof fetch !== 'function' || typeof createImageBitmap !== 'function' || !glOk() || (FLY && portraitMQ.matches && !root.hasAttribute('data-m'))) {
       if (FLY) root.setAttribute('data-fly-why', !A.ArchGL ? 'нет jar-gl.js' : (!stage || !cv || !jcv) ? 'нет холстов в читалке' : typeof createImageBitmap !== 'function' ? 'нет createImageBitmap' : !glOk() ? 'нет WebGL2' : 'узкое окно (высота больше ширины): пролёт только на широком экране');         // для ?flydebug (js/house.js)
       return dead0();
@@ -216,13 +238,14 @@
       if (low) f.low = true; upQ.push(f); schedule();
       if (!upTimer) upTimer = setTimeout(function again() { upTimer = 0; flushUploads(8); if (upQ.length) upTimer = setTimeout(again, 250); }, 250);
     }
+    let lastHeavy = 0;
     function flushUploads(budget) {
       if (!upQ.length) return;
       const t0 = performance.now();
       do {
         const i = fast ? upQ.findIndex(f => f.low) : 0;                      // во взмах тяжёлые загрузки ждут (в очереди их мало: новые не запускаются), уменьшенные копии идут
         if (i < 0) break;
-        const f = upQ.splice(i, 1)[0]; if (f.low) upN.low++; else upN.full++; try { f(); } catch (e) { /* — */ }
+        const f = upQ.splice(i, 1)[0]; if (f.low) upN.low++; else { upN.full++; lastHeavy = performance.now(); } try { f(); } catch (e) { /* — */ }
       } while (upQ.length && performance.now() - t0 < budget);
     }
 
@@ -237,7 +260,7 @@
       need.sort((a, b) => Math.abs(a - (l.k + l.t)) - Math.abs(b - (l.k + l.t)));
       if (pin) for (let k = pin[0]; k <= pin[1]; k++) if (need.indexOf(k) < 0) need.push(k);
       for (const k of need) {
-        if (decN >= DECODERS || lowOnlyF) break;
+        if (decN >= (isPortrait() ? DECODERS_P : DECODERS) || lowOnlyF) break;
         if (!resident[k] && keyDone(k) && !decoding[k]) {
           decoding[k] = 1; decN++; const g = gen;
           const shared = lowDone[k] === 1 && !LOWSZ[isPortrait() ? 1 : 0][2];                 // глубина уменьшенной копии — натуральная: второй раз её не разворачиваем
@@ -292,7 +315,7 @@
     function sizeCanvas() {
       const w = stage.clientWidth || innerWidth, h = stage.clientHeight || innerHeight;
       /* пикселей на холсте — не больше, чем в самом кадре (1920×1080 ≈ 2,1 млн): больше деталей на экране всё равно не появится; при слабом устройстве регулятор нагрузки снижает ещё (resScale) */
-      const dpr = Math.min(window.devicePixelRatio || 1, 2), s = Math.min(dpr, Math.sqrt((isPortrait() ? 1.2e6 : 2.1e6) / Math.max(1, w * h))) * resScale;          // телефон: ≈ 1,2 млн пикселей — слабые видеокарты не тянут больше; сетка реже, кромки решаются поточечно (jar-gl.js)
+      const dpr = Math.min(window.devicePixelRatio || 1, 2), s = Math.min(dpr, Math.sqrt((isPortrait() ? (A.lite ? 8e5 : 1.2e6) : 2.1e6) / Math.max(1, w * h))) * resScale;          // телефон: ≈ 1,2 млн пикселей — слабые видеокарты не тянут больше; сетка реже, кромки решаются поточечно (jar-gl.js)
       const nw = Math.round(w * s), nh = Math.round(h * s);
       if (hall && (nw !== W || nh !== H)) { W = nw; H = nh; hall.setSize(W, H); }
       else if (!hall) { W = nw; H = nh; }
@@ -412,8 +435,9 @@
       cp = clamp(cp, 0, 1);
       if (Math.abs(vp) > 1e-3) dirSign = vp > 0 ? 1 : -1;
       { const spd = Math.max(Math.abs(vp), Math.abs(cp - cpTick) / dt) * KS; cpTick = cp;      // скорость: и пружины, и реально пройденное за кадр (при редких кадрах скорость пружины к концу шага уже мала)                                   // «взмах»: пока он идёт, полные кадры не разворачиваем и не грузим (уменьшенных копий хватает)
-        if (!FLY && !fast && spd > FAST_ON && lowN >= NH * 0.9 && (!jar || lowJN >= NH * 0.9)) fast = true;
-        else if (fast && spd < FAST_OFF) { fast = false; pumpDecode(); } }
+        const por = isPortrait(), fOn = por ? FAST_ON_P : FAST_ON, fOff = por ? FAST_OFF_P : FAST_OFF;          // пролёт на ПК без быстрого режима (все ключи рядом), на телефоне он есть и в пролёте
+        if ((!FLY || por) && !fast && spd > fOn && lowN >= NH * 0.9 && (!jar || lowJN >= NH * 0.9)) fast = true;
+        else if (fast && spd < fOff) { fast = false; pumpDecode(); } }
       const inView = y + vh > sTop && y < sTop + sH;
       if (inView !== sph.view) sph.view = inView;
       if (!FLY && A.sphereHold && cp < 0.99) A.sphereHold = false;                  // после возврата из журнала шар стоит; когда посетитель уходит с экрана героя вверх, вращение в статике снова разрешено
@@ -425,7 +449,7 @@
         if (dtEma > base * 1.35 + 0.5) slowRun++; else slowRun = 0;
         if (slowRun >= 24 && resScale > 0.6 && now() - lastGov > 1500) { resScale = resScale > 0.8 ? 0.8 : 0.65; govChanges++; slowRun = 0; lastGov = now(); if (resScale < 0.7 && hall) hall.setGridScale(0.5); sizeCanvas(); }
       }
-      if (upQ.length) flushUploads(Math.abs(vp) * KS > MOVING ? 2.5 : 8);                // по одной-две тяжёлые текстуры за кадр; в покое — быстрее
+      if (upQ.length) { const mv = Math.abs(vp) * KS > MOVING; if (!mv || !isPortrait() || fast || performance.now() - lastHeavy >= UP_GAP_P) flushUploads(mv ? 2.5 : 8); }          // телефон: в движении тяжёлая загрузка не чаще раза в UP_GAP_P мс (иначе каждый кадр с хвостом)                // по одной-две тяжёлые текстуры за кадр; в покое — быстрее
       if ((inView || !firstDrawn) && hall && (dirty || Math.abs(cp - paintedP) > 1e-7)) {
         if (paint(t)) { paintedP = cp; dirty = false; } else dirty = true;
       }

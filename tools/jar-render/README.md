@@ -139,3 +139,14 @@ python3 tools/jar-render/bake_jar.py --mobile --fly /tmp/zone/pff --cdir /tmp/zo
 python3 tools/jar-render/apply_fly_m.py --fly /tmp/zone/pff --bake /tmp/zone/jarbake_m     # ffm/fzm/fjm, cam-fm.json, house.fly.mobile, fly_soft.py --mobile
 ```
 
+
+## Скрыть лишние объекты в готовых кадрах (`ZONE_HIDE`, `hidepatch`)
+`HALL_LAB=1` достраивает упаковки уже после того, как скрыты «бродячие» этикетки, и часть этикеток (`label.011–013`, `labelh.022–027`, `labelm.011–013`) остаётся в нулевой точке сцены — цилиндр со швом и диском слева от ниши.
+`ZONE_HIDE=extra` (или список имён через запятую) скрывает такие объекты при любой съёмке; готовые кадры можно не пересчитывать целиком, а дорисовать участок вокруг объектов:
+```
+export ZONE_MAG=1 HALL_LAB=1 HALL_LAB_PARTS=packs ZONE_HIDE=extra
+python3 hall_table.py hidepatch 0 59 /tmp/zone/pf/vase_patch --samples 16 --total 60 --portrait          # участки цвета (png + json с рамкой)
+python3 hall_table.py anim 0 59 /tmp/zone/pf/z_p --layer z --res 450x800 --total 60 --portrait         # глубину пересчитать целиком (иначе от цилиндра остаётся выступ)
+python3 paste_mag.py /tmp/zone/pf/bg_p /tmp/zone/pf/vase_patch /tmp/zone/pf/bg_p_fix                   # вклеить; дальше encode_arch.py / encode_depth.py, как в phone_build.sh
+```
+`phone_render.sh` запускает съёмку с `ZONE_HIDE=extra` сразу.
