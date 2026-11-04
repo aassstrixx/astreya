@@ -33,6 +33,7 @@ module.exports = function magSpreads(ctx, C, P, deps) {
   const hh = (lines, cls = '') => `<h3 class="mp-h${cls ? ' ' + cls : ''}">${esc(lines[0])}<em>${esc(lines[1])}</em></h3>`;
   const srcText = b => b.src ? ((getPath(content, b.src[0]) || [])[b.src[1]] || {}).text || '' : b.text || '';
   const hq = src => src.replace(/^assets\/teachers\/([^/]+)$/, 'assets/teachers/hq/$1');           // портреты 280×300 — в журнале версия ×2 (Lanczos + нерезкая маска): браузер сам растягивал бы их билинейно и мягче
+  const smallPack = f => /assets\/showroom\/pack-[^/]+\.webp$/.test(f) ? f.replace(/\.webp$/, '-s.webp') : f;          // упаковки в списках журнала показываются ≈ 60–100 px: берём копии 480 px (-s), а не 900–1400 px (5 МБ в раскодированном виде каждая)
   const img = (src, alt = '', cls = '') => `<img${cls ? ` class="${cls}"` : ''} src="${esc(C.u(P, src))}" alt="${esc(alt)}" loading="lazy" decoding="async">`;
   const dmy = d => S.dparts(d);
   const brandName = id => (ctx.brandById[id] || {}).name || id;
@@ -81,7 +82,7 @@ module.exports = function magSpreads(ctx, C, P, deps) {
     R: n => `<div class="pg pg-r pg-tx pg-fnr" id="room-finder" data-room="finder">${run}<p class="mg-kick">${esc(pg.finder.kick)}</p>${hh(pg.finder.hr)}
       <ol class="mp-steps3">${pg.finder.steps.map(s => `<li><span class="mp-sn">${s.n}</span>${ic(s.icon)}<strong>${esc(s.t)}</strong><span>${esc(s.p)}</span></li>`).join('')}</ol>
       <p class="mp-sub">${esc(pg.finder.pick)}</p>
-      <ul class="mp-prods">${pg.finder.products.map(productBy).filter(Boolean).map(p => `<li><a href="${C.purl(P, p)}" data-track="house_magazine_product" data-product="${p.id}"><span class="mp-pk">${img(S.packOf(p))}</span><span class="mp-pt">${logo(p.brand, 'mp-pbl')}<strong>${esc(p.name)}</strong><span>${esc(p.desc)}</span></span></a></li>`).join('')}</ul>
+      <ul class="mp-prods">${pg.finder.products.map(productBy).filter(Boolean).map(p => `<li><a href="${C.purl(P, p)}" data-track="house_magazine_product" data-product="${p.id}"><span class="mp-pk">${img(smallPack(S.packOf(p)))}</span><span class="mp-pt">${logo(p.brand, 'mp-pbl')}<strong>${esc(p.name)}</strong><span>${esc(p.desc)}</span></span></a></li>`).join('')}</ul>
       <p class="mp-note">${esc(pg.finder.note)}</p>
       <a class="btn btn-fill btn-sm mp-cta" href="${C.u(P, 'catalog.html')}" data-track="house_magazine_page" data-room="finder" data-place="magazine">${esc(pg.finder.cta)} ${I.arrow}</a>${foot(n, 'r')}</div>`
   };
@@ -108,7 +109,7 @@ module.exports = function magSpreads(ctx, C, P, deps) {
   const dlg = st.dialog.map(d => {
     const pr = d.product ? productBy(d.product) : null;
     return `<div class="mp-m mp-u"><p>${esc(d.q)}</p></div>
-      <div class="mp-m mp-s"><span class="mp-av">${pearlSlot()}</span><div><p>${esc(d.a)}</p>${pr ? `<a class="mp-pc" href="${C.purl(P, pr)}" data-track="house_magazine_product" data-product="${pr.id}"><span class="mp-pk">${img(S.packOf(pr))}</span><span>${logo(pr.brand, 'mp-pbl')}<strong>${esc(pr.name)}</strong></span>${go}</a>` : ''}${d.note ? `<small>${esc(d.note)}</small>` : ''}${d.link ? `<a class="mp-pl" href="${C.u(P, d.link.h)}" data-track="house_magazine_page" data-room="stella">${esc(d.link.l)} ${go}</a>` : ''}</div></div>`;
+      <div class="mp-m mp-s"><span class="mp-av">${pearlSlot()}</span><div><p>${esc(d.a)}</p>${pr ? `<a class="mp-pc" href="${C.purl(P, pr)}" data-track="house_magazine_product" data-product="${pr.id}"><span class="mp-pk">${img(smallPack(S.packOf(pr)))}</span><span>${logo(pr.brand, 'mp-pbl')}<strong>${esc(pr.name)}</strong></span>${go}</a>` : ''}${d.note ? `<small>${esc(d.note)}</small>` : ''}${d.link ? `<a class="mp-pl" href="${C.u(P, d.link.h)}" data-track="house_magazine_page" data-room="stella">${esc(d.link.l)} ${go}</a>` : ''}</div></div>`;
   }).join('');
   const stella = {
     L: n => `<div class="pg pg-l pg-tx pg-stl">${run}<p class="mg-kick">${esc(st.kick)}</p>${hh(st.hl)}

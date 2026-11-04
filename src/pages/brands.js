@@ -59,8 +59,9 @@ function nicheCardMaker(ctx, C, P) {
     const prods = nm ? nicheProducts(products.filter(p => p.brand === b.id), nm.slots.length) : [];
     const pk = prods.map((p, i) => {
       const slot = nm.slots[i], file = S.packOf(p), key = (/([^/]+)\.webp$/.exec(file) || [])[1], meta = packs[key]; if (!meta) return '';
+      const small = /assets\/showroom\/pack-[^/]+\.webp$/.test(file) ? file.replace(/\.webp$/, '-s.webp') : file;          // упаковка в нише показывается ≈ 60–110 px: копия 480 px, а не 900–1400 (5 МБ в раскодированном виде)
       const h = (PACK_CM[p.type] || 15) / (nm.frame[1] * 100);
-      return `<span class="br-pk" style="--x:${pct(slot.x)}%;--y:${pct(slot.y)}%;--h:${pct(h)}%;--ar:${(meta.w / meta.h).toFixed(4)};z-index:${Math.round(slot.y * 100)}"><img src="${esc(C.u(P, file))}" alt="" width="${meta.w}" height="${meta.h}" loading="lazy" decoding="async"></span>`;
+      return `<span class="br-pk" style="--x:${pct(slot.x)}%;--y:${pct(slot.y)}%;--h:${pct(h)}%;--ar:${(meta.w / meta.h).toFixed(4)};z-index:${Math.round(slot.y * 100)}"><img src="${esc(C.u(P, small))}" alt="" width="${meta.w}" height="${meta.h}" loading="lazy" decoding="async"></span>`;
     }).join('');
     const lw = logoPx(b, 11000);
     const logo = b.logo ? `<img class="br-logo" src="${esc(C.u(P, b.logo))}" alt="${esc(b.name)}"${b.logoW ? ` width="${b.logoW}" height="${b.logoH}"` : ''}${lw ? ` style="--lw:${lw}"` : ''} loading="lazy" decoding="async">` : `<b class="br-logo br-logo-t">${esc(b.name)}</b>`;
