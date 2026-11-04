@@ -203,7 +203,12 @@
     const hm = {key: '', on: false};
     /* значения читалки (--fu, --ra, --rb, --bd) каждый кадр пишутся прямо в элементы, которые от них зависят (opacity / transform): раньше они лежали на читалке как наследуемые переменные,
        и каждая запись заставляла браузер пересчитывать стили всех элементов журнала (тысячи), причём принудительно — следом шло чтение положения прокрутки. Сами переменные остаются (не наследуются) для отладки и проверок. */
-    const RS = {fu: 0, ra: 0, rb: 0, bd: 0}, pv = {fu: '', ra: '', rb: '', bd: '', veil: '', wrap: '', ctl: ''};
+    const RS = {fu: 0, ra: 0, rb: 0, bd: 0}, pv = {fu: '', ra: '', rb: '', bd: '', veil: '', wrap: '', ctl: '', clean: ''};
+    let cleanEl = null;                                                           // телефон: чистый фон без нарисованного журнала (создаётся при прогреве пролёта)
+    function ensureClean() {
+      if (cleanEl || !pm()) return; const fly = $('.hr-fly', reader), u = reader.getAttribute('data-fly-clean'); if (!fly || !u) return;
+      const ver = reader.getAttribute('data-v'); cleanEl = new Image(); cleanEl.className = 'hr-clean'; cleanEl.alt = ''; cleanEl.setAttribute('aria-hidden', 'true'); cleanEl.decoding = 'async'; cleanEl.src = A.assetUrl(u) + (ver ? '?v=' + ver : ''); fly.insertAdjacentElement('afterend', cleanEl);
+    }
     const bgEl = $('.hr-bg', reader), veilEl = $('.hr-veil', reader), ctlEl = $('.mag-ctl', mag), barEl = $('.mag-bar', mag), dimEl = $('.mag-dim', mag);
     function paintReader() {
       const fu = RS.fu.toFixed(4), ra = RS.ra.toFixed(4), rb = RS.rb.toFixed(4), bd = RS.bd.toFixed(4);
@@ -213,6 +218,7 @@
       if (pv.bd !== bd) { pv.bd = bd; reader.style.setProperty('--bd', bd); if (dimEl) dimEl.style.opacity = bd; }
       const vo = (RS.fu * .55 + RS.ra * .30).toFixed(4); if (pv.veil !== vo) { pv.veil = vo; if (veilEl) veilEl.style.opacity = vo; }
       const live = !!(FLd && !pflat() && A.flyDrawn && BK()), wo = (live ? RS.rb : RS.ra).toFixed(4); if (pv.wrap !== wo) { pv.wrap = wo; wrapEl.style.opacity = wo; }
+      if (cleanEl) { const cc = (live ? clamp((RS.rb - .9) * 10, 0, 1) : 0).toFixed(3); if (pv.clean !== cc) { pv.clean = cc; cleanEl.style.opacity = cc; } }          // живой журнал проявился — чистый фон закрывает нарисованный разворот
       const co = clamp((RS.ra - .6) * 2.5, 0, 1).toFixed(3); if (pv.ctl !== co) { pv.ctl = co; if (ctlEl) ctlEl.style.opacity = co; if (barEl) barEl.style.opacity = co; }
     }
     function homography(src, dst) {                                               // проективное преобразование 4 точек → 4 точки (метод прямых линейных уравнений, 8×8)
@@ -273,7 +279,7 @@
       if (!FLd || A.flyWarm) return;
       const f = A.jar && A.jar.fly;
       if (!f) { if (warmN++ < 60) setTimeout(warmFly, 300); return; }
-      A.flyWarm = true; f.warm();
+      A.flyWarm = true; ensureClean(); f.warm();
     }
 
     const lv = {live: null, gone: null, hf: '', hy: ''};
@@ -324,6 +330,7 @@
         if (!(A.flyDrawn && BK())) { RS.rb = ra; RS.bd = 0; }              // движок не рисует (нет WebGL2/ключей): журнал проявляется как раньше; иначе --rb и --bd ведёт сам кадр (flyOnDraw), чтобы прозрачность была привязана к той позиции камеры, где журнал стоит на самом деле
       }
       paintReader();
+      if (pm()) { const rdo = t >= RD.open - .004; if (rdo !== reader.classList.contains('rd-open')) reader.classList.toggle('rd-open', rdo); }          // журнал раскрыт: css не отдаёт вертикальные жесты по книге странице (touch-action)
       if (!pflat()) { const openNow = t >= RD.open - .001; if (openNow !== entered) { entered = openNow; if (entered) setTimeout(pageIn, 140); } }
       if (pflat()) { const target = ra > .94 ? Math.max(s, 1) : 0; if (target !== s && !(s > 0 && target > 0)) render(target, {noScroll: target === 0, instant: true}); return; }
       if (pm()) applyQ(Q); else setP(holdP !== null ? holdP : pOf(t));                                    // «На главную»: пока камера едет назад, журнал остаётся на развороте, где остановился читатель
@@ -499,6 +506,10 @@
          От самой левой кромки экрана свайп не берём — это системный жест «назад» браузера */
       let tx = null, ty = 0, tt = 0;
       mag.addEventListener('touchstart', e => { if (!pm() || e.touches.length !== 1) { tx = null; return; } const t0 = e.touches[0]; tx = t0.clientX > 24 ? t0.clientX : null; ty = t0.clientY; tt = Date.now(); }, {passive: true});
+      mag.addEventListener('touchmove', e => {                                      // страховка к touch-action: на старых iOS вертикальный жест по раскрытой книге всё равно не должен двигать страницу
+        if (!pm() || !reader.classList.contains('rd-open') || !e.cancelable) return;
+        const tg = e.target; if (tg && tg.closest && tg.closest('.mp-chat-log, input, textarea') || !(tg && tg.closest && tg.closest('.mag-wrap'))) return; e.preventDefault();
+      }, {passive: false});
       mag.addEventListener('touchend', e => {
         if (tx === null || !pm()) return; const t1 = e.changedTouches[0], dx = t1.clientX - tx, dy = t1.clientY - ty; tx = null;
         if (Date.now() - tt < 900 && Math.abs(dx) > 48 && Math.abs(dx) > Math.abs(dy) * 1.5 && !(e.target.closest && e.target.closest('.mp-chat-log, input, textarea'))) step(dx < 0 ? 1 : -1);
