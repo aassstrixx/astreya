@@ -335,6 +335,29 @@ const t = (cond, name, info) => { if (cond) ok++; else bad.push(name + (info !==
     await p.evaluate(() => window.Astreya.house.go('stella')); await settle(p); await p.waitForTimeout(900);
     const ch = await p.evaluate(() => { const r = document.querySelector('#mag .mp-chat-chips'); return {sw: r.scrollWidth, cw: r.clientWidth, n: r.children.length}; });
     t(ch.cw > 0 && ch.sw <= ch.cw + 1 && ch.n >= 1, 'телефон: лист с чатом Стеллы был выключен, пока был далеко, — когда его снова рисуют, подсказки подогнаны по ширине (лишняя не торчит)', ch);
+    /* переход героя → пролёт без двойного изображения (видео заказчика на iPhone): сцена героя стоит на месте весь путь затухания (хвост), холсты не двигаются из JS; холст баночки пролёта крошечный */
+    await p.evaluate(() => window.Astreya.house.hall()); await p.waitForTimeout(900);
+    const o3 = await box(p), tl = await p.evaluate(() => window.Astreya.heroTail());
+    t(Math.abs(tl - o3.tot * .05) <= 3 && tl > 100, 'телефон: «хвост» сцены героя равен пути затухания героя (5 % пути читалки)', {tail: tl, want: Math.round(o3.tot * .05)});
+    const pin = [];
+    for (const f of [.02, .045, .09]) { await p.evaluate(y => window.scrollTo({top: y, behavior: 'instant'}), o3.top + o3.tot * f); await p.waitForTimeout(450); pin.push(await p.evaluate(() => ({st: Math.round(document.querySelector('#arch-story .js-stage').getBoundingClientRect().top), hy: parseFloat(document.getElementById('arch-story').style.getPropertyValue('--hy')) || 0, hf: parseFloat(document.getElementById('arch-story').style.getPropertyValue('--hf'))}))); }
+    t(pin[0].st === 0 && pin[1].st === 0 && pin[0].hy === 0 && pin[1].hy === 0 && pin[0].hf > 0 && pin[1].hf > pin[0].hf && pin[2].st < -50, 'телефон: пока герой гаснет над пролётом, его сцена закреплена (смещения холстов нет), после затухания уезжает', pin);
+    const jc = await p.evaluate(() => { const c = document.querySelector('.hr-fly .ar-jar-cv'); return {w: c.width, h: c.height}; });
+    t(jc.w * jc.h <= 16, 'телефон: холст баночки пролёта крошечный (баночка запечена в кадры; раньше 6,2 млн пикселей собирались композитором каждый кадр)', jc);
+    /* память: когда журнал открыт, герой и пролёт отдают видеопамять; вернулись к герою — герой снова разворачивается */
+    await p.evaluate(() => window.Astreya.house.openMagazine(9)); await settle(p); await p.waitForTimeout(2500);
+    const tm = await p.evaluate(() => { const h = window.Astreya.jar.arch.state(), f = window.Astreya.jar.fly.state(); return {h: [h.trimmed, h.resident, h.lows, h.residentJar, h.lowSprites], f: [f.trimmed, f.resident, f.lows]}; });
+    t(tm.h[0] && tm.h[1] === 0 && tm.h[2] === 0 && tm.h[3] === 0 && tm.h[4] === 0 && tm.f[0] && tm.f[1] <= 1 && tm.f[2] <= 3, 'телефон: на 9-м развороте герой выгрузил кадры и спрайты, пролёт оставил последний кадр и три копии', tm);
+    await p.evaluate(() => window.Astreya.house.hall());
+    const back = await p.waitForFunction(() => { const a = window.Astreya.jar.arch; return a.ready() && !a.state().trimmed && a.state().lows >= 50; }, null, {timeout: 40000}).then(() => true).catch(() => false);
+    t(back, 'телефон: вернулись к герою — кадры героя снова развёрнуты, он готов рисовать');
+    /* свайп страниц: влево — дальше, вправо — назад (вертикальная прокрутка остаётся прокруткой) */
+    await p.evaluate(() => window.Astreya.house.openMagazine(1)); await settle(p); await p.waitForTimeout(700);
+    const swipe = dx => p.evaluate(d => { const el = document.querySelector('#mag .mag-book'), mk = (type, x) => { const tt = new Touch({identifier: 1, target: el, clientX: x, clientY: 420}); el.dispatchEvent(new TouchEvent(type, {bubbles: true, cancelable: true, touches: type === 'touchend' ? [] : [tt], changedTouches: [tt], targetTouches: type === 'touchend' ? [] : [tt]})); }; mk('touchstart', 220); mk('touchend', 220 + d); }, dx);
+    const sw0 = (await rs(p)).stop; await swipe(-130); await settle(p); await p.waitForTimeout(500);
+    const sw1 = (await rs(p)).stop; await swipe(130); await settle(p); await p.waitForTimeout(500);
+    const sw2 = (await rs(p)).stop;
+    t(sw1 === sw0 + 1 && sw2 === sw0, 'телефон: свайп влево листает на страницу вперёд, вправо — назад', {sw0, sw1, sw2});
   }
   t(p._errs.length === 0, 'нет ошибок JS на телефоне', p._errs.slice(0, 5));
   await p._ctx.close();

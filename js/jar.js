@@ -40,6 +40,15 @@
     A.lite = lite;
   })();
   const clamp = (x, a, b) => Math.max(a, Math.min(b, x));
+  /* «хвост» сцены героя: на телефоне читалка наезжает на конец сцены не на 100lvh, а на 100lvh + хвост (css/house.css), и сцена героя стоит на месте, пока её холсты гаснут над кадром пролёта.
+     Раньше сцена уезжала вверх в тот же момент, а холсты сдвигались обратно из JS (--hy): на iOS прокрутка идёт мимо главного потока, сдвиг запаздывал, и поверх кадра пролёта на 1–3 кадра
+     висел второй, смещённый слой (двойное изображение — «шторка»). Хвост меряется по вёрстке: конец закреплённой сцены минус верх читалки (на ПК — 0) */
+  function heroTail(root, stage) {
+    const rd = document.getElementById('house-reader'); if (!rd || !root.classList.contains('is-house')) return 0;
+    const sy = window.scrollY || window.pageYOffset || 0, st = stage || root.firstElementChild;
+    const end = root.getBoundingClientRect().top + sy + root.offsetHeight - (st ? st.clientHeight : innerHeight), rt = rd.getBoundingClientRect().top + sy;
+    return clamp(Math.round(end - rt), 0, root.offsetHeight);
+  }
   const ease = x => x * x * (3 - 2 * x);
   const pad = i => String(i).padStart(3, '0');
   const portraitMQ = window.matchMedia('(max-aspect-ratio: 11/10)');
@@ -94,7 +103,7 @@
     /* ---- состояние ---- */
     let W = 0, H = 0, JW = 0, JH = 0, dead = false, firstDrawn = false, jarShown = false, running = false, last = 0, dirty = true, started = false;
     let cp = 0, vp = 0, pT = 0, pPrev = -1, lastMove = 0, paintedP = -2, rzTimer = 0;
-    let sTop = 0, sTot = 1, sH = 1, yNow = 0;
+    let sTop = 0, sTot = 1, sH = 1, yNow = 0, sTail = 0;
     const born = performance.now();
     let hall = null, jar = null, track = null, set = '', gen = 0, labelReady = false, lastDraw = null, resScale = 1;
     let flyCam = null;                                                              // дорожка камеры пролёта (для живой книги: js/house.js проецирует углы журнала камерой, которой нарисован кадр)
@@ -150,7 +159,7 @@
     const busy = {c: new Uint8Array(NH), z: new Uint8Array(NH), j: new Uint8Array(NH)};
     const resident = new Uint8Array(NH), resJ = new Uint8Array(NH), decoding = new Uint8Array(NH * 2);
     const lowDone = new Uint8Array(NH), lowJDone = new Uint8Array(NH), lowBusy = new Uint8Array(NH * 2);       // уменьшенные копии: 1 — в видеопамяти, 2 — не получилось (браузер не умеет сжимать при разворачивании)
-    let decL = 0, shownP = -1, lastCp = 0, lowOnlyF = false, fast = false, lowN = 0, lowJN = 0, cpTick = 0;
+    let decL = 0, shownP = -1, lastCp = 0, lowOnlyF = false, trimmed = false, fast = false, lowN = 0, lowJN = 0, cpTick = 0;
     const upQ = [], upN = {full: 0, low: 0};                                                          // загрузки в видеопамять идут по одной-две за кадр: несколько больших текстур сразу — это подвисание
     let inflight = 0, decN = 0, loadedKeys = 0, pin = null;                  // pin — диапазон кадров, которые держим в видеопамяти независимо от положения (для проверок и точных замеров)
     const pinned = k => !!pin && k >= pin[0] && k <= pin[1];
@@ -208,22 +217,25 @@
       } catch (e) { return null; }
     }
     const closeB = b => { try { b && b.close && b.close(); } catch (e) { /* — */ } };
+    /* телефон (герой и пролёт): у уменьшенных копий глубина натуральная (450×800, общая с полным кадром): с глубиной 300×533 на кромках дивана, плит и журнала в движении были видны
+       ступеньки-квадраты (видео заказчика). Цена — +0,8 МБ на кадр (≈ +90 МБ на оба движка), но память отдаётся (trim), когда читатель далеко от движка */
+    const lowSz = () => { const L = LOWSZ[isPortrait() ? 1 : 0]; return isPortrait() && !RICH ? [L[0], L[1], 0, 0, L[4]] : L; };
     function decodeLow(k, sprite) {
-      const L = LOWSZ[isPortrait() ? 1 : 0], g = gen, bi = sprite ? NH + k : k;
+      const L = lowSz(), g = gen, bi = sprite ? NH + k : k;
       lowBusy[bi] = 1; decL++;
       (sprite ? bmpR(blobs.j[k], true, L[4], 0, 'medium').then(s => [s]) : Promise.all([bmpR(blobs.c[k], false, L[0], L[1], 'medium'), bmpR(blobs.z[k], false, L[2], L[3], 'pixelated')])).then(a => {
         const ok = a.every(Boolean);
-        if (g !== gen || !ok || dead) { if (!ok && g === gen) (sprite ? lowJDone : lowDone)[k] = 2; if (g === gen) lowBusy[bi] = 0; a.forEach(closeB); return; }
+        if (g !== gen || !ok || dead || trimmed) { if (!ok && g === gen) (sprite ? lowJDone : lowDone)[k] = 2; if (g === gen) lowBusy[bi] = 0; a.forEach(closeB); return; }
         pushUp(() => {                                                       // busy снимается только после загрузки в видеопамять: иначе пока она в очереди, тот же кадр разворачивался бы снова и снова
           if (g === gen) lowBusy[bi] = 0;
-          if (g === gen && !dead && (sprite ? jar : hall)) { if (sprite) { jar.setSpriteLow(k, a[0]); if (lowJDone[k] !== 1) lowJN++; lowJDone[k] = 1; } else { hall.setLow(k, a[0], a[1], a[0].width, a[0].height, a[1].width, a[1].height); if (lowDone[k] !== 1) lowN++; lowDone[k] = 1; } dirty = true; }
+          if (g === gen && !dead && !trimmed && (sprite ? jar : hall)) { if (sprite) { jar.setSpriteLow(k, a[0]); if (lowJDone[k] !== 1) lowJN++; lowJDone[k] = 1; } else { hall.setLow(k, a[0], a[1], a[0].width, a[0].height, a[1].width, a[1].height); if (lowDone[k] !== 1) lowN++; lowDone[k] = 1; } dirty = true; }
           a.forEach(closeB);
         }, true);
       }).catch(() => { if (g === gen) { (sprite ? lowJDone : lowDone)[k] = 2; lowBusy[bi] = 0; } }).then(() => { decL--; pumpDecode(); });
     }
     function pumpLows() {
       const LD = LOWDEC[isPortrait() ? 1 : 0];
-      if (ALLRES || decL >= LD || !hall || !firstDrawn) return;                  // пролёт на мощном устройстве держит в видеопамяти все ключи целиком — уменьшенные копии ему не нужны
+      if (ALLRES || decL >= LD || !hall || !firstDrawn || trimmed) return;                  // пролёт на мощном устройстве держит в видеопамяти все ключи целиком — уменьшенные копии ему не нужны
       const u = locate(cp), c = u.k + u.t;
       for (let d = 0; d < NH && decL < LD; d++) {
         for (const k of [Math.round(c) + dirSign * d, Math.round(c) - dirSign * d]) {
@@ -251,7 +263,7 @@
 
     /* развёртывание файлов в текстуры: нужные кадры рядом с положением, дальние выгружаем */
     function pumpDecode() {
-      if (dead || !hall) return;
+      if (dead || !hall || trimmed) return;
       pumpLows();
       if (fast) return;
       const R = ALLRES ? NH : RES[isPortrait() ? 1 : 0], l = locate(cp);
@@ -263,24 +275,24 @@
         if (decN >= (isPortrait() ? DECODERS_P : DECODERS) || lowOnlyF) break;
         if (!resident[k] && keyDone(k) && !decoding[k]) {
           decoding[k] = 1; decN++; const g = gen;
-          const shared = lowDone[k] === 1 && !LOWSZ[isPortrait() ? 1 : 0][2];                 // глубина уменьшенной копии — натуральная: второй раз её не разворачиваем
+          const shared = lowDone[k] === 1 && !lowSz()[2];                 // глубина уменьшенной копии — натуральная: второй раз её не разворачиваем
           Promise.all([bmp(blobs.c[k], false), shared ? null : bmp(blobs.z[k], false)]).then(([c, z]) => {
             if (g === gen && hall && !dead) pushUp(() => {
               if (g === gen) decoding[k] = 0;
-              if (g === gen && hall && !dead) { if (shared && hall.hasLow(k)) hall.setKeyShared(k, c, c.width, c.height); else if (z) hall.setKey(k, c, z, c.width, c.height, z.width, z.height); else { closeB(c); return; } resident[k] = 1; dirty = true; }
+              if (g === gen && hall && !dead && !trimmed) { if (shared && hall.hasLow(k)) hall.setKeyShared(k, c, c.width, c.height); else if (z) hall.setKey(k, c, z, c.width, c.height, z.width, z.height); else { closeB(c); return; } resident[k] = 1; dirty = true; }
               closeB(c); closeB(z);
             });
             else { if (g === gen) decoding[k] = 0; closeB(c); closeB(z); }
           }).catch(() => { if (g === gen) decoding[k] = 0; }).then(() => { decN--; pumpDecode(); evict(); });
         } else if (!resJ[k] && blobs.j[k] && jar && !decoding[NH + k]) {
           decoding[NH + k] = 1; decN++; const g = gen;
-          bmp(blobs.j[k], true).then(s => { if (g === gen && jar && !dead) pushUp(() => { if (g === gen) decoding[NH + k] = 0; if (g === gen && jar && !dead) { jar.setSprite(k, s); resJ[k] = 1; dirty = true; } closeB(s); }); else { if (g === gen) decoding[NH + k] = 0; closeB(s); } })
+          bmp(blobs.j[k], true).then(s => { if (g === gen && jar && !dead) pushUp(() => { if (g === gen) decoding[NH + k] = 0; if (g === gen && jar && !dead && !trimmed) { jar.setSprite(k, s); resJ[k] = 1; dirty = true; } closeB(s); }); else { if (g === gen) decoding[NH + k] = 0; closeB(s); } })
             .catch(() => { if (g === gen) decoding[NH + k] = 0; }).then(() => { decN--; pumpDecode(); });
         }
       }
     }
     function evict() {                                                // дальше окна — выгружаем текстуры (файлы остаются в памяти и разворачиваются снова по требованию)
-      if (!hall || fast || ALLRES) return;
+      if (!hall || fast || ALLRES || trimmed) return;
       const R = RES[isPortrait() ? 1 : 0], l = locate(cp), c = l.k + l.t;
       const ka = lastDraw ? lastDraw.ka : -1, kb = lastDraw ? lastDraw.kb : -1;       // кадры, по которым нарисовано то, что на экране сейчас, не выгружаем: иначе при нехватке новых картинка скачет назад к чужому кадру
       for (let k = 0; k < NH; k++) {
@@ -316,7 +328,7 @@
       const w = stage.clientWidth || innerWidth, h = stage.clientHeight || innerHeight;
       /* пикселей на холсте — не больше, чем в самом кадре (1920×1080 ≈ 2,1 млн): больше деталей на экране всё равно не появится; при слабом устройстве регулятор нагрузки снижает ещё (resScale) */
       const dpr = Math.min(window.devicePixelRatio || 1, 2), s = Math.min(dpr, Math.sqrt((isPortrait() ? (A.lite ? 8e5 : 1.2e6) : 2.1e6) / Math.max(1, w * h))) * resScale;          // телефон: ≈ 1,2 млн пикселей — слабые видеокарты не тянут больше; сетка реже, кромки решаются поточечно (jar-gl.js)
-      const nw = Math.round(w * s), nh = Math.round(h * s);
+      const nw = trimmed && !FLY ? 2 : Math.round(w * s), nh = trimmed && !FLY ? 2 : Math.round(h * s);          // герой погас — его холст не держим в полном размере
       if (hall && (nw !== W || nh !== H)) { W = nw; H = nh; hall.setSize(W, H); }
       else if (!hall) { W = nw; H = nh; }
       sizeJar();
@@ -327,7 +339,9 @@
       if (!jar || !world) return;
       const w = world.clientWidth, h = world.clientHeight; if (!w || !h) return;
       const dpr = Math.min(window.devicePixelRatio || 1, 2), s = Math.min(dpr, Math.sqrt(6.5e6 / (w * h)));
-      const nw = Math.round(w * s), nh = Math.round(h * s);
+      /* пролёт с запечённой баночкой: холст баночки ничего не рисует (нужна лишь проекция jar.proj для живой книги) — делаем его крошечным; раньше на телефоне он был 3314×1864 (6,2 млн пикселей) и
+         кадр за кадром собирался композитором поверх всего: пролёт шёл с ~25 кадров/с, а память росла на ~50 МБ */
+      const nw = (trimmed || FLYBAKE) ? 2 : Math.round(w * s), nh = (trimmed || FLYBAKE) ? 2 : Math.round(h * s);
       if (nw !== JW || nh !== JH) { JW = nw; JH = nh; jar.setSize(JW, JH); dirty = true; }
     }
 
@@ -410,7 +424,7 @@
     /* ---- границы сцены измеряются один раз (и при изменении размера) — в цикле вёрстку не читаем ---- */
     function measureStatic() {
       const sy = window.scrollY || window.pageYOffset || 0;
-      const r = root.getBoundingClientRect(); sTop = r.top + sy; sH = root.offsetHeight; sTot = Math.max(1, sH - stage.clientHeight);
+      const r = root.getBoundingClientRect(); sTop = r.top + sy; sH = root.offsetHeight; sTail = FLY ? 0 : heroTail(root, stage); sTot = Math.max(1, sH - stage.clientHeight - sTail);          // хвост: сцена героя ещё стоит на месте, пока гаснут её холсты (телефон, css/house.css), — прогресс героя считается без него
     }
 
     /* ---- цикл: прокрутка → цель; пружина ведёт текущее положение к цели; в покое цель — ближайший ключевой кадр ---- */
@@ -508,13 +522,31 @@
       /* для проверок: только уменьшенные копии (полные кадры и спрайты выгружены и не разворачиваются) — так выглядит прокрутка, пока рядом нет полных кадров */
       lowOnly(on) { lowOnlyF = !!on; if (on && hall) { for (let k = 0; k < NH; k++) { if (resident[k]) { hall.dropKey(k); resident[k] = 0; } if (resJ[k] && jar) { jar.dropSprite(k); resJ[k] = 0; } } } dirty = true; schedule(); },
       fly: FLY, warm() { if (FLY) openGate(); },
+      /* телефон: пока читатель далеко от этого движка (герой — когда он погас, пролёт — когда журнал уже открыт), его видеопамять отдаётся: полные кадры, уменьшенные копии, спрайты, холсты в 2×2.
+         Пролёт оставляет последний кадр целиком и три последних уменьшенных (подложка под журналом). trim(false) — всё разворачивается снова от положения (первыми — ближайшие кадры); ready() — можно ли нарисовать текущее положение */
+      trim(on) {
+        on = !!on; if (on === trimmed) return; trimmed = on;
+        if (on) {
+          fast = false; flushUploads(1e9);                                              // очередь отрабатывает вхолостую (при trimmed она только закрывает ImageBitmap и снимает отметки «разворачивается»)
+          if (hall) for (let k = 0; k < NH; k++) {
+            if (resident[k] && !(FLY && k === NH - 1)) { hall.dropKey(k); resident[k] = 0; }
+            if (lowDone[k] === 1 && !(FLY && k >= NH - 3)) { hall.dropLow(k); lowDone[k] = 0; lowN--; }
+          }
+          if (jar) for (let k = 0; k < NH; k++) {
+            if (resJ[k]) { jar.dropSprite(k); resJ[k] = 0; }
+            if (lowJDone[k] === 1 && !FLY) { jar.dropSpriteLow(k); lowJDone[k] = 0; lowJN--; }
+          }
+          if (!FLY) { sizeCanvas(); sizeJar(); }
+        } else { sizeCanvas(); sizeJar(); dirty = true; schedule(); pumpDecode(); }
+      },
+      ready() { return !!hall && !trimmed && firstDrawn && hall.plan(cp) === cp; },
       jump(p, moving) { cp = pT = p; cpTick = p; pPrev = p; vp = moving ? 0.05 : 0; started = true; lastMove = performance.now(); flushUploads(1e9); if (hall) paint(performance.now()); vp = 0; if (!FLY) ui(p, true); },      // moving — для проверок: нарисовать так, как рисуется в движении (со сглаживанием кромок)
       state() {
         const ring = Array.prototype.slice.call(perfRing, 0, Math.min(perfN, perfRing.length)).sort((a, b) => a - b);
         let res = 0, resj = 0, lo = 0, loj = 0; for (let k = 0; k < NH; k++) { res += resident[k]; resj += resJ[k]; lo += lowDone[k] === 1 ? 1 : 0; loj += lowJDone[k] === 1 ? 1 : 0; }
         return {p: cp, pTarget: pT, u: uOf(), N: NH, loaded: loadedKeys, set, gl: !!hall, drawn: lastDraw, firstDrawn, resident: res, residentJar: resj, lows: lo, lowSprites: loj, resScale, govChanges, fast, up: {full: upN.full, low: upN.low, queued: upQ.length}, rest: vp === 0 && Math.abs(cp - pT) < 1e-5,
           jar: {loaded: blobs.j.filter(Boolean).length, n: NH, shown: jarShown, sprites: resj, label: labelReady},
-          sphere: {ready: !!(hall && hall.sphereReady), yaw: sph.yaw, cur: [sph.hx, sph.hy], running: !!sph.raf, still: scrolling()}, jarOk: lastJarOk, fastNow: fast,
+          sphere: {ready: !!(hall && hall.sphereReady), yaw: sph.yaw, cur: [sph.hx, sph.hy], running: !!sph.raf, still: scrolling()}, jarOk: lastJarOk, fastNow: fast, trimmed,
           size: [W, H, JW, JH], perf: {n: perfN, mean: ring.length ? ring.reduce((s, v) => s + v, 0) / ring.length : 0, p95: ring.length ? ring[Math.floor(ring.length * 0.95)] : 0, max: ring.length ? ring[ring.length - 1] : 0}};
       },
       destroy() { dead = true; destroyGL(); for (const k in blobs) blobs[k].fill(null); }
@@ -530,13 +562,14 @@
     roots.forEach(root => { try { ctrls.push(create(root)); } catch (e) { root.classList.add('jar-off'); } });
     ctrl = ctrls[0] || null;
   }
+  A.heroTail = () => { const ar = document.getElementById('arch-story'); return ar ? heroTail(ar, ar.firstElementChild) : 0; };
   window.Astreya = A; A.jar = {init, get ctrl() { return ctrl; }, get ctrls() { return ctrls; }, get arch() { return ctrl; }, get fly() { return ctrls.find(c => c.fly) || null; }};
   /* где в документе «покой» героя (его верх под шапкой): от этой прокрутки считается уход текста героя (js/motion.js). Сцена есть — это конец её закреплённой части
      (кадры доиграли, текст и панель на месте); нет сцены (выключена, нет WebGL) — верх запасного героя под шапкой */
   A.heroBase = function () {
     const ar = document.getElementById('arch-story');
     if (ar && ar.offsetHeight) {
-      const st = ar.firstElementChild, y = ar.getBoundingClientRect().top + scrollY + 0.97 * Math.max(0, ar.offsetHeight - (st ? st.clientHeight : innerHeight));
+      const st = ar.firstElementChild, y = ar.getBoundingClientRect().top + scrollY + 0.97 * Math.max(0, ar.offsetHeight - (st ? st.clientHeight : innerHeight) - heroTail(ar, st));
       return Math.max(0, Math.round(y));
     }
     return 0;

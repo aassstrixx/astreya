@@ -36,7 +36,8 @@
     /* ---------- положение страницы ---------- */
     const abs = el => el.getBoundingClientRect().top + window.pageYOffset;
     const stageH = el => { const st = el && (el.classList.contains('hr-stage') ? el : el.firstElementChild); return st && st.offsetHeight && getComputedStyle(st).position === 'sticky' ? st.offsetHeight : window.innerHeight; };          // высота закреплённой сцены (100lvh) — постоянная; innerHeight на телефоне прыгает с панелью браузера, от неё прогресс дёргался
-    const hallY = () => story.classList.contains('jar-off') ? Math.max(0, abs(story)) : Math.max(0, abs(story) + story.offsetHeight - stageH(story));       // конец закреплённой сцены: герой стоит в готовом кадре зала
+    const heroTail = () => (A.heroTail ? A.heroTail() : 0);          // хвост сцены героя (телефон): она стоит ещё столько же, пока гаснут холсты (js/jar.js, css/house.css)
+    const hallY = () => story.classList.contains('jar-off') ? Math.max(0, abs(story)) : Math.max(0, abs(story) + story.offsetHeight - stageH(story) - heroTail());       // конец закреплённой сцены: герой стоит в готовом кадре зала
     const jump = y => window.scrollTo({top: Math.round(y), behavior: 'instant'});                // «instant» — мимо html{scroll-behavior:smooth}
     const readerBox = () => { const r = reader.getBoundingClientRect(); return {top: r.top + window.pageYOffset, total: Math.max(0, r.height - stageH($('.hr-stage', reader)))}; };
     /* положение читалки в документе меряем один раз и пересчитываем, только когда поменялась вёрстка (ResizeObserver, resize): раньше каждый кадр читал getBoundingClientRect() сразу после записей стилей предыдущего кадра — это принудительный пересчёт стилей и вёрстки прямо в обработчике прокрутки */
@@ -62,6 +63,12 @@
     let nearK = -9, nearK0 = -9;
     const chatLeaf = (() => { const el = $('.mp-chat', mag), l = el && el.closest('.leaf'); return l ? leaves.indexOf(l) : -1; })();
     const warmedK = new Set();
+    function holdImgs(k, keep) {
+      $$('img', leaves[k]).forEach(im => {
+        if (keep) { if (im.dataset.hsrc) { im.setAttribute('src', im.dataset.hsrc); delete im.dataset.hsrc; if (im.dataset.hset) { im.setAttribute('srcset', im.dataset.hset); delete im.dataset.hset; } } }
+        else if (im.hasAttribute('src') && !im.dataset.hsrc) { im.dataset.hsrc = im.getAttribute('src'); if (im.hasAttribute('srcset')) { im.dataset.hset = im.getAttribute('srcset'); im.removeAttribute('srcset'); } im.removeAttribute('src'); warmedK.delete(k); }
+      });
+    }
     function warmLeaf(k) {
       if (k < 0 || k >= N || warmedK.has(k)) return; warmedK.add(k);
       $$('img', leaves[k]).forEach(im => { try { im.loading = 'eager'; if (im.decode) im.decode().catch(() => {}); } catch (e) { /* — */ } });
@@ -72,6 +79,7 @@
       leaves.forEach((l, k) => l.classList.toggle('is-far', k < k0 - 2 || k > k0 + 2));
       if (chat && chatLeaf >= 0 && !(chatLeaf < k0 - 2 || chatLeaf > k0 + 2) && (was || nearK0 === -9)) chat.refit();                       // лист с чатом снова рисуется: подсказки подгоняются под его ширину
       nearK0 = k0;
+      for (let k = 0; k < N; k++) holdImgs(k, k >= k0 - 3 && k <= k0 + 3);                                       // фото листов дальше трёх от читаемого выгружаются (src снимается): раскодированные картинки копились по мере листания
       for (let k = k0 - 1; k <= k0 + 3; k++) warmLeaf(k);                                                         // фото ближайших листов раскодированы заранее, дальних — нет
     }
     function setP(v) {
@@ -220,7 +228,7 @@
     }
     A.flyOnDraw = (pc, cam, proj) => {
       const BKd = BK(); if (!BKd || !FLd || !fbox || !sbox || !sbox.w || pflat() || flat()) return;
-      A.flyDrawn = true;
+      if (!A.flyDrawn) { A.flyDrawn = true; if (!gateRaf) gateRaf = requestAnimationFrame(() => { gateRaf = 0; readerUpdate(); }); }          // первый кадр пролёта: герой может гаснуть (flyGate)
       const fp = pc / FLd.F;
       RS.rb = Math.max(fp > .22 ? .002 : 0, clamp((fp - HOM.rb[0]) / (HOM.rb[1] - HOM.rb[0]), 0, 1)); RS.bd = HOM.bdMax * (1 - ease(clamp((fp - HOM.bd[0]) / (HOM.bd[1] - HOM.bd[0]), 0, 1))); paintReader();
       /* слой книги поднимается (will-change) на ровном месте, до первой матрицы, и снимается на последнем шаге: пока подсказка стоит, Chrome не пересчитывает масштаб растра — слой, впервые нарисованный уменьшенным, остался бы мягким и в покое;
@@ -265,13 +273,32 @@
     const lv = {live: null, gone: null, hf: '', hy: ''};
     function setLive(live, hf) {                                               // герой и журнал — одна сцена (css/house.css, 3б): читалка встаёт на тот же экран под героем, холсты героя гаснут
       if (lv.live !== live) { if (lv.live && !live) A.sphereHold = true; lv.live = live; reader.classList.toggle('is-live', live); story.classList.toggle('rd-live', live); document.body.classList.toggle('house-reading', live); }          // пока журнал в сцене, верхней панели нет (и при прокрутке вверх она не выезжает)
-      const hfs = hf.toFixed(3), gone = live && hf >= .985, hys = (live ? Math.max(0, Math.min(window.innerHeight * 1.2, window.pageYOffset - rbx().top)) : 0).toFixed(1) + 'px';
+      const hfs = hf.toFixed(3), gone = live && hf >= .985, hys = (live ? Math.max(0, Math.min(window.innerHeight * 1.2, window.pageYOffset - rbx().top - heroTail())) : 0).toFixed(1) + 'px';
       if (lv.hf !== hfs) { lv.hf = hfs; story.style.setProperty('--hf', hfs); }
       if (lv.gone !== gone) {
         lv.gone = gone; story.classList.toggle('rd-gone', gone);
         if (pm()) { const h = A.jar && A.jar.arch; if (h && !h.fly && h.lowOnly) h.lowOnly(gone); }          // телефон: герой погас — его полные кадры и спрайты баночки не нужны, видеопамять отдаём журналу (вернулись к герою — разворачиваются снова)
       }
       if (lv.hy !== hys && (live || lv.hy !== '0.0px')) { lv.hy = hys; story.style.setProperty('--hy', hys); }          // холсты героя стоят на месте, пока гаснут: сцена уезжает вверх, а они — вниз на столько же (в журнале, когда героя не видно, не пишем: это пересчёт стилей всей сцены героя)
+    }
+    /* Герой гаснет над кадром пролёта, только когда пролёт уже нарисовал первый кадр: иначе под гаснущим героем пустой фон страницы («смывание» перед пролётом на медленном телефоне).
+       Пока не нарисовал — герой стоит как был; нарисовал — затухание включается за 0,28 с, а не скачком */
+    let flyAt = 0, gateRaf = 0;
+    function flyGate() {
+      if (!FLd || pflat() || reader.classList.contains('jar-off') || A.lite) return 1;
+      if (!A.flyDrawn) return 0;
+      if (!flyAt) flyAt = performance.now();
+      return clamp((performance.now() - flyAt) / 280, 0, 1);
+    }
+    /* телефон: видеопамять отдаётся тому, чем сейчас не пользуются (js/jar.js → trim): герой — пока он погас, пролёт — пока журнал открыт и камера далеко от кадров пролёта; возвращаются они заранее */
+    const tr = {hero: false, fly: false, heroEver: false};
+    function trimEngines(t) {
+      if (!pm()) return;
+      const j = A.jar, h = j && j.arch, f = j && j.fly;
+      const wantH = tr.hero ? t >= RD.open - .06 : t >= RD.open + .02,                      // герой: отдаём память, когда пролёт закончился; возвращаем за ≈ 1800 px до экрана героя (разворачивается ~1–2 с)
+            wantF = tr.fly ? t >= RD.open + .08 : t >= RD.open + .14;                         // пролёт: отдаём на 5–6-й странице; возвращаем на 3-й (кадры пролёта нужны, как только листают назад)
+      if (h && h.trim && !h.fly && wantH !== tr.hero) { tr.hero = wantH; if (wantH) tr.heroEver = true; h.trim(wantH); }
+      if (f && f.trim && wantF !== tr.fly) { tr.fly = wantF; f.trim(wantF); }
     }
     function readerUpdate() {
       if (flat()) { reader.classList.add('is-flat'); RS.fu = RS.ra = RS.rb = 1; RS.bd = 0; paintReader(); setLive(false, 0); if (s === 0 && p === 0) render(1, {instant: true, noScroll: true}); return; }
@@ -281,7 +308,7 @@
       const lin = flyLin(t), fu = pflat() ? ease(clamp(t / .5, 0, 1)) : lin;                  // запасная лента телефона: журнал встаёт без пролёта, как раньше
       const ra = pflat() ? clamp((fu - .86) / .14, 0, 1) : clamp((lin - RD.fade[0]) / (RD.fade[1] - RD.fade[0]), 0, 1);
       if (!A.flyWarm && (t > 0 || window.pageYOffset > fbox.top * .4)) warmFly();                  // подъезжаем к концу героя — пролёт начинает грузиться сразу
-      if (pflat()) { setLive(false, 0); const hid = rrTop < 4 && rrTop + rb0.total + window.innerHeight > window.innerHeight * .4; if (hid !== lv.phoneHide) { lv.phoneHide = hid; document.body.classList.toggle('house-reading', hid); } } else setLive(rrTop < -1, ease(clamp(t / RD.hold, 0, 1)));
+      if (pflat()) { setLive(false, 0); const hid = rrTop < 4 && rrTop + rb0.total + window.innerHeight > window.innerHeight * .4; if (hid !== lv.phoneHide) { lv.phoneHide = hid; document.body.classList.toggle('house-reading', hid); } } else { /* после возврата из журнала герой появляется, только когда его кадры снова развёрнуты */ const gt = flyGate(), hh = A.jar && A.jar.arch, heroWait = tr.heroEver && hh && hh.ready && !hh.ready(); setLive(rrTop < -1, heroWait ? 1 : ease(clamp(t / RD.hold, 0, 1)) * gt); if (gt < 1 && gt > 0 && !gateRaf) gateRaf = requestAnimationFrame(() => { gateRaf = 0; readerUpdate(); }); trimEngines(t); }
       RS.fu = fu; RS.ra = ra;
       if (FLd && !pflat()) {                                                                    // живой журнал входит в полёте: прозрачность и приглушение под нарисованный (если движок не рисует — как раньше, от --ra)
         if (!(A.flyDrawn && BK())) { RS.rb = ra; RS.bd = 0; }              // движок не рисует (нет WebGL2/ключей): журнал проявляется как раньше; иначе --rb и --bd ведёт сам кадр (flyOnDraw), чтобы прозрачность была привязана к той позиции камеры, где журнал стоит на самом деле
@@ -321,7 +348,7 @@
     /* в самое начало страницы (герой с баночкой): кнопка «В начало» и быстрая серия прокруток вверх. Ход один, плавный (косинусная кривая), 4,5–8,5 с: камера пролёта и герой едут назад на виду; пока идёт, колесо вверх его не обрывает */
     /* «На главную»: к экрану героя с заголовком (последний экран сцены героя). Журнал остаётся на том развороте, где остановился читатель (страницы не листаются ни вперёд, ни назад, и на первый
        не перекидывает): камера едет назад к залу одним ходом (2,6–5 с, косинусная кривая), живой журнал к концу пролёта сменяется нарисованным, как при входе */
-    const homeY = () => { const a = $('#arch-story'); const hy = a ? Math.round(a.getBoundingClientRect().top + window.pageYOffset + a.offsetHeight - stageH(a)) : 0; return Math.max(0, Math.min(hy, Math.round(readerBox().top))); };
+    const homeY = () => { const a = $('#arch-story'); const hy = a ? Math.round(a.getBoundingClientRect().top + window.pageYOffset + a.offsetHeight - stageH(a) - heroTail()) : 0; return Math.max(0, Math.min(hy, Math.round(readerBox().top))); };
     function home(via) {
       glideStop(); if (A.motion && A.motion.cancelSmooth) A.motion.cancelSmooth();
       track('house_magazine_home', {via: via || 'button'});
@@ -435,6 +462,14 @@
         book.setAttribute('data-hover', x > 0.7 && s < N - 1 ? 'r' : x < 0.3 && s > 0 ? 'l' : '');
       });
       book.addEventListener('pointerleave', () => book.removeAttribute('data-hover'));
+      /* телефон (журнал на сцене, pm): горизонтальный свайп листает страницы, как у настоящего журнала (влево — дальше, вправо — назад); вертикальная прокрутка остаётся прокруткой.
+         От самой левой кромки экрана свайп не берём — это системный жест «назад» браузера */
+      let tx = null, ty = 0, tt = 0;
+      mag.addEventListener('touchstart', e => { if (!pm() || e.touches.length !== 1) { tx = null; return; } const t0 = e.touches[0]; tx = t0.clientX > 24 ? t0.clientX : null; ty = t0.clientY; tt = Date.now(); }, {passive: true});
+      mag.addEventListener('touchend', e => {
+        if (tx === null || !pm()) return; const t1 = e.changedTouches[0], dx = t1.clientX - tx, dy = t1.clientY - ty; tx = null;
+        if (Date.now() - tt < 900 && Math.abs(dx) > 48 && Math.abs(dx) > Math.abs(dy) * 1.5 && !(e.target.closest && e.target.closest('.mp-chat-log, input, textarea'))) step(dx < 0 ? 1 : -1);
+      }, {passive: true});
       if (scroller) {                                                   // телефон: свайп — это прокрутка ленты страниц; номер страницы следует за ней
         let st = 0;
         scroller.addEventListener('scroll', () => {

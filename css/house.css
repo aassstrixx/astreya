@@ -95,6 +95,9 @@ body[data-page="home"]{--hs-paper:#fbf7ec;--hs-paper-2:#f3ebd9;--hs-ink:#0b1a33;
   .house-reader[data-m]:not(.is-flat) .leaf{transform:translate3d(0,0,calc(var(--lt,0) * 60px + ((1 - var(--f,0)) * var(--zr,0) + var(--f,0) * var(--zl,0)) * .4px)) rotateY(calc(var(--f,0) * -180deg))}
   .house-reader[data-m]:not(.is-flat) .mag-book.is-still .leaf{transform:rotateY(calc(var(--f,0) * -180deg))}
   .house-reader[data-m]:not(.is-flat) .mag-book.is-still .leaf:not(.is-cur):not(.is-prev){visibility:hidden}
+  html.js .arch-story.is-house:not(.is-static):not(.jar-off){height:calc(var(--jhm,380vh) + 50lvh)}          /* «хвост» сцены героя: она стоит на месте ещё 50lvh (= RD.hold × путь читалки), пока гаснут её холсты над кадром пролёта; читалка наезжает на конец сцены на 150lvh. Раньше сцена уезжала в тот же момент, а холсты возвращались из JS (--hy): на iOS сдвиг запаздывал на 1–3 кадра, и поверх пролёта висел смещённый второй слой («шторка»). js/jar.js (heroTail) меряет хвост по вёрстке */
+  html.js .arch-story.is-house:not(.is-static):not(.jar-off) ~ .house-reader[data-m]:not(.is-flat){margin-top:-150lvh}
+  .house-reader[data-m]:not(.is-flat) .mag{touch-action:pan-y}          /* горизонтальный жест — свайп страниц (js/house.js), а не жест браузера */
   .house-reader[data-m]:not(.is-flat) .leaf.is-far{display:none}          /* дальние листы не рисуются вовсе: ни слоёв, ни декодированных фото (js/house.js → nearLeaves) */
   .house-reader[data-m]:not(.is-flat) .mag-book.is-still{perspective:none}
   .house-reader[data-m]:not(.is-flat) .mag-book.is-still .leaves, .house-reader[data-m]:not(.is-flat) .mag-book.is-still .leaf{transform-style:flat}

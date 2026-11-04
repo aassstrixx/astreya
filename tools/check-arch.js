@@ -88,7 +88,7 @@ if (!J || !J.enabled || !A || !A.enabled) { console.log('Первый экран
     return {ctx, p};
   };
   const skipSplash = async p => { const s = await p.$('#sp-in'); if (s) { try { await s.click({timeout: 1500}); } catch (e) {} } await wait(1200); };
-  const geo = p => p.evaluate(() => { const r = document.getElementById('arch-story'); if (!r) return null; const st = r.firstElementChild; return {top: Math.round(r.getBoundingClientRect().top + scrollY), tot: r.offsetHeight - st.clientHeight, h: r.offsetHeight}; });
+  const geo = p => p.evaluate(() => { const r = document.getElementById('arch-story'); if (!r) return null; const st = r.firstElementChild; return {top: Math.round(r.getBoundingClientRect().top + scrollY), tot: r.offsetHeight - st.clientHeight - (window.Astreya && window.Astreya.heroTail ? window.Astreya.heroTail() : 0), tail: window.Astreya && window.Astreya.heroTail ? window.Astreya.heroTail() : 0, h: r.offsetHeight}; });
   /* перейти к положению pv: прокрутка + ожидание, пока плейхед не дойдёт (в программном WebGL кадр рисуется секунды, а пружина стоит на ключевом кадре — ждём её остановки) */
   const at = async (p, g, pv, ms = 1700) => { await p.evaluate(y => window.scrollTo({top: y, behavior: 'instant'}), Math.round(g.top + pv * g.tot)); await wait(ms);
     try { await p.waitForFunction(t => { const c = window.Astreya.jar.arch, s = c && c.state(); return s && s.firstDrawn && Math.abs(s.p - s.pTarget) < 0.012 && (s.pTarget < 0.003 || s.drawn); }, pv, {timeout: 60000, polling: 250}); } catch (e) { /* — */ } await wait(500); };
