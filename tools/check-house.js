@@ -376,6 +376,30 @@ const t = (cond, name, info) => { if (cond) ok++; else bad.push(name + (info !==
     t(q._errs.length === 0, 'нет ошибок JS в облегчённом режиме', q._errs.slice(0, 5));
     await q._ctx.close();
   }
+  { /* второй обрыв подряд → режим без анимации (статичный зал и лента страниц, WebGL-движки не создаются): цикл падений вкладки невозможен; плашка «Страница перезапустилась» с отчётом; журнал вылетов; ?nogl=0 снимает */
+    const q = await open(390, 844, {touch: true});
+    await q._ctx.addInitScript(() => { try { sessionStorage.setItem('astreya-boot', JSON.stringify({run: true, t: Date.now()})); sessionStorage.setItem('astreya-bc', JSON.stringify([[0, 'boot', 'x'], [3.2, 'swipe', '-200,4 110ms div.leaf'], [4.1, 'ctxlost', 'fly']])); } catch (e) { /* — */ } });
+    await q.reload(); await q.waitForSelector('html.ready', {timeout: 15000}).catch(() => {}); await q.waitForTimeout(900);
+    const c1 = await q.evaluate(() => ({lite: window.Astreya.lite, nogl: !!window.Astreya.nogl, n: window.Astreya.crashN, fly: !!(window.Astreya.jar && window.Astreya.jar.fly && window.Astreya.jar.fly.state().gl)}));
+    t(c1.lite === true && !c1.nogl && c1.n === 1, 'после первого обрыва — облегчённый режим (пролёт остаётся), без отключения анимации', c1);
+    await q.reload(); await q.waitForSelector('html.ready', {timeout: 15000}).catch(() => {}); await q.waitForTimeout(2600);
+    const c2 = await q.evaluate(() => ({nogl: !!window.Astreya.nogl, n: window.Astreya.crashN, off: document.getElementById('arch-story').classList.contains('jar-off'), dm: document.querySelector('.house-reader').hasAttribute('data-m'), fly: !!(window.Astreya.jar && window.Astreya.jar.fly && window.Astreya.jar.fly.state && window.Astreya.jar.fly.state().gl), hero: !!(window.Astreya.jar && window.Astreya.jar.arch && window.Astreya.jar.arch.state && window.Astreya.jar.arch.state().gl),
+      toast: !![...document.querySelectorAll('div[role=status]')].find(e => /перезапустилась/.test(e.textContent)), log: (JSON.parse(localStorage.getItem('astreya:crashlog') || '[]')).length, ow: document.documentElement.scrollWidth}));
+    t(c2.nogl && c2.n === 2 && c2.off && !c2.dm && !c2.fly && !c2.hero, 'второй обрыв подряд — режим без анимации: зал статичный, читалка — лента страниц, WebGL-движки не создаются', c2);
+    t(c2.toast && c2.log >= 1, 'после обрыва: плашка «Страница перезапустилась…» и журнал вылетов в localStorage (последние действия сохранены)', c2);
+    await q.evaluate(() => window.Astreya.house.openMagazine(1)); await q.waitForTimeout(900);
+    const c3 = await q.evaluate(() => { const l = [...document.querySelectorAll('#mag .leaf')].map(e => e.getBoundingClientRect()).filter(r => r.width > 100 && r.right > 0 && r.left < innerWidth); return {leaves: l.length, ow: document.documentElement.scrollWidth}; });
+    t(c3.leaves >= 1 && c3.ow <= 390, 'режим без анимации: журнал открывается лентой страниц, без горизонтальной прокрутки страницы', c3);
+    t(q._errs.length === 0, 'нет ошибок JS в режиме без анимации', q._errs.slice(0, 5));
+    await q.goto(base + '/' + page + '?nogl=0'); await q.waitForSelector('html.ready', {timeout: 15000}).catch(() => {}); await q.waitForTimeout(1200);
+    const c4 = await q.evaluate(() => ({nogl: !!window.Astreya.nogl, fly: !!(window.Astreya.jar && window.Astreya.jar.fly && window.Astreya.jar.fly.state && window.Astreya.jar.fly.state().gl)}));
+    t(!c4.nogl && c4.fly, '?nogl=0 снимает режим без анимации (пролёт снова создаётся)', c4);
+    await q._ctx.close();
+    const q2 = await open(390, 844, {touch: true, url: page + '?nogl=1'});
+    const d1 = await q2.evaluate(() => ({nogl: !!window.Astreya.nogl, off: document.getElementById('arch-story').classList.contains('jar-off'), dm: document.querySelector('.house-reader').hasAttribute('data-m')}));
+    t(d1.nogl && d1.off && !d1.dm, '?nogl=1 включает режим без анимации сразу', d1);
+    await q2._ctx.close();
+  }
   { /* свежесть страницы: версия в build.json не совпадает с версией загруженной страницы (устаревший кеш) → страница открывается заново (не больше двух раз), параметр ?b= из адреса убирается; совпадает — ничего не происходит */
     const ctx = await b.newContext({viewport: {width: 800, height: 700}, locale: 'ru-RU'});
     await ctx.addInitScript(() => { try { localStorage.setItem('astreya:consent', JSON.stringify({v: 1, a: false, t: Date.now()})); } catch (e) { /* — */ } });

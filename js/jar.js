@@ -30,7 +30,14 @@
       const ss = window.sessionStorage, q = /[?&]lite=([01])/.exec(location.search), st = JSON.parse(ss.getItem('astreya-boot') || 'null') || {};
       lite = ss.getItem('astreya-lite') === '1';
       A.crashed = !!(st.run && Date.now() - (st.t || 0) < 600000);          // прошлая загрузка оборвалась на экране (читает журнал вылетов ниже: к этому моменту «идёт» уже перезаписано)
+      let nc = +(ss.getItem('astreya-crashes') || 0); if (A.crashed) { nc++; ss.setItem('astreya-crashes', String(nc)); }
       if (!lite && A.crashed) lite = true;
+      /* второй обрыв подряд: анимацию на этом устройстве не тянем — статичный зал и лента страниц (без WebGL, цикл падений «повторно возникла проблема» невозможен). ?nogl=1 включает режим, ?nogl=0 снимает.
+         Счётчик обнуляется, если страница продержалась на экране 45 с без обрыва */
+      const qn = /[?&]nogl=([01])/.exec(location.search); A.nogl = qn ? qn[1] === '1' : nc >= 2; A.crashN = nc;
+      if (qn && qn[1] === '0') { ss.removeItem('astreya-crashes'); A.nogl = false; }
+      if (A.nogl) { const rd = document.querySelector('.house-reader'); if (rd) { rd.removeAttribute('data-m'); rd.removeAttribute('data-fly'); } }          // читалка без пролёта: прежняя лента страниц (js/house.js читает эти атрибуты при старте)
+      setTimeout(() => { try { if (document.visibilityState === 'visible') ss.removeItem('astreya-crashes'); } catch (e) { /* — */ } }, 45000);
       if (q) lite = q[1] === '1';
       if (lite) ss.setItem('astreya-lite', '1'); else ss.removeItem('astreya-lite');
       const mark = run => { try { ss.setItem('astreya-boot', JSON.stringify({run, t: Date.now()})); } catch (e) { /* — */ } };
@@ -70,7 +77,7 @@
       let r = ''; try { const j = A.jar, a = j && j.arch && j.arch.state && j.arch.state(), f = j && j.fly && j.fly.state && j.fly.state(); r = ' h' + (a ? a.resident + '/' + a.lows : '-') + ' f' + (f ? f.resident + '/' + f.lows : '-'); } catch (e) { /* — */ }
       bc('y', Math.round(window.pageYOffset) + r);
     }, {passive: true});
-    if (/[?&]diag=1/.test(location.search)) {
+    {
       const show = () => {
         if (document.getElementById('astreya-diag')) return;
         const pre = document.createElement('pre'); pre.id = 'astreya-diag';
@@ -80,7 +87,21 @@
         render(); const x = document.createElement('button'); x.textContent = 'закрыть'; x.style.cssText = 'position:sticky;float:right;top:0;font:11px sans-serif'; x.onclick = () => { clearInterval(iv); pre.remove(); }; pre.prepend(x);
         const iv = setInterval(() => { const sc = pre.scrollTop; render(); pre.prepend(x); pre.scrollTop = sc; }, 1500); document.body.appendChild(pre);
       };
-      if (document.body) show(); else document.addEventListener('DOMContentLoaded', show);
+      const diagOn = /[?&]diag=1/.test(location.search);
+      if (diagOn) { if (document.body) show(); else document.addEventListener('DOMContentLoaded', show); }
+      /* после обрыва вкладки — короткая плашка внизу: страница перезапустилась, включён облегчённый режим (или без анимации); «Отчёт» открывает журнал (его можно сфотографировать и прислать) */
+      if (crashed && !diagOn) {
+        const toast = () => {
+          if (!document.body) return;
+          const t = document.createElement('div'); t.setAttribute('role', 'status');
+          t.style.cssText = 'position:fixed;left:12px;right:12px;bottom:calc(14px + env(safe-area-inset-bottom,0px));z-index:2147483000;display:flex;gap:10px;align-items:center;justify-content:space-between;padding:10px 12px;border-radius:14px;background:rgba(11,26,51,.92);color:#fff;font:13px/1.3 system-ui,-apple-system,sans-serif;box-shadow:0 8px 24px rgba(0,0,0,.3)';
+          const m = document.createElement('span'); m.textContent = A.nogl ? 'Страница перезапустилась. Включён режим без анимации.' : 'Страница перезапустилась. Включён облегчённый режим.';
+          const b = document.createElement('button'); b.type = 'button'; b.textContent = 'Отчёт'; b.style.cssText = 'flex:none;border:0;border-radius:10px;padding:7px 11px;font:600 12px system-ui,sans-serif;background:#f4ecda;color:#0b1a33';
+          b.onclick = () => { t.remove(); show(); };
+          t.append(m, b); document.body.appendChild(t); setTimeout(() => t.remove(), 14000);
+        };
+        if (document.body) setTimeout(toast, 1500); else document.addEventListener('DOMContentLoaded', () => setTimeout(toast, 1500));
+      }
     }
   })();
   const clamp = (x, a, b) => Math.max(a, Math.min(b, x));
@@ -129,6 +150,7 @@
     let look = {}; try { look = JSON.parse(ds.look || '{}') || {}; } catch (e) { look = {}; }
     const LS = look.scale || {}, LSH = look.shadow || null, LG = look.ground || null, LH = look.halo || null;
     const dead0 = () => { root.classList.add('jar-off'); return {root, complete: () => true, destroy() {}, state: () => ({})}; };
+    if (A.nogl) { root.setAttribute('data-fly-why', 'режим без анимации (после падений вкладки / ?nogl=1)'); return dead0(); }
     if (!A.ArchGL || !stage || !cv || !jcv || typeof fetch !== 'function' || typeof createImageBitmap !== 'function' || !glOk() || (FLY && portraitMQ.matches && !root.hasAttribute('data-m'))) {
       if (FLY) root.setAttribute('data-fly-why', !A.ArchGL ? 'нет jar-gl.js' : (!stage || !cv || !jcv) ? 'нет холстов в читалке' : typeof createImageBitmap !== 'function' ? 'нет createImageBitmap' : !glOk() ? 'нет WebGL2' : 'узкое окно (высота больше ширины): пролёт только на широком экране');         // для ?flydebug (js/house.js)
       return dead0();
@@ -325,7 +347,7 @@
       for (let d = 0; d <= R; d++) { for (const k of [l.k + d, l.k + 1 - d]) if (k >= 0 && k < NH && need.indexOf(k) < 0) need.push(k); }
       need.sort((a, b) => Math.abs(a - (l.k + l.t)) - Math.abs(b - (l.k + l.t)));
       if (pin) for (let k = pin[0]; k <= pin[1]; k++) if (need.indexOf(k) < 0) need.push(k);
-      const holdFar = FLY && PHALL && pT <= 0 && scrolling();          // герой ещё листают пальцем: дальше первых K1 ключей пролёта не разворачиваем и не грузим в видеопамять — сделаем это в паузе (onScroll → wakeT), иначе каждый кадр скролла героя делит поток с загрузкой 49 ключей
+      const holdFar = FLY && PHALL && pT <= 0 && (scrolling() || !A.flyNear);          // герой ещё листают пальцем или он ещё далеко от конца (A.flyNear — js/house.js): дальше первых K1 ключей пролёта не разворачиваем и не грузим в видеопамять — сделаем это в паузе (onScroll → wakeT), иначе каждый кадр скролла героя делит поток с загрузкой 49 ключей
       for (const k of need) {
         if (decN >= (isPortrait() ? DECODERS_P : DECODERS) || lowOnlyF) break;
         if (holdFar && k >= K1) continue;
@@ -373,7 +395,7 @@
       if (!hall) { root.classList.add('jar-off'); if (FLY) root.setAttribute('data-fly-why', 'createHall вернул null (WebGL2 / шейдеры)'); dead = true; return; }
       hall.setSize(W, H); JW = JH = 0; sizeJar();
       loadSphere();
-      if (jar && ds.lbl) bmp(await (await fetch(urlOf(ds.lbl))).blob(), false).then(b => { if (jar) { jar.setLabel(b); labelReady = true; dirty = true; schedule(); } }).catch(() => {});
+      if (jar && ds.lbl && !FLYBAKE) bmp(await (await fetch(urlOf(ds.lbl))).blob(), false).then(b => { if (jar) { jar.setLabel(b); labelReady = true; dirty = true; schedule(); } }).catch(() => {});
       cv.addEventListener('webglcontextlost', e => { e.preventDefault(); A.bc && A.bc('ctxlost', FLY ? 'fly' : 'hero'); hall = null; jar = null; resident.fill(0); resJ.fill(0); lowDone.fill(0); lowJDone.fill(0); lowBusy.fill(0); decL = 0; upQ.length = 0; shownP = -1; fast = false; lowN = lowJN = 0; }, false);
       cv.addEventListener('webglcontextrestored', () => { if (!dead) initGL().catch(() => {}); }, false);
       pumpDecode(); schedule();
@@ -582,6 +604,11 @@
       fly: FLY, warm() { if (FLY) openGate(); },
       /* телефон: пока читатель далеко от этого движка (герой — когда он погас, пролёт — когда журнал уже открыт), его видеопамять отдаётся: полные кадры, уменьшенные копии, спрайты, холсты в 2×2.
          Пролёт оставляет последний кадр целиком и три последних уменьшенных (подложка под журналом). trim(false) — всё разворачивается снова от положения (первыми — ближайшие кадры); ready() — можно ли нарисовать текущее положение */
+      shrink(n) {                                                                      // вернулись выше конца героя: ключи пролёта дальше первых n (и их копии) отдаём — на подъезде к концу героя они развернутся снова
+        if (!FLY || trimmed || !hall) return false; let any = 0;
+        for (let k = n; k < NH; k++) { if (resident[k]) { hall.dropKey(k); resident[k] = 0; any++; } if (lowDone[k] === 1) { hall.dropLow(k); lowDone[k] = 0; lowN--; } }
+        if (any) { A.bc && A.bc('shrink', any); dirty = true; } return any > 0;
+      },
       trim(on) {
         on = !!on; if (on === trimmed) return; trimmed = on; A.bc && A.bc('trim', (FLY ? 'fly ' : 'hero ') + (on ? 'вкл' : 'выкл'));
         if (on) {

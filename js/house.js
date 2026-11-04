@@ -313,7 +313,11 @@
       if (!fbox || Math.abs(rb0.top - fbox.top) > 2) measureFly();
       const lin = flyLin(t), fu = pflat() ? ease(clamp(t / .5, 0, 1)) : lin;                  // запасная лента телефона: журнал встаёт без пролёта, как раньше
       const ra = pflat() ? clamp((fu - .86) / .14, 0, 1) : clamp((lin - RD.fade[0]) / (RD.fade[1] - RD.fade[0]), 0, 1);
-      if (!A.flyWarm && (t > 0 || window.pageYOffset > fbox.top * (pm() ? .1 : .4))) warmFly();                  // подъезжаем к концу героя — пролёт начинает грузиться сразу
+      if (!A.flyWarm && (t > 0 || window.pageYOffset > fbox.top * (pm() ? .45 : .4))) warmFly();                  // подъезжаем к концу героя — пролёт начинает грузиться (телефон: с 45 % героя, а не сразу после загрузки: второй движок и его шейдеры не должны мешать появлению героя и первой прокрутке)
+      if (pm()) {                                                                              // телефон: полный набор ключей пролёта — только на подъезде к концу героя; вернулись выше — лишние ключи отдаём герою (A.flyNear читает js/jar.js)
+        const near = t > 0 || window.pageYOffset > fbox.top * (A.flyNear ? .6 : .8);
+        if (near !== !!A.flyNear) { A.flyNear = near; if (!near && A.flyWarm) { const f = A.jar && A.jar.fly; if (f && f.shrink) f.shrink(12); } }
+      }
       if (pflat()) { setLive(false, 0); const hid = rrTop < 4 && rrTop + rb0.total + window.innerHeight > window.innerHeight * .4; if (hid !== lv.phoneHide) { lv.phoneHide = hid; document.body.classList.toggle('house-reading', hid); } } else { /* после возврата из журнала герой появляется, только когда его кадры снова развёрнуты */ const gt = flyGate(), hh = A.jar && A.jar.arch, heroWait = tr.heroEver && hh && hh.ready && !hh.ready(); setLive(rrTop < -1, heroWait ? 1 : ease(clamp(t / RD.hold, 0, 1)) * gt); if (gt < 1 && gt > 0 && !gateRaf) gateRaf = requestAnimationFrame(() => { gateRaf = 0; readerUpdate(); }); trimEngines(t); }
       RS.fu = fu; RS.ra = ra;
       if (FLd && !pflat()) {                                                                    // живой журнал входит в полёте: прозрачность и приглушение под нарисованный (если движок не рисует — как раньше, от --ra)
@@ -526,7 +530,7 @@
     if ('requestIdleCallback' in window) setTimeout(() => requestIdleCallback(warm, {timeout: 4000}), 2500); else setTimeout(warm, 3500);
     mag.removeAttribute('hidden');
     if (pflat() || flat()) { setS(0); setP(0); } else if (pm()) applyQ(1); else setP(1);
-    readerUpdate(); setTimeout(warmFly, pm() ? 2200 : 3000);
+    readerUpdate(); setTimeout(warmFly, pm() ? 9000 : 3000);                  // телефон: если страницу не листают — прогрев через 9 с покоя; иначе — на 45 % героя (readerUpdate)
     on(window, 'load', () => { bbox = null; measureFly(); }, {once: true});
 
     /* маскот Стеллы на страницах журнала: тот самый, что на кнопке чата и в окне диалога (js/assistant.js → Astreya.pearl; градиенты — #pe-defs, анимация моргания — css/extras.css) */
