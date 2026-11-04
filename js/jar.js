@@ -120,8 +120,9 @@
   const OMEGA = 24;           // жёсткость пружины, 1/с: отставание при равномерной прокрутке ≈ 2/OMEGA ≈ 0,08 с, остановка (до 2 %) ≈ 0,25 с
   const IDLE_TAIL = 150;      // мс после остановки прокрутки, пока цикл ещё идёт (пружина доводит кадр до точного положения)
   const FAST_ON = 30, FAST_OFF = 12;   // ключевых кадров в секунду: быстрее FAST_ON — «взмах»: тяжёлые полные кадры не разворачиваем и не грузим в видеопамять (их уже не успеть, а загрузка гасит кадры анимации), картинка идёт по уменьшенным копиям; медленнее FAST_OFF — снова обычная работа
+  const FAST_ON_PF = 30, FAST_OFF_PF = 12;   // пролёт на телефоне: при обычной прокрутке пальцем (≈ 15–20 ключей/с) кадры остаются полными, копии — только на настоящем взмахе
   const FAST_ON_P = 9, FAST_OFF_P = 3;   // то же для телефона (портретный кадр): взмах начинается уже при ≈ 9 ключах в секунду — обычная прокрутка пальцем идёт по уменьшенным копиям, полные кадры подтягиваются, когда движение замедлилось (каждая загрузка полного кадра в видеопамять на iPhone — 10–30 мс главного потока, т. е. пропущенные кадры)
-  const UP_GAP_P = 70, UP_GAP_LOW = 40;        // мс: на телефоне в движении загрузка в видеопамять — не чаще одной за этот промежуток (полный кадр / уменьшенная копия во «взмахе»): раньше копии всех кадров пролёта грузились по одной за каждый кадр анимации ровно во время первого пролёта
+  const UP_GAP_P = 70, UP_GAP_LOW = 40, UP_GAP_F = 34;          // UP_GAP_F — пролёт: окно ±8 должно обновляться быстрее, чем камера его съедает (≈ 29 ключей/с)        // мс: на телефоне в движении загрузка в видеопамять — не чаще одной за этот промежуток (полный кадр / уменьшенная копия во «взмахе»): раньше копии всех кадров пролёта грузились по одной за каждый кадр анимации ровно во время первого пролёта
   const MOVING = 0.04;        // ключевых кадров в секунду: быстрее — идёт движение (включается сглаживание кромок)
   const LANES = [14, 8];      // запросов одновременно: [компьютер, телефон] (HTTP/2)
   const RES = [5, A.lite ? 1 : 3];         // сколько ключевых кадров по обе стороны от положения держим в видеопамяти: [компьютер, телефон]
@@ -131,7 +132,7 @@
      Они должны быть почти неотличимы от полных кадров (мелкие копии давали «мыло» и ступеньки на кромках): на мощных устройствах (≥ 8 ГБ памяти) цвет 1280×720 и глубина целиком (≈ 350 МБ), иначе 960×540 и глубина 640×360 (≈ 180 МБ); телефон — 450×800 / 540×960 */
   const DM = navigator.deviceMemory || 4, RICH = DM >= 8;
   const PHONE = (() => { try { return matchMedia('(pointer: coarse)').matches && Math.min(screen.width, screen.height) <= 520; } catch (e) { return false; } })();          // телефон (в том числе повёрнутый набок): холст не больше портретного бюджета — ориентация экрана не должна удваивать видеопамять
-  const LOWSZ = [RICH ? [1280, 720, 0, 0, 640] : [960, 540, 640, 360, 480], RICH ? [540, 960, 0, 0, 480] : [450, 800, 300, 533, 360]];      // телефон: на 8 ГБ — цвет 540×960 и вся глубина (≈ 210 МБ), иначе 450×800 и глубина 300×533 (≈ 125 МБ)
+  const LOWSZ = [RICH ? [1280, 720, 0, 0, 640] : [960, 540, 640, 360, 480], RICH ? [540, 960, 0, 0, 480] : [300, 533, 300, 533, 360]];      // телефон: на 8 ГБ — цвет 540×960 и вся глубина (≈ 210 МБ), иначе 450×800 и глубина 300×533 (≈ 125 МБ)
   const LOWDEC = [2, 1];           // одновременных разворачиваний уменьшенных копий (они мелкие, идут в стороне от основной очереди)
   let ctrl = null, ctrls = [];       // ctrls — все сцены страницы (на главной одна: #arch-story), ctrl — она же
 
@@ -178,7 +179,8 @@
     const perfRing = new Float32Array(240); let perfN = 0;
     /* пролёт на телефоне — как на ПК: все ключи лежат в видеопамяти целиком (900×1600 + глубина ≈ 7 МБ на ключ, ≈ 350 МБ на 49), без «быстрого режима» по уменьшенным копиям: картинка в движении такая же чёткая, как в покое.
        Герой, пока журнал открыт, свою видеопамять отдаёт (trim). После падения вкладки (A.lite) — прежнее окно кадров + копии: память вдвое меньше, пролёт тот же */
-    const PHALL = FLY && fm0 && !A.lite && !RICH, ALLRES = FLY && (RICH || PHALL);
+    const FULL = /[?&]full=1/.test(location.search);                                // ?full=1 — все ключи пролёта в видеопамяти (по умолчанию на телефоне — широкое окно, см. winR)
+    const PHALL = FLY && fm0 && !A.lite && !RICH && FULL, ALLRES = FLY && (RICH || PHALL);
     /* ALLRES: на мощном устройстве (≥ 8 ГБ) и на телефоне (PHALL) все ключи пролёта лежат в видеопамяти целиком — уменьшенных копий и быстрого режима нет */
     let dirSign = 1, gate = !FLY;                                                      // gate — пролёт грузит ключи, когда читалка разрешит (self.warm): пока герой не доехал до конца, трафик нужен ему
 
@@ -218,7 +220,7 @@
       if (!hall || !hall.hasSphere || !ds.sa || !ds.sn) return;
       const g = gen;
       Promise.all([fetch(urlOf(ds.sa), {priority: 'low'}).then(r => r.blob()), fetch(urlOf(ds.sn), {priority: 'low'}).then(r => r.blob())])
-        .then(bs => Promise.all(bs.map(b => createImageBitmap(b, {premultiplyAlpha: 'none', colorSpaceConversion: 'none'}))))
+        .then(bs => Promise.all(bs.map(b => createImageBitmap(b, (isPortrait() && !RICH) ? {premultiplyAlpha: 'none', colorSpaceConversion: 'none', resizeWidth: 1024, resizeQuality: 'high'} : {premultiplyAlpha: 'none', colorSpaceConversion: 'none'}))))
         .then(([a, n]) => { if (g === gen && hall && !dead && hall.setSphereTex(a, n)) { sphPush(); dirty = true; schedule(); sphStart(); } try { a.close(); n.close(); } catch (e) { /* — */ } })
         .catch(() => {});
     }
@@ -294,6 +296,7 @@
        а в видеопамяти занимает на треть меньше (цвет 3,9 МБ вместо 5,8 МБ; на 49 ключей пролёта ≈ −90 МБ). 0 — натуральный размер (ПК, мощные устройства, браузер размер не применил) */
     let WF = 0;
     const keyW = () => (isPortrait() && !RICH && WF > 0) ? Math.min(900, Math.max(560, Math.round(WF))) : 0;
+    const bmpJ = blob => (isPortrait() && !RICH) ? bmpR(blob, true, 800, 0, 'medium').then(b => b || bmp(blob, true)) : bmp(blob, true);          // спрайт баночки на телефоне — 800 px
     const bmpKey = blob => { const w = keyW(); return w && w < 880 ? bmpR(blob, false, w, 0, 'medium').then(b => b || bmp(blob, false)) : bmp(blob, false); };
     function decodeLow(k, sprite) {
       const L = lowSz(), g = gen, bi = sprite ? NH + k : k;
@@ -308,15 +311,22 @@
         }, true);
       }).catch(() => { if (g === gen) { (sprite ? lowJDone : lowDone)[k] = 2; lowBusy[bi] = 0; } }).then(() => { decL--; pumpDecode(); });
     }
+    /* копии (lows) на телефоне — через ключ (в облегчённом режиме через два): в движении картинка идёт по ним, а между соседними копиями кадры перепроецируются (plan: разрыв до 3 ключей допустим); память копий вдвое меньше */
+    const lowStride = () => (isPortrait() && !RICH) ? (A.lite ? 3 : 2) : 1;
+    const lowWanted = k => { const st = lowStride(); return st === 1 || k % st === 0 || k === NH - 1; };
+    let lowTgtS = 0, lowTgtV = NH;
+    const lowTgt = () => { const st = lowStride(); if (st !== lowTgtS) { lowTgtS = st; lowTgtV = 0; for (let k = 0; k < NH; k++) if (lowWanted(k)) lowTgtV++; } return lowTgtV; };
     function pumpLows() {
       const LD = LOWDEC[isPortrait() ? 1 : 0];
       if ((ALLRES && !PHALL) || decL >= LD || !hall || !firstDrawn || trimmed) return;                  // пролёт на мощном устройстве держит в видеопамяти все ключи целиком — уменьшенные копии ему не нужны
       const u = locate(cp), c = u.k + u.t;
-      if (PHALL && pT <= 0) return;                                    // пролёт на телефоне: пока герой на экране, копии не нужны (полные ключи подгрузятся в паузе)
+      if (PHALL && pT <= 0) return;
+      if (FLY && pT <= 0 && !A.flyNear) return;                          // пролёт: копии нужны, когда герой подъехал к концу (A.flyNear) — раньше они лишь занимают видеопамять рядом с героем
+      if (upQ.length >= UPQ_MAX() + 2) return;                                    // пролёт на телефоне: пока герой на экране, копии не нужны (полные ключи подгрузятся в паузе)
       for (let d = 0; d < (PHALL ? 8 : NH) && decL < LD; d++) {          // PHALL: копии — только страховка на ±8 ключей вокруг положения, пока полные ещё грузятся
         for (const k of [Math.round(c) + dirSign * d, Math.round(c) - dirSign * d]) {
           if (k < 0 || k >= NH || decL >= LD) continue;
-          if (!lowDone[k] && !lowBusy[k] && keyDone(k)) { if (PHALL && resident[k]) lowDone[k] = 3; else decodeLow(k, false); }          // PHALL: полный кадр уже лежит — копия не нужна
+          if (!lowDone[k] && !lowBusy[k] && keyDone(k) && lowWanted(k)) { if (PHALL && resident[k]) lowDone[k] = 3; else decodeLow(k, false); }          // PHALL: полный кадр уже лежит — копия не нужна
           else if (jar && !lowJDone[k] && !lowBusy[NH + k] && blobs.j[k]) decodeLow(k, true);
         }
       }
@@ -335,14 +345,17 @@
         if (i < 0) break;
         const f = upQ.splice(i, 1)[0]; if (f.low) upN.low++; else upN.full++; lastUp = performance.now(); try { f(); } catch (e) { /* — */ }
       } while (upQ.length && performance.now() - t0 < budget);
+      if (upQ.length < UPQ_MAX()) setTimeout(pumpDecode, 0);                          // очередь разгрузилась — разворачиваем следующие кадры
     }
 
     /* развёртывание файлов в текстуры: нужные кадры рядом с положением, дальние выгружаем */
+    const UPQ_MAX = () => isPortrait() ? 2 : 6;          // не больше стольких развёрнутых кадров ждут загрузки в видеопамять: дальше новые не разворачиваем (иначе на быстром телефоне очередь растёт до сотен МБ)
+    const winR = () => { if (!isPortrait()) return RES[0]; return FLY ? (A.lite ? 3 : 8) : RES[1]; };          // сколько полных ключей по обе стороны от положения держим в видеопамяти
     function pumpDecode() {
       if (dead || !hall || trimmed) return;
       pumpLows();
       if (fast) return;
-      const R = ALLRES ? NH : RES[isPortrait() ? 1 : 0], l = locate(cp);
+      const R = ALLRES ? NH : winR(), l = locate(cp);
       const need = [];
       for (let d = 0; d <= R; d++) { for (const k of [l.k + d, l.k + 1 - d]) if (k >= 0 && k < NH && need.indexOf(k) < 0) need.push(k); }
       need.sort((a, b) => Math.abs(a - (l.k + l.t)) - Math.abs(b - (l.k + l.t)));
@@ -350,6 +363,7 @@
       const holdFar = FLY && PHALL && pT <= 0 && (scrolling() || !A.flyNear);          // герой ещё листают пальцем или он ещё далеко от конца (A.flyNear — js/house.js): дальше первых K1 ключей пролёта не разворачиваем и не грузим в видеопамять — сделаем это в паузе (onScroll → wakeT), иначе каждый кадр скролла героя делит поток с загрузкой 49 ключей
       for (const k of need) {
         if (decN >= (isPortrait() ? DECODERS_P : DECODERS) || lowOnlyF) break;
+        if (upQ.length + decN >= UPQ_MAX() + 1) break;
         if (holdFar && k >= K1) continue;
         if (!resident[k] && keyDone(k) && !decoding[k]) {
           decoding[k] = 1; decN++; const g = gen;
@@ -364,14 +378,14 @@
           }).catch(() => { if (g === gen) decoding[k] = 0; }).then(() => { decN--; pumpDecode(); evict(); });
         } else if (!resJ[k] && blobs.j[k] && jar && !decoding[NH + k]) {
           decoding[NH + k] = 1; decN++; const g = gen;
-          bmp(blobs.j[k], true).then(s => { if (g === gen && jar && !dead) pushUp(() => { if (g === gen) decoding[NH + k] = 0; if (g === gen && jar && !dead && !trimmed) { jar.setSprite(k, s); resJ[k] = 1; dirty = true; } closeB(s); }); else { if (g === gen) decoding[NH + k] = 0; closeB(s); } })
+          bmpJ(blobs.j[k]).then(s => { if (g === gen && jar && !dead) pushUp(() => { if (g === gen) decoding[NH + k] = 0; if (g === gen && jar && !dead && !trimmed) { jar.setSprite(k, s); resJ[k] = 1; dirty = true; } closeB(s); }); else { if (g === gen) decoding[NH + k] = 0; closeB(s); } })
             .catch(() => { if (g === gen) decoding[NH + k] = 0; }).then(() => { decN--; pumpDecode(); });
         }
       }
     }
     function evict() {                                                // дальше окна — выгружаем текстуры (файлы остаются в памяти и разворачиваются снова по требованию)
       if (!hall || fast || ALLRES || trimmed) return;
-      const R = RES[isPortrait() ? 1 : 0], l = locate(cp), c = l.k + l.t;
+      const R = winR(), l = locate(cp), c = l.k + l.t;
       const ka = lastDraw ? lastDraw.ka : -1, kb = lastDraw ? lastDraw.kb : -1;       // кадры, по которым нарисовано то, что на экране сейчас, не выгружаем: иначе при нехватке новых картинка скачет назад к чужому кадру
       for (let k = 0; k < NH; k++) {
         if (k === ka || k === kb) continue;
@@ -405,7 +419,7 @@
     function sizeCanvas() {
       const w = stage.clientWidth || innerWidth, h = stage.clientHeight || innerHeight;
       /* пикселей на холсте — не больше, чем в самом кадре (1920×1080 ≈ 2,1 млн): больше деталей на экране всё равно не появится; при слабом устройстве регулятор нагрузки снижает ещё (resScale) */
-      const dpr = Math.min(window.devicePixelRatio || 1, 2), s = Math.min(dpr, Math.sqrt((isPortrait() || PHONE ? (A.lite ? 8e5 : 1.2e6) : 2.1e6) / Math.max(1, w * h))) * resScale;          // телефон: ≈ 1,2 млн пикселей — слабые видеокарты не тянут больше; сетка реже, кромки решаются поточечно (jar-gl.js)
+      const dpr = Math.min(window.devicePixelRatio || 1, 2), s = Math.min(dpr, Math.sqrt((isPortrait() || PHONE ? (A.lite ? 7e5 : 1.0e6) : 2.1e6) / Math.max(1, w * h))) * resScale;          // телефон: ≈ 1,2 млн пикселей — слабые видеокарты не тянут больше; сетка реже, кромки решаются поточечно (jar-gl.js)
       const nw = trimmed && !FLY ? 2 : Math.round(w * s), nh = trimmed && !FLY ? 2 : Math.round(h * s);          // герой погас — его холст не держим в полном размере
       if (nw > 8) WF = nw;                                                              // ширина «живого» холста (когда герой погас, он 2×2): по ней выбирается размер разворачиваемых кадров
       if (hall && (nw !== W || nh !== H)) { W = nw; H = nh; hall.setSize(W, H); }
@@ -528,8 +542,8 @@
       cp = clamp(cp, 0, 1);
       if (Math.abs(vp) > 1e-3) dirSign = vp > 0 ? 1 : -1;
       { const spd = Math.max(Math.abs(vp), Math.abs(cp - cpTick) / dt) * KS; cpTick = cp;      // скорость: и пружины, и реально пройденное за кадр (при редких кадрах скорость пружины к концу шага уже мала)                                   // «взмах»: пока он идёт, полные кадры не разворачиваем и не грузим (уменьшенных копий хватает)
-        const por = isPortrait(), fOn = por ? FAST_ON_P : FAST_ON, fOff = por ? FAST_OFF_P : FAST_OFF;          // пролёт на ПК без быстрого режима (все ключи рядом), на телефоне он есть и в пролёте
-        if ((!FLY || (por && !PHALL)) && !fast && spd > fOn && lowN >= NH * 0.9 && (!jar || lowJN >= NH * 0.9)) fast = true;
+        const por = isPortrait(), fOn = por ? (FLY ? FAST_ON_PF : FAST_ON_P) : FAST_ON, fOff = por ? (FLY ? FAST_OFF_PF : FAST_OFF_P) : FAST_OFF;          // пролёт на ПК без быстрого режима (все ключи рядом), на телефоне он есть и в пролёте
+        if ((!FLY || (por && !PHALL)) && !fast && spd > fOn && lowN >= lowTgt() * 0.9 && (!jar || lowJN >= NH * 0.9)) fast = true;
         else if (fast && spd < fOff) { fast = false; pumpDecode(); } }
       const inView = y + vh > sTop && y < sTop + sH;
       if (inView !== sph.view) sph.view = inView;
@@ -542,7 +556,7 @@
         if (dtEma > base * 1.35 + 0.5) slowRun++; else slowRun = 0;
         if (slowRun >= (isPortrait() ? 12 : 24) && resScale > 0.6 && now() - lastGov > 1500) { resScale = resScale > 0.8 ? 0.8 : 0.65; govChanges++; A.bc && A.bc('gov', (FLY ? 'fly ' : 'hero ') + resScale + ' dt' + Math.round(dtEma)); slowRun = 0; lastGov = now(); if (resScale < 0.7 && hall) hall.setGridScale(0.5); sizeCanvas(); }
       }
-      if (upQ.length) { const mv = Math.abs(vp) * KS > MOVING || (FLY && PHALL && scrolling()); if (!mv || !isPortrait() || performance.now() - lastUp >= (fast ? UP_GAP_LOW : UP_GAP_P)) flushUploads(mv ? 2.5 : 8); }          // телефон: в движении тяжёлая загрузка не чаще раза в UP_GAP_P мс (иначе каждый кадр с хвостом)                // по одной-две тяжёлые текстуры за кадр; в покое — быстрее
+      if (upQ.length) { const mv = Math.abs(vp) * KS > MOVING || (FLY && PHALL && scrolling()); if (!mv || !isPortrait() || performance.now() - lastUp >= (fast ? UP_GAP_LOW : (FLY ? UP_GAP_F : UP_GAP_P))) flushUploads(mv ? 2.5 : 8); }          // телефон: в движении тяжёлая загрузка не чаще раза в UP_GAP_P мс (иначе каждый кадр с хвостом)                // по одной-две тяжёлые текстуры за кадр; в покое — быстрее
       if ((inView || !firstDrawn) && hall && (dirty || Math.abs(cp - paintedP) > 1e-7)) {
         if (paint(t)) { paintedP = cp; dirty = false; } else dirty = true;
       }
