@@ -334,7 +334,7 @@ _orig_build_scene = H.build_scene
 
 def zone_build_scene(*a, **k):
     r = _orig_build_scene(*a, **k)
-    zh = os.environ.get('ZONE_HIDE', '')
+    zh = os.environ.get('ZONE_HIDE', 'extra')                                  # по умолчанию лишние этикетки скрыты всегда; ZONE_HIDE= (пусто) — показать как в исходной сцене
     names = ZONE_HIDE_EXTRA.split(',') if zh == 'extra' else [x for x in zh.split(',') if x]
     S['hidden'] = []
     for nm in names:
