@@ -215,8 +215,13 @@ const t = (cond, name, info) => { if (cond) ok++; else bad.push(name + (info !==
       const pTrace = p.evaluate(() => new Promise(res => { const a = []; const t0 = performance.now(); const f = () => { a.push(+window.Astreya.house.readerState().p.toFixed(2)); if (performance.now() - t0 < 4200) setTimeout(f, 40); else res(a); }; f(); }));
       const y0H = await p.evaluate(() => scrollY); const yTrP = p.evaluate(() => new Promise(res => { const a = []; const t0 = performance.now(); const f = () => { a.push(Math.round(scrollY)); if (performance.now() - t0 < 800) setTimeout(f, 80); else res(a); }; setTimeout(f, 0); }));
       const tH0 = Date.now(); await p.click('#mag .mag-hm'); const yTr = await yTrP; const y1 = await home(), H1 = await hy(); const tHome = Date.now() - tH0; const tr = await pTrace;
-      t(tHome > 4000 && tHome < 10000, 'возврат «На главную» неторопливый: ход 4,4–5,8 с (раньше 1,4–2,4 с; на медленном программном рендере кадр длится дольше, потому верхняя граница шире)', tHome);
-      t(yTr.length >= 3 && yTr.every((v, i) => i === 0 || v <= yTr[i - 1] + 1) && (y0H - yTr[yTr.length - 1]) / (y0H - H1) < .12, 'возврат «На главную»: старт мягкий — за первые 0,8 с пройдено меньше 12 % пути, прокрутка идёт только вверх, без рывков назад', {y0H, tr: yTr});
+      t(tHome > 2700 && tHome < 8000, 'возврат «На главную» — 3 секунды (на медленном программном рендере кадр длится дольше, потому верхняя граница шире)', tHome);
+      { const cv = await p.evaluate(() => { const e = window.Astreya.house.homeEase, ms = window.Astreya.house.homeMs, a = []; for (let i = 0; i <= 200; i++) a.push(e(i / 200)); return {ms, a}; });
+        const mono = cv.a.every((v, i) => i === 0 || v >= cv.a[i - 1] - 1e-9), at = x => cv.a[Math.round(x * 200)];
+        t(cv.ms === 3000 && cv.a[0] === 0 && Math.abs(cv.a[200] - 1) < 1e-9 && mono, 'кривая «На главную»: ровно 3000 мс, от 0 до 1, без возвратов', {ms: cv.ms});
+        t(at(.33) > .4 && at(.1) < .08, 'выход из журнала быстрый, без долгого раскачивания: за треть времени пройдено больше 40 % пути, а первые 10 % времени — меньше 8 % (мягкий, но не вязкий старт)', {a33: at(.33), a10: at(.1)});
+        t(1 - at(.7) < .04 && at(.9) > .998 && cv.a[200] - cv.a[196] < .0015, 'посадка на главную плавная: к 70 % времени пройдено больше 96 % пути, дальше — длинная мягкая остановка без рывка на конце', {a70: at(.7), a90: at(.9), tail: cv.a[200] - cv.a[196]}); }
+      t(yTr.length >= 3 && yTr.every((v, i) => i === 0 || v <= yTr[i - 1] + 1), 'возврат «На главную»: прокрутка идёт только вверх, без рывков назад', {y0H, tr: yTr});
       { const sp0 = await p.evaluate(() => window.Astreya.jar.arch.state().sphere); await p.waitForTimeout(1400); const sp1 = await p.evaluate(() => window.Astreya.jar.arch.state().sphere);
         t(!sp1.running && Math.abs(sp1.yaw - sp0.yaw) < .002, 'после возврата из журнала шар на экране героя стоит и не крутится', {a: sp0.yaw, b: sp1.yaw, run: sp1.running}); }
       t(Math.abs(y1 - H1) < 4, 'кнопка «На главную» плавно ведёт к экрану героя с заголовком (последний экран сцены героя), а не на самый верх', {y: y1, hy: H1});
@@ -227,6 +232,17 @@ const t = (cond, name, info) => { if (cond) ok++; else bad.push(name + (info !==
       t(s5.s === 5 && y2 > H2 + 800 && s5b.s >= 3, 'быстрая серия прокруток вверх (14 щелчков за 0,7 с) не возвращает на главную: журнал просто листается назад, на главную ведёт только кнопка', {from: s5.s, to: s5b.s, y: y2, hy: H2});
       await p.evaluate(() => window.Astreya.house.openMagazine(5)); await settle(p); const s6 = await rs(p); await p.mouse.move(700, 450); await p.mouse.wheel(0, -100); await settle(p); const s7 = await rs(p);
       t(s6.s === 5 && s7.s === 4, 'обычный жест вверх по-прежнему листает назад на один разворот (на главную не уносит)', {from: s6.s, to: s7.s}); }
+    { /* ПК: страница по нажатию и протяжкой мыши не листается (раньше клик по внешним 60 % страницы запускал поворот листа — «складывание внутрь») */
+      await p.evaluate(() => window.Astreya.house.openMagazine(5)); await settle(p); await p.waitForTimeout(500);
+      const bb = await p.evaluate(() => { const r = document.querySelector('#mag .mag-book').getBoundingClientRect(); return {l: r.left, t: r.top, w: r.width, h: r.height}; });
+      const s0 = (await rs(p)).s; const yy = bb.t + bb.h * .035;
+      await p.mouse.click(bb.l + bb.w * .12, yy); await p.waitForTimeout(1300); const c1 = (await rs(p)).s;
+      await p.mouse.click(bb.l + bb.w * .88, yy); await p.waitForTimeout(1300); const c2 = (await rs(p)).s;
+      t(s0 === 5 && c1 === 5 && c2 === 5 && !(await p.evaluate(() => document.querySelector('#mag .mag-book').hasAttribute('data-hover'))), 'клик по странице (у левого и правого края) её не листает и курсор-«рука» у краёв не включается', {s0, c1, c2});
+      await p.mouse.move(bb.l + bb.w * .82, yy); await p.mouse.down(); await p.mouse.move(bb.l + bb.w * .82 - 170, yy + 3, {steps: 6}); await p.mouse.up(); await p.waitForTimeout(1300);
+      const d1 = (await rs(p)).s; t(d1 === 5, 'протяжка мышью (по полю и по тексту) страницу не листает: мышью листают кнопки, колесо и клавиши', {d1});
+      await p.mouse.click(bb.l + bb.w * .2, bb.t + bb.h * .5); await p.waitForTimeout(1300); await p.mouse.click(bb.l + bb.w * .8, bb.t + bb.h * .5); await p.waitForTimeout(1300);
+      const d2 = (await rs(p)).s; t(d2 === 5, 'клик по телу страницы (текст, чат, карточки) разворот не листает', {d2}); }
     await p.evaluate(() => window.Astreya.house.openMagazine(1)); await settle(p);
     { /* журнал в сцене: верхней панели нет — ни на развороте, ни после прокрутки вверх (листаем назад), ни при прокрутке вниз */
       const hb = () => p.evaluate(() => document.getElementById('hdr').getBoundingClientRect().bottom);
@@ -360,10 +376,10 @@ const t = (cond, name, info) => { if (cond) ok++; else bad.push(name + (info !==
     const sw1 = (await rs(p)).stop; await swipe(130); await settle(p); await p.waitForTimeout(500);
     const sw2 = (await rs(p)).stop;
     t(sw1 === sw0 + 1 && sw2 === sw0, 'телефон: свайп влево листает на страницу вперёд, вправо — назад', {sw0, sw1, sw2});
-    { /* «На главную» на телефоне — тот же неторопливый ход, что и на ПК (4,4–5,8 с), а не быстрый рывок */
+    { /* «На главную» на телефоне — тот же ход в 3 секунды, что и на ПК */
       await p.evaluate(() => window.Astreya.house.openMagazine(5)); await settle(p);
       const ph = await p.evaluate(() => new Promise(res => { const t0 = performance.now(), y0 = scrollY; window.Astreya.house.home(); const f = () => { if (window.Astreya.house.busy()) requestAnimationFrame(f); else res({ms: Math.round(performance.now() - t0), y0, y1: scrollY}); }; requestAnimationFrame(f); }));
-      t(ph.ms >= 4300 && ph.ms < 9000 && ph.y1 < ph.y0 - 500, 'телефон: «На главную» — тот же неторопливый ход (4,4–5,8 с), что и на ПК', ph);
+      t(ph.ms >= 2700 && ph.ms < 8000 && ph.y1 < ph.y0 - 500, 'телефон: «На главную» — тот же ход в 3 секунды, что и на ПК', ph);
     }
   }
   t(p._errs.length === 0, 'нет ошибок JS на телефоне', p._errs.slice(0, 5));

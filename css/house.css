@@ -199,7 +199,6 @@ body[data-page="home"]{--hs-backdrop:#c0b5a2;--hs-paper:#fbf7ec;--hs-paper-2:#f3
 .mag-ctl svg{width:16px;height:16px}
 .mag-pv svg{transform:scaleX(-1)}
 .mag-hm svg{transform:rotate(-90deg)}
-.mag-book[data-hover="l"],.mag-book[data-hover="r"]{cursor:pointer}
 
 /* ============ 4б. Переход скролла к раскрытому журналу ============ */
 /* после зала — закреплённая сцена: кадр зала отъезжает вглубь и темнеет, журнал вырастает со столика, обложка раскрывается, дальше прокрутка листает разворот за разворотом; --ra (0…1) задаёт js/house.js.

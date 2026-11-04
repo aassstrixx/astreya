@@ -364,20 +364,20 @@
       glideRaf = requestAnimationFrame(frame);
     }
     /* «На главную»: к экрану героя с заголовком (последний экран сцены героя). Журнал остаётся на том развороте, где остановился читатель (страницы не листаются ни вперёд, ни назад, и на первый
-       не перекидывает): камера едет назад к залу одним неторопливым ходом, живой журнал к концу пролёта сменяется нарисованным, как при входе. Ход один и тот же на ПК и на телефоне: путь камеры там
-       почти одинаков (≈ 3 экрана), поэтому и время одно — 4,4–5,8 с (было 1,4–2,4 с), а кривая — «smootherstep» (6x⁵ − 15x⁴ + 10x³): у неё нулевые и скорость, и ускорение на концах, старт и остановка
-       незаметны, пик скорости ≈ 1,2 экрана в секунду (у прежней косинусной кривой на 1,6 с было ≈ 2,9) — каждый кадр пролёта виден, декодированию ключей хватает времени */
-    const HOME_EASE = x => x * x * x * (x * (x * 6 - 15) + 10);
-    const homeDur = (dist, vh) => Math.round(clamp(3600 + dist / vh * 420, 4400, 5800));
+       не перекидывает): камера едет назад к залу одним ходом, живой журнал к концу пролёта сменяется нарисованным, как при входе. Ход один и тот же на ПК и на телефоне и всегда 3 секунды (путь камеры там
+       почти одинаков — ≈ 3 экрана). Кривая несимметричная: выход из журнала быстрый (камера трогается сразу и за первую треть времени проходит половину пути — журнал уходит с экрана примерно за секунду),
+       а посадка на главную плавная: время сжато как 1 − (1 − x)^1,7 и пропущено через «smootherstep» (6x⁵ − 15x⁴ + 10x³) — на концах нулевые и скорость, и ускорение, остановка длинная и мягкая */
+    const HOME_EASE = x => { const u = 1 - Math.pow(1 - x, 1.7); return u * u * u * (u * (u * 6 - 15) + 10); };
+    const HOME_MS = 3000;
     const homeY = () => { const a = $('#arch-story'); const hy = a ? Math.round(a.getBoundingClientRect().top + window.pageYOffset + a.offsetHeight - stageH(a) - heroTail()) : 0; return Math.max(0, Math.min(hy, Math.round(readerBox().top))); };
     function home(via) {
       glideStop(); if (A.motion && A.motion.cancelSmooth) A.motion.cancelSmooth();
       track('house_magazine_home', {via: via || 'button'});
-      const yh = homeY(), y0 = window.pageYOffset, vh = window.innerHeight;
+      const yh = homeY();
       if (reduce()) { jump(yh); readerUpdate(); return; }                                 // «меньше движения»: без пролёта, сразу к экрану героя
       if (!flat() && reader.classList.contains('is-live') && readerT() >= RD.from - .002) { if (!phone()) holdP = Math.round(p); }
       homing = true;
-      glide(yh, null, {home: true, dur: homeDur(Math.abs(y0 - yh), vh), ease: HOME_EASE});
+      glide(yh, null, {home: true, dur: HOME_MS, ease: HOME_EASE});
       if (!glideRaf) { homing = false; releaseHold(); }
     }
     on(window, 'wheel', e => { if (!e.__houseStep) glideStop(); }, {passive: true});          // хвост того же размаха колеса возврат не обрывает, а новое движение рукой (через ≈ 1 с) — обрывает: управление всегда возвращается               // рука на колесе — автоход уступает (кроме колеса, которым листают журнал: оно само запускает следующий ход)
@@ -493,20 +493,15 @@
     });
     if (book) {
       let x0 = null, y0 = 0, t0 = 0;
-      book.addEventListener('pointerdown', e => { if (phone()) return; x0 = e.clientX; y0 = e.clientY; t0 = Date.now(); });
+      /* ПК: мышью страница не листается вовсе — ни кликом, ни протяжкой (раньше клик по внешним 60 % страницы запускал поворот листа — «складывание внутрь», когда читатель просто нажимал на страницу, текст или чат;
+         протяжка мышью по тексту при выделении тоже перелистывала). Листают кнопки «Назад/Далее», колесо, клавиши ←/→. Планшет с вёрсткой ПК (касание/перо): быстрый горизонтальный свайп по пустому полю страницы */
+      const dragOk = t => !(t && t.closest && t.closest('a, button, input, textarea, select, label, summary, .mp-chat, p, h1, h2, h3, h4, li, dt, dd, blockquote, figcaption, [contenteditable]'));
+      book.addEventListener('pointerdown', e => { x0 = null; if (phone() || e.pointerType === 'mouse' || !e.isPrimary || !dragOk(e.target)) return; x0 = e.clientX; y0 = e.clientY; t0 = Date.now(); });
       book.addEventListener('pointerup', e => {
-        if (phone() || x0 === null) return; const dx = e.clientX - x0, dy = e.clientY - y0; x0 = null;
-        if (Math.abs(dx) > 60 && Math.abs(dx) > Math.abs(dy) * 1.4) { step(dx < 0 ? 1 : -1); return; }       // протяжка мышью
-        if (Math.abs(dx) < 8 && Math.abs(dy) < 8 && Date.now() - t0 < 600 && !(e.target.closest && e.target.closest('a,button'))) {       // клик по краю страницы
-          const b = book.getBoundingClientRect(), x = (e.clientX - b.left) / b.width;
-          if (x > 0.7 && s < N - 1) step(1); else if (x < 0.3 && s > 0) step(-1);
-        }
+        if (phone() || x0 === null) return; const dx = e.clientX - x0, dy = e.clientY - y0, tt = Date.now() - t0; x0 = null;
+        const sel = window.getSelection && window.getSelection(); if (sel && !sel.isCollapsed) return;
+        if (Math.abs(dx) > 90 && Math.abs(dx) > Math.abs(dy) * 1.8 && tt < 900) step(dx < 0 ? 1 : -1);
       });
-      book.addEventListener('pointermove', e => {
-        if (phone()) return; const b = book.getBoundingClientRect(), x = (e.clientX - b.left) / b.width;
-        book.setAttribute('data-hover', x > 0.7 && s < N - 1 ? 'r' : x < 0.3 && s > 0 ? 'l' : '');
-      });
-      book.addEventListener('pointerleave', () => book.removeAttribute('data-hover'));
       /* телефон (журнал на сцене, pm): горизонтальный свайп листает страницы, как у настоящего журнала (влево — дальше, вправо — назад); вертикальная прокрутка остаётся прокруткой.
          От самой левой кромки экрана свайп не берём — это системный жест «назад» браузера */
       let tx = null, ty = 0, tt = 0;
@@ -667,7 +662,7 @@
       step();
     }
     setTimeout(warmPages, 5000);
-    A.house = {busy: () => !!glideRaf, home: () => home('api'), go: id => go(id, {via: 'api'}), hall: () => hall({via: 'api'}), openMagazine: v => { if (flat() || pflat()) { jump(readerBox().top); render(v === undefined ? 1 : v, {instant: true}); } else toState(v === undefined ? 1 : stopOfSpread(v)); }, state: () => ({room: current, magazine: true, page: s, rooms: ids, reader: true}), readerState: () => { const f = A.jar && A.jar.fly, st = f && f.state ? f.state() : null; return {t: readerT(), s, p, q: Q, stop: pm() ? Math.round(Q) : s, pm: pm(), fly: {on: !!FLd, n: st ? st.N : 0, loaded: st ? st.loaded : 0, drawn: !!(st && st.firstDrawn), p: st ? st.p : 0, jarOk: st ? st.jarOk : null, size: st ? st.size : null, sprites: st ? st.jar : null}}; }};
+    A.house = {busy: () => !!glideRaf, home: () => home('api'), homeEase: HOME_EASE, homeMs: HOME_MS, go: id => go(id, {via: 'api'}), hall: () => hall({via: 'api'}), openMagazine: v => { if (flat() || pflat()) { jump(readerBox().top); render(v === undefined ? 1 : v, {instant: true}); } else toState(v === undefined ? 1 : stopOfSpread(v)); }, state: () => ({room: current, magazine: true, page: s, rooms: ids, reader: true}), readerState: () => { const f = A.jar && A.jar.fly, st = f && f.state ? f.state() : null; return {t: readerT(), s, p, q: Q, stop: pm() ? Math.round(Q) : s, pm: pm(), fly: {on: !!FLd, n: st ? st.N : 0, loaded: st ? st.loaded : 0, drawn: !!(st && st.firstDrawn), p: st ? st.p : 0, jarOk: st ? st.jarOk : null, size: st ? st.size : null, sprites: st ? st.jar : null}}; }};
   }
 
   init();
