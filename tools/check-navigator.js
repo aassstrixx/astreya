@@ -363,13 +363,13 @@ const wait = ms => new Promise(r => setTimeout(r, ms));
     ok(wn && wn.r.l >= 0 && wn.r.r <= wn.vw && wn.r.t >= 0 && wn.r.b <= wn.vh, name + ': окно целиком на экране', wn && wn.r);
     ok(wn && (o.w ? wn.side === 'l' && wn.r.r <= wn.s.l + 1 && wn.r.r >= wn.s.l - 30 && wn.r.t <= wn.s.b && wn.r.b >= wn.s.t : wn.side === 't' && wn.r.b <= wn.s.t + 1 && wn.r.b >= wn.s.t - 30 && wn.r.l >= wn.s.l - 2), name + (o.w ? ': слева от маскота, на уровне плашки' : ': над плашкой, у маскота'), wn);
     const nst = await p.evaluate(() => JSON.parse(sessionStorage.getItem('astreya:g-nudge') || '{}')); ok(nst.seen && nst.seen.hello === 1, name + ': приветствие показано один раз и учтено в сессии', nst);
-    await p.click('.g-hello-x'); await wait(700); ok(await p.evaluate(() => !document.querySelector('.g-hello-w')), name + ': крестик закрывает окно');
+    await p.click('.g-hello-x'); await p.waitForFunction(() => !document.querySelector('.g-hello-w'), null, {timeout: 5000}).catch(() => {}); ok(await p.evaluate(() => !document.querySelector('.g-hello-w')), name + ': крестик закрывает окно');          // ждём условие, а не 700 мс: без видеокарты главный поток после клика может стоять около секунды
     await p.goto(base + 'catalog.html'); await wait(800); await p.goto(base + 'index.html'); await wait(900); await p.evaluate(toStrip); await wait(3500);
     ok(await p.evaluate(() => !document.querySelector('.g-hello-w')), name + ': после закрытия в этой сессии приветствие больше не появляется');
     ok(!p.errs.length, name + ': на главной нет ошибок JS', p.errs); await p.context().close();
   }
   p = await mk({speed: 14}); await p.open('index.html'); await wait(2800); await p.evaluate(toStrip); await p.waitForSelector('.g-hello-w.on', {timeout: 15000}).catch(() => {}); await wait(500);
-  await p.evaluate(() => { window.Astreya.guide.tour('site', 0); }); await wait(900);
+  await p.evaluate(() => { window.Astreya.guide.tour('site', 0); }); await wait(900); await p.waitForFunction(() => !document.querySelector('.g-hello-w'), null, {timeout: 5000}).catch(() => {});          // тур прыгает к первому шагу: без видеокарты главный поток тут стоит до ≈ 1,5 с, фиксированной паузы мало
   ok(await p.evaluate(() => !document.querySelector('.g-hello-w')), 'при запуске экскурсии приветствие убирается и не мешает показу');
   await p.keyboard.press('Escape'); await p.context().close();
 
