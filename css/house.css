@@ -3,7 +3,7 @@
    листы поворачиваются вслед за прокруткой; 3) читалка: закреплённая сцена после зала; 4) телефон; 5) без JS страницы журнала идут подряд.
    Двигаются только opacity и transform. При prefers-reduced-motion переходы мгновенные, журнал — обычный экран. */
 
-body[data-page="home"]{--hs-paper:#fbf7ec;--hs-paper-2:#f3ebd9;--hs-ink:#0b1a33;--hs-navy:#101f37;--hs-line:rgba(86,60,30,.16);--hs-gold:#b08e4e;--hs-stone:#e9dcc5;--hs-glass:rgba(250,246,238,.82)}
+body[data-page="home"]{--hs-backdrop:#c0b5a2;--hs-paper:#fbf7ec;--hs-paper-2:#f3ebd9;--hs-ink:#0b1a33;--hs-navy:#101f37;--hs-line:rgba(86,60,30,.16);--hs-gold:#b08e4e;--hs-stone:#e9dcc5;--hs-glass:rgba(250,246,238,.82)}
 
 /* ============ 1. Зал: проходы, журнал на столике, приветствие ============ */
 .hall-anchor{position:absolute;left:0;bottom:100lvh;width:1px;height:1px;pointer-events:none}
@@ -44,6 +44,7 @@ body[data-page="home"]{--hs-paper:#fbf7ec;--hs-paper-2:#f3ebd9;--hs-ink:#0b1a33;
 .leaves{position:absolute;inset:0;transform-style:preserve-3d;filter:drop-shadow(0 40px 38px rgba(20,12,4,.55))}
 .leaf{position:absolute;left:50%;top:0;width:50%;height:100%;transform-origin:left center;transform-style:preserve-3d;z-index:var(--zr);transform:translate3d(0,0,calc(var(--lt,0) * 48px)) rotateY(calc(var(--f,0) * -180deg));will-change:transform}
 .leaf.is-flipped{z-index:var(--zl)}
+@property --bx{syntax:"<number>";inherits:false;initial-value:-.5}          /* сдвиг книги на телефоне ведёт js/house.js каждый кадр поворота: у наследуемого свойства запись пересчитывала стили всех страниц внутри книги (замер: 6 поворотов — 941 мс пересчёта стилей), без наследования — только саму книгу (129 мс) */
 @property --f{syntax:"<number>";inherits:false;initial-value:0}          /* без наследования: запись --f/--lt листа не заставляет браузер пересчитывать стили всех элементов страницы внутри него (на быстром листании это и давало лаги) */
 @property --lt{syntax:"<number>";inherits:false;initial-value:0}
 @property --ra{syntax:"<number>";inherits:false;initial-value:0}          /* переменные читалки (--ra, --fu, --rb, --bd) ведёт js/house.js; без наследования: запись на читалку не пересчитывает стили трёх тысяч элементов журнала (раньше это и было главным пересчётом на каждый кадр пролёта) */
@@ -268,6 +269,9 @@ body[data-page="home"] .hdr{transition:transform .6s var(--ease-out),background-
 @media all{          /* и на телефоне: пролёт камеры к журналу — та же сцена, что на ПК */
   html.js .arch-story.is-house:not(.is-static):not(.jar-off) ~ .house-reader:not(.is-flat){margin-top:-100lvh}
   html.js .arch-story.is-house:not(.is-static):not(.jar-off) ~ .house-reader:not(.is-live):not(.is-flat) .hr-stage{visibility:hidden}
+  html.js .arch-story.is-house:not(.is-static):not(.jar-off) ~ .house-reader:not(.is-flat) .hr-stage .hr-fly{visibility:visible}          /* кадр пролёта виден под героем заранее (его закрывает сам герой): холст не «включается» в момент стыка — на iPhone при быстрой прокрутке он ещё не успевал нарисоваться, и сквозь гаснущего героя виднелась светлая подложка («шторка») */
+  html.js .arch-story.is-house:not(.is-static):not(.jar-off) ~ .house-reader:not(.is-flat), html.js .arch-story.is-house:not(.is-static):not(.jar-off) ~ .house-reader:not(.is-flat) .hr-stage{background:var(--hs-backdrop)}          /* под кадрами — цвет зала (средний цвет кадров), а не молочный фон страницы: пока холст рисуется, провал не светлее картинки */
+  html.js .arch-story.is-house .js-stage{background:var(--hs-backdrop)}          /* та же подложка у героя: до первого кадра и пока кадры разворачиваются после быстрого возврата — тон зала, а не молоко */
   html.js .arch-story.is-house{z-index:2}
   html.js .house-reader{z-index:1}
   html.js .arch-story.is-house.rd-live,html.js .arch-story.is-house.rd-live .js-stage{background:transparent;pointer-events:none}

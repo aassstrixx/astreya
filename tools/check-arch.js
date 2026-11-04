@@ -190,6 +190,7 @@ if (!J || !J.enabled || !A || !A.enabled) { console.log('Первый экран
     await at(p, g, 0.7); v = await view(p); ok(v.h1 > 0.05 && v.h1 < 0.95, 'камера почти отъехала — заголовок проявляется (не мгновенно)', v.h1);
     await at(p, g, 0.97, 2200); v = await view(p);
     ok(v.h1 > 0.97 && v.lead > 0.97 && (HOUSE || (v.cta > 0.97 && v.panel > 0.97)), 'финал: заголовок и текст проявились' + (HOUSE ? ' (в режиме дома кнопок героя и панели нет)' : ', кнопки и панель'), {h1: v.h1, lead: v.lead, cta: v.cta, panel: v.panel});
+    if (v.hdrB < 40) { await p.waitForFunction(() => { const h = document.getElementById('hdr'); return h && h.getBoundingClientRect().bottom >= 40; }, null, {timeout: 6000, polling: 100}).catch(() => {}); v = await view(p); }          // шапка выезжает css-переходом: на медленном программном рендере кадр длится дольше выдержки — ждём конца перехода, а не гадаем со временем
     ok(!/arch-hide/.test(v.bodyCls) && v.hdrB >= 40, 'финал: шапка вернулась', {cls: v.bodyCls, hdrB: v.hdrB});
     ok(v.hr && v.hr.l >= 0 && v.hr.r <= W && v.er.t >= v.hdrB - 2, 'финал: заголовок целиком в экране и под шапкой', [v.hr, v.er, v.hdrB]);
     if (!HOUSE) ok(v.cr && v.cr.b <= H && v.pr && v.pr.b <= H + 1 && v.pr.t >= v.cr.b - 2, 'финал: кнопки и панель в экране и не налезают друг на друга', [v.cr, v.pr]);

@@ -162,6 +162,9 @@ const t = (cond, name, info) => { if (cond) ok++; else bad.push(name + (info !==
   { await p.evaluate(() => window.Astreya.house.hall()); await p.waitForTimeout(900);
     const g = await p.evaluate(() => { const r = document.getElementById('house-reader'), s = document.getElementById('arch-story'); return {rt: Math.round(r.getBoundingClientRect().top), mt: getComputedStyle(r).marginTop, live: r.classList.contains('is-live'), vis: getComputedStyle(r.querySelector('.hr-stage')).visibility, cue: (document.querySelector('.hs-cue') || {}).textContent, panel: !!document.querySelector('.ar-panel'), between: [...s.parentElement.children].indexOf(r) - [...s.parentElement.children].indexOf(s)}; });
     t(Math.abs(g.rt) <= 2 && !g.live && g.vis === 'hidden', 'герой и журнал — одна сцена: читалка начинается ровно там, где герой заканчивает закрепление, пока герой стоит — её сцена скрыта', g);
+    { const bk = await p.evaluate(() => { const r = document.getElementById('house-reader'), a = document.querySelector('#arch-story .js-stage'); return {fly: [...r.querySelectorAll('.hr-fly canvas')].map(c => getComputedStyle(c).visibility), mag: getComputedStyle(r.querySelector('.mag')).visibility, rd: getComputedStyle(r).backgroundColor, hero: getComputedStyle(a).backgroundColor, want: getComputedStyle(document.body).getPropertyValue('--hs-backdrop').trim()}; });
+      t(bk.fly.length >= 1 && bk.fly.every(v => v === 'visible') && bk.mag === 'hidden', 'пока герой стоит, кадр пролёта уже виден под ним (холст не включается в момент стыка — «шторка» при быстрой прокрутке), а живой журнал скрыт', bk);
+      t(bk.rd === bk.hero && bk.rd !== 'rgb(245, 242, 236)' && bk.rd !== 'rgba(0, 0, 0, 0)' && bk.want === '#c0b5a2', 'под героем и пролётом подложка цвета зала (#c0b5a2), а не молочный фон страницы: провал не светлее картинки', bk); }
     t(/Листайте ниже/.test(g.cue || '') && !g.panel, 'вместо панели «Почему выбирают Астрею?» внизу — подсказка «Листайте ниже — откроется журнал»', g);
     await p.evaluate(() => window.Astreya.house.openMagazine(1)); await settle(p); const o = await rs(p);          // к журналу — прокруткой: тот же плавный ход (его запускает API, как и прокрутка колесом в разделе 3)
     t(o.s === 1 && o.t > .25 && o.t < .4, 'ход к журналу: камера пролетает к раскрытому журналу (первый разворот)', o);
@@ -210,8 +213,10 @@ const t = (cond, name, info) => { if (cond) ok++; else bad.push(name + (info !==
       const hb = await p.evaluate(() => { const b = document.querySelector('#mag .mag-hm'); return b ? {txt: b.textContent.trim(), y: scrollY} : null; });
       t(!!hb && /На главную/.test(hb.txt) && hb.y > 1500, 'в журнале есть кнопка «На главную»', hb);
       const pTrace = p.evaluate(() => new Promise(res => { const a = []; const t0 = performance.now(); const f = () => { a.push(+window.Astreya.house.readerState().p.toFixed(2)); if (performance.now() - t0 < 4200) setTimeout(f, 40); else res(a); }; f(); }));
-      const tH0 = Date.now(); await p.click('#mag .mag-hm'); const y1 = await home(), H1 = await hy(); const tHome = Date.now() - tH0; const tr = await pTrace;
-      t(tHome < 3600, 'возврат «На главную» быстрый: до экрана героя меньше 3,6 с (ход 1,4–2,4 с; раньше 2,6–5 с)', tHome);
+      const y0H = await p.evaluate(() => scrollY); const yTrP = p.evaluate(() => new Promise(res => { const a = []; const t0 = performance.now(); const f = () => { a.push(Math.round(scrollY)); if (performance.now() - t0 < 800) setTimeout(f, 80); else res(a); }; setTimeout(f, 0); }));
+      const tH0 = Date.now(); await p.click('#mag .mag-hm'); const yTr = await yTrP; const y1 = await home(), H1 = await hy(); const tHome = Date.now() - tH0; const tr = await pTrace;
+      t(tHome > 4000 && tHome < 10000, 'возврат «На главную» неторопливый: ход 4,4–5,8 с (раньше 1,4–2,4 с; на медленном программном рендере кадр длится дольше, потому верхняя граница шире)', tHome);
+      t(yTr.length >= 3 && yTr.every((v, i) => i === 0 || v <= yTr[i - 1] + 1) && (y0H - yTr[yTr.length - 1]) / (y0H - H1) < .12, 'возврат «На главную»: старт мягкий — за первые 0,8 с пройдено меньше 12 % пути, прокрутка идёт только вверх, без рывков назад', {y0H, tr: yTr});
       { const sp0 = await p.evaluate(() => window.Astreya.jar.arch.state().sphere); await p.waitForTimeout(1400); const sp1 = await p.evaluate(() => window.Astreya.jar.arch.state().sphere);
         t(!sp1.running && Math.abs(sp1.yaw - sp0.yaw) < .002, 'после возврата из журнала шар на экране героя стоит и не крутится', {a: sp0.yaw, b: sp1.yaw, run: sp1.running}); }
       t(Math.abs(y1 - H1) < 4, 'кнопка «На главную» плавно ведёт к экрану героя с заголовком (последний экран сцены героя), а не на самый верх', {y: y1, hy: H1});
@@ -341,9 +346,10 @@ const t = (cond, name, info) => { if (cond) ok++; else bad.push(name + (info !==
     const jc = await p.evaluate(() => { const c = document.querySelector('.hr-fly .ar-jar-cv'); return {w: c.width, h: c.height}; });
     t(jc.w * jc.h <= 16, 'телефон: холст баночки пролёта крошечный (баночка запечена в кадры; раньше 6,2 млн пикселей собирались композитором каждый кадр)', jc);
     /* память: когда журнал открыт, герой и пролёт отдают видеопамять; вернулись к герою — герой снова разворачивается */
+    const lowsBefore = await p.evaluate(() => window.Astreya.jar.arch.state().lows);
     await p.evaluate(() => window.Astreya.house.openMagazine(9)); await settle(p); await p.waitForTimeout(2500);
     const tm = await p.evaluate(() => { const h = window.Astreya.jar.arch.state(), f = window.Astreya.jar.fly.state(); return {h: [h.trimmed, h.resident, h.lows, h.residentJar, h.lowSprites], f: [f.trimmed, f.resident, f.lows]}; });
-    t(tm.h[0] && tm.h[1] === 0 && tm.h[2] === 0 && tm.h[3] === 0 && tm.h[4] === 0 && tm.f[0] && tm.f[1] <= 1 && tm.f[2] <= 3, 'телефон: на 9-м развороте герой выгрузил кадры и спрайты, пролёт оставил последний кадр и три копии', tm);
+    t(tm.h[0] && tm.h[1] === 0 && tm.h[3] === 0 && tm.h[2] <= Math.min(lowsBefore, 24) && tm.h[4] <= 24 && (lowsBefore === 0 || tm.h[2] >= 1) && tm.f[0] && tm.f[1] <= 1 && tm.f[2] <= 3, 'телефон: на 9-м развороте герой выгрузил полные кадры и спрайты, оставил лишь крошечные копии (каждый 3-й кадр и три последних — на быстрый возврат к герою), пролёт оставил последний кадр и три копии', {lowsBefore, tm});
     await p.evaluate(() => window.Astreya.house.hall());
     const back = await p.waitForFunction(() => { const a = window.Astreya.jar.arch; return a.ready() && !a.state().trimmed && a.state().lows >= 50; }, null, {timeout: 40000}).then(() => true).catch(() => false);
     t(back, 'телефон: вернулись к герою — кадры героя снова развёрнуты, он готов рисовать');
@@ -354,6 +360,11 @@ const t = (cond, name, info) => { if (cond) ok++; else bad.push(name + (info !==
     const sw1 = (await rs(p)).stop; await swipe(130); await settle(p); await p.waitForTimeout(500);
     const sw2 = (await rs(p)).stop;
     t(sw1 === sw0 + 1 && sw2 === sw0, 'телефон: свайп влево листает на страницу вперёд, вправо — назад', {sw0, sw1, sw2});
+    { /* «На главную» на телефоне — тот же неторопливый ход, что и на ПК (4,4–5,8 с), а не быстрый рывок */
+      await p.evaluate(() => window.Astreya.house.openMagazine(5)); await settle(p);
+      const ph = await p.evaluate(() => new Promise(res => { const t0 = performance.now(), y0 = scrollY; window.Astreya.house.home(); const f = () => { if (window.Astreya.house.busy()) requestAnimationFrame(f); else res({ms: Math.round(performance.now() - t0), y0, y1: scrollY}); }; requestAnimationFrame(f); }));
+      t(ph.ms >= 4300 && ph.ms < 9000 && ph.y1 < ph.y0 - 500, 'телефон: «На главную» — тот же неторопливый ход (4,4–5,8 с), что и на ПК', ph);
+    }
   }
   t(p._errs.length === 0, 'нет ошибок JS на телефоне', p._errs.slice(0, 5));
   await p._ctx.close();

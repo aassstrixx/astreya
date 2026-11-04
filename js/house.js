@@ -208,6 +208,7 @@
     function ensureClean() {
       if (cleanEl || !pm()) return; const fly = $('.hr-fly', reader), u = reader.getAttribute('data-fly-clean'); if (!fly || !u) return;
       const ver = reader.getAttribute('data-v'); cleanEl = new Image(); cleanEl.className = 'hr-clean'; cleanEl.alt = ''; cleanEl.setAttribute('aria-hidden', 'true'); cleanEl.decoding = 'async'; cleanEl.src = A.assetUrl(u) + (ver ? '?v=' + ver : ''); fly.insertAdjacentElement('afterend', cleanEl);
+      if (cleanEl.decode) cleanEl.decode().catch(() => {});                          // картинка разворачивается сразу, а не в момент, когда журнал проявляется (иначе на медленном телефоне первый показ — пустое место)
     }
     const bgEl = $('.hr-bg', reader), veilEl = $('.hr-veil', reader), ctlEl = $('.mag-ctl', mag), barEl = $('.mag-bar', mag), dimEl = $('.mag-dim', mag);
     function paintReader() {
@@ -362,17 +363,21 @@
       };
       glideRaf = requestAnimationFrame(frame);
     }
-    /* в самое начало страницы (герой с баночкой): кнопка «В начало» и быстрая серия прокруток вверх. Ход один, плавный (косинусная кривая), 4,5–8,5 с: камера пролёта и герой едут назад на виду; пока идёт, колесо вверх его не обрывает */
     /* «На главную»: к экрану героя с заголовком (последний экран сцены героя). Журнал остаётся на том развороте, где остановился читатель (страницы не листаются ни вперёд, ни назад, и на первый
-       не перекидывает): камера едет назад к залу одним ходом (2,6–5 с, косинусная кривая), живой журнал к концу пролёта сменяется нарисованным, как при входе */
+       не перекидывает): камера едет назад к залу одним неторопливым ходом, живой журнал к концу пролёта сменяется нарисованным, как при входе. Ход один и тот же на ПК и на телефоне: путь камеры там
+       почти одинаков (≈ 3 экрана), поэтому и время одно — 4,4–5,8 с (было 1,4–2,4 с), а кривая — «smootherstep» (6x⁵ − 15x⁴ + 10x³): у неё нулевые и скорость, и ускорение на концах, старт и остановка
+       незаметны, пик скорости ≈ 1,2 экрана в секунду (у прежней косинусной кривой на 1,6 с было ≈ 2,9) — каждый кадр пролёта виден, декодированию ключей хватает времени */
+    const HOME_EASE = x => x * x * x * (x * (x * 6 - 15) + 10);
+    const homeDur = (dist, vh) => Math.round(clamp(3600 + dist / vh * 420, 4400, 5800));
     const homeY = () => { const a = $('#arch-story'); const hy = a ? Math.round(a.getBoundingClientRect().top + window.pageYOffset + a.offsetHeight - stageH(a) - heroTail()) : 0; return Math.max(0, Math.min(hy, Math.round(readerBox().top))); };
     function home(via) {
       glideStop(); if (A.motion && A.motion.cancelSmooth) A.motion.cancelSmooth();
       track('house_magazine_home', {via: via || 'button'});
       const yh = homeY(), y0 = window.pageYOffset, vh = window.innerHeight;
+      if (reduce()) { jump(yh); readerUpdate(); return; }                                 // «меньше движения»: без пролёта, сразу к экрану героя
       if (!flat() && reader.classList.contains('is-live') && readerT() >= RD.from - .002) { if (!phone()) holdP = Math.round(p); }
       homing = true;
-      glide(yh, null, {home: true, dur: clamp(1000 + Math.abs(y0 - yh) / vh * 170, 1400, 2400), ease: x => .5 - .5 * Math.cos(Math.PI * x)});          // возврат быстрый: 1,4–2,4 с (раньше 2,6–5 с); косинусная кривая — мягкий старт и остановка
+      glide(yh, null, {home: true, dur: homeDur(Math.abs(y0 - yh), vh), ease: HOME_EASE});
       if (!glideRaf) { homing = false; releaseHold(); }
     }
     on(window, 'wheel', e => { if (!e.__houseStep) glideStop(); }, {passive: true});          // хвост того же размаха колеса возврат не обрывает, а новое движение рукой (через ≈ 1 с) — обрывает: управление всегда возвращается               // рука на колесе — автоход уступает (кроме колеса, которым листают журнал: оно само запускает следующий ход)

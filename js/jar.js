@@ -627,13 +627,14 @@
         on = !!on; if (on === trimmed) return; trimmed = on; A.bc && A.bc('trim', (FLY ? 'fly ' : 'hero ') + (on ? 'вкл' : 'выкл'));
         if (on) {
           fast = false; flushUploads(1e9);                                              // очередь отрабатывает вхолостую (при trimmed она только закрывает ImageBitmap и снимает отметки «разворачивается»)
+          const keep = k => FLY ? k >= NH - 3 : (k >= NH - 3 || (NH - 1 - k) % 3 === 0);          // герой оставляет копии каждого 3-го кадра (так любое положение рисуется: plan() терпит промежутки до 2 кадров с каждой стороны) и трёх последних: быстрый возврат к герою показывает верный, пусть и мягкий кадр зала, а не пустую подложку, пока полные кадры разворачиваются (≈ +11 МБ видеопамяти)
           if (hall) for (let k = 0; k < NH; k++) {
             if (resident[k] && !(FLY && k === NH - 1)) { hall.dropKey(k); resident[k] = 0; }
-            if (lowDone[k] === 1 && !(FLY && k >= NH - 3)) { hall.dropLow(k); lowDone[k] = 0; lowN--; }
+            if (lowDone[k] === 1 && !keep(k)) { hall.dropLow(k); lowDone[k] = 0; lowN--; }
           }
           if (jar) for (let k = 0; k < NH; k++) {
             if (resJ[k]) { jar.dropSprite(k); resJ[k] = 0; }
-            if (lowJDone[k] === 1 && !FLY) { jar.dropSpriteLow(k); lowJDone[k] = 0; lowJN--; }
+            if (lowJDone[k] === 1 && !(FLY || keep(k))) { jar.dropSpriteLow(k); lowJDone[k] = 0; lowJN--; }
           }
           if (!FLY) { sizeCanvas(); sizeJar(); }
         } else { sizeCanvas(); sizeJar(); dirty = true; schedule(); pumpDecode(); }
