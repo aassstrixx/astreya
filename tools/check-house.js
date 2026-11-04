@@ -388,17 +388,34 @@ const t = (cond, name, info) => { if (cond) ok++; else bad.push(name + (info !==
     t(c2.nogl && c2.n === 2 && c2.off && !c2.dm && !c2.fly && !c2.hero, 'второй обрыв подряд — режим без анимации: зал статичный, читалка — лента страниц, WebGL-движки не создаются', c2);
     t(c2.toast && c2.log >= 1, 'после обрыва: плашка «Страница перезапустилась…» и журнал вылетов в localStorage (последние действия сохранены)', c2);
     await q.evaluate(() => window.Astreya.house.openMagazine(1)); await q.waitForTimeout(900);
-    const c3 = await q.evaluate(() => { const l = [...document.querySelectorAll('#mag .leaf')].map(e => e.getBoundingClientRect()).filter(r => r.width > 100 && r.right > 0 && r.left < innerWidth); return {leaves: l.length, ow: document.documentElement.scrollWidth}; });
+    const c3 = await q.evaluate(() => { const l = [...document.querySelectorAll('#mag .face')].map(e => e.getBoundingClientRect()).filter(r => r.width > 100 && r.right > 0 && r.left < innerWidth); return {leaves: l.length, ow: document.documentElement.scrollWidth}; });          // в ленте страниц листы — display:contents, видны их лица (.face)
     t(c3.leaves >= 1 && c3.ow <= 390, 'режим без анимации: журнал открывается лентой страниц, без горизонтальной прокрутки страницы', c3);
     t(q._errs.length === 0, 'нет ошибок JS в режиме без анимации', q._errs.slice(0, 5));
     await q.goto(base + '/' + page + '?nogl=0'); await q.waitForSelector('html.ready', {timeout: 15000}).catch(() => {}); await q.waitForTimeout(1200);
-    const c4 = await q.evaluate(() => ({nogl: !!window.Astreya.nogl, fly: !!(window.Astreya.jar && window.Astreya.jar.fly && window.Astreya.jar.fly.state && window.Astreya.jar.fly.state().gl)}));
-    t(!c4.nogl && c4.fly, '?nogl=0 снимает режим без анимации (пролёт снова создаётся)', c4);
+    const c4 = await q.evaluate(() => { const rd = document.querySelector('.house-reader'); return {nogl: !!window.Astreya.nogl, dm: rd.hasAttribute('data-m'), why: rd.getAttribute('data-fly-why') || '', crashN: window.Astreya.crashN}; });
+    t(!c4.nogl && c4.dm && !/без анимации/.test(c4.why), '?nogl=0 снимает режим без анимации (читалка с пролётом, движки не отключены)', c4);
     await q._ctx.close();
     const q2 = await open(390, 844, {touch: true, url: page + '?nogl=1'});
     const d1 = await q2.evaluate(() => ({nogl: !!window.Astreya.nogl, off: document.getElementById('arch-story').classList.contains('jar-off'), dm: document.querySelector('.house-reader').hasAttribute('data-m')}));
     t(d1.nogl && d1.off && !d1.dm, '?nogl=1 включает режим без анимации сразу', d1);
     await q2._ctx.close();
+  }
+  { /* плитки «У каждой задачи»: текстуры — слабые полупрозрачные золотые разводы поверх бумаги (RGBA с малой непрозрачностью); уменьшенные копии (-t) обязаны сохранять прозрачность, иначе плитки превращаются в сплошные жёлтые плашки с чёрными областями («баг с текстурами») */
+    const q = await open(1280, 800), names = ['water', 'cream', 'silk', 'pipette', 'swatch', 'film', 'molecules', 'smear'];
+    const r = await q.evaluate(async names => {
+      const out = [];
+      for (const n of names) {
+        const im = new Image(); im.src = 'assets/bg/' + n + '-t.webp'; await im.decode();
+        const c = document.createElement('canvas'); c.width = im.naturalWidth; c.height = im.naturalHeight; const g = c.getContext('2d', {willReadFrequently: true}); g.drawImage(im, 0, 0);
+        const d = g.getImageData(0, 0, c.width, c.height).data; let a = 0, lum = 0; const N = d.length / 4;
+        for (let i = 0; i < d.length; i += 4) { const al = d[i + 3] / 255; a += al; lum += (0.299 * d[i] + 0.587 * d[i + 1] + 0.114 * d[i + 2]) * al + 243 * (1 - al); }          // поверх бумаги ≈ #f3ebd9
+        out.push({n, w: im.naturalWidth, alpha: +(a / N).toFixed(3), lum: Math.round(lum / N)});
+      }
+      return out;
+    }, names);
+    const bad = r.filter(x => x.alpha > 0.6 || x.lum < 170 || x.w !== 560);
+    t(!bad.length, 'плитки задач: уменьшенные текстуры (-t) 560 px сохраняют прозрачность (в среднем < 60 % непрозрачности, поверх бумаги светлые)', bad.length ? bad : r.map(x => x.n + ':' + x.alpha + '/' + x.lum).join(' '));
+    await q._ctx.close();
   }
   { /* свежесть страницы: версия в build.json не совпадает с версией загруженной страницы (устаревший кеш) → страница открывается заново (не больше двух раз), параметр ?b= из адреса убирается; совпадает — ничего не происходит */
     const ctx = await b.newContext({viewport: {width: 800, height: 700}, locale: 'ru-RU'});
