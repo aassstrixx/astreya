@@ -291,7 +291,7 @@ const t = (cond, name, info) => { if (cond) ok++; else bad.push(name + (info !==
   /* ================= 5. телефон ================= */
   p = await open(390, 844, {touch: true});
   t(await noOverflow(p), 'телефон: нет горизонтальной прокрутки в зале');
-  t(await p.evaluate(n => getComputedStyle(document.querySelector('.hall-rooms')).display !== 'none' && document.querySelectorAll('.hall-rooms a').length === n, ROOMS.length), 'телефон: в зале лента из всех разделов (по данным) (путь без журнала на столике)');
+  t(await p.evaluate(n => getComputedStyle(document.querySelector('.hall-rooms')).display === 'none' && document.querySelectorAll('.hall-rooms a').length === n, ROOMS.length), 'телефон: пилюль разделов под заголовком героя нет (убраны по просьбе заказчика), ссылки остаются в разметке; в запасных режимах лента показана (проверка ниже)');
   await p.evaluate(() => window.Astreya.house.hall()); await p.waitForTimeout(900);
   { /* телефон: тот же пролёт камеры и листание от прокрутки, что на ПК; в окне одна страница — книга-разворот сдвигается к левой/правой странице (--bx) */
     const st = () => p.evaluate(() => { const r = window.Astreya.house.readerState(), bk = document.querySelector('#mag .mag-book'), pr = document.querySelector('#mag .leaf.is-prev .face.back'), cu = document.querySelector('#mag .leaf.is-cur .face.front'), vis = e => { if (!e) return null; const b = e.getBoundingClientRect(), l = Math.max(0, b.left), rr = Math.min(innerWidth, b.right); return Math.round(Math.max(0, rr - l)); };

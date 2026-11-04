@@ -293,6 +293,7 @@ body[data-page="home"] .hdr{transition:transform .6s var(--ease-out),background-
   .hall-rooms{position:static;width:auto;height:auto;overflow:visible;clip-path:none;white-space:normal;display:block;margin:14px -20px 0 0}                                         /* на телефоне список комнат — лента «пилюль» под кнопками: путь в комнаты без двери и журнала */
   .hall-rooms ol{flex-wrap:nowrap;overflow-x:auto;gap:8px;padding:2px 20px 6px 0;scrollbar-width:none;overscroll-behavior-x:contain}
   .hall-rooms ol::-webkit-scrollbar{display:none}
+  html.js .arch-story.is-house:not(.is-static):not(.jar-off) .hall-rooms{display:none}          /* пилюли разделов под заголовком героя убраны (просьба заказчика): на телефоне в зале только заголовок и подсказка; в запасных режимах (нет WebGL, нет JS) лента остаётся — там это единственный путь в разделы */
   .js-stage.ar-live .hall-rooms ol,.is-house.is-static .hall-rooms ol,.is-house.jar-off .hall-rooms ol{pointer-events:auto}
   .hall-rooms a{flex:0 0 auto;padding:9px 13px;border-radius:999px;background:var(--hs-glass);box-shadow:inset 0 0 0 1px rgba(255,255,255,.7),0 6px 16px -10px rgba(60,40,18,.5);border-bottom:0;white-space:nowrap;font-size:10.5px;color:var(--hs-ink)}
   .house-reader{height:var(--hrhm,190vh)}
