@@ -23,6 +23,7 @@
     if (!story || !story.classList.contains('is-house')) return;
     const on = (t, ev, fn, o) => { t.addEventListener(ev, fn, o); off.push(() => t.removeEventListener(ev, fn, o)); };
     off.push(() => document.body.classList.remove('house-reading'));
+    let dead = false; off.push(() => { dead = true; });                           // таймеры прошлого запуска init() (warmFly и др.) после повторной инициализации ничего не делают
     const reader = $('#house-reader'), mag = $('#mag');
     if (!reader || !mag) return;
 
@@ -203,12 +204,13 @@
     const hm = {key: '', on: false};
     /* значения читалки (--fu, --ra, --rb, --bd) каждый кадр пишутся прямо в элементы, которые от них зависят (opacity / transform): раньше они лежали на читалке как наследуемые переменные,
        и каждая запись заставляла браузер пересчитывать стили всех элементов журнала (тысячи), причём принудительно — следом шло чтение положения прокрутки. Сами переменные остаются (не наследуются) для отладки и проверок. */
-    const RS = {fu: 0, ra: 0, rb: 0, bd: 0}, pv = {fu: '', ra: '', rb: '', bd: '', veil: '', wrap: '', ctl: '', clean: ''};
+    const RS = {fu: 0, ra: 0, rb: 0, bd: 0}, pv = {fu: '', ra: '', rb: '', bd: '', veil: '', wrap: '', ctl: ''};
     let cleanEl = null;                                                           // телефон: чистый фон без нарисованного журнала (создаётся при прогреве пролёта)
-    function ensureClean() {
+    function ensureClean() {                                                       // заплатка создаётся один раз; init() вызывается дважды за загрузку (при старте и после заставки: js/motion.js → A.initPage), поэтому элемент берём готовый, если его уже создал прошлый запуск
       if (cleanEl || !pm()) return; const fly = $('.hr-fly', reader), u = reader.getAttribute('data-fly-clean'); if (!fly || !u) return;
+      cleanEl = $('.hr-clean', reader); if (cleanEl) return;
       const ver = reader.getAttribute('data-v'); cleanEl = new Image(); cleanEl.className = 'hr-clean'; cleanEl.alt = ''; cleanEl.setAttribute('aria-hidden', 'true'); cleanEl.decoding = 'async'; cleanEl.src = A.assetUrl(u) + (ver ? '?v=' + ver : ''); fly.insertAdjacentElement('afterend', cleanEl);
-      if (cleanEl.decode) cleanEl.decode().catch(() => {});                          // картинка разворачивается сразу, а не в момент, когда журнал проявляется (иначе на медленном телефоне первый показ — пустое место)
+      if (cleanEl.decode) cleanEl.decode().catch(() => {});                          // картинка разворачивается сразу, а не в момент, когда журнал приедет (иначе на медленном телефоне первый показ — пустое место)
     }
     const bgEl = $('.hr-bg', reader), veilEl = $('.hr-veil', reader), ctlEl = $('.mag-ctl', mag), barEl = $('.mag-bar', mag), dimEl = $('.mag-dim', mag);
     function paintReader() {
@@ -219,7 +221,6 @@
       if (pv.bd !== bd) { pv.bd = bd; reader.style.setProperty('--bd', bd); if (dimEl) dimEl.style.opacity = bd; }
       const vo = (RS.fu * .55 + RS.ra * .30).toFixed(4); if (pv.veil !== vo) { pv.veil = vo; if (veilEl) veilEl.style.opacity = vo; }
       const live = !!(FLd && !pflat() && A.flyDrawn && BK()), wo = (live ? RS.rb : RS.ra).toFixed(4); if (pv.wrap !== wo) { pv.wrap = wo; wrapEl.style.opacity = wo; }
-      if (cleanEl) { const cc = (live ? clamp((RS.rb - .9) * 10, 0, 1) : 0).toFixed(3); if (pv.clean !== cc) { pv.clean = cc; cleanEl.style.opacity = cc; } }          // живой журнал проявился — чистый фон закрывает нарисованный разворот
       const co = clamp((RS.ra - .6) * 2.5, 0, 1).toFixed(3); if (pv.ctl !== co) { pv.ctl = co; if (ctlEl) ctlEl.style.opacity = co; if (barEl) barEl.style.opacity = co; }
     }
     function homography(src, dst) {                                               // проективное преобразование 4 точек → 4 точки (метод прямых линейных уравнений, 8×8)
@@ -277,7 +278,8 @@
        Старт — через 3 с после загрузки страницы (после вступления заставки: компиляция шейдеров второй сцены не должна рвать её анимацию), но раньше, если страницу уже прокручивают к концу героя */
     let warmN = 0;
     function warmFly() {
-      if (!FLd || A.flyWarm) return;
+      if (!FLd || dead) return;
+      if (A.flyWarm) { ensureClean(); return; }
       const f = A.jar && A.jar.fly;
       if (!f) { if (warmN++ < 60) setTimeout(warmFly, 300); return; }
       A.flyWarm = true; ensureClean(); f.warm();
@@ -320,7 +322,7 @@
       if (!fbox || Math.abs(rb0.top - fbox.top) > 2) measureFly();
       const lin = flyLin(t), fu = pflat() ? ease(clamp(t / .5, 0, 1)) : lin;                  // запасная лента телефона: журнал встаёт без пролёта, как раньше
       const ra = pflat() ? clamp((fu - .86) / .14, 0, 1) : clamp((lin - RD.fade[0]) / (RD.fade[1] - RD.fade[0]), 0, 1);
-      if (!A.flyWarm && (t > 0 || window.pageYOffset > fbox.top * (pm() ? .45 : .4))) warmFly();                  // подъезжаем к концу героя — пролёт начинает грузиться (телефон: с 45 % героя, а не сразу после загрузки: второй движок и его шейдеры не должны мешать появлению героя и первой прокрутке)
+      if (!A.flyWarm && (t > 0 || window.pageYOffset > fbox.top * (pm() ? .45 : .4))) warmFly(); else if (A.flyWarm && !cleanEl) ensureClean();                  // подъезжаем к концу героя — пролёт начинает грузиться (телефон: с 45 % героя, а не сразу после загрузки: второй движок и его шейдеры не должны мешать появлению героя и первой прокрутке)
       if (pm()) {                                                                              // телефон: полный набор ключей пролёта — только на подъезде к концу героя; вернулись выше — лишние ключи отдаём герою (A.flyNear читает js/jar.js)
         const near = t > 0 || window.pageYOffset > fbox.top * (A.flyNear ? .6 : .8);
         if (near !== !!A.flyNear) { A.flyNear = near; if (!near && A.flyWarm) { const f = A.jar && A.jar.fly; if (f && f.shrink) f.shrink(12); } }
@@ -506,10 +508,6 @@
          От самой левой кромки экрана свайп не берём — это системный жест «назад» браузера */
       let tx = null, ty = 0, tt = 0;
       mag.addEventListener('touchstart', e => { if (!pm() || e.touches.length !== 1) { tx = null; return; } const t0 = e.touches[0]; tx = t0.clientX > 24 ? t0.clientX : null; ty = t0.clientY; tt = Date.now(); }, {passive: true});
-      mag.addEventListener('touchmove', e => {                                      // страховка к touch-action: на старых iOS вертикальный жест по раскрытой книге всё равно не должен двигать страницу
-        if (!pm() || !reader.classList.contains('rd-open') || !e.cancelable) return;
-        const tg = e.target; if (tg && tg.closest && tg.closest('.mp-chat-log, input, textarea') || !(tg && tg.closest && tg.closest('.mag-wrap'))) return; e.preventDefault();
-      }, {passive: false});
       mag.addEventListener('touchend', e => {
         if (tx === null || !pm()) return; const t1 = e.changedTouches[0], dx = t1.clientX - tx, dy = t1.clientY - ty; tx = null;
         if (Date.now() - tt < 900 && Math.abs(dx) > 48 && Math.abs(dx) > Math.abs(dy) * 1.5 && !(e.target.closest && e.target.closest('.mp-chat-log, input, textarea'))) step(dx < 0 ? 1 : -1);

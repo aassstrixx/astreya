@@ -164,7 +164,7 @@ const t = (cond, name, info) => { if (cond) ok++; else bad.push(name + (info !==
     t(Math.abs(g.rt) <= 2 && !g.live && g.vis === 'hidden', 'герой и журнал — одна сцена: читалка начинается ровно там, где герой заканчивает закрепление, пока герой стоит — её сцена скрыта', g);
     { const bk = await p.evaluate(() => { const r = document.getElementById('house-reader'), a = document.querySelector('#arch-story .js-stage'); return {fly: [...r.querySelectorAll('.hr-fly canvas')].map(c => getComputedStyle(c).visibility), mag: getComputedStyle(r.querySelector('.mag')).visibility, rd: getComputedStyle(r).backgroundColor, hero: getComputedStyle(a).backgroundColor, want: getComputedStyle(document.body).getPropertyValue('--hs-backdrop').trim()}; });
       t(bk.fly.length >= 1 && bk.fly.every(v => v === 'visible') && bk.mag === 'hidden', 'пока герой стоит, кадр пролёта уже виден под ним (холст не включается в момент стыка — «шторка» при быстрой прокрутке), а живой журнал скрыт', bk);
-      t(bk.rd === bk.hero && bk.rd !== 'rgb(245, 242, 236)' && bk.rd !== 'rgba(0, 0, 0, 0)' && bk.want === '#c0b5a2', 'под героем и пролётом подложка цвета зала (#c0b5a2), а не молочный фон страницы: провал не светлее картинки', bk); }
+      t(bk.rd === 'rgb(192, 181, 162)' && bk.hero === 'rgb(245, 242, 236)' && bk.want === '#c0b5a2', 'подложка цвета зала (#c0b5a2) — под читалкой и её сценой (страховка от светлого провала); подложка героя прежняя, молочная: вход и фон анимации не менялись', bk); }
     t(/Листайте ниже/.test(g.cue || '') && !g.panel, 'вместо панели «Почему выбирают Астрею?» внизу — подсказка «Листайте ниже — откроется журнал»', g);
     await p.evaluate(() => window.Astreya.house.openMagazine(1)); await settle(p); const o = await rs(p);          // к журналу — прокруткой: тот же плавный ход (его запускает API, как и прокрутка колесом в разделе 3)
     t(o.s === 1 && o.t > .25 && o.t < .4, 'ход к журналу: камера пролетает к раскрытому журналу (первый разворот)', o);
@@ -444,7 +444,7 @@ const t = (cond, name, info) => { if (cond) ok++; else bad.push(name + (info !==
     t(!bad.length, 'плитки задач: уменьшенные текстуры (-t) 560 px сохраняют прозрачность (в среднем < 60 % непрозрачности, поверх бумаги светлые)', bad.length ? bad : r.map(x => x.n + ':' + x.alpha + '/' + x.lum).join(' '));
     await q._ctx.close();
   }
-  { /* телефон, журнал раскрыт: вертикальный жест по книге не двигает страницу (touch-action: none на книге), по полю над книгой — прокручивает, горизонтальный — листает; кнопка «Далее» не закрыта кнопкой Стеллы; чистый фон без нарисованного журнала закрывает полосу сбоку страницы */
+  { /* телефон, журнал раскрыт: вертикальный жест по книге прокручивает страницу (вверх — назад к пролёту камеры, вниз — дальше), страницу журнала не листает; горизонтальный — листает; видно окно одной страницы (соседняя и нарисованный журнал под ней не торчат), «Далее» не закрыта кнопкой Стеллы; вход и пролёт прежние: заплатка включается только когда камера приехала */
     for (const [W, Hh] of [[390, 844], [360, 640]]) {
       const q = await open(W, Hh, {touch: true}); const cdp = await q._ctx.newCDPSession(q);
       const tch = (type, x, y) => cdp.send('Input.dispatchTouchEvent', {type, touchPoints: type === 'touchEnd' ? [] : [{x, y}]});
@@ -452,20 +452,24 @@ const t = (cond, name, info) => { if (cond) ok++; else bad.push(name + (info !==
       const pre = await q.evaluate(() => { const w = document.querySelector('#mag .mag-wrap'); return {ta: getComputedStyle(w).touchAction, open: document.getElementById('house-reader').classList.contains('rd-open')}; });
       await q.evaluate(() => window.Astreya.house.hall()); await q.waitForTimeout(600);
       await q.evaluate(() => window.Astreya.house.openMagazine(2)); await settle(q); await q.waitForTimeout(1800);
-      const g = await q.evaluate(() => { const r = el => { const b = el.getBoundingClientRect(); return [b.left, b.top, b.right, b.bottom]; }; const nx = r(document.querySelector('#mag .mag-nx')), fab = document.querySelector('#asst-fab') ? r(document.querySelector('#asst-fab')) : [9999, 9999, 9999, 9999], wrap = r(document.querySelector('#mag .mag-wrap')), cl = document.querySelector('.hr-clean');
-        return {open: document.getElementById('house-reader').classList.contains('rd-open'), ta: getComputedStyle(document.querySelector('#mag .mag-wrap')).touchAction, nx, fab, wrap, y: Math.round(scrollY), clean: !!cl && /read-m\.webp/.test(cl.src), cleanOp: cl ? +getComputedStyle(cl).opacity : -1}; });
+      const g = await q.evaluate(() => { const r = el => { const b = el.getBoundingClientRect(); return [b.left, b.top, b.right, b.bottom]; }; const nx = r(document.querySelector('#mag .mag-nx')), fab = document.querySelector('#asst-fab') ? r(document.querySelector('#asst-fab')) : [9999, 9999, 9999, 9999], wrap = r(document.querySelector('#mag .mag-wrap')), cl = document.querySelector('.hr-clean'), at = (x, y) => { const e = document.elementFromPoint(x, y); return e && e.closest('.mag-book') ? 'book' : 'other'; };
+        return {stop: window.Astreya.house.readerState().stop, sideL: at(4, (wrap[1] + wrap[3]) / 2), sideR: at(innerWidth - 4, (wrap[1] + wrap[3]) / 2), clip: getComputedStyle(document.querySelector('#mag .mag-book')).clipPath, open: document.getElementById('house-reader').classList.contains('rd-open'), ta: getComputedStyle(document.querySelector('#mag .mag-wrap')).touchAction, nx, fab, wrap, y: Math.round(scrollY), clean: !!cl && /read-m\.webp/.test(cl.src), cleanOp: cl ? +getComputedStyle(cl).opacity : -1}; });
       const cx = W / 2, cy = (g.wrap[1] + g.wrap[3]) / 2;
       await drag(cx, cy + 110, cx, cy - 110); const y1 = await q.evaluate(() => Math.round(scrollY)); await drag(cx, cy - 110, cx, cy + 110); const y2 = await q.evaluate(() => Math.round(scrollY));
-      await drag(cx, 40, cx, 8); const y3 = await q.evaluate(() => Math.round(scrollY));
+      const stA = await q.evaluate(() => window.Astreya.house.readerState().stop); await drag(cx, 40, cx, 8); const y3 = await q.evaluate(() => Math.round(scrollY)); const stB = await q.evaluate(() => window.Astreya.house.readerState().stop);
       const st0 = await q.evaluate(() => window.Astreya.house.readerState().stop); await drag(cx + 100, cy, cx - 100, cy + 6); await q.waitForTimeout(1400); const st1 = await q.evaluate(() => window.Astreya.house.readerState().stop);
       const tag = W + '×' + Hh;
-      t(pre.ta !== 'none' && !pre.open && g.open && g.ta === 'none', 'телефон ' + tag + ': пока камера летит, жесты по сцене прокручивают страницу; журнал раскрыт — книга не отдаёт вертикальные жесты странице (touch-action: none)', {pre, g: {open: g.open, ta: g.ta}});
-      t(y1 === g.y && y2 === g.y, 'телефон ' + tag + ': вертикальный жест по раскрытому журналу не двигает страницу и сцену', {y0: g.y, y1, y2});
-      t(y3 > g.y + 10, 'телефон ' + tag + ': жест по полю над книгой прокручивает страницу (выход из журнала остаётся)', {y0: g.y, y3});
+      t(!pre.open && g.open && g.ta === 'pan-y', 'телефон ' + tag + ': пока камера летит, жесты по сцене прокручивают страницу; журнал раскрыт — по книге разрешён вертикальный жест (touch-action: pan-y), горизонтальный остаётся листанию', {pre, g: {open: g.open, ta: g.ta}});
+      t(y1 > g.y + 10 && y2 < y1 - 10, 'телефон ' + tag + ': вертикальный жест по раскрытому журналу прокручивает страницу: вверх пальцем — дальше (к подвалу), вниз — назад к пролёту', {y0: g.y, y1, y2});
+      t(stA === stB && stA === g.stop, 'телефон ' + tag + ': вертикальные жесты страницы журнала не листают', {stA, stB, g: g.stop});
+      t(y3 > y2 + 10, 'телефон ' + tag + ': жест по полю над книгой тоже прокручивает страницу', {y2, y3});
+      t(g.sideL !== 'book' && g.sideR !== 'book' && /inset/.test(g.clip), 'телефон ' + tag + ': видно окно одной страницы — по бокам (левый и правый край экрана) не торчат ни соседняя страница, ни нарисованный журнал', {sideL: g.sideL, sideR: g.sideR, clip: g.clip});
       t(st1 === st0 + 1, 'телефон ' + tag + ': горизонтальный свайп по книге листает страницу', {st0, st1});
       const inter = !(g.nx[2] <= g.fab[0] || g.fab[2] <= g.nx[0] || g.nx[3] <= g.fab[1] || g.fab[3] <= g.nx[1]);
       t(!inter && g.nx[2] <= g.fab[0] + 1, 'телефон ' + tag + ': кнопка «Далее» не закрыта кнопкой Стеллы (справа от «Далее» оставлено место)', {nx: g.nx, fab: g.fab});
-      t(g.clean && g.cleanOp >= .99, 'телефон ' + tag + ': чистый фон (стол без нарисованного журнала) включён, когда живой журнал проявился — по краям страницы нет оглавления нарисованного разворота', {clean: g.clean, op: g.cleanOp});
+      t(g.clean && g.cleanOp >= .99, 'телефон ' + tag + ': заплатка «стол без нарисованного журнала» включена, когда камера приехала и журнал раскрыт', {clean: g.clean, op: g.cleanOp});
+      { await drag(cx, 120, cx, 120 + Math.round(Hh * .62)); await q.waitForTimeout(700); const back = await q.evaluate(() => { const c = document.querySelector('.hr-clean'); return {open: document.getElementById('house-reader').classList.contains('rd-open'), op: c ? +getComputedStyle(c).opacity : -1, t: window.Astreya.house.readerState().t}; });
+        t(!back.open && back.op < .05, 'телефон ' + tag + ': стоит потянуть назад к пролёту — заплатка уходит, нарисованный журнал на столике снова виден (вход и пролёт прежние)', back); }
       t(q._errs.length === 0, 'нет ошибок JS (жесты журнала, ' + tag + ')', q._errs.slice(0, 5));
       await q._ctx.close();
     }
