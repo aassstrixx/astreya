@@ -40,7 +40,12 @@
     const heroTail = () => (A.heroTail ? A.heroTail() : 0);          // хвост сцены героя (телефон): она стоит ещё столько же, пока гаснут холсты (js/jar.js, css/house.css)
     const hallY = () => story.classList.contains('jar-off') ? Math.max(0, abs(story)) : Math.max(0, abs(story) + story.offsetHeight - stageH(story) - heroTail());       // конец закреплённой сцены: герой стоит в готовом кадре зала
     const jump = y => window.scrollTo({top: Math.round(y), behavior: 'instant'});                // «instant» — мимо html{scroll-behavior:smooth}
-    const readerBox = () => { const r = reader.getBoundingClientRect(); return {top: r.top + window.pageYOffset, total: Math.max(0, r.height - stageH($('.hr-stage', reader)))}; };
+    /* Выход из журнала. После последнего разворота сцена не уезжает сразу: ещё ≈ 70 vh (ПК — отдельный участок, высота читалки больше на --hrx) или последние 50 vh выдержки (телефон — внутри неё)
+       закреплённая сцена плавно растворяется в молочный фон страницы (--xo → .hr-exit), и только потом уезжает вверх: раньше журнал и стол резко обрывались прямой кромкой на следующем блоке.
+       readerBox().total — по-прежнему длина пути читалки без этого участка: все доли пути (RD) остались прежними */
+    const EXIT_PC = 70, EXIT_PM = 50;                                              // vh; EXIT_PC = надбавка к высоте читалки на ПК (--hrx), EXIT_PM — доля телефонной выдержки
+    const extPx = () => (phone() || flat() || !FLd) ? 0 : EXIT_PC / 100 * stageH($('.hr-stage', reader));
+    const readerBox = () => { const r = reader.getBoundingClientRect(); return {top: r.top + window.pageYOffset, total: Math.max(0, r.height - stageH($('.hr-stage', reader)) - extPx())}; };
     /* положение читалки в документе меряем один раз и пересчитываем, только когда поменялась вёрстка (ResizeObserver, resize): раньше каждый кадр читал getBoundingClientRect() сразу после записей стилей предыдущего кадра — это принудительный пересчёт стилей и вёрстки прямо в обработчике прокрутки */
     let rbox = null;
     const rbx = () => rbox || (rbox = readerBox());
@@ -200,11 +205,16 @@
     const BK = () => pm() && BKs.m ? BKs.m : BKs.d;                           // углы разворота в мире: ПК и телефон (портретный кадр) — свои
     const BKd = BKs.d;
     const wrapEl = $('.mag-wrap', mag);
+    let exitEl = $('.hr-exit', reader); if (!exitEl && stageEl) { exitEl = document.createElement('i'); exitEl.className = 'hr-exit'; exitEl.setAttribute('aria-hidden', 'true'); stageEl.appendChild(exitEl); }          // растворение сцены в фон страницы (init() вызывается дважды — берём готовый)
+    const syncExt = () => { reader.style.setProperty('--hrx', extPx() ? EXIT_PC + 'vh' : '0px'); };          // надбавка к высоте читалки на ПК под выход (css: height: calc(var(--hrh) + var(--hrx)))
+    syncExt(); on(window, 'resize', syncExt, {passive: true});
+    const exitLen = () => (pm() ? EXIT_PM : EXIT_PC) / 100 * stageH(stageEl);
+    const exitP = () => { if (flat() || pflat() || !FLd) return 0; const L = exitLen(), b = rbx(), st = pm() ? b.total - L : b.total; return L > 0 && b.total > 0 ? ease(clamp((window.pageYOffset - b.top - st) / L, 0, 1)) : 0; };
     const HOM = {rb: [.46, .6], bd: [.5, .97], bdMax: .30};                       // лин. доля пролёта: журнал появляется / приглушение снимается; наибольшее приглушение
     const hm = {key: '', on: false};
     /* значения читалки (--fu, --ra, --rb, --bd) каждый кадр пишутся прямо в элементы, которые от них зависят (opacity / transform): раньше они лежали на читалке как наследуемые переменные,
        и каждая запись заставляла браузер пересчитывать стили всех элементов журнала (тысячи), причём принудительно — следом шло чтение положения прокрутки. Сами переменные остаются (не наследуются) для отладки и проверок. */
-    const RS = {fu: 0, ra: 0, rb: 0, bd: 0}, pv = {fu: '', ra: '', rb: '', bd: '', veil: '', wrap: '', ctl: ''};
+    const RS = {fu: 0, ra: 0, rb: 0, bd: 0, xo: 0}, pv = {fu: '', ra: '', rb: '', bd: '', veil: '', wrap: '', ctl: '', xo: '', ex: false};
     let cleanEl = null;                                                           // телефон: чистый фон без нарисованного журнала (создаётся при прогреве пролёта)
     function ensureClean() {                                                       // заплатка создаётся один раз; init() вызывается дважды за загрузку (при старте и после заставки: js/motion.js → A.initPage), поэтому элемент берём готовый, если его уже создал прошлый запуск
       if (cleanEl || !pm()) return; const fly = $('.hr-fly', reader), u = reader.getAttribute('data-fly-clean'); if (!fly || !u) return;
@@ -221,6 +231,7 @@
       if (pv.bd !== bd) { pv.bd = bd; reader.style.setProperty('--bd', bd); if (dimEl) dimEl.style.opacity = bd; }
       const vo = (RS.fu * .55 + RS.ra * .30).toFixed(4); if (pv.veil !== vo) { pv.veil = vo; if (veilEl) veilEl.style.opacity = vo; }
       const live = !!(FLd && !pflat() && A.flyDrawn && BK()), wo = (live ? RS.rb : RS.ra).toFixed(4); if (pv.wrap !== wo) { pv.wrap = wo; wrapEl.style.opacity = wo; }
+      const xo = RS.xo.toFixed(3); if (pv.xo !== xo) { pv.xo = xo; if (exitEl) exitEl.style.opacity = xo; const ex = RS.xo > .4; if (ex !== pv.ex) { pv.ex = ex; reader.classList.toggle('rd-exit', ex); } }          // сцена растворяется в фон страницы; когда журнала уже почти не видно, кнопки под ним нажимать нельзя
       const co = clamp((RS.ra - .6) * 2.5, 0, 1).toFixed(3); if (pv.ctl !== co) { pv.ctl = co; if (ctlEl) ctlEl.style.opacity = co; if (barEl) barEl.style.opacity = co; }
     }
     function homography(src, dst) {                                               // проективное преобразование 4 точек → 4 точки (метод прямых линейных уравнений, 8×8)
@@ -306,17 +317,19 @@
       return clamp((performance.now() - flyAt) / 280, 0, 1);
     }
     /* телефон: видеопамять отдаётся тому, чем сейчас не пользуются (js/jar.js → trim): герой — пока он погас, пролёт — пока журнал открыт и камера далеко от кадров пролёта; возвращаются они заранее */
-    const tr = {hero: false, fly: false, heroEver: false};
+    const tr = {hero: false, fly: false, heroEver: false}; let trimRetry = 0;
     function trimEngines(t) {
       if (!pm()) return;
       const j = A.jar, h = j && j.arch, f = j && j.fly;
       const wantH = tr.hero ? t >= RD.hold + .28 : t >= RD.hold + .09,                      // герой: отдаём память сразу после того, как он погас над кадром пролёта (t ≥ удержание + 9 % пути ≈ 34 vh); возвращаем, когда прокрутка вернулась выше 28 % за удержанием (≈ 106 vh до экрана героя — разворачивается за ~1 с, ближайшие к концу героя кадры первыми)
             wantF = tr.fly ? !(t < RD.open - .01 || Q < 3.5) : (t >= RD.open && Q >= 4.5);  // пролёт: отдаём на 5-й странице и дальше; возвращаем на 3-й или когда прокрутка пошла назад в пролёт
       if (h && h.trim && !h.fly && wantH !== tr.hero) { tr.hero = wantH; if (wantH) tr.heroEver = true; h.trim(wantH); }
-      if (f && f.trim && wantF !== tr.fly) { tr.fly = wantF; f.trim(wantF); }
+      let wf = wantF;
+      if (wf && !tr.fly && f && f.lastReady && !f.lastReady()) { wf = false; if (!trimRetry) trimRetry = setTimeout(() => { trimRetry = 0; trimEngines(readerT()); }, 700); }          // быстрый прыжок к далёкой странице раньше, чем загрузился последний ключ пролёта: выгружать рано — подложки не останется (на экране кадр зала вместо журнала); повторим, когда ключ приедет
+      if (f && f.trim && wf !== tr.fly) { tr.fly = wf; f.trim(wf); }
     }
     function readerUpdate() {
-      if (flat()) { reader.classList.add('is-flat'); RS.fu = RS.ra = RS.rb = 1; RS.bd = 0; paintReader(); setLive(false, 0); if (s === 0 && p === 0) render(1, {instant: true, noScroll: true}); return; }
+      if (flat()) { reader.classList.add('is-flat'); RS.fu = RS.ra = RS.rb = 1; RS.bd = 0; RS.xo = 0; paintReader(); setLive(false, 0); if (s === 0 && p === 0) render(1, {instant: true, noScroll: true}); return; }
       reader.classList.remove('is-flat');
       const rb0 = rbx(), rrTop = rb0.top - window.pageYOffset, t = readerT();
       if (!fbox || Math.abs(rb0.top - fbox.top) > 2) measureFly();
@@ -328,7 +341,7 @@
         if (near !== !!A.flyNear) { A.flyNear = near; if (!near && A.flyWarm) { const f = A.jar && A.jar.fly; if (f && f.shrink) f.shrink(12); } }
       }
       if (pflat()) { setLive(false, 0); const hid = rrTop < 4 && rrTop + rb0.total + window.innerHeight > window.innerHeight * .4; if (hid !== lv.phoneHide) { lv.phoneHide = hid; document.body.classList.toggle('house-reading', hid); } } else { /* после возврата из журнала герой появляется, только когда его кадры снова развёрнуты */ const gt = flyGate(), hh = A.jar && A.jar.arch, heroWait = tr.heroEver && hh && hh.ready && !hh.ready(); setLive(rrTop < -1, heroWait ? 1 : ease(clamp(t / RD.hold, 0, 1)) * gt); if (gt < 1 && gt > 0 && !gateRaf) gateRaf = requestAnimationFrame(() => { gateRaf = 0; readerUpdate(); }); trimEngines(t); }
-      RS.fu = fu; RS.ra = ra;
+      RS.fu = fu; RS.ra = ra; RS.xo = exitP();
       if (FLd && !pflat()) {                                                                    // живой журнал входит в полёте: прозрачность и приглушение под нарисованный (если движок не рисует — как раньше, от --ra)
         if (!(A.flyDrawn && BK())) { RS.rb = ra; RS.bd = 0; }              // движок не рисует (нет WebGL2/ключей): журнал проявляется как раньше; иначе --rb и --bd ведёт сам кадр (flyOnDraw), чтобы прозрачность была привязана к той позиции камеры, где журнал стоит на самом деле
       }

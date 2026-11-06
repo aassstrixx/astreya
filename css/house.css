@@ -203,7 +203,10 @@ body[data-page="home"]{--hs-backdrop:#c0b5a2;--hs-paper:#fbf7ec;--hs-paper-2:#f3
 /* ============ 4б. Переход скролла к раскрытому журналу ============ */
 /* после зала — закреплённая сцена: кадр зала отъезжает вглубь и темнеет, журнал вырастает со столика, обложка раскрывается, дальше прокрутка листает разворот за разворотом; --ra (0…1) задаёт js/house.js.
    Двигаются только transform и opacity. Без JS блока нет, при уменьшенном движении (.is-flat) — обычный экран с раскрытым журналом. */
-.house-reader{position:relative;height:var(--hrh,560vh);background:#d9ccb2;--ra:0;--fu:0}
+.house-reader{position:relative;height:calc(var(--hrh,560vh) + var(--hrx,0px));background:#d9ccb2;--ra:0;--fu:0}
+.hr-exit{position:absolute;inset:0;z-index:40;background:var(--milk,#f5f2ec);opacity:0;pointer-events:none}          /* выход из журнала: сцена растворяется в молочный фон страницы (js/house.js: --xo), потом уезжает — без резкой кромки на следующем блоке */
+.house-reader.rd-exit .mag-wrap{pointer-events:none}
+.house-reader.is-flat .hr-exit,html:not(.js) .hr-exit{display:none}
 html:not(.js) .house-reader{height:auto;--ra:1;--fu:1}
 html:not(.js) .house-reader .hr-stage{position:relative;height:auto;overflow:visible;padding:clamp(76px,10vh,110px) 0 clamp(40px,6vh,70px)}
 html:not(.js) .hr-fly,html:not(.js) .hr-bg,html:not(.js) .hr-veil,html:not(.js) .hr-cue,html:not(.js) .hr-skip,html:not(.js) .mag-bar,html:not(.js) .mag-ctl,html:not(.js) .mag-spine{display:none}

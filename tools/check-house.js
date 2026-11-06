@@ -44,7 +44,7 @@ const t = (cond, name, info) => { if (cond) ok++; else bad.push(name + (info !==
   const noOverflow = p => p.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1);
   const rs = p => p.evaluate(() => window.Astreya.house.readerState());
   const settle = async (p, ms) => { let last = -1, same = 0; const t0 = Date.now(); while (Date.now() - t0 < (ms || 9000)) { const y = await p.evaluate(() => Math.round(scrollY)); if (y === last && !(await p.evaluate(() => window.Astreya.house.busy && window.Astreya.house.busy()))) { if (++same >= 5) return; } else { if (y !== last) same = 0; last = y; } await p.waitForTimeout(110); } await p.waitForTimeout(80); };          // автоход страницы (плавное листание) закончился: прокрутка стоит
-  const box = p => p.evaluate(() => { const r = document.getElementById('house-reader'), b = r.getBoundingClientRect(); return {top: b.top + scrollY, tot: r.offsetHeight - innerHeight}; });
+  const box = p => p.evaluate(() => { const r = document.getElementById('house-reader'), b = r.getBoundingClientRect(); return {top: b.top + scrollY, tot: r.offsetHeight - innerHeight - (parseFloat(r.style.getPropertyValue('--hrx')) || 0) * innerHeight / 100}; });
   const at = async (p, f) => { const o = await box(p); await p.evaluate(y => window.scrollTo({top: y, behavior: 'instant'}), o.top + o.tot * f); await p.waitForTimeout(450); return rs(p); };
   const PL = (j, u) => .34 + .62 * (j + u) / (ROOMS.length + 1);                    // положение прокрутки: j — сколько разворотов после первого пройдено, u — доля пути внутри отрезка; см. RD и WIN в js/house.js (p = 1 + j + поворот)
 
@@ -198,7 +198,7 @@ const t = (cond, name, info) => { if (cond) ok++; else bad.push(name + (info !==
       t(f1.s === f0.s + 1, 'непрерывный поток колеса — один жест: листнулся один разворот (журнал не пролетает)', {from: f0.s, to: f1.s}); }
     { /* прокрутку остановили посередине поворота листа — лист сам доворачивается до ближайшего разворота */
       await p.evaluate(() => { window.__HOUSE_SNAP = true; window.Astreya.house.openMagazine(2); }); await settle(p);
-      const bx = await p.evaluate(() => { const r = document.getElementById('house-reader'); return {top: r.getBoundingClientRect().top + scrollY, tot: r.offsetHeight - innerHeight}; });
+      const bx = await p.evaluate(() => { const r = document.getElementById('house-reader'); return {top: r.getBoundingClientRect().top + scrollY, tot: r.offsetHeight - innerHeight - (parseFloat(r.style.getPropertyValue('--hrx')) || 0) * innerHeight / 100}; });
       await p.evaluate(y => window.scrollTo({top: y, behavior: 'instant'}), bx.top + bx.tot * (.34 + .62 * 1.55 / (ROOMS.length + 1))); await p.waitForTimeout(100);
       const mid = await rs(p); await settle(p); await p.waitForTimeout(400); await settle(p); const fin = await rs(p);
       t(mid.p > 2.3 && mid.p < 2.8 && Math.abs(fin.p - Math.round(fin.p)) < .02, 'остановка посередине поворота: лист доворачивается до ближайшего разворота сам', {mid: mid.p, fin: fin.p}); await p.evaluate(() => { window.__HOUSE_SNAP = false; }); }
@@ -243,6 +243,17 @@ const t = (cond, name, info) => { if (cond) ok++; else bad.push(name + (info !==
       const d1 = (await rs(p)).s; t(d1 === 5, 'протяжка мышью (по полю и по тексту) страницу не листает: мышью листают кнопки, колесо и клавиши', {d1});
       await p.mouse.click(bb.l + bb.w * .2, bb.t + bb.h * .5); await p.waitForTimeout(1300); await p.mouse.click(bb.l + bb.w * .8, bb.t + bb.h * .5); await p.waitForTimeout(1300);
       const d2 = (await rs(p)).s; t(d2 === 5, 'клик по телу страницы (текст, чат, карточки) разворот не листает', {d2}); }
+    { /* выход с последних страниц (ПК): после последнего разворота сцена не обрывается кромкой, а ≈ 70 vh растворяется в фон страницы и только потом уезжает; путь читалки (доли RD) от этого не меняется */
+      await p.evaluate(() => window.Astreya.house.openMagazine(20)); await settle(p); await p.waitForTimeout(500);
+      const gx = await p.evaluate(() => { const r = document.getElementById('house-reader'), st = r.querySelector('.hr-stage'), top = Math.round(r.getBoundingClientRect().top + scrollY); return {top, h: r.offsetHeight, st: st.offsetHeight, vh: innerHeight, hrx: r.style.getPropertyValue('--hrx')}; });
+      const ext = Math.round(gx.vh * .7), pathEnd = gx.top + gx.h - gx.st - ext, pinEnd = gx.top + gx.h - gx.st;
+      const xo = async y => { await p.evaluate(v => window.scrollTo({top: v, behavior: 'instant'}), y); await p.waitForTimeout(260); return p.evaluate(() => { const r = document.getElementById('house-reader'), x = r.querySelector('.hr-exit'), w = document.querySelector('#mag .mag-wrap'); return {o: x ? +x.style.opacity || 0 : -1, cls: r.classList.contains('rd-exit'), pe: getComputedStyle(w).pointerEvents, t: +window.Astreya.house.readerState().t.toFixed(3)}; }); };
+      const a0 = await xo(pathEnd - 160), a1 = await xo(pathEnd), a2 = await xo(pathEnd + Math.round(ext * .5)), a3 = await xo(pinEnd);
+      t(gx.hrx === '70vh' && Math.abs(gx.h - (5040 / 900 * gx.vh + ext)) < 3, 'выход (ПК): высота читалки больше прежней ровно на 70 vh', gx);
+      t(a0.o === 0 && !a0.cls && a0.pe !== 'none' && a1.o === 0 && a1.t >= .999, 'выход (ПК): пока идут страницы и сразу за последним разворотом сцена не затемняется и кнопки работают', {a0, a1});
+      t(a2.o > .35 && a2.o < .65 && a3.o >= .99 && a3.cls && a3.pe === 'none', 'выход (ПК): посередине участка сцена наполовину растворена, к концу — полностью (под ней кнопки не нажимаются), и только потом уезжает', {a2, a3});
+      const seq = []; for (let k = 0; k <= 8; k++) seq.push((await xo(pathEnd + Math.round(ext * k / 8))).o);
+      t(seq.every((v, i) => i === 0 || v >= seq[i - 1]) && seq.every((v, i) => i === 0 || v - seq[i - 1] < .3), 'выход (ПК): растворение идёт ровно — без скачков и возвратов', seq); }
     await p.evaluate(() => window.Astreya.house.openMagazine(1)); await settle(p);
     { /* журнал в сцене: верхней панели нет — ни на развороте, ни после прокрутки вверх (листаем назад), ни при прокрутке вниз */
       const hb = () => p.evaluate(() => document.getElementById('hdr').getBoundingClientRect().bottom);
@@ -471,6 +482,12 @@ const t = (cond, name, info) => { if (cond) ok++; else bad.push(name + (info !==
       t(g.clean && g.cleanOp >= .99, 'телефон ' + tag + ': заплатка «стол без нарисованного журнала» включена, когда камера приехала и журнал раскрыт', {clean: g.clean, op: g.cleanOp});
       { await drag(cx, 120, cx, 120 + Math.round(Hh * .62)); await q.waitForTimeout(700); const back = await q.evaluate(() => { const c = document.querySelector('.hr-clean'); return {open: document.getElementById('house-reader').classList.contains('rd-open'), op: c ? +getComputedStyle(c).opacity : -1, t: window.Astreya.house.readerState().t}; });
         t(!back.open && back.op < .05, 'телефон ' + tag + ': стоит потянуть назад к пролёту — заплатка уходит, нарисованный журнал на столике снова виден (вход и пролёт прежние)', back); }
+      { await q.evaluate(() => window.Astreya.house.openMagazine(20)); await settle(q); await q.waitForTimeout(900);
+        const gp = await q.evaluate(() => { const r = document.getElementById('house-reader'), st = r.querySelector('.hr-stage'); return {top: Math.round(r.getBoundingClientRect().top + scrollY), h: r.offsetHeight, st: st.offsetHeight}; });
+        const pinEnd = gp.top + gp.h - gp.st, L = Math.round(gp.st * .5);
+        const xq = async y => { await q.evaluate(v => window.scrollTo({top: v, behavior: 'instant'}), y); await q.waitForTimeout(260); return q.evaluate(() => { const r = document.getElementById('house-reader'), x = r.querySelector('.hr-exit'); return {o: x ? +x.style.opacity || 0 : -1, cls: r.classList.contains('rd-exit')}; }); };
+        const b0 = await xq(pinEnd - L - 20), seq = []; for (let k = 0; k <= 8; k++) seq.push((await xq(pinEnd - L + Math.round(L * k / 8))).o); const b1 = await xq(pinEnd);
+        t(b0.o === 0 && !b0.cls && seq.every((v, i) => i === 0 || (v >= seq[i - 1] && v - seq[i - 1] < .3)) && b1.o >= .99 && b1.cls, 'телефон ' + tag + ': выход с последней страницы — последние 50 vh выдержки сцена ровно растворяется в фон страницы (до этого журнал стоит как был)', {b0, seq, b1}); }
       t(q._errs.length === 0, 'нет ошибок JS (жесты журнала, ' + tag + ')', q._errs.slice(0, 5));
       await q._ctx.close();
     }

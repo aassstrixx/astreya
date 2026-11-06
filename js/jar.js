@@ -653,6 +653,7 @@
         } else { sizeCanvas(); sizeJar(); dirty = true; schedule(); pumpDecode(); }
       },
       ready() { return !!hall && !trimmed && firstDrawn && hall.plan(cp) === cp; },
+      lastReady() { return !!hall && !!resident[NH - 1]; },          // последний ключ пролёта уже лежит в видеопамяти: только тогда можно выгружать остальные (trim оставляет его подложкой под журналом; не успел загрузиться — на экране остался бы кадр зала)
       jump(p, moving) { cp = pT = p; cpTick = p; pPrev = p; vp = moving ? 0.05 : 0; started = true; lastMove = performance.now(); flushUploads(1e9); if (hall) paint(performance.now()); vp = 0; if (!FLY) ui(p, true); },      // moving — для проверок: нарисовать так, как рисуется в движении (со сглаживанием кромок)
       state() {
         const ring = Array.prototype.slice.call(perfRing, 0, Math.min(perfN, perfRing.length)).sort((a, b) => a - b);
