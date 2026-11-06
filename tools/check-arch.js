@@ -287,5 +287,26 @@ if (!J || !J.enabled || !A || !A.enabled) { console.log('Первый экран
     const r = await p.evaluate(() => { const q = s => document.querySelector(s), vis = e => { if (!e) return false; const r = e.getBoundingClientRect(); return r.width > 0 && r.height > 0 && getComputedStyle(e).display !== 'none'; }; return {arch: vis(q('#arch-story')), hero: vis(q('.hero')), ah1: vis(q('#arch-story h1'))}; });
     if (HOUSE) ok(r.arch && !r.hero && r.ah1, 'без JavaScript: виден заголовок первого экрана (прежнего героя нет)', r); else ok(!r.arch && r.hero, 'без JavaScript: сцены нет, виден прежний герой', r); await ctx.close(); }
 
+  console.log('\n[регулятор нагрузки героя]');
+  { /* строка обновления среднего времени кадра не должна оказаться в комментарии (так было с 73f86cc: dtEma застыл на 16,7 мс, и на экранах ≥ 90 Гц регулятор срезал холст и сетку героя при первой же прокрутке — «мыло» и зубчики на кромках) */
+    const ln = fs.readFileSync(pth.join(ROOT, 'js/jar.js'), 'utf8').split('\n').find(l => /dtEma \+= \(dtc - dtEma\)/.test(l));
+    ok(!!ln && ln.slice(0, ln.indexOf('dtEma +=')).indexOf('//') < 0, 'регулятор нагрузки: среднее время кадра обновляется (строка не проглочена комментарием)', ln && ln.trim().slice(0, 90));
+    ok(!/setGridScale\(0\.5\)/.test(fs.readFileSync(pth.join(ROOT, 'js/jar.js'), 'utf8')), 'регулятор нагрузки не режет сетку кромок вдвое (на половинной сетке кромки пилообразные)'); }
+  { /* экран 144 Гц: кадры быстрые, регулятор холст не трогает (раньше при первой же прокрутке героя resScale падал до 0,8, затем до 0,65 с сеткой вдвое реже) */
+    const {ctx, p} = await open(1573, 880); await ctx.addInitScript(() => { window.__ASTREYA_GL_GRID = 1; let fake = 0, timer = 0; const cbs = [];
+      window.requestAnimationFrame = cb => { cbs.push(cb); if (!timer) timer = setTimeout(() => { timer = 0; const l = cbs.splice(0); fake += 1000 / 144; l.forEach(f => { try { f(fake); } catch (e) { /* — */ } }); }, 0); return cbs.length; }; window.cancelAnimationFrame = () => {}; });
+    await p.goto(base + 'index.html'); await skipSplash(p);
+    try { await p.waitForFunction(() => { const a = window.Astreya.jar && window.Astreya.jar.arch; return a && a.ready && a.ready(); }, null, {timeout: 90000, polling: 500}); } catch (e) { /* — */ }
+    await wait(1200); const g = await geo(p); await p.mouse.move(700, 400);
+    for (let y = 0, tg = Math.round(g.top + g.tot * 0.6); y < tg; y += 80) { await p.mouse.wheel(0, 80); await wait(30); }
+    await wait(2500); const s1 = await p.evaluate(() => { const s = window.Astreya.jar.arch.state(); return {k: s.resScale, gov: s.govChanges, size: (s.size || []).slice(0, 2).join('x')}; });
+    ok(s1.k === 1 && s1.gov === 0, 'экран 144 Гц: после прокрутки героя холст полный (resScale 1, регулятор не срабатывал)', s1);
+    await p.evaluate(() => window.Astreya.jar.arch.govForce(0.65)); await wait(300); const s2 = await p.evaluate(() => window.Astreya.jar.arch.state()), w1 = s2.size[0];
+    ok(s2.resScale === 0.65 && w1 < s1.size.split('x')[0] * 0.7, 'снижение разрешения регулятором видно по размеру холста (проверочный вызов)', {k: s2.resScale, w1, full: s1.size});
+    try { await p.waitForFunction(() => window.Astreya.jar.arch.state().resScale === 1, null, {timeout: 12000, polling: 300}); } catch (e) { /* — */ }
+    const s3 = await p.evaluate(() => { const s = window.Astreya.jar.arch.state(); return {k: s.resScale, w: s.size[0]}; });
+    ok(s3.k === 1 && String(s3.w) === s1.size.split('x')[0], 'в покое (≈ 1,4 с без движения) холст возвращается к полному размеру: резкая картинка, а не навсегда сниженное разрешение', {s1: s1.size, s3});
+    await ctx.close(); }
+
   console.log(`\nИтого: ✓ ${pass}  ✗ ${fail}`); await b.close(); srv.close(); process.exit(fail ? 1 : 0);
 })().catch(e => { console.error(e); process.exit(2); });

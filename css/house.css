@@ -270,7 +270,6 @@ body[data-page="home"] .hdr{transition:transform .6s var(--ease-out),background-
 @media all{          /* и на телефоне: пролёт камеры к журналу — та же сцена, что на ПК */
   html.js .arch-story.is-house:not(.is-static):not(.jar-off) ~ .house-reader:not(.is-flat){margin-top:-100lvh}
   html.js .arch-story.is-house:not(.is-static):not(.jar-off) ~ .house-reader:not(.is-live):not(.is-flat) .hr-stage{visibility:hidden}
-  html.js .arch-story.is-house:not(.is-static):not(.jar-off) ~ .house-reader:not(.is-flat) .hr-stage .hr-fly{visibility:visible}          /* кадр пролёта виден под героем заранее (его закрывает сам герой): холст не «включается» в момент стыка — на iPhone при быстрой прокрутке он ещё не успевал нарисоваться, и сквозь гаснущего героя виднелась светлая подложка («шторка») */
   html.js .arch-story.is-house:not(.is-static):not(.jar-off) ~ .house-reader:not(.is-flat), html.js .arch-story.is-house:not(.is-static):not(.jar-off) ~ .house-reader:not(.is-flat) .hr-stage{background:var(--hs-backdrop)}          /* под кадрами — цвет зала (средний цвет кадров), а не молочный фон страницы: пока холст рисуется, провал не светлее картинки */
   html.js .arch-story.is-house{z-index:2}
   html.js .house-reader{z-index:1}
@@ -283,6 +282,9 @@ body[data-page="home"] .hdr{transition:transform .6s var(--ease-out),background-
   html.js .arch-story.is-house.rd-live .hs-cue{opacity:calc(var(--h3,0) * (1 - var(--hf,0)))}
   html.js .arch-story.is-house.rd-gone .ar-hero{visibility:hidden}               /* баночка-спрайт не гаснет сама: пока кадры героя уходят, она стоит поверх тех же пикселей кадра пролёта; убирается, когда они ушли совсем */
   html.js .arch-story.is-house.rd-live .ar-hero *{pointer-events:none!important}
+}
+@media (max-width:700px){
+  html.js .arch-story.is-house:not(.is-static):not(.jar-off) ~ .house-reader:not(.is-flat) .hr-stage .hr-fly{visibility:visible}          /* телефон: кадр пролёта виден под героем заранее (его закрывает сам герой): холст не «включается» в момент стыка — на iPhone при быстрой инерции он ещё не успевал нарисоваться, и сквозь гаснущего героя виднелась светлая подложка («шторка»). На ПК холст остаётся скрытым, пока читалка не «живая»: лишний слой 1920×1080 под героем — нагрузка на каждый кадр прокрутки */
 }
 @media (prefers-reduced-motion:reduce) and (min-width:100000px){.house-reader{height:auto;--ra:1;--fu:1}.hr-fly{display:none!important}.house-reader .hr-stage{position:relative;height:auto;min-height:100svh;padding:clamp(70px,10vh,120px) 0 clamp(40px,6vh,70px)}.house-reader .mag{position:relative;inset:auto;display:grid;min-height:calc(100svh - 120px)}.hr-bg,.house-reader .mag .mag-wrap{transform:none!important}.hr-cue{display:none}}
 

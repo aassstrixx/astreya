@@ -123,6 +123,7 @@
   const FAST_ON_PF = 30, FAST_OFF_PF = 12;   // пролёт на телефоне: при обычной прокрутке пальцем (≈ 15–20 ключей/с) кадры остаются полными, копии — только на настоящем взмахе
   const FAST_ON_P = 9, FAST_OFF_P = 3;   // то же для телефона (портретный кадр): взмах начинается уже при ≈ 9 ключах в секунду — обычная прокрутка пальцем идёт по уменьшенным копиям, полные кадры подтягиваются, когда движение замедлилось (каждая загрузка полного кадра в видеопамять на iPhone — 10–30 мс главного потока, т. е. пропущенные кадры)
   const UP_GAP_P = 70, UP_GAP_LOW = 40, UP_GAP_F = 34;          // UP_GAP_F — пролёт: окно ±8 должно обновляться быстрее, чем камера его съедает (≈ 29 ключей/с)        // мс: на телефоне в движении загрузка в видеопамять — не чаще одной за этот промежуток (полный кадр / уменьшенная копия во «взмахе»): раньше копии всех кадров пролёта грузились по одной за каждый кадр анимации ровно во время первого пролёта
+  const GOV_PHONE = false;    // регулятор нагрузки на телефоне выключен: с 73f86cc он на деле не работал (см. ниже), и весь телефонный профиль (холст ≈ 1 млн пикселей, окно ключей, копии) проверен именно так; слабые телефоны страхует A.lite, а не падающее разрешение
   const MOVING = 0.04;        // ключевых кадров в секунду: быстрее — идёт движение (включается сглаживание кромок)
   const LANES = [14, 8];      // запросов одновременно: [компьютер, телефон] (HTTP/2)
   const RES = [5, A.lite ? 1 : 3];         // сколько ключевых кадров по обе стороны от положения держим в видеопамяти: [компьютер, телефон]
@@ -552,9 +553,11 @@
       /* регулятор нагрузки: кадры идут дольше бюджета — холст чуть меньше (не чаще раза в 1,5 с) */
       if (inView && Math.abs(vp) * KS > MOVING && dtRaw > 0) {
         const dtc = Math.min(dtRaw, 80); minDt = Math.max(5, Math.min(minDt + 0.004, dtc));
-        const base = isPortrait() ? 16.67 : minDt < 19 ? minDt : minDt < 28 ? 16.67 : 33.33;          // телефон: цель всегда 60 кадров/с (из минимума по кадрам цель «ползла» к 30 и регулятор переставал снижать качество) dtEma += (dtc - dtEma) * 0.15;
-        if (dtEma > base * 1.35 + 0.5) slowRun++; else slowRun = 0;
-        if (slowRun >= (isPortrait() ? 12 : 24) && resScale > 0.6 && now() - lastGov > 1500) { resScale = resScale > 0.8 ? 0.8 : 0.65; govChanges++; A.bc && A.bc('gov', (FLY ? 'fly ' : 'hero ') + resScale + ' dt' + Math.round(dtEma)); slowRun = 0; lastGov = now(); if (resScale < 0.7 && hall) hall.setGridScale(0.5); sizeCanvas(); }
+        if (!isPortrait() || GOV_PHONE) dtEma += (dtc - dtEma) * 0.15;          // (эта строка попала в комментарий в 73f86cc — среднее время кадра застыло на 16,7 мс; на экране ≥ 90 Гц порог оказывался ниже, и регулятор срезал холст и сетку при первой же прокрутке героя: «мыло» и зубчики на кромках)
+        const base = isPortrait() ? 16.67 : minDt < 28 ? 16.67 : 33.33;          // цель — 60 кадров/с при любой частоте экрана (раньше на ПК цель равнялась кадру экрана: на 120–144 Гц любой кадр дольше 8–10 мс считался медленным); дисплей на 30 к/с — 33 мс
+        const other = A.jarBusy && A.jarBusy[FLY ? 'hero' : 'fly'];          // соседний движок сейчас грузит кадры (пролёт начинает грузиться на 40 % героя): кадры героя в это время дольше не из-за его холста — их не считаем
+        if (other) slowRun = 0; else if (dtEma > base * 1.35 + 0.5) slowRun++; else slowRun = 0;
+        if (slowRun >= (isPortrait() ? 12 : 24) && resScale > 0.6 && now() - lastGov > 1500) { resScale = resScale > 0.8 ? 0.8 : 0.65; govChanges++; A.bc && A.bc('gov', (FLY ? 'fly ' : 'hero ') + resScale + ' dt' + Math.round(dtEma)); slowRun = 0; lastGov = now(); sizeCanvas(); armRestore(); }          // сетку не режем: на ней держатся кромки (на половинной — пилообразные), а нагрузку даёт в основном число пикселей холста
       }
       if (upQ.length) { const mv = Math.abs(vp) * KS > MOVING || (FLY && PHALL && scrolling()); if (!mv || !isPortrait() || performance.now() - lastUp >= (fast ? UP_GAP_LOW : (FLY ? UP_GAP_F : UP_GAP_P))) flushUploads(mv ? 2.5 : 8); }          // телефон: в движении тяжёлая загрузка не чаще раза в UP_GAP_P мс (иначе каждый кадр с хвостом)                // по одной-две тяжёлые текстуры за кадр; в покое — быстрее
       if ((inView || !firstDrawn) && hall && (dirty || Math.abs(cp - paintedP) > 1e-7)) {
@@ -563,11 +566,20 @@
       if (inView && hall) { pumpDecode(); }
       if (!FLY) ui(cp, inView);
       if (FLY && !gate && (A.flyWarm || pT > 0)) openGate();              // читалка подошла (или разрешила заранее) — ключи пролёта грузятся
+      (A.jarBusy || (A.jarBusy = {hero: false, fly: false}))[FLY ? 'fly' : 'hero'] = !!(FLY && (decN > 0 || upQ.length > 0 || inflight > 0));          // для регулятора героя: пролёт сейчас грузит кадры
       perfRing[perfN++ % perfRing.length] = performance.now() - w0;
       if (cp !== target || vp !== 0 || upQ.length || (dirty && !firstDrawn) || (inView && (t - lastMove <= IDLE_TAIL || Math.abs(target - cp) > 1e-7))) requestAnimationFrame(tick); else running = false;
     }
-    let lastGov = -1e9;
+    let lastGov = -1e9, restoreT = 0;
     const now = () => performance.now();
+    /* качество возвращается, когда сцена остановилась: регулятор снижает холст при долгих кадрах (загрузка кадров, чужая вкладка, тяжёлая страница), но в покое кадры не считаются, а картинка должна быть
+       резкой — через ≈ 1,4 с без движения холст снова полный. Если в движении опять будет медленно, регулятор снизит снова (не раньше, чем через 1,5 с и 24 медленных кадра) */
+    const restoreQ = () => {
+      restoreT = 0; if (dead || !hall || resScale >= 1) return;
+      if (now() - lastScrollT < 1100 || Math.abs(vp) > 1e-3 || fast) { restoreT = setTimeout(restoreQ, 600); return; }
+      resScale = 1; slowRun = 0; lastGov = now(); A.bc && A.bc('gov', (FLY ? 'fly ' : 'hero ') + 'вернул 1'); sizeCanvas(); schedule();
+    };
+    const armRestore = () => { clearTimeout(restoreT); restoreT = setTimeout(restoreQ, 1400); };
 
     let wakeT = 0;
     const onScroll = () => { lastScrollT = performance.now(); quiet = 0; schedule(); if (FLY && PHALL) { clearTimeout(wakeT); wakeT = setTimeout(() => { if (!dead && hall && !trimmed && !scrolling()) { pumpDecode(); schedule(); } }, 420); } };          // пауза в прокрутке — догружаем отложенные ключи пролёта
@@ -613,6 +625,7 @@
       /* для проверок: держать кадры a…b в видеопамяти и дождаться, пока они развернутся (все — и зал, и спрайты) */
       prefetch(a, b) { pin = [Math.max(0, a), Math.min(NH - 1, b)]; return new Promise(res => { const t = setInterval(() => { let ok = !!hall; for (let k = pin[0]; k <= pin[1]; k++) if (!resident[k] || (!resJ[k] && !(FLY && k > 0))) ok = false; if (ok || dead) { clearInterval(t); res(ok); } else pumpDecode(); }, 80); }); },
       unpin() { pin = null; },
+      govForce(k) { resScale = k; sizeCanvas(); armRestore(); schedule(); },          // для проверок: как если бы регулятор нагрузки снизил холст до k; через ≈ 1,4 с покоя он должен вернуться к полному
       /* для проверок: только уменьшенные копии (полные кадры и спрайты выгружены и не разворачиваются) — так выглядит прокрутка, пока рядом нет полных кадров */
       lowOnly(on) { lowOnlyF = !!on; if (on && hall) { for (let k = 0; k < NH; k++) { if (resident[k]) { hall.dropKey(k); resident[k] = 0; } if (resJ[k] && jar) { jar.dropSprite(k); resJ[k] = 0; } } } dirty = true; schedule(); },
       fly: FLY, warm() { if (FLY) openGate(); },
