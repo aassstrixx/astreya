@@ -541,7 +541,7 @@
     "quickContact": false,
     "recent": true,
     "callback": true,
-    "quickView": true, "gallery": true, "showroom": true,
+    "quickView": true, "gallery": true, "showroom": true, "favorites": true,
     "showroomPhotos": false,
     "compare": true,
     "countdown": true,

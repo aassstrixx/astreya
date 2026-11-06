@@ -14,7 +14,6 @@
 .shw-room{position:relative;width:100%;max-width:2400px;margin:0 auto;aspect-ratio:1536/1024;overflow:hidden;background:#e8dbc5;--s:.9}
 .shw-canvas{position:absolute;left:0;top:0;width:1536px;height:1024px;transform-origin:0 0;transform:scale(var(--s))}
 .shw-vw{position:absolute;inset:0}
-.shw-grain{position:absolute;inset:0;z-index:5;pointer-events:none;background:url(../assets/bg/stone-grain.webp) 0 0/512px 512px;opacity:.55}      /* зерно камня: поры, крупинки и облака тона поверх стены, арок и платформы (рендеры после сжатия слишком гладкие) */
 .shw-view{position:absolute;inset:0;overflow:hidden;background:#e4d6bf}
 @media (min-width:2401px){.shw-vw::before,.shw-vw::after{content:"";position:absolute;top:0;bottom:0;z-index:6;width:90px;pointer-events:none}.shw-vw::before{left:0;background:linear-gradient(90deg,var(--milk),rgba(245,242,236,0))}.shw-vw::after{right:0;background:linear-gradient(270deg,var(--milk),rgba(245,242,236,0))}}      /* шире 2400 px сцена не растёт: края плавно уходят в фон страницы */
 .shw-pan{display:none}
@@ -29,6 +28,7 @@
 .shw-slab::before{content:"";position:absolute;left:0;right:0;top:calc(var(--e) / 2);bottom:0;border-radius:0 0 50% 50%/0 0 calc(var(--e) / 2) calc(var(--e) / 2);background:
   linear-gradient(180deg,rgba(255,255,255,0) 62%,rgba(86,58,30,.22)),url(../assets/showroom/pod-body.webp) 0 0/100% 100%;box-shadow:0 calc(var(--b) * .5) calc(var(--b) * .9) calc(var(--b) * -.45) rgba(78,54,26,.5)}
 .shw-slab::after{content:"";position:absolute;left:0;right:0;top:0;height:var(--e);background:url(../assets/showroom/pod-cap.webp) 0 0/100% 100%}
+.shw-grain{position:absolute;inset:0;z-index:5;pointer-events:none;background:url(../assets/bg/stone-grain.webp) 0 0/512px 512px;opacity:.55}      /* зерно камня: поры, крупинки и облака тона поверх стены, арок и платформы (рендеры после сжатия слишком гладкие) */
 .shw-motes{position:absolute;inset:0;overflow:hidden;pointer-events:none;z-index:1}
 .shw-motes i{position:absolute;left:var(--x);top:var(--y);width:var(--s);height:var(--s);border-radius:50%;background:radial-gradient(closest-side,rgba(255,247,224,.95),rgba(255,240,206,.42) 56%,rgba(255,240,206,0));opacity:0;animation:axMote var(--t) ease-in-out var(--d) infinite}
 @keyframes axMote{0%{opacity:0;transform:translate3d(0,0,0) scale(.7)}20%{opacity:.8}62%{opacity:.55}100%{opacity:0;transform:translate3d(var(--dx),-130px,0) scale(1.15)}}
@@ -348,4 +348,169 @@ html:not(.js) .shw{display:none}
 @media (max-width:1100px) and (max-height:720px){
   .shw-head .eyebrow,.shw-head h1,.shw-head .lead{display:none}
   .shw-card .c-d{display:none}
+}
+
+/* ============ 9. ASTREYA PRODUCT GALLERY: ниши, наведение, раскрытие экспозиции, орбиты ============
+   Поверх шоурума: у каждого товара своя ниша (арка со светодиодной кромкой, круглая ниша — мотив шара, вертикальное углубление со стеклянной полкой, открытое основание со световыми линиями; у центрального товара — двойная арка).
+   Наведение — три состояния без цен и плашек: товар чуть (≈ 7 %) выдвигается, по основанию вспыхивает тонкий световой контур, ниша светлеет, фон и товары слегка расходятся за курсором, остальные теряют акцент, рядом проявляется стеклянная панель.
+   Нажатие — «камера» приближает сцену к нише (transform всей сцены), остальное темнеет, товар встаёт в фокус, вокруг него на пару секунд проявляются орбиты, раскрывается стеклянная панель сведений.
+   Двигаются только opacity/transform/translate; на телефоне и планшете камеры нет (наведения нет — раскрытие по касанию, плашка внизу). Режимы «меньше движения» и «лёгкий» — без камеры, орбит и параллакса (js/showroom.js: mode()). */
+
+/* камера и параллакс (компьютер) */
+@media (min-width:1101px){
+  .shw-view{--cz:1;--cx:0px;--cy:0px}
+  .shw:not(.is-stack) .shw-plane{transform:translate3d(var(--cx),var(--cy),0) scale(var(--cz));transition:transform 1.2s var(--shw-ease),translate .9s var(--shw-ease),filter 1.2s var(--shw-ease)}
+  .shw-view.no-tr .shw-plane{transition:none}
+  .shw.is-cam .shw-plane{will-change:transform}
+}
+@media (min-width:1101px) and (hover:hover) and (pointer:fine){
+  .shw:not(.is-stack) .shw-world{translate:calc(var(--px,0) * -7px) calc(var(--py,0) * -4px)}
+  .shw:not(.is-stack) .shw-stage{translate:calc(var(--px,0) * 3px) calc(var(--py,0) * 2px)}
+}
+html.lite .shw-world,html.lite .shw-stage{translate:none!important;transition:none!important}
+
+/* смена света при смене экспозиции: мягкий луч смещается по залу */
+
+/* ниши за товарами */
+.shw-pd.is-sel{z-index:66!important}
+
+/* световой контур по основанию */
+
+/* наведение: товар выдвигается на 7 %, остальные отступают */
+@media (hover:hover) and (pointer:fine){ .shw:not(.has-sel) .shw-it:hover .shw-ph{--ly:-14px;--zm:1.07} }
+.shw:not(.has-sel) .shw-it.is-hov .shw-ph,.shw-it:focus-visible .shw-ph{--ly:-14px;--zm:1.07}
+.shw.has-hov:not(.has-sel) .shw-it:not(.is-hov){opacity:.7}
+.shw.has-hov:not(.has-sel) .shw-pd:not(.is-lit){opacity:.78}
+.shw-pd{transition:opacity .6s var(--shw-ease),transform .5s var(--shw-ease)}
+
+/* стеклянная панель рядом с товаром */
+.shw-tip{position:absolute;z-index:66;width:236px;box-sizing:border-box;padding:14px 16px 13px;border-radius:20px;background:linear-gradient(180deg,rgba(253,249,241,.8),rgba(246,239,226,.7));border:1px solid var(--shw-rim);box-shadow:0 1px 2px rgba(86,60,30,.08),0 22px 40px -22px rgba(86,60,30,.55);opacity:0;translate:-10px 6px;scale:.97;transition:opacity .45s var(--shw-grow),translate .55s var(--shw-ease),scale .55s var(--shw-ease);pointer-events:none}
+.shw-tip.on-left{translate:10px 6px}
+.shw-tip.is-on{opacity:1;translate:0 0;scale:1}
+.shw-tip[hidden]{display:none}
+/* панель — только для чтения: курсор проходит сквозь неё к соседним товарам; интерактивны лишь три действия (с невидимым мостиком к товару, чтобы до них можно было дойти) */
+.shw-tip .t-act{position:relative;pointer-events:none}
+.shw-tip.is-on .t-act{pointer-events:auto}
+.shw-tip .t-act::before{content:"";position:absolute;z-index:-1;left:-30px;right:-8px;top:-14px;bottom:-4px}
+.shw-tip.on-left .t-act::before{left:-8px;right:-30px}
+.shw-tip .t-br{font:700 9.5px/1.3 var(--sans);letter-spacing:.14em;text-transform:uppercase;color:var(--slate)}
+.shw-tip .t-n{margin:4px 0 6px;font:500 19px/1.15 var(--serif);letter-spacing:-.01em;color:var(--navy);overflow-wrap:anywhere}
+.shw-tip .t-d{margin:0;font-size:12px;line-height:1.45;color:var(--muted);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.shw-tip .t-tg{display:flex;flex-wrap:wrap;gap:5px;margin-top:9px}
+.shw-tip .t-tg span{padding:4px 9px;border-radius:999px;background:rgba(86,60,30,.08);font:600 10px/1 var(--sans);color:#5a4a33}
+.shw-tip .t-act{display:flex;gap:8px;margin:0 0 11px;padding:0 0 10px;border-bottom:1px solid var(--shw-line)}
+.shw-ab{display:inline-grid;place-items:center;width:34px;height:34px;border-radius:50%;border:1px solid rgba(86,60,30,.18);background:rgba(255,255,255,.72);color:var(--navy);transition:background-color .25s,color .25s,border-color .25s,transform .3s var(--shw-ease)}
+.shw-ab .ic,.shw-card .c-act .ic,.shw-card .c-x .ic{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
+@media (hover:hover){.shw-ab:hover{background:var(--navy);color:var(--milk);border-color:var(--navy);transform:translateY(-1px)}}
+.shw-ab[aria-pressed="true"]{background:var(--navy);color:var(--milk);border-color:var(--navy)}
+.shw-fav.is-on .ic,.c-fav.is-on .ic{fill:currentColor}
+
+/* выбор: ближе к нише камера, товар не увеличивается второй раз */
+.shw-it.is-sel .shw-ph{--ly:-10px;--zm:1.1}
+.shw.is-stack .shw-it.is-sel .shw-ph{--ly:-20px;--zm:1.3}
+.shw-card.is-open{width:300px;max-height:640px;overflow-y:auto;overscroll-behavior:contain;scrollbar-width:thin;padding-top:20px}
+.shw-card.is-open::before{content:"";position:absolute;left:22px;right:22px;top:0;height:2px;background:linear-gradient(90deg,rgba(214,185,130,0),rgba(214,185,130,.95),rgba(214,185,130,0))}
+.shw-card .c-d2{margin:10px 0 0;font-size:12.5px;line-height:1.5;color:var(--muted)}
+.shw-card .c-lb{margin-top:12px;font:700 9.5px/1 var(--sans);letter-spacing:.14em;text-transform:uppercase;color:var(--slate)}
+.shw-card .c-lb+.c-tasks{margin-top:7px}
+.shw-card .c-sec{margin-top:12px;padding-top:10px;border-top:1px solid var(--shw-line)}
+.shw-card .c-sec h4{margin:0 0 5px;font:700 9.5px/1 var(--sans);letter-spacing:.14em;text-transform:uppercase;color:var(--slate)}
+.shw-card .c-sec ul{margin:0;padding-left:16px;font-size:12px;line-height:1.5;color:var(--navy)}
+.shw-card .c-sec p{margin:0;font-size:12px;line-height:1.5;color:var(--navy)}
+.shw-card .c-act .btn{display:inline-flex;align-items:center;gap:7px}
+.shw-card .c-act .c-fav.is-on,.shw-card .c-act .c-cmp[aria-pressed="true"]{background:var(--navy);color:var(--milk);border-color:var(--navy)}
+.shw-card .c-x{display:none;width:auto;height:30px;padding:0 12px 0 10px;gap:6px;border-radius:999px;font:600 12px/1 var(--sans);white-space:nowrap}
+.shw-card.is-open .c-x{display:inline-flex;align-items:center}
+.shw-card .c-x .ic{width:13px;height:13px}
+.shw-card.is-open .c-bd{margin-right:84px}
+
+/* «Избранное» в панели фильтров */
+.shw-favs{display:flex;align-items:center;gap:8px;width:100%;margin-top:6px;padding:9px 12px;border-radius:14px;border:1px solid var(--shw-line);background:rgba(255,255,255,.55);font:600 13px/1 var(--sans);color:var(--navy);text-align:left;transition:background-color .25s,border-color .25s,color .25s}
+.shw-favs .ic{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
+.shw-favs b{margin-left:auto;font:600 11px/1 var(--sans);color:var(--slate)}
+.shw-favs.has .ic{fill:currentColor}
+.shw-favs[aria-pressed="true"]{background:var(--navy);border-color:var(--navy);color:var(--milk)}
+.shw-favs[aria-pressed="true"] b{color:var(--silver)}
+@media (hover:hover){.shw-favs:hover{background:#fff;border-color:var(--navy)}.shw-favs[aria-pressed="true"]:hover{background:var(--navy-2)}}
+
+/* планшет и телефон: наведения нет — ниши мельче, панель при наведении не нужна */
+@media (max-width:1100px){
+  .shw-tip{display:none!important}
+}
+
+/* ---- «Рекомендуем»: архитектурные полки вместо ряда прямоугольных карточек ----
+   Каждый товар — малая ниша (арка, круг, углубление или открытое основание — по кругу) на цоколе своей высоты (--ph); все цоколи стоят на одной стеклянной кромке и освещены общим светом.
+   Наведение — как на сцене: товар выдвигается на 7 %, ниша и контур цоколя светлеют, соседи отступают, справа от ниши проявляются три действия (избранное, сравнение, подробнее). Цен нет. */
+.shw-pop-h .shw-pop-s{margin:0 auto 0 4px;font:500 12px/1 var(--sans);color:var(--slate);letter-spacing:.02em}
+.shw-pop-t{gap:8px;padding:6px 6px 8px;align-items:flex-start}
+.shw-pop-w .shw-nav{top:58px}
+.shw-pc{flex:0 0 152px;height:auto;display:flex;flex-direction:column;align-items:center;background:none;border:0;border-radius:0;box-shadow:none;overflow:visible;--zm:1;--ly:0px;transition:opacity .5s var(--shw-ease)}
+.shw-pc-art{position:relative;display:block;width:100%;height:116px;padding:0;background:none;overflow:visible}
+.shw-pc-art::after{content:"";position:absolute;left:-5px;right:-5px;bottom:-2px;top:auto;width:auto;height:3px;border-radius:2px;background:linear-gradient(90deg,rgba(255,255,255,.25),rgba(255,255,255,.96) 18%,rgba(255,255,255,.96) 82%,rgba(255,255,255,.25));box-shadow:0 0 12px rgba(255,244,214,.85),0 7px 10px -5px rgba(86,60,30,.4)}
+.shw-pc-art i{position:absolute;display:block;pointer-events:none}
+.pc-niche{left:50%;top:2px;bottom:0;width:116px;margin-left:-58px;border-radius:58px 58px 0 0;background:linear-gradient(180deg,rgba(255,251,240,.42),rgba(255,246,224,.7));box-shadow:inset 0 0 0 1.5px rgba(255,251,240,.8),inset 0 14px 26px -10px rgba(255,249,230,.85),inset 0 -16px 22px -12px rgba(120,92,56,.28),0 0 18px rgba(255,244,214,.3);transition:box-shadow .6s var(--shw-ease),background-color .6s}
+.pc-glow{left:50%;bottom:calc(var(--ph) - 8px);width:150%;height:92px;margin-left:-75%;background:radial-gradient(ellipse 50% 56% at 50% 70%,rgba(255,250,232,.9),rgba(255,247,226,0) 72%);opacity:.38;transition:opacity .6s var(--shw-ease)}
+.pc-pl{left:50%;bottom:0;width:90px;height:var(--ph);margin-left:-45px;border-radius:5px 5px 0 0/4px 4px 0 0;background:linear-gradient(90deg,#d6c5a6,#efe4cd 38%,#e5d6ba 66%,#c8b692);box-shadow:inset 0 2px 0 rgba(255,255,255,.75),inset 0 -10px 12px -8px rgba(86,58,30,.3),0 8px 12px -8px rgba(66,44,20,.45);transition:box-shadow .6s var(--shw-ease)}
+.shw-pc-img{position:absolute;z-index:2;left:50%;bottom:var(--ph);margin:0 0 0 -50px;width:100px;height:68px;max-width:none;object-fit:contain;object-position:50% 100%;transform-origin:50% 100%;transform:translateY(var(--ly)) scale(var(--zm));transition:transform .85s var(--shw-grow);will-change:transform;pointer-events:none}
+.shw-pc-tag{left:calc(50% - 56px);top:4px;z-index:4;padding:3px 8px;font-size:8.5px}
+.shw-pc-ac{position:absolute;z-index:5;right:3px;top:6px;display:flex;flex-direction:column;gap:5px;opacity:0;translate:7px 0;transition:opacity .4s var(--shw-ease),translate .5s var(--shw-ease);pointer-events:none}
+.shw-pc-ac .shw-ab{width:28px;height:28px;pointer-events:auto;background:rgba(255,252,246,.82);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px)}
+.shw-pc-ac .shw-ab .ic{width:14px;height:14px}
+.shw-pc:focus-within .shw-pc-ac,.shw-pc:hover .shw-pc-ac{opacity:1;translate:0 0;pointer-events:auto}
+.shw-pc-b{align-items:center;text-align:center;gap:1px;padding:10px 4px 0;flex:0 0 auto;width:100%;box-sizing:border-box}
+.shw-pc h3{font:500 13px/1.2 var(--serif)}
+.shw-pc-k{max-width:100%}
+.shw-pc .shw-ask{margin-top:5px;padding:5px 11px;font-size:11px}
+.shw-pc .shw-ask .ic{width:12px;height:12px}
+.shw-pc:focus-within .shw-pc-img,.shw-pc:hover .shw-pc-img{--ly:-5px;--zm:1.07}
+.shw-pc:focus-within .pc-glow,.shw-pc:hover .pc-glow{opacity:1}
+.shw-pc:focus-within .pc-niche,.shw-pc:hover .pc-niche{box-shadow:inset 0 0 0 1.5px rgba(255,253,246,.98),inset 0 14px 26px -8px rgba(255,249,230,1),inset 0 -14px 22px -12px rgba(120,92,56,.2),0 0 24px rgba(255,240,205,.6)}
+.shw-pc:focus-within .pc-pl,.shw-pc:hover .pc-pl{box-shadow:inset 0 2px 0 #fff,0 0 0 1.5px rgba(255,250,236,.95),0 0 14px 2px rgba(255,240,205,.6),0 8px 12px -8px rgba(66,44,20,.45)}
+@media (hover:hover) and (pointer:fine){
+  .shw-pc:hover{transform:none;box-shadow:none}
+  .shw-pop-t:has(.shw-pc:hover) .shw-pc:not(:hover){opacity:.7}
+}
+@media (hover:none){.shw-pc-ac{opacity:1;translate:0 0;pointer-events:auto}}
+@media (max-width:1100px){
+  .shw-pc{flex:0 0 156px;min-width:0}
+  .shw-pop-h .shw-pop-s{display:none}
+}
+@media (max-width:640px){.shw-pc{flex:0 0 156px}}
+
+/* раскрытая карточка компактнее: высота не больше 520 (низ — над рядом «Рекомендуем»), мелкие пояснения мельче */
+.shw-card.is-open{max-height:520px}
+.shw-card.is-open .c-note{font-size:10.5px;line-height:1.35;margin-top:7px}
+.shw-card.is-open .c-spec{margin-top:8px}
+.shw-card.is-open .c-extra .btn{padding:7px 13px;font-size:11.5px}
+.shw-card.is-open .c-act{margin-top:11px}
+
+/* при выборе верх сцены мягко светлеет: навигация сайта остаётся читаемой над приблизившейся зеленью */
+@media (min-width:1101px){
+  .shw-hero::before{content:"";position:absolute;left:0;right:0;top:0;height:150px;z-index:17;pointer-events:none;background:linear-gradient(180deg,rgba(243,237,224,.94),rgba(243,237,224,.62) 52%,rgba(243,237,224,0));opacity:0;transition:opacity 1s var(--shw-ease)}
+  .shw.has-sel .shw-hero::before{opacity:1}
+}
+
+/* «меньше движения»: ни камеры, ни орбит, ни параллакса (js/showroom.js: только в полном режиме); раскрытие и панели остаются */
+@media (prefers-reduced-motion:reduce){
+  .shw:not(.is-stack) .shw-plane{transition:none}
+  .shw-tip{transition:opacity .4s ease}
+}
+
+/* ниши товаров поверх 3D-ниш зала: в покое лишь тихий контур (архитектуру несёт сам зал), при наведении и выборе — полная подсветка */
+
+/* заголовок над сценой: мягкая светлая дымка за текстом — «Каталог», заголовок и подводка читаются поверх листвы и арок */
+@media (min-width:1101px){
+  .shw-head::before{content:"";position:absolute;z-index:-1;left:-70px;right:-40px;top:-30px;bottom:-14px;pointer-events:none;background:radial-gradient(ellipse 50% 56% at 50% 50%,rgba(244,238,226,.8),rgba(244,238,226,.46) 58%,rgba(244,238,226,0) 100%)}
+}
+
+
+
+/* тон света фона по категории: едва заметный сдвиг (экспозиции различаются настроением, архитектура остаётся прежней); «Все» — исходный тон */
+.shw[data-light="1"] .shw-world{filter:saturate(1.08) brightness(1.02)}
+.shw[data-light="2"] .shw-world{filter:hue-rotate(-5deg) saturate(1.05)}
+html.lite .shw-world{filter:none!important}
+
+@media (prefers-reduced-motion:reduce){
+  .shw:not(.is-stack) .shw-plane{transition:none}
+  .shw-tip{transition:opacity .25s ease}
 }

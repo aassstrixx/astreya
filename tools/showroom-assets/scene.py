@@ -170,13 +170,73 @@ def build(sc):
     nled = arch_frame('nled', M['led'], NI['cx'], NI['rx'] - .05, NI['zs'] - .05, .035, 2.45, 2.5, 'niche')
     # --- платформа и ступени (травертин)
     dais = cylinder('dais', M['trav'], 0.95, -2.35, 3.15, 0.0, 0.30, 'dais', bev=0.03)
-    stepl = cylinder('stepl', M['trav'], -1.9, -0.7, 1.55, 0.0, 0.55, 'steps', bev=0.025)
+    stepl = cylinder('stepl', M['trav'], PLANT_X + .2, -0.7, 1.5, 0.0, 0.55, 'steps', bev=0.025)
     stepr = cylinder('stepr', M['trav'], 4.1, -0.9, 2.1, 0.0, 0.42, 'steps', bev=0.03)
     for st_ in (stepl, stepr):                                              # платформа и ступени — одно тело (объединение): без скрытых внутренних граней
         bmd = dais.modifiers.new('uni', 'BOOLEAN'); bmd.operation = 'UNION'; bmd.object = st_; bmd.solver = 'EXACT'; st_.hide_render = True; st_.display_type = 'WIRE'
+
     pod = cylinder('pod', M['trav_pod'], 0.2, -6.8, 1.0, 0.0, 1.0, 'pod', seg=160, bev=0.0)
+    os.environ.setdefault('TREE_R', '.95'); os.environ.setdefault('TREE_H', '.40')
     plant(M)
+    if os.environ.get('FILL', '1') == '1': fill(M)
     return M
+
+def mat_fabric(name='fabric', col=(.93, .90, .84)):
+    m, nt, b, out = mk(name); L = nt.links
+    v = tex_coord(nt, (1, 1, 1)); n = nt.nodes.new('ShaderNodeTexNoise'); n.inputs['Scale'].default_value = 90; n.inputs['Detail'].default_value = 6; L.new(v, n.inputs['Vector'])
+    bp = nt.nodes.new('ShaderNodeBump'); bp.inputs['Strength'].default_value = .35; bp.inputs['Distance'].default_value = .004; L.new(n.outputs['Fac'], bp.inputs['Height']); L.new(bp.outputs['Normal'], b.inputs['Normal'])
+    val(b, (*col, 1), 'Base Color'); val(b, .92, 'Roughness'); val(b, .35, 'Sheen Weight', 'Sheen'); return m
+def rblock(name, mat, x0, x1, y0, y1, z0, z1, grp, bev=.03):
+    ob = box(name, mat, x0, x1, y0, y1, z0, z1, grp, bev); bv = ob.modifiers['bev']; bv.segments = 5; bv.width = bev; return ob
+def vase_obj(name, mat, x, y, z, k=1.0, grp='deco'):
+    prof = [(0.0, 0.0), (.055, 0.0), (.085, .03), (.105, .09), (.11, .15), (.09, .22), (.05, .27), (.04, .30), (.05, .33), (0, .33)]; seg = 48; verts, faces = [], []
+    for (r, zz) in prof:
+        for kk in range(seg): a = 2 * math.pi * kk / seg; verts.append((r * math.cos(a), r * math.sin(a), zz))
+    for i in range(len(prof) - 1):
+        for kk in range(seg): faces.append((i * seg + kk, i * seg + (kk + 1) % seg, (i + 1) * seg + (kk + 1) % seg, (i + 1) * seg + kk))
+    ob = mesh_obj(name, verts, faces, mat, grp, smooth=True); ob.location = (x, y, z); ob.scale = (k, k, k); return ob
+def books(x0, x1, y, z, mats, seed=1, hmin=.17, hmax=.28, depth=.2, gap=.003):
+    import random; rnd = random.Random(seed); x = x0
+    while x < x1 - .03:
+        w = rnd.uniform(.022, .05); h = rnd.uniform(hmin, hmax)
+        if x + w > x1: break
+        box('book', rnd.choice(mats), x, x + w, y - depth / 2, y + depth / 2, z, z + h, 'shell', .002); x += w + gap
+def stack(x, y, z, mats, n=4, w=.3, d=.22, seed=2):
+    import random; rnd = random.Random(seed)
+    for i in range(n):
+        h = rnd.uniform(.03, .05); ww = w * rnd.uniform(.85, 1.0); box('stk', rnd.choice(mats), x - ww / 2 + rnd.uniform(-.015, .015), x + ww / 2, y - d / 2, y + d / 2, z, z + h, 'shell', .003); z += h
+
+
+PLANT_X = float(os.environ.get('PLANT_X', -3.2))                                   # дерево с вазой стоит левее и меньше прежнего: крона не заходит под заголовок страницы (x холста > 450)
+def fill(M):
+    """наполнение фона: открытый стеллаж с книгами и вазами в нише-арке, диван с высоким торшером перед ним (уголок для чтения), подвесные светильники над правой нишей, вазы на стеклянных полках правой ниши.
+       Свет и материалы те же, что у сцены; цвета спокойные (слоновая кость, песок, приглушённый синий) — текст страницы остаётся читаемым."""
+    fab = mat_fabric(); navy = mat_fabric('navy', (.20, .27, .42)); oak = mat_simple('oak', (.84, .72, .54), .55); cer = mat_simple('ceramic', (.95, .92, .86), .25); lamp = mat_led('lamp', 7.0, (1.0, .86, .62))
+    bk = [mat_simple('bk%d' % i, c, .6) for i, c in enumerate([(.93, .89, .80), (.86, .77, .62), (.74, .70, .62), (.68, .56, .44), (.56, .58, .46), (.90, .85, .72), (.50, .56, .66)])]
+    x0, x1, y0, y1, top = -1.95, -0.40, 0.80, 1.12, 2.75
+    box('su_l', oak, x0, x0 + .04, y0, y1, 0, top, 'shell', .004); box('su_r', oak, x1 - .04, x1, y0, y1, 0, top, 'shell', .004); box('su_back', M['back'], x0, x1, y1 - .02, y1, 0, top, 'shell', .002)
+    bd = [0.06, .60, 1.12, 1.64, 2.16, top - .03]
+    for z in bd: box('su_b', oak, x0, x1, y0, y1, z, z + .03, 'shell', .004)
+    ym = (y0 + y1) / 2
+    books(x0 + .06, x0 + .78, ym, bd[0] + .03, bk, 3, .26, .44, .2); stack(x0 + 1.08, ym, bd[0] + .03, bk, 4, .32, .22, 4); vase_obj('sv1', cer, x1 - .24, ym, bd[0] + .03, 1.0, 'shell')
+    books(x0 + .5, x1 - .08, ym, bd[1] + .03, bk, 5, .26, .46, .2); vase_obj('sv2', cer, x0 + .2, ym, bd[1] + .03, 1.2, 'shell')
+    books(x0 + .08, x0 + 1.0, ym, bd[2] + .03, bk, 6, .26, .44, .2); vase_obj('sv3', cer, x1 - .3, ym, bd[2] + .03, 1.1, 'shell'); stack(x0 + 1.22, ym, bd[2] + .03, bk, 3, .28, .22, 7)
+    books(x0 + .06, x1 - .5, ym, bd[3] + .03, bk, 8, .26, .44, .2); vase_obj('sv4', cer, x1 - .26, ym, bd[3] + .03, .9, 'shell')
+    books(x0 + .5, x1 - .06, ym, bd[4] + .03, bk, 9, .26, .38, .2); vase_obj('sv5', cer, x0 + .22, ym, bd[4] + .03, .85, 'shell')
+    # диван с торшером: уголок для чтения слева на платформе, перед стеллажом с книгами (торшер высокий — его круглый плафон виден над товарами)
+    sx0, sx1, sy0, sy1, z0 = -1.55, 0.45, 0.10, 0.74, .30
+    rblock('sofa_base', fab, sx0, sx1, sy0, sy1, z0, z0 + .14, 'shell', .05)
+    rblock('seat1', fab, sx0 + .05, (sx0 + sx1) / 2, sy0 + .02, sy1 - .22, z0 + .14, z0 + .30, 'shell', .05); rblock('seat2', fab, (sx0 + sx1) / 2, sx1 - .05, sy0 + .02, sy1 - .22, z0 + .14, z0 + .30, 'shell', .05)
+    rblock('sback', fab, sx0, sx1, sy1 - .24, sy1, z0 + .14, z0 + .76, 'shell', .06); rblock('arm_l', fab, sx0 - .02, sx0 + .18, sy0, sy1, z0 + .14, z0 + .50, 'shell', .05); rblock('arm_r', fab, sx1 - .18, sx1 + .02, sy0, sy1, z0 + .14, z0 + .50, 'shell', .05)
+    rblock('cu1', navy, sx0 + .28, sx0 + .74, sy1 - .46, sy1 - .22, z0 + .30, z0 + .66, 'shell', .05); rblock('cu2', navy, sx1 - .74, sx1 - .28, sy1 - .46, sy1 - .22, z0 + .30, z0 + .66, 'shell', .05)
+    cylinder('lamp_s', mat_simple('stem2', (.40, .34, .24), .4, .6), -1.78, .40, .013, z0, z0 + 2.15, 'shell', seg=16, bev=0)
+    bpy.ops.mesh.primitive_uv_sphere_add(radius=.20, location=(-1.78, .40, z0 + 2.22)); lo = bpy.context.object; lo.scale.z = .82; lo.data.materials.append(lamp); lo['grp'] = 'shell'
+    cord = mat_simple('cord', (.35, .30, .22), .4)
+    for (px, pz, r) in ((3.0, 3.35, .20), (3.55, 3.05, .17), (4.1, 3.6, .22)):
+        cylinder('cord', cord, px, .25, .004, pz, 7.0, 'shell', seg=8, bev=0)
+        bpy.ops.mesh.primitive_uv_sphere_add(radius=r, location=(px, .25, pz)); g = bpy.context.object; g.data.materials.append(lamp); g['grp'] = 'shell'
+    for (sx, z, k) in ((3.0, 0.66, 1.0), (4.2, 0.66, .8), (3.45, 1.46, .9), (4.35, 1.46, 1.1)):
+        vase_obj('nv', cer, sx, 1.7, z, k, 'niche')
 
 def leaf_mesh(L=.17, Wd=.05):
     n = 8; verts = []; faces = []
@@ -245,7 +305,7 @@ def plant(M):
         for k in range(seg): a = 2 * math.pi * k / seg; verts.append((r * math.cos(a), r * math.sin(a), z))
     for i in range(len(prof) - 1):
         for k in range(seg): faces.append((i * seg + k, i * seg + (k + 1) % seg, (i + 1) * seg + (k + 1) % seg, (i + 1) * seg + k))
-    vase = mesh_obj('vase', verts, faces, vase_m, 'plant', smooth=True); vase.location = (-1.9, -0.7, 0.55); vase.scale = (1.5, 1.5, 1.5)
+    vase = mesh_obj('vase', verts, faces, vase_m, 'plant', smooth=True); vase.location = (PLANT_X, -0.7, 0.55); vase.scale = (1.5, 1.5, 1.5)
     def branch(base, pts, n, sc=1.0, grp='plant'):
         # pts — контрольные точки (x,y,z), кривая Катмулла–Рома упрощённо ломаной
         P = [Vector(base) + Vector(p) for p in pts]
@@ -267,7 +327,7 @@ def plant(M):
                 ob.rotation_euler = dirv.to_track_quat('Y', 'Z').to_euler(); ob.location = pos
         # верхний листок
         ob = bpy.data.objects.new('lf', me); link(ob, grp); ob.scale = (sc * .7,) * 3; ob.rotation_euler = at(1.0).__sub__(at(.97)).normalized().to_track_quat('Y', 'Z').to_euler(); ob.location = at(1.0)
-    base = (-1.9, -0.7, 0.55 + .48)
+    base = (PLANT_X, -0.7, 0.55 + .48)
     if os.environ.get('LUSH', '1') == '1':
         lush_tree(base, me, me2, stem[0])                                                                   # пышное дерево, как на главной (веер длинных дуг с густыми листьями)
     else:
@@ -328,9 +388,9 @@ def anchors(sc, cam):
     def rim(cx, cy, r, z):
         pts = [proj(sc, cam, (cx + r * math.cos(a), cy + r * math.sin(a), z)) for a in np.linspace(0, 2 * math.pi, 72, endpoint=False)]
         xs = [p[0] for p in pts]; ys = [p[1] for p in pts]; return {'cx': round((min(xs) + max(xs)) / 2, 1), 'cy': round((min(ys) + max(ys)) / 2, 1), 'rx': round((max(xs) - min(xs)) / 2, 1), 'ry': round((max(ys) - min(ys)) / 2, 1)}
-    out['dais'] = rim(0.95, -2.35, 3.15, 0.30); out['stepl'] = rim(-1.9, -0.7, 1.55, 0.55); out['stepr'] = rim(4.1, -0.9, 2.1, 0.42)
+    out['dais'] = rim(0.95, -2.35, 3.15, 0.30); out['stepl'] = rim(PLANT_X + .2, -0.7, 1.5, 0.55); out['stepr'] = rim(4.1, -0.9, 2.1, 0.42)
     out['shelves'] = [{'y': round(proj(sc, cam, (3.6, 1.8, z + .04))[1], 1), 'x0': round(proj(sc, cam, (2.15, 1.8, z))[0], 1), 'x1': round(proj(sc, cam, (5.0, 1.8, z))[0], 1)} for z in (0.62, 1.42, 2.22)]
-    out['vase'] = {'x': round(proj(sc, cam, (-1.9, -0.7, 0.55))[0], 1), 'y': round(proj(sc, cam, (-1.9, -0.7, 0.55))[1], 1)}
+    out['vase'] = {'x': round(proj(sc, cam, (PLANT_X, -0.7, 0.55))[0], 1), 'y': round(proj(sc, cam, (PLANT_X, -0.7, 0.55))[1], 1)}
     return out
 
 def pod_sprites(sc, cam, f, meta):
@@ -424,6 +484,10 @@ def main():
     else: settings(sc)
     M = build(sc); lights(sc); cam = set_cam(sc)
     if mode == 'preview':
+        for o in bpy.data.objects:
+            if o.get('grp') == 'pod': o.hide_render = True
+        if os.environ.get('CROP'):
+            c_ = [float(v) for v in os.environ['CROP'].split(',')]; sc.render.use_border = True; sc.render.border_min_x, sc.render.border_min_y, sc.render.border_max_x, sc.render.border_max_y = c_[0], 1 - c_[3], c_[2], 1 - c_[1]; sc.render.use_crop_to_border = True
         sc.render.film_transparent = False; sc.render.filepath = os.environ.get('PREVIEW_OUT', '/tmp/scene_preview.png'); bpy.ops.render.render(write_still=True); print('preview done'); print(json.dumps(anchors(sc, cam))); return
     names = [n for n in os.environ.get('SCENE_LAYERS', ','.join(LAYERS)).split(',') if n]
     render_layers(sc, cam, names)

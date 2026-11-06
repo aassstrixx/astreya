@@ -49,6 +49,7 @@ module.exports = function showroom(ctx, C, P) {
       <div class="filters shw-filters" id="filters">
         ${GROUPS.map(group).join('')}
         ${sort}
+        ${C.xon('favorites') ? `<button class="shw-favs" type="button" data-act="shw-favs" data-shw-favs aria-pressed="false"><svg class="ic" viewBox="0 0 20 20" aria-hidden="true" focusable="false"><path d="M10 16.3S3.3 12.3 3.3 7.7A3.5 3.5 0 0 1 10 6.1a3.5 3.5 0 0 1 6.7 1.6c0 4.6-6.7 8.6-6.7 8.6z"/></svg><span>Только избранное</span><b data-shw-favn>0</b></button>` : ''}
       </div>
       <div class="active-filters" id="active-filters" hidden></div>
       <div class="shw-aside-foot"><span class="shw-count" data-shw-count>${products.length} из ${products.length}</span><button class="shw-reset" type="button" data-act="cat-reset" data-shw-reset hidden>${reset}Сбросить фильтры</button></div>
@@ -62,21 +63,28 @@ module.exports = function showroom(ctx, C, P) {
 
   /* «Рекомендуем» — товары с отметкой «В подборке» (featured) из админки; новинки — первыми */
   const feat = products.filter(p => p.featured).sort((a, b) => (b.isNew ? 1 : 0) - (a.isNew ? 1 : 0));
-  const popCard = p => {
+  /* полки «Рекомендуем»: каждый товар — своя малая ниша на цоколе своей высоты (арка, круг, углубление, открытое основание — по кругу), все цоколи стоят на одной стеклянной кромке, свет у всех общий.
+     Те же три действия, что и на сцене: избранное, сравнение, быстрый просмотр — проявляются при наведении (на сенсорных экранах видны всегда). Цен нет. */
+  const PH = [22, 40, 14, 44, 30, 36], NKS = ['arch', 'round', 'recess', 'plinth'];
+  const SVI = d => `<svg class="ic" viewBox="0 0 20 20" aria-hidden="true" focusable="false">${d}</svg>`;
+  const IC = {heart: SVI('<path d="M10 16.3S3.3 12.3 3.3 7.7A3.5 3.5 0 0 1 10 6.1a3.5 3.5 0 0 1 6.7 1.6c0 4.6-6.7 8.6-6.7 8.6z"/>'), cmp: SVI('<path d="M5 16V9M10 16V4M15 16v-4"/>'), eye: SVI('<path d="M1.8 10S5 4.6 10 4.6 18.2 10 18.2 10 15 15.4 10 15.4 1.8 10 1.8 10z"/><circle cx="10" cy="10" r="2.5"/>')};
+  const popActs = p => `<span class="shw-pc-ac" role="group" aria-label="Действия: ${esc(p.name)}">${C.xon('favorites') ? `<button class="shw-ab shw-fav" type="button" data-act="fav-toggle" data-fav-id="${p.id}" aria-pressed="false" aria-label="Добавить в избранное: ${esc(p.name)}" title="Добавить в избранное">${IC.heart}</button>` : ''}${C.xon('compare') ? `<button class="shw-ab shw-cmp" type="button" data-act="cmp-toggle" data-id="${p.id}" data-cmp-id="${p.id}" aria-pressed="false" aria-label="Добавить к сравнению: ${esc(p.name)}" title="Сравнить">${IC.cmp}</button>` : ''}${C.xon('quickView') ? `<button class="shw-ab shw-eye" type="button" data-act="qv-open" data-id="${p.id}" aria-label="Открыть подробную информацию: ${esc(p.name)}" title="Подробнее">${IC.eye}</button>` : `<a class="shw-ab shw-eye" href="${C.purl(P, p)}" aria-label="Открыть страницу товара: ${esc(p.name)}" title="Подробнее">${IC.eye}</a>`}</span>`;
+  const popCard = (p, i) => {
     const b = ctx.brandById[p.brand], k = ctx.kindById[p.kind];
-    return `<article class="shw-pc" role="listitem" style="${S.bstyle(b)}" data-id="${p.id}">
+    return `<article class="shw-pc" role="listitem" style="${S.bstyle(b)};--ph:${PH[i % PH.length]}px" data-id="${p.id}" data-nk="${NKS[i % 4]}">
       ${p.isNew ? '<span class="shw-pc-tag">Новинка</span>' : ''}
-      <div class="shw-pc-art" aria-hidden="true">${imgTag(p, 'shw-pc-img')}</div>
+      <div class="shw-pc-art" aria-hidden="true"><i class="pc-niche"></i><i class="pc-glow"></i>${imgTag(p, 'shw-pc-img')}<i class="pc-pl"></i></div>
+      ${popActs(p)}
       <div class="shw-pc-b">
         <span class="shw-pc-br">${esc(b.name)}</span>
         <h3><a class="stretch" href="${C.purl(P, p)}" data-track="product_card_click" data-place="showroom_pop" data-product="${p.id}">${esc(p.name)}</a></h3>
-        <span class="shw-pc-k">${esc(k ? k.name : '')}</span>
-        <div class="shw-pc-f"><span class="shw-pc-v">${esc(p.volume || '')}</span><button class="shw-ask z3" type="button" data-act="form" data-type="product" data-ref="${p.id}">Запросить ${I.arrow}</button></div>
+        <span class="shw-pc-k">${esc(k ? k.name : '')}${p.volume ? ' · ' + esc(p.volume) : ''}</span>
+        <button class="shw-ask z3" type="button" data-act="form" data-type="product" data-ref="${p.id}">Запросить ${I.arrow}</button>
       </div>
     </article>`;
   };
   const pop = feat.length ? `<section class="shw-pop" aria-labelledby="shw-pop-t">
-      <div class="shw-pop-h"><h2 id="shw-pop-t">Рекомендуем</h2><a class="lnk" href="#shw-all">Смотреть весь список ${I.arrow}</a></div>
+      <div class="shw-pop-h"><h2 id="shw-pop-t">Рекомендуем</h2><span class="shw-pop-s">Листайте вправо — экспозиция продолжается</span><a class="lnk" href="#shw-all">Смотреть весь список ${I.arrow}</a></div>
       <div class="shw-pop-w">
         <button class="shw-nav prev" type="button" data-act="shw-pop-nav" data-dir="-1" aria-label="Назад" disabled>${I.arrow}</button>
         <div class="shw-pop-t" role="list" tabindex="0" aria-label="Рекомендуем">${feat.map(popCard).join('')}</div>
@@ -115,6 +123,7 @@ module.exports = function showroom(ctx, C, P) {
           <div class="shw-vw">
             <div class="shw-view" data-shw-view>
               ${world}
+
               <div class="shw-motes" aria-hidden="true"><i style="--x:60%;--y:89%;--s:14px;--dx:17px;--t:21s;--d:-18s"></i><i style="--x:27%;--y:41%;--s:18px;--dx:20px;--t:23s;--d:-19s"></i><i style="--x:26%;--y:30%;--s:14px;--dx:-2px;--t:15s;--d:-2s"></i><i style="--x:71%;--y:23%;--s:18px;--dx:10px;--t:20s;--d:-20s"></i><i style="--x:81%;--y:38%;--s:18px;--dx:-39px;--t:21s;--d:-2s"></i><i style="--x:10%;--y:22%;--s:9px;--dx:-10px;--t:22s;--d:-0s"></i><i style="--x:62%;--y:59%;--s:14px;--dx:35px;--t:16s;--d:-16s"></i><i style="--x:32%;--y:55%;--s:14px;--dx:-40px;--t:23s;--d:-2s"></i><i style="--x:61%;--y:53%;--s:14px;--dx:30px;--t:14s;--d:-8s"></i><i style="--x:43%;--y:47%;--s:18px;--dx:-4px;--t:13s;--d:-2s"></i><i style="--x:75%;--y:31%;--s:14px;--dx:-27px;--t:17s;--d:-12s"></i><i style="--x:11%;--y:20%;--s:7px;--dx:-13px;--t:16s;--d:-1s"></i><i style="--x:63%;--y:66%;--s:14px;--dx:13px;--t:14s;--d:-18s"></i><i style="--x:83%;--y:43%;--s:11px;--dx:3px;--t:14s;--d:-9s"></i><i style="--x:45%;--y:19%;--s:14px;--dx:57px;--t:14s;--d:-4s"></i><i style="--x:34%;--y:30%;--s:7px;--dx:-33px;--t:20s;--d:-15s"></i></div>
               <div class="shw-plane shw-stage" data-shw-stage role="group" aria-label="Товары в экспозиции">
                   <div class="shw-empty" data-shw-empty hidden><b>Ничего не нашлось</b><span>Измените запрос или сбросьте фильтры.</span><button class="btn btn-ghost btn-sm" type="button" data-act="cat-reset">Сбросить фильтры</button></div>

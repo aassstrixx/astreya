@@ -15,7 +15,7 @@
   if (!A || !D || !D.extras || !D.extras.showroom || !D.extras.gallery) return;
   const X = D.extras, I = A.I || {};
   const $ = (s, r) => (r || document).querySelector(s), $$ = (s, r) => Array.prototype.slice.call((r || document).querySelectorAll(s));
-  const html = document.documentElement, rmq = matchMedia('(prefers-reduced-motion: reduce) and (min-width: 100000px)'), smq = matchMedia('(max-width:1100px)');
+  const html = document.documentElement, rmq = matchMedia('(prefers-reduced-motion: reduce) and (min-width: 100000px)'), rmReal = matchMedia('(prefers-reduced-motion: reduce)'), smq = matchMedia('(max-width:1100px)');
   const canAnimate = typeof Element.prototype.animate === 'function';
   const mode = () => (html.classList.contains('lite') || !canAnimate) ? 'off' : rmq.matches ? 'soft' : 'full';
   const EASE = 'cubic-bezier(.16,1,.3,1)';
@@ -30,6 +30,54 @@
   const bstyle = b => (A.bstyle ? A.bstyle(b) : '--c1:' + b.c1 + ';--c2:' + b.c2 + ';--ink:' + b.ink);
   const W0 = 1536, H0 = 1024;
 
+  /* ---------- «галерея»: ниши, избранное, камера ---------- */
+  const NK = ['arch', 'round', 'recess', 'plinth'];                       // виды ниш за товаром: арка со светодиодной кромкой, круглая ниша (мотив шара), вертикальное углубление со стеклянной полкой, открытое основание с тонкими световыми линиями
+  const FAV_ON = X.favorites !== false, FKEY = 'astreya:fav';
+  const SV = (d, extra) => '<svg class="ic" viewBox="0 0 20 20" aria-hidden="true" focusable="false"' + (extra || '') + '>' + d + '</svg>';
+  const IC = {
+    heart: SV('<path d="M10 16.3S3.3 12.3 3.3 7.7A3.5 3.5 0 0 1 10 6.1a3.5 3.5 0 0 1 6.7 1.6c0 4.6-6.7 8.6-6.7 8.6z"/>'),
+    cmp: SV('<path d="M5 16V9M10 16V4M15 16v-4"/>'),
+    eye: SV('<path d="M1.8 10S5 4.6 10 4.6 18.2 10 18.2 10 15 15.4 10 15.4 1.8 10 1.8 10z"/><circle cx="10" cy="10" r="2.5"/>'),
+    close: SV('<path d="M5 5l10 10M15 5L5 15"/>')
+  };
+  const favGet = () => { try { const l = JSON.parse(localStorage.getItem(FKEY) || '[]'); return Array.isArray(l) ? l.filter(id => P[id]) : []; } catch (e) { return []; } };
+  const favHas = id => favGet().indexOf(id) >= 0;
+  function favSync() {
+    const l = favGet();
+    $$('[data-fav-id]').forEach(b => { const id = b.getAttribute('data-fav-id'), on = l.indexOf(id) >= 0; b.setAttribute('aria-pressed', String(on)); b.classList.toggle('is-on', on); b.setAttribute('aria-label', (on ? 'Убрать из избранного: ' : 'Добавить в избранное: ') + (P[id] ? P[id].name : '')); b.setAttribute('title', on ? 'Убрать из избранного' : 'Добавить в избранное'); });
+    $$('[data-shw-favn]').forEach(n => { n.textContent = l.length; });
+    $$('[data-shw-favs]').forEach(b => { b.classList.toggle('has', l.length > 0); b.setAttribute('aria-pressed', String(!!(S && S.favOnly))); });
+  }
+  function favToggle(id) {
+    if (!P[id]) return; let l = favGet(), on;
+    if (l.indexOf(id) >= 0) { l = l.filter(x => x !== id); on = false; A.toast && A.toast('Убрано из избранного: ' + P[id].name); } else { l = l.concat(id); on = true; A.toast && A.toast('Добавлено в избранное: ' + P[id].name); }
+    try { localStorage.setItem(FKEY, JSON.stringify(l)); } catch (e) { /* без хранилища — только до перезагрузки */ }
+    favSync(); track('showroom_fav', {product: id, on}); if (S && S.favOnly) sync(false);
+  }
+  /* три действия над товаром (наведение, «Рекомендуем»): избранное, сравнение, быстрый просмотр (или карточка товара, если просмотра нет). Цен нет нигде */
+  const actBtns = id => (FAV_ON ? '<button class="shw-ab shw-fav" type="button" data-act="fav-toggle" data-fav-id="' + esc(id) + '" aria-pressed="false">' + IC.heart + '</button>' : '') +
+    (X.compare ? '<button class="shw-ab shw-cmp" type="button" data-act="cmp-toggle" data-id="' + esc(id) + '" data-cmp-id="' + esc(id) + '" aria-pressed="false">' + IC.cmp + '</button>' : '') +
+    '<button class="shw-ab shw-eye" type="button" data-act="' + (X.quickView ? 'qv-open' : 'shw-open') + '" data-id="' + esc(id) + '" aria-label="Открыть подробную информацию: ' + esc((P[id] || {}).name || '') + '" title="Подробнее">' + IC.eye + '</button>';
+
+  /* камера: при выборе вся сцена (стена, ниши, товары) приближается к выбранной нише, и товар встаёт в фокус композиции; карточка раскрывается рядом */
+  const CAM = {k: 1.3, fx: 770, fy: 500};
+  function camFor(it) {
+    const k = CAM.k, cx = it.cx, cy = it.t + it.h * .55;
+    let tx = CAM.fx - k * cx, ty = CAM.fy - k * cy;
+    tx = Math.max(W0 - k * W0, Math.min(0, tx)); ty = Math.max(H0 - k * H0, Math.min(0, ty));
+    return {k, tx, ty, px: tx + k * cx, py: ty + k * cy};
+  }
+  function camApply(it) {
+    const c = camFor(it), st = S.view.style; S.cam = c; S.root.classList.add('is-cam');
+    st.setProperty('--cz', c.k.toFixed(3)); st.setProperty('--cx', c.tx.toFixed(1) + 'px'); st.setProperty('--cy', c.ty.toFixed(1) + 'px');
+  }
+  function camClear(instant) {
+    if (!S) return; const st = S.view.style;
+    if (instant) { S.view.classList.add('no-tr'); }
+    ['--cz', '--cx', '--cy'].forEach(n => st.removeProperty(n)); S.cam = null;
+    if (instant) { void S.view.offsetWidth; S.view.classList.remove('no-tr'); }
+    clearTimeout(S.camT); S.camT = setTimeout(() => { if (S && !S.cam) S.root.classList.remove('is-cam'); }, 1250);
+  }
   /* высота упаковки на сцене (проектные пиксели холста) по виду упаковки; ширина — из пропорций картинки */
   const TH = {bottle: 240, pump: 246, dropper: 205, tube: 214, jar: 118, box: 122, device: 240};
   const thOf = p => TH[p.t] || TH.bottle;
@@ -40,7 +88,7 @@
   let S = null;
 
   /* ---------- состав и режимы ---------- */
-  const visibleIds = () => $$('.pcard', S.grid).filter(c => !c.hidden).map(c => c.getAttribute('data-id'));
+  const visibleIds = () => { const fo = S.favOnly ? favGet() : null; return $$('.pcard', S.grid).filter(c => !c.hidden).map(c => c.getAttribute('data-id')).filter(id => !fo || fo.indexOf(id) >= 0); };
   const inView = () => { const r = S.view.getBoundingClientRect(); return r.bottom > -80 && r.top < innerHeight + 80; };
   const MAIN_MAX = 10;                                                  // всё на переднем плане: на странице десять товаров, каждый на своём подиуме; на заднем плане (ниша, полки) предметов нет
   const perFor = () => MAIN_MAX;
@@ -69,7 +117,7 @@
       const hh = Math.max(30, Math.min(124, c.h0 * HV[v][c.k], BASE[c.row] - th - tmin));         // верх упаковки не заходит под заголовок, категории и карточку
       const e = pw * CAP_RATIO, topFace = BASE[c.row] - hh;                                             // y центра верхней грани подиума — здесь стоит упаковка
       x += pw + GAP + extra;
-      slots.push({group: 'main', i, p: c.p, im: c.im, hero: c.hero, row: c.row, pod: {l: cx - pw / 2, t: topFace - e / 2, w: pw, e, b: hh}, it: {l: cx - bw / 2, t: topFace + e * .08 - th, w: bw, h: th, cx, z: 5 + c.row * 2 + (c.hero ? 1 : 0)}});
+      slots.push({group: 'main', i, p: c.p, im: c.im, hero: c.hero, row: c.row, nk: c.hero ? 0 : (c.k + v) % 4, pod: {l: cx - pw / 2, t: topFace - e / 2, w: pw, e, b: hh}, it: {l: cx - bw / 2, t: topFace + e * .08 - th, w: bw, h: th, cx, z: 5 + c.row * 2 + (c.hero ? 1 : 0)}});
     });
     return slots;
   }
@@ -85,7 +133,7 @@
       list.forEach(([p, i], j) => {
         const hero = i === 2, im = imgOf(p), th0 = thOf(p) * (hero ? 1.06 : 1) * R2.cs, bw0 = th0 * im.ar, pw = Math.min(slotW - 8, Math.max(bw0 / FIT, 60)), k = Math.min(1, pw * FIT / bw0), th = th0 * k, bw = bw0 * k, cx = x0 + j * slotW;
         const hh = Math.max(18, Math.min(REF[i][0] * .42 * HV[v][i], R2.cap - th)), e = pw * CAP_RATIO, topFace = base - hh;
-        slots.push({group: 'main', i, p, im, hero, row: r, pod: {l: cx - pw / 2, t: topFace - e / 2, w: pw, e, b: hh}, it: {l: cx - bw / 2, t: topFace + e * .08 - th, w: bw, h: th, cx, z: 5 + r * 2 + (hero ? 1 : 0)}});
+        slots.push({group: 'main', i, p, im, hero, row: r, nk: hero ? 0 : (i + v) % 4, pod: {l: cx - pw / 2, t: topFace - e / 2, w: pw, e, b: hh}, it: {l: cx - bw / 2, t: topFace + e * .08 - th, w: bw, h: th, cx, z: 5 + r * 2 + (hero ? 1 : 0)}});
       });
     });
     const st = s.stage.style; s.stage.classList.toggle('is-rows2', back > 0);
@@ -107,7 +155,7 @@
   }
   /* подиум работает как продолжение товара на нём: наведение и нажатие по камню — то же, что по упаковке (так курсор не «соскакивает» при переходе от товара к подиуму) */
   function podEl() {
-    const el = document.createElement('i'); el.className = 'shw-slab shw-pd'; el.setAttribute('aria-hidden', 'true');
+    const el = document.createElement('i'); el.className = 'shw-slab shw-pd'; el.setAttribute('aria-hidden', 'true'); el.innerHTML = '';
     const id = () => { const q = S && S.pods.find(r => r.el === el); return q && q.g && q.g.p ? q.g.p.id : null; };
     el.addEventListener('pointerenter', e => { const i = id(); if (i && e.pointerType !== 'touch') preview(i); });
     el.addEventListener('pointerleave', e => { if (e.pointerType !== 'touch') unpreview(); });
@@ -139,6 +187,7 @@
     const pages = Math.max(1, Math.ceil(s.ids.length / s.per)); s.page = Math.max(0, Math.min(pages - 1, s.page));
     const ids = s.ids.slice(s.page * s.per, s.page * s.per + s.per), prods = ids.map(id => P[id]).filter(Boolean);
     s.pageIds = prods.map(p => p.id);
+    if (s.cam) { s.view.classList.add('no-tr'); const st = s.view.style; ['--cz', '--cx', '--cy'].forEach(n => st.removeProperty(n)); void s.view.offsetWidth; }
     s.rect = s.stage.getBoundingClientRect();
     const slots = compose(prods, s);
     /* 1. запомнить, где всё стоит сейчас (с учётом идущих анимаций) */
@@ -186,8 +235,9 @@
       }
     });
     /* 5. выбранный товар исчез со сцены — снимаем выбор */
-    if (s.sel && s.pageIds.indexOf(s.sel) < 0) clearSel(true);
-    else if (s.sel) positionSel();
+    if (s.sel && s.pageIds.indexOf(s.sel) < 0) { s.cam = null; clearSel(true); }
+    else if (s.sel) { const rc = s.items.get(s.sel); if (rc && !s.stack && !rmReal.matches) camApply(rc.g.it); positionSel(); }
+    if (s.view.classList.contains('no-tr')) { void s.view.offsetWidth; s.view.classList.remove('no-tr'); }
     const hero = slots.find(g => g.hero) || slots[0];
     s.defId = (slots.find(g => g.group === 'main' && (g.p.f || g.p.n)) || hero || {p: {}}).p.id || null;
     if (!s.sel && !s.hov) paintCard(idleId(), false);
@@ -201,15 +251,21 @@
     const b = B[p.brand] || {}, x = p.x || {}, url = root() + 'products/' + p.slug + '.html';
     const rows = [['Категория', CAT[p.c]], ['Вид', KIND[p.k]]]; if (x.volume) rows.push(['Объём', x.volume]); if (x.sku) rows.push(['Артикул', x.sku]); if (x.usage) rows.push(['Применение', x.usage]);
     const badge = p.n ? '<span class="c-bd is-new">Новинка</span>' : p.f ? '<span class="c-bd">Рекомендуем</span>' : '';
+    const list = (t, a) => a && a.length ? '<div class="c-sec"><h4>' + t + '</h4><ul>' + a.map(v => '<li>' + esc(v) + '</li>').join('') + '</ul></div>' : '';
+    const det = x.details && x.details.length ? x.details.map(t => '<p class="c-d2">' + esc(t) + '</p>').join('') : '';
+    const known = !!(x.actives && x.actives.length || x.composition || x.indications && x.indications.length || x.details && x.details.length || x.volume || x.sku || x.usage);
     return '<div class="c-in">' + badge + '<span class="c-br">' + esc(b.name || '') + '</span><div class="c-t">' + esc(p.name) + '</div><p class="c-d">' + esc(p.d || '') + '</p>' +
-      '<div class="c-more"><div><div class="c-tasks">' + (p.ts || []).map(t => '<span class="tag blue">' + esc(TASK[t] || t) + '</span>').join('') + '</div>' +
+      '<div class="c-more"><div>' + det + '<div class="c-lb">Назначение</div><div class="c-tasks">' + (p.ts || []).map(t => '<span class="tag blue">' + esc(TASK[t] || t) + '</span>').join('') + '</div>' +
+      list('Активные компоненты', x.actives) + (x.composition ? '<div class="c-sec"><h4>Состав</h4><p>' + esc(x.composition) + '</p></div>' : '') + list('Показания', x.indications) +
       '<dl class="c-spec">' + rows.filter(r => r[1]).map(r => '<div><dt>' + r[0] + '</dt><dd>' + esc(r[1]) + '</dd></div>').join('') + '</dl>' +
+      (known ? '' : '<p class="c-note">Подробные характеристики уточняются — менеджер пришлёт состав и протокол по запросу.</p>') +
       (p.im && PHOTOS ? '' : '<p class="c-note">Изображение упаковки условное — это 3D-макет без текста и логотипов.</p>') + '</div></div>' +
       '<div class="c-act"><a class="btn btn-fill" href="' + esc(url) + '" data-track="product_card_click" data-place="showroom_card" data-product="' + esc(p.id) + '">Подробнее ' + (I.arrow || '') + '</a>' +
-      '<button class="btn btn-ghost" type="button" data-act="form" data-type="product" data-ref="' + esc(p.id) + '">Запросить</button></div>' +
-      '<div class="c-act c-extra">' + (X.quickView ? '<button class="btn btn-ghost" type="button" data-act="qv-open" data-id="' + esc(p.id) + '">Быстрый просмотр</button>' : '') +
+      (FAV_ON ? '<button class="btn btn-ghost c-fav" type="button" data-act="fav-toggle" data-fav-id="' + esc(p.id) + '" aria-pressed="false">' + IC.heart + '<span>В избранное</span></button>' : '') +
+      (X.compare ? '<button class="btn btn-ghost c-cmp" type="button" data-act="cmp-toggle" data-id="' + esc(p.id) + '" data-cmp-id="' + esc(p.id) + '" aria-pressed="false">' + IC.cmp + '<span>Сравнить</span></button>' : '') + '</div>' +
+      '<div class="c-act c-extra"><button class="btn btn-ghost" type="button" data-act="form" data-type="product" data-ref="' + esc(p.id) + '">Запросить</button>' + (X.quickView && S && S.stack ? '<button class="btn btn-ghost" type="button" data-act="qv-open" data-id="' + esc(p.id) + '">Быстрый просмотр</button>' : '') +       // на компьютере быстрый просмотр — «глаз» в панели при наведении; на телефоне наведения нет
       (NAVI ? '<button class="btn btn-ghost" type="button" data-act="qv-stella" data-id="' + esc(p.id) + '">Помочь с подбором</button>' : '') + '</div></div>' +
-      '<button class="c-x" type="button" data-act="shw-close" aria-label="Закрыть карточку товара">' + (I.close || '×') + '</button>';
+      '<button class="c-x" type="button" data-act="shw-close" aria-label="Закрыть карточку товара">' + IC.close + '<span>Закрыть</span></button>';
   }
   /* на компьютере плашка товара показывается только при наведении на предмет и при выборе; на планшете и телефоне (наведения нет) в покое стоит плашка товара по умолчанию */
   const idleId = () => S && S.stack ? S.defId : null;
@@ -219,11 +275,28 @@
     c.classList.toggle('is-open', !!open);
     if (c._id === id) return;
     const first = !c._id; clearTimeout(c._t);
-    if (first) { c.classList.remove('swap'); c.innerHTML = cardHTML(P[id]); c._id = id; return; }
-    c.classList.add('swap'); c._id = id; c._t = setTimeout(() => { c.innerHTML = cardHTML(P[id]); c.classList.remove('swap'); }, 230);
+    if (first) { c.classList.remove('swap'); c.innerHTML = cardHTML(P[id]); c._id = id; favSync(); A.cmpSync && A.cmpSync(); return; }
+    c.classList.add('swap'); c._id = id; c._t = setTimeout(() => { c.innerHTML = cardHTML(P[id]); c.classList.remove('swap'); favSync(); A.cmpSync && A.cmpSync(); }, 230);
   }
-  function preview(id) { if (!S || S.sel) return; clearTimeout(S.hovT); clearTimeout(S.cardT); S.hov = id; S.root.classList.add('has-hov'); S.items.forEach((r, k) => r.el.classList.toggle('is-hov', k === id)); if (!S.sel) paintCard(id, false); const rec = S.items.get(id), pd = rec && S.pods.find(q => q.g === rec.g); if (pd) pd.el.classList.add('is-lit'); }
-  function unpreview() { if (!S) return; clearTimeout(S.hovT); S.hovT = setTimeout(() => { if (!S) return; S.hov = null; S.root.classList.remove('has-hov'); S.items.forEach(r => r.el.classList.remove('is-hov')); S.pods.forEach(q => q.el.classList.remove('is-lit')); if (S.stack && !S.sel) paintCard(S.defId, false); }, 170); if (!S.stack) S.cardT = setTimeout(() => { if (S && !S.sel && !S.hov && !S.cardHover) paintCard(null); }, 520); }
+  function preview(id) { if (!S || S.sel) return; clearTimeout(S.hovT); clearTimeout(S.cardT); S.hov = id; S.root.classList.add('has-hov'); S.items.forEach((r, k) => r.el.classList.toggle('is-hov', k === id)); if (S.stack) paintCard(id, false); else showTip(id); const rec = S.items.get(id), pd = rec && S.pods.find(q => q.g === rec.g); if (pd) pd.el.classList.add('is-lit'); }
+  function unpreview() { if (!S) return; clearTimeout(S.hovT); S.hovT = setTimeout(() => { if (!S) return; if (S.tipHover) return; S.hov = null; S.root.classList.remove('has-hov'); S.items.forEach(r => r.el.classList.remove('is-hov')); S.pods.forEach(q => q.el.classList.remove('is-lit')); hideTip(); if (S.stack && !S.sel) paintCard(S.defId, false); }, 170); }
+
+  /* ---------- панель при наведении: название, бренд, краткое описание, назначение и три действия ---------- */
+  function tipHTML(p) {
+    const b = B[p.brand] || {}, tasks = (p.ts || []).map(t => TASK[t]).filter(Boolean).slice(0, 2);
+    return '<div class="t-act">' + actBtns(p.id) + '</div><div class="t-br">' + esc(b.name || '') + '</div><div class="t-n">' + esc(p.name) + '</div><p class="t-d">' + esc(p.d || '') + '</p>' +
+      '<div class="t-tg">' + [KIND[p.k], ...tasks].filter(Boolean).map(t => '<span>' + esc(t) + '</span>').join('') + '</div>';          // три действия — сверху панели: ниже них нет подиумов соседних товаров, клики по подиумам не перехватываются
+  }
+  function showTip(id) {
+    const tip = S.tip, rec = S.items.get(id), p = P[id]; if (!tip || !rec || !p || S.sel) return;
+    clearTimeout(S.tipT);
+    if (tip._id !== id) { tip.innerHTML = tipHTML(p); tip._id = id; favSync(); A.cmpSync && A.cmpSync(); }
+    if (tip.hidden) { tip.hidden = false; void tip.offsetWidth; }
+    const it = rec.g.it, w = 236, h = tip.offsetHeight || 200, right = it.cx < 900, x = right ? it.l + it.w + 24 : it.l - 24 - w, y = Math.min(304, 696 - h);       // панель всегда у верха сцены (кнопки — в её верхней строке, выше подиумов соседей), целиком над рядом «Рекомендуем» (он с y≈706)
+    tip.style.left = x.toFixed(1) + 'px'; tip.style.top = y.toFixed(1) + 'px'; tip.classList.toggle('on-left', !right);
+    tip.classList.add('is-on');
+  }
+  function hideTip() { const tip = S && S.tip; if (!tip || tip.hidden) return; tip.classList.remove('is-on'); clearTimeout(S.tipT); S.tipT = setTimeout(() => { if (S && S.tip && !S.tip.classList.contains('is-on')) { S.tip.hidden = true; S.tip._id = null; } }, 380); }
 
   /* ---------- выбор ---------- */
   function positionSel() {
@@ -231,7 +304,9 @@
     S.spot.style.transform = 'translate(' + it.cx.toFixed(1) + 'px,' + (it.t + it.h * .55).toFixed(1) + 'px)';
     if (S.stack) { S.card.style.setProperty('--cx', '0px'); S.card.style.setProperty('--cy', '0px'); if (S.panOn) S.view.scrollTo({left: Math.max(0, it.cx * S.s - S.view.clientWidth / 2), behavior: mode() === 'full' ? 'smooth' : 'auto'}); return; }
     /* карточка приезжает к товару: справа от него, а если места нет — слева; выноска идёт от края карточки к упаковке */
-    const cw = 270, right = it.l + it.w + 46 + cw < W0 - 18, x = right ? it.l + it.w + 46 : it.l - 46 - cw, y = Math.max(132, Math.min(262, it.t - 8));                                    /* раскрытая карточка ≈470 px высотой: её низ не заходит на ряд «Рекомендуем» (с 743) */
+    const c = S.cam, cw = 300, px = c ? c.px : it.cx, py = c ? c.py : it.t + it.h * .55, half = it.w * (c ? c.k : 1) / 2;
+    const right = px + half + 52 + cw < W0 - 18, x = right ? px + half + 52 : px - half - 52 - cw, y = Math.max(126, Math.min(184, py - 250));
+    if (c) { const sp = S.spot.style; sp.transform = 'translate(' + it.cx.toFixed(1) + 'px,' + (it.t + it.h * .55).toFixed(1) + 'px)'; }                                    /* раскрытая карточка ≈470 px высотой: её низ не заходит на ряд «Рекомендуем» (с 743) */
     S.card.style.setProperty('--cx', (x - 1252).toFixed(1) + 'px'); S.card.style.setProperty('--cy', (y - 142).toFixed(1) + 'px');
     const x1 = right ? x : x + cw, y1 = y + 54, x2 = right ? it.l + it.w * .86 : it.l + it.w * .14, y2 = it.t + it.h * .34, len = Math.hypot(x2 - x1, y2 - y1), ang = Math.atan2(y2 - y1, x2 - x1) * 180 / Math.PI;
 
@@ -241,13 +316,18 @@
     if (S.sel === id) { clearSel(); return; }
     S.items.forEach((rec, k) => { const on = k === id; rec.el.classList.toggle('is-sel', on); rec.el.classList.remove('is-hov'); rec.el.setAttribute('aria-pressed', String(on)); });
     clearTimeout(S.hovT); S.hov = null; S.root.classList.remove('has-hov'); S.pods.forEach(q => q.el.classList.remove('is-lit'));
-    S.sel = id; S.root.classList.add('has-sel'); positionSel(); paintCard(id, true);
+    S.sel = id; S.root.classList.add('has-sel'); hideTip(); S.hov = null; S.root.classList.remove('has-hov');
+    S.pods.forEach(q => q.el.classList.toggle('is-sel', !!(q.g && q.g.p && q.g.p.id === id)));          // ниша выбранного товара остаётся освещённой над затемнением
+    S.view.style.setProperty('--px', '0'); S.view.style.setProperty('--py', '0');
+    /* камера и параллакс — крупное движение: при системной настройке «уменьшить движение» их нет (остальные анимации витрины прежние) */
+    if (!S.stack && mode() === 'full' && !rmReal.matches) camApply(S.items.get(id).g.it);
+    positionSel(); paintCard(id, true);
     track('showroom_select', {product: id});
     if (S.stack && mode() !== 'off') setTimeout(() => { if (!S) return; const r = S.card.getBoundingClientRect(); if (r.bottom > innerHeight - 8 || r.top < 70) S.card.scrollIntoView({behavior: 'smooth', block: 'nearest'}); }, 260);
   }
   function clearSel(quiet) {
-    if (!S) return; const was = S.sel; S.sel = null; S.root.classList.remove('has-sel');
-    S.items.forEach(rec => { rec.el.classList.remove('is-sel'); rec.el.setAttribute('aria-pressed', 'false'); });
+    if (!S) return; const was = S.sel; S.sel = null; S.root.classList.remove('has-sel'); camClear(!!quiet);
+    S.items.forEach(rec => { rec.el.classList.remove('is-sel'); rec.el.setAttribute('aria-pressed', 'false'); }); S.pods.forEach(q => q.el.classList.remove('is-sel'));
     S.card.style.setProperty('--cx', '0px'); S.card.style.setProperty('--cy', '0px');
     paintCard(S.hov || idleId(), false);
     if (was && !quiet) { const rec = S.items.get(was); if (rec && document.activeElement === document.body) { try { rec.el.focus({preventScroll: true}); } catch (e) {} } }
@@ -313,6 +393,7 @@
     if (!W || !H) return false;
     const ch = stack !== s.stack || rows2 !== s.rows2 || Math.abs(k - s.s) > 1e-4 || Math.abs(oy - (s.oy || 0)) > .5 || !s.W;
     s.W = W; s.H = H; s.s = k; s.oy = oy; s.stack = stack; s.rows2 = rows2; s.wc = wc; s.vx0 = vx0;
+    s.root.classList.toggle('is-stack', stack);
     const rs = s.room.style; rs.setProperty('--s', k.toFixed(5));
     if (stack) { rs.setProperty('--oy', oy.toFixed(1)); rs.setProperty('--ox', ox.toFixed(1)); rs.setProperty('--st', st + 'px'); rs.setProperty('--sb', sb + 'px'); }
     else { ['--oy', '--ox', '--st', '--sb'].forEach(n => rs.removeProperty(n)); }
@@ -331,6 +412,17 @@
       panel: $('.shw-aside .shw-panel', rootEl), hero: $('.shw-hero', rootEl), head: $('.shw-head', rootEl), aside: $('.shw-aside', rootEl), grid: $('#cat-grid'), ids: [], pageIds: [], page: 0, per: 10, W: 0, H: 0, s: 1, stack: false, panOn: false, centered: false, variant: 0, items: new Map(), pods: [], anims: new Set(), sel: null, hov: null, defId: null, rendered: false, rz: 0, rect: null};
     S.card.addEventListener('pointerenter', e => { if (e.pointerType === 'touch') return; S.cardHover = true; clearTimeout(S.cardT); });
     S.card.addEventListener('pointerleave', e => { if (e.pointerType === 'touch') return; S.cardHover = false; clearTimeout(S.cardT); S.cardT = setTimeout(() => { if (S && !S.stack && !S.sel && !S.hov && !S.cardHover) paintCard(null); }, 380); });
+    S.tip = document.createElement('div'); S.tip.className = 'shw-tip'; S.tip.hidden = true; S.tip.setAttribute('role', 'group'); S.tip.setAttribute('aria-label', 'Краткие сведения о товаре');
+    S.tip.addEventListener('pointerenter', e => { if (e.pointerType === 'touch') return; S.tipHover = true; clearTimeout(S.hovT); clearTimeout(S.tipT); });
+    S.tip.addEventListener('pointerleave', e => { if (e.pointerType === 'touch') return; S.tipHover = false; unpreview(); });
+    S.stage.appendChild(S.tip);
+    /* лёгкий параллакс: фон и товары едва заметно смещаются навстречу друг другу за курсором (только мышь, только полный режим, пока ничего не выбрано) */
+    S.view.addEventListener('pointermove', e => {
+      if (e.pointerType === 'touch' || S.sel || S.stack || mode() !== 'full' || rmReal.matches) return; const r = S.view.getBoundingClientRect();
+      S.px = ((e.clientX - r.left) / r.width - .5) * 2; S.py = ((e.clientY - r.top) / r.height - .5) * 2;
+      if (!S.pxRaf) S.pxRaf = requestAnimationFrame(() => { if (!S) return; S.pxRaf = 0; S.view.style.setProperty('--px', S.px.toFixed(3)); S.view.style.setProperty('--py', S.py.toFixed(3)); });
+    });
+    S.view.addEventListener('pointerleave', () => { if (!S) return; S.view.style.setProperty('--px', '0'); S.view.style.setProperty('--py', '0'); });
     S.spot = document.createElement('i'); S.spot.className = 'shw-spot'; S.spot.setAttribute('aria-hidden', 'true'); S.stage.appendChild(S.spot); S.veil = document.createElement('i'); S.veil.className = 'shw-veil'; S.veil.setAttribute('aria-hidden', 'true'); S.stage.appendChild(S.veil);
     S.sent = document.createElement('i'); S.sent.className = 'shw-sent'; S.sent.setAttribute('aria-hidden', 'true'); S.room.appendChild(S.sent);
     if (window.IntersectionObserver) { S.io = new IntersectionObserver(es => es.forEach(e => html.classList.toggle('shw-top', e.isIntersecting)), {rootMargin: '-84px 0px 0px 0px'}); S.io.observe(S.sent); } else html.classList.add('shw-top');
@@ -363,8 +455,8 @@
   function sync(push) {
     const s = ensure(); if (!s) return;
     const ids = visibleIds(), changed = ids.join() !== s.ids.join(), v = variantOf(), vch = v !== s.variant;
-    s.ids = ids; s.variant = v;
-    syncUI();
+    s.ids = ids; s.variant = v; s.root.setAttribute('data-light', String(v));
+    syncUI(); favSync();
     if (!s.rendered || !s.W) return;                                   // первая отрисовка — после того, как известен размер сцены (layout)
     if (changed || vch) { s.page = 0; if (s.sel) clearSel(true); render(push ? 'filter' : null); }
   }
@@ -383,6 +475,10 @@
   A.actions['shw-pan'] = t => { if (!S) return; S.view.scrollBy({left: +t.getAttribute('data-dir') * S.view.clientWidth * .7, behavior: mode() === 'full' ? 'smooth' : 'auto'}); };
   A.actions['shw-pick'] = (t, id) => select(id || t.getAttribute('data-id'));
   A.actions['shw-close'] = () => clearSel();
+  A.actions['fav-toggle'] = (t, id) => favToggle(id || t.getAttribute('data-fav-id') || t.getAttribute('data-id'));
+  A.actions['shw-open'] = (t, id) => { const p = P[id || t.getAttribute('data-id')]; if (p) location.href = root() + 'products/' + p.slug + '.html'; };
+  /* «Избранное»: в экспозиции остаются только отмеченные товары (остальные фильтры работают как раньше); повторное нажатие возвращает все */
+  A.actions['shw-favs'] = () => { if (!S) return; if (!S.favOnly && !favGet().length) { A.toast && A.toast('Избранное пока пусто — отметьте товары сердечком'); return; } S.favOnly = !S.favOnly; favSync(); sync(true); };
   /* плитки под витриной («Подбор по задаче», «Коллекции», «Бренды»): включают нужное значение фильтра и возвращают к главной экспозиции, которая перестраивается под него; повторный клик по выбранной плитке только возвращает к витрине */
   A.actions['shw-to'] = t => {
     const k = t.getAttribute('data-key') || 'cat', v = t.getAttribute('data-id'), sel = selOf(k);
@@ -407,7 +503,10 @@
     const m = $('#modal'); if (m && m.classList.contains('open')) return;
     clearSel();
   });
+  document.addEventListener('click', e => { const r = e.target.closest && e.target.closest('[data-act="cat-reset"]'); if (r && S && S.favOnly) { S.favOnly = false; favSync(); } }, true);          // «Сбросить фильтры» снимает и «Только избранное»
+  window.addEventListener('storage', e => { if (e.key === FKEY) { favSync(); if (S && S.favOnly) sync(false); } });
   A.showroom = {
+    fav: {has: favHas, toggle: favToggle, list: favGet},
     sync,
     select: id => select(id), close: () => clearSel(), page: dir => go(dir),
     openList, state: () => S && ({ids: S.ids.slice(), pageIds: (S.pageIds || []).slice(), page: S.page, per: S.per, sel: S.sel, stack: S.stack, pan: S.panOn, W: S.W, H: S.H, s: S.s, rendered: S.rendered, pods: S.pods.length}),
