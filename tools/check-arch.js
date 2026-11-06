@@ -301,11 +301,16 @@ if (!J || !J.enabled || !A || !A.enabled) { console.log('Первый экран
     for (let y = 0, tg = Math.round(g.top + g.tot * 0.6); y < tg; y += 80) { await p.mouse.wheel(0, 80); await wait(30); }
     await wait(2500); const s1 = await p.evaluate(() => { const s = window.Astreya.jar.arch.state(); return {k: s.resScale, gov: s.govChanges, size: (s.size || []).slice(0, 2).join('x')}; });
     ok(s1.k === 1 && s1.gov === 0, 'экран 144 Гц: после прокрутки героя холст полный (resScale 1, регулятор не срабатывал)', s1);
-    await p.evaluate(() => window.Astreya.jar.arch.govForce(0.65)); await wait(300); const s2 = await p.evaluate(() => window.Astreya.jar.arch.state()), w1 = s2.size[0];
-    ok(s2.resScale === 0.65 && w1 < s1.size.split('x')[0] * 0.7, 'снижение разрешения регулятором видно по размеру холста (проверочный вызов)', {k: s2.resScale, w1, full: s1.size});
-    try { await p.waitForFunction(() => window.Astreya.jar.arch.state().resScale === 1, null, {timeout: 12000, polling: 300}); } catch (e) { /* — */ }
+    await ctx.close(); }
+  { /* возврат качества — на обычных кадрах (при подменённой частоте кадров время пружины идёт медленнее настенного, и «покой» наступает не скоро) */
+    const {ctx, p} = await open(1573, 880); await p.goto(base + 'index.html'); await skipSplash(p);
+    try { await p.waitForFunction(() => { const a = window.Astreya.jar && window.Astreya.jar.arch; return a && a.ready && a.ready(); }, null, {timeout: 90000, polling: 500}); } catch (e) { /* — */ }
+    await wait(1200); const w0 = await p.evaluate(() => window.Astreya.jar.arch.state().size[0]);
+    await p.evaluate(() => window.Astreya.jar.arch.govForce(0.65)); await wait(300); const s2 = await p.evaluate(() => window.Astreya.jar.arch.state());
+    ok(s2.resScale === 0.65 && s2.size[0] < w0 * 0.7, 'снижение разрешения регулятором видно по размеру холста (проверочный вызов)', {k: s2.resScale, w: s2.size[0], full: w0});
+    try { await p.waitForFunction(() => window.Astreya.jar.arch.state().resScale === 1, null, {timeout: 15000, polling: 300}); } catch (e) { /* — */ }
     const s3 = await p.evaluate(() => { const s = window.Astreya.jar.arch.state(); return {k: s.resScale, w: s.size[0]}; });
-    ok(s3.k === 1 && String(s3.w) === s1.size.split('x')[0], 'в покое (≈ 1,4 с без движения) холст возвращается к полному размеру: резкая картинка, а не навсегда сниженное разрешение', {s1: s1.size, s3});
+    ok(s3.k === 1 && s3.w === w0, 'в покое (≈ 1,4 с без движения) холст возвращается к полному размеру: резкая картинка, а не навсегда сниженное разрешение', {full: w0, s3});
     await ctx.close(); }
 
   console.log(`\nИтого: ✓ ${pass}  ✗ ${fail}`); await b.close(); srv.close(); process.exit(fail ? 1 : 0);
