@@ -8,7 +8,21 @@
    0.2235,
    0.8311,
    0.4219
-  ]
+  ],
+  "spin": {
+   "file": "assets/showroom/spin-tube.webp",
+   "n": 24,
+   "cols": 18,
+   "rows": 2,
+   "fw": 218,
+   "fh": 660,
+   "box": [
+    0.0067,
+    0.0073,
+    0.9867,
+    0.9905
+   ]
+  }
  },
  "pack-bottle": {
   "file": "assets/showroom/pack-bottle.webp",
@@ -19,7 +33,21 @@
    0.3989,
    0.9621,
    0.3992
-  ]
+  ],
+  "spin": {
+   "file": "assets/showroom/spin-bottle.webp",
+   "n": 24,
+   "cols": 19,
+   "rows": 2,
+   "fw": 206,
+   "fh": 660,
+   "box": [
+    0.0071,
+    0.0022,
+    0.9859,
+    0.9956
+   ]
+  }
  },
  "pack-bottle-noir": {
   "file": "assets/showroom/pack-bottle-noir.webp",
@@ -30,7 +58,21 @@
    0.3989,
    0.9621,
    0.3992
-  ]
+  ],
+  "spin": {
+   "file": "assets/showroom/spin-bottle-noir.webp",
+   "n": 24,
+   "cols": 19,
+   "rows": 2,
+   "fw": 206,
+   "fh": 660,
+   "box": [
+    0.0071,
+    0.0022,
+    0.9859,
+    0.9956
+   ]
+  }
  },
  "pack-jar": {
   "file": "assets/showroom/pack-jar.webp",
@@ -41,7 +83,21 @@
    0.4593,
    0.9371,
    0.4251
-  ]
+  ],
+  "spin": {
+   "file": "assets/showroom/spin-jar.webp",
+   "n": 24,
+   "cols": 5,
+   "rows": 5,
+   "fw": 795,
+   "fh": 660,
+   "box": [
+    0.0022,
+    0.0027,
+    0.9955,
+    0.9946
+   ]
+  }
  },
  "pack-pump": {
   "file": "assets/showroom/pack-pump.webp",
@@ -52,7 +108,21 @@
    0.472,
    0.9223,
    0.3619
-  ]
+  ],
+  "spin": {
+   "file": "assets/showroom/spin-pump.webp",
+   "n": 24,
+   "cols": 18,
+   "rows": 2,
+   "fw": 216,
+   "fh": 660,
+   "box": [
+    0.0068,
+    0.0022,
+    0.9604,
+    0.9956
+   ]
+  }
  },
  "pack-pump-noir": {
   "file": "assets/showroom/pack-pump-noir.webp",
@@ -63,7 +133,21 @@
    0.472,
    0.9223,
    0.3619
-  ]
+  ],
+  "spin": {
+   "file": "assets/showroom/spin-pump-noir.webp",
+   "n": 24,
+   "cols": 18,
+   "rows": 2,
+   "fw": 216,
+   "fh": 660,
+   "box": [
+    0.0068,
+    0.0022,
+    0.9604,
+    0.9956
+   ]
+  }
  },
  "pack-dropper": {
   "file": "assets/showroom/pack-dropper.webp",
@@ -74,7 +158,21 @@
    0.6183,
    0.925,
    0.2796
-  ]
+  ],
+  "spin": {
+   "file": "assets/showroom/spin-dropper.webp",
+   "n": 24,
+   "cols": 24,
+   "rows": 1,
+   "fw": 156,
+   "fh": 660,
+   "box": [
+    0.0094,
+    0.0022,
+    0.9812,
+    0.9955
+   ]
+  }
  },
  "pack-dropper-noir": {
   "file": "assets/showroom/pack-dropper-noir.webp",
@@ -85,16 +183,58 @@
    0.6183,
    0.925,
    0.2796
-  ]
+  ],
+  "spin": {
+   "file": "assets/showroom/spin-dropper-noir.webp",
+   "n": 24,
+   "cols": 24,
+   "rows": 1,
+   "fw": 156,
+   "fh": 660,
+   "box": [
+    0.0094,
+    0.0022,
+    0.9812,
+    0.9955
+   ]
+  }
  },
  "pack-box": {
   "file": "assets/showroom/pack-box.webp",
   "w": 1404,
-  "h": 900
+  "h": 900,
+  "spin": {
+   "file": "assets/showroom/spin-box.webp",
+   "n": 24,
+   "cols": 4,
+   "rows": 6,
+   "fw": 959,
+   "fh": 660,
+   "box": [
+    0.0074,
+    0.0108,
+    0.9869,
+    0.9183
+   ]
+  }
  },
  "pack-device": {
   "file": "assets/showroom/pack-device.webp",
   "w": 305,
-  "h": 900
+  "h": 900,
+  "spin": {
+   "file": "assets/showroom/spin-device.webp",
+   "n": 24,
+   "cols": 18,
+   "rows": 2,
+   "fw": 225,
+   "fh": 660,
+   "box": [
+    0.0066,
+    0.0023,
+    0.9867,
+    0.9955
+   ]
+  }
  }
 }

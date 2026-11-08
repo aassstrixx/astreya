@@ -183,6 +183,24 @@ const userMsgs = p => p.evaluate(() => [...document.querySelectorAll('.asst-u .a
   const BACK = await p.evaluate(s => { const m = new DOMMatrix(getComputedStyle(document.querySelector('.shw-stage')).transform), r = document.querySelector(s).getBoundingClientRect(); return {k: m.a, x: r.x, y: r.y, w: r.width, cz: document.querySelector('.shw-view').style.getPropertyValue('--cz'), sel: document.querySelectorAll('.shw-it.is-sel,.shw-pd.is-sel').length, veil: +getComputedStyle(document.querySelector('.shw-veil')).opacity}; }, sel2);
   ok(Math.abs(BACK.k - 1) < .01 && BACK.cz === '' && BACK.sel === 0 && BACK.veil < .05 && Math.abs(BACK.x - rA.x) < 3 && Math.abs(BACK.y - rA.y) < 3 && Math.abs(BACK.w - rA.w) < 1.5, 'после закрытия камера и товар плавно возвращаются на место (смещение ' + Math.hypot(BACK.x - rA.x, BACK.y - rA.y).toFixed(1) + ' px), вуаль снята', {BACK, rA});
 
+  /* выбранный товар — вращаемая 3D-модель (атлас кадров оборота): тянуть, авто-вращение, клавиатура, возврат при закрытии */
+  await p.mouse.move(2, 2); await wait(600); await p.click(sel2); await wait(2600);
+  const SP0 = await p.evaluate(s => { const it = document.querySelector(s), sp = it.querySelector('.shw-spin'), im = it.querySelector('.shw-img'), r = it.getBoundingClientRect(); return {has: !!sp, cls: it.classList.contains('is-spin'), layers: sp ? sp.children.length : 0, bg: sp ? [...sp.children].every(i => /spin-[a-z-]+\.webp/.test(i.style.backgroundImage)) : false, imgHidden: im && getComputedStyle(im).opacity === '0', ang: sp ? +sp.getAttribute('data-angle') : -1, cx: r.x + r.width / 2, cy: r.y + r.height * .55, grab: getComputedStyle(it).cursor}; }, sel2);
+  ok(SP0.has && SP0.cls && SP0.layers === 2 && SP0.bg && SP0.imgHidden, 'выбранный товар — вращаемая 3D-модель: поверх картинки кадры оборота из атласа (два слоя для плавного смешения), статичный спрайт скрыт', SP0);
+  ok(SP0.grab === 'grab', 'у выбранной модели курсор «рука» (её можно крутить)', SP0.grab);
+  await p.mouse.move(SP0.cx, SP0.cy); await p.mouse.down(); await p.mouse.move(SP0.cx + 120, SP0.cy, {steps: 8}); await p.mouse.up(); await wait(350);
+  const SP1 = await p.evaluate(s => { const it = document.querySelector(s), sp = it.querySelector('.shw-spin'); return {ang: sp ? +sp.getAttribute('data-angle') : -1, sel: it.classList.contains('is-sel'), open: document.querySelector('.shw-card').classList.contains('is-open')}; }, sel2);
+  ok(SP1.sel && SP1.open && Math.abs(((SP1.ang - SP0.ang + 540) % 360) - 180) > 60, 'протяжка по модели поворачивает её (угол ' + SP0.ang + '° → ' + SP1.ang + '°) и не закрывает выбор', {SP0, SP1});
+  await wait(3600);
+  const SP2 = await p.evaluate(s => { const sp = document.querySelector(s + ' .shw-spin'); return sp ? +sp.getAttribute('data-angle') : -1; }, sel2);
+  ok(SP2 !== SP1.ang, 'в покое модель медленно вращается сама (' + SP1.ang + '° → ' + SP2 + '°)', {SP1, SP2});
+  await p.focus(sel2); const a3 = await p.evaluate(s => +document.querySelector(s + ' .shw-spin').getAttribute('data-angle'), sel2); await p.keyboard.press('ArrowRight'); await wait(120);
+  const a4 = await p.evaluate(s => +document.querySelector(s + ' .shw-spin').getAttribute('data-angle'), sel2);
+  const dK = (a4 - a3 + 360) % 360; ok(dK >= 11 && dK <= 19, 'стрелка → с клавиатуры поворачивает модель на один кадр оборота (+' + dK + '°)', {a3, a4});
+  await p.click('.shw-card .c-x'); await wait(1900);
+  const SP5 = await p.evaluate(s => { const it = document.querySelector(s); return {gone: !it.querySelector('.shw-spin'), cls: it.classList.contains('is-spin'), img: getComputedStyle(it.querySelector('.shw-img')).opacity}; }, sel2);
+  ok(SP5.gone && !SP5.cls && SP5.img === '1', 'после закрытия модель плавно возвращается лицом к зрителю и снова обычная картинка', SP5);
+
   /* смена экспозиций: фон остаётся целым, страница не перезагружается, акцент света меняется */
   const catA = CT.cats[0].id, catB = CT.cats[1].id;
   const lightOf = () => p.evaluate(() => document.querySelector('.shw').getAttribute('data-light'));

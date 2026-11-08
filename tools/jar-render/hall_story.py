@@ -92,16 +92,32 @@ LEAF_SHADOW = dict(leafk=float(os.environ.get('HALL_SHLEAFK', 1.0)), wk=float(os
 S = {}
 
 
+HS = float(os.environ.get('HALL_TEX', 4.0))                              # сцена главной — «миниатюра» (подиум радиусом 0,19 м): рисунок материалов мельче в несколько раз
+HALL_STYLE = os.environ.get('HALL_STYLE', '2')                    # '2' — материалы по таблице «Как использовать материалы на сайте» (известковая штукатурка, травертин, известняк, микроцемент); '1' — прежние
+
+
 def mats():
     M = {}
-    M['wall'] = MT.travertine('hw_wall', (1.0, .92, .80), .55, .45, 2.6, honed=True)
-    M['inner'] = MT.travertine('hw_inner', (1.04, .98, .90), 1.0, .2, 1.8, honed=True)
-    M['trav'] = MT.travertine('hw_trav', (1.03, .96, .86), 1.0, 1.1, 1.3)
-    M['trav2'] = MT.travertine('hw_trav2', (1.02, .95, .84), 1.5, .9, 1.0)
-    M['floor'] = MT.travertine('hw_floor', (.99, .93, .84), .45, .25, 2.4, honed=True)
-    fb = next(n for n in M['floor'].node_tree.nodes if n.type == 'BSDF_PRINCIPLED'); fb.inputs['Roughness'].default_value = .20
-    for k_, v_ in (('Coat Weight', .5), ('Coat Roughness', .05)):
-        if k_ in fb.inputs: fb.inputs[k_].default_value = v_
+    if HALL_STYLE == '2':
+        wave = float(os.environ.get('WAVE', 2.0))
+        M['wall'] = MT.lime_plaster('hw_wall', (.93, .86, .72), wave=wave, scale=HS)                      # основные стены: матовая известковая штукатурка, молочный песок, видимые неровности
+        M['inner'] = MT.lime_plaster('hw_inner', (.89, .81, .67), wave=wave, scale=HS)                    # внутри арок чуть глубже тоном
+        M['trav'] = MT.travertine('hw_trav', (.86, .76, .62), 1.0, 1.5, 1.3)                    # подиум и плита: травертин с видимыми порами, матовая шлифовка
+        M['trav2'] = MT.travertine('hw_trav2', (.86, .77, .63), 1.1, 1.0, 1.0)
+        M['stone'] = MT.travertine('hw_stone', (.88, .80, .66), 1.0, 1.2, 1.4)                   # полки и цоколь стеллажа
+        M['floor'] = MT.limestone_floor('hw_floor', (.86, .78, .64), .9, .0035, .05, 5.0)                       # пол: крупноформатный известняк, отражение минимальное
+        M['accent'] = MT.microcement('hw_accent', (.04, .075, .17), scale=HS)                             # акцентная ниша: глубокий синий матовый микроцемент
+    else:
+        M['wall'] = MT.travertine('hw_wall', (1.0, .92, .80), .55, .45, 2.6, honed=True)
+        M['inner'] = MT.travertine('hw_inner', (1.04, .98, .90), 1.0, .2, 1.8, honed=True)
+        M['trav'] = MT.travertine('hw_trav', (1.03, .96, .86), 1.0, 1.1, 1.3)
+        M['trav2'] = MT.travertine('hw_trav2', (1.02, .95, .84), 1.5, .9, 1.0)
+        M['stone'] = M['wall']
+        M['floor'] = MT.travertine('hw_floor', (.99, .93, .84), .45, .25, 2.4, honed=True)
+        fb = next(n for n in M['floor'].node_tree.nodes if n.type == 'BSDF_PRINCIPLED'); fb.inputs['Roughness'].default_value = .20
+        for k_, v_ in (('Coat Weight', .5), ('Coat Roughness', .05)):
+            if k_ in fb.inputs: fb.inputs[k_].default_value = v_
+        M['accent'] = M['inner']
     M['led'] = SC.mat_led('hw_led', 12.0, (1.0, .80, .52))
     M['back'] = SC.mat_simple('hw_back', (.95, .90, .80), .9)
     M['ceramic'] = SC.mat_simple('hw_ceramic', (.92, .87, .78), .34)
@@ -127,12 +143,12 @@ def build_shelf(M, yb):
     y0 = y1 - SHELF['d']
     pw = SHELF['post']
     top = SHELF['boards'][-1] + SHELF['t']
-    SC.box('shelf_plinth', M['wall'], x0, x1, y0, y1, 0, .07, 'p', .004)
-    SC.box('shelf_l', M['wall'], x0, x0 + pw, y0, y1, .07, top, 'p', .004)
-    SC.box('shelf_r', M['wall'], x1 - pw, x1, y0, y1, .07, top, 'p', .004)
+    SC.box('shelf_plinth', M['stone'], x0, x1, y0, y1, 0, .07, 'p', .004)
+    SC.box('shelf_l', M['stone'], x0, x0 + pw, y0, y1, .07, top, 'p', .004)
+    SC.box('shelf_r', M['stone'], x1 - pw, x1, y0, y1, .07, top, 'p', .004)
     pm = PK.M()
     for bi, z in enumerate(SHELF['boards']):
-        SC.box('shelf_b%d' % bi, M['wall'], x0 + pw, x1 - pw, y0, y1, z, z + SHELF['t'], 'p', .004)
+        SC.box('shelf_b%d' % bi, M['stone'], x0 + pw, x1 - pw, y0, y1, z, z + SHELF['t'], 'p', .004)
         for ki, (kind, noir, dx, rot) in enumerate(SHELF_ITEMS[bi]):
             objs, _ = PK.build(kind, noir, pm)
             g = bpy.data.objects.new('shelf_%s_%d_%d' % (kind, bi, ki), None)
@@ -152,7 +168,7 @@ def build_left_room(M):
     for c in cuts:
         BR.boolean(back, c)
     BR.apply_mods(back)
-    back.data.materials.append(M['inner'])
+    back.data.materials.append(M['accent'])
     for pl in back.data.polygons:
         if pl.center.y > yb + .01 and abs(pl.center.x - ROOM_X) < .65 and pl.center.z < 1.95:
             pl.material_index = 1
@@ -211,6 +227,8 @@ def build_architecture(M, portrait):
     for c in cuts:
         BR.boolean(wall, c)
     BR.apply_mods(wall)
+    if HALL_STYLE == '2':
+        bvw = wall.modifiers.new('bev', 'BEVEL'); bvw.width = .004; bvw.segments = 3; bvw.limit_method = 'ANGLE'          # кромки арок чуть скруглены — ловят свет
     wall.data.materials.append(M['inner'])
     for pl in wall.data.polygons:                                                                               # внутри арок — известняк чуть светлее и мягче
         c = pl.center
@@ -321,10 +339,13 @@ def build_tree(rnd, loc, H, R, lk=1.0, per=56, nb=22):
     """пышное дерево в вазе справа: изогнутый ствол и ярус ветвей веером (длинные дуги), на каждой — густые длинные листья двух оттенков; веточки-ответвления добавляют объём.
     Листья расходятся в стороны от ветки (в плоскости, перпендикулярной ей), поэтому крона читается объёмной с любой стороны. Параметры — TREE"""
     bx, by, bz = loc
-    ma = bpy.data.materials.new('tree_leafA'); ma.use_nodes = True; b = ma.node_tree.nodes['Principled BSDF']
-    b.inputs['Base Color'].default_value = (.36, .42, .25, 1); b.inputs['Roughness'].default_value = .5
-    mb = bpy.data.materials.new('tree_leafB'); mb.use_nodes = True; b = mb.node_tree.nodes['Principled BSDF']
-    b.inputs['Base Color'].default_value = (.50, .55, .36, 1); b.inputs['Roughness'].default_value = .5
+    if HALL_STYLE == '2':                                                          # листья как в жизни: цвет по длине, жилки, просвет, свой оттенок у каждого листа
+        ma = SC.leaf_material('tree_leafA', (.13, .20, .07), (.33, .44, .16)); mb = SC.leaf_material('tree_leafB', (.28, .36, .17), (.50, .57, .33), under=True)
+    else:
+        ma = bpy.data.materials.new('tree_leafA'); ma.use_nodes = True; b = ma.node_tree.nodes['Principled BSDF']
+        b.inputs['Base Color'].default_value = (.36, .42, .25, 1); b.inputs['Roughness'].default_value = .5
+        mb = bpy.data.materials.new('tree_leafB'); mb.use_nodes = True; b = mb.node_tree.nodes['Principled BSDF']
+        b.inputs['Base Color'].default_value = (.50, .55, .36, 1); b.inputs['Roughness'].default_value = .5
     ms = bpy.data.materials.new('tree_stem'); ms.use_nodes = True; ms.node_tree.nodes['Principled BSDF'].inputs['Base Color'].default_value = (.30, .25, .16, 1)
     leaves = []
     for m in (ma, mb):
@@ -509,7 +530,14 @@ def build_lights(M):
     bg = w.node_tree.nodes['Background']
     bg.inputs['Color'].default_value = (.98, .90, .78, 1)
     bg.inputs['Strength'].default_value = .12
-    S['scal'].append((bg.inputs['Strength'], 'default_value', .12))
+    if HALL_STYLE == '2' and os.environ.get('HALL_SKY', '1') == '1':                         # физическое небо, тонированное тёплым (отражённый от стен свет): мягкие тени и фотографический градиент света
+        try:
+            sk = w.node_tree.nodes.new('ShaderNodeTexSky'); sk.sky_type = 'MULTIPLE_SCATTERING'; sk.sun_disc = False; sk.sun_elevation = math.radians(28); sk.sun_rotation = math.radians(200); sk.aerosol_density = 1.2
+            wm = w.node_tree.nodes.new('ShaderNodeMix'); wm.data_type = 'RGBA'; wm.blend_type = 'MULTIPLY'; wm.inputs['Factor'].default_value = 1.0; wm.inputs['B'].default_value = (1.0, .85, .66, 1)
+            w.node_tree.links.new(sk.outputs['Color'], wm.inputs['A']); w.node_tree.links.new(wm.outputs['Result'], bg.inputs['Color'])
+            bg.inputs['Strength'].default_value = float(os.environ.get('HALL_SKY_K', .20))
+        except Exception as e: print('небо недоступно:', e)
+    S['scal'].append((bg.inputs['Strength'], 'default_value', bg.inputs['Strength'].default_value))
     sc.world = w
 
 
@@ -612,7 +640,7 @@ def build_scene(res, samples, portrait):
     cy.glossy_bounces = int(os.environ.get('HALL_GBOUNCE', 6))
     cy.sample_clamp_indirect = 4.0
     sc.view_settings.exposure = float(os.environ.get('HALL_EXP', -.85))
-    sc.view_settings.look = os.environ.get('HALL_LOOK', 'AgX - Punchy')
+    sc.view_settings.look = os.environ.get('HALL_LOOK', 'AgX - Medium High Contrast' if HALL_STYLE == '2' else 'AgX - Punchy')
     sc.render.film_transparent = False
     sc.render.use_persistent_data = True
     cy.filter_width = 1.05

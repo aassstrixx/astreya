@@ -15,9 +15,9 @@
  },
  "ring": {
   "file": "assets/showroom/layer-ring.webp",
-  "x": 284.0,
+  "x": 284.8,
   "y": 0.0,
-  "w": 306.4,
+  "w": 304.8,
   "h": 680.8
  },
  "plant": {
@@ -25,14 +25,14 @@
   "x": 0.0,
   "y": 148.0,
   "w": 1536.0,
-  "h": 466.4
+  "h": 467.2
  },
  "dais": {
   "file": "assets/showroom/layer-dais.webp",
   "x": 0.0,
   "y": 569.6,
   "w": 1536.0,
-  "h": 237.6
+  "h": 240.8
  },
  "anchors": {
   "dais": {

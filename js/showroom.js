@@ -321,12 +321,67 @@
     S.view.style.setProperty('--px', '0'); S.view.style.setProperty('--py', '0');
     /* камера и параллакс — крупное движение: при системной настройке «уменьшить движение» их нет (остальные анимации витрины прежние) */
     if (!S.stack && mode() === 'full' && !rmReal.matches) camApply(S.items.get(id).g.it);
-    positionSel(); paintCard(id, true);
+    positionSel(); paintCard(id, true); spinOn(id);
     track('showroom_select', {product: id});
     if (S.stack && mode() !== 'off') setTimeout(() => { if (!S) return; const r = S.card.getBoundingClientRect(); if (r.bottom > innerHeight - 8 || r.top < 70) S.card.scrollIntoView({behavior: 'smooth', block: 'nearest'}); }, 260);
   }
+  /* ---------- выбранный товар — полноценная 3D-модель: оборот на 360° ----------
+     Оборот рендерится в Blender (tools/showroom-assets/packs.py, PACK_SPIN): свет и камера неподвижны, поворачивается сам предмет — блики и тени на нём живые.
+     Кадры (≈32 на оборот) лежат в одной картинке-атласе assets/showroom/spin-<вид>.webp и грузятся только при выборе. Между соседними кадрами идёт перекрёстное смешение, поэтому вращение плавное.
+     Тянуть можно мышью и пальцем (по горизонтали; вертикальный жест по-прежнему прокручивает страницу), стрелки ← → — по 11° с клавиатуры. В покое модель медленно вращается сама (кроме «меньше движения» и лёгкого режима).
+     Если оборота у товара нет (настоящее фото, нет атласа, ошибка загрузки) — остаётся прежняя картинка. */
+  const SPINS = {};
+  function spinLoad(key, sp) {
+    if (SPINS[key]) return SPINS[key];
+    const r = SPINS[key] = {ok: false, cbs: [], src: url(sp.file)}, im = new Image();
+    im.onload = () => { r.ok = true; r.cbs.splice(0).forEach(f => f()); }; im.onerror = () => { r.fail = true; r.cbs.length = 0; };
+    im.decoding = 'async'; im.src = r.src; return r;
+  }
+  function spinPaint(st) {
+    const sp = st.sp, n = sp.n, f = st.ang / 360 * n, i0 = Math.floor(f) % n, t = f - Math.floor(f), i1 = (i0 + 1) % n;
+    const pos = i => (sp.cols > 1 ? (i % sp.cols) / (sp.cols - 1) * 100 : 0) + '% ' + (sp.rows > 1 ? Math.floor(i / sp.cols) / (sp.rows - 1) * 100 : 0) + '%';
+    st.a.style.backgroundPosition = pos(i0); st.b.style.backgroundPosition = pos(i1); st.b.style.opacity = t < .03 ? '0' : t > .97 ? '1' : t.toFixed(3);
+    st.el.setAttribute('data-angle', String(Math.round(st.ang)));
+  }
+  function spinOn(id) {
+    spinOff();
+    if (!S || PHOTOS) return;
+    const rec = S.items.get(id), p = P[id]; if (!rec || !p) return;
+    const key = packKey(p), m = PACKS[key]; if (!m || !m.spin) return;
+    const sp = m.spin, ld = spinLoad(key, sp), ph = rec.el.querySelector('.shw-ph'), img = rec.el.querySelector('.shw-img'); if (!ph || !img || ld.fail) return;
+    const st = S.spin = {id, rec, sp, ph, img, ang: 0, drag: null, idle: performance.now() + 900, last: 0, raf: 0, sup: 0, el: null};
+    const build = () => {
+      if (S.spin !== st || !rec.el.isConnected) return;
+      const bx = sp.box, root = document.createElement('div'); root.className = 'shw-spin'; root.setAttribute('aria-hidden', 'true');
+      root.style.cssText = 'left:' + (-bx[0] / bx[2] * 100).toFixed(3) + '%;top:' + (-bx[1] / bx[3] * 100).toFixed(3) + '%;width:' + (100 / bx[2]).toFixed(3) + '%;height:' + (100 / bx[3]).toFixed(3) + '%';
+      root.innerHTML = '<i></i><i></i>'; st.a = root.children[0]; st.b = root.children[1];
+      [st.a, st.b].forEach(e => { e.style.backgroundImage = 'url("' + ld.src + '")'; e.style.backgroundSize = (sp.cols * 100) + '% ' + (sp.rows * 100) + '%'; });
+      ph.appendChild(root); st.el = root; spinPaint(st); img.style.opacity = '0'; rec.el.classList.add('is-spin');
+      const el = rec.el;
+      st.down = e => { if (e.pointerType === 'mouse' && e.button !== 0) return; st.drag = {x: e.clientX, a: st.ang, moved: false}; try { el.setPointerCapture(e.pointerId); } catch (x) {} };
+      st.move = e => { const d = st.drag; if (!d) return; const dx = e.clientX - d.x; if (Math.abs(dx) > 4) d.moved = true; if (d.moved) { st.ang = ((d.a - dx * .8) % 360 + 360) % 360; spinPaint(st); } };
+      st.up = () => { const d = st.drag; if (!d) return; st.drag = null; st.idle = performance.now() + 2200; if (d.moved) st.sup = performance.now(); };
+      st.clk = e => { if (performance.now() - st.sup < 400) { e.stopPropagation(); e.preventDefault(); } };                       // протяжка не должна закрывать выбор
+      st.key = e => { if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return; st.ang = ((st.ang + (e.key === 'ArrowLeft' ? -360 / sp.n : 360 / sp.n)) % 360 + 360) % 360; st.idle = performance.now() + 2200; spinPaint(st); e.preventDefault(); e.stopPropagation(); };
+      el.addEventListener('pointerdown', st.down); el.addEventListener('pointermove', st.move); el.addEventListener('pointerup', st.up); el.addEventListener('pointercancel', st.up); el.addEventListener('click', st.clk, true); el.addEventListener('keydown', st.key);
+      const auto = !rmReal.matches && !html.classList.contains('lite');
+      const tick = t => { if (S && S.spin === st) { if (auto && !st.drag && t > st.idle) { st.ang = (st.ang + Math.min(60, t - (st.last || t)) * .02) % 360; spinPaint(st); } st.last = t; st.raf = requestAnimationFrame(tick); } };
+      st.raf = requestAnimationFrame(tick);
+    };
+    ld.ok ? build() : ld.cbs.push(build);
+  }
+  function spinOff() {
+    const st = S && S.spin; if (!st) return; S.spin = null; cancelAnimationFrame(st.raf);
+    const el = st.rec.el; if (st.down) { el.removeEventListener('pointerdown', st.down); el.removeEventListener('pointermove', st.move); el.removeEventListener('pointerup', st.up); el.removeEventListener('pointercancel', st.up); el.removeEventListener('click', st.clk, true); el.removeEventListener('keydown', st.key); }
+    const fin = () => { if (st.el) st.el.remove(); st.img.style.opacity = ''; el.classList.remove('is-spin'); };
+    if (!st.el || rmReal.matches || !el.isConnected || Math.min(st.ang, 360 - st.ang) < 4) { fin(); return; }
+    const a0 = st.ang > 180 ? st.ang - 360 : st.ang, t0 = performance.now();                                    // при закрытии модель плавно возвращается лицом к зрителю
+    const step = t => { const u = Math.min(1, (t - t0) / 420), e = 1 - Math.pow(1 - u, 3); st.ang = ((a0 * (1 - e)) % 360 + 360) % 360; spinPaint(st); u < 1 ? requestAnimationFrame(step) : fin(); };
+    requestAnimationFrame(step);
+  }
+
   function clearSel(quiet) {
-    if (!S) return; const was = S.sel; S.sel = null; S.root.classList.remove('has-sel'); camClear(!!quiet);
+    if (!S) return; const was = S.sel; spinOff(); S.sel = null; S.root.classList.remove('has-sel'); camClear(!!quiet);
     S.items.forEach(rec => { rec.el.classList.remove('is-sel'); rec.el.setAttribute('aria-pressed', 'false'); }); S.pods.forEach(q => q.el.classList.remove('is-sel'));
     S.card.style.setProperty('--cx', '0px'); S.card.style.setProperty('--cy', '0px');
     paintCard(S.hov || idleId(), false);

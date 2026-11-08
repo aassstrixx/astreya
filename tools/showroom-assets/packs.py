@@ -325,6 +325,57 @@ def finish(png, boxes, name):
     c.save(os.path.join(OUT, name + '.webp'), 'WEBP', quality=92, method=6, alpha_quality=98)
     return info
 
+
+SPIN_N = int(os.environ.get('PACK_SPIN', 0))                                   # число кадров оборота (0 — только статичные спрайты); 36 кадров = шаг 10°
+SPIN_H = int(os.environ.get('PACK_SPIN_H', 560))                               # высота кадра оборота, px
+SPIN_COLS = int(os.environ.get('PACK_SPIN_COLS', 6))
+def render_spin(kind, noir, sc, cam, n):
+    """оборот упаковки вокруг вертикальной оси: камера, свет и размер те же, что у статичного спрайта; кадр 0 совпадает со спрайтом. Все объекты привязаны к «пустышке» в нуле, поворачивается она"""
+    for o in list(bpy.data.objects):
+        if o.name not in OBJ_KEEP: bpy.data.objects.remove(o, do_unlink=True)
+    m = M(); objs, labels = build(kind, noir, m); bpy.context.view_layer.update()
+    pts = [o.matrix_world @ Vector(c) for o in objs for c in o.bound_box]; zmin = min(p.z for p in pts); zmax = max(p.z for p in pts); xs = [p.x for p in pts]
+    H = zmax - zmin; W_ = max(xs) - min(xs); cz = (zmin + zmax) / 2
+    fov = 2 * math.atan(36 / (2 * cam.data.lens)); dist = max(H, W_) * 1.28 / (2 * math.tan(fov / 2))
+    cam.location = (0, -dist * math.cos(ELEV), cz + dist * math.sin(ELEV)); cam.rotation_euler = (math.radians(90) - ELEV, 0, 0)
+    for o in bpy.data.objects:
+        if o.name in OBJ_KEEP[:-1]:
+            o.location.z = o['bz'] + cz; o.rotation_euler = (Vector((0, 0, cz)) - o.location).to_track_quat('-Z', 'Y').to_euler()
+    root = bpy.data.objects.new('spin_root', None); bpy.context.collection.objects.link(root)
+    for o in bpy.data.objects:
+        if o.name not in OBJ_KEEP and o is not root and o.parent is None: o.parent = root
+    paths = []
+    for i in range(n):
+        root.rotation_euler = (0, 0, 2 * math.pi * i / n); bpy.context.view_layer.update()
+        sc.render.filepath = '/tmp/spin_%s_%s_%02d.png' % (kind, 'n' if noir else 'w', i); bpy.ops.render.render(write_still=True); paths.append(sc.render.filepath)
+        print('  оборот', kind, i + 1, '/', n, flush=True)
+    return paths
+
+def finish_spin(paths, name, static_box=None):
+    """общая рамка по всем кадрам, уменьшение, сборка в одну картинку-атлас SPIN_COLS × строки; возвращает описание"""
+    ims = [Image.open(p).convert('RGBA') for p in paths]; W, Hh = ims[0].size
+    x0 = y0 = 10 ** 9; x1 = y1 = 0
+    for im in ims:
+        a = np.asarray(im.getchannel('A')); ys, xs = np.where(a > 6)
+        x0 = min(x0, xs.min()); x1 = max(x1, xs.max() + 1); y0 = min(y0, ys.min()); y1 = max(y1, ys.max() + 1)
+    pad = 4; x0 = max(0, x0 - pad); y0 = max(0, y0 - pad); x1 = min(W, x1 + pad); y1 = min(Hh, y1 + pad)
+    # рамка статичного спрайта (кадр 0, тот же отступ, что в finish(), пересчитанный на разрешение оборота): сайт по ней совмещает кадр 0 со спрайтом
+    a0 = np.asarray(ims[0].getchannel('A')); ys0, xs0 = np.where(a0 > 6); k0 = W / float(os.environ.get('PACK_STATIC_RES', 1600)); p0 = 6 * k0
+    sx0 = max(0, xs0.min() - p0); sx1 = min(W, xs0.max() + 1 + p0); sy0 = max(0, ys0.min() - p0); sy1 = min(Hh, ys0.max() + 1 + p0)
+    fw0, fh0 = x1 - x0, y1 - y0; fh = SPIN_H
+    while True:                                                                      # атлас не больше 4096 px по любой стороне (предел текстуры на телефонах)
+        fw = max(1, round(fw0 * fh / fh0)); cols = max(1, min(len(ims), 4096 // fw)); rows = (len(ims) + cols - 1) // cols
+        if rows * fh <= 4096: break
+        fh = int(fh * .94)
+    atlas = Image.new('RGBA', (cols * fw, rows * fh), (0, 0, 0, 0))
+    for i, im in enumerate(ims):
+        c = im.crop((x0, y0, x1, y1)).resize((fw, fh), Image.LANCZOS)
+        r, g, b, al = c.split(); rgb = Image.merge('RGB', (r, g, b)).filter(ImageFilter.UnsharpMask(radius=1.0, percent=40, threshold=2)); c = Image.merge('RGBA', (*rgb.split(), al))
+        atlas.paste(c, ((i % cols) * fw, (i // cols) * fh))
+    out = 'spin-%s.webp' % name; atlas.save(os.path.join(OUT, out), 'WEBP', quality=int(os.environ.get('PACK_SPIN_Q', 84)), method=6, alpha_quality=90)
+    return {'file': 'assets/showroom/' + out, 'n': len(ims), 'cols': cols, 'rows': rows, 'fw': fw, 'fh': fh,
+            'box': [round((sx0 - x0) / fw0, 4), round((sy0 - y0) / fh0, 4), round((sx1 - sx0) / fw0, 4), round((sy1 - sy0) / fh0, 4)]}
+
 if __name__ == '__main__':
     jobs = [('tube', False), ('bottle', False), ('bottle', True), ('pump', False), ('pump', True), ('dropper', False), ('dropper', True), ('jar', False), ('box', False), ('device', False)]
     want = sys.argv[1:]
@@ -332,6 +383,9 @@ if __name__ == '__main__':
     meta_path = os.path.join(OUT, 'packs.json'); meta = json.load(open(meta_path)) if os.path.exists(meta_path) else {}
     for kind, noir in jobs:
         sc = reset(); cam = setup_scene(sc)
+        if SPIN_N:
+            name = 'pack-%s%s' % (kind, '-noir' if noir else ''); paths = render_spin(kind, noir, sc, cam, SPIN_N)
+            meta.setdefault(name, {})['spin'] = finish_spin(paths, name[5:]); print(name, meta[name]['spin'], flush=True); json.dump(meta, open(meta_path, 'w'), indent=1, ensure_ascii=False); continue
         png, boxes = render_one(kind, noir, sc, cam)
         name = 'pack-%s%s' % (kind, '-noir' if noir else ''); meta[name] = finish(png, boxes, name); print(name, meta[name], flush=True)
         json.dump(meta, open(meta_path, 'w'), indent=1, ensure_ascii=False)

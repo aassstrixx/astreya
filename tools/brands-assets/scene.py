@@ -85,8 +85,7 @@ def camera(sc, loc, lens, target=None, rot=None):
 def olive(base, h=.3, n=14, sc=1.0, rnd=None, grp='plant', seed=2, lush=True, lean=-.05, leafk=1.0, wk=1.0, dens=1.0):
     """ветка оливы: стебли-трубки и листья; lush — пышный букет: три стебля из горлышка, боковые побеги и широкие густые листья; leafk / wk — длина и ширина листа (1 — как раньше), dens — густота листьев на стеблях"""
     rnd = rnd or random.Random(seed); base = Vector(base)
-    leaf = SC.leaf_mesh(L=.082 * sc * leafk, Wd=(.024 if lush else .016) * sc * wk); m1 = bpy.data.materials.new('olive'); m1.use_nodes = True; b = m1.node_tree.nodes['Principled BSDF']
-    b.inputs['Base Color'].default_value = (.34, .40, .22, 1); b.inputs['Roughness'].default_value = .5; leaf.materials.append(m1)
+    leaf = SC.leaf_mesh(L=.082 * sc * leafk, Wd=(.024 if lush else .016) * sc * wk); m1 = SC.leaf_material('olive', (.14, .21, .08), (.34, .44, .17)); leaf.materials.append(m1)      # лист с жилками, просветом и своим оттенком (SC.leaf_material)
     ms = bpy.data.materials.new('stem'); ms.use_nodes = True; ms.node_tree.nodes['Principled BSDF'].inputs['Base Color'].default_value = (.30, .26, .17, 1)
     def shoot(pts, count, k=1.0):
         cu = bpy.data.curves.new('st', 'CURVE'); cu.dimensions = '3D'; sp = cu.splines.new('POLY'); sp.points.add(len(pts) - 1)

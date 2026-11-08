@@ -500,7 +500,7 @@ html.lite .shw-world,html.lite .shw-stage{translate:none!important;transition:no
 
 /* заголовок над сценой: мягкая светлая дымка за текстом — «Каталог», заголовок и подводка читаются поверх листвы и арок */
 @media (min-width:1101px){
-  .shw-head::before{content:"";position:absolute;z-index:-1;left:-70px;right:-40px;top:-30px;bottom:-14px;pointer-events:none;background:radial-gradient(ellipse 50% 56% at 50% 50%,rgba(244,238,226,.8),rgba(244,238,226,.46) 58%,rgba(244,238,226,0) 100%)}
+  .shw-head::before{content:"";position:absolute;z-index:-1;left:-70px;right:-40px;top:-30px;bottom:-14px;pointer-events:none;background:radial-gradient(ellipse 50% 56% at 50% 50%,rgba(246,238,222,.52),rgba(246,238,222,.28) 58%,rgba(246,238,222,0) 100%)}      /* дымка мягче прежней: под текстом стеллаж и стена теперь тёмные и сочные, ровная светлая пелена стирала их контраст */
 }
 
 
@@ -514,3 +514,13 @@ html.lite .shw-world{filter:none!important}
   .shw:not(.is-stack) .shw-plane{transition:none}
   .shw-tip{transition:opacity .25s ease}
 }
+
+/* выбранный товар — вращаемая 3D-модель (js/showroom.js → spinOn): кадры оборота лежат в одном атласе, два слоя смешиваются между соседними кадрами */
+.shw-spin{position:absolute;pointer-events:none}
+.shw-spin i{position:absolute;left:0;top:0;width:100%;height:100%;background-repeat:no-repeat;background-size:100% 100%}
+.shw-it.is-sel{cursor:grab;touch-action:pan-y}
+.shw-it.is-sel:active{cursor:grabbing}
+.shw-it.is-spin::after{content:"↔  потяните, чтобы повернуть";position:absolute;left:50%;bottom:-40px;transform:translateX(-50%);white-space:nowrap;font:500 11px/1 var(--sans,system-ui);letter-spacing:.06em;color:var(--navy);padding:6px 11px;border-radius:99px;background:rgba(250,246,238,.82);box-shadow:0 8px 18px -10px rgba(40,30,16,.5);pointer-events:none;opacity:0;animation:shwHint 4.6s var(--shw-ease) .9s both}
+@keyframes shwHint{0%{opacity:0;transform:translate(-50%,6px)}12%,78%{opacity:1;transform:translate(-50%,0)}100%{opacity:0;transform:translate(-50%,0)}}
+@media (prefers-reduced-motion:reduce){.shw-it.is-spin::after{animation:none;opacity:1}}
+html.lite .shw-it.is-spin::after{animation:none;opacity:1}
