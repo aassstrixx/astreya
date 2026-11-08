@@ -78,8 +78,8 @@
     if (instant) { void S.view.offsetWidth; S.view.classList.remove('no-tr'); }
     clearTimeout(S.camT); S.camT = setTimeout(() => { if (S && !S.cam) S.root.classList.remove('is-cam'); }, 1250);
   }
-  /* высота упаковки на сцене — по реальным размерам (10–25 см): 7,4 px холста на сантиметр; вся композиция (упаковка + подставка) не выше трети видимой области (≈ 236 px из ≈ 706) */
-  const PXCM = 7.4, CAPH = 236;
+  /* высота упаковки на сцене — по реальным размерам (10–25 см): 10,4 px холста на сантиметр, как на фото-образце заказчика (упаковки крупные, на переднем плане, выше всего остального в кадре); вся композиция (упаковка + подставка) ≈ 40–45 % видимой области (≤ 320 px из ≈ 706) */
+  const PXCM = 10.4, CAPH = 320;
   const CMH = {pump: 24, bottle: 22, dropper: 14, jar: 10, tube: 16, box: 14, device: 18};
   const TH = {}; Object.keys(CMH).forEach(k => { TH[k] = CMH[k] * PXCM; });
   const thOf = p => TH[p.t] || TH.bottle;
@@ -98,7 +98,7 @@
   const ASIDE_TOP = 100, COMPACT_TOP = 318, COMPACT_EXT = 392;                          // по вертикали холста показываем от верха самой высокой упаковки (y≈318) до оснований подиумов (y≈710)
 
   /* расстановка по макету 1536×1024: один широкий низкий травертиновый стол, упаковки стоят прямо на нём небольшими композиционными группами (2–3 предмета, ряд чередуется: дальний/передний ±32 px), у части групп — невысокая подставка (5–12 см), которая создаёт уровень, но не спорит с упаковкой.
-     Высота всей композиции (упаковка + подставка) ≤ CAPH ≈ трети видимой области. Группы разведены по столу, предметы в группе почти касаются, но не перекрывают друг друга. Размеры — проектные пиксели холста. */
+     Высота всей композиции (упаковка + подставка) ≤ CAPH ≈ 45 % видимой области. Группы разведены по столу, предметы в группе почти касаются, но не перекрывают друг друга. Размеры — проектные пиксели холста. */
   const PLV = [[0, 6, 0, 9, 0, 5, 0, 7, 0, 5], [5, 0, 8, 0, 6, 0, 10, 0, 5, 0], [0, 8, 0, 5, 9, 0, 6, 0, 12, 0]];      // высота подставки, см, по номеру места: три «композиции» (по категории)
   const GRP = [[3, 2, 3, 2], [2, 3, 2, 3], [3, 3, 2, 2]];
   const BASE = [654, 686], CAP_RATIO = (D.showroom && D.showroom.pod && D.showroom.pod.capRatio) || .1026;
@@ -142,14 +142,14 @@
 
   /* узкий экран (телефон): та же экспозиция, но «в две полки» — до пяти подиумов в ряд, оба ряда на одном экране без сдвига; задний ряд стоит на каменной полке, передний — на платформе.
      Масштаб подбирается так, чтобы всё поместилось по ширине и по высоте (measure). Размеры — те же проектные пиксели холста. */
-  const R2 = {Yf: 700, R: 236, cs: .8, cols: 5, slot: 104, topC: 262, ext: 446, cap: 190};
+  const R2 = {Yf: 700, R: 236, cs: .57, cols: 5, slot: 104, topC: 262, ext: 446, cap: 190};
   function composeRows(prods, s) {
     const n = Math.min(prods.length, MAIN_MAX), slots = [], v = s.variant, wc = s.wc, vx0 = s.vx0, m = 12 / s.s, slotW = (wc - 2 * m) / R2.cols, Yb = R2.Yf - R2.R;
     const back = n > R2.cols ? Math.ceil(n / 2) : 0, rows = [prods.slice(0, back).map((p, j) => [p, j]), prods.slice(back).map((p, j) => [p, back + j])];
     rows.forEach((list, r) => {
       const c = list.length, x0 = vx0 + wc / 2 - c * slotW / 2 + slotW / 2, base = r ? R2.Yf : Yb;
       list.forEach(([p, i], j) => {
-        const hero = i === 2, im = imgOf(p), th0 = thOf(p) * (hero ? 1.06 : 1) * R2.cs, bw0 = th0 * im.ar, hp = Math.max(0, Math.min(PLV[v % 3][i % 10] * PXCM * .8, R2.cap - th0)), pw0 = hp > 0 ? Math.max(bw0 * 1.3, 56) : bw0, pw = Math.min(slotW - 8, pw0), k = Math.min(1, pw / pw0), th = th0 * k, bw = bw0 * k, cx = x0 + j * slotW;
+        const hero = i === 2, im = imgOf(p), th0 = thOf(p) * (hero ? 1.06 : 1) * R2.cs, bw0 = th0 * im.ar, hp = Math.max(0, Math.min(PLV[v % 3][i % 10] * PXCM * R2.cs, R2.cap - th0)), pw0 = hp > 0 ? Math.max(bw0 * 1.3, 56) : bw0, pw = Math.min(slotW - 8, pw0), k = Math.min(1, pw / pw0), th = th0 * k, bw = bw0 * k, cx = x0 + j * slotW;
         const hh = hp * k, e = pw * CAP_RATIO, topFace = base - hh;
         slots.push({group: 'main', i, p, im, hero, row: r, nk: hero ? 0 : (i + v) % 4, pod: hh > 0 ? {l: cx - pw / 2, t: topFace - e / 2, w: pw, e, b: hh} : null, it: {l: cx - bw / 2, t: topFace + (hh > 0 ? e * .08 : 0) - th, w: bw, h: th, cx, z: 5 + r * 2 + (hero ? 1 : 0)}});
       });
