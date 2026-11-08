@@ -106,15 +106,66 @@ def mat_liquid(name='serum', col=(.93, .80, .45)):
 def mat_clear_glass(name='glass', tint=(.90, .95, .92)):
     m, nt, b, o = new_mat(name); _set(b, (*tint, 1), 'Base Color'); _set(b, 1.0, 'Transmission Weight', 'Transmission'); _set(b, .012, 'Roughness'); _set(b, 1.5, 'IOR'); _set(b, .7, 'Specular IOR Level', 'Specular'); return m
 
+def mat_pearl(name='pearl', col=(.93, .925, .91), rough=.30):
+    """глянцево-жемчужный белый пластик (как на образце): мягкий градиент, широкий блик студии, тонкий лаковый слой, лёгкий свет изнутри"""
+    return mat_plastic(name, col, rough=rough, coat=.5, sheen=.12, sss=.12, spec=.55, bump=.03)
+def mat_accent(name, col, rough=.28):
+    m = mat_plastic(name, col, rough=rough, coat=.5, sheen=.08, sss=.05, spec=.55, bump=.03); return m
+def mat_color_glass(name, col, rough=.018, ior=1.52):
+    """цветное стекло флакона: глубокий насыщенный цвет, чёткие блики студии"""
+    m, nt, b, o = new_mat(name); _set(b, (*col, 1), 'Base Color'); _set(b, 1.0, 'Transmission Weight', 'Transmission'); _set(b, rough, 'Roughness'); _set(b, ior, 'IOR'); _set(b, .7, 'Specular IOR Level', 'Specular'); return m
+def mat_lacquer(name, col, rough=.09, coat=.75):
+    """глянцевый лак (баночка): глубокий цвет под прозрачным слоем"""
+    m, nt, b, o = new_mat(name); _set(b, (*col, 1), 'Base Color'); _set(b, rough, 'Roughness'); _set(b, coat, 'Coat Weight', 'Clearcoat'); _set(b, .03, 'Coat Roughness', 'Clearcoat Roughness'); _set(b, .55, 'Specular IOR Level', 'Specular'); return m
+def mat_chrome(name='chrome', col=(.82, .80, .76), rough=.14):
+    m, nt, b, o = new_mat(name); _set(b, (*col, 1), 'Base Color'); _set(b, 1.0, 'Metallic'); _set(b, rough, 'Roughness'); micro(nt, b, rough, .03, 300, .04); return m
+def add_ribs(m, n, k=.4):
+    """вертикальные рёбра по боковой поверхности (bump sin(n·угол))"""
+    nt = m.node_tree; pb = nt.nodes['Principled BSDF']; prev = pb.inputs['Normal'].links[0].from_socket if pb.inputs['Normal'].links else None
+    tc = nt.nodes.new('ShaderNodeTexCoord'); sp = nt.nodes.new('ShaderNodeSeparateXYZ'); at = nt.nodes.new('ShaderNodeMath'); at.operation = 'ARCTAN2'
+    mu = nt.nodes.new('ShaderNodeMath'); mu.operation = 'MULTIPLY'; mu.inputs[1].default_value = float(n); sn = nt.nodes.new('ShaderNodeMath'); sn.operation = 'SINE'
+    bp = nt.nodes.new('ShaderNodeBump'); bp.inputs['Strength'].default_value = k; bp.inputs['Distance'].default_value = 0.0006
+    nt.links.new(tc.outputs['Object'], sp.inputs[0]); nt.links.new(sp.outputs['Y'], at.inputs[0]); nt.links.new(sp.outputs['X'], at.inputs[1]); nt.links.new(at.outputs[0], mu.inputs[0]); nt.links.new(mu.outputs[0], sn.inputs[0])
+    nt.links.new(sn.outputs[0], bp.inputs['Height'])
+    if prev is not None: nt.links.new(prev, bp.inputs['Normal'])
+    nt.links.new(bp.outputs['Normal'], pb.inputs['Normal']); return m
+
+STYLES = {          # бренды-партнёры: гарнитура названия, цвет акцента и отделки — по образцу заказчика (белый жемчужный пластик, бирюзовое стекло Endocare, оранжевая полоса Heliocare, фиолетовый колпачок Neoretin); синего нет
+    'dermatime': dict(name='Dermatime', body='pearl', cap='pearl', ring='chrome', ink=(24, 24, 26), accent=None, glass='opal', font='serif', case='title', track=.03),
+    'keenwell': dict(name='Keenwell', body='noir', cap='noir', ring='champ', ink=(208, 182, 138), accent=None, glass='smoke', font='light', case='upper', track=.24),
+    'endocare': dict(name='Endocare', body='pearl', cap='pearl', ring='chrome', ink=(24, 24, 26), accent=(20, 112, 120), glass='teal', font='bold', case='upper', track=.06, gink=(244, 244, 240)),
+    'neoretin': dict(name='Neoretin', body='pearl', cap='accent', ring='chrome', ink=(34, 28, 44), accent=(96, 62, 138), glass='opal', font='semibold', case='upper', track=.12),
+    'heliocare': dict(name='Heliocare', body='pearl', cap='accent', ring='chrome', ink=(30, 30, 32), accent=(226, 98, 34), glass='opal', font='bold', case='upper', track=.05, band=(.30, .385)),
+    'biretix': dict(name='Biretix', body='pearl', cap='accent', ring='chrome', ink=(26, 44, 42), accent=(47, 127, 122), glass='opal', font='medium', case='lower', track=.04),
+    'iraltone': dict(name='Iraltone', body='pearl', cap='pearl', ring='champ', ink=(34, 42, 28), accent=(91, 107, 74), glass='amber', font='serifb', case='upper', track=.14),
+    'eva': dict(name='EVA', body='pearl', cap='pearl', ring='champ', ink=(70, 34, 46), accent=(162, 90, 110), glass='opal', font='xlight', case='upper', track=.30),
+    'elancyl': dict(name='Elancyl', body='pearl', cap='accent', ring='chrome', ink=(30, 46, 24), accent=(93, 156, 47), glass='opal', font='bold', case='lower', track=.03),
+}
+def style_mats(st, m, noir=False):
+    """материалы отделки бренда: корпус, колпачок, кольцо, стекло (+жидкость), печать"""
+    n = st['name'].lower(); acc = tuple(c / 255.0 for c in st['accent']) if st.get('accent') else None; lin = lambda c: tuple((x / 255.0) ** 2.2 for x in c) if c else None
+    body = m['noirsoft'] if (st['body'] == 'noir' or noir) else mat_pearl('pearl_' + n)
+    cap = m['noirsoft'] if st['cap'] == 'noir' or noir else (mat_accent('cap_' + n, lin(st['accent'])) if st['cap'] == 'accent' and st.get('accent') else body)
+    ring = m['champ'] if st['ring'] == 'champ' else m['chrome']
+    g = st['glass']
+    glass = {'opal': m['opal'], 'smoke': m['smoke'], 'amber': mat_color_glass('amber_' + n, (.30, .13, .02)), 'teal': mat_color_glass('teal_' + n, (.02, .24, .25))}[g]
+    liq = {'opal': None, 'smoke': m['smoke_liq'], 'amber': mat_color_glass('amberl_' + n, (.20, .08, .01), rough=.01), 'teal': mat_color_glass('teall_' + n, (.01, .16, .17), rough=.01)}[g]
+    return dict(body=body, cap=cap, ring=ring, glass=glass, liq=liq, collar=(m['champ_rib'] if st['ring'] == 'champ' or noir else m['white_rib']), clear=(m['smoke_clear'] if noir else m['clear']))
+
 def M():
+    wr = mat_plastic('softtouch_rib', (.90, .89, .86), rough=.5, coat=0.0, sheen=.3, sss=.08, bump=.12); add_ribs(wr, 90, .45)
     return {
-      'white': mat_plastic('softtouch', (.88, .87, .83), rough=.52, coat=0.0, sheen=.35, sss=.1, bump=.18),
-      'gloss': mat_plastic('glosspl', (.90, .89, .85), rough=.22, coat=.35, sheen=.1, sss=.1, bump=.0),
+      'white': mat_plastic('softtouch', (.91, .90, .87), rough=.5, coat=0.0, sheen=.3, sss=.08, bump=.12), 'white_rib': wr,
+      'gloss': mat_plastic('glosspl', (.92, .91, .88), rough=.2, coat=.4, sheen=.1, sss=.08, bump=.0),
       'opal': mat_opal(), 'noirglass': mat_noir_glass(),
-      'noirsoft': mat_plastic('noirsoft', (.022, .021, .02), rough=.46, coat=.0, sheen=.2, spec=.45, bump=.15),
+      'noirsoft': mat_plastic('noirsoft', (.024, .023, .022), rough=.44, coat=.0, sheen=.2, spec=.45, bump=.15),
       'champ': mat_champagne(), 'champ_rib': mat_champagne('champ_rib', ribs=84), 'champ_lid': mat_champagne('champ_lid', rough=.34, ribs=96),
       'paper': mat_paper(), 'foil': mat_foil(), 'rubber': mat_rubber(), 'carton': mat_carton(), 'serum': mat_liquid(), 'glass': mat_clear_glass(),
       'ink': mat_ink('ink', (.80, .76, .68), .55), 'inkdark': mat_ink('inkdark', (.20, .18, .16), .45),
+      'cobalt': mat_color_glass('cobalt', (.012, .085, .27)), 'cobalt_liq': mat_color_glass('cobalt_liq', (.006, .05, .17), rough=.01),
+      'smoke': mat_color_glass('smoke', (.075, .05, .03)), 'smoke_liq': mat_color_glass('smoke_liq', (.04, .026, .016), rough=.01),
+      'clear': mat_clear_glass('clear_cap', (.98, .985, .985)), 'smoke_clear': mat_color_glass('smoke_clear', (.30, .28, .26), rough=.03),
+      'lacquer': mat_lacquer('lacquer_blue', (.014, .05, .17)), 'lacquer_noir': mat_lacquer('lacquer_noir', (.018, .017, .016)), 'chrome': mat_chrome(),
     }
 
 # ---------- геометрия: профили вращения со скруглениями ----------
@@ -153,29 +204,6 @@ def revolve(name, prof, mat_, seg=128, loc=(0, 0, 0), ry=None, cap=True, smooth=
 def body(name, corners, radii, mat_, **kw):
     """корпус по ломаной углов [(r,z)…] и радиусам скруглений в них"""
     return revolve(name, fillet(corners, radii), mat_, **kw)
-def label_band(name, mat_, r, z0, z1, ry=None, arc=0.6, seg=96, eps=0.012, thick=0.035):
-    ob = _band(name, mat_, r, z0, z1, ry, arc, seg, eps, thick)
-    ink = mat_ink('hair', (.46, .40, .32), .5); h = z1 - z0                       # печатные «волосяные» линии у краёв этикетки и короткая метка — как у настоящей минималистичной этикетки
-    for zz in (z0 + h * .10, z1 - h * .10): _band(name + 'h', ink, r, zz, zz + .045, ry, arc * .86, seg, eps + thick, .012)
-    _band(name + 'm', ink, r, z0 + h * .70, z0 + h * .70 + .04, ry, arc * .22, seg, eps + thick, .012)
-    return ob
-def _band(name, mat_, r, z0, z1, ry=None, arc=0.6, seg=96, eps=0.012, thick=0.035):
-    """этикетка: тонкая бумажная оболочка вокруг цилиндра (середина — на камеру, -Y), с видимой толщиной кромки"""
-    ry = ry or r; th = np.linspace(-math.pi * arc, math.pi * arc, int(seg * arc) + 1) - math.pi / 2; verts = []; faces = []
-    for rr in (r + eps, r + eps + thick):
-        for z in (z0, z1):
-            for t in th: verts.append((rr * math.cos(t) * CM, (rr * ry / r) * math.sin(t) * CM, z * CM))
-    m = len(th)
-    def at(layer, zi, j): return (layer * 2 + zi) * m + j
-    for j in range(m - 1):
-        faces.append((at(1, 0, j), at(1, 0, j + 1), at(1, 1, j + 1), at(1, 1, j)))                   # лицо
-        faces.append((at(0, 0, j), at(0, 1, j), at(0, 1, j + 1), at(0, 0, j + 1)))                   # изнанка
-        faces.append((at(0, 1, j), at(1, 1, j), at(1, 1, j + 1), at(0, 1, j + 1)))                   # верхняя кромка
-        faces.append((at(0, 0, j), at(0, 0, j + 1), at(1, 0, j + 1), at(1, 0, j)))                   # нижняя кромка
-    faces.append((at(0, 0, 0), at(0, 1, 0), at(1, 1, 0), at(1, 0, 0))); faces.append((at(0, 0, m - 1), at(1, 0, m - 1), at(1, 1, m - 1), at(0, 1, m - 1)))
-    me = bpy.data.meshes.new(name); me.from_pydata(verts, [], faces); me.update(); ob = bpy.data.objects.new(name, me); bpy.context.collection.objects.link(ob); ob.data.materials.append(mat_)
-    for p in me.polygons: p.use_smooth = True
-    return ob
 def block(name, mat_, w, h, d, loc=(0, 0, 0), bev=0.1, rot=0.0):
     bpy.ops.mesh.primitive_cube_add(size=1, location=loc); ob = bpy.context.object; ob.name = name
     ob.scale = (w * CM, d * CM, h * CM); bpy.ops.object.transform_apply(scale=True)
@@ -190,76 +218,80 @@ def ring_teeth(name, r, z0, z1, mat_, n=3, gap=.22, w=.1, seg=96):
         out.append(body(name + str(i), [(0, z - w), (r + .07, z - w), (r + .07, z + w), (0, z + w)], [0, .05, .05, 0], mat_, seg=seg, cap=False))
     return out
 
+def shell(name, outer, t, mat_, seg=128):
+    """полый колпак (толщина стенки t), открытый снизу: профиль идёт по наружной стенке вверх и по внутренней — вниз"""
+    out = fillet(outer, [0] + [min(.5, t * 3)] * (len(outer) - 2) + [0], 6); inn = [(max(0.0, r - t), z - (t if k > len(out) // 2 else 0)) for k, (r, z) in enumerate(out)]
+    prof = out + list(reversed(inn)); return revolve(name, prof, mat_, seg=seg, cap=False)
 # ---------- упаковки ----------
-def build(kind, noir, m):
-    objs = []; labels = []
-    glass = m['noirglass'] if noir else m['opal']; plastic = m['noirsoft'] if noir else m['white']
+def build(kind, noir, m, brand=None):
+    """реалистичные макеты по образцам из фото заказчика: стройные флаконы с помпой из жемчужного глянцевого пластика, цветное стекло с чёрной пипеткой, баночка с белой крышкой и хромовым кольцом, флакон с прозрачным колпачком; печать брендов — настоящим шрифтом прямо на корпусе (decal)"""
+    objs = []; labels = []                                 # надписей и этикеток нет: форма, материал и цвет самих деталей (по просьбе заказчика)
+    st = STYLES.get(brand) if brand else None; sm = style_mats(st or STYLES['dermatime'], m, noir)
+    plastic = sm['body']; cap_m = sm['cap']; collar_m = sm['collar']
     if kind == 'tube':                                     # туба стоит на крышке; верх — плоский обжатый шов с поперечным рифлением
         rings = []
         for i in range(0, 81):
-            t = i / 80; z = 2.7 + (13.9 - 2.7) * t
+            t = i / 80; z = 2.9 + (14.4 - 2.9) * t
             if t < .70: rx, ry = 1.92, 1.92
             else:
                 u = (t - .70) / .30; k = (3 * u * u - 2 * u ** 3); rx = 1.92 + .32 * k; ry = 1.92 * (1 - .945 * k)
             rings.append((z, rx, ry))
-        verts, faces = [], []; seg = 128; th = np.linspace(0, 2 * math.pi, seg, endpoint=False)
+        verts, faces = [], []; seg = 128; thh = np.linspace(0, 2 * math.pi, seg, endpoint=False)
         for z, rx, ry in rings:
-            for t in th: verts.append((rx * math.cos(t) * CM, ry * math.sin(t) * CM, z * CM))
+            for t in thh: verts.append((rx * math.cos(t) * CM, ry * math.sin(t) * CM, z * CM))
         for i in range(len(rings) - 1):
             for j in range(seg): faces.append((i * seg + j, i * seg + (j + 1) % seg, (i + 1) * seg + (j + 1) % seg, (i + 1) * seg + j))
         faces.append(tuple(range((len(rings) - 1) * seg, len(rings) * seg))); faces.append(tuple(reversed(range(seg))))
         me = bpy.data.meshes.new('tube'); me.from_pydata(verts, [], faces); me.update(); tb = bpy.data.objects.new('tube', me); bpy.context.collection.objects.link(tb); tb.data.materials.append(plastic)
         for p in me.polygons: p.use_smooth = True
         objs.append(tb)
-        for k in range(16):                                # шов: тонкие поперечные рёбра на обеих сторонах
+        for k in range(18):                                # шов: тонкие поперечные рёбра на обеих сторонах
             for sgn in (-1, 1):
-                objs.append(block('seal%d_%d' % (k, sgn), plastic, 4.5, .07, .07, loc=(0, sgn * .125 * CM, (13.1 + k * .05) * CM), bev=.012))
-        objs.append(body('cap', [(0, 0), (2.0, 0), (2.0, 2.5), (1.82, 2.75), (0, 2.75)], [0, .2, .2, .12, 0], plastic, seg=128))
-        objs.append(body('capline', [(0, 2.55), (2.01, 2.55), (2.01, 2.6), (0, 2.6)], [0, 0, 0, 0], m['champ'], seg=128, cap=False))
-        labels.append(label_band('label', m['paper'], 1.92, 5.0, 10.8, arc=0.55, eps=0.006, thick=.025))
-    elif kind == 'bottle':                                 # цилиндрический флакон 100–150 мл с плоским колпачком
-        objs.append(body('body', [(0, 0), (2.9, 0), (2.9, 11.8), (2.35, 13.9), (1.55, 14.6), (1.55, 15.1), (0, 15.1)], [0, .55, 1.6, 1.4, .2, .0, 0], glass, seg=128))
-        objs += ring_teeth('thr', 1.55, 14.65, 15.0, glass, n=2)
-        objs.append(body('cap', [(0, 15.15), (2.12, 15.15), (2.12, 18.9), (1.95, 19.15), (0, 19.15)], [0, .1, .25, .3, 0], plastic, seg=128))
-        objs.append(body('capring', [(1.99, 15.05), (2.22, 15.05), (2.22, 15.95), (1.99, 15.95)], [0, .06, .06, 0], m['champ'], seg=128, cap=False))
-        labels.append(label_band('label', m['paper'], 2.9, 4.0, 11.4, arc=0.6, eps=0.008, thick=.03))
-    elif kind == 'pump':                                   # флакон с дозатором
-        objs.append(body('body', [(0, 0), (2.55, 0), (2.55, 9.8), (2.2, 11.2), (1.45, 11.9), (1.45, 12.4), (0, 12.4)], [0, .5, 1.3, 1.2, .2, 0, 0], glass, seg=128))
-        objs.append(body('collar', [(1.5, 12.3), (1.95, 12.3), (1.95, 13.6), (1.5, 13.6)], [0, .08, .08, 0], m['champ_rib'], seg=128, cap=False))
-        objs.append(body('collartop', [(0, 13.55), (1.95, 13.55), (1.95, 13.75), (1.1, 13.9), (0, 13.9)], [0, .05, .08, 0, 0], m['champ'], seg=128))
-        objs.append(body('stem', [(0, 13.8), (.5, 13.8), (.5, 15.5), (0, 15.5)], [0, 0, 0, 0], plastic, seg=48))
-        objs.append(body('head', [(0, 15.2), (1.22, 15.2), (1.22, 16.6), (1.0, 16.9), (0, 16.9)], [0, .12, .3, .2, 0], plastic, seg=96))
-        sp = body('spout', [(0, 0), (.38, 0), (.38, 2.3), (.26, 2.55), (0, 2.55)], [0, .06, .1, .12, 0], plastic, seg=48)
-        sp.rotation_euler = (0, math.radians(-90), 0); sp.location = (-.15 * CM, 0, 16.2 * CM); objs.append(sp)
-        objs.append(body('headtop', [(0, 16.85), (.95, 16.85), (.95, 17.0), (0, 17.0)], [0, .02, .02, 0], m['champ'], seg=96))
-        labels.append(label_band('label', m['paper'], 2.55, 2.9, 8.8, arc=0.6, eps=0.008, thick=.03))
-    elif kind == 'dropper':                                # флакон с пипеткой 30 мл
-        objs.append(body('body', [(0, 0), (1.72, 0), (1.72, 6.4), (1.45, 7.5), (1.0, 8.0), (1.0, 8.4), (0, 8.4)], [0, .35, .9, 1.0, .1, 0, 0], glass, seg=112))
-        objs += ring_teeth('thr', 1.0, 8.05, 8.35, glass, n=2, seg=64)
-        objs.append(body('collar', [(1.04, 8.3), (1.46, 8.3), (1.46, 10.5), (1.04, 10.5)], [0, .06, .06, 0], m['champ_rib'], seg=112, cap=False))
-        objs.append(body('collartop', [(0, 10.45), (1.46, 10.45), (1.46, 10.62), (.9, 10.75), (0, 10.75)], [0, .04, .06, 0, 0], m['champ'], seg=112))
-        bulb = [(0, 10.7), (.92, 10.7), (.98, 11.15), (1.14, 11.9), (1.30, 12.9), (1.30, 13.8), (1.08, 14.7), (.62, 15.35), (0, 15.5)]
+                objs.append(block('seal%d_%d' % (k, sgn), plastic, 4.5, .07, .07, loc=(0, sgn * .125 * CM, (13.6 + k * .045) * CM), bev=.012))
+        objs.append(body('cap', [(0, 0), (1.98, 0), (1.98, 2.7), (1.8, 3.0), (0, 3.0)], [0, .22, .22, .12, 0], cap_m, seg=128))
+        objs.append(body('capline', [(0, 2.74), (2.0, 2.74), (2.0, 2.82), (0, 2.82)], [0, 0, 0, 0], sm['ring'], seg=128, cap=False))
+    elif kind == 'bottle':                                 # флакон с помпой под прозрачным колпачком (средство от солнца): овальное сечение, цветная полоса печатью
+        objs.append(revolve('body', fillet([(0, 0), (3.0, 0), (3.0, 12.6), (2.75, 13.7), (1.75, 14.45), (1.75, 14.9), (0, 14.9)], [0, .5, 1.6, 1.3, .2, 0, 0], 6), plastic, seg=128, ry=.68))
+        objs.append(body('collar', [(1.2, 14.6), (1.55, 14.6), (1.55, 15.5), (1.2, 15.5)], [0, .06, .06, 0], collar_m, seg=96, cap=False))
+        objs.append(body('stem', [(0, 15.4), (.5, 15.4), (.5, 16.4), (0, 16.4)], [0, 0, 0, 0], plastic, seg=48))
+        objs.append(body('head', [(0, 16.2), (1.25, 16.2), (1.25, 17.7), (1.05, 18.0), (0, 18.0)], [0, .12, .35, .25, 0], cap_m if (st and st.get('accent')) else plastic, seg=96))
+        sp = body('spout', [(0, 0), (.34, 0), (.34, 1.3), (.25, 1.5), (0, 1.5)], [0, .06, .1, .12, 0], cap_m if (st and st.get('accent')) else plastic, seg=48); sp.rotation_euler = (0, math.radians(-90), 0); sp.location = (-.2 * CM, 0, 17.3 * CM)      # носик целиком внутри колпачка (внутренний радиус 2,2 см; кончик на 1,7 см от оси); objs.append(sp)
+        objs.append(shell('overcap', [(2.34, 13.55), (2.34, 20.6), (2.05, 21.4), (1.05, 21.8), (0, 21.9)], .14, sm['clear'], seg=128))
+    elif kind == 'pump':                                   # высокий флакон 200 мл с дозатором-помпой: жемчужный пластик, рифлёное кольцо, высокая головка
+        objs.append(body('body', [(0, 0), (2.62, 0), (2.62, 14.4), (2.4, 15.6), (1.62, 16.3), (1.62, 16.8), (0, 16.8)], [0, .5, 1.7, 1.5, .25, 0, 0], plastic, seg=128))
+        objs.append(body('collar', [(1.5, 16.5), (1.9, 16.5), (1.9, 18.0), (1.5, 18.0)], [0, .08, .08, 0], collar_m, seg=128, cap=False))
+        objs.append(body('collartop', [(0, 17.95), (1.9, 17.95), (1.9, 18.12), (1.0, 18.32), (0, 18.32)], [0, .05, .08, 0, 0], plastic if not noir else sm['ring'], seg=128))
+        objs.append(body('stem', [(0, 18.2), (.58, 18.2), (.58, 19.6), (0, 19.6)], [0, 0, 0, 0], plastic, seg=48))
+        objs.append(body('head', [(0, 19.3), (1.5, 19.3), (1.5, 22.4), (1.3, 22.8), (0, 22.85)], [0, .14, .45, .4, 0], cap_m, seg=112))
+        sp = body('spout', [(0, 0), (.34, 0), (.34, 1.25), (.25, 1.45), (0, 1.45)], [0, .06, .1, .12, 0], cap_m, seg=48); sp.rotation_euler = (0, math.radians(-90), 0); sp.location = (-1.1 * CM, 0, 21.9 * CM); objs.append(sp)
+    elif kind == 'dropper':                                # флакон 30 мл с пипеткой: стекло цвета бренда, чёрный воротник, каучуковая груша
+        gl = sm['glass']; lq = sm['liq']; gink = (st or {}).get('gink')
+        objs.append(body('body', [(0, 0), (1.72, 0), (1.72, 6.6), (1.45, 7.7), (1.02, 8.2), (1.02, 8.6), (0, 8.6)], [0, .35, .9, 1.0, .1, 0, 0], gl, seg=112))
+        if lq is not None: objs.append(body('liquid', [(0, .42), (1.5, .42), (1.5, 5.4), (1.38, 5.8), (0, 5.85)], [0, .3, .3, .3, 0], lq, seg=96))
+        objs += ring_teeth('thr', 1.02, 8.1, 8.45, gl, n=2, seg=64)
+        objs.append(body('collar', [(1.06, 8.4), (1.5, 8.4), (1.5, 10.7), (1.06, 10.7)], [0, .06, .06, 0], m['noirsoft'] if not (st and st['cap'] == 'accent') else cap_m, seg=112, cap=False))
+        objs.append(body('collarring', [(1.47, 8.36), (1.58, 8.36), (1.58, 8.78), (1.47, 8.78)], [0, .03, .03, 0], sm['ring'], seg=112, cap=False))
+        objs.append(body('collartop', [(0, 10.65), (1.5, 10.65), (1.5, 10.82), (.9, 10.95), (0, 10.95)], [0, .04, .06, 0, 0], m['noirsoft'] if not (st and st['cap'] == 'accent') else cap_m, seg=112))
+        bulb = [(0, 10.9), (.92, 10.9), (.98, 11.35), (1.1, 12.1), (1.22, 13.0), (1.22, 13.9), (1.0, 14.8), (.58, 15.45), (0, 15.6)]
         objs.append(revolve('bulb', fillet(bulb, [0, .08, .5, .9, 1.2, 1.3, 1.2, .9, 0], 6), m['rubber'], seg=112))
-        labels.append(label_band('label', m['paper'], 1.72, 1.6, 5.7, arc=0.6, eps=0.008, thick=.03))
-    elif kind == 'jar':                                    # баночка с крышкой 50 мл
-        objs.append(body('jar', [(0, 0), (4.5, 0), (4.5, 4.4), (4.35, 4.6), (0, 4.6)], [0, .8, .6, .15, 0], glass if not noir else m['opal'], seg=160))
-        objs.append(body('gasket', [(0, 4.4), (4.52, 4.4), (4.52, 4.56), (0, 4.56)], [0, 0, 0, 0], m['inkdark'], seg=160, cap=False))
-        objs.append(body('lid', [(0, 4.5), (4.72, 4.5), (4.72, 6.85), (4.55, 7.05), (3.0, 7.08), (0, 7.1)], [0, .12, .4, .35, .2, 0], m['champ_lid'], seg=160))
-        objs.append(body('lidtop', [(0, 7.09), (3.3, 7.09), (3.3, 7.13), (0, 7.13)], [0, 0, 0, 0], m['champ'], seg=128))
-        labels.append(label_band('label', m['paper'], 4.5, .95, 3.5, arc=0.5, eps=0.01, thick=.03))
-    elif kind == 'box':                                    # картонная коробка (ампулы) с полосой фольги
-        objs.append(block('box', m['carton'], 9.8, 6.0, 3.0, loc=(0, 0, 3.0 * CM), bev=.12, rot=-18))
-        objs.append(block('foil', m['foil'], 9.84, .5, 3.04, loc=(0, 0, 5.35 * CM), bev=.04, rot=-18))
-        objs.append(block('foil2', m['foil'], 9.84, .12, 3.04, loc=(0, 0, 1.0 * CM), bev=.02, rot=-18))
-        labels = []
+    elif kind == 'jar':                                    # баночка 50 мл по образцу: плоская белая крышка, тонкое хромовое кольцо, глянцевый корпус цвета бренда, кольцо у основания
+        wj = mat_pearl('pearl_jar'); body_m = wj; cap_m = wj            # баночка — всегда белая (глянцево-жемчужный пластик), хромовые кольца
+        objs.append(body('jar', [(0, 0), (3.82, 0), (3.82, 4.0), (3.72, 4.1), (0, 4.1)], [0, .55, .2, .1, 0], body_m, seg=160))
+        objs.append(body('ringlo', [(3.80, .12), (3.90, .12), (3.90, .52), (3.80, .52)], [0, .03, .03, 0], sm['ring'], seg=160, cap=False))
+        objs.append(body('ring', [(3.80, 3.72), (3.92, 3.72), (3.92, 4.22), (3.80, 4.22)], [0, .04, .04, 0], sm['ring'], seg=160, cap=False))
+        objs.append(body('lid', [(0, 4.2), (3.9, 4.2), (3.9, 5.7), (3.74, 5.95), (2.6, 6.02), (0, 6.04)], [0, .1, .35, .8, .3, 0], cap_m, seg=160))
+        objs.append(body('gap', [(0, 4.18), (3.92, 4.18), (3.92, 4.27), (0, 4.27)], [0, 0, 0, 0], m['inkdark'], seg=160, cap=False))
+    elif kind == 'box':                                    # картонная коробка (ампулы): вертикальная, с печатью
+        rot = -14
+        objs.append(block('box', m['carton'], 5.4, 13.0, 3.6, loc=(0, 0, 6.5 * CM), bev=.12, rot=rot))
+        objs.append(block('foil', m['foil'], 5.44, .22, 3.64, loc=(0, 0, 12.0 * CM), bev=.04, rot=rot)); objs.append(block('foil2', m['foil'], 5.44, .1, 3.64, loc=(0, 0, 1.0 * CM), bev=.02, rot=rot))
     elif kind == 'device':                                 # косметологическая «ручка»
         handle = [(0, 0), (1.15, 0), (1.35, 3.0), (1.9, 7.2), (1.75, 10.8), (1.5, 11.5), (0, 11.5)]
-        objs.append(revolve('handle', fillet(handle, [0, .45, 1.0, 2.5, 1.0, .1, 0], 6), m['gloss'], seg=128))
+        objs.append(revolve('handle', fillet(handle, [0, .45, 1.0, 2.5, 1.0, .1, 0], 6), plastic, seg=128))
         objs.append(body('ring', [(1.45, 11.3), (2.05, 11.3), (2.05, 12.35), (1.45, 12.35)], [0, .1, .1, 0], m['champ_rib'], seg=128, cap=False))
         head = [(0, 12.3), (1.85, 12.3), (2.55, 13.4), (2.55, 14.6), (1.85, 15.5), (0, 15.6)]
-        objs.append(revolve('head', fillet(head, [0, .3, 1.2, 1.2, 1.0, 0], 8), m['gloss'], seg=128))
+        objs.append(revolve('head', fillet(head, [0, .3, 1.2, 1.2, 1.0, 0], 8), plastic, seg=128))
         btn = body('btn', [(0, 0), (.55, 0), (.55, .35), (0, .35)], [0, .06, .06, 0], m['champ'], seg=48); btn.rotation_euler = (math.radians(90), 0, 0); btn.location = (0, -1.78 * CM, 7.0 * CM); objs.append(btn)
-        labels = []
     return objs, labels
 
 def softbox(name, loc, sx, sy, strength, color=(1, .96, .9), feather=.28, aim=(0, 0, .09)):
@@ -281,19 +313,22 @@ def softbox(name, loc, sx, sy, strength, color=(1, .96, .9), feather=.28, aim=(0
 def setup_scene(sc):
     w = bpy.data.worlds.new('w'); w.use_nodes = True; bg = w.node_tree.nodes['Background']; bg.inputs[0].default_value = (.74, .66, .55, 1); bg.inputs[1].default_value = float(os.environ.get('PACK_WORLD', .16)); sc.world = w
     # студия: длинная вертикальная полоса слева (главный «живой» блик), верхняя панель, тонкая контровая полоса справа, тёплый отскок снизу и большой слабый заполняющий свет спереди
-    softbox('strip_l', (-.55, -.45, .12), .17, .9, float(os.environ.get('PACK_STRIP', 26)), (1, .95, .87))
+    softbox('strip_l', (-.55, -.45, .12), .17, .9, float(os.environ.get('PACK_STRIP', 38)), (1, .95, .87))
     softbox('top', (-.08, -.2, .85), .8, .8, float(os.environ.get('PACK_TOP', 9)), (1, .97, .92))
     softbox('rim_r', (.62, .32, .1), .10, .85, float(os.environ.get('PACK_RIM', 26)), (1, .98, .96), feather=.4)
     softbox('front', (.35, -.95, .05), .7, .7, float(os.environ.get('PACK_FILL', 1.0)), (1, .97, .93))
     softbox('floor', (0, -.3, -.28), .8, .6, float(os.environ.get('PACK_BOUNCE', 3.2)), (1, .86, .66))
     cd = bpy.data.cameras.new('cam'); cd.lens = float(os.environ.get('PACK_LENS', 100)); cd.sensor_width = 36; cam = bpy.data.objects.new('cam', cd); bpy.context.collection.objects.link(cam); sc.camera = cam
+    bpy.ops.mesh.primitive_plane_add(size=1, location=(0, .42, .09)); cd_ = bpy.context.object; cd_.name = 'card'; cd_.scale = (1.4, 1, 1.2); cd_.rotation_euler = (math.radians(90), 0, 0)
+    cm_ = bpy.data.materials.new('card'); cm_.use_nodes = True; nt_ = cm_.node_tree; nt_.nodes.clear(); o_ = nt_.nodes.new('ShaderNodeOutputMaterial'); e_ = nt_.nodes.new('ShaderNodeEmission'); e_.inputs['Color'].default_value = (.86, .74, .56, 1); e_.inputs['Strength'].default_value = float(os.environ.get('PACK_CARD', .9)); nt_.links.new(e_.outputs[0], o_.inputs[0]); cd_.data.materials.append(cm_)
+    cd_.visible_camera = False; cd_['bz'] = .09                                   # тёплая карточка за предметом: её видят только преломлённые лучи — цветное стекло не чернеет
     return cam
 
-OBJ_KEEP = ('strip_l', 'top', 'rim_r', 'front', 'floor', 'cam')
-def render_one(kind, noir, sc, cam):
+OBJ_KEEP = ('strip_l', 'top', 'rim_r', 'front', 'floor', 'card', 'cam')
+def render_one(kind, noir, sc, cam, brand=None, tag=None):
     for o in list(bpy.data.objects):
         if o.name not in OBJ_KEEP: bpy.data.objects.remove(o, do_unlink=True)
-    m = M(); objs, labels = build(kind, noir, m)
+    m = M(); objs, labels = build(kind, noir, m, brand)
     bpy.context.view_layer.update()
     pts = [o.matrix_world @ Vector(c) for o in objs for c in o.bound_box]; zmin = min(p.z for p in pts); zmax = max(p.z for p in pts); xs = [p.x for p in pts]
     H = zmax - zmin; W_ = max(xs) - min(xs); cz = (zmin + zmax) / 2
@@ -304,7 +339,7 @@ def render_one(kind, noir, sc, cam):
     for o in bpy.data.objects:
         if o.name in OBJ_KEEP[:-1]:
             o.location.z = o['bz'] + cz; o.rotation_euler = (Vector((0, 0, cz)) - o.location).to_track_quat('-Z', 'Y').to_euler()
-    sc.render.filepath = os.path.join('/tmp', 'pack_%s_%s.png' % (kind, 'n' if noir else 'w')); bpy.context.view_layer.update(); bpy.ops.render.render(write_still=True)
+    sc.render.filepath = os.path.join('/tmp', 'pack_%s_%s.png' % (tag or kind, 'n' if noir else 'w')); bpy.context.view_layer.update(); bpy.ops.render.render(write_still=True)
     boxes = []
     for lo in labels:
         us = [world_to_camera_view(sc, cam, lo.matrix_world @ v.co) for v in lo.data.vertices]
@@ -376,16 +411,28 @@ def finish_spin(paths, name, static_box=None):
     return {'file': 'assets/showroom/' + out, 'n': len(ims), 'cols': cols, 'rows': rows, 'fw': fw, 'fh': fh,
             'box': [round((sx0 - x0) / fw0, 4), round((sy0 - y0) / fh0, 4), round((sx1 - sx0) / fw0, 4), round((sy1 - sy0) / fh0, 4)]}
 
+def product_jobs():
+    """по одной упаковке на сочетание «бренд + вид» из data/products.json: отделка и цвет бренда, без надписей; файл pack-<бренд>-<вид>.webp"""
+    root = os.path.join(HERE, '..', '..'); ps = json.load(open(os.path.join(root, 'data', 'products.json'), encoding='utf8')); ps = ps if isinstance(ps, list) else ps.get('products', [])
+    out = []; seen = set()
+    for p in ps:
+        k = (p['brand'], p['type'])
+        if k in seen or p['brand'] not in STYLES: continue
+        seen.add(k); out.append((p['type'], False, p['brand'], None, '%s-%s' % k))
+    return out
+
 if __name__ == '__main__':
-    jobs = [('tube', False), ('bottle', False), ('bottle', True), ('pump', False), ('pump', True), ('dropper', False), ('dropper', True), ('jar', False), ('box', False), ('device', False)]
+    jobs = [(k, n, None, None, None) for k, n in [('tube', False), ('bottle', False), ('bottle', True), ('pump', False), ('pump', True), ('dropper', False), ('dropper', True), ('jar', False), ('box', False), ('device', False)]]
     want = sys.argv[1:]
-    if want: jobs = [j for j in jobs if j[0] in want or ('%s-noir' % j[0]) in want]
+    if want == ['products']: jobs = product_jobs()
+    elif want and want[0] == 'product': jobs = [j for j in product_jobs() if j[4] in want[1:]]
+    elif want: jobs = [j for j in jobs if j[0] in want or ('%s-noir' % j[0]) in want]
     meta_path = os.path.join(OUT, 'packs.json'); meta = json.load(open(meta_path)) if os.path.exists(meta_path) else {}
-    for kind, noir in jobs:
+    for kind, noir, brand, prod, pid in jobs:
         sc = reset(); cam = setup_scene(sc)
-        if SPIN_N:
+        if SPIN_N and not pid:
             name = 'pack-%s%s' % (kind, '-noir' if noir else ''); paths = render_spin(kind, noir, sc, cam, SPIN_N)
             meta.setdefault(name, {})['spin'] = finish_spin(paths, name[5:]); print(name, meta[name]['spin'], flush=True); json.dump(meta, open(meta_path, 'w'), indent=1, ensure_ascii=False); continue
-        png, boxes = render_one(kind, noir, sc, cam)
-        name = 'pack-%s%s' % (kind, '-noir' if noir else ''); meta[name] = finish(png, boxes, name); print(name, meta[name], flush=True)
+        png, boxes = render_one(kind, noir, sc, cam, brand, pid)
+        name = 'pack-%s' % pid if pid else 'pack-%s%s' % (kind, '-noir' if noir else ''); meta[name] = finish(png, boxes, name); meta[name]['kind'] = kind; print(name, meta[name], flush=True)
         json.dump(meta, open(meta_path, 'w'), indent=1, ensure_ascii=False)

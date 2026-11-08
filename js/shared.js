@@ -57,7 +57,19 @@
   /* ---------- стили бренда (переменные CSS) ---------- */
   /* условное изображение упаковки для витрины-шоурума, пока у товара нет настоящего фото: 3D-рендер нейтральной упаковки без текста (tools/showroom-assets/packs.py) */
   const PACKS = {tube: 'pack-tube', bottle: 'pack-bottle', pump: 'pack-pump', dropper: 'pack-dropper', jar: 'pack-jar', box: 'pack-box', device: 'pack-device'}, NOIR = {bottle: 1, pump: 1, dropper: 1};
-  const packOf = p => { const t = p.type || p.t || 'bottle', k = PACKS[t] || PACKS.bottle; let h = 7; for (let i = 0; i < p.id.length; i++) h = (h * 31 + p.id.charCodeAt(i)) >>> 0; return 'assets/showroom/' + k + (NOIR[t] && h % 3 === 0 ? '-noir' : '') + '.webp'; };
+  /* упаковка по бренду: assets/showroom/pack-<бренд>-<вид>.webp (отделка и цвет бренда: бирюза Endocare, оранжевый Heliocare, фиолетовый Neoretin…), если такая отрисована (индекс — assets/showroom/packs.json: в браузере через ASTREYA_DATA.showroom.packs, в Node читается с диска); иначе — общая упаковка вида */
+  const BP = {}; let bpInit = false;
+  const bpAdd = idx => Object.keys(idx || {}).forEach(k => { const m = /^pack-(.+)-(tube|bottle|pump|dropper|jar|box|device)$/.exec(k); if (m) BP[m[1] + '-' + m[2]] = 1; });
+  const bpLoad = () => {
+    bpInit = true;
+    try { const d = typeof window !== 'undefined' && window.ASTREYA_DATA; if (d && d.showroom && d.showroom.packs) { bpAdd(d.showroom.packs); return; } } catch (e) { /* без данных страницы */ }
+    try { if (typeof require === 'function') { const fs = require('fs'), path = require('path'); bpAdd(JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'assets', 'showroom', 'packs.json'), 'utf8'))); } } catch (e) { /* нет индекса — общие упаковки */ }
+  };
+  const packOf = p => {
+    const t = p.type || p.t || 'bottle', k = PACKS[t] || PACKS.bottle; if (!bpInit) bpLoad();
+    if (p.brand && BP[p.brand + '-' + t]) return 'assets/showroom/pack-' + p.brand + '-' + t + '.webp';
+    let h = 7; for (let i = 0; i < p.id.length; i++) h = (h * 31 + p.id.charCodeAt(i)) >>> 0; return 'assets/showroom/' + k + (NOIR[t] && h % 3 === 0 ? '-noir' : '') + '.webp';
+  };
   const PACK_H = {bottle: 97, pump: 100, dropper: 83, tube: 87, jar: 49, box: 50, device: 97};                 // высота макета в рамке карточки/окна просмотра, % (jar и box — низкие)
   const packH = p => PACK_H[p.type || p.t] || 97;
   /* «витрина-миниатюра» (единая система ASTREYA, css/system.css): упаковка — 3D-макет либо настоящее фото — стоит на стене и полу той же сцены, что и главная экспозиция.

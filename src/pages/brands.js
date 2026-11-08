@@ -7,7 +7,7 @@ const path = require('path');
 const ROOT = path.join(__dirname, '..', '..');
 const readJson = f => { try { return JSON.parse(fs.readFileSync(path.join(ROOT, f), 'utf8')); } catch (e) { return null; } };
 /* высота упаковки-макета в сантиметрах (из размеров 3D-моделей tools/showroom-assets/packs.py): по ним товары в нише получают верный масштаб относительно подиума */
-const PACK_CM = {tube: 13.95, bottle: 19.15, pump: 17.0, dropper: 16.2, jar: 7.13, box: 6.0, device: 15.6};
+const PACK_CM = {tube: 14.4, bottle: 21.9, pump: 22.9, dropper: 15.6, jar: 6.0, box: 13.0, device: 15.6};
 
 function brandsPage(ctx, C, P) {
   const bp = ctx.redesign && ctx.redesign.brandsPage;

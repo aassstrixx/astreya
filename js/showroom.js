@@ -78,8 +78,10 @@
     if (instant) { void S.view.offsetWidth; S.view.classList.remove('no-tr'); }
     clearTimeout(S.camT); S.camT = setTimeout(() => { if (S && !S.cam) S.root.classList.remove('is-cam'); }, 1250);
   }
-  /* высота упаковки на сцене (проектные пиксели холста) по виду упаковки; ширина — из пропорций картинки */
-  const TH = {bottle: 240, pump: 246, dropper: 205, tube: 214, jar: 118, box: 122, device: 240};
+  /* высота упаковки на сцене — по реальным размерам (10–25 см): 7,4 px холста на сантиметр; вся композиция (упаковка + подставка) не выше трети видимой области (≈ 236 px из ≈ 706) */
+  const PXCM = 7.4, CAPH = 236;
+  const CMH = {pump: 24, bottle: 22, dropper: 14, jar: 10, tube: 16, box: 14, device: 18};
+  const TH = {}; Object.keys(CMH).forEach(k => { TH[k] = CMH[k] * PXCM; });
   const thOf = p => TH[p.t] || TH.bottle;
   const packKey = p => { const s = A.packOf ? A.packOf(p) : ''; const m = /([^/]+)\.webp$/.exec(s); return m ? m[1] : ''; };
   const url = p => A.assetUrl ? A.assetUrl(p) : root() + p;       // обычный сайт: путь от корня; автономная сборка: data:-адрес
@@ -95,45 +97,61 @@
   /* на узких экранах показывается та же сцена, что на компьютере: полоса холста [WX0…1536]×[WY0…WY0+WH]; если по ширине она не умещается при читаемом масштабе, сцену можно сдвигать пальцем или стрелками */
   const ASIDE_TOP = 100, COMPACT_TOP = 318, COMPACT_EXT = 392;                          // по вертикали холста показываем от верха самой высокой упаковки (y≈318) до оснований подиумов (y≈710)
 
-  /* расстановка по макету 1536×1024: десять подиумов в одну линию на переднем плане — высота разная, ряд чередуется (дальний/передний: ±32 px по вертикали), главный товар — на самом высоком подиуме и крупнее.
-     Подиумы не перекрывают друг друга, упаковка занимает не больше FIT ширины своего подиума — ни один товар не заходит на чужой подиум и не закрывает соседа. Размеры — проектные пиксели холста.
-     REF: [высота подиума, ряд (0 — дальний, 1 — передний), масштаб товара] */
-  const REF = [[44, 1, 1.00], [82, 0, .96], [104, 1, 1.08], [56, 0, 1.04], [92, 1, 1.00], [40, 0, 1.02], [76, 1, .98], [100, 0, 1.06], [50, 1, 1.00], [70, 0, 1.03]];
-  const HV = [[1, 1, 1, 1, 1, 1, 1, 1, 1, 1], [1.7, 1.0, .75, 1.6, .9, 1.8, 1.2, .8, 1.5, .9], [.9, 1.5, 1.15, .75, 1.7, .8, 1.4, 1.1, .7, 1.6]];      // высоты подиумов по категории: «композиций» три, архитектура одна
-  const BASE = [654, 686], CAP_RATIO = (D.showroom && D.showroom.pod && D.showroom.pod.capRatio) || .1026, TOP_MIN = 322;
-  const SPAN = [322, 1448], GAP = 10, FIT = .82, PW_MIN = 96;
+  /* расстановка по макету 1536×1024: один широкий низкий травертиновый стол, упаковки стоят прямо на нём небольшими композиционными группами (2–3 предмета, ряд чередуется: дальний/передний ±32 px), у части групп — невысокая подставка (5–12 см), которая создаёт уровень, но не спорит с упаковкой.
+     Высота всей композиции (упаковка + подставка) ≤ CAPH ≈ трети видимой области. Группы разведены по столу, предметы в группе почти касаются, но не перекрывают друг друга. Размеры — проектные пиксели холста. */
+  const PLV = [[0, 6, 0, 9, 0, 5, 0, 7, 0, 5], [5, 0, 8, 0, 6, 0, 10, 0, 5, 0], [0, 8, 0, 5, 9, 0, 6, 0, 12, 0]];      // высота подставки, см, по номеру места: три «композиции» (по категории)
+  const GRP = [[3, 2, 3, 2], [2, 3, 2, 3], [3, 3, 2, 2]];
+  const BASE = [654, 686], CAP_RATIO = (D.showroom && D.showroom.pod && D.showroom.pod.capRatio) || .1026;
+  const SPAN = [322, 1448], WITHIN = 10;
+  function groupsOf(n, v) {
+    const base = GRP[v % 3], out = []; let left = n, i = 0;
+    while (left > 0) { const g = Math.min(base[i % base.length], left); out.push(g); left -= g; i++; }
+    if (out.length > 1 && out[out.length - 1] === 1) { out[out.length - 2]++; out.pop(); }
+    return out;
+  }
   function compose(prods, s) { return s.rows2 ? composeRows(prods, s) : composeLine(prods, s); }
   function composeLine(prods, s) {
     s.stage.classList.remove('is-rows2');
-    const n = Math.min(prods.length, MAIN_MAX), slots = [], v = s.variant;
-    const idx = n === 1 ? [2] : Array.from({length: n}, (_, i) => Math.round(i * (MAIN_MAX - 1) / (n - 1)));
-    const cells = idx.map((k, i) => { const [h0, row, sc] = REF[k], p = prods[i], im = imgOf(p), th = thOf(p) * sc, bw = th * im.ar; return {k, p, im, h0, row, th, bw, pw: Math.max(bw / FIT, PW_MIN), hero: k === 2 || (n <= 3 && i === Math.floor((n - 1) / 2))}; });
-    const avail = SPAN[1] - SPAN[0], sum = cells.reduce((a, c) => a + c.pw, 0), gaps = (n - 1) * GAP, f = Math.min(1, (avail - gaps) / sum);
-    const extra = n > 1 ? Math.min(46, Math.max(0, avail - gaps - sum * f) / (n - 1)) : 0, used = sum * f + (gaps + extra * (n - 1));
+    const n = Math.min(prods.length, MAIN_MAX), slots = [], v = s.variant, gs = groupsOf(n, v), pl = PLV[v % 3], hi = Math.floor((n - 1) / 2);
+    let idx = 0;
+    const groups = gs.map(sz => {
+      const cells = [];
+      for (let j = 0; j < sz; j++, idx++) {
+        const p = prods[idx], im = imgOf(p), row = (idx + v) % 2 === 0 ? 1 : 0, th0 = thOf(p) * (row ? 1.03 : .97), bw0 = th0 * im.ar;
+        const hh = Math.max(0, Math.min(pl[idx % 10] * PXCM, CAPH - th0)), pw = hh > 0 ? Math.max(bw0 * 1.35 + 10, 64) : bw0;
+        cells.push({idx, p, im, row, th: th0, bw: bw0, hh, pw, hero: idx === hi});
+      }
+      return {cells, w: cells.reduce((a, c) => a + c.pw, 0) + (sz - 1) * WITHIN};
+    });
+    const avail = SPAN[1] - SPAN[0], sumW = groups.reduce((a, g) => a + g.w, 0), G = groups.length;
+    const f = Math.min(1, (avail - (G - 1) * 36) / sumW);
+    const gap = G > 1 ? Math.min(190, Math.max(36, (avail - sumW * f) / (G - 1))) : 0, used = sumW * f + gap * (G - 1);
     let x = SPAN[0] + (avail - used) / 2;
-    cells.forEach((c, i) => {
-      const pw = c.pw * f, cx = x + pw / 2, k = Math.min(1, pw * FIT / c.bw), th = c.th * k, bw = c.bw * k;
-      const tmin = cx + bw / 2 > 1240 ? 404 : TOP_MIN;                                                    // справа сверху — акцентная карточка: товар под ней не заходит на неё
-      const hh = Math.max(30, Math.min(124, c.h0 * HV[v][c.k], BASE[c.row] - th - tmin));         // верх упаковки не заходит под заголовок, категории и карточку
-      const e = pw * CAP_RATIO, topFace = BASE[c.row] - hh;                                             // y центра верхней грани подиума — здесь стоит упаковка
-      x += pw + GAP + extra;
-      slots.push({group: 'main', i, p: c.p, im: c.im, hero: c.hero, row: c.row, nk: c.hero ? 0 : (c.k + v) % 4, pod: {l: cx - pw / 2, t: topFace - e / 2, w: pw, e, b: hh}, it: {l: cx - bw / 2, t: topFace + e * .08 - th, w: bw, h: th, cx, z: 5 + c.row * 2 + (c.hero ? 1 : 0)}});
+    groups.forEach(g => {
+      g.cells.forEach((c, j) => {
+        const pw = c.pw * f, bw = c.bw * f, th = c.th * f, hh = c.hh * f, cx = x + pw / 2, e = pw * CAP_RATIO, topFace = BASE[c.row] - hh;
+        x += pw + WITHIN * f;
+        slots.push({group: 'main', i: c.idx, p: c.p, im: c.im, hero: c.hero, row: c.row, nk: c.hero ? 0 : (c.idx + v) % 4,
+          pod: hh > 0 ? {l: cx - pw / 2, t: topFace - e / 2, w: pw, e, b: hh} : null,
+          it: {l: cx - bw / 2, t: topFace + (hh > 0 ? e * .08 : 0) - th, w: bw, h: th, cx, z: 5 + c.row * 2 + (c.hero ? 1 : 0)}});
+      });
+      x += gap - WITHIN * f;
     });
     return slots;
   }
 
   /* узкий экран (телефон): та же экспозиция, но «в две полки» — до пяти подиумов в ряд, оба ряда на одном экране без сдвига; задний ряд стоит на каменной полке, передний — на платформе.
      Масштаб подбирается так, чтобы всё поместилось по ширине и по высоте (measure). Размеры — те же проектные пиксели холста. */
-  const R2 = {Yf: 700, R: 236, cs: .72, cols: 5, slot: 104, topC: 246, ext: 462, cap: 214};
+  const R2 = {Yf: 700, R: 236, cs: .8, cols: 5, slot: 104, topC: 262, ext: 446, cap: 190};
   function composeRows(prods, s) {
     const n = Math.min(prods.length, MAIN_MAX), slots = [], v = s.variant, wc = s.wc, vx0 = s.vx0, m = 12 / s.s, slotW = (wc - 2 * m) / R2.cols, Yb = R2.Yf - R2.R;
     const back = n > R2.cols ? Math.ceil(n / 2) : 0, rows = [prods.slice(0, back).map((p, j) => [p, j]), prods.slice(back).map((p, j) => [p, back + j])];
     rows.forEach((list, r) => {
       const c = list.length, x0 = vx0 + wc / 2 - c * slotW / 2 + slotW / 2, base = r ? R2.Yf : Yb;
       list.forEach(([p, i], j) => {
-        const hero = i === 2, im = imgOf(p), th0 = thOf(p) * (hero ? 1.06 : 1) * R2.cs, bw0 = th0 * im.ar, pw = Math.min(slotW - 8, Math.max(bw0 / FIT, 60)), k = Math.min(1, pw * FIT / bw0), th = th0 * k, bw = bw0 * k, cx = x0 + j * slotW;
-        const hh = Math.max(18, Math.min(REF[i][0] * .42 * HV[v][i], R2.cap - th)), e = pw * CAP_RATIO, topFace = base - hh;
-        slots.push({group: 'main', i, p, im, hero, row: r, nk: hero ? 0 : (i + v) % 4, pod: {l: cx - pw / 2, t: topFace - e / 2, w: pw, e, b: hh}, it: {l: cx - bw / 2, t: topFace + e * .08 - th, w: bw, h: th, cx, z: 5 + r * 2 + (hero ? 1 : 0)}});
+        const hero = i === 2, im = imgOf(p), th0 = thOf(p) * (hero ? 1.06 : 1) * R2.cs, bw0 = th0 * im.ar, hp = Math.max(0, Math.min(PLV[v % 3][i % 10] * PXCM * .8, R2.cap - th0)), pw0 = hp > 0 ? Math.max(bw0 * 1.3, 56) : bw0, pw = Math.min(slotW - 8, pw0), k = Math.min(1, pw / pw0), th = th0 * k, bw = bw0 * k, cx = x0 + j * slotW;
+        const hh = hp * k, e = pw * CAP_RATIO, topFace = base - hh;
+        slots.push({group: 'main', i, p, im, hero, row: r, nk: hero ? 0 : (i + v) % 4, pod: hh > 0 ? {l: cx - pw / 2, t: topFace - e / 2, w: pw, e, b: hh} : null, it: {l: cx - bw / 2, t: topFace + (hh > 0 ? e * .08 : 0) - th, w: bw, h: th, cx, z: 5 + r * 2 + (hero ? 1 : 0)}});
       });
     });
     const st = s.stage.style; s.stage.classList.toggle('is-rows2', back > 0);
@@ -167,10 +185,11 @@
     st.left = it.l.toFixed(1) + 'px'; st.top = it.t.toFixed(1) + 'px'; st.width = it.w.toFixed(1) + 'px'; st.height = it.h.toFixed(1) + 'px';
     el.style.setProperty('--bw', it.w.toFixed(1) + 'px'); el.style.setProperty('--z', it.z);
     el.style.setProperty('--pdh', g.pod ? (g.pod.t + g.pod.e + g.pod.b - (it.t + it.h)).toFixed(1) + 'px' : '14px');
+    el.classList.toggle('is-flat', !g.pod && g.group !== 'niche');                                  // стоит прямо на столе (без подставки): в полированной столешнице видно отражение
     rec.g = g;
   }
   function placePod(rec, g) {
-    const el = rec.el, d = g.pod, st = el.style;
+    const el = rec.el, d = g.pod, st = el.style; el.setAttribute('data-for', g.p.id);                       // какому товару принадлежит подставка
     st.left = d.l.toFixed(1) + 'px'; st.top = d.t.toFixed(1) + 'px'; st.setProperty('--w', d.w.toFixed(1) + 'px'); st.setProperty('--e', d.e.toFixed(1) + 'px'); st.setProperty('--b', d.b.toFixed(1) + 'px'); st.zIndex = 2 + g.row * 2;
     rec.g = g;
   }
@@ -321,67 +340,12 @@
     S.view.style.setProperty('--px', '0'); S.view.style.setProperty('--py', '0');
     /* камера и параллакс — крупное движение: при системной настройке «уменьшить движение» их нет (остальные анимации витрины прежние) */
     if (!S.stack && mode() === 'full' && !rmReal.matches) camApply(S.items.get(id).g.it);
-    positionSel(); paintCard(id, true); spinOn(id);
+    positionSel(); paintCard(id, true);
     track('showroom_select', {product: id});
     if (S.stack && mode() !== 'off') setTimeout(() => { if (!S) return; const r = S.card.getBoundingClientRect(); if (r.bottom > innerHeight - 8 || r.top < 70) S.card.scrollIntoView({behavior: 'smooth', block: 'nearest'}); }, 260);
   }
-  /* ---------- выбранный товар — полноценная 3D-модель: оборот на 360° ----------
-     Оборот рендерится в Blender (tools/showroom-assets/packs.py, PACK_SPIN): свет и камера неподвижны, поворачивается сам предмет — блики и тени на нём живые.
-     Кадры (≈32 на оборот) лежат в одной картинке-атласе assets/showroom/spin-<вид>.webp и грузятся только при выборе. Между соседними кадрами идёт перекрёстное смешение, поэтому вращение плавное.
-     Тянуть можно мышью и пальцем (по горизонтали; вертикальный жест по-прежнему прокручивает страницу), стрелки ← → — по 11° с клавиатуры. В покое модель медленно вращается сама (кроме «меньше движения» и лёгкого режима).
-     Если оборота у товара нет (настоящее фото, нет атласа, ошибка загрузки) — остаётся прежняя картинка. */
-  const SPINS = {};
-  function spinLoad(key, sp) {
-    if (SPINS[key]) return SPINS[key];
-    const r = SPINS[key] = {ok: false, cbs: [], src: url(sp.file)}, im = new Image();
-    im.onload = () => { r.ok = true; r.cbs.splice(0).forEach(f => f()); }; im.onerror = () => { r.fail = true; r.cbs.length = 0; };
-    im.decoding = 'async'; im.src = r.src; return r;
-  }
-  function spinPaint(st) {
-    const sp = st.sp, n = sp.n, f = st.ang / 360 * n, i0 = Math.floor(f) % n, t = f - Math.floor(f), i1 = (i0 + 1) % n;
-    const pos = i => (sp.cols > 1 ? (i % sp.cols) / (sp.cols - 1) * 100 : 0) + '% ' + (sp.rows > 1 ? Math.floor(i / sp.cols) / (sp.rows - 1) * 100 : 0) + '%';
-    st.a.style.backgroundPosition = pos(i0); st.b.style.backgroundPosition = pos(i1); st.b.style.opacity = t < .03 ? '0' : t > .97 ? '1' : t.toFixed(3);
-    st.el.setAttribute('data-angle', String(Math.round(st.ang)));
-  }
-  function spinOn(id) {
-    spinOff();
-    if (!S || PHOTOS) return;
-    const rec = S.items.get(id), p = P[id]; if (!rec || !p) return;
-    const key = packKey(p), m = PACKS[key]; if (!m || !m.spin) return;
-    const sp = m.spin, ld = spinLoad(key, sp), ph = rec.el.querySelector('.shw-ph'), img = rec.el.querySelector('.shw-img'); if (!ph || !img || ld.fail) return;
-    const st = S.spin = {id, rec, sp, ph, img, ang: 0, drag: null, idle: performance.now() + 900, last: 0, raf: 0, sup: 0, el: null};
-    const build = () => {
-      if (S.spin !== st || !rec.el.isConnected) return;
-      const bx = sp.box, root = document.createElement('div'); root.className = 'shw-spin'; root.setAttribute('aria-hidden', 'true');
-      root.style.cssText = 'left:' + (-bx[0] / bx[2] * 100).toFixed(3) + '%;top:' + (-bx[1] / bx[3] * 100).toFixed(3) + '%;width:' + (100 / bx[2]).toFixed(3) + '%;height:' + (100 / bx[3]).toFixed(3) + '%';
-      root.innerHTML = '<i></i><i></i>'; st.a = root.children[0]; st.b = root.children[1];
-      [st.a, st.b].forEach(e => { e.style.backgroundImage = 'url("' + ld.src + '")'; e.style.backgroundSize = (sp.cols * 100) + '% ' + (sp.rows * 100) + '%'; });
-      ph.appendChild(root); st.el = root; spinPaint(st); img.style.opacity = '0'; rec.el.classList.add('is-spin');
-      const el = rec.el;
-      st.down = e => { if (e.pointerType === 'mouse' && e.button !== 0) return; st.drag = {x: e.clientX, a: st.ang, moved: false}; try { el.setPointerCapture(e.pointerId); } catch (x) {} };
-      st.move = e => { const d = st.drag; if (!d) return; const dx = e.clientX - d.x; if (Math.abs(dx) > 4) d.moved = true; if (d.moved) { st.ang = ((d.a - dx * .8) % 360 + 360) % 360; spinPaint(st); } };
-      st.up = () => { const d = st.drag; if (!d) return; st.drag = null; st.idle = performance.now() + 2200; if (d.moved) st.sup = performance.now(); };
-      st.clk = e => { if (performance.now() - st.sup < 400) { e.stopPropagation(); e.preventDefault(); } };                       // протяжка не должна закрывать выбор
-      st.key = e => { if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return; st.ang = ((st.ang + (e.key === 'ArrowLeft' ? -360 / sp.n : 360 / sp.n)) % 360 + 360) % 360; st.idle = performance.now() + 2200; spinPaint(st); e.preventDefault(); e.stopPropagation(); };
-      el.addEventListener('pointerdown', st.down); el.addEventListener('pointermove', st.move); el.addEventListener('pointerup', st.up); el.addEventListener('pointercancel', st.up); el.addEventListener('click', st.clk, true); el.addEventListener('keydown', st.key);
-      const auto = !rmReal.matches && !html.classList.contains('lite');
-      const tick = t => { if (S && S.spin === st) { if (auto && !st.drag && t > st.idle) { st.ang = (st.ang + Math.min(60, t - (st.last || t)) * .02) % 360; spinPaint(st); } st.last = t; st.raf = requestAnimationFrame(tick); } };
-      st.raf = requestAnimationFrame(tick);
-    };
-    ld.ok ? build() : ld.cbs.push(build);
-  }
-  function spinOff() {
-    const st = S && S.spin; if (!st) return; S.spin = null; cancelAnimationFrame(st.raf);
-    const el = st.rec.el; if (st.down) { el.removeEventListener('pointerdown', st.down); el.removeEventListener('pointermove', st.move); el.removeEventListener('pointerup', st.up); el.removeEventListener('pointercancel', st.up); el.removeEventListener('click', st.clk, true); el.removeEventListener('keydown', st.key); }
-    const fin = () => { if (st.el) st.el.remove(); st.img.style.opacity = ''; el.classList.remove('is-spin'); };
-    if (!st.el || rmReal.matches || !el.isConnected || Math.min(st.ang, 360 - st.ang) < 4) { fin(); return; }
-    const a0 = st.ang > 180 ? st.ang - 360 : st.ang, t0 = performance.now();                                    // при закрытии модель плавно возвращается лицом к зрителю
-    const step = t => { const u = Math.min(1, (t - t0) / 420), e = 1 - Math.pow(1 - u, 3); st.ang = ((a0 * (1 - e)) % 360 + 360) % 360; spinPaint(st); u < 1 ? requestAnimationFrame(step) : fin(); };
-    requestAnimationFrame(step);
-  }
-
   function clearSel(quiet) {
-    if (!S) return; const was = S.sel; spinOff(); S.sel = null; S.root.classList.remove('has-sel'); camClear(!!quiet);
+    if (!S) return; const was = S.sel; S.sel = null; S.root.classList.remove('has-sel'); camClear(!!quiet);
     S.items.forEach(rec => { rec.el.classList.remove('is-sel'); rec.el.setAttribute('aria-pressed', 'false'); }); S.pods.forEach(q => q.el.classList.remove('is-sel'));
     S.card.style.setProperty('--cx', '0px'); S.card.style.setProperty('--cy', '0px');
     paintCard(S.hov || idleId(), false);

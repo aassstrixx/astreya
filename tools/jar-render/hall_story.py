@@ -136,7 +136,10 @@ SHELF_ITEMS = [
     [('jar', True, -.17, -8), ('pump', False, .0, 0), ('tube', False, .17, 14)],
     [('bottle', False, -.16, -6), ('dropper', False, .02, 0), ('jar', False, .18, 10)],
 ]
-PACK_K = 1.3                                   # упаковки чуть крупнее настоящих: с пяти метров на стеллаже должны читаться формы
+PACK_K = float(os.environ.get('HALL_PACK_K', 1.2))                                   # упаковки чуть крупнее настоящих: с пяти метров на стеллаже должны читаться формы
+
+
+SHELF_BRANDS = ['dermatime', 'endocare', 'neoretin', 'heliocare', 'keenwell', 'biretix', 'iraltone', 'elancyl']
 
 
 def build_shelf(M, yb):
@@ -155,7 +158,7 @@ def build_shelf(M, yb):
         if HALL_STYLE == '2' and bi > 0:                                           # скрытая тёплая лента под полкой: моет заднюю стенку и продукцию на полке ниже
             SC.box('shelf_led%d' % bi, M['led'], x0 + pw + .004, x1 - pw - .004, y0 + .035, y0 + .045, z - .006, z - .002, 'p', 0)
         for ki, (kind, noir, dx, rot) in enumerate(SHELF_ITEMS[bi]):
-            objs, _ = PK.build(kind, noir, pm)
+            objs, _ = PK.build(kind, noir, pm, SHELF_BRANDS[(bi * 3 + ki) % len(SHELF_BRANDS)])           # у каждой упаковки отделка бренда-партнёра (белый жемчужный пластик, бирюзовое стекло, фиолетовый колпачок…), без надписей
             g = bpy.data.objects.new('shelf_%s_%d_%d' % (kind, bi, ki), None)
             bpy.context.collection.objects.link(g)
             for o in objs:
@@ -625,7 +628,7 @@ def build_lab(M):
             SC.box('glass%d' % i, fm, x0, x1, y0, y1, z0, z1, 'p', .002)
     pm = PK.M()
     for i, (kind, noir, x, y, rot) in enumerate(LAB_PACKS):
-        objs, _ = PK.build(kind, noir, pm)
+        objs, _ = PK.build(kind, noir, pm, SHELF_BRANDS[i % len(SHELF_BRANDS)])
         g = bpy.data.objects.new('lab_%s_%d' % (kind, i), None)
         bpy.context.collection.objects.link(g)
         for o in objs:

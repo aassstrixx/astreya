@@ -515,12 +515,8 @@ html.lite .shw-world{filter:none!important}
   .shw-tip{transition:opacity .25s ease}
 }
 
-/* выбранный товар — вращаемая 3D-модель (js/showroom.js → spinOn): кадры оборота лежат в одном атласе, два слоя смешиваются между соседними кадрами */
-.shw-spin{position:absolute;pointer-events:none}
-.shw-spin i{position:absolute;left:0;top:0;width:100%;height:100%;background-repeat:no-repeat;background-size:100% 100%}
-.shw-it.is-sel{cursor:grab;touch-action:pan-y}
-.shw-it.is-sel:active{cursor:grabbing}
-.shw-it.is-spin::after{content:"↔  потяните, чтобы повернуть";position:absolute;left:50%;bottom:-40px;transform:translateX(-50%);white-space:nowrap;font:500 11px/1 var(--sans,system-ui);letter-spacing:.06em;color:var(--navy);padding:6px 11px;border-radius:99px;background:rgba(250,246,238,.82);box-shadow:0 8px 18px -10px rgba(40,30,16,.5);pointer-events:none;opacity:0;animation:shwHint 4.6s var(--shw-ease) .9s both}
-@keyframes shwHint{0%{opacity:0;transform:translate(-50%,6px)}12%,78%{opacity:1;transform:translate(-50%,0)}100%{opacity:0;transform:translate(-50%,0)}}
-@media (prefers-reduced-motion:reduce){.shw-it.is-spin::after{animation:none;opacity:1}}
-html.lite .shw-it.is-spin::after{animation:none;opacity:1}
+/* упаковки на столе: контактная тень плотнее, предмет читается на фоне; у стоящих прямо на полированной столешнице — мягкое отражение (где поддерживается box-reflect) */
+.shw-sh{background:radial-gradient(closest-side,rgba(54,34,14,.62),rgba(54,34,14,.26) 54%,rgba(54,34,14,0))}
+.shw-it:not(.is-bg) .shw-img{filter:drop-shadow(0 1px 1.2px rgba(54,34,14,.34))}
+.shw-it.is-flat .shw-ph{-webkit-box-reflect:below 0 linear-gradient(transparent 80%,rgba(255,255,255,.22))}
+html.lite .shw-it.is-flat .shw-ph{-webkit-box-reflect:none}
