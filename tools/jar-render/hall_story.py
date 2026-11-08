@@ -109,7 +109,7 @@ def mats():
         M['trav2'] = MT.travertine('hw_trav2', (.86, .77, .63), 1.1, 1.0, 1.0)
         M['stone'] = MT.travertine('hw_stone', (.88, .80, .66), 1.0, 1.2, 1.4)                   # полки и цоколь стеллажа
         M['floor'] = MT.limestone_floor('hw_floor', (.80, .72, .60), .9, .0035, .08, 5.0, rough=float(os.environ.get('HALL_FLOOR_R', .36)))                       # пол: крупноформатный известняк, отражение минимальное
-        M['accent'] = MT.microcement('hw_accent', tuple(float(v) for v in os.environ.get('HALL_ACCENT', '.060,.105,.245').split(',')), scale=HS)                             # акцентная ниша: глубокий синий матовый микроцемент
+        M['accent'] = MT.lime_plaster('hw_accent', tuple(float(v) for v in os.environ.get('HALL_ACCENT', '.80,.70,.54').split(',')), wave=wave, scale=HS, tone=.45)             # задняя стенка витрины слева: светлый тёплый камень-штукатурка чуть глубже тоном, чем стена (по просьбе заказчика — не синяя): тёмные флаконы и дуб читаются на ней, а свет ленты ложится мягко
     else:
         M['wall'] = MT.travertine('hw_wall', (1.0, .92, .80), .55, .45, 2.6, honed=True)
         M['inner'] = MT.travertine('hw_inner', (1.04, .98, .90), 1.0, .2, 1.8, honed=True)
@@ -522,7 +522,7 @@ def build_lights(M):
     wo.rotation_euler = (Vector((.1, 0, .4)) - Vector(wo.location)).to_track_quat('-Z', 'Y').to_euler()
     wo.visible_camera = False
     if HALL_STYLE == '2':                                                      # свет в комнате за левой аркой: мягкий тёплый из глубины комнаты на заднюю стенку и стеллаж (витрина слева не должна быть тёмной)
-        rl = bpy.data.lights.new('room_fill', 'AREA'); rl.energy = float(os.environ.get('HALL_ROOM', 230)); rl.size = 1.6; rl.size_y = 1.2; rl.color = (1.0, .88, .70)
+        rl = bpy.data.lights.new('room_fill', 'AREA'); rl.energy = float(os.environ.get('HALL_ROOM', 170)); rl.size = 1.6; rl.size_y = 1.2; rl.color = (1.0, .88, .70)
         S['scal'].append((rl, 'energy', rl.energy))
         ro = bpy.data.objects.new('room_fill', rl); bpy.context.collection.objects.link(ro); ro.location = (ROOM_X + .10, 1.30, 1.55)
         ro.rotation_euler = (Vector((ROOM_X, 2.3, .55)) - Vector(ro.location)).to_track_quat('-Z', 'Y').to_euler(); ro.visible_camera = False

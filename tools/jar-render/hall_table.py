@@ -112,7 +112,7 @@ def zone_mats():
         nt.links.new(tc.outputs['Object'], ns.inputs['Vector']); nt.links.new(ns.outputs['Fac'], mx.inputs['Factor']); nt.links.new(mx.outputs[2], b.inputs['Base Color'])
         M['sofa_' + key] = f
     if H.HALL_STYLE == '2':
-        M.update(H.RL.make_mats(float(os.environ.get('HALL_FAB_SCALE', 2.6))))                         # букле, лён, синий замш, дуб (фактура крупнее: сцена видна издали)
+        M.update(H.RL.make_mats(float(os.environ.get('HALL_FAB_SCALE', 2.0))))                         # букле, лён, синий замш, дуб (фактура крупнее: сцена видна издали)
     t = bpy.data.materials.new('zt_ink'); t.use_nodes = True                                              # надпись на стене: тёмно-синяя матовая инкрустация
     b = next(n for n in t.node_tree.nodes if n.type == 'BSDF_PRINCIPLED')
     b.inputs['Base Color'].default_value = (.012, .022, .06, 1); b.inputs['Roughness'].default_value = .75
