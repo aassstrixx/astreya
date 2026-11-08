@@ -37,8 +37,11 @@ import bpy
 import numpy as np
 from mathutils import Euler, Vector
 
+if os.environ.get('HALL_STYLE', '2') == '2':
+    os.environ.setdefault('REAL_LEAVES', '1')                                  # настоящие листья оливы и дерева (realism.leaf_mesh)
 import lumiere_scene as L
 import materials as MT
+import realism as RL
 import packs as PK
 import rocks as RK
 import stone_logo as SL
@@ -87,7 +90,7 @@ RXC, RXB, RXP = _xy('HALL_ROCK_C', '.3,0'), _xy('HALL_ROCK_B', '.35,.15'), _xy('
 TREE_R = os.environ.get('HALL_TREE_R', '1') == '1'                                                                                                                          # пышная ветка (дерево) в вазе справа — по просьбе заказчика, как на телефоне
 LAB = os.environ.get('HALL_LAB', '0') == '1'                                                                                                                                 # «световая лаборатория» (кольца на полу и подиуме, упаковки на пороге ниши) — в эталоне заказчика их нет: пол ровный, полированный
 LOGO_PARTS = ('mountain',) if os.environ.get('HALL_BAND') == '0' else ('mountain', 'band')       # весь знак: две ножки горы с острыми кончиками и серп (волна) — как в логотипе
-LEAF_SHADOW = dict(leafk=float(os.environ.get('HALL_SHLEAFK', 1.0)), wk=float(os.environ.get('HALL_SHLEAFW', 1.0)), dens=1.0)             # ветки вне кадра, дающие пятна света на стене: как в эталоне
+LEAF_SHADOW = dict(leafk=float(os.environ.get('HALL_SHLEAFK', 1.9 if os.environ.get('HALL_STYLE', '2') == '2' else 1.0)), wk=float(os.environ.get('HALL_SHLEAFW', 2.2 if os.environ.get('HALL_STYLE', '2') == '2' else 1.0)), dens=1.0)             # ветки вне кадра, дающие пятна света на стене: как в эталоне
 
 S = {}
 
@@ -105,8 +108,8 @@ def mats():
         M['trav'] = MT.travertine('hw_trav', (.86, .76, .62), 1.0, 1.5, 1.3)                    # подиум и плита: травертин с видимыми порами, матовая шлифовка
         M['trav2'] = MT.travertine('hw_trav2', (.86, .77, .63), 1.1, 1.0, 1.0)
         M['stone'] = MT.travertine('hw_stone', (.88, .80, .66), 1.0, 1.2, 1.4)                   # полки и цоколь стеллажа
-        M['floor'] = MT.limestone_floor('hw_floor', (.80, .72, .60), .9, .0035, .05, 5.0)                       # пол: крупноформатный известняк, отражение минимальное
-        M['accent'] = MT.microcement('hw_accent', (.04, .075, .17), scale=HS)                             # акцентная ниша: глубокий синий матовый микроцемент
+        M['floor'] = MT.limestone_floor('hw_floor', (.80, .72, .60), .9, .0035, .08, 5.0, rough=float(os.environ.get('HALL_FLOOR_R', .36)))                       # пол: крупноформатный известняк, отражение минимальное
+        M['accent'] = MT.microcement('hw_accent', tuple(float(v) for v in os.environ.get('HALL_ACCENT', '.060,.105,.245').split(',')), scale=HS)                             # акцентная ниша: глубокий синий матовый микроцемент
     else:
         M['wall'] = MT.travertine('hw_wall', (1.0, .92, .80), .55, .45, 2.6, honed=True)
         M['inner'] = MT.travertine('hw_inner', (1.04, .98, .90), 1.0, .2, 1.8, honed=True)
@@ -148,7 +151,9 @@ def build_shelf(M, yb):
     SC.box('shelf_r', M['stone'], x1 - pw, x1, y0, y1, .07, top, 'p', .004)
     pm = PK.M()
     for bi, z in enumerate(SHELF['boards']):
-        SC.box('shelf_b%d' % bi, M['stone'], x0 + pw, x1 - pw, y0, y1, z, z + SHELF['t'], 'p', .004)
+        SC.box('shelf_b%d' % bi, M.get('oak', M['stone']), x0 + pw, x1 - pw, y0, y1, z, z + SHELF['t'], 'p', .004)
+        if HALL_STYLE == '2' and bi > 0:                                           # скрытая тёплая лента под полкой: моет заднюю стенку и продукцию на полке ниже
+            SC.box('shelf_led%d' % bi, M['led'], x0 + pw + .004, x1 - pw - .004, y0 + .035, y0 + .045, z - .006, z - .002, 'p', 0)
         for ki, (kind, noir, dx, rot) in enumerate(SHELF_ITEMS[bi]):
             objs, _ = PK.build(kind, noir, pm)
             g = bpy.data.objects.new('shelf_%s_%d_%d' % (kind, bi, ki), None)
@@ -340,7 +345,7 @@ def build_tree(rnd, loc, H, R, lk=1.0, per=56, nb=22):
     Листья расходятся в стороны от ветки (в плоскости, перпендикулярной ей), поэтому крона читается объёмной с любой стороны. Параметры — TREE"""
     bx, by, bz = loc
     if HALL_STYLE == '2':                                                          # листья как в жизни: цвет по длине, жилки, просвет, свой оттенок у каждого листа
-        ma = SC.leaf_material('tree_leafA', (.13, .20, .07), (.33, .44, .16)); mb = SC.leaf_material('tree_leafB', (.28, .36, .17), (.50, .57, .33), under=True)
+        ma = RL.leaf_material('tree_leafA', (.045, .08, .03), (.15, .22, .07)); mb = RL.leaf_material('tree_leafB', (.085, .13, .05), (.23, .31, .11), under=True)
     else:
         ma = bpy.data.materials.new('tree_leafA'); ma.use_nodes = True; b = ma.node_tree.nodes['Principled BSDF']
         b.inputs['Base Color'].default_value = (.36, .42, .25, 1); b.inputs['Roughness'].default_value = .5
@@ -348,7 +353,11 @@ def build_tree(rnd, loc, H, R, lk=1.0, per=56, nb=22):
         b.inputs['Base Color'].default_value = (.50, .55, .36, 1); b.inputs['Roughness'].default_value = .5
     ms = bpy.data.materials.new('tree_stem'); ms.use_nodes = True; ms.node_tree.nodes['Principled BSDF'].inputs['Base Color'].default_value = (.30, .25, .16, 1)
     leaves = []
-    for m in (ma, mb):
+    if HALL_STYLE == '2':                                                          # по четыре формы листа на материал: каждый чуть иначе изогнут и волнист
+        for m in (ma, mb):
+            leaves.extend(RL.leaf_variants(.082 * 1.9 * lk * 1.1, .024 * 1.45 * (1 + .6 * (lk - 1)) * .62, 4, 'olive', (m,)))
+    else:
+      for m in (ma, mb):
         me = SC.leaf_mesh(L=.082 * 1.9 * lk, Wd=.024 * 1.45 * (1 + .6 * (lk - 1))); me.materials.append(m); leaves.append(me)
     up = Vector((0, 0, 1))
     solids = Solids()
@@ -357,7 +366,7 @@ def build_tree(rnd, loc, H, R, lk=1.0, per=56, nb=22):
 
     def blocked(ob):
         """лист (объект) протыкает камень: ось, поперечник или кончик/середина внутри тела"""
-        R3 = ob.rotation_euler.to_matrix(); sc = ob.scale.x; ax = R3 @ Vector((0, 1, 0)); sd = R3 @ Vector((1, 0, 0))
+        R3 = (ob.rotation_quaternion.to_matrix() if ob.rotation_mode == 'QUATERNION' else ob.rotation_euler.to_matrix()); sc = ob.scale.x; ax = R3 @ Vector((0, 1, 0)); sd = R3 @ Vector((1, 0, 0))
         base = ob.location.copy(); tip = base + ax * Lleaf * sc; mid = base + ax * Lleaf * sc * .55; wd = sd * Wleaf * sc
         if solids.hit(base, tip) is not None or solids.hit(mid - wd, mid + wd) is not None:
             return True
@@ -377,12 +386,16 @@ def build_tree(rnd, loc, H, R, lk=1.0, per=56, nb=22):
             if u.length < .2:
                 u = d.cross(Vector((1, 0, 0)))
             u.normalize(); v = d.cross(u); phi = rnd.uniform(0, 6.283)
+            dvs = RL.pair_dirs(d, i, rnd, spread=1.0, up=.18, droop=.30) if HALL_STYLE == '2' else None          # супротивные пары листьев, поворот пары на 90° от узла к узлу
             for side in (0, 1):
                 a = phi + side * 3.1416 + rnd.uniform(-.5, .5)
                 dv = d * .55 + (u * math.cos(a) + v * math.sin(a)) * 1.0 + Vector((0, 0, rnd.uniform(-.1, .3)))
+                if dvs: dv = dvs[side]
                 ob = bpy.data.objects.new('lf', rnd.choice(leaves)); bpy.context.collection.objects.link(ob)
-                ob.scale = ((1.1 - .4 * t) * (.8 + rnd.random() * .4) * k,) * 3
-                ob.rotation_euler = dv.normalized().to_track_quat('Y', 'Z').to_euler(); ob.location = pos
+                ob.scale = ((1.1 - .4 * t) * (.7 + rnd.random() * .6) * k,) * 3
+                if dvs: RL.orient(ob, dv, rnd, .8, RL.tint_for(t, rnd))
+                else: ob.rotation_euler = dv.normalized().to_track_quat('Y', 'Z').to_euler()
+                ob.location = pos
                 if blocked(ob):                                                                 # лист задел бы камень — не создаём (случайные числа уже израсходованы: остальная крона не меняется)
                     mods.append(tuple(pos)); bpy.data.objects.remove(ob)
         ob = bpy.data.objects.new('lf', leaves[0]); bpy.context.collection.objects.link(ob)                         # верхушечный листок
@@ -476,7 +489,7 @@ def build_lights(M):
     d = Vector((.40, .86, -.30))
     sun = bpy.data.lights.new('sun', 'SUN')
     sun.energy = 13.0
-    sun.angle = math.radians(1.1)
+    sun.angle = math.radians(float(os.environ.get('HALL_SUN_ANGLE', .55 if HALL_STYLE == '2' else 1.1)))
     sun.color = (1.0, .92, .78)
     S['scal'] = [(sun, 'energy', sun.energy)]                                 # всё, что светлеет по ходу сцены: (источник, свойство, полная яркость) — см. apply_light
     so = bpy.data.objects.new('sun', sun)
@@ -508,6 +521,11 @@ def build_lights(M):
     wo.location = (-1.9, -1.7, 1.0)
     wo.rotation_euler = (Vector((.1, 0, .4)) - Vector(wo.location)).to_track_quat('-Z', 'Y').to_euler()
     wo.visible_camera = False
+    if HALL_STYLE == '2':                                                      # свет в комнате за левой аркой: мягкий тёплый из глубины комнаты на заднюю стенку и стеллаж (витрина слева не должна быть тёмной)
+        rl = bpy.data.lights.new('room_fill', 'AREA'); rl.energy = float(os.environ.get('HALL_ROOM', 230)); rl.size = 1.6; rl.size_y = 1.2; rl.color = (1.0, .88, .70)
+        S['scal'].append((rl, 'energy', rl.energy))
+        ro = bpy.data.objects.new('room_fill', rl); bpy.context.collection.objects.link(ro); ro.location = (ROOM_X + .10, 1.30, 1.55)
+        ro.rotation_euler = (Vector((ROOM_X, 2.3, .55)) - Vector(ro.location)).to_track_quat('-Z', 'Y').to_euler(); ro.visible_camera = False
     # мягкие блики на стекле и крышке баночки
     for sb in (PK.softbox('strip_l', (-.35, -1.2, .40), .10, .40, 24, (1, .95, .88), aim=(.5, -.35, .1)),
                PK.softbox('strip_r', (1.25, -.9, .35), .07, .36, 24, (1, .97, .94), feather=.4, aim=(.5, -.35, .1)),

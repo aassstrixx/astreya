@@ -74,13 +74,13 @@ def travertine(name='travertine', tint=(1, 1, 1), scale=1.0, pits=1.0, bands=1.0
         inv = _math(nt, 'SUBTRACT', 1.0, vo.outputs['Distance'])
         jit = _noise(nt, _coord(nt, (3.0 * scale, 3.0 * scale, 3.0 * scale)), sc_ * 1.7, 3)                                  # неровный край поры: настоящие поры не идеальные круги
         inv2 = _math(nt, 'ADD', inv, _math(nt, 'MULTIPLY', _math(nt, 'SUBTRACT', jit, .5), .26))
-        hit = _math(nt, 'MULTIPLY', _math(nt, 'SUBTRACT', inv2, thr_ - .035), 14.0, clamp=True)                              # мягкий переход от камня к поре (≈ 0,07 по расстоянию), а не плоская заливка
+        hit = _math(nt, 'MULTIPLY', _math(nt, 'SUBTRACT', inv2, thr_ - .04), 9.0, clamp=True)                              # мягкий переход от камня к поре (≈ 0,07 по расстоянию), а не плоская заливка
         gate = _noise(nt, _coord(nt, (.9 * scale, .9 * scale, 2.0 * scale)), 2.6, 3)
         return _math(nt, 'MULTIPLY', hit, _math(nt, 'GREATER_THAN', gate, rare))
-    big = pores(9.0, 2.4, 1.0 - .075 * pits, .52); small = pores(42.0, 1.8, 1.0 - .115 * pits, .36)
-    pit = _math(nt, 'MAXIMUM', _math(nt, 'MULTIPLY', big, .95), _math(nt, 'MULTIPLY', small, .75))
+    big = pores(15.0, 5.0, 1.0 - .066 * pits, .50); small = pores(68.0, 3.6, 1.0 - .105 * pits, .34)           # поры — узкие горизонтальные щели (вытянутость по слоям), мельче и гуще прежних круглых «дыр»
+    pit = _math(nt, 'MAXIMUM', _math(nt, 'MULTIPLY', big, .80), _math(nt, 'MULTIPLY', small, .65))
     grain = _noise(nt, _coord(nt, (1, 1, 1)), 110 * scale, 5, .65)
-    base = nt.nodes.new('ShaderNodeMix'); base.data_type = 'RGBA'; base.inputs['B'].default_value = _t((.52, .43, .31, 1), tint); L.new(col.outputs['Color'], base.inputs['A']); L.new(pit, base.inputs['Factor'])
+    base = nt.nodes.new('ShaderNodeMix'); base.data_type = 'RGBA'; base.inputs['B'].default_value = _t((.64, .54, .40, 1), tint); L.new(col.outputs['Color'], base.inputs['A']); L.new(pit, base.inputs['Factor'])
     lum = nt.nodes.new('ShaderNodeMix'); lum.data_type = 'RGBA'; lum.inputs['B'].default_value = _t((.82, .78, .70, 1), tint); L.new(base.outputs['Result'], lum.inputs['A']); L.new(_math(nt, 'MULTIPLY', _math(nt, 'GREATER_THAN', grain, .62), .22), lum.inputs['Factor'])
     L.new(lum.outputs['Result'], b.inputs['Base Color'])
     h = _math(nt, 'SUBTRACT', _math(nt, 'MULTIPLY', grain, .5), _math(nt, 'MULTIPLY', pit, 1.8))
@@ -139,7 +139,7 @@ def microcement(name='microcement', col=(.045, .08, .17), rough=.84, scale=1.0):
     _val(b, rough, 'Roughness'); _val(b, .2, 'Specular IOR Level', 'Specular'); return m
 
 
-def limestone_floor(name='limestone_floor', tint=(1, 1, 1), tile=2.4, joint=.0026, tone=.05, tex=1.6):
+def limestone_floor(name='limestone_floor', tint=(1, 1, 1), tile=2.4, joint=.0026, tone=.05, tex=1.6, rough=.56):
     """пол — крупноформатный известняк (плиты tile × tile м): ровный пыльный тон с облаками и редкими мелкими порами, тонкие швы, каждая плита чуть светлее или темнее соседних; матовая шлифовка — отражение минимальное"""
     m = limestone(name, tint, tex); nt = m.node_tree; L = nt.links; b = nt.nodes['Principled BSDF']
     prev_col = b.inputs['Base Color'].links[0].from_socket; prev_nrm = b.inputs['Normal'].links[0].from_socket if b.inputs['Normal'].links else None
@@ -158,7 +158,7 @@ def limestone_floor(name='limestone_floor', tint=(1, 1, 1), tile=2.4, joint=.002
     bp = nt.nodes.new('ShaderNodeBump'); bp.inputs['Strength'].default_value = .8; bp.inputs['Distance'].default_value = .003; L.new(_math(nt, 'SUBTRACT', 1.0, seam), bp.inputs['Height'])
     if prev_nrm is not None: L.new(prev_nrm, bp.inputs['Normal'])
     L.new(bp.outputs['Normal'], b.inputs['Normal'])
-    _val(b, .56, 'Roughness'); return m
+    _val(b, rough, 'Roughness'); return m
 
 
 def satin_glass(name='satin_glass', tint=(.93, .95, .94), rough=.4):

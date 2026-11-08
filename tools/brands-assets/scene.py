@@ -19,6 +19,8 @@ sys.path.insert(0, os.path.join(HERE, '..', 'showroom-assets'))
 import materials as MT
 import scene as SC                      # геометрические помощники сцены каталога (арки, коробки, цилиндры), grade()
 import packs as PK                      # условные упаковки
+import realism as RL                    # реалистичные листья, мебель, ткани
+REAL_LEAVES = os.environ.get('REAL_LEAVES', '0') == '1'      # настоящие листья (RL.leaf_mesh) вместо ленты; включает главная (HALL_STYLE=2) и перерисовка каталога
 
 OUT = os.environ.get('BR_OUT') or os.path.join(ROOT, 'assets', 'brands'); os.makedirs(OUT, exist_ok=True)
 SPP = int(os.environ.get('BR_SPP', 128)); K = float(os.environ.get('BR_SCALE', 1.0))
@@ -85,18 +87,28 @@ def camera(sc, loc, lens, target=None, rot=None):
 def olive(base, h=.3, n=14, sc=1.0, rnd=None, grp='plant', seed=2, lush=True, lean=-.05, leafk=1.0, wk=1.0, dens=1.0):
     """ветка оливы: стебли-трубки и листья; lush — пышный букет: три стебля из горлышка, боковые побеги и широкие густые листья; leafk / wk — длина и ширина листа (1 — как раньше), dens — густота листьев на стеблях"""
     rnd = rnd or random.Random(seed); base = Vector(base)
-    leaf = SC.leaf_mesh(L=.082 * sc * leafk, Wd=(.024 if lush else .016) * sc * wk); m1 = SC.leaf_material('olive', (.14, .21, .08), (.34, .44, .17)); leaf.materials.append(m1)      # лист с жилками, просветом и своим оттенком (SC.leaf_material)
+    if REAL_LEAVES:                                                                              # настоящий лист: складка по жилке, изгиб, серебристая изнанка; четыре варианта формы; супротивные пары
+        m1 = RL.leaf_material('olive_r', (.06, .11, .03), (.20, .31, .08)); m2 = RL.leaf_material('olive_r2', (.10, .16, .05), (.28, .38, .12), under=True)
+        leaves = RL.leaf_variants(.082 * sc * leafk * 1.15, (.024 if lush else .016) * sc * wk * .62, 4, 'olive', (m1, m1, m2))
+    else:
+        leaf = SC.leaf_mesh(L=.082 * sc * leafk, Wd=(.024 if lush else .016) * sc * wk); m1 = SC.leaf_material('olive', (.14, .21, .08), (.34, .44, .17)); leaf.materials.append(m1); leaves = [leaf]      # лист с жилками, просветом и своим оттенком (SC.leaf_material)
     ms = bpy.data.materials.new('stem'); ms.use_nodes = True; ms.node_tree.nodes['Principled BSDF'].inputs['Base Color'].default_value = (.30, .26, .17, 1)
     def shoot(pts, count, k=1.0):
         cu = bpy.data.curves.new('st', 'CURVE'); cu.dimensions = '3D'; sp = cu.splines.new('POLY'); sp.points.add(len(pts) - 1)
         for i, p in enumerate(pts): sp.points[i].co = (*p, 1)
         cu.bevel_depth = .0012 * sc * k; co = bpy.data.objects.new('stem', cu); cu.materials.append(ms); bpy.context.collection.objects.link(co)
         def at(t): f = t * (len(pts) - 1); i = min(int(f), len(pts) - 2); return pts[i].lerp(pts[i + 1], f - i)
-        def put(pos, dv, s):
-            ob = bpy.data.objects.new('lf', leaf); bpy.context.collection.objects.link(ob); ob.scale = (s * k,) * 3
-            ob.rotation_euler = dv.normalized().to_track_quat('Y', 'Z').to_euler(); ob.location = pos
+        def put(pos, dv, s, t_=.5):
+            ob = bpy.data.objects.new('lf', leaves[0] if len(leaves) == 1 else rnd.choice(leaves)); bpy.context.collection.objects.link(ob); ob.scale = (s * k,) * 3
+            if REAL_LEAVES: RL.orient(ob, dv, rnd, .7, RL.tint_for(t_, rnd))
+            else: ob.rotation_euler = dv.normalized().to_track_quat('Y', 'Z').to_euler()
+            ob.location = pos
         for i in range(1, count + 1):
             t = i / (count + 1) * .94 + .06; pos = at(t); d = (at(min(1, t + .03)) - pos).normalized()
+            if REAL_LEAVES:
+                for dv in RL.pair_dirs(d, i, rnd):
+                    put(pos, dv, (1.0 - .3 * t) * (.8 + rnd.random() * .4), t)
+                continue
             for side in (-1, 1):
                 put(pos, d * .5 + Vector((side * 1.0, rnd.uniform(-.25, .35), rnd.uniform(.05, .4))), (1.0 - .3 * t) * (.85 + rnd.random() * .3))
         if lush: put(at(1.0), (at(1.0) - at(.94)).normalized() + Vector((0, 0, .15)), .9)      # верхушечный листок
