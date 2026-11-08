@@ -176,12 +176,13 @@ def boucle(name='boucle', col=(.90, .85, .75)):
     bp = nt.nodes.new('ShaderNodeBump'); bp.inputs['Strength'].default_value = .85; bp.inputs['Distance'].default_value = .005; L.new(_math(nt, 'ADD', _math(nt, 'MULTIPLY', n1, .6), _math(nt, 'MULTIPLY', n2, .4)), bp.inputs['Height']); L.new(bp.outputs['Normal'], b.inputs['Normal']); return m
 
 
-def lime_plaster(name='lime_plaster', col=(.93, .88, .78), rough=.92, wave=1.0, scale=1.0):
+def lime_plaster(name='lime_plaster', col=(.93, .88, .78), rough=.92, wave=1.0, scale=1.0, tone=1.0):
     """матовая известковая штукатурка цвета молочного песка (основной фон комнат): неровности видны под косым солнцем — пологие «волны» стены (≈ 0,5 м), мазки шпателя в разных направлениях, пятна нанесения (≈ 30 см), облака тона и мелкое зерно; блеска нет.
-    wave — множитель заметности волн и мазков."""
+    wave — множитель заметности волн и мазков; tone — размах пятен тона (1 — как в каталоге; на крупном плане главной нужно мягче)."""
     m, nt, b = _mk(name); L = nt.links
     cloud = _noise(nt, _coord(nt, (.30 * scale,) * 3), 1.0, 5, .55, .8); patch = _noise(nt, _coord(nt, (.9 * scale,) * 3), 3.4, 4, .5, .7)
-    c = _ramp(nt, [(.2, (col[0] * .90, col[1] * .90, col[2] * .89, 1)), (.5, (col[0], col[1], col[2], 1)), (.8, (min(1, col[0] * 1.03), min(1, col[1] * 1.03), min(1, col[2] * 1.03), 1))])
+    lo, hi = 1 - .10 * tone, 1 + .03 * tone
+    c = _ramp(nt, [(.2, (col[0] * lo, col[1] * lo, col[2] * lo, 1)), (.5, (col[0], col[1], col[2], 1)), (.8, (min(1, col[0] * hi), min(1, col[1] * hi), min(1, col[2] * hi), 1))])
     L.new(_math(nt, 'ADD', _math(nt, 'MULTIPLY', cloud, .55), _math(nt, 'MULTIPLY', patch, .45)), c.inputs['Fac']); L.new(c.outputs['Color'], b.inputs['Base Color'])
     undul = _noise(nt, _coord(nt, (.55 * scale,) * 3), 1.7, 3, .5, 1.1)                                                          # пологие волны стены
     strokeH = _noise(nt, _coord(nt, (.35 * scale, 3.2 * scale, .35 * scale)), 6.5, 3, .5, 1.9); strokeV = _noise(nt, _coord(nt, (3.2 * scale, .35 * scale, .35 * scale)), 5.5, 3, .5, 1.9)     # мазки шпателя: широкие, вытянутые, в двух направлениях

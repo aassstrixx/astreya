@@ -110,8 +110,17 @@ def olive(base, h=.3, n=14, sc=1.0, rnd=None, grp='plant', seed=2, lush=True, le
     for ln, hs in ((-.2, .84), (.16, .72)):                                                      # ещё два стебля из горлышка вазы — веером в стороны
         shoot([base, base + Vector((ln * h * .12 + lean * .24 * sc, .004, h * hs * .35)), base + Vector((ln * h * .3 + lean * .6 * sc, .012, h * hs * .7)), base + Vector((ln * h * .5 + lean * sc, .018, h * hs))], int(n * .85 * dens), .96)
 
+def _smooth_profile(prof, n=8):
+    """сплайн Катмулла–Рома по точкам профиля тела вращения: гладкий силуэт без «граней» по высоте"""
+    P = list(prof); out = []
+    for i in range(len(P) - 1):
+        p0 = P[max(0, i - 1)]; p1 = P[i]; p2 = P[i + 1]; p3 = P[min(len(P) - 1, i + 2)]
+        for s in range(n):
+            u = s / n
+            out.append(tuple(.5 * ((2 * p1[c]) + (-p0[c] + p2[c]) * u + (2 * p0[c] - 5 * p1[c] + 4 * p2[c] - p3[c]) * u * u + (-p0[c] + 3 * p1[c] - 3 * p2[c] + p3[c]) * u ** 3) for c in (0, 1)))
+    out.append(P[-1]); return [(max(0.0, r), z) for r, z in out]
 def vase(loc, h=.075, r=.028, mat=None):
-    prof = [(0, 0), (.55 * r, 0), (.9 * r, .1 * h), (r, .38 * h), (.78 * r, .7 * h), (.42 * r, .88 * h), (.4 * r, h), (.52 * r, 1.05 * h), (0, 1.05 * h)]
+    prof = _smooth_profile([(0, 0), (.55 * r, 0), (.9 * r, .1 * h), (r, .38 * h), (.78 * r, .7 * h), (.42 * r, .88 * h), (.4 * r, h), (.52 * r, 1.05 * h), (0, 1.05 * h)])
     seg = 64; verts, faces = [], []
     for (rr, z) in prof:
         for k in range(seg): a = 2 * math.pi * k / seg; verts.append((rr * math.cos(a) + loc[0], rr * math.sin(a) + loc[1], z + loc[2]))

@@ -100,12 +100,12 @@ def mats():
     M = {}
     if HALL_STYLE == '2':
         wave = float(os.environ.get('WAVE', 2.0))
-        M['wall'] = MT.lime_plaster('hw_wall', (.93, .86, .72), wave=wave, scale=HS)                      # основные стены: матовая известковая штукатурка, молочный песок, видимые неровности
-        M['inner'] = MT.lime_plaster('hw_inner', (.89, .81, .67), wave=wave, scale=HS)                    # внутри арок чуть глубже тоном
+        M['wall'] = MT.lime_plaster('hw_wall', (.84, .76, .62), wave=wave, scale=HS, tone=.45)                      # основные стены: матовая известковая штукатурка, молочный песок, видимые неровности
+        M['inner'] = MT.lime_plaster('hw_inner', (.80, .72, .58), wave=wave, scale=HS, tone=.45)                    # внутри арок чуть глубже тоном
         M['trav'] = MT.travertine('hw_trav', (.86, .76, .62), 1.0, 1.5, 1.3)                    # подиум и плита: травертин с видимыми порами, матовая шлифовка
         M['trav2'] = MT.travertine('hw_trav2', (.86, .77, .63), 1.1, 1.0, 1.0)
         M['stone'] = MT.travertine('hw_stone', (.88, .80, .66), 1.0, 1.2, 1.4)                   # полки и цоколь стеллажа
-        M['floor'] = MT.limestone_floor('hw_floor', (.86, .78, .64), .9, .0035, .05, 5.0)                       # пол: крупноформатный известняк, отражение минимальное
+        M['floor'] = MT.limestone_floor('hw_floor', (.80, .72, .60), .9, .0035, .05, 5.0)                       # пол: крупноформатный известняк, отражение минимальное
         M['accent'] = MT.microcement('hw_accent', (.04, .075, .17), scale=HS)                             # акцентная ниша: глубокий синий матовый микроцемент
     else:
         M['wall'] = MT.travertine('hw_wall', (1.0, .92, .80), .55, .45, 2.6, honed=True)
@@ -535,7 +535,7 @@ def build_lights(M):
             sk = w.node_tree.nodes.new('ShaderNodeTexSky'); sk.sky_type = 'MULTIPLE_SCATTERING'; sk.sun_disc = False; sk.sun_elevation = math.radians(28); sk.sun_rotation = math.radians(200); sk.aerosol_density = 1.2
             wm = w.node_tree.nodes.new('ShaderNodeMix'); wm.data_type = 'RGBA'; wm.blend_type = 'MULTIPLY'; wm.inputs['Factor'].default_value = 1.0; wm.inputs['B'].default_value = (1.0, .85, .66, 1)
             w.node_tree.links.new(sk.outputs['Color'], wm.inputs['A']); w.node_tree.links.new(wm.outputs['Result'], bg.inputs['Color'])
-            bg.inputs['Strength'].default_value = float(os.environ.get('HALL_SKY_K', .20))
+            bg.inputs['Strength'].default_value = float(os.environ.get('HALL_SKY_K', .08))
         except Exception as e: print('небо недоступно:', e)
     S['scal'].append((bg.inputs['Strength'], 'default_value', bg.inputs['Strength'].default_value))
     sc.world = w
@@ -640,7 +640,7 @@ def build_scene(res, samples, portrait):
     cy.glossy_bounces = int(os.environ.get('HALL_GBOUNCE', 6))
     cy.sample_clamp_indirect = 4.0
     sc.view_settings.exposure = float(os.environ.get('HALL_EXP', -.85))
-    sc.view_settings.look = os.environ.get('HALL_LOOK', 'AgX - Medium High Contrast' if HALL_STYLE == '2' else 'AgX - Punchy')
+    sc.view_settings.look = os.environ.get('HALL_LOOK', 'AgX - Punchy')
     sc.render.film_transparent = False
     sc.render.use_persistent_data = True
     cy.filter_width = 1.05
