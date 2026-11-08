@@ -1,10 +1,12 @@
 #!/usr/bin/env python3
-"""Сцена шоурума в 3D (Blender/Cycles): светлый зал с арками, нишей со стеклянными полками и тёплой LED-подсветкой, ступенями и платформой из травертина, диском, окном с косым светом.
-Рендерится ОТДЕЛЬНЫМИ СЛОЯМИ с одной камеры (стена и пол, левая арка, ниша, ступени, платформа, диск, растение): тень и отражённый свет каждого объекта попадают во все слои, но сам объект виден только в своём.
-Слои складываются на странице каталога в CSS (css/showroom.css), подиумы и товары — живой HTML поверх.
-   python3 tools/showroom-assets/scene.py            — все слои в полном качестве (assets/showroom/layer-*.webp, anchors.json)
-   python3 tools/showroom-assets/scene.py preview    — один быстрый кадр целиком (/tmp/scene_preview.png)
-Переменные: SCENE_W (ширина, по умолчанию 1920), SCENE_SPP (сэмплов), SCENE_LAYERS (список через запятую)."""
+"""Сцена шоурума каталога в 3D (Blender/Cycles) по образцу заказчика — геометрия и расстановка в expo.py: большой овальный стол из травертина с полированной столешницей, ступенчатые блоки и диски (подиумы запечены в сцену),
+ваза-шар из пористого камня с веткой оливы, стеклянные шары, гладкая стена с пятнами солнца и тенями листьев, пилястра, дальняя арка с тёмно-синей тканевой панелью и знаком «Астреи» (без надписи), ниша со стеклянными полками;
+лёгкая дымка в воздухе и размытая ветка на переднем плане дают глубину. Товары — живой HTML поверх сцены: места товаров (x, y основания, px на см, глубина) записываются в layers.json → anchors.slots.
+Рендерится ОТДЕЛЬНЫМИ СЛОЯМИ разной глубины с одной камеры (shell — стена, арка, панель, пол; niche — полки и флаконы; ring — пилястра и рама арки; dais — стол, подиумы, шары; plant — ваза и ветка): тень и отражённый свет каждого объекта попадают во все слои,
+но сам объект виден только в своём. На странице (css/showroom.css) слои двигаются с разной скоростью — параллакс курсора и «наезд» камеры при выборе товара.
+   python3 tools/showroom-assets/scene.py            — все слои в полном качестве (assets/showroom/layer-*.webp, layers.json)
+   python3 tools/showroom-assets/scene.py preview    — один быстрый кадр целиком (/tmp/scene_preview.png; CROP=0,0,1,0.72 — видимая часть, SCENE_W — ширина)
+Переменные: SCENE_W (ширина, по умолчанию 1920), SCENE_SPP (сэмплов), SCENE_LAYERS (список через запятую), VOL (плотность дымки, .003), MARK_E/MARK_W/MARK_Z (знак на панели), FORE (ветка на переднем плане, 1/0), UCM (ед. сцены на см), TBL_ROUGH, WALLC, INSC."""
 import bpy, bmesh, math, os, sys, json, addon_utils
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import materials as MT                                    # общая библиотека камня: травертин, известняк, штукатурка, плитка (см. materials.py)
@@ -18,7 +20,7 @@ from PIL import Image, ImageFilter
 HERE = os.path.dirname(os.path.abspath(__file__)); OUT = os.path.join(HERE, '..', '..', 'assets', 'showroom'); os.makedirs(OUT, exist_ok=True)
 W = int(os.environ.get('SCENE_W', 1920)); H = round(W * 1024 / 1536); SPP = int(os.environ.get('SCENE_SPP', 128))
 CANVAS = (1536, 1024)
-CAM = {'loc': (0.0, -12.0, 0.9), 'lens': 50.0}
+CAM = {'loc': (0.0, -12.0, float(os.environ.get('CAMZ', 1.4))), 'lens': 50.0, 'shift_y': float(os.environ.get('CAM_SHIFT', -140.0)) / 1536.0}      # камера выше столешницы (верх подиумов виден овалом, ≈ 5–6° — как наклон спрайтов упаковок и как на образце); сдвиг объектива возвращает композицию на прежние строки холста
 
 # ---------------- материалы ----------------
 def mk(name):
@@ -134,7 +136,7 @@ def arch_frame(name, mat, cx, rx, zs, t, y0, y1, grp, n=96, z0=0.0):
     return mesh_obj(name, verts, faces, mat, grp, smooth=False)
 
 def set_cam(sc, loc=None, lens=None, pitch=0.0):
-    cd = bpy.data.cameras.new('cam'); cd.lens = lens or CAM['lens']; cd.sensor_width = 36; cd.sensor_fit = 'HORIZONTAL'; cam = bpy.data.objects.new('cam', cd); bpy.context.collection.objects.link(cam)
+    cd = bpy.data.cameras.new('cam'); cd.lens = lens or CAM['lens']; cd.sensor_width = 36; cd.sensor_fit = 'HORIZONTAL'; cd.shift_y = CAM.get('shift_y', 0.0) if loc is None else 0.0; cam = bpy.data.objects.new('cam', cd); bpy.context.collection.objects.link(cam)
     cam.location = loc or CAM['loc']; cam.rotation_euler = (math.radians(90 - pitch), 0, 0); sc.camera = cam; bpy.context.view_layer.update(); return cam
 
 def add_flutes(mat, n, k):
@@ -157,241 +159,12 @@ def E3(name, default):
     v = os.environ.get(name); return tuple(float(x) for x in v.split(',')) if v else default
 
 def build(sc):
-    M = {'plaster': MT.lime_plaster('wall_plaster', E3('WALLC', (.82, .70, .52)), wave=float(os.environ.get('WAVE', 2.0))), 'plaster2': MT.limestone('plaster2', (.95, .90, .80)), 'trav': MT.travertine('trav', (1.02, .94, .82)), 'trav2': MT.travertine('trav2', (.86, .77, .63), 1.1, 1.0), 'trav_pod': MT.travertine('pod_stone', E3('PODT', (.86, .76, .62)), .5, 1.5), 'floor': MT.limestone_floor('floor', E3('FLOORT', (.86, .78, .64)), 2.4), 'trav_dais': MT.travertine('dais_stone', E3('DAISC', (.80, .70, .57)), .32, 1.7, honed=False),
-         'led': mat_led(), 'glass': MT.satin_glass('niche_glass'), 'back': MT.lime_plaster('back_plaster', E3('BACKC', (.76, .64, .47)), wave=float(os.environ.get('WAVE', 2.0))), 'ring': MT.limestone('ring', (.94, .88, .77)), 'white': mat_simple('white', (.95, .93, .88), .35), 'dark': mat_simple('dark', (.05, .045, .04), .25)}
-    import time; _t=[time.time()]
-    def T(l): print('  [build] %s +%.1f с' % (l, time.time()-_t[0]), flush=True); _t[0]=time.time()
-    ob = []
-    # --- пол и стены
-    floor = box('floor', M['floor'], -14, 14, -16, 6, -0.4, 0.0, 'shell')
-    # стена с вырезами (булевы операции)
-    wall = box('wall', M['plaster'], -9, 9, 0.0, 0.45, 0.0, 7.0, 'shell')
-    LA = {'cx': 0.95, 'rx': 3.2, 'zs': 1.25}
-    NI = {'cx': 3.6, 'rx': 1.55, 'zs': 2.3}
-    cut1 = arch_solid('cut1', M['plaster'], LA['cx'], LA['rx'], LA['zs'], -0.3, 0.8, 'shell'); cut2 = arch_solid('cut2', M['plaster'], NI['cx'], NI['rx'], NI['zs'], -0.3, 2.9, 'shell')
-    for c in (cut1, cut2):
-        bm = wall.modifiers.new('cut', 'BOOLEAN'); bm.operation = 'DIFFERENCE'; bm.object = c; bm.solver = 'EXACT'
-    for c in (cut1, cut2): c.hide_render = True; c.display_type = 'WIRE'
-    bvw = wall.modifiers.new('bev', 'BEVEL'); bvw.width = .014; bvw.segments = 3; bvw.limit_method = 'ANGLE'          # кромки проёмов чуть скруглены — ловят свет, как у настоящей штукатурки
-    T('стена+вырезы')
-    # светлая панель за левой аркой и задняя стена ниши
-    back1 = box('back1', M['back'], -4.5, 7.5, 1.15, 1.6, 0.0, 6.0, 'shell')
-    bm1 = back1.modifiers.new('cut', 'BOOLEAN'); bm1.operation = 'DIFFERENCE'; bm1.object = cut2; bm1.solver = 'EXACT'
-    # цоколь из травертина вдоль стены (с теми же вырезами) и рифлёная каменная пилястра между аркой и нишей — второй материал и вертикальный ритм на фоне
-    plinth = box('plinth', M['trav2'], -9, 9, -0.05, 0.0, 0.0, 0.46, 'shell', bev=0.012)
-    for c in (cut1, cut2):
-        bmp = plinth.modifiers.new('cut', 'BOOLEAN'); bmp.operation = 'DIFFERENCE'; bmp.object = c; bmp.solver = 'EXACT'
-    for i in range(9): cylinder('reed%d' % i, M['trav2'], 1.32 + i * .062, -0.03, .028, 0.0, float(os.environ.get('REED_H', 5.6)), 'shell', seg=24, bev=0)
-    ARCH_X = (-0.80, 0.50)                                                      # две глухие арки-ниши на задней панели слева, на равном расстоянии друг от друга и от рифлёной пилястры (она с 1,32): ни одна не заходит на пилястру и стеллаж
-    for ia_, cxr_ in enumerate(ARCH_X):
-        cr_ = arch_solid('cutR%d' % ia_, M['back'], cxr_, .58, 2.35, 1.0, 1.31, 'shell', z0=-.2); bmr_ = back1.modifiers.new('cutR', 'BOOLEAN'); bmr_.operation = 'DIFFERENCE'; bmr_.object = cr_; bmr_.solver = 'EXACT'; cr_.hide_render = True; cr_.display_type = 'WIRE'
-        arch_frame('rled%d' % ia_, M['led'], cxr_, .52, 2.34, .026, 1.27, 1.293, 'shell', z0=.0)
-    # синяя тканевая вставка в левой арке (мягкая панель с замшевым ворсом) и белый логотип «Астреи» (вектор assets/favicon.svg + «Астрея» из logo-defs.html → astreya-logo-white.png), напечатанный на ткани
-    fab_ = RL.fabric_suede('insert_blue', E3('INSC', (.018, .042, .125)), float(os.environ.get('INS_K', 14.0)))
-    arch_solid('insert', fab_, ARCH_X[0], .485, 2.34, 1.27, 1.30, 'shell', z0=0.0)
-    lg_ = bpy.data.materials.new('insert_logo'); lg_.use_nodes = True; nt_ = lg_.node_tree; bsdf_ = nt_.nodes['Principled BSDF']; tx_ = nt_.nodes.new('ShaderNodeTexImage'); tx_.image = bpy.data.images.load(os.path.join(HERE, 'astreya-logo-white.png')); tx_.interpolation = 'Cubic'; tx_.extension = 'CLIP'
-    nt_.links.new(tx_.outputs['Color'], bsdf_.inputs['Base Color']); nt_.links.new(tx_.outputs['Alpha'], bsdf_.inputs['Alpha']); val(bsdf_, .78, 'Roughness'); val(bsdf_, .0, 'Specular IOR Level', 'Specular'); val(bsdf_, .4, 'Sheen Weight'); val(bsdf_, 0.55, 'Emission Strength'); bsdf_.inputs['Emission Color'].default_value = (1, 1, 1, 1)      # печать белая и в тени ниши читается белой
-    lw_, lh_ = float(os.environ.get('LOGO_W', .88)), float(os.environ.get('LOGO_W', .88)) * 1888 / 2046; lz_ = float(os.environ.get('LOGO_Z', 1.38)); lc_ = lz_ + lh_ / 2
-    mesh_obj('insert_logo', [(ARCH_X[0] - lw_ / 2, 1.264, lz_), (ARCH_X[0] + lw_ / 2, 1.264, lz_), (ARCH_X[0] + lw_ / 2, 1.264, lz_ + lh_), (ARCH_X[0] - lw_ / 2, 1.264, lz_ + lh_)], [(0, 1, 2, 3)], lg_, 'shell')
-    lo_ = bpy.data.objects['insert_logo']; uvl_ = lo_.data.uv_layers.new(name='UVMap')
-    for poly_ in lo_.data.polygons:
-        for li_, vi_ in zip(poly_.loop_indices, poly_.vertices): uvl_.data[li_].uv = ((0, 0), (1, 0), (1, 1), (0, 1))[vi_]
-    back2 = box('back2', M['back'], NI['cx'] - NI['rx'] - .1, NI['cx'] + NI['rx'] + .1, 2.6, 3.05, 0.0, 5.0, 'niche')
-    # --- левая арка-рама (толстая, матовое стекло / камень), выступает вперёд
-    ring = arch_frame('ring', M['ring'], LA['cx'], LA['rx'], LA['zs'], .34, -0.55, 0.02, 'ring')
-    clipb = box('clipb', M['plaster'], 1.25, 9.0, -2.0, 1.0, -1.0, 9.0, 'x'); clipb.hide_render = True; clipb.display_type = 'WIRE'
-    bmr = ring.modifiers.new('clip', 'BOOLEAN'); bmr.operation = 'DIFFERENCE'; bmr.object = clipb; bmr.solver = 'EXACT'
-    bvr = ring.modifiers.new('bev', 'BEVEL'); bvr.width = .016; bvr.segments = 4; bvr.limit_method = 'ANGLE'
-    # --- ниша справа: тонкая рама и три стеклянные полки с тёплой подсветкой; вторая, внутренняя ниша
-    nring = arch_frame('nring', M['plaster2'], NI['cx'], NI['rx'], NI['zs'], .14, -0.1, 0.02, 'niche'); bvn = nring.modifiers.new('bev', 'BEVEL'); bvn.width = .008; bvn.segments = 3; bvn.limit_method = 'ANGLE'
-    for k, z in enumerate((0.62, 1.42, 2.22)):
-        box('shelf%d' % k, M['glass'], NI['cx'] - NI['rx'], NI['cx'] + NI['rx'], 1.05, 2.55, z, z + .04, 'niche')
-        box('led%d' % k, M['led'], NI['cx'] - NI['rx'] + .02, NI['cx'] + NI['rx'] - .02, 2.50, 2.56, z - .02, z + .0, 'niche')
-    nled = arch_frame('nled', M['led'], NI['cx'], NI['rx'] - .05, NI['zs'] - .05, .035, 2.45, 2.5, 'niche')
-    T('арки+ниша')
-    # --- стол: один широкий низкий монолит из травертина (вместо платформы со ступенями) — упаковки стоят прямо на нём; столешница чуть шире основания и подсвечена снизу тёплой лентой
-    TZ = TABLE_Z; y0, y1 = TABLE_Y
-    tsd = MT.travertine('tbl_side', E3('TBLC', (.72, .57, .38)), 1.0, .9, 2.6, honed=True)
-    ttp = MT.travertine('tbl_top', E3('TBLC', (.72, .57, .38)), 1.0, .5, 1.6, honed=False)
-    for nm_ in ('tbl_top',):                                                  # полированный верх: гладкий, с мягким отражением зала и слабой слоистостью
-        b_ = next(n for n in ttp.node_tree.nodes if n.type == 'BSDF_PRINCIPLED'); b_.inputs['Roughness'].default_value = float(os.environ.get('TBL_ROUGH', .30))
-        for k_, v_ in (('Coat Weight', .45), ('Coat Roughness', .06)):
-            if k_ in b_.inputs: b_.inputs[k_].default_value = v_
-    M['trav_dais'] = tsd
-    box('table_base', tsd, -17.0, 19.0, y0 + .12, y1 - .10, 0.0, TZ - .13, 'dais', bev=.02)
-    box('table_top', ttp, -17.0, 19.0, y0, y1, TZ - .13, TZ, 'dais', bev=.035)
-    ledm = decor.led('base_led', float(os.environ.get('BASE_LED', 4.0)), (1.0, .82, .56))
-    box('table_led', ledm, -17.0, 19.0, y0 + .14, y1 - .12, TZ - .16, TZ - .135, 'dais')          # тёплая лента в щели под столешницей
-    T('стол')
-    add_flutes(M['trav_pod'], float(os.environ.get('POD_FLUTES', 20)), float(os.environ.get('POD_FLUTE_K', .45)))      # подиумы-колонны: мягкие вертикальные канавки (растягиваются по высоте вместе со спрайтом)
-    pod = cylinder('pod', M['trav_pod'], 0.2, -6.8, 1.0, 0.0, 1.0, 'pod', seg=160, bev=0.03)          # скруглённая кромка подиума
-    os.environ.setdefault('TREE_R', '.95'); os.environ.setdefault('TREE_H', '.40')
-    if os.environ.get('DECOR', '1') == '1':
-        decor.pendants(); niche_packs()                                                      # спокойный фон: три подвесных светильника и небольшое число настоящих упаковок на полках ниши
-    T('декор')
-    if os.environ.get('PLANT', '1') == '1': plant(M)
-    T('растение')
-    return M
+    """экспозиция по образцу заказчика (expo.py): круглый стол, подиумы-блоки и диски, ваза с оливой, шары, арка с синей панелью, ниша и стойка"""
+    import expo
+    M = {}; expo.build(sys.modules[__name__], sc, M); return M
 
-_PM = {}
-def place_pack(kind, brand, x, y, z, k, grp='niche', yaw=0.0):
-    """настоящая упаковка (packs.build — те же модели, что на спрайтах каталога) на полке: k — масштаб относительно реальных сантиметров (сцена-«зал» втрое больше человеческой)"""
-    import packs as PK
-    if 'm' not in _PM: _PM['m'] = PK.M()
-    objs, _ = PK.build(kind, False, _PM['m'], brand)
-    root = bpy.data.objects.new('pk_' + kind, None); bpy.context.collection.objects.link(root); root['grp'] = grp
-    root.location = (x, y, z); root.rotation_euler = (0, 0, yaw); root.scale = (k, k, k)
-    for o in objs: o.parent = root; o['grp'] = grp
-    return root
-def niche_packs():
-    y = 1.78; k = float(os.environ.get('NICHE_K', 3.0))
-    zs = (0.62 + .04, 1.42 + .04, 2.22 + .04)
-    for (kind, brand, x, yaw) in (('pump', 'dermatime', 2.5, .35), ('jar', 'endocare', 3.2, -.2), ('dropper', 'endocare', 3.75, .1), ('bottle', 'heliocare', 4.4, -.3)): place_pack(kind, brand, x, y, zs[0], k, 'niche', yaw)
-    for (kind, brand, x, yaw) in (('tube', 'elancyl', 2.65, .2), ('jar', 'dermatime', 3.45, .0), ('pump', 'biretix', 4.2, -.25)): place_pack(kind, brand, x, y, zs[1], k, 'niche', yaw)
-    for (kind, brand, x, yaw) in (('dropper', 'neoretin', 2.7, .15), ('bottle', 'neoretin', 3.5, .3), ('box', 'dermatime', 4.35, .0)): place_pack(kind, brand, x, y, zs[2], k, 'niche', yaw)
 TABLE_Z = float(os.environ.get('TABLE_Z', .34)); TABLE_Y = (-5.6, -0.45)
-PLANT_X = float(os.environ.get('PLANT_X', -3.2)); PLANT_Y = float(os.environ.get('PLANT_Y', -1.7))                                   # дерево с вазой стоит левее и меньше прежнего: крона не заходит под заголовок страницы (x холста > 450)
-
-_LEAF_SEED = [0]
-def leaf_mesh(L=.17, Wd=.05):
-    """настоящий лист (realism.leaf_mesh): ланцетный, со складкой по жилке, волнистым краем и изгибом; у каждого вызова своя форма"""
-    if os.environ.get('REAL_LEAVES', '1') == '1':
-        _LEAF_SEED[0] += 1; return RL.leaf_mesh(L * 1.12, Wd * .62, seed=_LEAF_SEED[0], kind='olive')
-    return leaf_mesh_old(L, Wd)
-def leaf_mesh_old(L=.17, Wd=.05):
-    """лист: три вершины в ряду (край, середина, край) — середина чуть ниже краёв, получается складка по центральной жилке; изгиб по длине; развёртка UV (u — поперёк, v — вдоль) для рисунка жилок"""
-    n = 9; verts = []; faces = []
-    for i in range(n + 1):
-        t = i / n; w = Wd * (math.sin(math.pi * (t ** .8)) ** .8) * (1 - .15 * t); y = L * t; z = .014 * math.sin(math.pi * t) - .012 * (t ** 2); fold = .22 * w
-        verts += [(-w, y, z + .006 + fold), (0.0, y, z + .006 - fold * .35), (w, y, z + .006 + fold)]
-    for i in range(n):
-        a = 3 * i; faces += [(a, a + 1, a + 4, a + 3), (a + 1, a + 2, a + 5, a + 4)]
-    me = bpy.data.meshes.new('leaf'); me.from_pydata(verts, [], faces); me.update()
-    for p in me.polygons: p.use_smooth = True
-    uv = me.uv_layers.new(name='UVMap')
-    for poly in me.polygons:
-        for li, vi in zip(poly.loop_indices, poly.vertices): uv.data[li].uv = ((vi % 3) / 2.0, (vi // 3) / n)
-    return me
-def leaf_material(name, dark, light, under=False):
-    if os.environ.get('REAL_LEAVES', '1') == '1':
-        return RL.leaf_material(name, (.045, .08, .03) if not under else (.085, .13, .05), (.15, .22, .07) if not under else (.23, .31, .11), under=under)
-    return leaf_material_old(name, dark, light, under)
-def leaf_material_old(name, dark, light, under=False):
-    """лист оливы/дерева: цвет по длине (темнее у черенка, светлее к кончику), светлая центральная жилка и боковые прожилки, оттенок и яркость каждого листа чуть свои (случайное число объекта), просвет на свет, мягкий блеск"""
-    m, nt, b, out = mk(name); L = nt.links
-    uvc = nt.nodes.new('ShaderNodeTexCoord'); sp = nt.nodes.new('ShaderNodeSeparateXYZ'); L.new(uvc.outputs['UV'], sp.inputs[0])
-    gr = ramp(nt, [(0.0, (*dark, 1)), (1.0, (*light, 1))]); L.new(sp.outputs['Y'], gr.inputs['Fac'])
-    ab = nt.nodes.new('ShaderNodeMath'); ab.operation = 'SUBTRACT'; ab.inputs[1].default_value = .5; L.new(sp.outputs['X'], ab.inputs[0]); ab2 = nt.nodes.new('ShaderNodeMath'); ab2.operation = 'ABSOLUTE'; L.new(ab.outputs[0], ab2.inputs[0])
-    rib = nt.nodes.new('ShaderNodeMath'); rib.operation = 'LESS_THAN'; rib.inputs[1].default_value = .035; L.new(ab2.outputs[0], rib.inputs[0])                      # центральная жилка
-    sid = nt.nodes.new('ShaderNodeMath'); sid.operation = 'MULTIPLY'; L.new(sp.outputs['Y'], sid.inputs[0]); sid.inputs[1].default_value = 26.0
-    sin = nt.nodes.new('ShaderNodeMath'); sin.operation = 'SINE'; L.new(sid.outputs[0], sin.inputs[0]); sab = nt.nodes.new('ShaderNodeMath'); sab.operation = 'ABSOLUTE'; L.new(sin.outputs[0], sab.inputs[0])
-    sth = nt.nodes.new('ShaderNodeMath'); sth.operation = 'GREATER_THAN'; sth.inputs[1].default_value = .93; L.new(sab.outputs[0], sth.inputs[0])
-    vein = nt.nodes.new('ShaderNodeMath'); vein.operation = 'MAXIMUM'; L.new(rib.outputs[0], vein.inputs[0]); L.new(sth.outputs[0], vein.inputs[1])
-    oi = nt.nodes.new('ShaderNodeObjectInfo'); rv = nt.nodes.new('ShaderNodeMapRange'); rv.inputs['To Min'].default_value = .78; rv.inputs['To Max'].default_value = 1.22; L.new(oi.outputs['Random'], rv.inputs['Value'])
-    vc = nt.nodes.new('ShaderNodeMix'); vc.data_type = 'RGBA'; vc.blend_type = 'MULTIPLY'; vc.inputs['Factor'].default_value = 1.0; L.new(gr.outputs['Color'], vc.inputs['A']); rc = nt.nodes.new('ShaderNodeCombineColor'); L.new(rv.outputs['Result'], rc.inputs[0]); L.new(rv.outputs['Result'], rc.inputs[1]); L.new(rv.outputs['Result'], rc.inputs[2]); L.new(rc.outputs[0], vc.inputs['B'])
-    lv = nt.nodes.new('ShaderNodeMix'); lv.data_type = 'RGBA'; lv.inputs['B'].default_value = (.55, .62, .38, 1) if not under else (.80, .83, .66, 1); L.new(vc.outputs['Result'], lv.inputs['A']); mul = nt.nodes.new('ShaderNodeMath'); mul.operation = 'MULTIPLY'; mul.inputs[1].default_value = .55; L.new(vein.outputs[0], mul.inputs[0]); L.new(mul.outputs[0], lv.inputs['Factor'])
-    L.new(lv.outputs['Result'], b.inputs['Base Color'])
-    bp = nt.nodes.new('ShaderNodeBump'); bp.inputs['Strength'].default_value = .5; bp.inputs['Distance'].default_value = .0008; L.new(vein.outputs[0], bp.inputs['Height']); L.new(bp.outputs['Normal'], b.inputs['Normal'])
-    val(b, .42, 'Roughness'); val(b, .22, 'Transmission Weight', 'Transmission'); val(b, .25, 'Subsurface Weight'); val(b, .4, 'Specular IOR Level', 'Specular'); return m
-
-def lush_tree(base, me, me2, stem_m):
-    """пышное дерево в вазе (то же построение, что build_tree на главной, hall_story.py): изогнутый ствол и ярус ветвей веером — длинные дуги с густыми парами листьев; ветви не уходят назад в стену и раму арки"""
-    import random; rnd = random.Random(77)
-    H = float(os.environ.get('TREE_H', .46)); R = float(os.environ.get('TREE_R', 1.25)); nb = int(os.environ.get('TREE_NB', 36)); per = int(os.environ.get('TREE_PER', 60)); lk = float(os.environ.get('TREE_LK', 1.7)); el0, el1 = (float(v) for v in os.environ.get('TREE_EL', '.3,1.1').split(','))
-    up = Vector((0, 0, 1)); grp = 'plant'
-    def limb(pts, count, k, bevel):
-        cu = bpy.data.curves.new('tl', 'CURVE'); cu.dimensions = '3D'; sp = cu.splines.new('POLY'); sp.points.add(len(pts) - 1)
-        for i, p in enumerate(pts): sp.points[i].co = (*p, 1)
-        cu.bevel_depth = bevel; cu.bevel_resolution = 2; cu.materials.append(stem_m)
-        link(bpy.data.objects.new('tl', cu), grp)
-        def at(t):
-            f = t * (len(pts) - 1); i = min(int(f), len(pts) - 2); return pts[i].lerp(pts[i + 1], f - i)
-        for i in range(1, count + 1):
-            t = i / (count + 1) * .93 + .07; pos = at(t); d = (at(min(1, t + .03)) - pos).normalized()
-            u = d.cross(up)
-            if u.length < .2: u = d.cross(Vector((1, 0, 0)))
-            u.normalize(); v = d.cross(u); phi = rnd.uniform(0, 6.283)
-            for side in (0, 1):
-                a = phi + side * 3.1416 + rnd.uniform(-.5, .5)
-                dv = d * .55 + (u * math.cos(a) + v * math.sin(a)) * 1.0 + Vector((0, 0, rnd.uniform(-.1, .3)))
-                if dv.y > .35: dv.y = .35                                                              # листья не лезут назад, в стену
-                ob = bpy.data.objects.new('lf', me if rnd.random() > .3 else me2); link(ob, grp)
-                ob.scale = ((1.1 - .4 * t) * (.8 + rnd.random() * .4) * lk,) * 3
-                ob.rotation_euler = dv.normalized().to_track_quat('Y', 'Z').to_euler(); ob.location = pos
-        ob = bpy.data.objects.new('lf', me); link(ob, grp); ob.scale = (lk,) * 3
-        ob.rotation_euler = (at(1) - at(.9)).normalized().to_track_quat('Y', 'Z').to_euler(); ob.location = at(1)
-        return at
-    b = Vector(base)
-    trunk = limb([b, b + Vector((-.03, -.02, H * .35)), b + Vector((.03, -.03, H * .7)), b + Vector((-.05, -.04, H))], 4, .9, .03)
-    for j in range(nb):
-        az = 6.283 * (j + rnd.random() * .7) / nb; el = rnd.uniform(el0, el1)
-        d = Vector((math.cos(az) * math.cos(el), math.sin(az) * math.cos(el), math.sin(el)))
-        if d.y > .25: d.y = .25; d.normalize()                                                         # ветви веером вперёд, вбок и вверх — не в стену
-        P0 = trunk(rnd.uniform(.45, 1.0)); Lb = R * rnd.uniform(.8, 1.2)
-        pts = [P0, P0 + d * Lb * .34 + Vector((0, 0, .06)), P0 + d * Lb * .68 + Vector((0, 0, .10 * Lb)), P0 + d * Lb + Vector((0, 0, -.12 * Lb * (1.1 - math.sin(el))))]
-        at = limb(pts, per, 1.0, .009)
-        for t in (.30, .46, .62, .78):
-            P = at(t); az2 = az + rnd.choice((-1, 1)) * rnd.uniform(.5, .9); d2 = Vector((math.cos(az2) * math.cos(el), math.sin(az2) * math.cos(el), math.sin(el) * .8 + .15))
-            if d2.y > .25: d2.y = .25
-            d2.normalize(); L2 = Lb * rnd.uniform(.3, .45)
-            limb([P, P + d2 * L2 * .5 + Vector((0, 0, .04)), P + d2 * L2 + Vector((0, 0, -.03))], max(18, per // 3), .92, .006)
-
-def plant(M):
-    import random; rnd = random.Random(5)
-    m1 = (leaf_material('leafA', (.10, .17, .05), (.27, .38, .12)),); m2 = (leaf_material('leafU', (.30, .38, .18), (.52, .58, .34), under=True),)
-    stem = mk('stem'); val(stem[2], (.30, .26, .16, 1), 'Base Color'); val(stem[2], .6, 'Roughness')
-    me = leaf_mesh(); me.materials.append(m1[0]); me2 = leaf_mesh(); me2.materials.append(m2[0])
-    vase_m = mat_simple('vase', (.95, .91, .84), .22)
-    # ваза на левой ступени
-    prof = [(0.0, 0.0), (.055, 0.0), (.085, .03), (.105, .09), (.11, .15), (.09, .22), (.05, .27), (.04, .30), (.05, .33), (0, .33)]
-    rings = []
-    verts, faces = [], []; seg = 64
-    for (r, z) in prof:
-        for k in range(seg): a = 2 * math.pi * k / seg; verts.append((r * math.cos(a), r * math.sin(a), z))
-    for i in range(len(prof) - 1):
-        for k in range(seg): faces.append((i * seg + k, i * seg + (k + 1) % seg, (i + 1) * seg + (k + 1) % seg, (i + 1) * seg + k))
-    vase = mesh_obj('vase', verts, faces, vase_m, 'plant', smooth=True); vase.location = (PLANT_X, PLANT_Y, TABLE_Z); vase.scale = (1.5, 1.5, 1.5)
-    def branch(base, pts, n, sc=1.0, grp='plant'):
-        # pts — контрольные точки (x,y,z), кривая Катмулла–Рома упрощённо ломаной
-        P = [Vector(base) + Vector(p) for p in pts]
-        verts, edges = [], []
-        # стебель: трубка
-        curve = bpy.data.curves.new('st', 'CURVE'); curve.dimensions = '3D'; sp = curve.splines.new('POLY'); sp.points.add(len(P) - 1)
-        for i, p in enumerate(P): sp.points[i].co = (*p, 1)
-        curve.bevel_depth = .0028 * sc; curve.bevel_resolution = 2
-        co = bpy.data.objects.new('stem', curve); curve.materials.append(stem[0]); link(co, grp)
-        def at(t):
-            f = t * (len(P) - 1); i = min(int(f), len(P) - 2); u = f - i; return P[i].lerp(P[i + 1], u)
-        for i in range(1, n + 1):
-            t = i / (n + 1) * .96 + .04; pos = at(t); nxt = at(min(1, t + .03)); d = (nxt - pos).normalized()
-            for side in (-1, 1):
-                ob = bpy.data.objects.new('lf', me if rnd.random() > .28 else me2); link(ob, grp)
-                ob.scale = (sc * (1.0 - .35 * t) * (.85 + rnd.random() * .3),) * 3
-                # ориентируем лист: ось +Y листа — по направлению от стебля в сторону side с наклоном вперёд по d
-                dirv = (d * .55 + Vector((side * 1.0, rnd.uniform(-.25, .35), rnd.uniform(.05, .35)))).normalized()
-                ob.rotation_euler = dirv.to_track_quat('Y', 'Z').to_euler(); ob.location = pos
-        # верхний листок
-        ob = bpy.data.objects.new('lf', me); link(ob, grp); ob.scale = (sc * .7,) * 3; ob.rotation_euler = at(1.0).__sub__(at(.97)).normalized().to_track_quat('Y', 'Z').to_euler(); ob.location = at(1.0)
-    base = (PLANT_X, PLANT_Y, TABLE_Z + .48)
-    if os.environ.get('LUSH', '1') == '1':
-        lush_tree(base, me, me2, stem[0])                                                                   # пышное дерево, как на главной (веер длинных дуг с густыми листьями)
-    else:
-        branch(base, [(0, 0, 0), (-.06, 0, .5), (-.18, .02, 1.0), (-.36, .04, 1.45)], 22, 1.7)
-        branch(base, [(0, 0, 0), (.14, 0, .38), (.46, -.02, .72), (.88, -.05, .88)], 22, 1.6)
-        branch(base, [(0, 0, 0), (-.1, .02, .3), (-.34, 0, .56), (-.68, -.03, .66)], 18, 1.5)
-        branch(base, [(0, 0, 0), (.03, 0, .55), (.16, .01, 1.1), (.24, .02, 1.58)], 22, 1.6)
-        branch(base, [(0, 0, 0), (.1, 0, .3), (.3, .03, .62), (.5, .03, 1.08)], 16, 1.4)
-    # ветка в нише (справа внизу)
-    branch((5.0, 1.5, 0.0), [(0, 0, 0), (0, 0, .5), (-.06, 0, 1.05), (-.2, 0, 1.55)], 20, 1.2, 'plant')
-    # тени листьев на стене: ветки висят вне кадра на пути солнечного луча и невидимы камере, но отбрасывают чёткие тени
-    d = Vector((.62, .72, -.55)).normalized()
-    for (tx, tz, rot, k) in ((0.4, 2.0, 0.0, 1.0), (-1.9, 3.1, 0.7, .85), (3.3, 4.6, -0.5, .9)):
-        tgt = Vector((tx, 0.0, tz)); loc = tgt - d * 7.5
-        ex = d.cross(Vector((0, 0, 1))).normalized(); ey = ex.cross(d).normalized()
-        mk_pts = lambda pts: [tuple(ex * (p[0] * math.cos(rot) - p[2] * math.sin(rot)) * 1.0 + ey * (p[0] * math.sin(rot) + p[2] * math.cos(rot)) + d * p[1]) for p in pts]
-        branch(tuple(loc), mk_pts([(0, 0, 0), (-.1 * 2.2, 0, .5 * 2.2), (-.3 * 2.2, .02, 1.0 * 2.2), (-.6 * 2.2, .04, 1.45 * 2.2)]), 24, 3.0 * k, 'gobo')
-        branch(tuple(loc), mk_pts([(0, 0, 0), (.14 * 2.2, 0, .4 * 2.2), (.46 * 2.2, -.02, .72 * 2.2), (.9 * 2.2, -.05, .9 * 2.2)]), 22, 2.8 * k, 'gobo')
-
+_VOL = [None]
 def lights(sc):
     # окно: солнце сквозь переплёт (переплёт невидим для камеры, но отбрасывает тень)
     sun = bpy.data.lights.new('sun', 'SUN'); sun.energy = float(os.environ.get('SUN', 14.0)); sun.angle = math.radians(float(os.environ.get('SUN_ANGLE', 0.35))); sun.color = E3('SUNC', (1.0, .94, .84))
@@ -415,6 +188,12 @@ def lights(sc):
     ao = bpy.data.objects.new('fill', ar); bpy.context.collection.objects.link(ao); ao.location = (-2.5, -11.0, 5.5); ao.rotation_euler = (math.radians(70), 0, math.radians(8))
     ao.visible_camera = False
     w = bpy.data.worlds.new('w'); w.use_nodes = True; bg = w.node_tree.nodes['Background']; bg.inputs['Color'].default_value = (*E3('WORLDC', (.80, .88, 1.0)), 1); bg.inputs['Strength'].default_value = float(os.environ.get('WORLD', 0.22)); sc.world = w
+    vol = float(os.environ.get('VOL', .003))
+    if vol > 0:                                                                                              # лёгкая дымка в воздухе (объём-куб между камерой и стеной): лучи солнца через тени листьев и воздушная перспектива; мировой объём гасил весь свет, поэтому куб
+        hm = bpy.data.materials.new('haze'); hm.use_nodes = True; nt_ = hm.node_tree; nt_.nodes.clear(); vs = nt_.nodes.new('ShaderNodeVolumeScatter'); vs.inputs['Density'].default_value = vol; vs.inputs['Anisotropy'].default_value = float(os.environ.get('VOL_G', .55)); vs.inputs['Color'].default_value = (1.0, .93, .80, 1)
+        ot = nt_.nodes.new('ShaderNodeOutputMaterial'); nt_.links.new(vs.outputs['Volume'], ot.inputs['Volume']); _VOL[0] = vs
+        bpy.ops.mesh.primitive_cube_add(size=1); hz = bpy.context.object; hz.name = 'haze'; hz.scale = (30, 16.0, 11.0); hz.location = (0, -2.6, 3.5); hz.data.materials.append(hm); hz['grp'] = 'shell'
+        hz.visible_shadow = False; sc.cycles.volume_bounces = 1; sc.cycles.volume_step_rate = float(os.environ.get('VOL_STEP', 1.5))
     if os.environ.get('SKY', '1') == '1':                                                                  # физическое небо Blender (многократное рассеяние — дневной свет): солнце — отдельная лампа (даёт тени переплёта и листьев), небо — прохладный рассеянный свет, отсюда голубоватые тени и тёплые пятна света, как на архитектурных снимках
         try:
             sk = w.node_tree.nodes.new('ShaderNodeTexSky'); sk.sky_type = 'MULTIPLE_SCATTERING'; sk.sun_disc = False; sk.sun_elevation = math.radians(float(os.environ.get('SKY_EL', 32))); sk.sun_rotation = math.radians(float(os.environ.get('SKY_ROT', 210))); sk.air_density = 1.0; sk.aerosol_density = float(os.environ.get('SKY_DUST', 1.2)); sk.altitude = 0
@@ -430,42 +209,19 @@ def settings(sc, w=W, h=H, spp=SPP):
     sc.view_settings.view_transform = os.environ.get('VT', 'AgX'); sc.view_settings.look = os.environ.get('LOOK', 'AgX - Punchy' if os.environ.get('VT', 'AgX') == 'AgX' else 'None'); sc.view_settings.exposure = float(os.environ.get('EXPO', -0.85))
     sc.render.image_settings.file_format = 'PNG'; sc.render.image_settings.color_mode = 'RGBA'; sc.render.image_settings.color_depth = '16'
 
-LAYERS = ['shell', 'niche', 'ring', 'dais', 'plant', 'pod']
+LAYERS = ['shell', 'niche', 'ring', 'dais', 'plant']
 def proj(sc, cam, co):
     v = world_to_camera_view(sc, cam, Vector(co)); return (v.x * CANVAS[0], (1 - v.y) * CANVAS[1])
 
 def anchors(sc, cam):
-    out = {}
-    def rim(cx, cy, r, z):
-        pts = [proj(sc, cam, (cx + r * math.cos(a), cy + r * math.sin(a), z)) for a in np.linspace(0, 2 * math.pi, 72, endpoint=False)]
-        xs = [p[0] for p in pts]; ys = [p[1] for p in pts]; return {'cx': round((min(xs) + max(xs)) / 2, 1), 'cy': round((min(ys) + max(ys)) / 2, 1), 'rx': round((max(xs) - min(xs)) / 2, 1), 'ry': round((max(ys) - min(ys)) / 2, 1)}
-    pts_ = [proj(sc, cam, (x_, y_, TABLE_Z)) for x_ in (-17.0, 19.0) for y_ in TABLE_Y]; ys_ = [q[1] for q in pts_]
-    out['dais'] = {'cx': CANVAS[0] / 2, 'cy': round((min(ys_) + max(ys_)) / 2, 1), 'rx': CANVAS[0] * 2.0, 'ry': round((max(ys_) - min(ys_)) / 2, 1)}; out['table'] = {'top': round(min(ys_), 1), 'front': round(max(ys_), 1), 'z': TABLE_Z}
-    out['shelves'] = [{'y': round(proj(sc, cam, (3.6, 1.8, z + .04))[1], 1), 'x0': round(proj(sc, cam, (2.15, 1.8, z))[0], 1), 'x1': round(proj(sc, cam, (5.0, 1.8, z))[0], 1)} for z in (0.62, 1.42, 2.22)]
-    out['vase'] = {'x': round(proj(sc, cam, (PLANT_X, PLANT_Y, TABLE_Z))[0], 1), 'y': round(proj(sc, cam, (PLANT_X, PLANT_Y, TABLE_Z))[1], 1)}
+    """места товаров (холст 1536×1024): x, y основания, px на см упаковки на этой глубине, глубина; край стола — для тени и отражения"""
+    import expo
+    out = {'slots': []}
+    for si in range(len(expo.SLOTS)):
+        X, Y, Z = expo.slot_world(si); p0 = proj(sc, cam, (X, Y, Z)); p1 = proj(sc, cam, (X, Y, Z + expo.cm(10.0)))
+        out['slots'].append({'x': round(p0[0], 1), 'y': round(p0[1], 1), 'pxcm': round((p0[1] - p1[1]) / 10.0, 3), 'd': round(Y + 12.0, 2), 'plinth': expo.SLOTS[si][0]})
+    out['table'] = {'front': round(proj(sc, cam, (expo.world(768, 6.4)[0], -5.6, TABLE_Z))[1], 1), 'z': TABLE_Z}
     return out
-
-def pod_sprites(sc, cam, f, meta):
-    """спрайты подиума-цилиндра: верхняя грань (эллипс) и боковая стенка (прямоугольник между центрами верхней и нижней окружностей); сайт тянет их под любой размер подиума"""
-    from PIL import ImageDraw
-    im = Image.open(f).convert('RGBA'); k = im.width / CANVAS[0]
-    def P(a, z): x, y = proj(sc, cam, (0.2 + math.cos(a), -6.8 + math.sin(a), z)); return x * k, y * k
-    top = [P(a, 1.0) for a in np.linspace(0, 2 * math.pi, 180, endpoint=False)]; bot = [P(a, 0.0) for a in np.linspace(0, 2 * math.pi, 180, endpoint=False)]
-    tx = [p[0] for p in top]; ty = [p[1] for p in top]; by = [p[1] for p in bot]
-    cx0, cx1, cy0, cy1 = min(tx), max(tx), min(ty), max(ty)
-    mask = Image.new('L', im.size, 0); ImageDraw.Draw(mask).polygon(top, fill=255)
-    cap = Image.composite(im, Image.new('RGBA', im.size, (0, 0, 0, 0)), mask).crop((int(cx0), int(cy0), int(cx1) + 1, int(cy1) + 1))
-    y_a = (cy0 + cy1) / 2; y_b = (min(by) + max(by)) / 2
-    body = im.crop((int(cx0), int(y_a), int(cx1) + 1, int(y_b))).convert('RGB')
-    from PIL import ImageEnhance
-    def g(im_):
-        im_ = ImageEnhance.Brightness(im_).enhance(float(os.environ.get('POD_GAIN', 1.0)))
-        return Image.fromarray(grade(np.asarray(im_)).astype(np.uint8)) if os.environ.get('GRADE', '1') == '1' else im_             # подиумы — в той же палитре, что и фон
-    w_ = body.width; body = body.crop((int(w_ * .018), 0, int(w_ * .982), body.height))                       # без тёмной кромки силуэта
-    cap_rgb = g(cap.convert('RGB')); cap = Image.merge('RGBA', (*cap_rgb.split(), cap.getchannel('A'))); body = g(body)
-    cap.save(os.path.join(OUT, 'pod-cap.webp'), 'WEBP', quality=90, method=6, alpha_quality=95); body.save(os.path.join(OUT, 'pod-body.webp'), 'WEBP', quality=88, method=6)
-    meta['pod'] = {'cap': 'assets/showroom/pod-cap.webp', 'body': 'assets/showroom/pod-body.webp', 'capRatio': round(cap.height / cap.width, 4), 'bodyRatio': round(body.height / body.width, 4), 'capW': cap.width, 'bodyH': body.height}
-    print('pod', meta['pod'], flush=True)
 
 def grade(a, sat=None, lift=None, cool=None, gamma=None):
     """цветокоррекция слоёв и «фотографическая» обработка: гамма (.84 по умолчанию), едва заметная виньетка и плёночное зерно (после шумоподавления Cycles картинка слишком гладкая — «пластик»), лёгкое возвращение резкости. Применяется ко всем слоям одинаково (кадр целиком)."""
@@ -500,7 +256,7 @@ def render_layers(sc, cam0, names):
     """Слои из ОДНОЙ полной отрисовки R2 (все объекты, общий свет и тени) + чистая «подложка» R1 (только стена, пол и задник — без остальных объектов) + маски объектов по группам:
        • слой группы = пиксели R2 с альфой-маской этой группы (объекты видны в своём слое, тени и отражения — настоящие);
        • подложка = R2 вне объектов и R1 под ними (под любым слоем есть «что-то», швов и дыр нет)."""
-    objs = [o for o in bpy.data.objects if 'grp' in o.keys() and o['grp'] != 'gobo' and o.name not in ('cut1', 'cut2', 'clipb', 'stepl', 'stepr') and not o.name.startswith('cutR') and o.type in ('MESH', 'CURVE')]      # «резаки» булевых операций остаются скрытыми всегда
+    objs = [o for o in bpy.data.objects if 'grp' in o.keys() and o['grp'] != 'gobo' and o.name not in ('cut1', 'cut2', 'clipb', 'stepl', 'stepr', 'tbl_clip') and not o.name.startswith('cutR') and o.type in ('MESH', 'CURVE')]      # «резаки» булевых операций остаются скрытыми всегда
     groups = ['niche', 'ring', 'dais', 'plant']; mp = os.path.join(OUT, 'layers.json'); old = json.load(open(mp)) if os.path.exists(mp) else {}
     def show(gs):
         for o in objs: o.hide_render = o['grp'] not in gs; o.visible_camera = True
@@ -512,10 +268,14 @@ def render_layers(sc, cam0, names):
         show(['shell']); shoot('/tmp/R1.png')                                                          # подложка
         ov = bpy.data.materials.new('mask'); ov.use_nodes = True; nt = ov.node_tree; nt.nodes.clear(); em = nt.nodes.new('ShaderNodeEmission'); em.inputs['Strength'].default_value = 1.0; out = nt.nodes.new('ShaderNodeOutputMaterial'); nt.links.new(em.outputs[0], out.inputs[0])
         vl = bpy.context.view_layer; vl.material_override = ov; vt = sc.view_settings.view_transform; lk = sc.view_settings.look; ex = sc.view_settings.exposure; sc.view_settings.view_transform = 'Standard'; sc.view_settings.exposure = 0; sc.view_settings.look = 'None'
+        v0 = _VOL[0].inputs['Density'].default_value if _VOL[0] else 0.0
+        if _VOL[0]: _VOL[0].inputs['Density'].default_value = 0.0                                                # маски без дымки
         bgn = sc.world.node_tree.nodes['Background']; w0 = bgn.inputs['Strength'].default_value; bgn.inputs['Strength'].default_value = 0.0; spp0 = sc.cycles.samples; sc.cycles.samples = 16; sc.cycles.use_denoising = False
         for g in groups:
             show([g]); shoot('/tmp/M_%s.png' % g)
-        vl.material_override = None; sc.view_settings.view_transform = vt; sc.view_settings.look = lk; sc.view_settings.exposure = ex; bgn.inputs['Strength'].default_value = w0; sc.cycles.samples = spp0; sc.cycles.use_denoising = True
+        vl.material_override = None
+        if _VOL[0]: _VOL[0].inputs['Density'].default_value = v0
+        sc.view_settings.view_transform = vt; sc.view_settings.look = lk; sc.view_settings.exposure = ex; bgn.inputs['Strength'].default_value = w0; sc.cycles.samples = spp0; sc.cycles.use_denoising = True
         R2 = np.asarray(Image.open('/tmp/R2.png').convert('RGB')).astype(np.float32); R1 = np.asarray(Image.open('/tmp/R1.png').convert('RGB')).astype(np.float32)
         M = {g: np.asarray(Image.open('/tmp/M_%s.png' % g).convert('L')).astype(np.float32) / 255.0 for g in groups}
         from scipy import ndimage as ndi
@@ -534,16 +294,7 @@ def render_layers(sc, cam0, names):
             Image.fromarray(np.clip(rgba, 0, 255).astype(np.uint8), 'RGBA').save(os.path.join(OUT, name), 'WEBP', quality=q, method=6, alpha_quality=92)
             old[g] = {'file': 'assets/showroom/' + name, 'x': round(x0 * k, 2), 'y': round(y0 * k, 2), 'w': round((x1 - x0) * k, 2), 'h': round((y1 - y0) * k, 2)}
             print('layer', g, old[g], os.path.getsize(os.path.join(OUT, name)) // 1024, 'КБ', flush=True)
-    if 'pod' in names:
-        for o in objs: o.hide_render = o['grp'] != 'pod'; o.visible_camera = True
-        for o in bpy.data.objects:
-            if o.get('grp') == 'gobo': o.hide_render = True                                                                  # подиумы — спрайты, которые тянутся и повторяются: тень переплёта на каждом была бы одинаковой и выдавала бы подделку
-        wn_ = sc.world.node_tree; bgp = wn_.nodes['Background']
-        for l_ in list(bgp.inputs['Color'].links): wn_.links.remove(l_)
-        bgp.inputs['Color'].default_value = (*E3('PODWORLD', (1.0, .90, .76)), 1); bgp.inputs['Strength'].default_value = float(os.environ.get('POD_WORLD', .55))      # тёплый рассеянный свет вместо голубого неба: тени подиума тёплые
-        sc.render.film_transparent = True; cam2 = set_cam(sc, (0.0, -12.0, 1.52), pitch=11.0)                         # подиум снимается чуть сверху: верхняя грань читается эллипсом ≈1:10
-        shoot('/tmp/layer_pod.png'); pod_sprites(sc, cam2, '/tmp/layer_pod.png', old); sc.camera = cam0
-    old['anchors'] = anchors(sc, cam0); json.dump(old, open(mp, 'w'), indent=1, ensure_ascii=False)
+    old.pop('pod', None); old['anchors'] = anchors(sc, cam0); json.dump(old, open(mp, 'w'), indent=1, ensure_ascii=False)
 
 def main():
     mode = sys.argv[1] if len(sys.argv) > 1 else 'all'
@@ -555,8 +306,6 @@ def main():
     if dof > 0: cam.data.dof.use_dof = True; cam.data.dof.focus_distance = float(os.environ.get('DOF_DIST', 7.7)); cam.data.dof.aperture_fstop = dof                      # фон мягко размыт, стол и упаковки — в фокусе (как на фото-образце)
     print('сцена собрана за %.0f с, объектов %d' % (time.time() - t0, len(bpy.data.objects)), flush=True)
     if mode == 'preview':
-        for o in bpy.data.objects:
-            if o.get('grp') == 'pod': o.hide_render = True
         if os.environ.get('CROP'):
             c_ = [float(v) for v in os.environ['CROP'].split(',')]; sc.render.use_border = True; sc.render.border_min_x, sc.render.border_min_y, sc.render.border_max_x, sc.render.border_max_y = c_[0], 1 - c_[3], c_[2], 1 - c_[1]; sc.render.use_crop_to_border = True
         sc.render.film_transparent = False; sc.render.filepath = os.environ.get('PREVIEW_OUT', '/tmp/scene_preview.png'); bpy.ops.render.render(write_still=True); print('preview done'); print(json.dumps(anchors(sc, cam))); return

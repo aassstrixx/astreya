@@ -22,18 +22,12 @@
 .shw-stage>*{pointer-events:auto}
 .shw-ly{position:absolute;display:block;max-width:none;pointer-events:none;user-select:none;-webkit-user-drag:none}
 
-/* --- 1–2. слои сцены (3D-рендеры, img.shw-ly) уже содержат стену, пол, арки, нишу, платформу и растение; ниже — только подиумы: боковая стенка и верхняя грань — спрайты травертинового цилиндра,
-   тянутся под любой размер (--w ширина, --e высота эллипса верхней грани, --b толщина) --- */
-.shw-slab{position:absolute;width:var(--w);height:calc(var(--e) + var(--b));pointer-events:none}
-.shw-slab::before{content:"";position:absolute;left:0;right:0;top:calc(var(--e) / 2);bottom:0;border-radius:0 0 50% 50%/0 0 calc(var(--e) / 2) calc(var(--e) / 2);background:
-  linear-gradient(180deg,rgba(255,255,255,0) 62%,rgba(86,58,30,.22)),url(../assets/showroom/pod-body.webp) 0 0/100% 100%;box-shadow:0 calc(var(--b) * .5) calc(var(--b) * .9) calc(var(--b) * -.45) rgba(78,54,26,.5)}
-.shw-slab::after{content:"";position:absolute;left:0;right:0;top:0;height:var(--e);background:url(../assets/showroom/pod-cap.webp) 0 0/100% 100%}
+/* --- 1–2. слои сцены (3D-рендеры, img.shw-ly): стена, арка, ниша, стол с подиумами, ваза с веткой; подиумы запечены в сцену (tools/showroom-assets/expo.py), живые только товары --- */
 .shw-grain{position:absolute;inset:0;z-index:5;pointer-events:none;background:url(../assets/bg/stone-grain.webp) 0 0/512px 512px;opacity:.55}      /* зерно камня: поры, крупинки и облака тона поверх стены, арок и платформы (рендеры после сжатия слишком гладкие) */
 .shw-motes{position:absolute;inset:0;overflow:hidden;pointer-events:none;z-index:1}
 .shw-motes i{position:absolute;left:var(--x);top:var(--y);width:var(--s);height:var(--s);border-radius:50%;background:radial-gradient(closest-side,rgba(255,247,224,.95),rgba(255,240,206,.42) 56%,rgba(255,240,206,0));opacity:0;animation:axMote var(--t) ease-in-out var(--d) infinite}
 @keyframes axMote{0%{opacity:0;transform:translate3d(0,0,0) scale(.7)}20%{opacity:.8}62%{opacity:.55}100%{opacity:0;transform:translate3d(var(--dx),-130px,0) scale(1.15)}}
 html.lite .shw-motes{display:none}
-.shw-pd{transition:opacity .5s var(--ease),transform .5s var(--ease);pointer-events:auto;cursor:pointer}
 
 /* --- 3. товары на сцене (js/showroom.js) --- */
 .shw-it{position:absolute;display:block;padding:0;margin:0;border:0;background:none;cursor:pointer;text-align:left;touch-action:manipulation;-webkit-tap-highlight-color:transparent;z-index:var(--z,5);transition:opacity .5s var(--shw-ease)}
@@ -45,6 +39,7 @@ html.lite .shw-motes{display:none}
 .shw-sh{position:absolute;left:50%;bottom:-7px;width:112%;height:calc(var(--bw) * .16 + 8px);transform:translateX(-50%) scale(var(--ss,1),var(--ss,1));background:radial-gradient(closest-side,rgba(66,44,20,.5),rgba(66,44,20,.2) 56%,rgba(66,44,20,0));opacity:var(--so,1);transition:transform .95s var(--shw-grow),opacity .95s var(--shw-grow);pointer-events:none}
 .shw-gl{position:absolute;left:50%;bottom:-24px;width:190%;height:70%;transform:translateX(-50%);background:radial-gradient(ellipse 50% 56% at 50% 78%,rgba(255,250,232,.95),rgba(255,247,226,.4) 50%,rgba(255,247,226,0) 74%);opacity:0;transition:opacity .95s var(--shw-grow),transform .95s var(--shw-grow);pointer-events:none}
 .shw-it.is-bg .shw-img{filter:blur(.35px)}
+.shw-cs{position:absolute;left:0;top:0;width:100%;height:100%;object-fit:contain;max-width:none;pointer-events:none;user-select:none;-webkit-user-drag:none;transform-origin:50% 100%;transform:translateX(2%) skewX(-46deg) scaleY(.2);filter:brightness(0) blur(1.6px);opacity:calc(var(--so,1) * .34);transition:opacity .95s var(--shw-grow)}      /* тень от солнца слева: упаковка «ложится» на подиум вправо и вглубь */
 /* наведение «прожектор»: товар приподнимается и увеличивается (растёт вверх от основания), под ним вспыхивает свет, подиум светлеет и чуть поднимается, остальные товары и подиумы мягко отступают; подпись не всплывает — сведения о товаре показывает карточка справа */
 @media (hover:hover) and (pointer:fine){
   .shw:not(.has-sel) .shw-it:hover{z-index:60}
@@ -57,7 +52,6 @@ html.lite .shw-motes{display:none}
 .shw:not(.has-sel) .shw-it.is-hov .shw-ph,.shw-it:focus-visible .shw-ph{--ly:-12px;--zm:1.16}
 .shw:not(.has-sel) .shw-it.is-hov .shw-sh,.shw-it:focus-visible .shw-sh{--ss:.82;--so:.55}
 .shw:not(.has-sel) .shw-it.is-hov .shw-gl,.shw-it:focus-visible .shw-gl{opacity:1;transform:translateX(-50%) scale(1.12)}
-.shw-pd.is-lit::before{box-shadow:0 -6px 26px rgba(255,248,226,.55)}
 .shw-it.is-sel{z-index:70}
 .shw-it.is-sel .shw-ph{--ly:-20px;--zm:1.3}
 .shw-it.is-sel .shw-sh{--ss:.72;--so:.5}
@@ -356,18 +350,27 @@ html:not(.js) .shw{display:none}
    Нажатие — «камера» приближает сцену к нише (transform всей сцены), остальное темнеет, товар встаёт в фокус, вокруг него на пару секунд проявляются орбиты, раскрывается стеклянная панель сведений.
    Двигаются только opacity/transform/translate; на телефоне и планшете камеры нет (наведения нет — раскрытие по касанию, плашка внизу). Режимы «меньше движения» и «лёгкий» — без камеры, орбит и параллакса (js/showroom.js: mode()). */
 
-/* камера и параллакс (компьютер) */
+/* камера и параллакс (компьютер): сцена — стопка слоёв РАЗНОЙ глубины, а не одна картинка. При выборе товара «камера» подъезжает: плоскость подиумов и товары приближаются на полную величину (--cz), дальние слои (стена, ниша, арка) — на долю (--lz), ближний (ваза и ветка) — сильнее;
+   точка фокуса одна на всех (--fx,--fy), поэтому ближние слои уходят в стороны быстрее, дальние почти стоят — настоящий параллакс. При движении курсора слои смещаются на разную величину (--lp, px на единицу): подиумы и товары — на одну и ту же, чтобы товар не съезжал с подиума. */
 @media (min-width:1101px){
-  .shw-view{--cz:1;--cx:0px;--cy:0px}
+  .shw-view{--cz:1;--cx:0px;--cy:0px;--fx:770px;--fy:500px}
   .shw:not(.is-stack) .shw-plane{transform:translate3d(var(--cx),var(--cy),0) scale(var(--cz));transition:transform 1.2s var(--shw-ease),translate .9s var(--shw-ease),filter 1.2s var(--shw-ease)}
-  .shw-view.no-tr .shw-plane{transition:none}
-  .shw.is-cam .shw-plane{will-change:transform}
+  .shw:not(.is-stack) .shw-world{transform:none;isolation:isolate;transition:filter 1.2s var(--shw-ease)}      /* изоляция: зерно камня (z-index 5) остаётся внутри мира и не ложится поверх товаров */
+  .shw:not(.is-stack) .shw-ly{--lz:1;--lp:-6;--sk:calc(1 + (var(--cz) - 1) * var(--lz));transform-origin:var(--ox,0px) var(--oy,0px);
+    transform:translate3d(clamp(calc(1536px * (1 - var(--sk))),calc(var(--fx) - var(--sk) * (var(--fx) - var(--cx)) / var(--cz)),0px),clamp(calc(1024px * (1 - var(--sk))),calc(var(--fy) - var(--sk) * (var(--fy) - var(--cy)) / var(--cz)),0px),0) scale(var(--sk));
+    translate:calc(var(--px,0) * var(--lp) * 1px) calc(var(--py,0) * var(--lp) * .6px);transition:transform 1.2s var(--shw-ease),translate .9s var(--shw-ease)}
+  .shw:not(.is-stack) .shw-ly-shell{--lz:.45;--lp:-2}
+  .shw:not(.is-stack) .shw-ly-niche{--lz:.6;--lp:-3}
+  .shw:not(.is-stack) .shw-ly-ring{--lz:.78;--lp:-4.5}
+  .shw:not(.is-stack) .shw-ly-dais{--lz:1;--lp:-6}
+  .shw:not(.is-stack) .shw-ly-plant{--lz:1.3;--lp:-12}
+  .shw-view.no-tr .shw-plane,.shw-view.no-tr .shw-ly{transition:none}
+  .shw.is-cam .shw-plane,.shw.is-cam .shw-ly{will-change:transform}
 }
 @media (min-width:1101px) and (hover:hover) and (pointer:fine){
-  .shw:not(.is-stack) .shw-world{translate:calc(var(--px,0) * -7px) calc(var(--py,0) * -4px)}
-  .shw:not(.is-stack) .shw-stage{translate:calc(var(--px,0) * 3px) calc(var(--py,0) * 2px)}
+  .shw:not(.is-stack) .shw-stage{translate:calc(var(--px,0) * -6px) calc(var(--py,0) * -3.6px)}
 }
-html.lite .shw-world,html.lite .shw-stage{translate:none!important;transition:none!important}
+html.lite .shw-world,html.lite .shw-stage,html.lite .shw-ly{translate:none!important;transition:none!important}
 
 /* смена света при смене экспозиции: мягкий луч смещается по залу */
 
@@ -492,7 +495,7 @@ html.lite .shw-world,html.lite .shw-stage{translate:none!important;transition:no
 
 /* «меньше движения»: ни камеры, ни орбит, ни параллакса (js/showroom.js: только в полном режиме); раскрытие и панели остаются */
 @media (prefers-reduced-motion:reduce){
-  .shw:not(.is-stack) .shw-plane{transition:none}
+  .shw:not(.is-stack) .shw-plane,.shw:not(.is-stack) .shw-ly{transition:none;translate:none}
   .shw-tip{transition:opacity .4s ease}
 }
 
@@ -511,12 +514,14 @@ html.lite .shw-world,html.lite .shw-stage{translate:none!important;transition:no
 html.lite .shw-world{filter:none!important}
 
 @media (prefers-reduced-motion:reduce){
-  .shw:not(.is-stack) .shw-plane{transition:none}
+  .shw:not(.is-stack) .shw-plane,.shw:not(.is-stack) .shw-ly{transition:none;translate:none}
   .shw-tip{transition:opacity .25s ease}
 }
 
 /* упаковки на столе: контактная тень плотнее, предмет читается на фоне; у стоящих прямо на полированной столешнице — мягкое отражение (где поддерживается box-reflect) */
 .shw-sh{background:radial-gradient(closest-side,rgba(54,34,14,.62),rgba(54,34,14,.26) 54%,rgba(54,34,14,0))}
 .shw-it:not(.is-bg) .shw-img{filter:drop-shadow(0 1px 1.2px rgba(54,34,14,.34))}
-.shw-it.is-flat .shw-ph{-webkit-box-reflect:below 0 linear-gradient(transparent 80%,rgba(255,255,255,.22))}
-html.lite .shw-it.is-flat .shw-ph{-webkit-box-reflect:none}
+
+/* заголовок над листвой и тенями: мягкое светлое свечение, чтобы тёмные буквы читались на любом участке сцены */
+.shw-head h1,.shw-head .lead{text-shadow:0 0 26px rgba(255,249,236,.92),0 0 8px rgba(255,249,236,.75)}
+.shw-head .eyebrow{text-shadow:0 0 12px rgba(255,249,236,.9)}
