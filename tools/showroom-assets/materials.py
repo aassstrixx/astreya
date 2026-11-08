@@ -71,7 +71,10 @@ def travertine(name='travertine', tint=(1, 1, 1), scale=1.0, pits=1.0, bands=1.0
     def pores(sc_, z_stretch, thr_, rare):
         vo = nt.nodes.new('ShaderNodeTexVoronoi'); vo.inputs['Scale'].default_value = sc_; vo.inputs['Randomness'].default_value = 1.0
         L.new(_coord(nt, (1.0 * scale, 1.0 * scale, z_stretch * scale)), vo.inputs['Vector'])
-        inv = _math(nt, 'SUBTRACT', 1.0, vo.outputs['Distance']); hit = _math(nt, 'GREATER_THAN', inv, thr_)
+        inv = _math(nt, 'SUBTRACT', 1.0, vo.outputs['Distance'])
+        jit = _noise(nt, _coord(nt, (3.0 * scale, 3.0 * scale, 3.0 * scale)), sc_ * 1.7, 3)                                  # неровный край поры: настоящие поры не идеальные круги
+        inv2 = _math(nt, 'ADD', inv, _math(nt, 'MULTIPLY', _math(nt, 'SUBTRACT', jit, .5), .26))
+        hit = _math(nt, 'MULTIPLY', _math(nt, 'SUBTRACT', inv2, thr_ - .035), 14.0, clamp=True)                              # мягкий переход от камня к поре (≈ 0,07 по расстоянию), а не плоская заливка
         gate = _noise(nt, _coord(nt, (.9 * scale, .9 * scale, 2.0 * scale)), 2.6, 3)
         return _math(nt, 'MULTIPLY', hit, _math(nt, 'GREATER_THAN', gate, rare))
     big = pores(9.0, 2.4, 1.0 - .075 * pits, .52); small = pores(42.0, 1.8, 1.0 - .115 * pits, .36)

@@ -220,7 +220,7 @@ def leaf_mesh(L=.17, Wd=.05):
     """лист: три вершины в ряду (край, середина, край) — середина чуть ниже краёв, получается складка по центральной жилке; изгиб по длине; развёртка UV (u — поперёк, v — вдоль) для рисунка жилок"""
     n = 9; verts = []; faces = []
     for i in range(n + 1):
-        t = i / n; w = Wd * math.sin(math.pi * (t ** .8)) * (1 - .15 * t); y = L * t; z = .014 * math.sin(math.pi * t) - .012 * (t ** 2); fold = .22 * w
+        t = i / n; w = Wd * (math.sin(math.pi * (t ** .8)) ** .8) * (1 - .15 * t); y = L * t; z = .014 * math.sin(math.pi * t) - .012 * (t ** 2); fold = .22 * w
         verts += [(-w, y, z + .006 + fold), (0.0, y, z + .006 - fold * .35), (w, y, z + .006 + fold)]
     for i in range(n):
         a = 3 * i; faces += [(a, a + 1, a + 4, a + 3), (a + 1, a + 2, a + 5, a + 4)]

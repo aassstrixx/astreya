@@ -100,8 +100,8 @@ def mats():
     M = {}
     if HALL_STYLE == '2':
         wave = float(os.environ.get('WAVE', 2.0))
-        M['wall'] = MT.lime_plaster('hw_wall', (.84, .76, .62), wave=wave, scale=HS, tone=.45)                      # основные стены: матовая известковая штукатурка, молочный песок, видимые неровности
-        M['inner'] = MT.lime_plaster('hw_inner', (.80, .72, .58), wave=wave, scale=HS, tone=.45)                    # внутри арок чуть глубже тоном
+        M['wall'] = MT.lime_plaster('hw_wall', (.88, .78, .61), wave=wave, scale=HS, tone=.45)                      # основные стены: матовая известковая штукатурка, молочный песок, видимые неровности
+        M['inner'] = MT.lime_plaster('hw_inner', (.83, .73, .57), wave=wave, scale=HS, tone=.45)                    # внутри арок чуть глубже тоном
         M['trav'] = MT.travertine('hw_trav', (.86, .76, .62), 1.0, 1.5, 1.3)                    # подиум и плита: травертин с видимыми порами, матовая шлифовка
         M['trav2'] = MT.travertine('hw_trav2', (.86, .77, .63), 1.1, 1.0, 1.0)
         M['stone'] = MT.travertine('hw_stone', (.88, .80, .66), 1.0, 1.2, 1.4)                   # полки и цоколь стеллажа
