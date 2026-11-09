@@ -77,12 +77,12 @@ module.exports = function homeHouse(ctx, C, P, deps) {
   /* листы: лист k — спереди правая страница, сзади левая страница следующего разворота; порядок в DOM = порядок страниц при чтении */
   const pageL = (r, n) => SP[r.id] ? SP[r.id].L(n) : pageL0(r, n), pageR = (r, n) => SP[r.id] ? SP[r.id].R(n) : pageR0(r, n);
   /* логическая цепочка и переход к разделу: порядок комнат (data/redesign.json → house.rooms) — путь знакомства с сайтом: компания → бренды → каталог → Стелла → обучение (экспертиза, центр) → новости → партнёрам → контакты.
-     Левая страница комнаты — «вход в раздел»: настоящая ссылка-плашка и переход по нажатию на страницу (js/house.js, [data-sec]); правая — колонтитул «Дальше · следующая комната» (листает журнал) и заголовок-ссылка на раздел */
+     Левая страница комнаты — «вход в раздел»: переход по нажатию на страницу (js/house.js, [data-sec]; плашки «Открыть раздел» нет — убрана по просьбе заказчика); правая — колонтитул «Дальше · следующая комната» (листает журнал) и заголовок-ссылка на раздел */
   const CH = mc.chain || {}, toSec = [...rooms.map(r => ({id: r.id, nav: r.nav || r.short, short: r.short, href: href(r.href)})), {id: 'contacts', nav: CH.contactsNav || mc.contactsTitle, short: mc.contactsTitle, href: href(CH.contactsHref || 'contacts.html')}];
   const arrowI = I.arrow;
-  const decL = (html, k) => {                                              // k — номер комнаты в toSec
-    const t = toSec[k], chip = `<a class="mg-sec" href="${esc(t.href)}" data-track="house_magazine_section" data-room="${t.id}" data-place="page"><span>${esc(CH.open || 'Открыть раздел')}<em>${esc(t.nav)}</em></span>${arrowI}</a>`;
-    return html.replace(/^<div class="pg /, `<div data-sec="${esc(t.href)}" data-room-l="${t.id}" class="pg `).replace(/<footer class="pg-f l">/, chip + '<footer class="pg-f l">');
+  const decL = (html, k) => {                                              // k — номер комнаты в toSec; плашки на странице нет (убрана по просьбе заказчика) — переход по нажатию на страницу
+    const t = toSec[k];
+    return html.replace(/^<div class="pg /, `<div data-sec="${esc(t.href)}" data-room-l="${t.id}" class="pg `);
   };
   const decR = (html, k) => {
     const t = toSec[k], nx = toSec[k + 1], nxBtn = nx
