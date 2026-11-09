@@ -11,6 +11,7 @@ const PACK_CM = {tube: 14.4, bottle: 21.9, pump: 22.9, dropper: 15.6, jar: 6.0, 
 
 function brandsPage(ctx, C, P) {
   const bp = ctx.redesign && ctx.redesign.brandsPage;
+  if (bp && bp.wall && readJson('assets/brands/wall.json')) return brandsWall(ctx, C, P);
   if (bp && bp.gallery) return brandsGallery(ctx, C, P);
   const {brands, tasks} = ctx;
   return `<div class="wrap" data-brands>
@@ -116,6 +117,111 @@ function brandsGallery(ctx, C, P) {
         <div class="empty" id="br-empty" hidden><b>Бренды не найдены</b>Измените запрос или выберите другую задачу.</div>
       </div>
     </section>
+  </div>`;
+}
+
+/* ---------- единая витрина-стена (по референсу «Галерея брендов ASTREYA»): рендер стены с девятью арочными нишами на общем основании + логотипы и упаковки реального масштаба поверх, панель бренда, «Бренд под вашу задачу» ---------- */
+function brandsWall(ctx, C, P) {
+  const {brands, tasks, products, redesign} = ctx, bp = redesign.brandsPage, W = bp.wall, wall = readJson('assets/brands/wall.json'), packs = readJson('assets/showroom/packs.json') || {};
+  const PW = wall.plate.w, PH = wall.plate.h, pct = x => Math.round(x * 100000) / 1000, usedTasks = new Set(); brands.forEach(b => b.tasks.forEach(t => usedTasks.add(t)));
+  const wallTex = (bp.gallery && bp.gallery.wallTextures) || [], pl = W.plate, pnl = W.panel, tk = W.tasks, ask = W.ask;
+  const order = Object.keys(wall.niches).map(id => brands.find(b => b.id === id)).filter(Boolean);
+  brands.forEach(b => { if (!order.includes(b)) order.push(b); });
+  const small = f => /assets\/showroom\/pack-[^/]+\.webp$/.test(f) ? f.replace(/\.webp$/, '-s.webp') : f;
+  const nWord = n => `${n} ${S.plural(n, 'позиция', 'позиции', 'позиций')}`;
+  const packInfo = p => { const file = S.packOf(p), key = (/([^/]+)\.webp$/.exec(file) || [])[1], meta = packs[key]; return meta ? {file, meta, small: small(file)} : null; };
+  const star = '<svg class="br-st" viewBox="0 0 48 48" aria-hidden="true" focusable="false"><defs><radialGradient id="br-pg" cx="38%" cy="30%" r="75%"><stop offset="0" stop-color="#fff"/><stop offset=".55" stop-color="#cfd9f0"/><stop offset="1" stop-color="#8ea3d8"/></radialGradient></defs><circle cx="24" cy="26" r="19" fill="url(#br-pg)"/><ellipse cx="18" cy="26.6" rx="2.1" ry="2.9" fill="#0b1a33"/><ellipse cx="30" cy="26.6" rx="2.1" ry="2.9" fill="#0b1a33"/><path d="M19.5 32.4c1.4 1.6 7.6 1.6 9 0" fill="none" stroke="#0b1a33" stroke-width="1.6" stroke-linecap="round"/></svg>';
+  let helpN = 0;
+  const helpBtn = (cls, a, b2) => `<button class="br-help ${cls}" type="button" data-act="br-help">${star.split('br-pg').join('br-pg' + (++helpN))}<span><b>${esc(a)}</b><small>${esc(b2)}</small></span></button>`;
+  const logoImg = (b, cls, style) => b.logo ? `<img class="${cls}"${style ? ` style="${style}"` : ''} src="${esc(C.u(P, b.logo))}" alt="${esc(b.name)}"${b.logoW ? ` width="${b.logoW}" height="${b.logoH}"` : ''} loading="lazy" decoding="async">` : `<b class="${cls} bw-logo-t">${esc(b.name)}</b>`;
+  const hayOf = b => S.norm([b.name, b.tag, b.desc, b.group, b.country, b.tasks.map(t => ctx.taskById[t].label).join(' ')].join(' '));
+
+  /* ниши на стене */
+  const niches = order.map(b => {
+    const n = wall.niches[b.id]; if (!n) return '';
+    const prods = nicheProducts(products.filter(p => p.brand === b.id), n.slots.length), nichePx = (n.x1 - n.x0) * PW, nicheH = n.bottom - n.top;
+    const aspect = b.logoW && b.logoH ? b.logoW / b.logoH : 3, lw = Math.min(.8 * nichePx, Math.max(.42 * nichePx, Math.sqrt(.105 * nichePx * nichePx * aspect) * (b.logoScale || 1)));
+    const pk = prods.map((p, i) => { const sl = n.slots[i], pi = packInfo(p); if (!pi) return ''; const h = (PACK_CM[p.type] || 15) * sl.pxcm / PH;
+      return `<span class="bw-pk" style="--x:${pct(sl.x)}%;--y:${pct(sl.y)}%;--h:${pct(h)}%;--ar:${(pi.meta.w / pi.meta.h).toFixed(4)};z-index:${Math.round(sl.y * 1000)}"><img class="bw-cs" src="${esc(C.u(P, pi.small))}" alt="" decoding="async"><img src="${esc(C.u(P, pi.small))}" alt="${esc(p.name)}" width="${pi.meta.w}" height="${pi.meta.h}" decoding="async"></span>`; }).join('');
+    const nProd = products.filter(p => p.brand === b.id).length;
+    return `<li class="bw-n" style="${S.bstyle(b)};--x:${pct(n.x0)}%;--w:${pct(n.x1 - n.x0)}%;--t:${pct(n.top)}%;--h:${pct(nicheH)}%;--cx:${pct(n.cx)}%;--ly:${pct(n.top + nicheH * .165)}%;--lw:${pct(lw / PW)}%;--cy:${pct(n.top + nicheH * .36)}%" data-id="${b.id}" data-tasks="${b.tasks.join(' ')}" data-q="${esc(hayOf(b))}">
+      ${logoImg(b, 'bw-logo')}<span class="bw-cap">${esc(b.tag)}</span>${pk}
+      <button class="bw-hit" type="button" data-act="bw-open" data-id="${b.id}" aria-controls="bw-panel" aria-expanded="false" aria-label="${esc(b.name)}: ${esc(nWord(nProd))} в каталоге. ${esc(W.hint)}"><span class="bw-glow" aria-hidden="true"></span><span class="bw-veil" aria-hidden="true"></span><span class="bw-hint" aria-hidden="true">${esc(W.hint)} ${I.arrow}</span></button>
+    </li>`;
+  }).join('');
+
+  /* нижняя полоса «Портфель ASTREYA» */
+  const strip = `<nav class="bw-strip" aria-label="${esc(W.stripTitle)}"><p class="bw-strip-t">${esc(W.stripTitle.replace(/ASTREYA/, ''))}<span>ASTREYA</span></p>
+    <ul>${order.map(b => `<li data-id="${b.id}"><button type="button" data-act="bw-open" data-id="${b.id}"><b>${esc(b.name)}</b><small>${esc(b.tag)}</small></button></li>`).join('')}</ul>${helpBtn('bw-strip-help', W.help, W.helpSub)}</nav>`;
+
+  /* панели брендов: все на странице, по одной показывается; данные — из data/*.json */
+  const panels = order.map(b => {
+    const n = wall.niches[b.id], prods = products.filter(p => p.brand === b.id), pad = .012, x0 = Math.max(0, n.x0 - pad), x1 = Math.min(1, n.x1 + pad), y0 = Math.max(0, n.top - .05), y1 = Math.min(1, n.bottom + .045), cw = x1 - x0, ch = y1 - y0;
+    const slots = nicheProducts(prods, n.slots.length).map((p, i) => { const sl = n.slots[i], pi = packInfo(p); if (!pi) return ''; const h = (PACK_CM[p.type] || 15) * sl.pxcm / PH;
+      return `<span class="bw-pk" style="--x:${pct((sl.x - x0) / cw)}%;--y:${pct((sl.y - y0) / ch)}%;--h:${pct(h / ch)}%;--ar:${(pi.meta.w / pi.meta.h).toFixed(4)};z-index:${Math.round(sl.y * 1000)}"><img class="bw-cs" src="${esc(C.u(P, pi.small))}" alt="" loading="lazy" decoding="async"><img src="${esc(C.u(P, pi.small))}" alt="" loading="lazy" decoding="async"></span>`; }).join('');
+    const mini = `<figure class="bw-mini" style="--ar:${((cw * PW) / (ch * PH)).toFixed(4)};--bs:${pct(1 / cw)}% ${pct(1 / ch)}%;--bp:${pct(x0 / (1 - cw || 1))}% ${pct(y0 / (1 - ch || 1))}%;background-image:url(${esc(C.u(P, pl.src))})" aria-hidden="true">${slots}</figure>`;
+    const cats = [...new Set(prods.map(p => p.cat))].map(id => (ctx.catById[id] || {}).name).filter(Boolean);
+    const pick = nicheProducts(prods, 4).filter(p => packInfo(p));
+    const meta = [b.country, b.group && b.group !== b.country ? b.group : ''].filter(Boolean);
+    return `<article class="bw-pn" id="bw-pn-${b.id}" data-id="${b.id}" style="${S.bstyle(b)}" hidden aria-label="${esc(b.name)}">
+      ${mini}
+      <div class="bw-pn-in">
+        <p class="bw-pn-eyebrow">${esc(meta.join(' · ') || pnl.device)}</p>
+        <h3 class="bw-pn-h">${logoImg(b, 'bw-pn-logo')}<span class="sr">${esc(b.name)}</span></h3>
+        <p class="bw-pn-lead">${esc(b.tag)}</p>
+        ${b.long && b.long[0] ? `<p class="bw-pn-p">${esc(b.long[0])}</p>` : ''}
+        <dl class="bw-pn-facts">
+          ${b.tasks.length ? `<div><dt>${esc(pnl.tasks)}</dt><dd>${b.tasks.map(t => `<a href="${C.u(P, 'catalog.html')}?brand=${b.id}&task=${t}" data-track="catalog_click" data-place="brand-wall">${esc(ctx.taskById[t].label)}</a>`).join('')}</dd></div>` : ''}
+          ${cats.length ? `<div><dt>${esc(pnl.lines)}</dt><dd>${cats.map(c => `<span>${esc(c)}</span>`).join('')}</dd></div>` : ''}
+          <div><dt>${esc(pnl.count)}</dt><dd><b>${prods.length}</b> ${esc(S.plural(prods.length, 'позиция', 'позиции', 'позиций'))}</dd></div>
+        </dl>
+        <div class="bw-pn-act"><a class="btn btn-fill" href="${C.u(P, 'catalog.html')}?brand=${b.id}" data-track="catalog_click" data-place="brand-wall" data-brand="${b.id}">${esc(pnl.cta)} ${I.arrow}</a><a class="lnk" href="${C.burl(P, b)}" data-track="brand_card_click" data-brand="${b.id}">${esc(pnl.about)} ${I.arrow}</a></div>
+      </div>
+      <ul class="bw-pn-prods" aria-label="${esc(pnl.products)}">${pick.map(p => { const pi = packInfo(p); return `<li><a href="${C.purl(P, p)}" data-track="house_magazine_product" data-product="${p.id}"><span class="bw-pr-pic"><img src="${esc(C.u(P, pi.small))}" alt="" loading="lazy" decoding="async"></span><strong>${esc(p.name)}</strong><small>${esc((ctx.catById[p.cat] || {}).name || '')}</small></a></li>`; }).join('')}</ul>
+      <button class="bw-close" type="button" data-act="bw-close" aria-label="${esc(pnl.close)}">${esc(pnl.close)}<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6 6l12 12M18 6 6 18" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg></button>
+    </article>`;
+  }).join('');
+
+  /* «Бренд под вашу задачу»: результаты по задачам заранее, показывает скрипт (те же связи b.tasks, что и фильтр) */
+  const usedList = tasks.filter(t => usedTasks.has(t.id));
+  const taskRes = usedList.map(t => { const list = order.filter(b => b.tasks.includes(t.id)); return `<ul class="bw-tr" data-task="${t.id}" hidden aria-label="${esc(t.label)}">${list.map(b => `<li><a href="${C.burl(P, b)}" style="${S.bstyle(b)}" data-track="brand_card_click" data-brand="${b.id}">${logoImg(b, 'bw-tr-logo')}<span>${esc(b.tag)}</span><small>${esc(nWord(products.filter(p => p.brand === b.id && p.tasks.includes(t.id)).length))} · ${esc(t.label)}</small></a></li>`).join('')}</ul>`; }).join('');
+
+  return `<div class="br-page bw-page" data-brands data-brands-gallery data-bw>
+    <section class="bw" aria-labelledby="br-h1">
+      <div class="bw-stage" data-bw-stage>
+        <div class="bw-head">
+          <p class="br-eyebrow reveal">${esc(W.eyebrow)}</p>
+          <h1 id="br-h1" class="reveal">${esc(W.title)}</h1>
+          <p class="br-lead reveal">${esc(W.lead)}</p>
+        </div>
+        <div class="bw-bar reveal">
+          <div class="chips br-chips" id="br-tasks" role="group" aria-label="Фильтр по задаче">${C.chip(esc(W.all), 'br-task', 'all', true)}${usedList.map(t => C.chip(esc(t.label), 'br-task', t.id, false)).join('')}</div>
+          <label class="search br-search bw-search"><span class="sr">Поиск по брендам</span>${I.search}<input id="br-q" type="search" placeholder="${esc(W.search)}" autocomplete="off"></label>
+        </div>
+        <div class="bw-scroll" data-bw-scroll>
+          <div class="bw-plane" id="br-grid" style="--ar:${PW} / ${PH}">
+            <picture><source media="(max-width: 1100px)" srcset="${esc(C.u(P, pl.small))}"><img class="bw-plate" src="${esc(C.u(P, pl.src))}" alt="Единая каменная витрина брендов ASTREYA: арочные ниши с логотипами и продукцией" width="${PW}" height="${PH}" fetchpriority="high" decoding="async"></picture>
+            <h2 class="sr">Список брендов</h2>
+            <ol class="bw-niches">${niches}</ol>
+          </div>
+        </div>
+      </div>
+      <div class="empty bw-empty" id="br-empty" hidden><b>Бренды не найдены</b>Измените запрос или выберите другую задачу.</div>
+      ${strip}
+    </section>
+    <div class="br-wall bw-lower">
+      <div class="br-wall-bg" aria-hidden="true" style="--n:${Math.max(1, wallTex.length - 1)}">${wallTex.map((t, i) => `<i data-bd="${t[0]}" data-bd-pos="${t[1]}" data-bd-o="${t[2]}" style="--i:${i}"></i>`).join('')}</div>
+      <div class="br-in">
+        <section class="bw-panel" id="bw-panel" aria-live="polite" hidden>${panels}</section>
+        <section class="bw-tasks" aria-labelledby="bw-tasks-h">
+          <header><p class="br-eyebrow">${esc(tk.eyebrow)}</p><h2 id="bw-tasks-h">${esc(tk.title)}</h2><p class="bw-tasks-lead">${esc(tk.lead)}</p></header>
+          <div class="chips bw-task-chips" id="bw-task-chips" role="group" aria-label="${esc(tk.title)}">${usedList.map(t => C.chip(esc(t.label), 'bw-task', t.id, false)).join('')}</div>
+          <p class="bw-tr-empty muted">${esc(tk.empty)}</p>
+          ${taskRes}
+        </section>
+        <section class="bw-ask" aria-labelledby="bw-ask-h"><div><h2 id="bw-ask-h">${esc(ask.title)}</h2><p>${esc(ask.lead)}</p></div>${helpBtn('bw-ask-help', ask.btn, '')}</section>
+      </div>
+    </div>
   </div>`;
 }
 

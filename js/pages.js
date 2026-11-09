@@ -103,8 +103,54 @@
   };
 
   /* ---------- бренды ---------- */
+  /* ---------- бренды: единая витрина-стена (css/brands-wall.css, src/pages/brands.js → brandsWall) ----------
+     Ниши — кнопки: наведение подсвечивает нишу (класс is-hov), нажатие выделяет её и открывает панель бренда под стеной (панели собраны на странице заранее из data/*.json). Фильтр по задаче и поиск не прячут ниши, а приглушают лишние
+     (стена остаётся целой); «Бренд под вашу задачу» работает от того же состояния. Esc и «Закрыть» возвращают общую экспозицию. */
+  function brandsWallPage() {
+    const page = $('[data-bw]'), sec = $('.bw', page), niches = $$('.bw-n', page), strip = $$('.bw-strip li', page), qEl = $('#br-q'), empty = $('#br-empty'), panel = $('#bw-panel'), box = $('.bw-tasks', page), scroller = $('[data-bw-scroll]'), stage = $('[data-bw-stage]');
+    let task = 'all', sel = '';
+    const byId = id => niches.find(n => n.dataset.id === id);
+    function apply() {
+      const toks = A.tokens(qEl.value); let n = 0;
+      niches.forEach(li => { const ok = (task === 'all' || li.dataset.tasks.split(' ').indexOf(task) !== -1) && toks.every(t => li.dataset.q.indexOf(t) !== -1); li.classList.toggle('is-off', !ok); if (ok) n++; const s = strip.find(x => x.dataset.id === li.dataset.id); if (s) s.classList.toggle('is-off', !ok); });
+      empty.hidden = n > 0; setOn($('#br-tasks'), task); setOn($('#bw-task-chips'), task === 'all' ? '__none' : task);
+      $$('.bw-tr', box).forEach(u => { u.hidden = u.dataset.task !== task; }); box.classList.toggle('has-res', task !== 'all');
+    }
+    function show(id, opts) {
+      sel = id || ''; const open = !!sel;
+      niches.forEach(li => { const on = li.dataset.id === sel; li.classList.toggle('is-sel', on); const b = $('.bw-hit', li); if (b) b.setAttribute('aria-expanded', String(on)); });
+      strip.forEach(li => li.classList.toggle('is-sel', li.dataset.id === sel)); sec.classList.toggle('has-sel', open);
+      $$('.bw-pn', panel).forEach(a => { a.hidden = a.dataset.id !== sel; }); panel.hidden = !open;
+      if (!open || (opts && opts.quiet)) return;
+      A.track && A.track('brands_wall_open', {brand: sel});
+      const li = byId(sel), hit = li && $('.bw-hit', li);
+      if (scroller && scroller.scrollWidth > scroller.clientWidth + 8 && hit) scroller.scrollTo({left: hit.offsetLeft + hit.offsetWidth / 2 - scroller.clientWidth / 2, behavior: 'smooth'});
+      const r = panel.getBoundingClientRect(), vh = window.innerHeight || 800;
+      if (r.top > vh * .66 || r.bottom < 0) window.scrollTo({top: window.scrollY + r.top - Math.min(110, vh * .12), behavior: 'smooth'});
+    }
+    A.actions['br-task'] = (t, id) => { task = id; apply(); };
+    A.actions['bw-task'] = (t, id) => { task = task === id ? 'all' : id; apply(); };
+    A.actions['bw-open'] = (t, id) => { show(sel === id ? '' : id); };
+    A.actions['bw-close'] = () => { const was = sel; show(''); const li = was && byId(was), b = li && $('.bw-hit', li); if (b && b.focus) b.focus({preventScroll: true}); };
+    document.addEventListener('keydown', e => { if (e.key === 'Escape' && sel) A.actions['bw-close'](); });
+    niches.forEach(li => { const b = $('.bw-hit', li); if (!b) return; const on = () => li.classList.add('is-hov'), off = () => li.classList.remove('is-hov'); b.addEventListener('mouseenter', on); b.addEventListener('mouseleave', off); b.addEventListener('focus', on); b.addEventListener('blur', off); });
+    qEl.addEventListener('input', debounce(apply, 120));
+    const img = $('.bw-plate', page); if (img) { const bad = () => stage.classList.add('no-plate'); img.addEventListener('error', bad); if (img.complete && img.naturalWidth === 0 && img.src) bad(); }
+    const q = params().get('q'); if (q) qEl.value = q;
+    const tk = params().get('task'); if (tk && $('#br-tasks [data-id="' + tk + '"]')) task = tk;
+    apply(); const want = params().get('brand') || location.hash.replace(/^#brand-/, ''); if (want && byId(want)) show(want, {quiet: true});
+    const root = document.documentElement; let raf = 0; const top = () => { raf = 0; root.classList.toggle('br-top', (window.scrollY || 0) < 8); };
+    top(); window.addEventListener('scroll', () => { if (!raf) raf = requestAnimationFrame(top); }, {passive: true});
+    A.actions['br-help'] = () => {
+      if (!A.stella) return; const chip = $('#br-tasks .chip.on'), label = chip && chip.dataset.id !== 'all' ? chip.textContent.trim() : '', word = qEl.value.trim(), nm = sel && $('.bw-pn[data-id="' + sel + '"] .sr', panel);
+      const text = label ? 'Помоги выбрать бренд для задачи «' + label + '»: чем бренды отличаются и с чего начать?' : word ? 'Помоги выбрать бренд по запросу «' + word + '»: что подойдёт и чем бренды отличаются?' : nm ? 'Расскажи про бренд ' + nm.textContent.trim() + ': для каких задач он подходит и с чего начать?' : 'Помоги выбрать бренд: расскажи, чем бренды «Астреи» отличаются и под какие задачи кожи подходят.';
+      A.track && A.track('brands_help', {task: label}); A.stella.ask(text, {brands: true});
+    };
+  }
+
   A.pages.brands = function () {
     const grid = $('#br-grid'); if (!grid) return;
+    if ($('[data-bw]')) return brandsWallPage();
     const cards = $$('.bl-card', grid), qEl = $('#br-q'); let task = 'all', pageReady = false;
     function apply() {
       const toks = A.tokens(qEl.value); let n = 0;

@@ -178,8 +178,8 @@
   /* ================= БРЕНДЫ: ближайший семинар на карточке бренда ================= */
   function brands(c, main) {
     const cfg = PG.brands || {};
-    $$('.bl-card[data-id]', main).forEach(card => {
-      if ($('.sx-bchip', card)) return; const id = card.getAttribute('data-id'), ev = nextEvent(id), foot = $('.bl-foot', card); if (!ev || !foot) return;
+    $$('.bl-card[data-id], .bw-pn[data-id]', main).forEach(card => {          // карточка бренда (прежняя галерея) или панель бренда на единой стене
+      if ($('.sx-bchip', card)) return; const id = card.getAttribute('data-id'), ev = nextEvent(id), foot = $('.bl-foot', card) || $('.bw-pn-act', card); if (!ev || !foot) return;
       const dp = A.dparts(ev.date), a = el('a', 'sx-bchip', '<span class="sx-bt" aria-hidden="true"><b>' + dp.d + '</b><small>' + esc(dp.m) + '</small></span><span>' + esc(fill(cfg.chip, {date: dShort(ev.date), city: ev.city})) + '</span>', {href: href(evUrl(ev)), 'data-sx-go': evUrl(ev), title: cfg.chipTitle || '', 'data-sx': 'brands-chip'});
       foot.parentNode.insertBefore(a, foot);
     });

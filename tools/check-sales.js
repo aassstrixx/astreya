@@ -323,10 +323,10 @@ const J = f => JSON.parse(fs.readFileSync(path.join(ROOT, f), 'utf8'));
 
   /* --- бренды и бренд --- */
   p = await mk(); await p.open('brands.html');
-  const chips = await p.evaluate(() => ({n: [...document.querySelectorAll('.bl-card .sx-bchip')].length, t: (document.querySelector('.sx-bchip') || {}).textContent}));
+  const chips = await p.evaluate(() => ({n: [...document.querySelectorAll('.bl-card .sx-bchip, .bw-pn .sx-bchip')].length, t: (document.querySelector('.sx-bchip') || {}).textContent}));
   const brandsWithEv = new Set(D.events.filter(e => e.date >= today).map(e => e.b)).size;
-  ok(chips.n === brandsWithEv && /Семинар/.test(chips.t || ''), 'бренды: ближайший семинар — на карточке каждого бренда, у которого он есть', {chips, brandsWithEv});
-  ok(await p.evaluate(() => document.querySelectorAll('.br-group').length >= 1 && document.querySelectorAll('.br-group small').length === 0), 'бренды: у заголовков «Косметические бренды» и «Аппаратные решения» нет чисел');
+  ok(chips.n === brandsWithEv && /Семинар/.test(chips.t || ''), 'бренды: ближайший семинар — на карточке (панели) каждого бренда, у которого он есть', {chips, brandsWithEv});
+  ok(await p.evaluate(() => !!document.querySelector('[data-bw]') || (document.querySelectorAll('.br-group').length >= 1 && document.querySelectorAll('.br-group small').length === 0)), 'бренды: у заголовков «Косметические бренды» и «Аппаратные решения» нет чисел (на единой стене групп нет)');
   const evb = D.events.find(e => e.date >= today).b;
   await p.open('brands/' + evb + '.html');
   const route = await p.evaluate(() => ({st: document.querySelectorAll('.sx-station').length, first: !!document.querySelector('.sx-station.first'), gen: document.querySelectorAll('.sx-next, .sx-trust, .sx-sec').length, badge: (document.querySelector('.sx-st-top em') || {}).textContent}));
