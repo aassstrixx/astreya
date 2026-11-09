@@ -201,19 +201,6 @@ def lights(sc):
             w.node_tree.links.new(sk.outputs['Color'], wm.inputs['A']); w.node_tree.links.new(wm.outputs['Result'], bg.inputs['Color'])
         except Exception as e: print('небо Нишита недоступно:', e)
 
-    if os.environ.get('VIEWSKY', '0') == '1':                                                              # небо с облаками — для луча камеры и отражённых лучей (видно в окнах и в воде); освещение зала по-прежнему от тёплого неба выше
-        nt_ = w.node_tree; out_ = next(n for n in nt_.nodes if n.type == 'OUTPUT_WORLD'); lp_ = nt_.nodes.new('ShaderNodeLightPath')
-        tcn_ = nt_.nodes.new('ShaderNodeTexCoord'); sep_ = nt_.nodes.new('ShaderNodeSeparateXYZ'); nt_.links.new(tcn_.outputs['Generated'], sep_.inputs[0])
-        mr_ = nt_.nodes.new('ShaderNodeMapRange'); mr_.inputs['From Min'].default_value = 0.0; mr_.inputs['From Max'].default_value = float(os.environ.get('VIEW_RISE', .20)); mr_.clamp = True; nt_.links.new(sep_.outputs['Z'], mr_.inputs['Value'])
-        gr_ = nt_.nodes.new('ShaderNodeMix'); gr_.data_type = 'RGBA'; gr_.inputs['A'].default_value = (.84, .90, .96, 1); gr_.inputs['B'].default_value = (.20, .43, .84, 1); nt_.links.new(mr_.outputs['Result'], gr_.inputs['Factor'])
-        mp_ = nt_.nodes.new('ShaderNodeMapping'); mp_.inputs['Scale'].default_value = (2.4, 2.4, 11.0); nt_.links.new(tcn_.outputs['Generated'], mp_.inputs['Vector'])
-        nz_ = nt_.nodes.new('ShaderNodeTexNoise'); nz_.inputs['Scale'].default_value = 1.8; nz_.inputs['Detail'].default_value = 7; nz_.inputs['Roughness'].default_value = .62; nt_.links.new(mp_.outputs['Vector'], nz_.inputs['Vector'])
-        cr_ = nt_.nodes.new('ShaderNodeValToRGB'); cr_.color_ramp.elements[0].position = .50; cr_.color_ramp.elements[0].color = (0, 0, 0, 1); cr_.color_ramp.elements[1].position = .72; cr_.color_ramp.elements[1].color = (.9, .9, .9, 1); nt_.links.new(nz_.outputs['Fac'], cr_.inputs['Fac'])
-        cl_ = nt_.nodes.new('ShaderNodeMix'); cl_.data_type = 'RGBA'; cl_.inputs['B'].default_value = (1.0, .97, .93, 1); nt_.links.new(gr_.outputs['Result'], cl_.inputs['A']); nt_.links.new(cr_.outputs['Color'], cl_.inputs['Factor'])
-        bg2 = nt_.nodes.new('ShaderNodeBackground'); bg2.inputs['Strength'].default_value = float(os.environ.get('VIEW_STR', 1.5)); nt_.links.new(cl_.outputs['Result'], bg2.inputs['Color'])
-        m1_ = nt_.nodes.new('ShaderNodeMath'); m1_.operation = 'MAXIMUM'; nt_.links.new(lp_.outputs['Is Camera Ray'], m1_.inputs[0]); nt_.links.new(lp_.outputs['Is Glossy Ray'], m1_.inputs[1])
-        m2_ = nt_.nodes.new('ShaderNodeMath'); m2_.operation = 'MAXIMUM'; nt_.links.new(m1_.outputs[0], m2_.inputs[0]); nt_.links.new(lp_.outputs['Is Transmission Ray'], m2_.inputs[1])
-        mx_ = nt_.nodes.new('ShaderNodeMixShader'); nt_.links.new(m2_.outputs[0], mx_.inputs['Fac']); nt_.links.new(bg.outputs['Background'], mx_.inputs[1]); nt_.links.new(bg2.outputs['Background'], mx_.inputs[2]); nt_.links.new(mx_.outputs['Shader'], out_.inputs['Surface'])
 
 def settings(sc, w=W, h=H, spp=SPP):
     addon_utils.enable('cycles'); sc.render.engine = 'CYCLES'; cy = sc.cycles; cy.device = 'CPU'; cy.samples = spp; cy.use_denoising = True; cy.denoiser = 'OPENIMAGEDENOISE'

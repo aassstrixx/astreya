@@ -488,6 +488,11 @@
 
     /* ---------- события: клики, клавиатура, свайп ---------- */
     on(document, 'click', e => {
+      /* переход от страницы журнала к разделу сайта: нажатие на левую страницу (фото) или на заголовок правой — как по плашке «Открыть раздел»; настоящая ссылка, поэтому работает шторка перехода и аналитика */
+      const sp = e.target.closest && e.target.closest('#mag .pg[data-sec]');
+      if (sp && !e.target.closest('a,button,input,textarea,select,label,summary,[data-act]') && (sp.classList.contains('pg-l') || e.target.closest('h3,.mg-kick'))) {
+        const hr = sp.getAttribute('data-sec'); if (hr) { e.preventDefault(); track('house_magazine_section', {room: sp.getAttribute('data-room') || sp.getAttribute('data-room-l') || '', from: 'page'}); const a = document.createElement('a'); a.href = hr; a.hidden = true; document.body.appendChild(a); a.click(); a.remove(); return; }
+      }
       const t = e.target.closest && e.target.closest('[data-house-go],[data-house-mag],[data-mag-page],[data-mag-step],[data-mag-home]'); if (!t) return;
       if (t.hasAttribute('data-mag-step')) { e.preventDefault(); step(parseInt(t.getAttribute('data-mag-step'), 10)); return; }
       if (t.hasAttribute('data-mag-home')) { e.preventDefault(); home('button'); return; }

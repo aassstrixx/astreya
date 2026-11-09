@@ -75,6 +75,23 @@ module.exports = function magSpreads(ctx, C, P, deps) {
   /* ------------------------------------------------ 8–9. От задачи к решению */
   /* плитки задач показываются ≈ 150 px шириной: берём уменьшенные текстуры 560×385 (-t), а не 1600×1100 — восемь больших текстур в раскодированном виде давали ≈ 56 МБ и вместе с соседними листами выбивали память iPhone на 6–7-й странице */
   const tex = ['water', 'cream', 'silk', 'pipette', 'swatch', 'film', 'molecules', 'smear'];
+  /* ------------------------------------------------ Каталог: что в нём лежит (8 категорий с числом продуктов, ссылки на фильтр catalog.html?cat=…) и новинки */
+  const cats = ctx.cats || [], catCount = id => products.filter(p => p.cat === id).length, cg = pg.catalog;
+  const finderPicks = pg.finder.products;
+  const newest = products.filter(p => p.isNew && !finderPicks.includes(p.id)).slice(0, 4);
+  const catalog = {
+    L: n => `<div class="pg pg-l pg-tx pg-fnl pg-cal">${run}<p class="mg-kick">${esc(cg.kick)}</p>${hh(cg.hl)}
+      <p class="mg-p mp-intro">${esc(cg.intro)}</p>
+      <ul class="mp-tasks">${cats.map((c, i) => `<li><a href="${C.u(P, 'catalog.html')}?cat=${c.id}" data-track="house_magazine_cat" data-cat="${c.id}"><img class="mp-tx" src="${esc(C.u(P, `assets/bg/${tex[(i + 3) % tex.length]}-t.webp`))}" alt="" loading="lazy" decoding="async"><span class="mp-tn">${String(i + 1).padStart(2, '0')}</span><strong>${esc(c.name)}</strong><em>${esc(pc(catCount(c.id), 'продукт', 'продукта', 'продуктов'))}</em></a></li>`).join('')}</ul>${foot(n, 'l')}</div>`,
+    R: n => `<div class="pg pg-r pg-tx pg-fnr pg-car" id="room-catalog" data-room="catalog">${run}<p class="mg-kick">${esc(cg.kick)}</p>${hh(cg.hr)}
+      <p class="mg-p mp-intro">${esc(pc(products.length, 'продукт', 'продукта', 'продуктов'))} · ${esc(pc(brands.length, 'бренд', 'бренда', 'брендов'))} · ${esc(pc(cats.length, 'категория', 'категории', 'категорий'))}</p>
+      <ul class="mg-chips">${cg.filters.map(f => `<li>${esc(f)}</li>`).join('')}</ul>
+      <p class="mp-sub">${esc(cg.newLabel)}</p>
+      <ul class="mp-prods">${newest.map(p => `<li><a href="${C.purl(P, p)}" data-track="house_magazine_product" data-product="${p.id}"><span class="mp-pk">${img(smallPack(S.packOf(p)))}</span><span class="mp-pt">${logo(p.brand, 'mp-pbl')}<strong>${esc(p.name)}</strong><span>${esc(p.desc)}</span></span></a></li>`).join('')}</ul>
+      <p class="mp-note">${esc(cg.note)}</p>
+      <a class="btn btn-fill btn-sm mp-cta" href="${C.u(P, 'catalog.html')}" data-track="house_magazine_page" data-room="catalog" data-place="magazine">${esc(cg.cta)} ${I.arrow}</a>${foot(n, 'r')}</div>`
+  };
+
   const finder = {
     L: n => `<div class="pg pg-l pg-tx pg-fnl">${run}<p class="mg-kick">${esc(pg.finder.kick)}</p>${hh(pg.finder.hl)}
       <p class="mg-p mp-intro">${esc(rd.solutions.lead)}</p>
@@ -188,5 +205,5 @@ module.exports = function magSpreads(ctx, C, P, deps) {
       ${foot(n, 'r')}</div>`
   };
 
-  return {about, brands: brandsP, finder, expertise, stella, academy, partners, editorial, contacts: contactsP};
+  return {about, brands: brandsP, catalog, finder, expertise, stella, academy, partners, editorial, contacts: contactsP};
 };

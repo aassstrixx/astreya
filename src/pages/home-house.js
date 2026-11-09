@@ -76,8 +76,22 @@ module.exports = function homeHouse(ctx, C, P, deps) {
 
   /* листы: лист k — спереди правая страница, сзади левая страница следующего разворота; порядок в DOM = порядок страниц при чтении */
   const pageL = (r, n) => SP[r.id] ? SP[r.id].L(n) : pageL0(r, n), pageR = (r, n) => SP[r.id] ? SP[r.id].R(n) : pageR0(r, n);
-  const pagesR = [pCover, pToc, ...rooms.map((r, i) => pageR(r, (i + 1) * 2 + 3)), SP.contacts.R((rooms.length + 1) * 2 + 3)];
-  const pagesL = [pWelcome, ...rooms.map((r, i) => pageL(r, (i + 1) * 2 + 2)), SP.contacts.L((rooms.length + 1) * 2 + 2), pBack];
+  /* логическая цепочка и переход к разделу: порядок комнат (data/redesign.json → house.rooms) — путь знакомства с сайтом: компания → бренды → каталог → Стелла → обучение (экспертиза, центр) → новости → партнёрам → контакты.
+     Левая страница комнаты — «вход в раздел»: настоящая ссылка-плашка и переход по нажатию на страницу (js/house.js, [data-sec]); правая — колонтитул «Дальше · следующая комната» (листает журнал) и заголовок-ссылка на раздел */
+  const CH = mc.chain || {}, toSec = [...rooms.map(r => ({id: r.id, nav: r.nav || r.short, short: r.short, href: href(r.href)})), {id: 'contacts', nav: CH.contactsNav || mc.contactsTitle, short: mc.contactsTitle, href: href(CH.contactsHref || 'contacts.html')}];
+  const arrowI = I.arrow;
+  const decL = (html, k) => {                                              // k — номер комнаты в toSec
+    const t = toSec[k], chip = `<a class="mg-sec" href="${esc(t.href)}" data-track="house_magazine_section" data-room="${t.id}" data-place="page"><span>${esc(CH.open || 'Открыть раздел')}<em>${esc(t.nav)}</em></span>${arrowI}</a>`;
+    return html.replace(/^<div class="pg /, `<div data-sec="${esc(t.href)}" data-room-l="${t.id}" class="pg `).replace(/<footer class="pg-f l">/, chip + '<footer class="pg-f l">');
+  };
+  const decR = (html, k) => {
+    const t = toSec[k], nx = toSec[k + 1], nxBtn = nx
+      ? `<button class="pg-nx" type="button" data-mag-page="${k + 3}" data-track="house_magazine_next" data-room="${nx.id}">${esc(CH.next || 'Дальше')} · ${esc(nx.short)} ${arrowI}</button>`
+      : `<button class="pg-nx pg-nx-toc" type="button" data-mag-page="1" data-track="house_magazine_next" data-room="toc">${esc(CH.toc || 'К оглавлению')} ${arrowI}</button>`;
+    return html.replace(/^<div class="pg /, `<div data-sec="${esc(t.href)}" class="pg `).replace(/(<footer class="pg-f r"><span>ASTREYA<\/span>)/, '$1' + nxBtn);
+  };
+  const pagesR = [pCover, pToc, ...rooms.map((r, i) => decR(pageR(r, (i + 1) * 2 + 3), i)), decR(SP.contacts.R((rooms.length + 1) * 2 + 3), rooms.length)];
+  const pagesL = [pWelcome, ...rooms.map((r, i) => decL(pageL(r, (i + 1) * 2 + 2), i)), decL(SP.contacts.L((rooms.length + 1) * 2 + 2), rooms.length), pBack];
   const leaves = pagesR.map((f, k) => `<div class="leaf" data-k="${k}" style="--zr:${pagesR.length - k};--zl:${k + 1}"><div class="face front">${f}<i class="fx" aria-hidden="true"><b></b></i></div><div class="face back">${pagesL[k] || ''}<i class="fx" aria-hidden="true"><b></b></i></div></div>`).join('');
   const magazine = `<div class="mag" id="mag" role="region" aria-label="Журнал ASTREYA" data-n="${pagesR.length}">
     <div class="mag-wrap">

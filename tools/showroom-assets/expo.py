@@ -166,8 +166,6 @@ def build(S, sc, M):
     olive(S, Vector((vx, vy, vz + zt - .02)), 'plant')
     # --- тени листьев на стене и столе: ветки вне кадра на пути луча солнца
     gobo(S)
-    if os.environ.get('WINDOWS', '0') == '1':
-        import view; view.build(S, M); T('окна и пейзаж')
     T('ветки')
 
 

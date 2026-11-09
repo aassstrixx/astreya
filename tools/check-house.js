@@ -56,8 +56,23 @@ const t = (cond, name, info) => { if (cond) ok++; else bad.push(name + (info !==
   { const o = await p.evaluate(() => [...document.querySelector('#main, main').children].map(e => e.id || e.className.toString().split(' ')[0]));
     t(o[0] === 'arch-story' && o.filter(x => x !== 'g-entry').slice(-2).join() === 'house-reader,house-end' && o.length <= 6, 'после зала идёт только журнал (читалка), дальше — подвал сайта', o); }
   { const ids = await p.evaluate(() => [...document.querySelectorAll('#mag .pg-r[data-room]')].map(e => e.dataset.room));
-    t(JSON.stringify(ids) === JSON.stringify(ROOMS) && ids.length === ROOMS.length && ROOMS.length === 8, 'восемь комнат (с отдельным разворотом Стеллы) — страницы журнала в порядке из данных: ' + ROOMS.join(' → '), ids); }
+    t(JSON.stringify(ids) === JSON.stringify(ROOMS) && ids.length === ROOMS.length && ROOMS.length === 9, 'девять комнат (с отдельными разворотами Каталога и Стеллы) — страницы журнала в порядке из данных: ' + ROOMS.join(' → '), ids); }
   t(await p.evaluate(() => [...document.querySelectorAll('#mag .pg-r[data-room]')].every(e => e.id === 'room-' + e.dataset.room)), 'у каждой страницы комнаты есть якорь #room-… (адреса прежней версии работают, без JS — обычные ссылки)');
+  /* ---- логическая цепочка журнала и переход от страницы к разделу ---- */
+  t(ROOMS.join() === 'about,brands,catalog,finder,stella,expertise,academy,editorial,partners', 'цепочка знакомства: компания → бренды → каталог → подбор → Стелла → экспертиза → учебный центр → новости → партнёрам (→ контакты)', ROOMS);
+  { const r = await p.evaluate(() => { const rs = [...document.querySelectorAll('#mag .pg-r[data-room]')], out = [];
+      rs.forEach((e, i) => { const nx = e.querySelector('.pg-f .pg-nx'); out.push(nx ? nx.getAttribute('data-mag-page') : null); });
+      const c = [...document.querySelectorAll('#mag .pg-r')].pop(), cn = c && c.querySelector('.pg-f .pg-nx'); return {nx: out, last: cn && cn.getAttribute('data-mag-page'), lastToc: !!(cn && cn.classList.contains('pg-nx-toc'))}; });
+    t(r.nx.every((v, i) => v === String(i + 3)) && r.last === '1' && r.lastToc, 'в колонтитуле каждой правой страницы кнопка «Дальше · …» ведёт на следующий разворот цепочки, на контактах — «К оглавлению»', r); }
+  { const r = await p.evaluate(() => [...document.querySelectorAll('#mag .pg-l[data-room-l]')].map(e => { const a = e.querySelector('a.mg-sec'); return {room: e.getAttribute('data-room-l'), sec: e.getAttribute('data-sec'), href: a && a.getAttribute('href'), track: a && a.dataset.track}; }));
+    const want = Object.fromEntries(H.rooms.map(r => [r.id, r.href])); want.contacts = 'contacts.html';
+    t(r.length === ROOMS.length + 1 && r.every(x => x.href && x.href === x.sec && x.href.replace(/^\.\.?\//, '') === want[x.room] && x.track === 'house_magazine_section'), 'левая страница каждой комнаты и контактов — вход в раздел: настоящая ссылка-плашка «Открыть раздел» на нужную страницу сайта (+ аналитика)', r); }
+  { const q = await open(1440, 900, {url: page + '?lite=1'}); await q.waitForFunction(() => window.Astreya && window.Astreya.house && window.Astreya.house.state, null, {timeout: 15000}).catch(() => {}); await q.waitForTimeout(800); await q.evaluate(() => document.documentElement.classList.add('lite'));
+    const ok = await Promise.all([q.waitForURL(/brands\.html/, {timeout: 8000}).then(() => true).catch(() => false), q.evaluate(() => document.querySelector('#mag .pg-l[data-room-l="brands"] .mg-ph, #mag .pg-l[data-room-l="brands"]').click())]);
+    t(ok[0], 'нажатие на левую страницу журнала (бренды) переводит на раздел «Бренды» (шторка перехода сайта)'); await q._ctx.close(); }
+  { const q = await open(1440, 900, {url: page + '?lite=1'}); await q.waitForFunction(() => window.Astreya && window.Astreya.house && window.Astreya.house.state, null, {timeout: 15000}).catch(() => {}); await q.waitForTimeout(800); await q.evaluate(() => document.documentElement.classList.add('lite'));
+    const ok = await Promise.all([q.waitForURL(/catalog\.html/, {timeout: 8000}).then(() => true).catch(() => false), q.evaluate(() => document.querySelector('#mag .pg-r[data-room="finder"] h3').click())]);
+    t(ok[0], 'нажатие на заголовок правой страницы (подбор) переводит на раздел «Каталог»'); await q._ctx.close(); }
   t(await p.evaluate(n => document.querySelectorAll('.hall-rooms a[data-house-go]').length === n, ROOMS.length), 'в зале есть список разделов ссылками (запасной путь для клавиатуры, телефона и режимов без анимации)');
   t(await p.evaluate(n => document.querySelectorAll('#mag .leaf').length >= n + 2, ROOMS.length), 'журнал: обложка, оглавление, развороты всех комнат и контакты');
   t(await p.evaluate(() => { const m = document.getElementById('mag'), r = document.getElementById('house-reader'); return !!m && !!r && r.contains(m) && m.getAttribute('role') === 'region' && !m.hidden && !m.classList.contains('is-modal') && !m.querySelector('[data-mag-close]'); }), 'журнал стоит в читалке как обычный блок страницы (не диалог, закрывать нечего)');
@@ -236,13 +251,13 @@ const t = (cond, name, info) => { if (cond) ok++; else bad.push(name + (info !==
       await p.evaluate(() => window.Astreya.house.openMagazine(5)); await settle(p); await p.waitForTimeout(500);
       const bb = await p.evaluate(() => { const r = document.querySelector('#mag .mag-book').getBoundingClientRect(); return {l: r.left, t: r.top, w: r.width, h: r.height}; });
       const s0 = (await rs(p)).s; const yy = bb.t + bb.h * .035;
-      await p.mouse.click(bb.l + bb.w * .12, yy); await p.waitForTimeout(1300); const c1 = (await rs(p)).s;
+      const c1 = (await rs(p)).s;                                      // левая страница с 2026-11 — «вход в раздел» (нажатие ведёт на раздел сайта, проверка ниже), поэтому листание проверяем по правому краю
       await p.mouse.click(bb.l + bb.w * .88, yy); await p.waitForTimeout(1300); const c2 = (await rs(p)).s;
-      t(s0 === 5 && c1 === 5 && c2 === 5 && !(await p.evaluate(() => document.querySelector('#mag .mag-book').hasAttribute('data-hover'))), 'клик по странице (у левого и правого края) её не листает и курсор-«рука» у краёв не включается', {s0, c1, c2});
+      t(s0 === 5 && c1 === 5 && c2 === 5 && !(await p.evaluate(() => document.querySelector('#mag .mag-book').hasAttribute('data-hover'))), 'клик по странице (у правого края) её не листает и курсор-«рука» у краёв не включается', {s0, c1, c2});
       await p.mouse.move(bb.l + bb.w * .82, yy); await p.mouse.down(); await p.mouse.move(bb.l + bb.w * .82 - 170, yy + 3, {steps: 6}); await p.mouse.up(); await p.waitForTimeout(1300);
       const d1 = (await rs(p)).s; t(d1 === 5, 'протяжка мышью (по полю и по тексту) страницу не листает: мышью листают кнопки, колесо и клавиши', {d1});
-      await p.mouse.click(bb.l + bb.w * .2, bb.t + bb.h * .5); await p.waitForTimeout(1300); await p.mouse.click(bb.l + bb.w * .8, bb.t + bb.h * .5); await p.waitForTimeout(1300);
-      const d2 = (await rs(p)).s; t(d2 === 5, 'клик по телу страницы (текст, чат, карточки) разворот не листает', {d2}); }
+      await p.mouse.click(bb.l + bb.w * .93, bb.t + bb.h * .035); await p.waitForTimeout(1300); await p.mouse.click(bb.l + bb.w * .8, bb.t + bb.h * .035); await p.waitForTimeout(1300);
+      const d2 = (await rs(p)).s; t(d2 === 5, 'клик по телу правой страницы (текст, чат, карточки) разворот не листает (левая страница — вход в раздел, проверка выше)', {d2}); }
     { /* выход с последних страниц (ПК): после последнего разворота сцена не обрывается кромкой, а ≈ 70 vh растворяется в фон страницы и только потом уезжает; путь читалки (доли RD) от этого не меняется */
       await p.evaluate(() => window.Astreya.house.openMagazine(20)); await settle(p); await p.waitForTimeout(500);
       const gx = await p.evaluate(() => { const r = document.getElementById('house-reader'), st = r.querySelector('.hr-stage'), top = Math.round(r.getBoundingClientRect().top + scrollY); return {top, h: r.offsetHeight, st: st.offsetHeight, vh: innerHeight, hrx: r.style.getPropertyValue('--hrx')}; });
@@ -297,10 +312,11 @@ const t = (cond, name, info) => { if (cond) ok++; else bad.push(name + (info !==
     const a = await rs(p), hash = await p.evaluate(() => location.hash), want = ROOMS.indexOf(id) + 2;
     t(a.s === want && hash === '#room-' + id && Math.abs(a.p - want) < .02, `список зала «${id}»: журнал стоит на развороте комнаты (${want}), адрес #room-${id}`, {s: a.s, want, hash});
   }
-  { await p.evaluate(() => window.Astreya.house.go('expertise')); await settle(p); t((await rs(p)).s === 5, 'API go(expertise): разворот комнаты 04');
-    await at(p, .4); await p.evaluate(() => document.querySelector('#mag .mg-toc button[data-mag-page="7"]').click()); await settle(p);
-    const s = await rs(p); t(s.s === 7, 'строка оглавления «Учебный центр» открывает разворот комнаты 06', s);
-    const pageOk = await p.evaluate(() => { const sh = document.querySelector('.mag-book').dataset.s; return +sh === 7; }); t(pageOk, 'оглавление ведёт на тот же разворот, что и список зала'); }
+  { const sE = ROOMS.indexOf('expertise') + 2, sA = ROOMS.indexOf('academy') + 2;
+    await p.evaluate(() => window.Astreya.house.go('expertise')); await settle(p); t((await rs(p)).s === sE, 'API go(expertise): разворот комнаты «Экспертиза»');
+    await at(p, .4); await p.evaluate(v => document.querySelector(`#mag .mg-toc button[data-mag-page="${v}"]`).click(), sA); await settle(p);
+    const s = await rs(p); t(s.s === sA, 'строка оглавления «Учебный центр» открывает разворот этой комнаты', s);
+    const pageOk = await p.evaluate(v => { const sh = document.querySelector('.mag-book').dataset.s; return +sh === v; }, sA); t(pageOk, 'оглавление ведёт на тот же разворот, что и список зала'); }
   t(await p.evaluate(() => getComputedStyle(document.documentElement).overflowY !== 'hidden' && getComputedStyle(document.body).overflowY !== 'hidden'), 'страница прокручивается: scroll-lock нет');
   for (const [hash, room] of [['solutions', 'finder'], ['training-block', 'academy'], ['brands-gallery', 'brands'], ['how-to-start', 'partners'], ['room-brands', 'brands']]) {
     const q = await open(1440, 900, {url: page + '#' + hash}); await q.waitForTimeout(2600);
@@ -323,14 +339,14 @@ const t = (cond, name, info) => { if (cond) ok++; else bad.push(name + (info !==
       return {pm: r.pm, stop: r.stop, s: r.s, q: +r.q.toFixed(2), bx: parseFloat(bk.style.getPropertyValue('--bx')), label: document.querySelector('#mag .mag-st').textContent, leftVis: vis(pr), rightVis: vis(cu), fly: r.fly.on, drawn: r.fly.drawn, ow: document.documentElement.scrollWidth}; });
     await p.evaluate(() => window.Astreya.house.openMagazine(1)); await settle(p); await p.waitForTimeout(600);
     const m1 = await st();
-    t(m1.pm && m1.fly && m1.stop === 1 && m1.s === 1 && m1.bx > .45 && m1.leftVis >= 330 && m1.ow <= 390 && /Страница 2 из 21/.test(m1.label), 'телефон: после пролёта камеры журнал открыт на странице 2 — левая страница разворота целиком в окне, книга сдвинута к ней', m1);
+    t(m1.pm && m1.fly && m1.stop === 1 && m1.s === 1 && m1.bx > .45 && m1.leftVis >= 330 && m1.ow <= 390 && new RegExp('Страница 2 из ' + (ROOMS.length * 2 + 5)).test(m1.label), 'телефон: после пролёта камеры журнал открыт на странице 2 — левая страница разворота целиком в окне, книга сдвинута к ней', m1);
     t(m1.drawn, 'телефон: пролёт камеры нарисован движком (портретные ключи, глубина, дорожка)', m1);
     await p.click('#mag .mag-nx'); await settle(p); await p.waitForTimeout(500);
     const m2 = await st();
-    t(m2.stop === 2 && m2.s === 1 && m2.bx < -.45 && m2.rightVis >= 330 && /Страница 3 из 21/.test(m2.label), 'телефон: «Далее» ведёт к правой странице того же разворота (книга едет влево, лист не поворачивается)', m2);
+    t(m2.stop === 2 && m2.s === 1 && m2.bx < -.45 && m2.rightVis >= 330 && new RegExp('Страница 3 из ' + (ROOMS.length * 2 + 5)).test(m2.label), 'телефон: «Далее» ведёт к правой странице того же разворота (книга едет влево, лист не поворачивается)', m2);
     await p.click('#mag .mag-nx'); await settle(p); await p.waitForTimeout(500);
     const m3 = await st();
-    t(m3.stop === 3 && m3.s === 2 && m3.bx > .45 && m3.leftVis >= 330 && /Страница 4 из 21/.test(m3.label), 'телефон: следующая «Далее» переворачивает лист и показывает левую страницу следующего разворота', m3);
+    t(m3.stop === 3 && m3.s === 2 && m3.bx > .45 && m3.leftVis >= 330 && new RegExp('Страница 4 из ' + (ROOMS.length * 2 + 5)).test(m3.label), 'телефон: следующая «Далее» переворачивает лист и показывает левую страницу следующего разворота', m3);
     await p.click('#mag .mag-pv'); await settle(p); await p.waitForTimeout(500);
     t((await st()).stop === 2, 'телефон: «Назад» возвращает на страницу назад');
     /* страницы на телефоне прокруткой не листаются (просьба заказчика): прокрутка за пролётом страницу не меняет, листают свайп, «Далее/Назад», оглавление */
@@ -524,7 +540,7 @@ const t = (cond, name, info) => { if (cond) ok++; else bad.push(name + (info !==
     await q.goto(base + '/' + page); await q.waitForSelector('html.ready', {timeout: 15000}).catch(() => {}); await q.waitForTimeout(1800);
     const r = await q.evaluate(() => { const a = document.getElementById('arch-story'), s = a.querySelector('.js-stage'); return {off: a.classList.contains('jar-off'), pos: getComputedStyle(s).position, poster: getComputedStyle(a.querySelector('.ar-poster')).display, rooms: getComputedStyle(document.querySelector('.hall-rooms')).display, h: a.getBoundingClientRect().height}; });
     t(r.off && r.pos !== 'sticky' && r.poster === 'block' && r.rooms !== 'none' && r.h > 500 && r.h <= 1400, 'без WebGL: вместо сцены готовый кадр зала на один экран, список разделов на виду', r);
-    await q.click('.hall-rooms a[data-house-go="finder"]'); await settle(q); t((await q.evaluate(() => window.Astreya.house.readerState().s)) === 4, 'без WebGL: список разделов открывает нужный разворот журнала');
+    await q.click('.hall-rooms a[data-house-go="finder"]'); await settle(q); t((await q.evaluate(() => window.Astreya.house.readerState().s)) === ROOMS.indexOf('finder') + 2, 'без WebGL: список разделов открывает нужный разворот журнала');
     t(qe.length === 0, 'нет ошибок JS без WebGL', qe.slice(0, 4)); await ctx.close(); }
 
   p = await open(1440, 900, {nojs: true});
