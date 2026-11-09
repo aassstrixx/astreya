@@ -169,8 +169,7 @@
   .bw-head .br-lead{font-size:clamp(15px,2.4vw,19px)}
   .bw-head .br-eyebrow::before,.bw-head .br-eyebrow::after{flex-basis:clamp(24px,8vw,70px)}
   .bw-bar{display:flex;flex-direction:column;align-items:stretch;gap:12px;padding:clamp(16px,2.6vw,26px) var(--gut) clamp(14px,2vw,22px)}
-  .bw-bar .br-chips{flex-wrap:nowrap;justify-content:flex-start;overflow-x:auto;scrollbar-width:none;margin-inline:calc(var(--gut) * -1);padding-inline:var(--gut)}
-  .bw-bar .br-chips::-webkit-scrollbar{display:none}
+  .bw-bar .br-chips{flex-wrap:wrap;justify-content:center;gap:8px}              /* как фильтры каталога: на телефоне кнопки переносятся на несколько строк, без горизонтальной прокрутки */
   .bw-bar .br-chips .chip{font-size:13px;padding:9px 16px;flex:none}
   .bw-search{width:100%;max-width:420px;align-self:center}
   .bw-search input{font-size:14px}
