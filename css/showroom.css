@@ -503,14 +503,12 @@ html.lite .shw-world,html.lite .shw-stage,html.lite .shw-ly{translate:none!impor
 
 /* заголовок над сценой: мягкая светлая дымка за текстом — «Каталог», заголовок и подводка читаются поверх листвы и арок */
 @media (min-width:1101px){
-  .shw-head::before{content:"";position:absolute;z-index:-1;left:-70px;right:-40px;top:-30px;bottom:-14px;pointer-events:none;background:radial-gradient(ellipse 50% 56% at 50% 50%,rgba(246,238,222,.52),rgba(246,238,222,.28) 58%,rgba(246,238,222,0) 100%)}      /* дымка мягче прежней: под текстом стеллаж и стена теперь тёмные и сочные, ровная светлая пелена стирала их контраст */
+  .shw-head::before{content:"";position:absolute;z-index:-1;left:-130px;right:-120px;top:-90px;bottom:-80px;pointer-events:none;filter:blur(18px);background:radial-gradient(ellipse closest-side at 50% 52%,rgba(247,240,226,.74) 0%,rgba(247,240,226,.60) 38%,rgba(247,240,226,.30) 66%,rgba(247,240,226,.10) 86%,rgba(247,240,226,0) 100%)}      /* овал с нулевой прозрачностью у всех краёв (closest-side) и размытием: прямых границ нет, под текстом заметно светлее, чтобы тёмный заголовок читался и на синей панели арки */
 }
 
 
 
 /* тон света фона по категории: едва заметный сдвиг (экспозиции различаются настроением, архитектура остаётся прежней); «Все» — исходный тон */
-.shw[data-light="1"] .shw-world{filter:saturate(1.08) brightness(1.02)}
-.shw[data-light="2"] .shw-world{filter:hue-rotate(-5deg) saturate(1.05)}
 html.lite .shw-world{filter:none!important}
 
 @media (prefers-reduced-motion:reduce){
@@ -523,5 +521,5 @@ html.lite .shw-world{filter:none!important}
 .shw-it:not(.is-bg) .shw-img{filter:drop-shadow(0 1px 1.2px rgba(54,34,14,.34))}
 
 /* заголовок над листвой и тенями: мягкое светлое свечение, чтобы тёмные буквы читались на любом участке сцены */
-.shw-head h1,.shw-head .lead{text-shadow:0 0 26px rgba(255,249,236,.92),0 0 8px rgba(255,249,236,.75)}
+.shw-head h1,.shw-head .lead{text-shadow:0 0 22px rgba(255,249,236,.85),0 0 6px rgba(255,249,236,.7)}
 .shw-head .eyebrow{text-shadow:0 0 12px rgba(255,249,236,.9)}

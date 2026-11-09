@@ -19,7 +19,7 @@ let pass = 0, fail = 0; const ok = (c, m, x) => { if (c) { pass++; console.log('
 const wait = ms => new Promise(r => setTimeout(r, ms));
 const count = f => PR.filter(f).length;
 const EXP = {all: PR.length, sun: count(p => p.cat === 'sun'), face: count(p => p.cat === 'face'), heliocare: count(p => p.brand === 'heliocare'), acne: count(p => p.tasks.includes('acne')), cream: count(p => p.kind === 'cream'), feat: count(p => p.featured), pigment: count(p => p.tasks.includes('pigment'))};
-const PAGE = 8;
+const PAGE = 10;
 const SLOTS = (() => { try { return JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'assets', 'showroom', 'layers.json'), 'utf8')).anchors.slots; } catch (e) { return []; } })();
 let base = '';
 
@@ -104,20 +104,19 @@ const userMsgs = p => p.evaluate(() => [...document.querySelectorAll('.asst-u .a
   await p.click('.shw-empty [data-act="cat-reset"]'); await wait(1500);
   ok(await vis(p) === EXP.all && (await items(p)).length === PAGE && await p.evaluate(() => document.getElementById('cat-q').value) === '', 'сброс возвращает каталог и пустое поле поиска');
   await setSel(p, 'f-sort', 'az'); await wait(1400);
-  const az = await st(p), names = await p.evaluate(() => [...document.querySelectorAll('#cat-grid .pcard:not([hidden])')].slice(0, 8).map(c => c.getAttribute('data-id')));
+  const az = await st(p), names = await p.evaluate(() => [...document.querySelectorAll('#cat-grid .pcard:not([hidden])')].slice(0, 10).map(c => c.getAttribute('data-id')));
   ok(JSON.stringify(az.pageIds) === JSON.stringify(names), 'сортировка «А–Я»: порядок на сцене совпадает с порядком в списке', az.pageIds);
   await setSel(p, 'f-sort', 'def'); await wait(900);
 
   console.log('\n[листание, наведение, выбор]');
   const pg = await p.evaluate(() => ({vis: !document.querySelector('[data-shw-pager]').hidden, txt: document.querySelector('[data-shw-pg]').textContent.trim(), prev: document.querySelector('.shw-pager .prev').disabled, next: document.querySelector('.shw-pager .next').disabled}));
-  ok(pg.vis && pg.prev && !pg.next && /1 \/ 4/.test(pg.txt), 'листание: «' + pg.txt + '», «назад» отключена на первой странице', pg);
+  ok(pg.vis && pg.prev && !pg.next && /1 \/ 3/.test(pg.txt), 'листание: «' + pg.txt + '», «назад» отключена на первой странице', pg);
   const idsP1 = (await st(p)).pageIds; await p.click('.shw-pager .next'); await wait(1400);
   const p2 = await st(p);
   ok(p2.page === 1 && p2.pageIds.length === PAGE && p2.pageIds.every(id => idsP1.indexOf(id) < 0) && JSON.stringify((await items(p)).slice().sort()) === JSON.stringify(p2.pageIds.slice().sort()), 'страница 2: другие ' + PAGE + ' товаров, ни один не потерян', p2);
-  await p.click('.shw-pager .next'); await wait(1300); const p3 = await st(p); ok(p3.page === 2 && p3.pageIds.length === PAGE, 'страница 3: ' + PAGE + ' товаров', p3);
-  await p.click('.shw-pager .next'); await wait(1300); const p4 = await st(p); const seen = new Set([...idsP1, ...p2.pageIds, ...p3.pageIds, ...p4.pageIds]); ok(seen.size === EXP.all, 'за четыре страницы показаны все ' + EXP.all + ' товаров', seen.size);
-  ok(p4.page === 3 && p4.pageIds.length === EXP.all - 3 * PAGE && await p.evaluate(() => document.querySelector('.shw-pager .next').disabled), 'последняя страница: ' + p4.pageIds.length + ' товаров, «вперёд» отключена', p4);
-  await p.click('.shw-pager .prev'); await p.click('.shw-pager .prev'); await p.click('.shw-pager .prev'); await wait(1500);
+  await p.click('.shw-pager .next'); await wait(1300); const p3 = await st(p); ok(p3.page === 2 && p3.pageIds.length === EXP.all - 2 * PAGE && await p.evaluate(() => document.querySelector('.shw-pager .next').disabled), 'последняя страница: ' + p3.pageIds.length + ' товаров, «вперёд» отключена', p3);
+  const seen = new Set([...idsP1, ...p2.pageIds, ...p3.pageIds]); ok(seen.size === EXP.all, 'за три страницы показаны все ' + EXP.all + ' товаров', seen.size);
+  await p.click('.shw-pager .prev'); await p.click('.shw-pager .prev'); await wait(1400);
   const hid = (await st(p)).pageIds[2], sel = '.shw-it[data-id="' + hid + '"]';
   await p.hover(sel); await wait(900);
   const H = await p.evaluate(s => { const e = document.querySelector(s), ph = e.querySelector('.shw-ph'), cs = getComputedStyle(ph), gl = getComputedStyle(e.querySelector('.shw-gl')), m = /matrix\(([-\d.]+)/.exec(cs.transform), others = [...document.querySelectorAll('.shw-it:not(.is-gone)')].filter(x => x !== e).map(x => +getComputedStyle(x).opacity); return {tr: cs.transform, zoom: m ? +m[1] : 1, gl: gl.opacity, dim: Math.max(...others), pods: document.querySelectorAll('.shw-pd.is-lit').length, hasPod: document.querySelectorAll('.shw-pd[data-for="' + e.getAttribute('data-id') + '"]').length, label: !!e.querySelector('.shw-nm'), z: getComputedStyle(e).zIndex, card: document.querySelector('.shw-card .c-t') && document.querySelector('.shw-card .c-t').textContent}; }, sel);
@@ -189,13 +188,12 @@ const userMsgs = p => p.evaluate(() => [...document.querySelectorAll('.asst-u .a
 
   /* смена экспозиций: фон остаётся целым, страница не перезагружается, акцент света меняется */
   const catA = CT.cats[0].id, catB = CT.cats[1].id;
-  const lightOf = () => p.evaluate(() => document.querySelector('.shw').getAttribute('data-light'));
-  const l0 = await lightOf();
-  await p.click('.cat-tile[data-id="' + catA + '"]'); await wait(1700); const l1 = await lightOf(); const w1 = await p.evaluate(() => ({keep: window.__keep, world: document.querySelectorAll('.shw-world img.shw-ly').length, ids: document.querySelectorAll('.shw-it:not(.is-gone)').length, gone: document.querySelectorAll('.shw-it.is-gone').length}));
-  await p.click('.cat-tile[data-id="' + catB + '"]'); await wait(1700); const l2 = await lightOf();
-  await p.click('.shw-all'); await wait(1700); const l3 = await lightOf();
-  const fl = await p.evaluate(() => getComputedStyle(document.querySelector('.shw-world')).filter);
-  ok(l0 === '0' && l1 === '1' && l2 === '2' && l3 === '0' && fl === 'none', 'экспозиции: тон света фона меняется вместе с категорией (data-light ' + [l0, l1, l2, l3].join(' → ') + '), а на «Все» фон возвращается к исходному', [l0, l1, l2, l3, fl]);
+  const toneOf = () => p.evaluate(() => { const w = document.querySelector('.shw-world'), v = document.querySelector('.shw-view'); return {filter: getComputedStyle(w).filter, bg: getComputedStyle(v).backgroundColor, light: document.querySelector('.shw').getAttribute('data-light')}; });
+  const t0 = await toneOf();
+  await p.click('.cat-tile[data-id="' + catA + '"]'); await wait(1700); const t1 = await toneOf(); const w1 = await p.evaluate(() => ({keep: window.__keep, world: document.querySelectorAll('.shw-world img.shw-ly').length, ids: document.querySelectorAll('.shw-it:not(.is-gone)').length, gone: document.querySelectorAll('.shw-it.is-gone').length}));
+  await p.click('.cat-tile[data-id="' + catB + '"]'); await wait(1700); const t2 = await toneOf();
+  await p.click('.shw-all'); await wait(1700); const t3 = await toneOf();
+  ok([t1, t2, t3].every(t => t.filter === 'none' && t.bg === t0.bg && t.light === null) && t0.filter === 'none', 'при выборе категории и фильтра цвет и свет фона не меняются: у сцены нет сдвига тона (filter none), цвет подложки прежний', [t0, t1, t2, t3]);
   ok(w1.keep === 7 && w1.world === WL0 && w1.gone === 0, 'экспозиции: страница не перезагружалась, архитектурный фон цел (' + w1.world + ' слоёв), ушедшие товары убраны', w1);
 
   /* избранное и сравнение: панель при наведении, раскрытая карточка, фильтр «Только избранное» */
@@ -283,13 +281,13 @@ const userMsgs = p => p.evaluate(() => [...document.querySelectorAll('.asst-u .a
     return {n: its.length, inside: its.every(r => r.left >= h.left - 1 && r.right <= h.right + 1 && r.top >= head.bottom - 4 && r.bottom <= card.top + 40), hero: [Math.round(h.width), Math.round(h.height)], pan: [...document.querySelectorAll('.shw-pan')].every(b => b.hidden), vw: innerWidth, sw: document.documentElement.scrollWidth, blur: /rgba/.test(getComputedStyle(document.querySelector('.shw-panel')).backgroundImage), tog: getComputedStyle(document.querySelector('.filters-toggle')).display}; });
   p = await open(b, {viewport: {width: 820, height: 1180}});
   const T = await st(p), TF = await FIT(p), TO = await OV(p);
-  ok(T.stack && T.pageIds.length === PAGE && TF.sw <= TF.vw + 1, 'планшет: те же 8 товаров, без горизонтальной прокрутки страницы', {T: T.pageIds.length, TF});
+  ok(T.stack && T.pageIds.length === PAGE && TF.sw <= TF.vw + 1, 'планшет: те же 10 товаров, без горизонтальной прокрутки страницы', {T: T.pageIds.length, TF});
   ok(TF.inside && TF.pan && TO.bad.length === 0, 'планшет: вся экспозиция на одном экране — все подиумы с товарами внутри «героя», между заголовком и плашкой товара, наложений нет', {TF, TO});
   await p.close(); await p.ctx.close();
   p = await open(b, {viewport: {width: 390, height: 844}, isMobile: true, hasTouch: true});
   const M = await st(p), MF = await FIT(p), MO = await OV(p);
-  ok(M.stack && M.pageIds.length === PAGE && MF.sw <= MF.vw + 1, 'телефон: те же 8 товаров, без горизонтальной прокрутки страницы', {M: M.pageIds.length, MF});
-  ok(MF.inside && MF.pan && MF.tog !== 'none', 'телефон: все 8 товаров на одном экране без сдвига, внутри «героя», кнопка «Фильтры» есть', MF);
+  ok(M.stack && M.pageIds.length === PAGE && MF.sw <= MF.vw + 1, 'телефон: те же 10 товаров, без горизонтальной прокрутки страницы', {M: M.pageIds.length, MF});
+  ok(MF.inside && MF.pan && MF.tog !== 'none', 'телефон: все 10 товаров на одном экране без сдвига, внутри «героя», кнопка «Фильтры» есть', MF);
   ok(MO.bad.length === 0, 'телефон: товары на подиумах, соседей не закрывают', MO);
   await p.evaluate(() => document.querySelector('.shw-it:not(.is-gone)').click()); await wait(1100);
   const MS = await p.evaluate(() => { const c = document.querySelector('.shw-card'), h = document.querySelector('.shw-hero').getBoundingClientRect(), r = c.getBoundingClientRect(), it = document.querySelector('.shw-it.is-sel'); return {open: c.classList.contains('is-open'), pos: getComputedStyle(c).position, inside: r.top > h.top && r.bottom <= h.bottom + 1, sel: !!it, itemVisible: it ? it.getBoundingClientRect().top < r.top : false}; });

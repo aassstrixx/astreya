@@ -96,8 +96,8 @@
   const perFor = () => MAIN_MAX;
   /* на узких экранах показывается та же сцена, что на компьютере: полоса холста [WX0…1536]×[WY0…WY0+WH]; если по ширине она не умещается при читаемом масштабе, сцену можно сдвигать пальцем или стрелками */
   const SLOTS = (D.showroom && D.showroom.slots) || [];
-  const SLOT_CAP = [16, 18, 25, 14, 11, 24, 24, 20];                                     // наибольшая высота упаковки на месте, см (малые места — для малых упаковок)
-  const SLOT_RANK = [2, 3, 5, 6, 1, 0, 7, 4];                                            // порядок заполнения: самые заметные места первыми
+  const SLOT_CAP = [16, 18, 25, 14, 11, 24, 24, 20, 18, 20];                                     // наибольшая высота упаковки на месте, см (малые места — для малых упаковок)
+  const SLOT_RANK = [2, 3, 5, 6, 1, 0, 8, 9, 7, 4];                                            // порядок заполнения: самые заметные места первыми
   const TOP_Y = 326;                                                                     // верх упаковки не выше: под заголовком и чипами категорий
   const ASIDE_TOP = 100, SPAN = SLOTS.length ? [Math.min.apply(null, SLOTS.map(q => q.x)) - 62, Math.max.apply(null, SLOTS.map(q => q.x)) + 62] : [470, 1250];
   const COMPACT_TOP = TOP_Y - 6, COMPACT_EXT = (SLOTS.length ? Math.max.apply(null, SLOTS.map(q => q.y)) : 640) + 58 - COMPACT_TOP;   // по вертикали холста показываем от верха самой высокой упаковки до оснований подиумов
@@ -406,7 +406,7 @@
   function sync(push) {
     const s = ensure(); if (!s) return;
     const ids = visibleIds(), changed = ids.join() !== s.ids.join(), v = variantOf(), vch = v !== s.variant;
-    s.ids = ids; s.variant = v; s.root.setAttribute('data-light', String(v));
+    s.ids = ids; s.variant = v;
     syncUI(); favSync();
     if (!s.rendered || !s.W) return;                                   // первая отрисовка — после того, как известен размер сцены (layout)
     if (changed || vch) { s.page = 0; if (s.sel) clearSel(true); render(push ? 'filter' : null); }

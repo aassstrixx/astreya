@@ -136,7 +136,7 @@ def arch_frame(name, mat, cx, rx, zs, t, y0, y1, grp, n=96, z0=0.0):
     return mesh_obj(name, verts, faces, mat, grp, smooth=False)
 
 def set_cam(sc, loc=None, lens=None, pitch=0.0):
-    cd = bpy.data.cameras.new('cam'); cd.lens = lens or CAM['lens']; cd.sensor_width = 36; cd.sensor_fit = 'HORIZONTAL'; cd.shift_y = CAM.get('shift_y', 0.0) if loc is None else 0.0; cam = bpy.data.objects.new('cam', cd); bpy.context.collection.objects.link(cam)
+    cd = bpy.data.cameras.new('cam'); cd.lens = lens or CAM['lens']; cd.sensor_width = 36; cd.sensor_fit = 'HORIZONTAL'; cd.clip_end = 20000.0; cd.shift_y = CAM.get('shift_y', 0.0) if loc is None else 0.0; cam = bpy.data.objects.new('cam', cd); bpy.context.collection.objects.link(cam)
     cam.location = loc or CAM['loc']; cam.rotation_euler = (math.radians(90 - pitch), 0, 0); sc.camera = cam; bpy.context.view_layer.update(); return cam
 
 def add_flutes(mat, n, k):
@@ -201,6 +201,20 @@ def lights(sc):
             w.node_tree.links.new(sk.outputs['Color'], wm.inputs['A']); w.node_tree.links.new(wm.outputs['Result'], bg.inputs['Color'])
         except Exception as e: print('небо Нишита недоступно:', e)
 
+    if os.environ.get('VIEWSKY', '0') == '1':                                                              # небо с облаками — для луча камеры и отражённых лучей (видно в окнах и в воде); освещение зала по-прежнему от тёплого неба выше
+        nt_ = w.node_tree; out_ = next(n for n in nt_.nodes if n.type == 'OUTPUT_WORLD'); lp_ = nt_.nodes.new('ShaderNodeLightPath')
+        tcn_ = nt_.nodes.new('ShaderNodeTexCoord'); sep_ = nt_.nodes.new('ShaderNodeSeparateXYZ'); nt_.links.new(tcn_.outputs['Generated'], sep_.inputs[0])
+        mr_ = nt_.nodes.new('ShaderNodeMapRange'); mr_.inputs['From Min'].default_value = 0.0; mr_.inputs['From Max'].default_value = float(os.environ.get('VIEW_RISE', .20)); mr_.clamp = True; nt_.links.new(sep_.outputs['Z'], mr_.inputs['Value'])
+        gr_ = nt_.nodes.new('ShaderNodeMix'); gr_.data_type = 'RGBA'; gr_.inputs['A'].default_value = (.84, .90, .96, 1); gr_.inputs['B'].default_value = (.20, .43, .84, 1); nt_.links.new(mr_.outputs['Result'], gr_.inputs['Factor'])
+        mp_ = nt_.nodes.new('ShaderNodeMapping'); mp_.inputs['Scale'].default_value = (2.4, 2.4, 11.0); nt_.links.new(tcn_.outputs['Generated'], mp_.inputs['Vector'])
+        nz_ = nt_.nodes.new('ShaderNodeTexNoise'); nz_.inputs['Scale'].default_value = 1.8; nz_.inputs['Detail'].default_value = 7; nz_.inputs['Roughness'].default_value = .62; nt_.links.new(mp_.outputs['Vector'], nz_.inputs['Vector'])
+        cr_ = nt_.nodes.new('ShaderNodeValToRGB'); cr_.color_ramp.elements[0].position = .50; cr_.color_ramp.elements[0].color = (0, 0, 0, 1); cr_.color_ramp.elements[1].position = .72; cr_.color_ramp.elements[1].color = (.9, .9, .9, 1); nt_.links.new(nz_.outputs['Fac'], cr_.inputs['Fac'])
+        cl_ = nt_.nodes.new('ShaderNodeMix'); cl_.data_type = 'RGBA'; cl_.inputs['B'].default_value = (1.0, .97, .93, 1); nt_.links.new(gr_.outputs['Result'], cl_.inputs['A']); nt_.links.new(cr_.outputs['Color'], cl_.inputs['Factor'])
+        bg2 = nt_.nodes.new('ShaderNodeBackground'); bg2.inputs['Strength'].default_value = float(os.environ.get('VIEW_STR', 1.5)); nt_.links.new(cl_.outputs['Result'], bg2.inputs['Color'])
+        m1_ = nt_.nodes.new('ShaderNodeMath'); m1_.operation = 'MAXIMUM'; nt_.links.new(lp_.outputs['Is Camera Ray'], m1_.inputs[0]); nt_.links.new(lp_.outputs['Is Glossy Ray'], m1_.inputs[1])
+        m2_ = nt_.nodes.new('ShaderNodeMath'); m2_.operation = 'MAXIMUM'; nt_.links.new(m1_.outputs[0], m2_.inputs[0]); nt_.links.new(lp_.outputs['Is Transmission Ray'], m2_.inputs[1])
+        mx_ = nt_.nodes.new('ShaderNodeMixShader'); nt_.links.new(m2_.outputs[0], mx_.inputs['Fac']); nt_.links.new(bg.outputs['Background'], mx_.inputs[1]); nt_.links.new(bg2.outputs['Background'], mx_.inputs[2]); nt_.links.new(mx_.outputs['Shader'], out_.inputs['Surface'])
+
 def settings(sc, w=W, h=H, spp=SPP):
     addon_utils.enable('cycles'); sc.render.engine = 'CYCLES'; cy = sc.cycles; cy.device = 'CPU'; cy.samples = spp; cy.use_denoising = True; cy.denoiser = 'OPENIMAGEDENOISE'
     cy.max_bounces = 8; cy.diffuse_bounces = 5; cy.glossy_bounces = 4; cy.transmission_bounces = 6; cy.transparent_max_bounces = 12; cy.caustics_reflective = False; cy.caustics_refractive = False
@@ -256,7 +270,7 @@ def render_layers(sc, cam0, names):
     """Слои из ОДНОЙ полной отрисовки R2 (все объекты, общий свет и тени) + чистая «подложка» R1 (только стена, пол и задник — без остальных объектов) + маски объектов по группам:
        • слой группы = пиксели R2 с альфой-маской этой группы (объекты видны в своём слое, тени и отражения — настоящие);
        • подложка = R2 вне объектов и R1 под ними (под любым слоем есть «что-то», швов и дыр нет)."""
-    objs = [o for o in bpy.data.objects if 'grp' in o.keys() and o['grp'] != 'gobo' and o.name not in ('cut1', 'cut2', 'clipb', 'stepl', 'stepr', 'tbl_clip') and not o.name.startswith('cutR') and o.type in ('MESH', 'CURVE')]      # «резаки» булевых операций остаются скрытыми всегда
+    objs = [o for o in bpy.data.objects if 'grp' in o.keys() and o['grp'] != 'gobo' and o.name not in ('cut1', 'cut2', 'clipb', 'stepl', 'stepr', 'tbl_clip') and not o.name.startswith('cutR') and not o.name.startswith('cutW') and o.type in ('MESH', 'CURVE')]      # «резаки» булевых операций остаются скрытыми всегда
     groups = ['niche', 'ring', 'dais', 'plant']; mp = os.path.join(OUT, 'layers.json'); old = json.load(open(mp)) if os.path.exists(mp) else {}
     def show(gs):
         for o in objs: o.hide_render = o['grp'] not in gs; o.visible_camera = True
@@ -270,12 +284,14 @@ def render_layers(sc, cam0, names):
         vl = bpy.context.view_layer; vl.material_override = ov; vt = sc.view_settings.view_transform; lk = sc.view_settings.look; ex = sc.view_settings.exposure; sc.view_settings.view_transform = 'Standard'; sc.view_settings.exposure = 0; sc.view_settings.look = 'None'
         v0 = _VOL[0].inputs['Density'].default_value if _VOL[0] else 0.0
         if _VOL[0]: _VOL[0].inputs['Density'].default_value = 0.0                                                # маски без дымки
-        bgn = sc.world.node_tree.nodes['Background']; w0 = bgn.inputs['Strength'].default_value; bgn.inputs['Strength'].default_value = 0.0; spp0 = sc.cycles.samples; sc.cycles.samples = 16; sc.cycles.use_denoising = False
+        bgs_ = [n for n in sc.world.node_tree.nodes if n.type == 'BACKGROUND']; bgv_ = [n.inputs['Strength'].default_value for n in bgs_]
+        for n in bgs_: n.inputs['Strength'].default_value = 0.0
+        bgn = sc.world.node_tree.nodes['Background']; w0 = bgv_[bgs_.index(bgn)]; spp0 = sc.cycles.samples; sc.cycles.samples = 16; sc.cycles.use_denoising = False
         for g in groups:
             show([g]); shoot('/tmp/M_%s.png' % g)
         vl.material_override = None
         if _VOL[0]: _VOL[0].inputs['Density'].default_value = v0
-        sc.view_settings.view_transform = vt; sc.view_settings.look = lk; sc.view_settings.exposure = ex; bgn.inputs['Strength'].default_value = w0; sc.cycles.samples = spp0; sc.cycles.use_denoising = True
+        sc.view_settings.view_transform = vt; sc.view_settings.look = lk; sc.view_settings.exposure = ex; [setattr(n.inputs['Strength'], 'default_value', v_) for n, v_ in zip(bgs_, bgv_)]; sc.cycles.samples = spp0; sc.cycles.use_denoising = True
         R2 = np.asarray(Image.open('/tmp/R2.png').convert('RGB')).astype(np.float32); R1 = np.asarray(Image.open('/tmp/R1.png').convert('RGB')).astype(np.float32)
         M = {g: np.asarray(Image.open('/tmp/M_%s.png' % g).convert('L')).astype(np.float32) / 255.0 for g in groups}
         from scipy import ndimage as ndi
