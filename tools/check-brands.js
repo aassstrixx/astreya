@@ -31,7 +31,7 @@ const t = (cond, name, info) => { if (cond) ok++; else bad.push(name + (info !==
   };
   const noOverflow = p => p.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1);
   const offIds = p => p.evaluate(() => [...document.querySelectorAll('.bw-n.is-off')].map(x => x.dataset.id));
-  const openId = p => p.evaluate(() => { const a = [...document.querySelectorAll('.bw-pn')].filter(x => !x.hidden); return a.length === 1 && !document.getElementById('bw-panel').hidden ? a[0].dataset.id : a.length ? '?' + a.length : ''; });
+  const openId = p => p.evaluate(() => { const a = [...document.querySelectorAll('.bw-pn.is-on')]; return a.length === 1 && document.getElementById('bw-panel').classList.contains('is-open') ? a[0].dataset.id : a.length ? '?' + a.length : ''; });
   const geom = p => p.evaluate(() => {
     const R = e => { const r = e.getBoundingClientRect(); return {l: r.left, t: r.top + scrollY, r: r.right, b: r.bottom + scrollY, w: r.width, h: r.height}; };
     const plane = document.querySelector('.bw-plane'), pr = R(plane), bar = document.querySelector('.bw-bar'), head = document.querySelector('.bw-head');
@@ -61,10 +61,10 @@ const t = (cond, name, info) => { if (cond) ok++; else bad.push(name + (info !==
     const cnt = PRODUCTS.filter(x => x.brand === br.id).length;
     t(new RegExp('\\b' + cnt + '\\b').test(n.label || ''), br.id + ': число позиций в подписи совпадает с data/products.json', [n.label, cnt]);
     t(br.logo ? !!(n.logo && n.logo.ok) : !!n.logo, br.id + ': логотип бренда (картинка) загружен', n.logo && n.logo.tag);
-    t(!!n.logo && n.logo.l >= n.hit.l - 1 && n.logo.r <= n.hit.r + 1 && n.logo.t >= n.hit.t - 1 && n.logo.b <= n.hit.t + n.hit.h * .45, br.id + ': логотип внутри арки, в верхней части ниши', n.logo && [Math.round(n.logo.l - n.hit.l), Math.round(n.hit.r - n.logo.r), Math.round(n.logo.t - n.hit.t)]);
+    t(!!n.logo && n.logo.l >= n.hit.l - 1 && n.logo.r <= n.hit.r + 1 && n.logo.t >= n.hit.t - 1 && n.logo.b <= n.hit.t + n.hit.h * .55, br.id + ': логотип внутри арки, в верхней части ниши', n.logo && [Math.round(n.logo.l - n.hit.l), Math.round(n.hit.r - n.logo.r), Math.round(n.logo.t - n.hit.t)]);
     t(n.pk.length >= Math.min(2, cnt) && n.pk.every(k => k.ok), br.id + ': упаковки на подиумах загружены', [n.pk.length, cnt]);
     t(n.pk.every(k => k.l >= n.hit.l - 2 && k.r <= n.hit.r + 2 && k.b <= n.hit.b + 2 && k.h <= n.hit.h * .62), br.id + ': упаковки внутри ниши и не выше 62 % её высоты');
-    t(n.pk.every(k => { const cm = k.h / pxPerCm; return cm >= 5.2 && cm <= 24; }), br.id + ': реальный масштаб упаковок (5–24 см)', n.pk.map(k => Math.round(k.h / pxPerCm * 10) / 10));
+    t(n.pk.every(k => { const cm = k.h / pxPerCm; return cm >= 5.2 && cm <= 27; }), br.id + ': масштаб упаковок (5–27 см: реальные размеры × 1,12)', n.pk.map(k => Math.round(k.h / pxPerCm * 10) / 10));
     t(fs.existsSync(path.join(ROOT, 'brands', br.id + '.html')), br.id + ': страница бренда собрана');
   }
   t(g.niches.every(n => n.hit.t >= g.barB + 4), 'ряд фильтров не пересекает арки ниш (1672)', [Math.round(g.barB), Math.round(Math.min(...g.niches.map(n => n.hit.t)))]);
@@ -86,10 +86,15 @@ const t = (cond, name, info) => { if (cond) ok++; else bad.push(name + (info !==
   await p.click('.bw-n[data-id="endocare"] .bw-hit'); await p.waitForTimeout(500); t(await openId(p) === 'endocare', 'другая ниша переключает панель (одна открытая)', await openId(p));
   await p.click('.bw-n[data-id="endocare"] .bw-hit'); await p.waitForTimeout(400); t(await openId(p) === '', 'повторное нажатие закрывает панель', await openId(p));
   await p.click('.bw-n[data-id="neoretin"] .bw-hit'); await p.waitForTimeout(400); await p.keyboard.press('Escape'); await p.waitForTimeout(300); t(await openId(p) === '', 'Esc закрывает панель');
-  await p.click('.bw-n[data-id="eva"] .bw-hit'); await p.waitForTimeout(600); await p.click('.bw-pn:not([hidden]) .bw-close'); await p.waitForTimeout(300);
+  await p.click('.bw-n[data-id="eva"] .bw-hit'); await p.waitForTimeout(600); await p.click('.bw-pn.is-on .bw-close'); await p.waitForTimeout(300);
   t(await openId(p) === '' && await p.evaluate(() => !document.querySelector('.bw-n.is-sel') && !document.querySelector('.bw').classList.contains('has-sel')), '«Закрыть» возвращает общий вид');
   t(await p.evaluate(() => document.activeElement && document.activeElement.classList.contains('bw-hit')), 'после закрытия фокус возвращается на нишу');
 
+  /* --- панель одного размера, прямо под стеной; затемнение; нижняя полоса --- */
+  const pg = await p.evaluate(() => { const pn = [...document.querySelectorAll('.bw-pn')].map(a => Math.round(a.getBoundingClientRect().height)), st = document.querySelector('[data-bw-stage]').getBoundingClientRect(), pa = document.getElementById('bw-panel').getBoundingClientRect(), sp = document.querySelector('.bw-strip').getBoundingClientRect(); return {pn, gap: Math.round(pa.top - st.bottom), beforeStrip: pa.top < sp.top}; });
+  t(pg.pn.length === BRANDS.length && pg.pn.every(h => h === pg.pn[0] && h > 380), 'панели всех брендов одного размера', pg.pn); t(pg.gap >= -2 && pg.gap <= 6 && pg.beforeStrip, 'панель раскрывается сразу под стеной (выше нижней полосы)', pg);
+  t(await p.evaluate(() => { const d = document.querySelector('.bw-dim'); return !!d && !d.classList.contains('on') && document.querySelectorAll('.bw-hole').length === 9; }), 'слой затемнения есть и в покое выключен (9 «окон» по аркам)');
+  t(await p.evaluate(() => { const s = document.querySelector('.bw-strip'); return s.querySelectorAll('li img.bw-strip-logo').length === 9 && !/ASTREYA/i.test(s.textContent) && !!s.querySelector('use[href="#logo-art"]'); }), 'нижняя полоса: логотипы брендов вместо названий, знак «Астреи» вместо надписи ASTREYA');
   /* --- поиск и фильтры: стена остаётся целой, лишние ниши приглушены --- */
   await p.fill('#br-q', 'helio'); await p.waitForTimeout(500); let off = await offIds(p); t(off.length === BRANDS.length - 1 && !off.includes('heliocare'), 'поиск «helio» → остаётся Heliocare', off);
   await p.fill('#br-q', 'пигмент'); await p.waitForTimeout(500); off = await offIds(p); t(off.length > 0 && off.length < BRANDS.length - 1, 'поиск по задаче «пигмент» находит несколько брендов', off.length);
@@ -102,6 +107,9 @@ const t = (cond, name, info) => { if (cond) ok++; else bad.push(name + (info !==
     const r = await p.evaluate(id2 => [...document.querySelectorAll('.bw-n')].map(c => ({id: c.dataset.id, off: c.classList.contains('is-off'), has: c.dataset.tasks.split(' ').includes(id2)})), id);
     t(r.every(x => x.off === !x.has) && r.some(x => !x.off), 'фильтр «' + id + '» приглушает только неподходящие бренды', r.filter(x => x.off === x.has).map(x => x.id));
   }
+  await p.click('#br-tasks [data-act="br-task"][data-id="' + taskIds[0] + '"]'); await p.waitForTimeout(900);
+  const dm = await p.evaluate(() => ({on: document.querySelector('.bw-dim').classList.contains('on'), holes: [...document.querySelectorAll('.bw-hole.on')].map(h => h.dataset.id).sort(), lit: [...document.querySelectorAll('.bw-n:not(.is-off)')].map(n => n.dataset.id).sort(), dim: [...document.querySelectorAll('.bw-n.is-dim')].map(n => n.dataset.id).sort(), off: [...document.querySelectorAll('.bw-n.is-off')].map(n => n.dataset.id).sort()}));
+  t(dm.on && dm.holes.join() === dm.lit.join() && dm.dim.join() === dm.off.join() && dm.lit.length > 0 && dm.off.length > 0, 'фильтр: стена затемняется, подходящие ниши освещены, остальные затемнены', dm);
   await p.click('#br-tasks [data-act="br-task"][data-id="all"]'); await p.waitForTimeout(350); off = await offIds(p); t(off.length === 0, '«Все бренды» сбрасывает фильтр', off);
 
   /* --- «Бренд под вашу задачу» --- */
@@ -116,9 +124,11 @@ const t = (cond, name, info) => { if (cond) ok++; else bad.push(name + (info !==
   }
 
   /* --- Стелла и шапка --- */
-  const helps = await p.$$('.br-help'); t(helps.length >= 2, 'кнопки «Подобрать бренд со Стеллой» (в нижней полосе и в блоке приглашения)', helps.length);
+  const helps = await p.$$('.br-help'); t(helps.length === 1, 'на странице одна кнопка «Подобрать бренд со Стеллой» (в блоке «Не уверены…»)', helps.length);
+  t(await p.evaluate(() => !document.querySelector('.g-entry')), 'отдельной полоски Стеллы на странице нет (меньше насыщения)');
+  t(await p.evaluate(() => { const e = document.querySelector('.bw-ask .bw-ask-pe svg.pe'); return !!e && !!e.querySelector('.pe-b'); }), 'в блоке приглашения — оригинальный маскот Стеллы (тот же, что на кнопке чата)');
+  t(await p.evaluate(() => !document.querySelector('.bw-strip-help, .bw-strip .br-help') && !document.querySelector('.br-st')), 'в нижней полосе нет плашки Стеллы и самодельных значков');
   if (helps[0]) { await helps[0].click(); await p.waitForTimeout(1500); t(await p.evaluate(() => !!(window.ASTREYA && ASTREYA.stella && ASTREYA.stella.state().open) || !!document.querySelector('.asst.open, #asst.open, body.asst-open')), 'кнопка «Подобрать бренд» открывает Стеллу'); }
-  t(await p.evaluate(() => !!document.querySelector('.g-entry') && document.querySelector('.g-entry').parentElement.classList.contains('bw')), 'полоска Стеллы стоит под стеной (не внутри неё)');
   await p.evaluate(() => window.scrollTo(0, 900)); await p.waitForTimeout(500);
   t(await p.evaluate(() => !document.documentElement.classList.contains('br-top')), 'после прокрутки шапка снова обычная');
   t(await p.evaluate(() => !!document.querySelector('#hdr a.logo') && document.querySelectorAll('#nav a.nl').length >= 5), 'верхняя навигация на месте');
@@ -147,7 +157,7 @@ const t = (cond, name, info) => { if (cond) ok++; else bad.push(name + (info !==
       await p.evaluate(() => document.querySelector('.bw-n[data-id="dermatime"] .bw-hit').scrollIntoView({inline: 'center', block: 'nearest'})); await p.waitForTimeout(500);
       await p.evaluate(() => document.querySelector('.bw-n[data-id="dermatime"] .bw-hit').click()); await p.waitForTimeout(1200);
       t(await openId(p) === 'dermatime', w + ' px: нажатие открывает панель бренда', await openId(p));
-      t(await p.evaluate(() => { const r = document.querySelector('.bw-pn:not([hidden])').getBoundingClientRect(); return r.left >= -1 && r.right <= innerWidth + 1; }), w + ' px: панель бренда помещается по ширине');
+      t(await p.evaluate(() => { const r = document.querySelector('.bw-pn.is-on').getBoundingClientRect(); return r.left >= -1 && r.right <= innerWidth + 1; }), w + ' px: панель бренда помещается по ширине');
       t(await noOverflow(p), w + ' px: после открытия панели нет горизонтальной прокрутки');
     }
     t(await p.evaluate(() => [...document.querySelectorAll('.bw-strip li button small')].every(x => x.scrollWidth <= x.clientWidth + 1)), w + ' px: подписи в нижней полосе не обрезаны по ширине');

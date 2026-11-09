@@ -61,86 +61,86 @@
  },
  "pack-dermatime-dropper": {
   "file": "assets/showroom/pack-dermatime-dropper.webp",
-  "w": 187,
-  "h": 820,
+  "w": 267,
+  "h": 1200,
   "kind": "dropper"
  },
  "pack-dermatime-bottle": {
   "file": "assets/showroom/pack-dermatime-bottle.webp",
-  "w": 231,
-  "h": 820,
+  "w": 332,
+  "h": 1200,
   "kind": "bottle"
  },
  "pack-dermatime-jar": {
   "file": "assets/showroom/pack-dermatime-jar.webp",
-  "w": 956,
-  "h": 820,
+  "w": 1401,
+  "h": 1200,
   "kind": "jar"
  },
  "pack-dermatime-pump": {
   "file": "assets/showroom/pack-dermatime-pump.webp",
-  "w": 195,
-  "h": 820,
+  "w": 279,
+  "h": 1200,
   "kind": "pump"
  },
  "pack-dermatime-box": {
   "file": "assets/showroom/pack-dermatime-box.webp",
-  "w": 382,
-  "h": 820,
+  "w": 555,
+  "h": 1200,
   "kind": "box"
  },
  "pack-keenwell-pump": {
   "file": "assets/showroom/pack-keenwell-pump.webp",
-  "w": 195,
-  "h": 820,
+  "w": 279,
+  "h": 1200,
   "kind": "pump"
  },
  "pack-keenwell-tube": {
   "file": "assets/showroom/pack-keenwell-tube.webp",
-  "w": 262,
-  "h": 820,
+  "w": 378,
+  "h": 1200,
   "kind": "tube"
  },
  "pack-keenwell-jar": {
   "file": "assets/showroom/pack-keenwell-jar.webp",
-  "w": 956,
-  "h": 820,
+  "w": 1401,
+  "h": 1200,
   "kind": "jar"
  },
  "pack-keenwell-dropper": {
   "file": "assets/showroom/pack-keenwell-dropper.webp",
-  "w": 187,
-  "h": 820,
+  "w": 267,
+  "h": 1200,
   "kind": "dropper"
  },
  "pack-endocare-dropper": {
   "file": "assets/showroom/pack-endocare-dropper.webp",
-  "w": 187,
-  "h": 820,
+  "w": 267,
+  "h": 1200,
   "kind": "dropper"
  },
  "pack-endocare-jar": {
   "file": "assets/showroom/pack-endocare-jar.webp",
-  "w": 956,
-  "h": 820,
+  "w": 1401,
+  "h": 1200,
   "kind": "jar"
  },
  "pack-endocare-box": {
   "file": "assets/showroom/pack-endocare-box.webp",
-  "w": 382,
-  "h": 820,
+  "w": 555,
+  "h": 1200,
   "kind": "box"
  },
  "pack-neoretin-jar": {
   "file": "assets/showroom/pack-neoretin-jar.webp",
-  "w": 956,
-  "h": 820,
+  "w": 1401,
+  "h": 1200,
   "kind": "jar"
  },
  "pack-neoretin-dropper": {
   "file": "assets/showroom/pack-neoretin-dropper.webp",
-  "w": 187,
-  "h": 820,
+  "w": 267,
+  "h": 1200,
   "kind": "dropper"
  },
  "pack-neoretin-bottle": {

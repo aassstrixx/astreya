@@ -332,9 +332,10 @@ const wait = ms => new Promise(r => setTimeout(r, ms));
   for (const u of pages) {
     await p.goto(base + u); const s = await p.$('#sp-in'); if (s) { try { await s.click({timeout: 1200}); } catch (e) {} } await p.waitForFunction(() => document.documentElement.classList.contains('ready'), null, {timeout: 30000}).catch(() => {}); await wait(1400);
     const has = await p.evaluate(() => { const e = document.querySelector('.g-entry'); return e ? {t: e.querySelector('b').textContent, chips: e.querySelectorAll('.chip').length, vis: e.getBoundingClientRect().width > 100} : null; });
+    if (u === 'brands.html') { if (has) miss.push(u + ' (плашки быть не должно)'); continue; }          // на стене брендов отдельной плашки нет (по просьбе заказчика — меньше Стеллы): остаются кнопка чата и один блок «Не уверены…»
     if (!has || !has.vis || has.chips < 1) miss.push(u); else anchors.push(u);
   }
-  ok(!miss.length, 'блок «Спросите Стеллу» есть на всех ' + pages.length + ' типах страниц: ' + anchors.join(', '), miss);
+  ok(!miss.length, 'блок «Спросите Стеллу» есть на всех типах страниц, кроме стены брендов (там его нет намеренно): ' + anchors.join(', '), miss);
   ok(!p.errs.length, 'на этих страницах нет ошибок JS', p.errs); await p.context().close();
 
   /* ---------- всплывающее окно Стеллы: только приветствие на главной ---------- */

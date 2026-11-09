@@ -97,7 +97,7 @@ def mat_ink(name='ink', col=(.55, .48, .38), rough=.5):
 def mat_foil(name='foil'):
     m, nt, b, o = new_mat(name); _set(b, (.86, .72, .52, 1), 'Base Color'); _set(b, 1.0, 'Metallic'); _set(b, .22, 'Roughness'); micro(nt, b, .22, .04, 260, .15); return m
 def mat_rubber(name='rubber'):
-    m, nt, b, o = new_mat(name); _set(b, (.018, .018, .019, 1), 'Base Color'); _set(b, .5, 'Roughness'); _set(b, .35, 'Specular IOR Level', 'Specular'); _set(b, .2, 'Sheen Weight'); micro(nt, b, .5, .08, 90, .25); return m
+    m, nt, b, o = new_mat(name); _set(b, (.020, .020, .021, 1), 'Base Color'); _set(b, .30, 'Roughness'); _set(b, .62, 'Specular IOR Level', 'Specular'); _set(b, .2, 'Sheen Weight'); _set(b, .28, 'Coat Weight', 'Clearcoat'); _set(b, .14, 'Coat Roughness', 'Clearcoat Roughness'); micro(nt, b, .30, .08, 90, .22); return m
 def mat_carton(name='carton', col=(.92, .90, .85)):
     m, nt, b, o = new_mat(name); _set(b, (*col, 1), 'Base Color'); _set(b, .62, 'Roughness'); _set(b, .22, 'Specular IOR Level', 'Specular'); _set(b, .2, 'Sheen Weight')
     n = micro(nt, b, .62, .06, 300, .4); return m
@@ -158,7 +158,7 @@ def M():
       'white': mat_plastic('softtouch', (.91, .90, .87), rough=.5, coat=0.0, sheen=.3, sss=.08, bump=.12), 'white_rib': wr,
       'gloss': mat_plastic('glosspl', (.92, .91, .88), rough=.2, coat=.4, sheen=.1, sss=.08, bump=.0),
       'opal': mat_opal(), 'noirglass': mat_noir_glass(),
-      'noirsoft': mat_plastic('noirsoft', (.024, .023, .022), rough=.44, coat=.0, sheen=.2, spec=.45, bump=.15),
+      'noirsoft': mat_plastic('noirsoft', (.024, .023, .022), rough=.34, coat=.14, sheen=.2, spec=.55, bump=.15),
       'champ': mat_champagne(), 'champ_rib': mat_champagne('champ_rib', ribs=84), 'champ_lid': mat_champagne('champ_lid', rough=.34, ribs=96),
       'paper': mat_paper(), 'foil': mat_foil(), 'rubber': mat_rubber(), 'carton': mat_carton(), 'serum': mat_liquid(), 'glass': mat_clear_glass(),
       'ink': mat_ink('ink', (.80, .76, .68), .55), 'inkdark': mat_ink('inkdark', (.20, .18, .16), .45),
@@ -352,7 +352,7 @@ def finish(png, boxes, name):
     pad = 6; x0 = max(0, x0 - pad); y0 = max(0, y0 - pad); x1 = min(W, x1 + pad); y1 = min(Hh, y1 + pad)
     c = im.crop((x0, y0, x1, y1)); s = TARGET_H / c.height
     c = c.resize((max(1, round(c.width * s)), TARGET_H), Image.LANCZOS)
-    r, g, b, al = c.split(); rgb = Image.merge('RGB', (r, g, b)).filter(ImageFilter.UnsharpMask(radius=1.0, percent=int(os.environ.get('PACK_SHARP', 55)), threshold=2)); c = Image.merge('RGBA', (*rgb.split(), al))
+    r, g, b, al = c.split(); rgb = Image.merge('RGB', (r, g, b)).filter(ImageFilter.UnsharpMask(radius=1.0, percent=int(os.environ.get('PACK_SHARP', 95)), threshold=2)); c = Image.merge('RGBA', (*rgb.split(), al))
     info = {'file': 'assets/showroom/%s.webp' % name, 'w': c.width, 'h': c.height}
     if boxes:
         bx = boxes[0]; px = lambda u: (u * W - x0) / (x1 - x0); py = lambda v: (v * Hh - y0) / (y1 - y0)

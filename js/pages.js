@@ -109,25 +109,40 @@
   function brandsWallPage() {
     const page = $('[data-bw]'), sec = $('.bw', page), niches = $$('.bw-n', page), strip = $$('.bw-strip li', page), qEl = $('#br-q'), empty = $('#br-empty'), panel = $('#bw-panel'), box = $('.bw-tasks', page), scroller = $('[data-bw-scroll]'), stage = $('[data-bw-stage]');
     let task = 'all', sel = '';
-    const byId = id => niches.find(n => n.dataset.id === id);
+    const byId = id => niches.find(n => n.dataset.id === id), pns = $$('.bw-pn', panel), holes = $$('.bw-hole', page), dim = $('.bw-dim', page);
     function apply() {
       const toks = A.tokens(qEl.value); let n = 0;
       niches.forEach(li => { const ok = (task === 'all' || li.dataset.tasks.split(' ').indexOf(task) !== -1) && toks.every(t => li.dataset.q.indexOf(t) !== -1); li.classList.toggle('is-off', !ok); if (ok) n++; const s = strip.find(x => x.dataset.id === li.dataset.id); if (s) s.classList.toggle('is-off', !ok); });
       empty.hidden = n > 0; setOn($('#br-tasks'), task); setOn($('#bw-task-chips'), task === 'all' ? '__none' : task);
-      $$('.bw-tr', box).forEach(u => { u.hidden = u.dataset.task !== task; }); box.classList.toggle('has-res', task !== 'all');
+      $$('.bw-tr', box).forEach(u => { u.hidden = u.dataset.task !== task; }); box.classList.toggle('has-res', task !== 'all'); paintFocus();
     }
+    /* затемнение стены: при выборе бренда или фильтре стена и лишние ниши слегка темнеют (слой .bw-dim с «окнами» по аркам подходящих ниш), подходящие остаются светлыми и подсвечены */
+    function paintFocus() {
+      const filt = niches.some(n => n.classList.contains('is-off')), set = sel ? [sel] : filt ? niches.filter(n => !n.classList.contains('is-off')).map(n => n.dataset.id) : [], on = !!(sel || filt);
+      sec.classList.toggle('has-filter', filt);
+      if (dim) dim.classList.toggle('on', on);
+      holes.forEach(h => h.classList.toggle('on', set.indexOf(h.dataset.id) !== -1));
+      niches.forEach(n => n.classList.toggle('is-dim', on && set.indexOf(n.dataset.id) === -1));
+    }
+    const wallBottom = () => stage.getBoundingClientRect().bottom + (window.scrollY || 0);
     function show(id, opts) {
-      sel = id || ''; const open = !!sel;
+      sel = id || ''; const open = !!sel, quiet = !!(opts && opts.quiet);
       niches.forEach(li => { const on = li.dataset.id === sel; li.classList.toggle('is-sel', on); const b = $('.bw-hit', li); if (b) b.setAttribute('aria-expanded', String(on)); });
       strip.forEach(li => li.classList.toggle('is-sel', li.dataset.id === sel)); sec.classList.toggle('has-sel', open);
-      $$('.bw-pn', panel).forEach(a => { a.hidden = a.dataset.id !== sel; }); panel.hidden = !open;
-      if (!open || (opts && opts.quiet)) return;
+      pns.forEach(a => { const on = a.dataset.id === sel; a.classList.toggle('is-on', on); a.setAttribute('aria-hidden', String(!on)); if (on) a.removeAttribute('inert'); else a.setAttribute('inert', ''); });
+      panel.classList.toggle('is-open', open); panel.setAttribute('aria-hidden', String(!open));
+      paintFocus();
+      const vh = window.innerHeight || 800, sy = window.scrollY || 0;
+      if (!open) { if (!quiet && sy > wallBottom() - vh * .2) window.scrollTo({top: Math.max(0, wallBottom() - vh * .62), behavior: 'smooth'}); return; }          // закрыли панель, пока читали её, — вернуться к стене
+      if (quiet) return;
       A.track && A.track('brands_wall_open', {brand: sel});
       const li = byId(sel), hit = li && $('.bw-hit', li);
       if (scroller && scroller.scrollWidth > scroller.clientWidth + 8 && hit) scroller.scrollTo({left: hit.offsetLeft + hit.offsetWidth / 2 - scroller.clientWidth / 2, behavior: 'smooth'});
-      const r = panel.getBoundingClientRect(), vh = window.innerHeight || 800;
-      if (r.top > vh * .66 || r.bottom < 0) window.scrollTo({top: window.scrollY + r.top - Math.min(110, vh * .12), behavior: 'smooth'});
+      const want = Math.max(0, wallBottom() - vh * .4);                                                                   // стена остаётся в кадре (выбранная ниша светится), под ней — начало панели
+      if (Math.abs(sy - want) > 70) window.scrollTo({top: want, behavior: 'smooth'});
     }
+    const fillPearl = () => $$('[data-pe]', page).forEach(el => { if (!el.firstChild && A.pearl) el.innerHTML = A.pearl(el.getAttribute('data-pe') || 'happy', true); });
+    fillPearl(); window.addEventListener('load', fillPearl);
     A.actions['br-task'] = (t, id) => { task = id; apply(); };
     A.actions['bw-task'] = (t, id) => { task = task === id ? 'all' : id; apply(); };
     A.actions['bw-open'] = (t, id) => { show(sel === id ? '' : id); };
@@ -182,16 +197,58 @@
     const list = $('#sem-list'); if (!list) return;
     const rows = $$('.sem-item', list); let city = 'all', fmt = 'all';
     const allPast = rows.every(r => r.dataset.date < today());
+    const acad = $('[data-acad]');
+    const foldN = +list.dataset.fold || 0, foldBtn = $('[data-act="acad-fold"]');
+    /* ASTREYA ACADEMY: выбранное мероприятие — тёмно-синяя карточка; тот же день подсвечивается в календаре; календарь не показывает дни скрытых фильтром мероприятий */
+    let selId = '';
+    const byGo = go => rows.find(r => r.dataset.go === go);
+    function paintDays() {
+      if (!acad) return; const cur = selId && rows.find(r => r.dataset.id === selId);
+      $$('.sx-cal .sx-cd.ev').forEach(d => { const r = byGo(d.getAttribute('data-sx-go')); d.classList.toggle('acad-sel', !!(cur && r === cur)); d.classList.toggle('acad-off', !!(r && r.hidden)); });
+    }
+    function fold() {                                        // «Показать ещё»: видны первые foldN подходящих карточек, остальные раскрываются кнопкой
+      if (!acad || !foldN) return;
+      const vis = rows.filter(r => !r.hidden); vis.forEach((r, i) => r.classList.toggle('is-fold', i >= foldN)); rows.filter(r => r.hidden).forEach(r => r.classList.remove('is-fold'));
+      const more = vis.length > foldN;
+      if (foldBtn) { foldBtn.hidden = !more; const open = list.classList.contains('is-open'); foldBtn.setAttribute('aria-expanded', String(open)); foldBtn.firstElementChild.textContent = open ? foldBtn.dataset.less : foldBtn.dataset.more; }
+    }
+    function select(id) {
+      selId = id || ''; rows.forEach(r => { const on = r.dataset.id === selId; r.classList.toggle('is-sel', on); if (on) r.setAttribute('aria-current', 'true'); else r.removeAttribute('aria-current'); });
+      const cur = rows.find(r => r.dataset.id === selId); if (cur && cur.classList.contains('is-fold')) { list.classList.add('is-open'); fold(); }
+      paintDays();
+    }
+    function ensure() { if (!acad) return; if (!rows.some(r => r.dataset.id === selId && !r.hidden)) { const f = rows.find(r => !r.hidden); select(f ? f.dataset.id : ''); } else paintDays(); }
     function apply() {
       let n = 0;
       rows.forEach(r => { const ok = (city === 'all' || r.dataset.city === city) && (fmt === 'all' || r.dataset.fmt === fmt) && (allPast || r.dataset.date >= today()); r.hidden = !ok; if (ok) n++; });
-      $('#sem-empty').hidden = n > 0;
+      $('#sem-empty').hidden = n > 0; fold(); ensure();
     }
-    A.actions.city = (t, id) => { city = id; setOn($('#city-chips'), id); apply(); };
-    A.actions.fmt = (t, id) => { fmt = id; setOn($('#fmt-chips'), id); apply(); };
-    const f = params().get('fmt'); if (f === 'online' || f === 'offline') { fmt = f; setOn($('#fmt-chips'), f); }
+    const dd = $('[data-ac-dd]');
+    function ddOpen(on) { if (!dd) return; dd.classList.toggle('is-open', on); const b = $('.ac-dd-b', dd); if (b) b.setAttribute('aria-expanded', String(on)); }
+    function fmtLabel() { const c = $('#fmt-chips .chip.on'), l = $('[data-ac-dd-l]'); if (c && l) l.textContent = c.textContent.trim(); }
+    A.actions.city = (t, id) => { city = id; setOn($('#city-chips'), id); apply(); if (acad) { const s = $('.sx-tl-sec'); if (s && s.__draw) s.__draw(id); } };
+    A.actions.fmt = (t, id) => { fmt = id; setOn($('#fmt-chips'), id); fmtLabel(); ddOpen(false); apply(); };
+    A.actions['acad-dd'] = () => ddOpen(!(dd && dd.classList.contains('is-open')));
+    A.actions['acad-fold'] = () => { list.classList.toggle('is-open'); fold(); };
+    A.actions['acad-more'] = t => {                           // «О преподавателях»: плавно раскрывает остальных (grid-template-rows 0fr → 1fr)
+      const box = document.getElementById(t.dataset.target); if (!box) return; const open = !box.classList.contains('is-open');
+      box.classList.toggle('is-open', open); box.setAttribute('aria-hidden', String(!open)); if (open) box.removeAttribute('inert'); else box.setAttribute('inert', '');
+      t.setAttribute('aria-expanded', String(open)); t.firstElementChild.textContent = open ? t.dataset.less : t.dataset.more;
+    };
+    document.addEventListener('click', e => { if (dd && !e.target.closest('[data-ac-dd]')) ddOpen(false); });
+    document.addEventListener('keydown', e => { if (e.key === 'Escape') ddOpen(false); });
+    const f = params().get('fmt'); if (f === 'online' || f === 'offline') { fmt = f; setOn($('#fmt-chips'), f); fmtLabel(); }
     const c = params().get('city'); if (c) { city = c; setOn($('#city-chips'), c); }
     apply();
+    if (acad) {
+      list.addEventListener('click', e => { const r = e.target.closest('.sem-item'); if (r && !e.target.closest('a,button')) select(r.dataset.id); });
+      list.addEventListener('focusin', e => { const r = e.target.closest('.sem-item'); if (r && r.dataset.id !== selId) select(r.dataset.id); });
+      const host = $('[data-acad-cal]');
+      if (host) {
+        host.addEventListener('mouseover', e => { const d = e.target.closest('.sx-cd.ev'); if (!d) return; const r = byGo(d.getAttribute('data-sx-go')); if (r && !r.hidden && r.dataset.id !== selId) select(r.dataset.id); });
+        if (window.MutationObserver) new MutationObserver(paintDays).observe(host, {childList: true, subtree: true});
+      }
+    }
   };
   A.pages.event = function () {
     const w = $('[data-event]'); if (!w) return;

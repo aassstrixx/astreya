@@ -258,7 +258,7 @@
     const sec = el('section', 'sx-mod sx-tl-sec', '<div class="wrap"><header class="sx-head"><span class="eyebrow">' + esc(cfg.eyebrow) + '</span><h2>' + esc(cfg.title) + '</h2><p class="lead">' + esc(cfg.lead) + '</p></header>' +
       '<div class="sx-tl-bar"><div class="sx-tl-city" role="group" aria-label="' + esc(cfg.cityLabel) + '"><span>' + esc(cfg.cityLabel) + '</span>' + ['all'].concat(cities).map(x => '<button type="button" class="chip' + (x === pref ? ' on' : '') + '" data-sx-city="' + esc(x) + '" aria-pressed="' + (x === pref) + '">' + esc(x === 'all' ? cfg.all : x) + '</button>').join('') + '</div></div>' +
       '<div class="sx-tl-main"><div class="sx-tl-next" data-sx-tl-next></div><div class="sx-cal" data-sx-tl-track aria-label="' + esc(cal.label) + '"></div></div></div>', {'data-sx-mod': 'timeline'});
-    wrap.parentNode.insertBefore(sec, wrap.nextSibling);
+    const host = $('[data-acad-cal]', main); if (host) { sec.classList.add('in-acad'); host.appendChild(sec); } else wrap.parentNode.insertBefore(sec, wrap.nextSibling);          // академия: календарь внутри зоны «Календарь семинаров»
     let evs = [], months = [], mi = 0, nearId = '';
     const paintCal = () => {
       const host = $('[data-sx-tl-track]', sec), key = months[mi];

@@ -956,6 +956,10 @@
                 "after": 700
               },
               {
+                "click": "[data-ac-dd] .ac-dd-b",
+                "after": 500
+              },
+              {
                 "click": "#fmt-chips .chip:nth-child(2)",
                 "undo": "#fmt-chips .chip:nth-child(1)",
                 "after": 800

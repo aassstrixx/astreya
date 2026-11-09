@@ -547,7 +547,7 @@
   /* ---------- точки входа на страницах ---------- */
   function entryKey() { return pageKey(); }
   function mountEntry() {
-    const key = entryKey(), cfg = G.entry && G.entry.pages && G.entry.pages[key]; if (!cfg || $('.g-entry')) return;
+    const key = entryKey(), cfg = G.entry && G.entry.pages && G.entry.pages[key]; if (!cfg || $('.g-entry') || $('[data-no-entry]')) return;          // data-no-entry: страница сама решает, где её единственная кнопка Стеллы (стена брендов)
     let a = null; try { a = $(cfg.anchor); } catch (e) {} if (!a) return;
     if (key === 'home' && $('.arch-story.is-house')) a = document.getElementById('house-end') || a;          // главная-дом: после героя сразу журнал — полоска помощника не стоит между ними, а идёт после журнала
     const el = document.createElement('aside'); el.className = 'g-entry'; el.setAttribute('aria-label', 'Помощник Стелла'); el.setAttribute('data-style', (G.entry && G.entry.style) || 'strip');          // strip · slim · card

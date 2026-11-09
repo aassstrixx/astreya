@@ -56,6 +56,7 @@ module.exports = function backdrops(ctx) {
   function apply(P, html) {
     if (!on || !html) return html;
     if ((cfg.skipPages || []).includes(P.key)) return html;
+    if (/<div class="ac-page"/.test(html)) return html;                 // ASTREYA ACADEMY: у зон страницы «Обучение» свои фоны (css/academy.css)
     if (/<section class="[^"]*is-house/.test(html)) return html;           // главная-дом: после зала идёт только журнал, блоков прежней главной (rd-sec, hp-*) на странице нет
     const plan = planFor(P.key);
     if (!plan) return html;

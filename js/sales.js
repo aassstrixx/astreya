@@ -585,7 +585,7 @@
       const ft = $('footer'), form = ctxCache.type === 'partners' ? $('#form') : null;
       if (ft) { ft.setAttribute('data-sx-watch', 'footer'); io.observe(ft); } if (form) { form.setAttribute('data-sx-watch', 'form'); io.observe(form); }
       /* свои призывы страницы (модули слоя и завершающий блок) важнее панели: пока один из них на экране, панель уступает место */
-      const own = new Set(); $$('[data-sx-mod], .cta-band[data-sx-closing]').forEach((el, k) => { el.setAttribute('data-sx-watch', 'own' + k); io.observe(el); });
+      const own = new Set(); $$('[data-sx-mod], .cta-band[data-sx-closing], .ac-final[data-sx-closing]').forEach((el, k) => { el.setAttribute('data-sx-watch', 'own' + k); io.observe(el); });
       io.__own = own;
     }
     schedule();

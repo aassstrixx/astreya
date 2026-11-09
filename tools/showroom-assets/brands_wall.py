@@ -6,12 +6,14 @@
 
   python3 tools/showroom-assets/brands_wall.py preview      # быстрый кадр /tmp/wall_preview.png (BW_W — ширина, BW_SPP — сэмплы)
   python3 tools/showroom-assets/brands_wall.py layout       # только wall.json (без рендера)
+  python3 tools/showroom-assets/brands_wall.py regrade      # только цветокоррекция кадра /tmp/wall_full.png (BW_SAT, BW_GAMMA, BW_LIFT, BW_WARM)
   python3 tools/showroom-assets/brands_wall.py              # итоговый рендер (3072 px, BW_SPP=56 по умолчанию) → assets/brands/
 Переменные: BW_W, BW_SPP, SUN, FILL, LED, EXPO, WALLC (R,G,B)."""
 import bpy, bmesh, math, os, sys, json, random
 HERE = os.path.dirname(os.path.abspath(__file__)); sys.path.insert(0, HERE)
 import scene as S
 import materials as MT
+import realism as RL
 from mathutils import Vector, Matrix
 from bpy_extras.object_utils import world_to_camera_view
 
@@ -28,12 +30,12 @@ NICHES = [('keenwell', -13.14, 3.35, 7.82), ('endocare', -9.57, 2.84, 7.46), ('d
 LAYOUT = {
     'dermatime': dict(plinths=[('disc', 0.0, .85, 1.05, 1.05, .50), ('box', -1.9, .80, 1.5, 1.1, .28), ('box', 1.85, .80, 1.3, 1.0, .18)], slots=[(0.0, .85, .50), (-1.9, .80, .28), (1.85, .80, .18), (-.85, .35, 0), (.95, .30, 0)]),
     'keenwell': dict(plinths=[('box', .45, .85, 1.5, 1.0, .50)], slots=[(.45, .85, .50), (-.9, .80, 0), (-.15, .38, 0), (1.15, .45, 0)]),
-    'endocare': dict(plinths=[('disc', .25, .80, .78, .78, .40)], slots=[(.25, .80, .40), (-.7, .75, 0), (.85, .30, 0)]),
+    'endocare': dict(plinths=[('disc', .25, .80, .78, .78, .40)], slots=[(.25, .80, .40), (-.64, .75, 0), (.80, .30, 0)]),
     'neoretin': dict(plinths=[('box', -.2, .80, 1.3, .90, .35)], slots=[(-.2, .80, .35), (.85, .55, 0), (-1.0, .40, 0)]),
-    'heliocare': dict(plinths=[('disc', -.1, .80, .74, .74, .45)], slots=[(-.1, .80, .45), (.9, .55, 0), (-.95, .45, 0)]),
-    'biretix': dict(plinths=[('box', .1, .80, 1.1, .80, .30)], slots=[(.1, .80, .30), (-.85, .50, 0), (.9, .40, 0)]),
-    'iraltone': dict(plinths=[('disc', 0.0, .80, .68, .68, .38)], slots=[(0.0, .80, .38), (-.8, .45, 0), (.8, .40, 0)]),
-    'elancyl': dict(plinths=[('box', .1, .80, .95, .70, .30)], slots=[(.1, .80, .30), (-.72, .45, 0), (.78, .40, 0)]),
+    'heliocare': dict(plinths=[('disc', -.1, .80, .74, .74, .45)], slots=[(-.1, .80, .45), (.84, .55, 0), (-.88, .45, 0)]),
+    'biretix': dict(plinths=[('box', .1, .80, 1.1, .80, .30)], slots=[(.1, .80, .30), (-.74, .50, 0), (.80, .40, 0)]),
+    'iraltone': dict(plinths=[('disc', 0.0, .80, .68, .68, .38)], slots=[(0.0, .80, .38), (-.66, .45, 0), (.68, .40, 0)]),
+    'elancyl': dict(plinths=[('box', .1, .80, .95, .70, .30)], slots=[(.1, .80, .30), (-.58, .45, 0), (.62, .40, 0)]),
     'eva': dict(plinths=[('disc', 0.0, .85, 1.05, 1.05, .60), ('disc', 0.0, .85, 1.3, 1.3, .22)], slots=[(0.0, .85, .60)]),
 }
 NICHE_DEPTH = 1.55
@@ -74,7 +76,94 @@ def build(sc):
     # вертикальная рейка справа над нишей EVA (как на референсе)
     for i in range(14):
         x = 14.0 + i * .56; S.box('slat%d' % i, M['slat'], x, x + .30, -.45, 0.0, 8.15, HU + 3, G, bev=.04)
+    olive_tree(M, (TREE_X, TREE_Y, BASE_Z), G)
     return M
+
+
+# высокое оливковое дерево в каменном горшке слева от ниши Keenwell (по просьбе заказчика: высокое, толстый ствол, пышная крона сверху).
+# Крона — широкий овал по эскизу заказчика (TREE_ENV): от левого края кадра до x ≈ -7,7 и от верха кадра до z ≈ 9; листья ниже TREE_ZMIN (верх самой высокой арки ≈ 8,5) и вне овала не создаются — ни один бренд листвой не закрыт.
+TREE_X, TREE_Y = float(os.environ.get('TREE_X', -16.3)), float(os.environ.get('TREE_Y', -1.0))
+TREE_ZMIN = float(os.environ.get('TREE_ZMIN', 9.0))                               # листья не ниже этой высоты (верх самой высокой арки Keenwell ≈ 8,5)
+TREE_ENV = dict(ex=float(os.environ.get('TREE_EX', -13.0)), rx=float(os.environ.get('TREE_RX', 5.3)), ez=float(os.environ.get('TREE_EZ', 12.0)), rz=float(os.environ.get('TREE_RZ', 3.3)), p=2.5)   # суперэллипс кроны (x, z в единицах стены)
+def olive_tree(M, base, G):
+    rnd = random.Random(int(os.environ.get('TREE_SEED', 7))); bx, by, bz = base; up = Vector((0, 0, 1))
+    # горшок: тело вращения из травертина, тёмная земля, галька сверху
+    import decor as DC
+    pot = [(0.0, 0.0), (.70, 0.0), (.80, .06), (.94, .66), (.97, 1.0), (.92, 1.42), (.86, 1.48), (.80, 1.44), (.0, 1.44)]
+    DC.lathe('pot', pot, M['block'], G, bx, by, bz, seg=96, caps=True)
+    soil = S.mat_simple('soil', (.055, .042, .03), .96)
+    DC.lathe('soil', [(0.0, 1.26), (.78, 1.26), (.80, 1.30), (0.0, 1.32)], soil, G, bx, by, bz, seg=64)
+    for k in range(10):
+        a = rnd.uniform(0, 6.283); r = rnd.uniform(.14, .68); S.cylinder('peb%d' % k, M['frame'], bx + math.cos(a) * r, by + math.sin(a) * r, rnd.uniform(.05, .09), bz + 1.30, bz + 1.35, G, seg=12, bev=.015)
+    ma = RL.leaf_material('olive_leafA', (.05, .085, .035), (.16, .23, .075)); mb = RL.leaf_material('olive_leafB', (.085, .125, .05), (.23, .30, .105), under=True)
+    leaves = []
+    for m in (ma, mb): leaves.extend(RL.leaf_variants(.62, .085, 4, 'olive', (m,)))
+    bark = S.mat_simple('bark', (.21, .165, .12), .88)
+    def curve(pts, r0, r1):
+        cu = bpy.data.curves.new('tw', 'CURVE'); cu.dimensions = '3D'; sp = cu.splines.new('POLY'); sp.points.add(len(pts) - 1)
+        for i, q in enumerate(pts): sp.points[i].co = (q[0], q[1], q[2], 1); sp.points[i].radius = r0 + (r1 - r0) * i / max(1, len(pts) - 1)
+        cu.bevel_depth = 1.0; cu.bevel_resolution = 4; cu.use_fill_caps = True; cu.materials.append(bark)
+        ob = bpy.data.objects.new('tw', cu); bpy.context.collection.objects.link(ob); ob['grp'] = G
+    def at_factory(pts):
+        def at(t):
+            f = t * (len(pts) - 1); i = min(int(f), len(pts) - 2); return pts[i].lerp(pts[i + 1], f - i)
+        return at
+    E = TREE_ENV
+    def inside(q, k=1.0):
+        return (abs((q.x - E['ex']) / (E['rx'] * k)) ** E['p'] + abs((q.z - E['ez']) / (E['rz'] * k)) ** E['p']) <= 1.0
+    def ok(pos, dv):                                                   # и корень листа, и его кончик внутри кроны, выше арок и не в стене
+        tip = pos + dv * .55
+        return pos.z >= TREE_ZMIN - .05 and tip.z >= TREE_ZMIN - .05 and inside(pos, 1.03) and inside(tip, 1.05) and tip.y <= -.12 and pos.y <= -.12
+    def leafy(pts, count, k, r0, r1):
+        curve(pts, r0, r1); at = at_factory(pts)
+        for i in range(1, count + 1):
+            t = i / (count + 1) * .94 + .06; pos = at(t); d = (at(min(1, t + .03)) - pos).normalized()
+            for dv in RL.pair_dirs(d, i, rnd, spread=1.0, up=.20, droop=.24):
+                if dv.y > .2: dv.y *= .25; dv.normalize()
+                if not ok(pos, dv): continue
+                ob = bpy.data.objects.new('lf', rnd.choice(leaves)); bpy.context.collection.objects.link(ob); ob['grp'] = G
+                ob.scale = ((1.15 - .40 * t) * (.74 + rnd.random() * .56) * k,) * 3
+                RL.orient(ob, dv, rnd, .8, RL.tint_for(t, rnd)); ob.location = pos
+        e = at(1); ed = (at(1) - at(.9)).normalized()
+        if ok(e, ed):
+            tip = bpy.data.objects.new('lf', leaves[0]); bpy.context.collection.objects.link(tip); tip['grp'] = G
+            tip.scale = (k,) * 3; tip.rotation_euler = ed.to_track_quat('Y', 'Z').to_euler(); tip.location = e
+        return at
+    root = Vector((bx, by, bz + 1.28)); topz = float(os.environ.get('TREE_TOPZ', 9.8)); H = topz - root.z
+    ytw = by + .02
+    trunk = [root, root + Vector((.10, .02, H * .20)), root + Vector((.34, -.05, H * .46)), root + Vector((.62, .04, H * .74)), Vector((bx + .95, ytw, topz))]
+    tr = leafy(trunk, 8, .9, float(os.environ.get('TREE_R0', .42)), .24)       # толстый ствол
+    for sgn in (-1, 1):                                                # два боковых ствола: сращены с основным и уходят в крону (не обрываются голой палкой)
+        o = lambda t_, sx_, sy_, sz_: tr(t_) + Vector((sx_ * sgn, sy_ * sgn, sz_))
+        st = [root + Vector((.22 * sgn, .08 * sgn, 0)), o(.34, .30, .06, 0), o(.68, .27, .04, 0), o(.97, .20, .02, .15), Vector((bx + .95 + .30 * sgn, ytw + .02 * sgn, topz + .75))]
+        leafy(st, 14, .95, .17, .10)
+    top = Vector((bx + .95, ytw, topz))
+    def limb(pts, r0, r1):
+        return leafy(pts, 20, .95, r0, r1)
+    V = Vector
+    limbs = [limb([top, V((-15.2, ytw - .1, 11.6)), V((-14.4, ytw - .2, 13.2)), V((-13.6, ytw - .2, 14.5))], .21, .06),
+             limb([top, V((-14.2, ytw - .1, 10.7)), V((-12.5, ytw - .3, 12.0)), V((-10.9, ytw - .4, 12.9))], .20, .06),
+             limb([tr(.92), V((-13.9, ytw - .2, 10.1)), V((-11.9, ytw - .5, 10.7)), V((-9.7, ytw - .6, 11.5))], .17, .05),
+             limb([top, V((-16.2, ytw - .1, 11.5)), V((-16.9, ytw - .2, 13.2)), V((-16.3, ytw - .3, 14.8))], .18, .05),
+             limb([tr(.97), V((-14.8, ytw - .3, 11.2)), V((-13.0, ytw - .8, 13.2)), V((-11.5, ytw - .8, 14.4))], .15, .05)]
+    nb = int(os.environ.get('TREE_NB', 140)); LBk = float(os.environ.get('TREE_LB', 1.0)); cen = V((E['ex'], 0, E['ez']))
+    for j in range(nb):                                                # ветки отходят от ветвей наружу от центра кроны: заполняют весь контур
+        at0 = rnd.choice(limbs); P0 = at0(rnd.uniform(.12, 1.0))
+        rad = V((P0.x - cen.x, 0, P0.z - cen.z)); rad = rad.normalized() if rad.length > .2 else V((0, 0, 1))
+        if j % 3 == 2: d = (rad * -rnd.uniform(.2, .6) + V((rnd.uniform(-.8, .8), rnd.uniform(-.6, .1), rnd.uniform(-.7, .25)))).normalized()      # каждая третья — внутрь и вниз: закрывает просветы
+        else: d = (rad * rnd.uniform(.55, 1.0) + V((rnd.uniform(-.7, .7), rnd.uniform(-.55, .25), rnd.uniform(-.25, .7)))).normalized()
+        Lb = rnd.uniform(1.0, 2.1) * LBk
+        for _ in range(7):                                             # укоротить, пока кончик не окажется в контуре кроны
+            if inside(P0 + d * Lb, 1.0): break
+            Lb *= .8
+        else: continue
+        mid = P0 + d * Lb * .5 + V((0, 0, .10 * Lb))
+        pts = [P0, P0 + d * Lb * .30 + V((0, 0, .08)), mid, P0 + d * Lb * .78 + V((0, 0, .02 * Lb)), P0 + d * Lb + V((0, 0, -.08 * Lb))]
+        at = leafy(pts, 30, 1.0, .030, .008)
+        for t in (.34, .56, .76):
+            P = at(t); az2 = rnd.uniform(0, 6.283); d2 = (d * .6 + V((math.cos(az2), math.sin(az2) * .35, rnd.uniform(-.3, .6)))).normalized(); L2 = Lb * rnd.uniform(.30, .46)
+            leafy([P, P + d2 * L2 * .5 + V((0, 0, .04)), P + d2 * L2 + V((0, 0, -.03))], 10, .95, .012, .006)
+
 
 
 def lights(sc):
@@ -122,8 +211,23 @@ def layout_json(sc, cam):
     return out
 
 
+def export(im):
+    """Цветокоррекция под гамму каталога и главной (стена теплее и насыщеннее: B/R ≈ 0,82, насыщенность ≈ 0,18 — как у стены витрины каталога assets/showroom/layer-shell.webp и кадров главной) и запись webp.
+    Переменные: BW_SAT, BW_GAMMA, BW_LIFT, BW_WARM (множители R,G,B)."""
+    from PIL import Image
+    import numpy as np
+    g = S.grade(np.asarray(im), sat=float(os.environ.get('BW_SAT', 1.38)), gamma=float(os.environ.get('BW_GAMMA', .85)), lift=float(os.environ.get('BW_LIFT', .05)))
+    g = np.clip(g * np.array([float(x) for x in os.environ.get('BW_WARM', '1.0,.99,.955').split(',')], np.float32), 0, 255)
+    im2 = Image.fromarray(g.astype(np.uint8)); os.makedirs(OUT, exist_ok=True)
+    im2.save(os.path.join(OUT, 'wall.webp'), quality=92, method=6)
+    im2.resize((1800, round(1800 * PH / PW)), Image.LANCZOS).save(os.path.join(OUT, 'wall-s.webp'), quality=90, method=6)
+
+
 def main():
     mode = sys.argv[1] if len(sys.argv) > 1 else 'all'
+    if mode == 'regrade':                                                     # только цветокоррекция уже посчитанного кадра /tmp/wall_full.png (без рендера)
+        from PIL import Image
+        export(Image.open('/tmp/wall_full.png').convert('RGB')); print('regrade done'); return
     bpy.ops.wm.read_factory_settings(use_empty=True); sc = bpy.context.scene
     pw = int(os.environ.get('BW_W', 1536 if mode == 'preview' else PW)); spp = int(os.environ.get('BW_SPP', 24 if mode == 'preview' else 56))
     S.settings(sc, pw, round(pw * PH / PW), spp)
@@ -140,10 +244,7 @@ def main():
     json.dump(layout_json(sc, cam), open(os.path.join(OUT, 'wall.json'), 'w'), ensure_ascii=False, indent=1)
     from PIL import Image
     import numpy as np
-    im = Image.open('/tmp/wall_full.png').convert('RGB'); g = S.grade(np.asarray(im))
-    im2 = Image.fromarray(np.clip(g, 0, 255).astype(np.uint8))
-    im2.save(os.path.join(OUT, 'wall.webp'), quality=92, method=6)
-    im2.resize((1800, round(1800 * PH / PW)), Image.LANCZOS).save(os.path.join(OUT, 'wall-s.webp'), quality=90, method=6)
+    export(Image.open('/tmp/wall_full.png').convert('RGB'))
     print('готово →', OUT, flush=True)
 
 

@@ -503,7 +503,7 @@ html.lite .shw-world,html.lite .shw-stage,html.lite .shw-ly{translate:none!impor
 
 /* заголовок над сценой: мягкая светлая дымка за текстом — «Каталог», заголовок и подводка читаются поверх листвы и арок */
 @media (min-width:1101px){
-  .shw-head::before{content:"";position:absolute;z-index:-1;left:-130px;right:-120px;top:-90px;bottom:-80px;pointer-events:none;filter:blur(18px);background:radial-gradient(ellipse closest-side at 50% 52%,rgba(247,240,226,.74) 0%,rgba(247,240,226,.60) 38%,rgba(247,240,226,.30) 66%,rgba(247,240,226,.10) 86%,rgba(247,240,226,0) 100%)}      /* овал с нулевой прозрачностью у всех краёв (closest-side) и размытием: прямых границ нет, под текстом заметно светлее, чтобы тёмный заголовок читался и на синей панели арки */
+  .shw-head::before{content:"";position:absolute;z-index:-1;left:-230px;right:-210px;top:-170px;bottom:-150px;pointer-events:none;background:radial-gradient(ellipse 50% 50% at 50% 52%,rgba(248,242,229,.82) 0%,rgba(248,242,229,.72) 30%,rgba(248,242,229,.52) 50%,rgba(248,242,229,.30) 66%,rgba(248,242,229,.13) 80%,rgba(248,242,229,.04) 92%,rgba(248,242,229,0) 100%)}      /* крупный овал, прозрачный по всему контуру (эллипс упирается в границы блока, фильтров и прямых краёв нет): под текстом заметно светлее, дымка уходит далеко за буквы и читается поверх листвы и синей панели арки */
 }
 
 
@@ -521,5 +521,19 @@ html.lite .shw-world{filter:none!important}
 .shw-it:not(.is-bg) .shw-img{filter:drop-shadow(0 1px 1.2px rgba(54,34,14,.34))}
 
 /* заголовок над листвой и тенями: мягкое светлое свечение, чтобы тёмные буквы читались на любом участке сцены */
-.shw-head h1,.shw-head .lead{text-shadow:0 0 22px rgba(255,249,236,.85),0 0 6px rgba(255,249,236,.7)}
-.shw-head .eyebrow{text-shadow:0 0 12px rgba(255,249,236,.9)}
+/* свечение букв (text-shadow) убрано: на тёмной панели арки оно склеивалось в светлый прямоугольник; читаемость даёт дымка за блоком */
+.shw-head h1,.shw-head .lead,.shw-head .eyebrow{text-shadow:none}
+
+
+/* ---------- тени товаров: стоят на подиуме, а не парят ----------
+   Контактная тень (::before) — плотная и узкая прямо у основания: упаковка «посажена» на камень, даже когда её не трогают.
+   Косая тень от солнца слева (.shw-cs) теперь гаснет по длине (маска) и мягче размыта, чтобы у тубы и коробки она не читалась тёмным параллелограммом.
+   При подъёме (наведение, выбор) контактная тень светлеет и сужается, косая сдвигается вслед за светом вправо и слабеет: товар отрывается от подиума естественно, а тень не остаётся лежать «плитой». */
+.shw-it{--lf:0px;--co:1;--cs:1;--cso:.34}
+.shw-it::before{content:"";position:absolute;left:50%;bottom:-3px;width:calc(var(--cs) * 84%);height:10px;transform:translateX(-50%);border-radius:50%;background:radial-gradient(closest-side,rgba(38,24,10,.74),rgba(38,24,10,.34) 58%,rgba(38,24,10,0));opacity:var(--co);transition:opacity .95s var(--shw-grow),width .95s var(--shw-grow);pointer-events:none}
+.shw-cs{transform:translateX(calc(2% + var(--lf) * .9)) skewX(-46deg) scaleY(.2);filter:brightness(0) blur(2.4px);opacity:var(--cso);-webkit-mask-image:linear-gradient(to top,#000 0,rgba(0,0,0,.72) 30%,rgba(0,0,0,.28) 70%,rgba(0,0,0,0) 100%);mask-image:linear-gradient(to top,#000 0,rgba(0,0,0,.72) 30%,rgba(0,0,0,.28) 70%,rgba(0,0,0,0) 100%);transition:transform .95s var(--shw-grow),opacity .95s var(--shw-grow)}
+@media (hover:hover) and (pointer:fine){ .shw:not(.has-sel) .shw-it:hover{--lf:14px;--co:.32;--cs:.7;--cso:.2} }
+.shw:not(.has-sel) .shw-it.is-hov,.shw-it:focus-visible{--lf:14px;--co:.32;--cs:.7;--cso:.2}
+.shw-it.is-sel{--lf:20px;--co:.22;--cs:.62;--cso:.16}
+.shw-it.is-sel::before,.shw-it.is-sel .shw-cs{transition-duration:1.15s}
+html.lite .shw-it::before{transition:none}
