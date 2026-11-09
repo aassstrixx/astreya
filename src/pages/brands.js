@@ -135,26 +135,33 @@ function brandsWall(ctx, C, P) {
   const logoImg = (b, cls, style) => b.logo ? `<img class="${cls}"${style ? ` style="${style}"` : ''} src="${esc(C.u(P, b.logo))}" alt="${esc(b.name)}"${b.logoW ? ` width="${b.logoW}" height="${b.logoH}"` : ''} loading="lazy" decoding="async">` : `<b class="${cls} bw-logo-t">${esc(b.name)}</b>`;
   const hayOf = b => S.norm([b.name, b.tag, b.desc, b.group, b.country, b.tasks.map(t => ctx.taskById[t].label).join(' ')].join(' '));
 
-  /* ниши на стене */
-  const niches = order.map(b => {
-    const n = wall.niches[b.id]; if (!n) return '';
-    const prods = nicheProducts(products.filter(p => p.brand === b.id), n.slots.length), nichePx = (n.x1 - n.x0) * PW, nicheH = n.bottom - n.top;
-    const aspect = b.logoW && b.logoH ? b.logoW / b.logoH : 3, lw = Math.min(.84 * nichePx, Math.max(.58 * nichePx, Math.sqrt(.14 * nichePx * nichePx * aspect) * (b.logoScale || 1)));        // единый визуальный вес логотипов: площадь растёт с нишей, а для «квадратных» знаков (Dermatime) ширина не меньше 58 % ниши
+  /* геометрия логотипа в нише (px плиты): ширина, высота, центр по вертикали; одна и та же для ниши на стене и для миниатюры в панели бренда */
+  const logoGeom = (b, n) => {
+    const nichePx = (n.x1 - n.x0) * PW, nicheH = n.bottom - n.top;
+    const aspect = b.logoW && b.logoH ? b.logoW / b.logoH : 3, lw = Math.min(.84 * nichePx, Math.max(.58 * nichePx, Math.sqrt(.14 * nichePx * nichePx * aspect) * (b.logoScale || 1)));
     const nhPx = nicheH * PH, topPx = n.top * PH, rN = nichePx / 2, cyc = topPx + rN, lhPx = Math.min(lw / aspect, .36 * nhPx);
     let lyPx = topPx + Math.max(lhPx / 2 + .06 * nhPx, .17 * nhPx);
     const fits = y => { const dy = cyc - (y - lhPx / 2), hw = Math.min(lw, lhPx * aspect) / 2; return dy <= 0 ? hw <= rN * .94 : hw * hw + dy * dy <= (rN * .9) * (rN * .9); };
     while (!fits(lyPx) && lyPx < topPx + .42 * nhPx) lyPx += 4;                      // логотип целиком внутри арки: центр опускается, пока верхние углы не уйдут из-под дуги
+    return {lw, lhPx, lyPx};
+  };
+
+  /* ниши на стене */
+  const niches = order.map(b => {
+    const n = wall.niches[b.id]; if (!n) return '';
+    const prods = nicheProducts(products.filter(p => p.brand === b.id), n.slots.length), nicheH = n.bottom - n.top;
+    const {lw, lhPx, lyPx} = logoGeom(b, n), nhPx = nicheH * PH;
     const pk = prods.map((p, i) => { const sl = n.slots[i], pi = packInfo(p); if (!pi) return ''; const h = PACK_K * (PACK_CM[p.type] || 15) * sl.pxcm / PH;
       return `<span class="bw-pk" style="--x:${pct(sl.x)}%;--y:${pct(sl.y)}%;--h:${pct(h)}%;--ar:${(pi.meta.w / pi.meta.h).toFixed(4)};z-index:${Math.round(sl.y * 1000)}"><img class="bw-cs" src="${esc(C.u(P, pi.small))}" alt="" decoding="async"><img src="${esc(C.u(P, pi.small))}" alt="${esc(p.name)}" width="${pi.meta.w}" height="${pi.meta.h}" decoding="async"></span>`; }).join('');
     const nProd = products.filter(p => p.brand === b.id).length;
     return `<li class="bw-n" style="${S.bstyle(b)};--x:${pct(n.x0)}%;--w:${pct(n.x1 - n.x0)}%;--t:${pct(n.top)}%;--h:${pct(nicheH)}%;--cx:${pct(n.cx)}%;--ly:${pct(lyPx / PH)}%;--lw:${pct(lw / PW)}%;--lh:${pct(lhPx / PH)}%;--cy:${pct((lyPx + lhPx / 2 + .07 * nhPx) / PH)}%;--cb:${pct((lyPx + lhPx + .022 * nhPx) / PH)}%" data-id="${b.id}" data-tasks="${b.tasks.join(' ')}" data-q="${esc(hayOf(b))}">
-      ${logoImg(b, 'bw-logo')}<span class="bw-cap">${esc(b.tag)}</span>${pk}
+      ${logoImg(b, 'bw-logo')}${pk}
       <button class="bw-hit" type="button" data-act="bw-open" data-id="${b.id}" aria-controls="bw-panel" aria-expanded="false" aria-label="${esc(b.name)}: ${esc(nWord(nProd))} в каталоге. ${esc(W.hint)}"><span class="bw-glow" aria-hidden="true"></span><span class="bw-veil" aria-hidden="true"></span></button>
     </li>`;
   }).join('');
 
   /* нижняя полоса «Портфель брендов»: знак «Астреи» (вектор из шапки) и логотипы брендов вместо названий — переключатель, дублирующий ниши */
-  const strip = `<nav class="bw-strip" aria-label="${esc(W.stripTitle)}" data-bd="silk" data-bd-pos="c" data-bd-o="8"><p class="bw-strip-t"><svg class="bw-strip-mark" viewBox="46 338 836 436" role="img" aria-label="Астрея"><use href="#logo-art"/></svg><span>${esc(W.stripTitle)}</span></p>
+  const strip = `<nav class="bw-strip" aria-label="${esc(W.stripTitle)}"><p class="bw-strip-t"><svg class="bw-strip-mark" viewBox="46 338 836 436" role="img" aria-label="Астрея"><use href="#logo-art"/></svg><span>${esc(W.stripTitle)}</span></p>
     <ul>${order.map(b => `<li data-id="${b.id}"><button type="button" data-act="bw-open" data-id="${b.id}" aria-label="${esc(b.name)}">${logoImg(b, 'bw-strip-logo' + ((b.logoW && b.logoH && b.logoW / b.logoH < 1.8) ? ' is-sq' : ''))}<small>${esc(b.tag)}</small></button></li>`).join('')}</ul></nav>`;
 
   /* панели брендов: все лежат в одной ячейке сетки (высота — по самой большой, поэтому у всех брендов плашка одного размера); показывается одна, остальные прозрачны и недоступны (inert).
@@ -165,7 +172,8 @@ function brandsWall(ctx, C, P) {
     const x0 = Math.min(1 - cw, Math.max(0, n.cx - cw / 2)), y0 = Math.min(1 - ch, Math.max(0, n.top - ch * .1));
     const slots = nicheProducts(prods, n.slots.length).map((p, i) => { const sl = n.slots[i], pi = packInfo(p); if (!pi) return ''; const h = PACK_K * (PACK_CM[p.type] || 15) * sl.pxcm / PH;
       return `<span class="bw-pk" style="--x:${pct((sl.x - x0) / cw)}%;--y:${pct((sl.y - y0) / ch)}%;--h:${pct(h / ch)}%;--ar:${(pi.meta.w / pi.meta.h).toFixed(4)};z-index:${Math.round(sl.y * 1000)}"><img class="bw-cs" src="${esc(C.u(P, pi.small))}" alt="" loading="lazy" decoding="async"><img src="${esc(C.u(P, pi.small))}" alt="" loading="lazy" decoding="async"></span>`; }).join('');
-    const mini = `<figure class="bw-mini" style="--bs:${pct(1 / cw)}% ${pct(1 / ch)}%;--bp:${pct(x0 / (1 - cw || 1))}% ${pct(y0 / (1 - ch || 1))}%" aria-hidden="true">${slots}</figure>`;
+    const lg = logoGeom(b, n), mlogo = logoImg(b, 'bw-mini-logo', `left:${pct((n.cx - x0) / cw)}%;top:${pct((lg.lyPx / PH - y0) / ch)}%;width:${pct(lg.lw / PW / cw)}%;max-height:${pct(lg.lhPx / PH / ch)}%`);
+    const mini = `<figure class="bw-mini" style="--bs:${pct(1 / cw)}% ${pct(1 / ch)}%;--bp:${pct(x0 / (1 - cw || 1))}% ${pct(y0 / (1 - ch || 1))}%" aria-hidden="true">${mlogo}${slots}</figure>`;
     const cats = [...new Set(prods.map(p => p.cat))].map(id => (ctx.catById[id] || {}).name).filter(Boolean);
     const pick = nicheProducts(prods, 4).filter(p => packInfo(p));
     const meta = [b.country, b.group && b.group !== b.country ? b.group : ''].filter(Boolean);
@@ -176,7 +184,7 @@ function brandsWall(ctx, C, P) {
       </div>
       <div class="bw-pn-in">
         <p class="bw-pn-eyebrow">${esc(meta.join(' · ') || pnl.device)}</p>
-        <h3 class="bw-pn-h">${logoImg(b, 'bw-pn-logo')}<span class="sr">${esc(b.name)}</span></h3>
+        <h3 class="bw-pn-h"><span class="bw-pn-brand" aria-hidden="true">${esc(b.name)}</span><span class="sr">${esc(b.name)}</span></h3>
         <p class="bw-pn-lead">${esc(b.tag)}</p>
         ${(b.long || []).slice(0, 2).map(t => `<p class="bw-pn-p">${esc(t)}</p>`).join('')}
         <dl class="bw-pn-facts">
@@ -210,7 +218,7 @@ function brandsWall(ctx, C, P) {
           <p class="br-lead reveal">${esc(W.lead)}</p>
         </div>
         <div class="bw-bar reveal">
-          <div class="chips br-chips" id="br-tasks" role="group" aria-label="Фильтр по задаче">${C.chip(esc(W.all), 'br-task', 'all', true)}${usedList.map(t => C.chip(esc(t.label), 'br-task', t.id, false)).join('')}</div>
+          <div class="chips br-chips" id="br-tasks" role="group" aria-label="Фильтр по задаче">${C.chip(esc(W.all), 'br-task', 'all', true)}${usedList.map(t => C.chip(esc(t.label), 'br-task', t.id, false).replace('<button ', `<button data-n="${order.filter(b => b.tasks.includes(t.id)).length}" `)).join('')}</div>
           <label class="search br-search bw-search"><span class="sr">Поиск по брендам</span>${I.search}<input id="br-q" type="search" placeholder="${esc(W.search)}" autocomplete="off"></label>
         </div>
         <div class="bw-scroll" data-bw-scroll>

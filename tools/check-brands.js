@@ -76,9 +76,9 @@ const t = (cond, name, info) => { if (cond) ok++; else bad.push(name + (info !==
   await p.click('.bw-n[data-id="keenwell"] .bw-hit'); await p.waitForTimeout(1100);
   t(await openId(p) === 'keenwell', 'нажатие на нишу открывает панель этого бренда', await openId(p));
   t(await p.evaluate(() => document.querySelector('.bw-n[data-id="keenwell"]').classList.contains('is-sel') && document.querySelector('.bw').classList.contains('has-sel') && document.querySelector('.bw-n[data-id="keenwell"] .bw-hit').getAttribute('aria-expanded') === 'true'), 'ниша выделена, aria-expanded=true');
-  const pn = await p.evaluate(() => { const a = document.querySelector('.bw-pn[data-id="keenwell"]'); return {cat: (a.querySelector('.bw-pn-act a.btn') || {}).href || '', about: (a.querySelectorAll('.bw-pn-act a')[1] || {}).href || '', n: a.querySelectorAll('.bw-pn-prods li').length, logo: !!a.querySelector('.bw-pn-logo'), mini: !!a.querySelector('.bw-mini')}; });
+  const pn = await p.evaluate(() => { const a = document.querySelector('.bw-pn[data-id="keenwell"]'); return {cat: (a.querySelector('.bw-pn-act a.btn') || {}).href || '', about: (a.querySelectorAll('.bw-pn-act a')[1] || {}).href || '', n: a.querySelectorAll('.bw-pn-prods li').length, logo: !!a.querySelector('.bw-mini .bw-mini-logo, .bw-mini .bw-logo-t') && /Keenwell/i.test((a.querySelector('.bw-pn-brand') || {}).textContent || ''), mini: !!a.querySelector('.bw-mini')}; });
   t(/catalog\.html\?brand=keenwell/.test(pn.cat), 'в панели: ссылка в каталог с фильтром бренда', pn.cat); t(/brands\/keenwell\.html/.test(pn.about), 'в панели: «О бренде» ведёт на страницу бренда', pn.about);
-  t(pn.n >= 1 && pn.logo && pn.mini, 'в панели: логотип, миниатюра ниши и товары', pn);
+  t(pn.n >= 1 && pn.logo && pn.mini, 'в панели: название бренда, логотип в миниатюре ниши и товары', pn);
   const EVENTS = JSON.parse(fs.readFileSync(path.join(ROOT, 'data/events.json'), 'utf8')), evs = Array.isArray(EVENTS) ? EVENTS : EVENTS.events || EVENTS.items || [], today = new Date().toISOString().slice(0, 10);
   const chipIds = await p.evaluate(() => [...document.querySelectorAll('.bw-pn')].filter(a => a.querySelector('.sx-bchip')).map(a => a.dataset.id));
   const withEv = BRANDS.filter(x => evs.some(e => e.brand === x.id && e.date >= today)).map(x => x.id);
@@ -110,7 +110,10 @@ const t = (cond, name, info) => { if (cond) ok++; else bad.push(name + (info !==
   await p.click('#br-tasks [data-act="br-task"][data-id="' + taskIds[0] + '"]'); await p.waitForTimeout(900);
   const dm = await p.evaluate(() => ({on: document.querySelector('.bw-dim').classList.contains('on'), holes: [...document.querySelectorAll('.bw-hole.on')].map(h => h.dataset.id).sort(), lit: [...document.querySelectorAll('.bw-n:not(.is-off)')].map(n => n.dataset.id).sort(), dim: [...document.querySelectorAll('.bw-n.is-dim')].map(n => n.dataset.id).sort(), off: [...document.querySelectorAll('.bw-n.is-off')].map(n => n.dataset.id).sort()}));
   t(dm.on && dm.holes.join() === dm.lit.join() && dm.dim.join() === dm.off.join() && dm.lit.length > 0 && dm.off.length > 0, 'фильтр: стена затемняется, подходящие ниши освещены, остальные затемнены', dm);
-  await p.click('#br-tasks [data-act="br-task"][data-id="all"]'); await p.waitForTimeout(350); off = await offIds(p); t(off.length === 0, '«Все бренды» сбрасывает фильтр', off);
+  await p.evaluate(id2 => document.querySelector('#br-tasks [data-act="br-task"][data-id="' + id2 + '"]').click(), taskIds[0]); await p.waitForTimeout(500); off = await offIds(p);       // клик по DOM: на странице плавная прокрутка, клик Playwright по движущемуся элементу ненадёжен
+  t(off.length === 0 && await p.evaluate(() => document.querySelector('#br-tasks .chip.on').dataset.id === 'all'), 'повторное нажатие на активный фильтр сбрасывает его к «Все бренды»', off);
+  t(await p.evaluate(() => { const c = [...document.querySelectorAll('#br-tasks .chip[data-n]')]; return c.length >= 4 && c.every(x => +x.dataset.n >= 1); }), 'у фильтров есть счётчики брендов');
+  await p.evaluate(() => document.querySelector('#br-tasks [data-act="br-task"][data-id="all"]').click()); await p.waitForTimeout(350); off = await offIds(p); t(off.length === 0, '«Все бренды» сбрасывает фильтр', off);
 
   /* --- «Бренд под вашу задачу» --- */
   const tk = await p.evaluate(() => [...document.querySelectorAll('#bw-task-chips [data-act="bw-task"]')].map(x => x.dataset.id));

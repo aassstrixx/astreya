@@ -143,7 +143,7 @@
     }
     const fillPearl = () => $$('[data-pe]', page).forEach(el => { if (!el.firstChild && A.pearl) el.innerHTML = A.pearl(el.getAttribute('data-pe') || 'happy', true); });
     fillPearl(); window.addEventListener('load', fillPearl);
-    A.actions['br-task'] = (t, id) => { task = id; apply(); };
+    A.actions['br-task'] = (t, id) => { task = (id === task && id !== 'all') ? 'all' : id; apply(); };            // повторное нажатие на активный фильтр сбрасывает его
     A.actions['bw-task'] = (t, id) => { task = task === id ? 'all' : id; apply(); };
     A.actions['bw-open'] = (t, id) => { show(sel === id ? '' : id); };
     A.actions['bw-close'] = () => { const was = sel; show(''); const li = was && byId(was), b = li && $('.bw-hit', li); if (b && b.focus) b.focus({preventScroll: true}); };
@@ -175,7 +175,7 @@
       $$('.br-group, .br-dev-note', grid).forEach(h => { let el = h.nextElementSibling, any = false; while (el && !el.classList.contains('br-group')) { if (el.classList.contains('bl-card') && !el.hidden) any = true; el = el.nextElementSibling; } h.hidden = !any; });
     }
     qEl.addEventListener('input', debounce(apply, 120));
-    A.actions['br-task'] = (t, id) => { task = id; setOn($('#br-tasks'), id); apply(); };
+    A.actions['br-task'] = (t, id) => { task = (id === task && id !== 'all') ? 'all' : id; setOn($('#br-tasks'), task); apply(); };
     const q = params().get('q'); if (q) { qEl.value = q; apply(); }
     const tk = params().get('task'); if (tk && $('[data-act="br-task"][data-id="' + tk + '"]')) A.actions['br-task'](null, tk);
     pageReady = true;

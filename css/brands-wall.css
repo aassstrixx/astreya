@@ -3,7 +3,7 @@
    логотипы брендов (вместо названий), упаковки реального масштаба (высота в см × «px на см» из assets/brands/wall.json), мягкая подсветка при наведении, панель выбранного бренда ниже стены.
    Положения — в долях кадра, поэтому композиция одинакова на любой ширине. Двигаются только opacity и transform. Токены — из css/system.css. Выключатель: redesign.json → brandsPage.wall = null. */
 
-.bw-page{--br-bg:#ebe1ce;--bw-card:linear-gradient(180deg,#f8efde,#f0e4cc);--bw-card-2:linear-gradient(180deg,#f6ecd9,#eee0c6);--bw-navy:var(--navy,#0b1a33)}
+.bw-page{--br-bg:#f2f0eb;--bw-card:linear-gradient(180deg,#fcfbf7,#f3f0e8);--bw-card-2:linear-gradient(180deg,#fbfaf6,#f1eee6);--bw-navy:var(--navy,#0b1a33)}
 .bw{position:relative}
 .bw-stage{position:relative;container-type:inline-size;isolation:isolate}
 .bw-plane{position:relative;width:100%;aspect-ratio:var(--ar);display:block}
@@ -93,7 +93,7 @@
 .bw-panel.is-open{grid-template-rows:1fr;visibility:visible;transition:grid-template-rows .85s var(--ax-ease),visibility 0s}
 .bw-panel-clip{min-height:0;overflow:hidden}
 .bw-stack{display:grid;padding:clamp(20px,2vw,32px) 0 clamp(26px,3vw,46px)}
-.bw-pn{grid-area:1 / 1;position:relative;display:grid;grid-template-columns:minmax(230px,.56fr) minmax(0,1.32fr) minmax(250px,.74fr);gap:clamp(20px,2.6vw,48px);align-items:start;padding:clamp(22px,2.6vw,44px);border-radius:30px;background:url(../assets/bg/cream-t.webp) 50% 40%/cover no-repeat,var(--bw-card);border:1px solid var(--ax-line);box-shadow:var(--ax-sh-2);opacity:0;visibility:hidden;transform:translateY(16px);pointer-events:none;transition:opacity .45s var(--ax-ease),transform .8s var(--ax-ease),visibility 0s .45s}
+.bw-pn{grid-area:1 / 1;position:relative;display:grid;grid-template-columns:minmax(230px,.56fr) minmax(0,1.32fr) minmax(250px,.74fr);gap:clamp(20px,2.6vw,48px);align-items:start;padding:clamp(22px,2.6vw,44px);border-radius:30px;background:url(../assets/bg/water-t.webp) 60% 40%/cover no-repeat,var(--bw-card);border:1px solid var(--ax-line);box-shadow:var(--ax-sh-2);opacity:0;visibility:hidden;transform:translateY(16px);pointer-events:none;transition:opacity .45s var(--ax-ease),transform .8s var(--ax-ease),visibility 0s .45s}
 .bw-pn.is-on{opacity:1;visibility:visible;transform:none;pointer-events:auto;transition:opacity .7s var(--ax-ease) .16s,transform .95s var(--ax-ease) .16s,visibility 0s}
 .bw-pn-l,.bw-pn-in,.bw-pn-r{min-width:0}
 .bw-mini{position:relative;margin:0;width:100%;aspect-ratio:4/5;background-image:url(../assets/brands/wall.webp);background-repeat:no-repeat;background-size:var(--bs);background-position:var(--bp);border-radius:22px;overflow:hidden;box-shadow:inset 0 0 0 1px rgba(86,60,30,.12)}
@@ -128,9 +128,9 @@
 .bw-pn-prods i svg{display:block;width:100%;height:100%}
 .bw-pn-prods a:hover i{transform:translateX(4px);opacity:1}
 .bw-pn-all{margin-top:16px;display:inline-flex}
-.bw-close{position:absolute;top:16px;right:18px;display:inline-flex;align-items:center;gap:8px;padding:8px 14px;border:1px solid var(--ax-line);border-radius:99px;background:rgba(248,239,222,.92);color:var(--ax-ink);font:600 12px/1 var(--sans);cursor:pointer;transition:background-color .3s}
+.bw-close{position:absolute;top:16px;right:18px;display:inline-flex;align-items:center;gap:8px;padding:8px 14px;border:1px solid var(--ax-line);border-radius:99px;background:rgba(252,250,246,.94);color:var(--ax-ink);font:600 12px/1 var(--sans);cursor:pointer;transition:background-color .3s}
 .bw-close svg{width:14px;height:14px}
-.bw-close:hover{background:#fbf3e4}
+.bw-close:hover{background:#fff}
 
 /* ---------- «Бренд под вашу задачу» и приглашение ---------- */
 .bw-tasks{margin:0 0 clamp(36px,4vw,64px);text-align:center}
@@ -138,7 +138,7 @@
 .bw-tasks h2{font:500 clamp(28px,2.6vw,44px)/1.1 var(--serif);margin:0;color:var(--ax-ink)}
 .bw-tasks-lead{margin:12px auto 0;max-width:34em;font:400 clamp(14px,1.1vw,17px)/1.55 var(--sans);color:var(--ax-ink-2)}
 .bw-task-chips{display:flex;flex-wrap:wrap;justify-content:center;gap:8px;margin:clamp(18px,2vw,28px) 0 0}
-.bw-task-chips .chip{font-size:13px;padding:9px 16px;background:rgba(249,240,224,.94);border-color:var(--ax-line);color:var(--ax-ink)}
+.bw-task-chips .chip{font-size:13px;padding:9px 16px;background:rgba(252,250,246,.95);border-color:var(--ax-line);color:var(--ax-ink)}
 .bw-task-chips .chip.on{background:var(--navy);border-color:var(--navy);color:#fff}
 .bw-tr-empty{margin:clamp(18px,2vw,28px) 0 0;font-size:14px}
 .bw-tasks.has-res .bw-tr-empty{display:none}
@@ -149,7 +149,7 @@
 .bw-tr-logo{display:block;width:auto;height:auto;max-height:34px;max-width:70%;object-fit:contain}
 .bw-tr a span{font:500 15px/1.4 var(--sans);color:var(--ax-ink)}
 .bw-tr a small{font:600 11px/1.3 var(--sans);letter-spacing:.1em;text-transform:uppercase;color:var(--ax-ink-2)}
-.bw-ask{display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;gap:clamp(16px,2.4vw,36px);padding:clamp(22px,2.6vw,40px) clamp(22px,3vw,52px);border-radius:28px;background:url(../assets/bg/cream-t.webp) 70% 50%/cover no-repeat,var(--bw-card-2);border:1px solid var(--ax-line);box-shadow:var(--ax-sh-1)}
+.bw-ask{display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;gap:clamp(16px,2.4vw,36px);padding:clamp(22px,2.6vw,40px) clamp(22px,3vw,52px);border-radius:28px;background:var(--bw-card-2);border:1px solid var(--ax-line);box-shadow:var(--ax-sh-1)}
 .bw-ask-pe{display:block;width:clamp(52px,4.6vw,72px);height:clamp(52px,4.6vw,72px)}
 .bw-ask-pe .pe{display:block;width:100%;height:100%}
 .bw-ask h2{margin:0;font:500 clamp(24px,2.1vw,34px)/1.15 var(--serif);color:var(--ax-ink)}
@@ -213,10 +213,9 @@ html.lite .bw-pn,html.lite .bw-panel,html.lite .bw-dim,html.lite .bw-hole{transi
 @media (max-width:1100px){.bw-mini{background-image:url(../assets/brands/wall-s.webp)}}
 
 /* нижняя часть страницы: полосы «Портфель брендов» и подбор лежат на том же тёплом тоне, без белых полос; фоновые узоры — макро-текстуры из галереи (assets/bg, js/backdrops.js) */
-.bw-strip[data-bd]{--bd-max:520px}
-.bw-pn .bw-pn-prods a{background:rgba(120,84,40,.07)}
+.bw-pn .bw-pn-prods a{background:rgba(11,26,51,.045)}
 .bw-pn .bw-pn-prods a:hover{background:rgba(176,142,78,.2)}
-.bw-pn-facts dd a,.bw-pn-facts dd span{background:rgba(120,84,40,.08)}
+.bw-pn-facts dd a,.bw-pn-facts dd span{background:rgba(11,26,51,.06)}
 
 /* фильтры и поиск на стене — «жидкое стекло» как на главной: матовое полупрозрачное тело с размытием фона, светлая кромка, блик сверху и мягкая тень */
 .bw-bar .br-chips .chip,.bw-search input{position:relative;overflow:hidden;color:var(--ax-ink);background:linear-gradient(135deg,rgba(255,255,255,.60),rgba(250,244,232,.30));border:1px solid rgba(255,255,255,.62);
@@ -228,3 +227,30 @@ html.lite .bw-pn,html.lite .bw-panel,html.lite .bw-dim,html.lite .bw-hole{transi
 .bw-bar .br-chips .chip.on{color:#fff;background:linear-gradient(135deg,rgba(16,31,55,.92),rgba(30,48,82,.78));border-color:rgba(255,255,255,.28);box-shadow:inset 0 1px 0 rgba(255,255,255,.34),inset 0 -1px 1px rgba(255,255,255,.1),0 12px 24px -12px rgba(11,26,51,.7)}
 .bw-bar .br-chips .chip.on::before{background:linear-gradient(180deg,rgba(255,255,255,.26),rgba(255,255,255,0))}
 .bw-search input::placeholder{color:rgba(60,48,32,.62)}
+
+/* панель бренда: название тёмно-синим (основной цвет сайта) вместо логотипа; логотип — в арке миниатюры, как в нише на стене */
+.bw-pn-brand{display:block;font:500 clamp(24px,2.3vw,38px)/1.08 var(--serif);letter-spacing:-.012em;color:var(--navy)}
+.bw-mini-logo{position:absolute;z-index:3;transform:translate(-50%,-50%);height:auto;object-fit:contain;display:block;pointer-events:none}
+.bw-mini-logo.bw-logo-t{width:auto;white-space:nowrap;font:500 clamp(15px,1.5vw,22px)/1.1 var(--serif);color:var(--ax-ink)}
+/* теги «Задачи» и «Направления» в панели бренда — тёмно-синие (основной цвет сайта), текст белый */
+.bw-pn-in .bw-pn-facts dd a,.bw-pn-in .bw-pn-facts dd span{background:var(--navy);color:#fff;box-shadow:inset 0 1px 0 rgba(255,255,255,.14)}
+.bw-pn-in .bw-pn-facts dd a:hover{background:#1d3560;color:#fff}
+
+/* нейтральные тона нижней части: нижний край блока подбора — холодно-серый, а не песочный (на странице каталога тот же «молочный» ряд оттенков) */
+.bw-page .br-wall::after{background:linear-gradient(180deg,rgba(236,234,229,0),rgba(231,229,223,.7))}
+/* фильтры: счётчик брендов у каждой задачи (как у фильтров каталога); повторное нажатие на активный фильтр сбрасывает его */
+.bw-bar .br-chips .chip[data-n]::after{content:attr(data-n);margin-left:.55em;font-weight:600;font-size:.84em;color:rgba(11,26,51,.5)}
+.bw-bar .br-chips .chip.on[data-n]::after{color:rgba(255,255,255,.66)}
+/* на экранах уже ~1560 px счётчики не помещаются в одну строку поверх стены — они появляются только на широких */
+@container (max-width:1560px){.bw-bar .br-chips .chip[data-n]::after{display:none}}
+
+/* ---------- плавное сочетание тёплого и белого (жёлтое не убираем, а переводим в оттенки белого мягким градиентом) ----------
+   сама картинка-стена и цвет у её нижней кромки — прежние (#ebe1ce); дальше песочный тон длинно и ровно переходит в молочный; у блока «Бренд под вашу задачу» своего непрозрачного фона в начале нет, поэтому шва между полосой логотипов и блоком нет */
+.bw-page{--bw-warm:#ebe1ce;--bw-cream:#f1eadb;--bw-white:#f5f3ee;--br-bg:#f2eee5;
+  --bw-card:linear-gradient(135deg,#fdfcf8 0%,#f7f2e6 52%,#efe6d2 100%);--bw-card-2:linear-gradient(135deg,#fdfcf8 0%,#f6f1e4 58%,#eee4ce 100%)}
+.bw{background:linear-gradient(180deg,var(--bw-warm) 0,var(--bw-warm) calc(100% - 225px),#eee5d3 calc(100% - 120px),var(--bw-cream) 100%)}      /* привязка к низу секции: полоса логотипов плавно светлеет независимо от высоты картинки */
+.bw-lower.br-wall{background:linear-gradient(180deg,var(--bw-cream) 0,#f3eee3 16%,var(--bw-white) 34%,#f1eadb 60%,#f4f0e6 80%,#ede3cf 100%)}   /* начало совпадает с низом .bw — шва нет */
+.bw-lower>.br-wall-bg{-webkit-mask-image:linear-gradient(180deg,transparent 0,#000 220px);mask-image:linear-gradient(180deg,transparent 0,#000 220px)}
+.bw-page .br-wall::after{background:linear-gradient(180deg,rgba(231,220,199,0),rgba(229,217,194,.66))}
+.bw-tr a{background:var(--bw-card)}
+.bw-pn{background:url(../assets/bg/water-t.webp) 60% 40%/cover no-repeat,var(--bw-card)}

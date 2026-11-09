@@ -308,7 +308,7 @@
     "helpSub": "со Стеллой",
     "hero": {"src": "assets/brands/hero.webp", "mobile": "assets/brands/hero-m.webp", "w": 3200, "h": 900},
     "_wallTextures": "Полосы фоновых текстур (assets/bg, система фоновых вставок) за галереей: [текстура, положение, сила 3…10] — идут друг за другом по высоте, края растворяются.",
-    "wallTextures": [["cream", "l", 8], ["film", "r", 7], ["smear", "l", 7], ["silk", "r", 6], ["cream", "l", 8], ["swatch", "r", 7], ["ribbon", "l", 7]]
+    "wallTextures": [["water", "l", 9], ["film", "r", 7], ["ribbon", "l", 8], ["cream", "r", 6], ["smear", "l", 6]]
   }
   },
   "picker": {
