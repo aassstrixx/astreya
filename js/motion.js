@@ -44,8 +44,9 @@
     updateProgress(y);
     scrollNow = y;
     if (hdr && !body.classList.contains('menu-open') && !body.classList.contains('search-open')) {
-      if (y > 160 && d > 4) hdr.classList.add('hide');            // шапка уходит при скролле вниз
-      else if (d < -4 || y <= 160) hdr.classList.remove('hide');
+      const hy = body.getAttribute('data-page') === 'brands' ? 36 : 160;          // на стене брендов шапка уходит почти сразу (лежит на витрине и закрывает её)
+      if (y > hy && d > 4) hdr.classList.add('hide');            // шапка уходит при скролле вниз
+      else if (d < -4 || y <= hy) hdr.classList.remove('hide');
     }
     lastY = y;
     parKick();

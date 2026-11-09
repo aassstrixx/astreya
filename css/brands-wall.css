@@ -3,20 +3,20 @@
    логотипы брендов (вместо названий), упаковки реального масштаба (высота в см × «px на см» из assets/brands/wall.json), мягкая подсветка при наведении, панель выбранного бренда ниже стены.
    Положения — в долях кадра, поэтому композиция одинакова на любой ширине. Двигаются только opacity и transform. Токены — из css/system.css. Выключатель: redesign.json → brandsPage.wall = null. */
 
-.bw-page{--br-bg:var(--ax-milk);--bw-navy:var(--navy,#0b1a33)}
+.bw-page{--br-bg:#ebe1ce;--bw-card:linear-gradient(180deg,#f8efde,#f0e4cc);--bw-card-2:linear-gradient(180deg,#f6ecd9,#eee0c6);--bw-navy:var(--navy,#0b1a33)}
 .bw{position:relative}
 .bw-stage{position:relative;container-type:inline-size;isolation:isolate}
 .bw-plane{position:relative;width:100%;aspect-ratio:var(--ar);display:block}
 .bw-plate{position:absolute;inset:0;width:100%;height:100%;display:block;object-fit:cover;user-select:none;-webkit-user-drag:none}
 .bw-plane picture{display:contents}
-.bw-plane::after{content:"";position:absolute;left:0;right:0;bottom:0;height:9%;z-index:3;pointer-events:none;background:linear-gradient(180deg,rgba(245,242,236,0),rgba(245,242,236,.55) 55%,rgb(245,242,236))}
+.bw-plane::after{content:"";position:absolute;left:0;right:0;bottom:0;height:9%;z-index:3;pointer-events:none;background:linear-gradient(180deg,rgba(235,225,206,0),rgba(235,225,206,.55) 55%,rgb(235,225,206))}
 .bw-niches{position:absolute;inset:0;margin:0;padding:0;list-style:none}
 .bw-n{position:absolute;inset:0;pointer-events:none}
 
 /* ---------- логотип, подпись, упаковки ---------- */
 .bw-logo{position:absolute;z-index:4;left:var(--cx);top:var(--ly);width:var(--lw);height:auto;max-height:var(--lh);transform:translate(-50%,-50%);object-fit:contain;display:block;pointer-events:none;transition:transform .7s var(--ax-ease),opacity .5s}
 .bw-logo-t{width:auto;white-space:nowrap;font:500 max(15px,1.3cqw)/1.1 var(--serif);color:var(--ax-ink);text-align:center}
-.bw-cap{position:absolute;z-index:4;left:var(--cx);top:var(--cy);width:calc(var(--w) * .8);transform:translate(-50%,-30%);text-align:center;font:500 max(11px,.64cqw)/1.38 var(--sans);letter-spacing:.01em;color:var(--ax-ink-2);opacity:0;pointer-events:none;transition:opacity .55s var(--ax-ease),transform .55s var(--ax-ease);display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+.bw-cap{position:absolute;z-index:4;left:var(--cx);top:var(--cb,var(--cy));width:calc(var(--w) * .8);transform:translate(-50%,8px);text-align:center;font:500 max(11px,.64cqw)/1.38 var(--sans);letter-spacing:.01em;color:var(--ax-ink-2);opacity:0;pointer-events:none;transition:opacity .55s var(--ax-ease),transform .55s var(--ax-ease);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
 .bw-pk{position:absolute;left:var(--x);top:var(--y);height:var(--h);aspect-ratio:var(--ar);transform:translate(-50%,-100%);transition:transform .7s var(--ax-ease);pointer-events:none}
 .bw-pk img{display:block;width:100%;height:100%;object-fit:contain;max-width:none;user-select:none;-webkit-user-drag:none}
 .bw-pk img.bw-cs{position:absolute;left:0;top:0;transform-origin:50% 100%;transform:translateX(3%) skewX(-44deg) scaleY(.2);filter:brightness(0) blur(1.4px);opacity:.26}       /* тень от солнца слева: упаковка «ложится» на основание вправо и вглубь */
@@ -31,14 +31,14 @@
 .bw-veil{opacity:0;background:rgba(246,239,226,.66)}
 @media (hover:hover){
   .bw-n.is-hov .bw-glow,.bw-hit:hover .bw-glow{opacity:1}
-  .bw-n.is-hov .bw-cap,.bw-hit:hover~.bw-cap{opacity:1;transform:translate(-50%,-50%)}
+  .bw-n.is-hov .bw-cap,.bw-hit:hover~.bw-cap{opacity:1;transform:translate(-50%,0)}
   .bw-n.is-hov .bw-logo{transform:translate(-50%,-50%) scale(1.045)}
   .bw-n.is-hov .bw-pk{transform:translate(-50%,calc(-100% - .35%))}
 }
 .bw-hit:focus-visible .bw-glow{opacity:1}
 .bw-n.is-sel .bw-glow{opacity:1}
 .bw-n.is-sel .bw-hit{box-shadow:inset 0 0 0 max(2px,.13cqw) rgba(255,247,226,.95),0 0 0 max(2px,.13cqw) rgba(255,247,226,.9),0 0 3cqw .6cqw rgba(255,224,168,.55)}
-.bw-n.is-sel .bw-cap{opacity:1;transform:translate(-50%,-50%)}
+.bw-n.is-sel .bw-cap{opacity:1;transform:translate(-50%,0)}
 .bw-n.is-sel .bw-logo{transform:translate(-50%,-50%) scale(1.06)}
 .bw.has-sel .bw-n:not(.is-sel) .bw-veil,.bw-n.is-off .bw-veil{opacity:0}
 .bw-dim{position:absolute;inset:0;width:100%;height:100%;z-index:2;display:block;pointer-events:none;opacity:0;transition:opacity .75s var(--ax-ease)}
@@ -72,11 +72,11 @@
   .bw-bar{position:absolute;z-index:8;left:3.5%;right:3.5%;top:35.2%;display:flex;justify-content:center;align-items:center;gap:1cqw}
 }
 
-.bw{background:var(--ax-milk)}
+.bw{background:var(--br-bg)}
 /* ---------- нижняя полоса «Портфель брендов»: знак «Астреи» и логотипы брендов ---------- */
 .bw-strip{position:relative;z-index:2;display:grid;grid-template-columns:auto minmax(0,1fr);align-items:center;gap:clamp(14px,2vw,34px);width:min(1720px,100% - 2 * var(--gut));margin:0 auto;padding:clamp(18px,2vw,30px) 0 clamp(26px,3vw,44px);border-top:1px solid var(--ax-line)}
 .bw-strip-t{margin:0;display:grid;gap:10px;justify-items:start;font:700 10.5px/1 var(--sans);letter-spacing:.2em;text-transform:uppercase;color:var(--ax-ink-2)}
-.bw-strip-mark{display:block;width:clamp(92px,8.4vw,136px);height:auto;color:var(--navy)}
+.bw-strip-mark{display:block;width:clamp(92px,8.4vw,136px);height:auto;color:var(--navy);--lm:#101f37}          /* знак «Астреи» — тем же тёмно-синим, что в шапке (раньше брал голубой по умолчанию) */
 .bw-strip ul{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(126px,1fr);margin:0;padding:0;list-style:none;overflow-x:auto;scrollbar-width:none}
 .bw-strip ul::-webkit-scrollbar{display:none}
 .bw-strip li{border-left:1px solid var(--ax-line);transition:opacity .5s}
@@ -93,7 +93,7 @@
 .bw-panel.is-open{grid-template-rows:1fr;visibility:visible;transition:grid-template-rows .85s var(--ax-ease),visibility 0s}
 .bw-panel-clip{min-height:0;overflow:hidden}
 .bw-stack{display:grid;padding:clamp(20px,2vw,32px) 0 clamp(26px,3vw,46px)}
-.bw-pn{grid-area:1 / 1;position:relative;display:grid;grid-template-columns:minmax(230px,.56fr) minmax(0,1.32fr) minmax(250px,.74fr);gap:clamp(20px,2.6vw,48px);align-items:start;padding:clamp(22px,2.6vw,44px);border-radius:30px;background:linear-gradient(180deg,rgba(253,250,243,.98),rgba(247,241,228,.98));border:1px solid var(--ax-line);box-shadow:var(--ax-sh-2);opacity:0;visibility:hidden;transform:translateY(16px);pointer-events:none;transition:opacity .45s var(--ax-ease),transform .8s var(--ax-ease),visibility 0s .45s}
+.bw-pn{grid-area:1 / 1;position:relative;display:grid;grid-template-columns:minmax(230px,.56fr) minmax(0,1.32fr) minmax(250px,.74fr);gap:clamp(20px,2.6vw,48px);align-items:start;padding:clamp(22px,2.6vw,44px);border-radius:30px;background:url(../assets/bg/cream-t.webp) 50% 40%/cover no-repeat,var(--bw-card);border:1px solid var(--ax-line);box-shadow:var(--ax-sh-2);opacity:0;visibility:hidden;transform:translateY(16px);pointer-events:none;transition:opacity .45s var(--ax-ease),transform .8s var(--ax-ease),visibility 0s .45s}
 .bw-pn.is-on{opacity:1;visibility:visible;transform:none;pointer-events:auto;transition:opacity .7s var(--ax-ease) .16s,transform .95s var(--ax-ease) .16s,visibility 0s}
 .bw-pn-l,.bw-pn-in,.bw-pn-r{min-width:0}
 .bw-mini{position:relative;margin:0;width:100%;aspect-ratio:4/5;background-image:url(../assets/brands/wall.webp);background-repeat:no-repeat;background-size:var(--bs);background-position:var(--bp);border-radius:22px;overflow:hidden;box-shadow:inset 0 0 0 1px rgba(86,60,30,.12)}
@@ -128,9 +128,9 @@
 .bw-pn-prods i svg{display:block;width:100%;height:100%}
 .bw-pn-prods a:hover i{transform:translateX(4px);opacity:1}
 .bw-pn-all{margin-top:16px;display:inline-flex}
-.bw-close{position:absolute;top:16px;right:18px;display:inline-flex;align-items:center;gap:8px;padding:8px 14px;border:1px solid var(--ax-line);border-radius:99px;background:rgba(255,253,248,.9);color:var(--ax-ink);font:600 12px/1 var(--sans);cursor:pointer;transition:background-color .3s}
+.bw-close{position:absolute;top:16px;right:18px;display:inline-flex;align-items:center;gap:8px;padding:8px 14px;border:1px solid var(--ax-line);border-radius:99px;background:rgba(248,239,222,.92);color:var(--ax-ink);font:600 12px/1 var(--sans);cursor:pointer;transition:background-color .3s}
 .bw-close svg{width:14px;height:14px}
-.bw-close:hover{background:#fff}
+.bw-close:hover{background:#fbf3e4}
 
 /* ---------- «Бренд под вашу задачу» и приглашение ---------- */
 .bw-tasks{margin:0 0 clamp(36px,4vw,64px);text-align:center}
@@ -138,18 +138,18 @@
 .bw-tasks h2{font:500 clamp(28px,2.6vw,44px)/1.1 var(--serif);margin:0;color:var(--ax-ink)}
 .bw-tasks-lead{margin:12px auto 0;max-width:34em;font:400 clamp(14px,1.1vw,17px)/1.55 var(--sans);color:var(--ax-ink-2)}
 .bw-task-chips{display:flex;flex-wrap:wrap;justify-content:center;gap:8px;margin:clamp(18px,2vw,28px) 0 0}
-.bw-task-chips .chip{font-size:13px;padding:9px 16px;background:rgba(255,253,248,.92);border-color:var(--ax-line);color:var(--ax-ink)}
+.bw-task-chips .chip{font-size:13px;padding:9px 16px;background:rgba(249,240,224,.94);border-color:var(--ax-line);color:var(--ax-ink)}
 .bw-task-chips .chip.on{background:var(--navy);border-color:var(--navy);color:#fff}
 .bw-tr-empty{margin:clamp(18px,2vw,28px) 0 0;font-size:14px}
 .bw-tasks.has-res .bw-tr-empty{display:none}
 .bw-tr{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,230px),1fr));gap:14px;margin:clamp(18px,2vw,28px) 0 0;padding:0;list-style:none;text-align:left}
 .bw-tr[hidden]{display:none}
-.bw-tr a{display:grid;gap:10px;align-content:start;height:100%;padding:clamp(16px,1.6vw,24px);border-radius:20px;background:linear-gradient(180deg,#fdfaf3,#f7f1e4);border:1px solid var(--ax-line);box-shadow:var(--ax-sh-1);color:inherit;text-decoration:none;transition:transform .5s var(--ax-ease),box-shadow .5s var(--ax-ease)}
+.bw-tr a{display:grid;gap:10px;align-content:start;height:100%;padding:clamp(16px,1.6vw,24px);border-radius:20px;background:var(--bw-card);border:1px solid var(--ax-line);box-shadow:var(--ax-sh-1);color:inherit;text-decoration:none;transition:transform .5s var(--ax-ease),box-shadow .5s var(--ax-ease)}
 .bw-tr a:hover{transform:translateY(-4px);box-shadow:var(--ax-sh-2)}
 .bw-tr-logo{display:block;width:auto;height:auto;max-height:34px;max-width:70%;object-fit:contain}
 .bw-tr a span{font:500 15px/1.4 var(--sans);color:var(--ax-ink)}
 .bw-tr a small{font:600 11px/1.3 var(--sans);letter-spacing:.1em;text-transform:uppercase;color:var(--ax-ink-2)}
-.bw-ask{display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;gap:clamp(16px,2.4vw,36px);padding:clamp(22px,2.6vw,40px) clamp(22px,3vw,52px);border-radius:28px;background:linear-gradient(135deg,rgba(255,253,248,.94),rgba(245,238,224,.94));border:1px solid var(--ax-line);box-shadow:var(--ax-sh-1)}
+.bw-ask{display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;gap:clamp(16px,2.4vw,36px);padding:clamp(22px,2.6vw,40px) clamp(22px,3vw,52px);border-radius:28px;background:url(../assets/bg/cream-t.webp) 70% 50%/cover no-repeat,var(--bw-card-2);border:1px solid var(--ax-line);box-shadow:var(--ax-sh-1)}
 .bw-ask-pe{display:block;width:clamp(52px,4.6vw,72px);height:clamp(52px,4.6vw,72px)}
 .bw-ask-pe .pe{display:block;width:100%;height:100%}
 .bw-ask h2{margin:0;font:500 clamp(24px,2.1vw,34px)/1.15 var(--serif);color:var(--ax-ink)}
@@ -211,3 +211,20 @@ html.lite .bw-pn,html.lite .bw-panel,html.lite .bw-dim,html.lite .bw-hole{transi
 
 /* миниатюра ниши берёт кадр стены из таблицы стилей: адрес в CSS считается от файла стиля, а не от адреса страницы (при переходах между страницами в другой папке inline-адрес давал 404) */
 @media (max-width:1100px){.bw-mini{background-image:url(../assets/brands/wall-s.webp)}}
+
+/* нижняя часть страницы: полосы «Портфель брендов» и подбор лежат на том же тёплом тоне, без белых полос; фоновые узоры — макро-текстуры из галереи (assets/bg, js/backdrops.js) */
+.bw-strip[data-bd]{--bd-max:520px}
+.bw-pn .bw-pn-prods a{background:rgba(120,84,40,.07)}
+.bw-pn .bw-pn-prods a:hover{background:rgba(176,142,78,.2)}
+.bw-pn-facts dd a,.bw-pn-facts dd span{background:rgba(120,84,40,.08)}
+
+/* фильтры и поиск на стене — «жидкое стекло» как на главной: матовое полупрозрачное тело с размытием фона, светлая кромка, блик сверху и мягкая тень */
+.bw-bar .br-chips .chip,.bw-search input{position:relative;overflow:hidden;color:var(--ax-ink);background:linear-gradient(135deg,rgba(255,255,255,.60),rgba(250,244,232,.30));border:1px solid rgba(255,255,255,.62);
+  -webkit-backdrop-filter:blur(14px) saturate(1.6);backdrop-filter:blur(14px) saturate(1.6);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.95),inset 0 -1px 1px rgba(255,255,255,.4),inset 0 0 16px rgba(255,255,255,.30),0 10px 22px -12px rgba(70,46,18,.5);
+  transition:background-color .4s var(--ax-ease),box-shadow .4s var(--ax-ease),transform .4s var(--ax-ease),color .3s}
+.bw-bar .br-chips .chip::before{content:"";position:absolute;left:10%;right:10%;top:1px;height:46%;border-radius:99px;background:linear-gradient(180deg,rgba(255,255,255,.55),rgba(255,255,255,0));pointer-events:none}
+.bw-bar .br-chips .chip:hover,.bw-search input:focus{background:linear-gradient(135deg,rgba(255,255,255,.78),rgba(250,244,232,.46));box-shadow:inset 0 1px 0 #fff,inset 0 -1px 1px rgba(255,255,255,.5),inset 0 0 18px rgba(255,255,255,.4),0 12px 24px -12px rgba(70,46,18,.55)}
+.bw-bar .br-chips .chip.on{color:#fff;background:linear-gradient(135deg,rgba(16,31,55,.92),rgba(30,48,82,.78));border-color:rgba(255,255,255,.28);box-shadow:inset 0 1px 0 rgba(255,255,255,.34),inset 0 -1px 1px rgba(255,255,255,.1),0 12px 24px -12px rgba(11,26,51,.7)}
+.bw-bar .br-chips .chip.on::before{background:linear-gradient(180deg,rgba(255,255,255,.26),rgba(255,255,255,0))}
+.bw-search input::placeholder{color:rgba(60,48,32,.62)}

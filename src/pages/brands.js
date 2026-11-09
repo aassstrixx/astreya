@@ -147,14 +147,14 @@ function brandsWall(ctx, C, P) {
     const pk = prods.map((p, i) => { const sl = n.slots[i], pi = packInfo(p); if (!pi) return ''; const h = PACK_K * (PACK_CM[p.type] || 15) * sl.pxcm / PH;
       return `<span class="bw-pk" style="--x:${pct(sl.x)}%;--y:${pct(sl.y)}%;--h:${pct(h)}%;--ar:${(pi.meta.w / pi.meta.h).toFixed(4)};z-index:${Math.round(sl.y * 1000)}"><img class="bw-cs" src="${esc(C.u(P, pi.small))}" alt="" decoding="async"><img src="${esc(C.u(P, pi.small))}" alt="${esc(p.name)}" width="${pi.meta.w}" height="${pi.meta.h}" decoding="async"></span>`; }).join('');
     const nProd = products.filter(p => p.brand === b.id).length;
-    return `<li class="bw-n" style="${S.bstyle(b)};--x:${pct(n.x0)}%;--w:${pct(n.x1 - n.x0)}%;--t:${pct(n.top)}%;--h:${pct(nicheH)}%;--cx:${pct(n.cx)}%;--ly:${pct(lyPx / PH)}%;--lw:${pct(lw / PW)}%;--lh:${pct(lhPx / PH)}%;--cy:${pct((lyPx + lhPx / 2 + .07 * nhPx) / PH)}%" data-id="${b.id}" data-tasks="${b.tasks.join(' ')}" data-q="${esc(hayOf(b))}">
+    return `<li class="bw-n" style="${S.bstyle(b)};--x:${pct(n.x0)}%;--w:${pct(n.x1 - n.x0)}%;--t:${pct(n.top)}%;--h:${pct(nicheH)}%;--cx:${pct(n.cx)}%;--ly:${pct(lyPx / PH)}%;--lw:${pct(lw / PW)}%;--lh:${pct(lhPx / PH)}%;--cy:${pct((lyPx + lhPx / 2 + .07 * nhPx) / PH)}%;--cb:${pct((lyPx + lhPx + .022 * nhPx) / PH)}%" data-id="${b.id}" data-tasks="${b.tasks.join(' ')}" data-q="${esc(hayOf(b))}">
       ${logoImg(b, 'bw-logo')}<span class="bw-cap">${esc(b.tag)}</span>${pk}
       <button class="bw-hit" type="button" data-act="bw-open" data-id="${b.id}" aria-controls="bw-panel" aria-expanded="false" aria-label="${esc(b.name)}: ${esc(nWord(nProd))} в каталоге. ${esc(W.hint)}"><span class="bw-glow" aria-hidden="true"></span><span class="bw-veil" aria-hidden="true"></span></button>
     </li>`;
   }).join('');
 
   /* нижняя полоса «Портфель брендов»: знак «Астреи» (вектор из шапки) и логотипы брендов вместо названий — переключатель, дублирующий ниши */
-  const strip = `<nav class="bw-strip" aria-label="${esc(W.stripTitle)}"><p class="bw-strip-t"><svg class="bw-strip-mark" viewBox="46 338 836 436" role="img" aria-label="Астрея"><use href="#logo-art"/></svg><span>${esc(W.stripTitle)}</span></p>
+  const strip = `<nav class="bw-strip" aria-label="${esc(W.stripTitle)}" data-bd="silk" data-bd-pos="c" data-bd-o="8"><p class="bw-strip-t"><svg class="bw-strip-mark" viewBox="46 338 836 436" role="img" aria-label="Астрея"><use href="#logo-art"/></svg><span>${esc(W.stripTitle)}</span></p>
     <ul>${order.map(b => `<li data-id="${b.id}"><button type="button" data-act="bw-open" data-id="${b.id}" aria-label="${esc(b.name)}">${logoImg(b, 'bw-strip-logo' + ((b.logoW && b.logoH && b.logoW / b.logoH < 1.8) ? ' is-sq' : ''))}<small>${esc(b.tag)}</small></button></li>`).join('')}</ul></nav>`;
 
   /* панели брендов: все лежат в одной ячейке сетки (высота — по самой большой, поэтому у всех брендов плашка одного размера); показывается одна, остальные прозрачны и недоступны (inert).

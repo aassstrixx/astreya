@@ -154,7 +154,7 @@
     const q = params().get('q'); if (q) qEl.value = q;
     const tk = params().get('task'); if (tk && $('#br-tasks [data-id="' + tk + '"]')) task = tk;
     apply(); const want = params().get('brand') || location.hash.replace(/^#brand-/, ''); if (want && byId(want)) show(want, {quiet: true});
-    const root = document.documentElement; let raf = 0; const top = () => { raf = 0; root.classList.toggle('br-top', (window.scrollY || 0) < 8); };
+    const root = document.documentElement; let raf = 0; const top = () => { raf = 0; root.classList.toggle('br-top', stage.getBoundingClientRect().bottom > 96); };         // шапка прозрачна, пока под ней стена-витрина
     top(); window.addEventListener('scroll', () => { if (!raf) raf = requestAnimationFrame(top); }, {passive: true});
     A.actions['br-help'] = () => {
       if (!A.stella) return; const chip = $('#br-tasks .chip.on'), label = chip && chip.dataset.id !== 'all' ? chip.textContent.trim() : '', word = qEl.value.trim(), nm = sel && $('.bw-pn[data-id="' + sel + '"] .sr', panel);

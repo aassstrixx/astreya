@@ -83,8 +83,49 @@ def build(sc):
 # высокое оливковое дерево в каменном горшке слева от ниши Keenwell (по просьбе заказчика: высокое, толстый ствол, пышная крона сверху).
 # Крона — широкий овал по эскизу заказчика (TREE_ENV): от левого края кадра до x ≈ -7,7 и от верха кадра до z ≈ 9; листья ниже TREE_ZMIN (верх самой высокой арки ≈ 8,5) и вне овала не создаются — ни один бренд листвой не закрыт.
 TREE_X, TREE_Y = float(os.environ.get('TREE_X', -16.3)), float(os.environ.get('TREE_Y', -1.0))
-TREE_ZMIN = float(os.environ.get('TREE_ZMIN', 9.0))                               # листья не ниже этой высоты (верх самой высокой арки Keenwell ≈ 8,5)
-TREE_ENV = dict(ex=float(os.environ.get('TREE_EX', -13.0)), rx=float(os.environ.get('TREE_RX', 5.3)), ez=float(os.environ.get('TREE_EZ', 12.0)), rz=float(os.environ.get('TREE_RZ', 3.3)), p=2.5)   # суперэллипс кроны (x, z в единицах стены)
+TREE_ZMIN_R = float(os.environ.get('TREE_ZMIN', 8.35))                             # над нишами листья не ниже этой высоты (верх арок: Keenwell 7,8, Dermatime 8,5 — по центру своей ниши, правее x ≈ -7,7 кроны нет)
+TREE_ZMIN_L = float(os.environ.get('TREE_ZMIN_L', 6.9))                            # левее первой ниши (x < -14,9) крона опускается к стволу
+def tree_zmin(x): t = max(0.0, min(1.0, (x + 15.3) / .8)); t = t * t * (3 - 2 * t); return TREE_ZMIN_L + (TREE_ZMIN_R - TREE_ZMIN_L) * t
+TREE_ENV = dict(ex=float(os.environ.get('TREE_EX', -13.0)), rx=float(os.environ.get('TREE_RX', 5.3)), ez=float(os.environ.get('TREE_EZ', 11.3)), rz=float(os.environ.get('TREE_RZ', 4.5)), p=2.5)   # суперэллипс кроны (x, z в единицах стены)
+def bark_material(mode='box'):
+    """кора оливы: если в assets/textures/bark лежат реальные CC0-текстуры (*_diff.jpg, *_rough.jpg, *_nor.jpg — Poly Haven / ambientCG), используются они (коробочная проекция по оси ствола, волокна вертикальны);
+    иначе — процедурная: сеть продольных трещин (Voronoi «расстояние до ребра», вытянутая вдоль Z), тёмные щели, светлые гребни, мелкий шум, рельеф"""
+    import glob
+    d = os.path.join(HERE, '..', '..', 'assets', 'textures', 'bark')
+    want = os.path.join(d, os.environ.get('BARK_NAME', 'bark_willow_02') + '_diff.jpg')                      # серо-коричневая продольно-трещиноватая кора (Poly Haven, CC0)
+    diff = want if os.path.exists(want) else (sorted(glob.glob(os.path.join(d, '*_diff.jpg'))) or [None])[0]
+    m, nt, b, o = S.mk('bark_' + mode); L = nt.links
+    tc = nt.nodes.new('ShaderNodeTexCoord'); mp = nt.nodes.new('ShaderNodeMapping'); L.new(tc.outputs['Object'], mp.inputs['Vector'])
+    uvn = nt.nodes.new('ShaderNodeUVMap') if (mode == 'uv' and diff) else None
+    if diff:
+        tile = float(os.environ.get('BARK_TILE', 1.7)); mp.inputs['Scale'].default_value = (1 / tile,) * 3
+        def img(path, nc=False):
+            t = nt.nodes.new('ShaderNodeTexImage'); t.image = bpy.data.images.load(path); t.extension = 'REPEAT'
+            if nc: t.image.colorspace_settings.name = 'Non-Color'
+            if uvn: t.projection = 'FLAT'; L.new(uvn.outputs['UV'], t.inputs['Vector'])                     # развёртка сетки: u вокруг ствола, v вдоль, в единицах «плитка = BARK_TILE» — без растяжения
+            else: t.projection = 'BOX'; t.projection_blend = .3; L.new(mp.outputs['Vector'], t.inputs['Vector'])
+            return t
+        t = img(diff); tint = nt.nodes.new('ShaderNodeMix'); tint.data_type = 'RGBA'; tint.blend_type = 'MULTIPLY'; tint.inputs['Factor'].default_value = 1.0; tint.inputs['B'].default_value = (.92, .88, .82, 1)
+        L.new(t.outputs['Color'], tint.inputs['A']); L.new(tint.outputs['Result'], b.inputs['Base Color'])
+        base = diff[:-len('_diff.jpg')]
+        if os.path.exists(base + '_rough.jpg'): L.new(img(base + '_rough.jpg', True).outputs['Color'], S.inp(b, 'Roughness'))
+        else: S.val(b, .86, 'Roughness')
+        if os.path.exists(base + '_nor.jpg'):
+            nm = nt.nodes.new('ShaderNodeNormalMap'); nm.inputs['Strength'].default_value = float(os.environ.get('BARK_NOR', 1.2)); L.new(img(base + '_nor.jpg', True).outputs['Color'], nm.inputs['Color']); L.new(nm.outputs['Normal'], b.inputs['Normal'])
+        return m
+    mp.inputs['Scale'].default_value = (2.6, 2.6, .55)
+    vo = nt.nodes.new('ShaderNodeTexVoronoi'); vo.feature = 'DISTANCE_TO_EDGE'; vo.inputs['Scale'].default_value = 6.0; L.new(mp.outputs['Vector'], vo.inputs['Vector'])
+    nz = nt.nodes.new('ShaderNodeTexNoise'); nz.inputs['Scale'].default_value = 14.0; nz.inputs['Detail'].default_value = 8.0; nz.inputs['Roughness'].default_value = .62; L.new(mp.outputs['Vector'], nz.inputs['Vector'])
+    cr = nt.nodes.new('ShaderNodeValToRGB'); cr.color_ramp.elements[0].position = .03; cr.color_ramp.elements[0].color = (.045, .034, .028, 1); cr.color_ramp.elements[1].position = .34; cr.color_ramp.elements[1].color = (.46, .40, .33, 1)
+    e = cr.color_ramp.elements.new(.15); e.color = (.20, .165, .13, 1); L.new(vo.outputs['Distance'], cr.inputs['Fac'])
+    mx = nt.nodes.new('ShaderNodeMix'); mx.data_type = 'RGBA'; mx.blend_type = 'MULTIPLY'; mx.inputs['Factor'].default_value = 1.0; L.new(cr.outputs['Color'], mx.inputs['A'])
+    nr = nt.nodes.new('ShaderNodeValToRGB'); nr.color_ramp.elements[0].color = (.72, .70, .68, 1); nr.color_ramp.elements[1].color = (1.18, 1.14, 1.08, 1); L.new(nz.outputs['Fac'], nr.inputs['Fac']); L.new(nr.outputs['Color'], mx.inputs['B'])
+    L.new(mx.outputs['Result'], b.inputs['Base Color']); S.val(b, .88, 'Roughness')
+    hh = nt.nodes.new('ShaderNodeMath'); hh.operation = 'ADD'; L.new(vo.outputs['Distance'], hh.inputs[0]); k = nt.nodes.new('ShaderNodeMath'); k.operation = 'MULTIPLY'; k.inputs[1].default_value = .12; L.new(nz.outputs['Fac'], k.inputs[0]); L.new(k.outputs[0], hh.inputs[1])
+    bp = nt.nodes.new('ShaderNodeBump'); bp.inputs['Strength'].default_value = 1.1; bp.inputs['Distance'].default_value = .06; L.new(hh.outputs[0], bp.inputs['Height']); L.new(bp.outputs['Normal'], b.inputs['Normal'])
+    return m
+
+
 def olive_tree(M, base, G):
     rnd = random.Random(int(os.environ.get('TREE_SEED', 7))); bx, by, bz = base; up = Vector((0, 0, 1))
     # горшок: тело вращения из травертина, тёмная земля, галька сверху
@@ -98,11 +139,46 @@ def olive_tree(M, base, G):
     ma = RL.leaf_material('olive_leafA', (.05, .085, .035), (.16, .23, .075)); mb = RL.leaf_material('olive_leafB', (.085, .125, .05), (.23, .30, .105), under=True)
     leaves = []
     for m in (ma, mb): leaves.extend(RL.leaf_variants(.62, .085, 4, 'olive', (m,)))
-    bark = S.mat_simple('bark', (.21, .165, .12), .88)
-    def curve(pts, r0, r1):
+    bark = bark_material('box'); bark_uv = bark_material('uv')
+    def tube(pts, rr, seg=44):
+        """толстая часть дерева (ствол, боковые стволы, крупные ветви) — сетка-труба по сглаженному пути с UV-развёрткой: u вокруг (целое число повторов плитки), v по длине пути / BARK_TILE;
+        кадры вдоль пути — параллельным переносом (без скручивания); торцы открыты (низ в кашпо, верх в кроне)"""
+        import bmesh
+        Vc = Vector; P = [Vc(q) for q in pts]; n = len(P); per = 12
+        def cr(i, t):
+            p0, p1, p2, p3 = P[max(i - 1, 0)], P[i], P[min(i + 1, n - 1)], P[min(i + 2, n - 1)]
+            return (p1 * 2 + (p2 - p0) * t + (p0 * 2 - p1 * 5 + p2 * 4 - p3) * t * t + (p1 * 3 - p0 - p2 * 3 + p3) * t ** 3) * .5
+        sm, rd = [], []
+        for i in range(n - 1):
+            for k in range(per): sm.append(cr(i, k / per)); rd.append(rr[i] + (rr[i + 1] - rr[i]) * k / per)
+        sm.append(P[-1]); rd.append(rr[-1]); m_ = len(sm)
+        tg = [((sm[min(i + 1, m_ - 1)] - sm[max(i - 1, 0)]).normalized()) for i in range(m_)]
+        nrm = tg[0].cross(Vc((0, 1, 0)))
+        if nrm.length < .2: nrm = tg[0].cross(Vc((1, 0, 0)))
+        nrm.normalize(); frames = []
+        for i in range(m_):
+            nrm = (nrm - tg[i] * nrm.dot(tg[i])); nrm.normalize(); frames.append((nrm.copy(), tg[i].cross(nrm)))
+        tile = float(os.environ.get('BARK_TILE', 1.7)); nu = max(1, round(2 * math.pi * (sum(rd) / m_) / tile))
+        bm = bmesh.new(); uvl = bm.loops.layers.uv.new('UVMap'); rings = []; sacc = 0.0; uvs = {}
+        for i in range(m_):
+            if i: sacc += (sm[i] - sm[i - 1]).length
+            ring = []
+            for k in range(seg + 1):
+                a = 2 * math.pi * k / seg; vtx = bm.verts.new(sm[i] + (frames[i][0] * math.cos(a) + frames[i][1] * math.sin(a)) * rd[i]); ring.append(vtx); uvs[vtx.index if False else id(vtx)] = (k / seg * nu, sacc / tile)
+            rings.append(ring)
+        for i in range(m_ - 1):
+            for k in range(seg):
+                f = bm.faces.new((rings[i][k], rings[i][k + 1], rings[i + 1][k + 1], rings[i + 1][k])); f.smooth = True
+                for lp in f.loops: lp[uvl].uv = uvs[id(lp.vert)]
+        bmesh.ops.recalc_face_normals(bm, faces=bm.faces[:])
+        me = bpy.data.meshes.new('trunk'); bm.to_mesh(me); bm.free(); me.materials.append(bark_uv)
+        ob = bpy.data.objects.new('trunk', me); bpy.context.collection.objects.link(ob); ob['grp'] = G
+    def curve(pts, r0, r1, rads=None):
+        rr_ = rads or [r0 + (r1 - r0) * i / max(1, len(pts) - 1) for i in range(len(pts))]
+        if max(rr_) >= .10: tube(pts, rr_); return
         cu = bpy.data.curves.new('tw', 'CURVE'); cu.dimensions = '3D'; sp = cu.splines.new('POLY'); sp.points.add(len(pts) - 1)
-        for i, q in enumerate(pts): sp.points[i].co = (q[0], q[1], q[2], 1); sp.points[i].radius = r0 + (r1 - r0) * i / max(1, len(pts) - 1)
-        cu.bevel_depth = 1.0; cu.bevel_resolution = 4; cu.use_fill_caps = True; cu.materials.append(bark)
+        for i, q in enumerate(pts): sp.points[i].co = (q[0], q[1], q[2], 1); sp.points[i].radius = rads[i] if rads else r0 + (r1 - r0) * i / max(1, len(pts) - 1)
+        cu.bevel_depth = 1.0; cu.bevel_resolution = 6; cu.use_fill_caps = True; cu.materials.append(bark)
         ob = bpy.data.objects.new('tw', cu); bpy.context.collection.objects.link(ob); ob['grp'] = G
     def at_factory(pts):
         def at(t):
@@ -113,9 +189,9 @@ def olive_tree(M, base, G):
         return (abs((q.x - E['ex']) / (E['rx'] * k)) ** E['p'] + abs((q.z - E['ez']) / (E['rz'] * k)) ** E['p']) <= 1.0
     def ok(pos, dv):                                                   # и корень листа, и его кончик внутри кроны, выше арок и не в стене
         tip = pos + dv * .55
-        return pos.z >= TREE_ZMIN - .05 and tip.z >= TREE_ZMIN - .05 and inside(pos, 1.03) and inside(tip, 1.05) and tip.y <= -.12 and pos.y <= -.12
-    def leafy(pts, count, k, r0, r1):
-        curve(pts, r0, r1); at = at_factory(pts)
+        return pos.z >= tree_zmin(pos.x) - .05 and tip.z >= tree_zmin(tip.x) - .05 and inside(pos, 1.03) and inside(tip, 1.05) and tip.y <= -.12 and pos.y <= -.12
+    def leafy(pts, count, k, r0, r1, rads=None):
+        curve(pts, r0, r1, rads); at = at_factory(pts)
         for i in range(1, count + 1):
             t = i / (count + 1) * .94 + .06; pos = at(t); d = (at(min(1, t + .03)) - pos).normalized()
             for dv in RL.pair_dirs(d, i, rnd, spread=1.0, up=.20, droop=.24):
@@ -132,7 +208,7 @@ def olive_tree(M, base, G):
     root = Vector((bx, by, bz + 1.28)); topz = float(os.environ.get('TREE_TOPZ', 9.8)); H = topz - root.z
     ytw = by + .02
     trunk = [root, root + Vector((.10, .02, H * .20)), root + Vector((.34, -.05, H * .46)), root + Vector((.62, .04, H * .74)), Vector((bx + .95, ytw, topz))]
-    tr = leafy(trunk, 8, .9, float(os.environ.get('TREE_R0', .42)), .24)       # толстый ствол
+    R0 = float(os.environ.get('TREE_R0', .46)); tr = leafy(trunk, 8, .9, R0, .26, rads=[R0 * 1.32, R0, R0 * .90, R0 * .78, .27])       # толстый ствол с раструбом у основания
     for sgn in (-1, 1):                                                # два боковых ствола: сращены с основным и уходят в крону (не обрываются голой палкой)
         o = lambda t_, sx_, sy_, sz_: tr(t_) + Vector((sx_ * sgn, sy_ * sgn, sz_))
         st = [root + Vector((.22 * sgn, .08 * sgn, 0)), o(.34, .30, .06, 0), o(.68, .27, .04, 0), o(.97, .20, .02, .15), Vector((bx + .95 + .30 * sgn, ytw + .02 * sgn, topz + .75))]
@@ -145,8 +221,13 @@ def olive_tree(M, base, G):
              limb([top, V((-14.2, ytw - .1, 10.7)), V((-12.5, ytw - .3, 12.0)), V((-10.9, ytw - .4, 12.9))], .20, .06),
              limb([tr(.92), V((-13.9, ytw - .2, 10.1)), V((-11.9, ytw - .5, 10.7)), V((-9.7, ytw - .6, 11.5))], .17, .05),
              limb([top, V((-16.2, ytw - .1, 11.5)), V((-16.9, ytw - .2, 13.2)), V((-16.3, ytw - .3, 14.8))], .18, .05),
-             limb([tr(.97), V((-14.8, ytw - .3, 11.2)), V((-13.0, ytw - .8, 13.2)), V((-11.5, ytw - .8, 14.4))], .15, .05)]
-    nb = int(os.environ.get('TREE_NB', 140)); LBk = float(os.environ.get('TREE_LB', 1.0)); cen = V((E['ex'], 0, E['ez']))
+             limb([tr(.97), V((-14.8, ytw - .3, 11.2)), V((-13.0, ytw - .8, 13.2)), V((-11.5, ytw - .8, 14.4))], .15, .05),
+             # нижние ветви прямо из ствола: крона спускается к нему слева и над первой нишей — дерево «стоит на стволе», без зазора
+             limb([tr(.56), V((-16.6, ytw - .1, 7.3)), V((-17.6, ytw - .2, 8.2)), V((-18.0, ytw - .3, 9.0))], .16, .05),
+             limb([tr(.62), V((-15.0, ytw - .2, 8.1)), V((-13.6, ytw - .4, 8.9)), V((-12.3, ytw - .5, 9.5))], .15, .05),
+             limb([tr(.50), V((-15.9, ytw - .1, 6.8)), V((-16.9, ytw - .2, 7.0)), V((-17.6, ytw - .3, 7.4))], .14, .05),
+             limb([tr(.72), V((-14.6, ytw - .2, 9.0)), V((-12.8, ytw - .5, 10.2)), V((-10.9, ytw - .6, 10.4))], .14, .05)]
+    nb = int(os.environ.get('TREE_NB', 200)); LBk = float(os.environ.get('TREE_LB', 1.0)); cen = V((E['ex'], 0, E['ez']))
     for j in range(nb):                                                # ветки отходят от ветвей наружу от центра кроны: заполняют весь контур
         at0 = rnd.choice(limbs); P0 = at0(rnd.uniform(.12, 1.0))
         rad = V((P0.x - cen.x, 0, P0.z - cen.z)); rad = rad.normalized() if rad.length > .2 else V((0, 0, 1))
@@ -154,7 +235,8 @@ def olive_tree(M, base, G):
         else: d = (rad * rnd.uniform(.55, 1.0) + V((rnd.uniform(-.7, .7), rnd.uniform(-.55, .25), rnd.uniform(-.25, .7)))).normalized()
         Lb = rnd.uniform(1.0, 2.1) * LBk
         for _ in range(7):                                             # укоротить, пока кончик не окажется в контуре кроны
-            if inside(P0 + d * Lb, 1.0): break
+            ep = P0 + d * Lb
+            if inside(ep, 1.0) and ep.z >= tree_zmin(ep.x) + .4: break                       # кончик внутри кроны и не ниже её нижней кромки: голые веточки не свисают
             Lb *= .8
         else: continue
         mid = P0 + d * Lb * .5 + V((0, 0, .10 * Lb))
@@ -162,6 +244,7 @@ def olive_tree(M, base, G):
         at = leafy(pts, 30, 1.0, .030, .008)
         for t in (.34, .56, .76):
             P = at(t); az2 = rnd.uniform(0, 6.283); d2 = (d * .6 + V((math.cos(az2), math.sin(az2) * .35, rnd.uniform(-.3, .6)))).normalized(); L2 = Lb * rnd.uniform(.30, .46)
+            if (P + d2 * L2).z < tree_zmin(P.x) + .3: continue
             leafy([P, P + d2 * L2 * .5 + V((0, 0, .04)), P + d2 * L2 + V((0, 0, -.03))], 10, .95, .012, .006)
 
 
