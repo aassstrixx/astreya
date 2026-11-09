@@ -188,7 +188,7 @@ def lights(sc):
     ao = bpy.data.objects.new('fill', ar); bpy.context.collection.objects.link(ao); ao.location = (-2.5, -11.0, 5.5); ao.rotation_euler = (math.radians(70), 0, math.radians(8))
     ao.visible_camera = False
     w = bpy.data.worlds.new('w'); w.use_nodes = True; bg = w.node_tree.nodes['Background']; bg.inputs['Color'].default_value = (*E3('WORLDC', (.80, .88, 1.0)), 1); bg.inputs['Strength'].default_value = float(os.environ.get('WORLD', 0.22)); sc.world = w
-    vol = float(os.environ.get('VOL', .003))
+    vol = float(os.environ.get('VOL', .0))
     if vol > 0:                                                                                              # лёгкая дымка в воздухе (объём-куб между камерой и стеной): лучи солнца через тени листьев и воздушная перспектива; мировой объём гасил весь свет, поэтому куб
         hm = bpy.data.materials.new('haze'); hm.use_nodes = True; nt_ = hm.node_tree; nt_.nodes.clear(); vs = nt_.nodes.new('ShaderNodeVolumeScatter'); vs.inputs['Density'].default_value = vol; vs.inputs['Anisotropy'].default_value = float(os.environ.get('VOL_G', .55)); vs.inputs['Color'].default_value = (1.0, .93, .80, 1)
         ot = nt_.nodes.new('ShaderNodeOutputMaterial'); nt_.links.new(vs.outputs['Volume'], ot.inputs['Volume']); _VOL[0] = vs
@@ -233,9 +233,9 @@ def grade(a, sat=None, lift=None, cool=None, gamma=None):
     a = a + ((1 - L) ** 2.2) * np.array([-9, -4, 12], np.float32) * cool
     a = np.clip(255.0 * np.power(np.clip(a, 0, 255) / 255.0, gamma), 0, 255)
     h, w = a.shape[:2]
-    sh = float(os.environ.get('SHARP', 40))
+    sh = float(os.environ.get('SHARP', 70))
     if sh > 0:
-        im = Image.fromarray(a.astype(np.uint8)).filter(ImageFilter.UnsharpMask(radius=1.4, percent=int(sh), threshold=2)); a = np.asarray(im).astype(np.float32)
+        im = Image.fromarray(a.astype(np.uint8)).filter(ImageFilter.UnsharpMask(radius=1.4 * max(1.0, w / 1536.0), percent=int(sh), threshold=2)); a = np.asarray(im).astype(np.float32)
     vg = float(os.environ.get('VIG', .10))
     if vg > 0:
         yy, xx = np.mgrid[0:h, 0:w].astype(np.float32); r2 = ((xx / w - .5) ** 2 * 1.2 + (yy / h - .5) ** 2) * 1.6; a = a * (1 - vg * np.clip(r2, 0, 1))[..., None]
@@ -283,7 +283,7 @@ def render_layers(sc, cam0, names):
         plate = R2 * (1 - dil[..., None]) + R1 * dil[..., None]
         if os.environ.get('GRADE', '1') == '1': plate = grade(plate); R2 = grade(R2)
         if os.environ.get('FIX_SLIVER') == '1': plate = fix_sliver(plate, R2.shape[1] / CANVAS[0])
-        k = CANVAS[0] / R2.shape[1]; q = int(os.environ.get('SCENE_Q', 84))
+        k = CANVAS[0] / R2.shape[1]; q = int(os.environ.get('SCENE_Q', 90))
         Image.fromarray(np.clip(plate, 0, 255).astype(np.uint8)).save(os.path.join(OUT, 'layer-shell.webp'), 'WEBP', quality=q, method=6)
         old['shell'] = {'file': 'assets/showroom/layer-shell.webp', 'x': 0.0, 'y': 0.0, 'w': float(CANVAS[0]), 'h': float(CANVAS[1])}; print('layer shell', os.path.getsize(os.path.join(OUT, 'layer-shell.webp')) // 1024, 'КБ', flush=True)
         for g in groups:
@@ -302,7 +302,7 @@ def main():
     if mode == 'preview': pw = int(os.environ.get('SCENE_W', 960)); settings(sc, pw, round(pw * 640 / 960), int(os.environ.get('SCENE_SPP', 24)))      # SCENE_W — ширина кадра предпросмотра (с CROP — крупные врезки)
     else: settings(sc)
     import time; t0 = time.time()
-    M = build(sc); lights(sc); cam = set_cam(sc); dof = float(os.environ.get('DOF', 1.1))
+    M = build(sc); lights(sc); cam = set_cam(sc); dof = float(os.environ.get('DOF', 8.0))
     if dof > 0: cam.data.dof.use_dof = True; cam.data.dof.focus_distance = float(os.environ.get('DOF_DIST', 7.7)); cam.data.dof.aperture_fstop = dof                      # фон мягко размыт, стол и упаковки — в фокусе (как на фото-образце)
     print('сцена собрана за %.0f с, объектов %d' % (time.time() - t0, len(bpy.data.objects)), flush=True)
     if mode == 'preview':

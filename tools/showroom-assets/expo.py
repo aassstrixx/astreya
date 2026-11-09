@@ -127,7 +127,7 @@ def build(S, sc, M):
     T('стол')
     # --- подиумы: блоки с фасками (края камня слегка сколоты — фаска неровная) и диски; своя фактура у каждого
     for i, (kind, cx, d, w, dp, h, z0, tint, yaw) in enumerate(PLINTHS):
-        X, Y = plinth_pos(i); mat = MT.travertine('pl_stone%d' % i, (tint[0] * .84, tint[1] * .72, tint[2] * .54), .8 + .15 * (i % 3), 1.5, 1.8 + .3 * (i % 2), honed=True)
+        X, Y = plinth_pos(i); mat = MT.travertine('pl_stone%d' % i, (tint[0] * .84, tint[1] * .72, tint[2] * .54), .8 + .15 * (i % 3), 1.1, 1.8 + .3 * (i % 2), honed=True)
         z_lo = TZ + cm(z0); z_hi = TZ + cm(z0 + h)
         if kind == 'box':
             ob = S.box('plinth%d' % i, mat, -cm(w) / 2, cm(w) / 2, -cm(dp) / 2, cm(dp) / 2, 0.0, cm(h), 'dais', bev=cm(.35)); ob.location = (X, Y, z_lo); ob.rotation_euler = (0, 0, yaw)
@@ -157,7 +157,7 @@ def build(S, sc, M):
     a_end = -math.pi / 2 + math.pi * .925; neck = VR * math.cos(a_end); zt = VR * math.sin(a_end)
     prof += [(neck * .96, zt + .012), (neck * .72, zt + .02), (neck * .55, zt + .0), (neck * .52, zt - .12), (0.0, zt - .12)]
     vase = decor.lathe('vase', prof, vm, 'plant', cx=vx, cy=vy, z=vz, seg=96, smooth=True)
-    sub = vase.modifiers.new('sub', 'SUBSURF'); sub.levels = 1; sub.render_levels = 2                                                          # сначала сглаживание, затем неровность: силуэт шара чуть «рубленый», как у настоящего камня
+    sub = vase.modifiers.new('sub', 'SUBSURF'); sub.levels = 1; sub.render_levels = 3                                                          # сначала сглаживание, затем неровность: силуэт шара чуть «рубленый», как у настоящего камня
     dm = vase.modifiers.new('rough', 'DISPLACE'); tx_ = bpy.data.textures.new('vase_dsp', 'CLOUDS'); tx_.noise_scale = .10; tx_.noise_depth = 3; dm.texture = tx_; dm.strength = .02; dm.mid_level = .5
     T('ваза')
     olive(S, Vector((vx, vy, vz + zt - .02)), 'plant')
@@ -212,7 +212,7 @@ def olive(S, base, grp='plant'):
             stem_leaves(tw, 9, .004, .92, off=.08)
 
 
-    if os.environ.get('FORE', '1') == '1':                                                                          # ветка на переднем плане у самой камеры: сильно размыта (малая глубина резкости) — слои глубины, как в фотографии
+    if os.environ.get('FORE', '0') == '1':                                                                          # ветка на переднем плане у самой камеры: сильно размыта (малая глубина резкости) — слои глубины, как в фотографии
         Fb = Vector((float(os.environ.get('FORE_X', -1.25)), -8.3, float(os.environ.get('FORE_Z', 1.78)))); fv = lambda x, y, z: Fb + Vector((x, y, z))
         stem_leaves([fv(0, 0, 0), fv(.14, .0, -.04), fv(.30, .04, -.16), fv(.40, .07, -.26), fv(.50, .09, -.42)], 13, .011, scale=1.2, shadow=False)
         stem_leaves([fv(.05, .0, -.02), fv(.10, .02, -.18), fv(.14, .05, -.30), fv(.12, .08, -.50)], 9, .009, scale=1.05, shadow=False)
