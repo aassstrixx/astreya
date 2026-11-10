@@ -244,10 +244,29 @@
       list.addEventListener('click', e => { const r = e.target.closest('.sem-item'); if (r && !e.target.closest('a,button')) select(r.dataset.id); });
       list.addEventListener('focusin', e => { const r = e.target.closest('.sem-item'); if (r && r.dataset.id !== selId) select(r.dataset.id); });
       const host = $('[data-acad-cal]');
+      /* «Ближайший семинар» в левом столбце календаря: дата, город и «через N дней» берутся из модуля календаря (js/sales-pages.js), сам его тёмный блок на этой странице скрыт */
+      const nextEl = $('[data-acad-next]');
+      const paintNext = () => {
+        if (!nextEl || !host) return; const n = $('.sx-tl-next', host), when = n && $('.sx-tl-in', n), meta = n && $('.sx-tl-m', n);
+        if (!when || !meta) { nextEl.hidden = true; return; }
+        const html = '<b>' + A.esc(nextEl.dataset.label || 'Ближайший семинар') + '</b><em>' + A.esc(when.textContent.trim()) + '</em>' + A.esc(meta.textContent.trim());
+        if (nextEl.innerHTML !== html) nextEl.innerHTML = html; nextEl.hidden = false;
+      };
       if (host) {
         host.addEventListener('mouseover', e => { const d = e.target.closest('.sx-cd.ev'); if (!d) return; const r = byGo(d.getAttribute('data-sx-go')); if (r && !r.hidden && r.dataset.id !== selId) select(r.dataset.id); });
-        if (window.MutationObserver) new MutationObserver(paintDays).observe(host, {childList: true, subtree: true});
+        if (window.MutationObserver) new MutationObserver(() => { paintDays(); paintNext(); }).observe(host, {childList: true, subtree: true});
+        paintNext();
       }
+      /* шапка прозрачна, пока под ней зал первого экрана; зал чуть отстаёт от прокрутки (параллакс); полоса шагов «дорисовывает» стрелки, когда появляется на экране */
+      const root = document.documentElement, hero = $('.ac-hero', acad), hall = $('[data-ac-par] .ac-hall-in', acad), still = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+      let raf = 0; const onScroll = () => {
+        raf = 0; if (!hero) return; const r = hero.getBoundingClientRect();
+        root.classList.toggle('ac-scrolled', r.bottom < 90);
+        if (hall && !still && r.bottom > 0 && innerWidth > 760) hall.style.transform = 'translate3d(0,' + (Math.min(1, Math.max(0, -r.top / Math.max(1, r.height))) * 4).toFixed(2) + '%,0)';
+      };
+      onScroll(); window.addEventListener('scroll', () => { if (!raf) raf = requestAnimationFrame(onScroll); }, {passive: true}); window.addEventListener('resize', onScroll);
+      const reg = $('.ac-reg', acad);
+      if (reg) { if ('IntersectionObserver' in window) { const io = new IntersectionObserver(es => es.forEach(e => { if (e.isIntersecting) { reg.classList.add('is-in'); io.disconnect(); } }), {threshold: .35}); io.observe(reg); } else reg.classList.add('is-in'); }
     }
   };
   A.pages.event = function () {
