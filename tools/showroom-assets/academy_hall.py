@@ -40,20 +40,20 @@ NA, NB, NC = 34.0, 47.5, 63.5                                                   
 def mats():
     M = {}
     wc = S.E3('WALLC', (.97, .89, .75))
-    M['wall'] = MT.lime_plaster('wall_plaster', wc, wave=F('WAVE', 1.8), scale=.42, tone=.9)
+    M['wall'] = MT.lime_plaster('wall_plaster', wc, wave=F('WAVE', 2.1), scale=.42, tone=1.15)
     M['inner'] = MT.lime_plaster('inner_plaster', (wc[0] * .985, wc[1] * .955, wc[2] * .90), wave=1.0, scale=.42, tone=.7)
     M['frame'] = MT.limestone('arch_trim', (.98, .91, .79), scale=.5)
     M['trav'] = MT.travertine('trav_top', (.95, .86, .72), .5, 1.0, 1.3, honed=True)
     M['block'] = MT.travertine('trav_block', (.92, .83, .68), .62, .9, 1.1, honed=True)
-    M['ttop'] = trav_veined('trav_table_top', (.97, .90, .78), 'Y', F('VEIN', .85)); M['tblock'] = trav_veined('trav_table_block', (.95, .87, .74), 'Z', F('VEIN', .85))
-    M['floor'] = MT.limestone_floor('hall_floor', (.68, .60, .49), tile=8.0, joint=.04, tone=.22)
-    M['amber'] = glass_amber(); M['rug'] = RL.fabric_boucle('rug_wool', (.86, .79, .66), scale=10.0, tint=.14)
+    M['ttop'] = trav_veined('trav_table_top', (.97, .90, .78), 'Y', F('VEIN', 1.0)); M['tblock'] = trav_veined('trav_table_block', (.95, .87, .74), 'Z', F('VEINB', .7))
+    M['floor'] = MT.limestone_floor('hall_floor', (.70, .62, .50), tile=8.0, joint=.05, tone=.32)
+    M['amber'] = glass_amber(); M['rug'] = RL.fabric_boucle('rug_wool', (.84, .76, .62), scale=F('RUGSC', 46.0), tint=.26)
     M['bronze'] = S.mat_simple('bronze', (.075, .066, .058), .42, .55)
-    M['sky'] = sky_mat('sky', F('SKY', 3.2))
+    M['sky'] = vista_mat('vista', vista_texture('/tmp/ac_vista.png'), F('SKY', 2.6))
     M['white'] = S.mat_simple('white', (.93, .92, .90), .28)
     M['alu'] = S.mat_simple('alu', (.78, .78, .77), .35, .8)
     M['wood'] = RL.oak('shelf_oak', (.72, .56, .38), scale=1.0)
-    M['glaze'] = DC.paint('vase_ceramic', (.56, .52, .46), .62, 0, 0.0, .3, bump=.3, bump_scale=38)
+    M['glaze'] = DC.paint('vase_ceramic', (.56, .52, .46), .62, 0, 0.0, .3, bump=.6, bump_scale=14)
     M['bark'] = S.mat_simple('bark', (.21, .165, .12), .88)
     M['paper'] = S.mat_simple('paper', (.94, .93, .90), .55)
     M['navy'] = S.mat_simple('navy_cover', (.035, .075, .17), .5)
@@ -64,7 +64,7 @@ def mats():
 
 def trav_veined(name, tint=(1, 1, 1), axis='Z', k=1.0, sc=.5):
     """травертин стола: к обычному травертину (materials.py) добавлены выраженные слои — длинные светлые и песочные полосы вдоль распила (axis — ось, поперёк которой идут слои)"""
-    m = MT.travertine(name, tint, sc, F('PITS', 1.5), 1.6, honed=True); nt = m.node_tree; L = nt.links
+    m = MT.travertine(name, tint, sc, F('PITS', 1.9), 1.8, honed=True); nt = m.node_tree; L = nt.links
     b = next(n for n in nt.nodes if n.type == 'BSDF_PRINCIPLED')
     st = {'Z': (.09, .09, 1.15), 'Y': (.09, 1.15, .09), 'X': (1.15, .09, .09)}[axis]
     v1 = MT._noise(nt, MT._coord(nt, st), 2.4, 6, .62, 1.6); v2 = MT._noise(nt, MT._coord(nt, tuple(x * 2.3 for x in st)), 3.6, 5, .6, .9)
@@ -87,6 +87,14 @@ def glass_amber(name='amber_glass'):
     return m
 
 
+def vista_mat(name, path, k):
+    """даль за окном как светящаяся картинка (по габаритам плоскости: u = X, v = Z)"""
+    m, nt, b, o = S.mk(name); tex = nt.nodes.new('ShaderNodeTexImage'); tex.image = bpy.data.images.load(path); tex.extension = 'EXTEND'
+    tc = nt.nodes.new('ShaderNodeTexCoord'); sp = nt.nodes.new('ShaderNodeSeparateXYZ'); cb = nt.nodes.new('ShaderNodeCombineXYZ'); nt.links.new(tc.outputs['Generated'], sp.inputs['Vector'])
+    nt.links.new(sp.outputs['X'], cb.inputs['X']); nt.links.new(sp.outputs['Z'], cb.inputs['Y']); nt.links.new(cb.outputs['Vector'], tex.inputs['Vector'])
+    em = nt.nodes.new('ShaderNodeEmission'); nt.links.new(tex.outputs['Color'], em.inputs['Color']); em.inputs['Strength'].default_value = k; nt.links.new(em.outputs['Emission'], o.inputs['Surface']); return m
+
+
 def sky_mat(name, k):
     """вид из окна: мягкий градиент — тёплая дымка внизу, бледно-голубое небо вверху (эмиссия, чтобы не выгорало в белый)"""
     m, nt, b, o = S.mk(name)
@@ -102,6 +110,41 @@ def sky_mat(name, k):
     mx = nt.nodes.new('ShaderNodeMix'); mx.data_type = 'RGBA'; nt.links.new(msk.outputs[0], mx.inputs['Factor']); nt.links.new(cr.outputs['Color'], mx.inputs['A']); nt.links.new(tcol.outputs['Color'], mx.inputs['B'])
     nt.links.new(mx.outputs['Result'], em.inputs['Color']); em.inputs['Strength'].default_value = k
     nt.links.new(em.outputs['Emission'], o.inputs['Surface']); return m
+
+
+def vista_texture(path, w=2000, h=1200):
+    """даль за окном: небо с перистыми облаками, три гряды холмов в воздушной дымке (дальние — светлее и голубее), кипарисы и кроны на ближней гряде; слегка размыта, как фон вне фокуса"""
+    from PIL import Image, ImageDraw, ImageFilter
+    import numpy as np
+    rnd = random.Random(17); yy = np.linspace(0, 1, h, dtype=np.float32)[:, None, None]
+    top = np.array([118, 164, 222], np.float32); hor = np.array([238, 230, 212], np.float32); sky = top + (hor - top) * np.clip(yy / .62, 0, 1) ** 1.25
+    a = np.broadcast_to(sky, (h, w, 3)).copy()
+    cl = Image.new('L', (w, h), 0); d = ImageDraw.Draw(cl)
+    for _ in range(46):                                         # облака: вытянутые пятна, сильное размытие
+        cx, cy = rnd.uniform(0, w), rnd.uniform(.05 * h, .46 * h); rx, ry = rnd.uniform(90, 330), rnd.uniform(14, 44)
+        d.ellipse([cx - rx, cy - ry, cx + rx, cy + ry], fill=rnd.randint(70, 190))
+    cl = np.asarray(cl.filter(ImageFilter.GaussianBlur(26)), np.float32)[..., None] / 255.0
+    a = a * (1 - .8 * cl) + np.array([252, 250, 246], np.float32) * (.8 * cl)
+    im = Image.fromarray(np.clip(a, 0, 255).astype(np.uint8)); d = ImageDraw.Draw(im)
+    def ridge(base, amp, col, seed, trees=0, tcol=None):
+        r = random.Random(seed); ph = [r.uniform(0, 6.28) for _ in range(5)]; fr = [r.uniform(.6, 1.6) * k for k in (1, 2.3, 4.1, 7.7, 13.0)]
+        prof = [base * h - amp * h * sum(math.sin(x / w * 6.283 * f + q) / (i + 1) for i, (f, q) in enumerate(zip(fr, ph))) / 1.8 for x in range(w + 1)]
+        d.polygon([(0, h)] + [(x, prof[x]) for x in range(0, w + 1, 4)] + [(w, h)], fill=col)
+        for _ in range(trees):
+            x = r.uniform(0, w); y0 = prof[int(x)] + r.uniform(0, 26); k = r.uniform(.7, 1.5)
+            if r.random() < .45: d.polygon([(x - 9 * k, y0), (x, y0 - 86 * k), (x + 9 * k, y0)], fill=tcol[0])                 # кипарис
+            else:
+                rr_ = r.uniform(22, 46) * k; d.ellipse([x - rr_, y0 - rr_ * 1.5, x + rr_, y0 + rr_ * .3], fill=tcol[r.randint(0, len(tcol) - 1)])
+    ridge(.62, .035, (176, 192, 206), 1); ridge(.68, .045, (150, 170, 168), 2); ridge(.75, .05, (122, 146, 118), 3, 26, [(92, 116, 88), (104, 128, 92)])
+    ridge(.86, .035, (104, 132, 84), 4, 34, [(58, 84, 52), (74, 102, 58), (88, 112, 62)])
+    im = im.filter(ImageFilter.GaussianBlur(2.2))
+    hz = Image.new('RGB', (w, h), (240, 232, 214)); m = Image.linear_gradient('L').resize((w, h)); m = m.point(lambda v: int(max(0, 70 - abs(v - 168) * 1.6)))        # лёгкая дымка у горизонта
+    im = Image.composite(hz, im, m); im.save(path); return path
+
+
+def grass_mat():
+    m, nt, b, o = S.mk('lawn'); n = MT._noise(nt, MT._coord(nt, (1, 1, 1)), 3.0, 6, .7); r = MT._ramp(nt, [(.3, (.10, .17, .05, 1)), (.6, (.19, .28, .09, 1)), (.8, (.30, .36, .14, 1))])
+    nt.links.new(n, r.inputs['Fac']); nt.links.new(r.outputs['Color'], b.inputs['Base Color']); S.val(b, .9, 'Roughness'); return m
 
 
 def oliv_leaves():
@@ -201,7 +244,7 @@ def shell_mesh(R, z0, z1, t, a0, a1, drop, n=48):
 def chair(M, x, y, rot, col=(.93, .85, .73), seed=1, tub=False):
     """кресло-букле в натуральную величину (строится в метрах и увеличивается корневым пустым ×10 — текстура петель букле остаётся настоящего размера):
     мягкая подушка сиденья со швом и прогибом, основание-рама, спинка-ракушка толщиной 7 см с закруглёнными кромками, четыре конические ножки из дуба"""
-    boucle = RL.fabric_boucle('boucle%d' % seed, col, scale=1.0, tint=.15)
+    boucle = RL.fabric_boucle('boucle%d' % seed, col, scale=F('BOUCLE', 4.2), tint=.24)                  # крупное букле: петли ≈ 1,2 см — фактура ткани читается на общем плане
     root = bpy.data.objects.new('chair', None); bpy.context.collection.objects.link(root); root.location = (x, y, 0); root.rotation_euler = (0, 0, rot); root.scale = (10, 10, 10)
     RL.cushion('ch_frame', boucle, .50, .50, .09, (.01, 0, .30), parent=root, r=.12, rz=.03, belly=.004, wrinkle=.0008, seed=seed, n=22)
     RL.cushion('ch_seat', boucle, .50, .50, .11, (.03, 0, .395), parent=root, r=.14, rz=.045, crown=.012, crown_b=.10, belly=.012, sag=.006, wrinkle=.0016, seed=seed + 4, n=28)
@@ -330,6 +373,7 @@ def build_hero(sc):
     cut = S.arch_solid('cut1', M['wall'], AX, ARX, AZS, W1Y - .6, W1Y + 6.6, G, z0=-.05); cut.hide_render = True; cut.display_type = 'WIRE'
     bm = w1.modifiers.new('cut', 'BOOLEAN'); bm.operation = 'DIFFERENCE'; bm.object = cut; bm.solver = 'EXACT'
     bv = w1.modifiers.new('bev', 'BEVEL'); bv.width = .14; bv.segments = 4; bv.limit_method = 'ANGLE'
+    rim = S.arch_frame('rim1', M['frame'], AX, ARX, AZS, 1.5, W1Y - .28, W1Y + .1, G, n=160, z0=0.0); rb = rim.modifiers.new('bev', 'BEVEL'); rb.width = .07; rb.segments = 3; rb.limit_method = 'ANGLE'          # каменное обрамление большой арки
     # --- второе помещение: дальняя стена с нишей, арочным стеллажом и окном; боковые стены и потолок (свет — через арку и окно) ---
     w2 = S.box('wall2', M['inner'], -40, 120, W2Y, W2Y + 4.0, 0.0, 46.0, G)
     cuts = [('nA', NA, 3.2, 17.5, 3.5, W2Y + 2.2), ('nB', NB, 7.6, 15.5, -.05, W2Y + 3.0), ('nC', NC, 5.4, 17.0, 8.5, W2Y + 4.6)]
@@ -337,6 +381,8 @@ def build_hero(sc):
         c = S.arch_solid('cut' + nm, M['inner'], cx, rx, zs, W2Y - .6, y1, G, z0=z0); c.hide_render = True; c.display_type = 'WIRE'
         b2 = w2.modifiers.new('cut' + nm, 'BOOLEAN'); b2.operation = 'DIFFERENCE'; b2.object = c; b2.solver = 'EXACT'
     bv = w2.modifiers.new('bev', 'BEVEL'); bv.width = .10; bv.segments = 3; bv.limit_method = 'ANGLE'
+    for nm, cx, rx, zs, z0, y1 in cuts:                         # обрамления ниши, стеллажа и окна
+        fr = S.arch_frame('rim' + nm, M['frame'], cx, rx, zs, .55, W2Y - .2, W2Y + .08, G, n=96, z0=max(0.0, z0)); fb = fr.modifiers.new('bev', 'BEVEL'); fb.width = .04; fb.segments = 3; fb.limit_method = 'ANGLE'
     S.box('side_l', M['inner'], 16.0, 20.0, W1Y + 6.0, W2Y, 0.0, 46.0, G); S.box('side_r', M['inner'], 73.0, 77.0, W1Y + 6.0, W2Y, 0.0, 46.0, G)
     S.box('ceil', M['inner'], 16.0, 77.0, W1Y, W2Y + 4.0, 46.0, 47.0, G)
     pal_w = DC.paint('pb_white', (.92, .91, .88), .40, 0, .15, .08); pal_d = DC.paint('pb_dark', (.022, .020, .022), .30, 0, .3, .1); pal_s = DC.paint('pb_sand', (.80, .68, .52), .5, 0, .1, .1)
@@ -357,7 +403,13 @@ def build_hero(sc):
     DC.vase('nvB', 'amphora', M['glaze'], NB + 5.0, W2Y + 1.7, 18.0, 2.2, G, W=1.4)
     DC.eucalyptus(NB + 5.0, W2Y + 1.7, 19.9, 3.2, DC.paint('euc_leaf', (.40, .48, .38), .5, 0, .05, .1), M['bark'], rr, G, n=5, spread=.9)
     # окно C: вид на сад, тонкая рама, подоконник
-    S.box('sky', M['sky'], NC - 9.0, NC + 9.0, W2Y + 7.0, W2Y + 7.2, 7.0, 26.0, G).visible_shadow = False
+    S.box('sky', M['sky'], NC - 150.0, NC + 150.0, W2Y + 190.0, W2Y + 190.4, -30.0, 150.0, G).visible_shadow = False             # даль: большая светящаяся картина далеко за окном (параллакс с рамой — как у настоящего вида)
+    S.box('lawn', grass_mat(), NC - 150.0, NC + 150.0, W2Y + 4.2, W2Y + 190.0, -.4, .12, G)
+    rt = random.Random(5)
+    for tx, ty, th, trx in ((NC - 4.6, W2Y + 22.0, 19.0, 5.2), (NC + 6.5, W2Y + 31.0, 24.0, 6.6)):                     # два настоящих дерева в саду за окном
+        potted_olive(M, leaves, rt, tx, ty, H=th, rx=trx, ry=trx * .8, rz=trx * .9, nb=int(F('TREE_NB', 46)), lean=.6)
+    gl = bpy.data.lights.new('garden_sun', 'AREA'); gl.energy = F('GARDEN', 420000); gl.size = 60; gl.size_y = 40; gl.color = (1.0, .95, .86)
+    go = bpy.data.objects.new('garden_sun', gl); bpy.context.collection.objects.link(go); go.location = (NC - 30, W2Y + 6.0, 80); go.rotation_euler = (Vector((NC, W2Y + 26, 20)) - Vector(go.location)).to_track_quat('-Z', 'Y').to_euler(); go.visible_camera = False
     wf = S.arch_frame('wf', M['bronze'], NC, 5.2, 17.0, .20, W2Y + 2.2, W2Y + 2.7, G, z0=8.5)
     S.box('wm_v', M['bronze'], NC - .09, NC + .09, W2Y + 2.3, W2Y + 2.6, 8.5, 22.4, G); S.box('wm_h', M['bronze'], NC - 5.3, NC + 5.3, W2Y + 2.3, W2Y + 2.6, 15.4, 15.58, G)
     S.box('sill', M['frame'], NC - 6.0, NC + 6.0, W2Y - .5, W2Y + 3.0, 7.9, 8.5, G, bev=.05)
@@ -370,6 +422,9 @@ def build_hero(sc):
     parent_all(out, F('FLX', 47.6), F('FLY', 23.0), math.radians(F('FLR', -18)))
     # --- стол: каменный блок и плита со скруглённым торцом ---
     S.box('table_block', M['tblock'], T['x0'] + 2.4, T['x1'] - 5.2, T['y0'] + 1.5, T['y1'] - 1.5, 0.0, T['top'] - 1.1, G, bev=.10)
+    for k in range(int((T['x1'] - 5.2 - T['x0'] - 2.4) / .72)):                                   # каннелюры на лицевой стороне основания: ряд вертикальных полуколонок
+        S.cylinder('flute', M['tblock'], T['x0'] + 2.4 + .36 + k * .72, T['y0'] + 1.5, .33, 0.0, T['top'] - 1.1, G, seg=20, bev=0)
+    for k in range(int((T['y1'] - T['y0'] - 3.0) / .72)): S.cylinder('flute_l', M['tblock'], T['x0'] + 2.4, T['y0'] + 1.5 + .36 + k * .72, .33, 0.0, T['top'] - 1.1, G, seg=20, bev=0)
     slab('table_top', M['ttop'], T['x0'], T['x1'], T['y0'], T['y1'], T['top'] - 1.1, T['top'], rl=.9, bev=.09)
     th_ = T['top']
     # на столе: ваза с ветками, флаконы (тёмное стекло с чёрными крышками, белые), журналы и бумаги
@@ -518,7 +573,7 @@ def main():
     bpy.ops.wm.read_factory_settings(use_empty=True); sc = bpy.context.scene
     S.settings(sc, pw, ph, spp); sc.view_settings.exposure = F('EXPO', -0.7)
     if SCENE == 'hero':
-        build_hero(sc); lights(sc); c = CAM_HERO; cam = camera(sc, c['loc'], c['tgt'], c['lens'], focus=(F('VX', 15.6), F('VY', -10.0), 10.0), fstop=F('FSTOP', 4.0))
+        build_hero(sc); lights(sc); c = CAM_HERO; cam = camera(sc, c['loc'], c['tgt'], c['lens'], focus=(F('VX', 15.6), F('VY', -10.0), 10.0), fstop=F('FSTOP', 11.0))
     elif SCENE == 'mag':
         build_mag(sc); lights(sc); cam = camera(sc, (F('CAMX', .4), F('CAMY', -10.6), F('CAMZ', 7.2)), (F('TGTX', .5), 1.0, F('TGTZ', 1.7)), F('LENS', 36.0), focus=(-1.2, -1.6, .2), fstop=F('FSTOP', 5.6))
     elif SCENE == 'arch':
