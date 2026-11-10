@@ -26,7 +26,7 @@ G = 'ac'
 args = [a for a in sys.argv[1:] if not a.startswith('-')]
 SCENE = args[0] if args and args[0] in ('hero', 'mag', 'arch', 'shade') else 'hero'
 MODE = next((a for a in args if a in ('preview', 'layout', 'regrade')), 'final')
-SIZES = {'hero': (2800, 1100), 'mag': (1500, 1200), 'arch': (1500, 640), 'shade': (1600, 1000)}
+SIZES = {'hero': (2800, 1100), 'mag': (1800, 1440), 'arch': (1500, 640), 'shade': (1600, 1000)}
 F = lambda k, d: float(os.environ.get(k, d))
 CAM_HERO = dict(loc=(F('CAMX', 16.0), F('CAMY', -46.0), F('CAMZ', 12.6)), tgt=(F('TGTX', 16.0), 0.0, F('TGTZ', 10.6)), lens=F('LENS', 27.0))
 TABLE = dict(x0=11.0, x1=32.0, y0=-17.0, y1=-4.0, top=7.7)                          # массивный стол: плита 2,1 × 1,3 м со скруглённым правым торцом на каменном блоке
@@ -376,7 +376,7 @@ def build_hero(sc):
     rim = S.arch_frame('rim1', M['frame'], AX, ARX, AZS, 1.5, W1Y - .28, W1Y + .1, G, n=160, z0=0.0); rb = rim.modifiers.new('bev', 'BEVEL'); rb.width = .07; rb.segments = 3; rb.limit_method = 'ANGLE'          # каменное обрамление большой арки
     # --- второе помещение: дальняя стена с нишей, арочным стеллажом и окном; боковые стены и потолок (свет — через арку и окно) ---
     w2 = S.box('wall2', M['inner'], -40, 120, W2Y, W2Y + 4.0, 0.0, 46.0, G)
-    cuts = [('nA', NA, 3.2, 17.5, 3.5, W2Y + 2.2), ('nB', NB, 7.6, 15.5, -.05, W2Y + 3.0), ('nC', NC, 5.4, 17.0, 8.5, W2Y + 4.6)]
+    cuts = [('nA', NA, 3.2, 17.5, 3.5, W2Y + 2.2), ('nB', NB, 7.6, 15.5, -.05, W2Y + 3.0), ('nC', NC, 4.7, 19.2, -.05, W2Y + 2.7)]
     for nm, cx, rx, zs, z0, y1 in cuts:
         c = S.arch_solid('cut' + nm, M['inner'], cx, rx, zs, W2Y - .6, y1, G, z0=z0); c.hide_render = True; c.display_type = 'WIRE'
         b2 = w2.modifiers.new('cut' + nm, 'BOOLEAN'); b2.operation = 'DIFFERENCE'; b2.object = c; b2.solver = 'EXACT'
@@ -402,17 +402,16 @@ def build_hero(sc):
     for i in range(3): S.box('towel', lin, NB + 3.2, NB + 6.0, W2Y + .8, W2Y + 2.7, 7.9 + i * .36, 7.9 + i * .36 + .32, G, bev=.09)
     DC.vase('nvB', 'amphora', M['glaze'], NB + 5.0, W2Y + 1.7, 18.0, 2.2, G, W=1.4)
     DC.eucalyptus(NB + 5.0, W2Y + 1.7, 19.9, 3.2, DC.paint('euc_leaf', (.40, .48, .38), .5, 0, .05, .1), M['bark'], rr, G, n=5, spread=.9)
-    # окно C: вид на сад, тонкая рама, подоконник
-    S.box('sky', M['sky'], NC - 150.0, NC + 150.0, W2Y + 190.0, W2Y + 190.4, -30.0, 150.0, G).visible_shadow = False             # даль: большая светящаяся картина далеко за окном (параллакс с рамой — как у настоящего вида)
-    S.box('lawn', grass_mat(), NC - 150.0, NC + 150.0, W2Y + 4.2, W2Y + 190.0, -.4, .12, G)
-    rt = random.Random(5)
-    for tx, ty, th, trx in ((NC - 4.6, W2Y + 22.0, 19.0, 5.2), (NC + 6.5, W2Y + 31.0, 24.0, 6.6)):                     # два настоящих дерева в саду за окном
-        potted_olive(M, leaves, rt, tx, ty, H=th, rx=trx, ry=trx * .8, rz=trx * .9, nb=int(F('TREE_NB', 46)), lean=.6)
-    gl = bpy.data.lights.new('garden_sun', 'AREA'); gl.energy = F('GARDEN', 420000); gl.size = 60; gl.size_y = 40; gl.color = (1.0, .95, .86)
-    go = bpy.data.objects.new('garden_sun', gl); bpy.context.collection.objects.link(go); go.location = (NC - 30, W2Y + 6.0, 80); go.rotation_euler = (Vector((NC, W2Y + 26, 20)) - Vector(go.location)).to_track_quat('-Z', 'Y').to_euler(); go.visible_camera = False
-    wf = S.arch_frame('wf', M['bronze'], NC, 5.2, 17.0, .20, W2Y + 2.2, W2Y + 2.7, G, z0=8.5)
-    S.box('wm_v', M['bronze'], NC - .09, NC + .09, W2Y + 2.3, W2Y + 2.6, 8.5, 22.4, G); S.box('wm_h', M['bronze'], NC - 5.3, NC + 5.3, W2Y + 2.3, W2Y + 2.6, 15.4, 15.58, G)
-    S.box('sill', M['frame'], NC - 6.0, NC + 6.0, W2Y - .5, W2Y + 3.0, 7.9, 8.5, G, bev=.05)
+    # ниша C (на месте прежнего окна): тёплая подсветка сверху, травертиновый постамент, высокая керамическая ваза с ветками, внизу — стопка камней
+    S.cylinder('ped_c', M['tblock'], NC, W2Y + 1.35, 1.75, 0.0, 6.4, G, seg=96, bev=.07)
+    DC.vase('nvC', 'amphora', M['glaze'], NC, W2Y + 1.35, 6.4, 4.2, G, W=2.5)
+    rc = random.Random(11)
+    for j in range(7):
+        az = rc.uniform(0, 6.283); el = rc.uniform(1.0, 1.45); Lb = rc.uniform(4.0, 7.0); nk = Vector((NC, W2Y + 1.35, 6.4 + 4.2 * .92))
+        dv = Vector((math.cos(az) * math.cos(el), math.sin(az) * math.cos(el) * .5 - .1, math.sin(el))).normalized()
+        olive_stem(rc, leaves, M['bark'], [nk, nk + dv * Lb * .35 + Vector((0, 0, .1)), nk + dv * Lb * .7 + Vector((0, 0, .15)), nk + dv * Lb], 26, .95, .03, .008)
+    cl = bpy.data.lights.new('niche_c', 'AREA'); cl.energy = F('NICHE', 520); cl.size = 6.0; cl.size_y = 1.6; cl.color = (1.0, .84, .62)
+    co = bpy.data.objects.new('niche_c', cl); bpy.context.collection.objects.link(co); co.location = (NC, W2Y + 1.0, 22.6); co.rotation_euler = (math.radians(128), 0, 0); co.visible_camera = False
     # флипчарт на треноге
     bm_ = img_mat('flip', board_texture('/tmp/ac_board.png'), .35, axes='xz'); out = []
     out.append(S.box('board', bm_, -3.1, 3.1, -.06, .06, 10.2, 18.8, G))
@@ -464,14 +463,14 @@ def build_hero(sc):
 
 
 def lights(sc):
-    sun = bpy.data.lights.new('sun', 'SUN'); sun.energy = F('SUN', 18.0 if SCENE == 'hero' else 10.0); sun.angle = math.radians(F('SUN_ANGLE', 2.2 if SCENE == 'hero' else 1.8)); sun.color = S.E3('SUNC', (1.0, .90, .76))
+    sun = bpy.data.lights.new('sun', 'SUN'); sun.energy = F('SUN', 18.0 if SCENE == 'hero' else 13.0); sun.angle = math.radians(F('SUN_ANGLE', 2.2 if SCENE == 'hero' else 1.8)); sun.color = S.E3('SUNC', (1.0, .90, .76))
     so = bpy.data.objects.new('sun', sun); bpy.context.collection.objects.link(so)
     d = SUN_DIR if SCENE in ('hero', 'mag') else Vector((F('SUNX', .58), F('SUNY', .60), F('SUNZ', -.55))).normalized(); so.rotation_euler = d.to_track_quat('-Z', 'Y').to_euler(); so.location = (-70, -70, 60)
     fl = bpy.data.lights.new('fill', 'AREA'); fl.energy = F('FILL', 2600 if SCENE == 'hero' else 11000); fl.size = 90; fl.size_y = 34; fl.color = S.E3('FILLC', (1.0, .88, .74))
     fo = bpy.data.objects.new('fill', fl); bpy.context.collection.objects.link(fo); fo.location = (-30, -120, 40); fo.rotation_euler = (math.radians(78), 0, math.radians(-14)); fo.visible_camera = False
     if SCENE == 'hero':                                        # мягкий «оконный» свет слева-спереди: объём и собственные тени вместо ровной заливки небом
         fl.energy = F('FILL', 7500); fl.size = 70; fl.size_y = 44; fo.location = (-75, -70, 46); fo.rotation_euler = (Vector((16, -6, 8)) - Vector(fo.location)).to_track_quat('-Z', 'Y').to_euler()
-    w = bpy.data.worlds.new('w'); w.use_nodes = True; bg = w.node_tree.nodes['Background']; bg.inputs['Color'].default_value = (*S.E3('WORLDC', (.98, .84, .68)), 1); bg.inputs['Strength'].default_value = F('WORLD', .13 if SCENE == 'hero' else .42); sc.world = w
+    w = bpy.data.worlds.new('w'); w.use_nodes = True; bg = w.node_tree.nodes['Background']; bg.inputs['Color'].default_value = (*S.E3('WORLDC', (.98, .84, .68)), 1); bg.inputs['Strength'].default_value = F('WORLD', .13 if SCENE == 'hero' else .26); sc.world = w
 
 
 def camera(sc, loc, tgt, lens, focus=None, fstop=None):
@@ -493,7 +492,7 @@ def layout_hero(sc, cam, PW, PH):
 
 
 # ---------------- остальные сцены ----------------
-def mag_page(path, side, w=1100, h=1450):
+def mag_page(path, side, w=1650, h=2175):
     """страница журнала для сцены «Полезные статьи»: настоящие фото сайта (assets/photos), заголовок-плашки и колонки «текста» (серые строки — мелкий текст с расстояния не читается)"""
     from PIL import Image, ImageDraw, ImageOps
     im = Image.new('RGB', (w, h), (250, 247, 241)); d = ImageDraw.Draw(im); rnd = random.Random(31 + side)
@@ -507,17 +506,21 @@ def mag_page(path, side, w=1100, h=1450):
         y = y0
         while y < y1:
             xe = x1 - (rnd.randint(40, 160) if rnd.random() < .22 else rnd.randint(0, 18)); d.rectangle([x0, y, xe, y + th], fill=col); y += step
-    m = 84
+    m = 126; k = 1.5
+    def lines(x0, x1, y0, y1, step=33, th=10, col=(132, 128, 122)):
+        y = y0
+        while y < y1:
+            xe = x1 - (rnd.randint(60, 240) if rnd.random() < .22 else rnd.randint(0, 26)); d.rectangle([x0, y, xe, y + th], fill=col); y += step
     if side == 0:                                              # левая страница: крупный портрет, подпись, две колонки
-        photo('photo-01-hero.webp', (m, m, w - m, 800), (.5, .35))
-        d.rectangle([m, 850, m + 420, 868], fill=(28, 40, 70)); d.rectangle([m, 884, m + 300, 896], fill=(120, 100, 76))
-        lines(m, w // 2 - 24, 940, h - m); lines(w // 2 + 24, w - m, 940, h - m)
+        photo('photo-01-hero.webp', (m, m, w - m, 1200), (.5, .35))
+        d.rectangle([m, 1275, m + 630, 1302], fill=(28, 40, 70)); d.rectangle([m, 1326, m + 450, 1344], fill=(120, 100, 76))
+        lines(m, w // 2 - 36, 1410, h - m); lines(w // 2 + 36, w - m, 1410, h - m)
     else:                                                      # правая страница: заголовок, вводка, фото процедуры и фото команды, колонки
-        d.rectangle([m, m + 6, m + 560, m + 34], fill=(28, 40, 70)); d.rectangle([m, m + 54, m + 420, m + 78], fill=(28, 40, 70))
-        lines(m, w - m, m + 120, m + 250, 24, 8, (120, 116, 110))
-        photo('photo-05-expertise.webp', (m, 380, w // 2 - 20, 900), (.5, .3)); photo('photo-02b-about.webp', (w // 2 + 20, 380, w - m, 640), (.5, .3))
-        lines(w // 2 + 20, w - m, 680, 900); lines(m, w // 2 - 24, 950, h - m); lines(w // 2 + 24, w - m, 950, h - m)
-        d.rectangle([w - m - 60, h - 56, w - m, h - 48], fill=(150, 146, 140))
+        d.rectangle([m, m + 9, m + 840, m + 51], fill=(28, 40, 70)); d.rectangle([m, m + 81, m + 630, m + 117], fill=(28, 40, 70))
+        lines(m, w - m, m + 180, m + 375, 36, 12, (112, 108, 102))
+        photo('photo-05-expertise.webp', (m, 570, w // 2 - 30, 1350), (.5, .3)); photo('photo-02b-about.webp', (w // 2 + 30, 570, w - m, 960), (.5, .3))
+        lines(w // 2 + 30, w - m, 1020, 1350); lines(m, w // 2 - 36, 1425, h - m); lines(w // 2 + 36, w - m, 1425, h - m)
+        d.rectangle([w - m - 90, h - 84, w - m, h - 72], fill=(150, 146, 140))
     im.save(path); return path
 
 
@@ -525,7 +528,7 @@ def build_mag(sc):
     """«Полезные статьи»: раскрытый журнал на каменной плите, рядом ваза с оливковыми ветками, очки и стопка книг; тёплая стена с мягкой тенью листвы (сцена в единицах по 10 см)"""
     M = mats(); rnd = random.Random(8); leaves = oliv_leaves()
     S.box('wall', M['wall'], -80, 80, 9.0, 12.0, -10, 60, G)
-    S.box('slab', trav_veined('mag_slab', (.97, .92, .84), 'Y', F('MVEIN', .4)), -60, 60, -16, 9.0, -1.0, 0.0, G, bev=.06)
+    S.box('slab', trav_veined('mag_slab', (.95, .88, .76), 'Z', F('MVEIN', .9), sc=F('MSC', 1.2)), -60, 60, -16, 9.0, -1.0, 0.0, G, bev=.06)
     root = bpy.data.objects.new('mag', None); bpy.context.collection.objects.link(root); root.location = (F('MGX', -1.2), F('MGY', -1.6), 0.0); root.rotation_euler = (0, 0, math.radians(F('MGR', 13)))
     PW, PD = 2.2, 2.95
     for side in (0, 1):                                        # две страницы с изгибом к корешку и приподнятым внешним краем
@@ -545,6 +548,13 @@ def build_mag(sc):
     books(-4.4, 2.6, 0.0, M, random.Random(3), bk)
     DC.cream_jar(-4.2, 2.5, 1.0, .9, .6, DC.paint('pb_white', (.92, .91, .88), .40, 0, .15, .08), DC.paint('pb_white2', (.90, .88, .84), .40, 0, .15, .08))
     S.box('pencil', DC.paint('pencil', (.10, .16, .30), .4), 2.7, 4.3, -3.3, -3.22, 0.0, .08, G, bev=.02).rotation_euler = (0, 0, math.radians(-24))
+    wht = DC.paint('cup_white', (.93, .92, .89), .22, 0, .6, .06)
+    DC.lathe('saucer', [(0, 0), (.42, 0), (.74, .07), (.78, .12), (.70, .12), (.40, .06), (0, .06)], wht, G, F('CUPX', -4.3), F('CUPY', -1.2), 0.0, seg=64)                     # чашка чая на блюдце
+    DC.lathe('cup', [(0, .06), (.26, .06), (.40, .30), (.44, .62), (.41, .62), (.37, .32), (.24, .12), (0, .12)], wht, G, F('CUPX', -4.3), F('CUPY', -1.2), 0.0, seg=64)
+    DC.lathe('tea', [(0, .52), (.405, .52), (.405, .53), (0, .53)], DC.paint('tea', (.36, .17, .05), .08, 0, 1.0, .03), G, F('CUPX', -4.3), F('CUPY', -1.2), 0.0, seg=48)
+    DC.lathe('mtray', [(0, 0), (1.25, 0), (1.31, .04), (1.31, .14), (1.23, .17), (1.15, .09), (0, .09)], M['block'], G, 2.75, -2.9, 0.0, seg=96)                                      # каменный поднос с пипеткой и баночкой
+    bottle('drop', 2.5, -2.7, .09, 1.25, M['amber'], DC.paint('pb_dark', (.022, .020, .022), .30, 0, .3, .1), DC.paint('lbl_paper', (.95, .94, .91), .55))
+    bottle('jar', 3.2, -3.3, .09, .5, wht, wht)
     cast_branches(M, leaves, rnd, [(-10, 12), (4, 16), (16, 10)], per=10, count=40, k=1.0, s0=14.0, s1=22.0, wall_y=9.0, d=SUN_DIR)
     return M
 
@@ -575,7 +585,7 @@ def main():
     if SCENE == 'hero':
         build_hero(sc); lights(sc); c = CAM_HERO; cam = camera(sc, c['loc'], c['tgt'], c['lens'], focus=(F('VX', 15.6), F('VY', -10.0), 10.0), fstop=F('FSTOP', 11.0))
     elif SCENE == 'mag':
-        build_mag(sc); lights(sc); cam = camera(sc, (F('CAMX', .4), F('CAMY', -10.6), F('CAMZ', 7.2)), (F('TGTX', .5), 1.0, F('TGTZ', 1.7)), F('LENS', 36.0), focus=(-1.2, -1.6, .2), fstop=F('FSTOP', 5.6))
+        build_mag(sc); lights(sc); cam = camera(sc, (F('CAMX', -1.5), F('CAMY', -10.6), F('CAMZ', 7.2)), (F('TGTX', -1.4), 1.0, F('TGTZ', 1.7)), F('LENS', 36.0), focus=(-1.2, -1.6, .2), fstop=F('FSTOP', 22.0))
     elif SCENE == 'arch':
         build_arch(sc); lights(sc); cam = camera(sc, (F('CAMX', 2.0), F('CAMY', -120.0), F('CAMZ', 7.5)), (F('TGTX', 2.0), 0.0, F('TGTZ', 7.5)), F('LENS', 105.0))
     else:
