@@ -9,7 +9,7 @@
 .js-stage{position:sticky;top:0;height:100vh;height:100lvh;overflow:hidden;background:var(--milk);isolation:isolate}
 .js-cv{position:absolute;inset:0;width:100%;height:100%;display:block;object-fit:cover;opacity:0;transition:opacity .9s ease}      /* cover: если размер холста устарел, картинка обрежется, но не растянется */
 .jar-story.ready .js-cv{opacity:1}
-.arch-story .js-stage::after{background:url(../assets/bg/stone-grain.webp?v=018499f4) 0 0/512px 512px;opacity:calc(.34 * var(--h2,0));z-index:1}      /* зерно камня поверх рендера зала: поры и крупинки — сцена не «мыльная» после сжатия кадров */
+.arch-story .js-stage::after{background:url(../assets/bg/stone-grain.webp?v=08676624) 0 0/512px 512px;opacity:calc(.34 * var(--h2,0));z-index:1}      /* зерно камня поверх рендера зала: поры и крупинки — сцена не «мыльная» после сжатия кадров */
 /* заставка: тёплая виньетка по краям (как у студийной съёмки) — уходит с первой же прокруткой; кадр зала, баночка и шар от неё не зависят */
 .ar-vig{position:absolute;inset:0;z-index:1;pointer-events:none;opacity:var(--cue,1);background:radial-gradient(115% 100% at 50% 48%,rgba(60,40,20,0) 54%,rgba(60,40,20,.2) 100%)}
 
@@ -30,7 +30,7 @@
 .ar-orbit .orb img{filter:drop-shadow(0 6px 10px rgba(11,26,51,.10))}
 /* «Листайте» — полоска заставки внизу сцены; гаснет с первой прокруткой (--cue) */
 .ar-cue{position:absolute;left:50%;bottom:clamp(20px,4.4vh,40px);z-index:2;transform:translateX(-50%);display:flex;flex-direction:column;align-items:center;gap:12px;
-  color:var(--navy);font:600 11px/1 var(--sans);letter-spacing:.3em;text-transform:uppercase;opacity:var(--cue,1);pointer-events:none}
+  color:var(--navy);font:700 12px/1 var(--sans);letter-spacing:.28em;text-transform:uppercase;opacity:var(--cue,1);pointer-events:none}
 .ar-cue i{position:relative;display:block;width:2px;height:56px;border-radius:2px;overflow:hidden;background:linear-gradient(180deg,rgba(11,26,51,.58),rgba(11,26,51,.22))}
 .ar-cue i::after{content:"";position:absolute;left:0;right:0;top:0;height:55%;border-radius:2px;background:linear-gradient(180deg,rgba(255,252,244,0),rgba(255,252,244,.98) 55%,rgba(255,252,244,0));transform:translate3d(0,-100%,0);animation:jarCue 1.9s cubic-bezier(.45,0,.35,1) infinite}      /* по полоске сверху вниз проходит свет — подсказка, что сцену надо листать */
 @keyframes jarCue{0%{transform:translate3d(0,-100%,0)}70%,100%{transform:translate3d(0,185%,0)}}
@@ -133,7 +133,7 @@ body[data-page="home"] .rd-about-photo figcaption,body[data-page="home"] .rd-abo
 /* цифры — каменные плиты */
 body[data-page="home"] .rd-nums{gap:14px}
 body[data-page="home"] .rd-num{position:relative;border:0;padding:clamp(20px,2.6vw,34px) clamp(16px,2vw,28px);border-radius:var(--ax-r-l,24px);background:var(--ar-card);box-shadow:var(--ar-rim),var(--ax-sh-1);overflow:hidden}
-body[data-page="home"] .rd-num::after{content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;background:url(../assets/bg/stone-grain.webp?v=018499f4) 0 0/512px 512px;opacity:.34}
+body[data-page="home"] .rd-num::after{content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;background:url(../assets/bg/stone-grain.webp?v=08676624) 0 0/512px 512px;opacity:.34}
 body[data-page="home"] .rd-num:nth-child(even){border-left:0}
 body[data-page="home"] .rd-num b{font-size:clamp(40px,5.6vw,84px)}
 
@@ -146,7 +146,7 @@ body[data-page="home"] .rd-why-item{position:relative;display:flex;flex-directio
   border-radius:999px 999px var(--ax-r-l,24px) var(--ax-r-l,24px);background:radial-gradient(120% 70% at 50% 0%,#fffaf0 0,#efe5d1 62%,#e8dcc4 100%);
   box-shadow:inset 0 22px 34px -22px rgba(86,60,30,.32),inset 0 0 0 1px rgba(255,255,255,.7),var(--ax-sh-1);overflow:hidden}
 body[data-page="home"] .rd-why-item:last-child{border-bottom:0}
-body[data-page="home"] .rd-why-item::after{content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;background:url(../assets/bg/stone-grain.webp?v=018499f4) 0 0/512px 512px;opacity:.4}
+body[data-page="home"] .rd-why-item::after{content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;background:url(../assets/bg/stone-grain.webp?v=08676624) 0 0/512px 512px;opacity:.4}
 body[data-page="home"] .rd-why-item:hover{transform:translateY(-6px);box-shadow:inset 0 22px 34px -22px rgba(86,60,30,.32),inset 0 0 0 1px rgba(255,255,255,.75),var(--ax-sh-2)}
 body[data-page="home"] .rd-why-item .rd-no{position:absolute;top:clamp(22px,3.2vw,46px);left:50%;transform:translateX(-50%);font-size:clamp(40px,4.6vw,68px);color:rgba(176,142,78,.5)}
 body[data-page="home"] .rd-why-item.lit .rd-no{color:rgba(176,142,78,.5)}

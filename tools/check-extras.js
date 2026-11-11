@@ -214,7 +214,7 @@ const cfg = JSON.parse(fs.readFileSync(pth.join(ROOT, 'data/redesign.json'), 'ut
     await p.waitForFunction(() => { const f = document.getElementById('asst-fab'); return f && getComputedStyle(f).opacity > 0.5; }, null, {timeout: 9000}).catch(() => {}); let fo = await fabOn(); ok(fo && fo.vis && fo.exp === 'false' && await p.$eval('#asst', e => e.hidden), 'кнопка «Помощник» на месте, чат закрыт');
     /* кнопка Стеллы: маскот, подпись, искры при появлении, «магнит» и ховер (только компьютер) */
     const fabI = await p.evaluate(() => { const f = document.getElementById('asst-fab'), t = f.querySelector('.asst-fab-t'); return {pe: f.querySelectorAll('svg.pe').length, mood: (f.querySelector('.pe') || {getAttribute: () => ''}).getAttribute('data-m'), label: t ? t.textContent.trim() : '', aria: f.getAttribute('aria-label'), sparks: f.querySelectorAll('.asst-fab-fx i').length, burst: !!f.querySelector('.asst-fab-fx.go'), defs: !!document.getElementById('pe-g')}; });
-    ok(fabI.pe === 1 && fabI.label === 'Спросить Стеллу' && /Стелла/.test(fabI.aria) && fabI.sparks >= 6 && fabI.defs, 'кнопка: жемчужинка Стелла, подпись «Спросить Стеллу», доступное имя, искры и градиент на месте', fabI);
+    ok(fabI.pe === 1 && fabI.label === 'Спросить Стеллу' && /Спросить Стеллу/.test(fabI.aria) && fabI.sparks >= 6 && fabI.defs, 'кнопка: жемчужинка Стелла, подпись «Спросить Стеллу», доступное имя, искры и градиент на месте', fabI);
     if (!mobile) {
       ok(fabI.burst, 'при появлении кнопки запускается россыпь искр');
       await p.waitForFunction(() => { const f = document.getElementById('asst-fab'); return f.classList.contains('settled'); }, null, {timeout: 16000}).catch(() => {}); await wait(600);

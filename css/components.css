@@ -34,7 +34,7 @@
 .g4{grid-template-columns:repeat(4,1fr)}
 .card{position:relative;background:#fff;border-radius:var(--r-lg);box-shadow:var(--sh);overflow:hidden}
 .card.hov{transition:box-shadow .25s ease}
-.card.hov:hover{box-shadow:var(--sh),0 0 0 1px color-mix(in srgb,var(--cc,#2f5bd6) 60%,transparent)}
+.card.hov:hover{box-shadow:var(--sh),0 0 0 1px color-mix(in srgb,var(--cc,var(--blue)) 60%,transparent)}
 .card-pad{padding:clamp(20px,2.2vw,28px)}
 
 /* ---- Seminar card ---- */
@@ -178,6 +178,8 @@
 /* ============ Шапка: поиск, кнопки, выдвижное меню ============ */
 .nav-extra{display:none}
 .hdr-cta{gap:12px}
+.hdr-tel .ic{width:18px;height:18px}
+@media (max-width:400px){.hdr-cta{gap:8px}}
 .hdr .icon-btn[aria-expanded="true"]{background:var(--navy);border-color:var(--navy);color:var(--milk)}
 
 /* ============ Поиск по сайту (оверлей) ============ */
@@ -222,7 +224,16 @@ a.tag{min-height:24px}
 .pcard h3 a,.newscard h3 a,.sem h3 a{color:inherit}
 .pcard .pf .lnk{pointer-events:none}
 .pcard:hover h3 a,.newscard:hover h3 a,.sem:hover h3 a{color:var(--blue-d)}
-.newscard .cov{height:112px}
+/* обложка новостной карточки: кадр из рендеров сайта (по категории) вместо цветной плашки с пунктирным кругом; подпись категории — на тёмно-синей подложке */
+.newscard .cov{height:132px;padding:0;color:#fff;background:#efe7d6 var(--cv) var(--cvp,50% 50%)/var(--cs,cover) no-repeat;overflow:hidden}
+.newscard .cov::before{display:none}
+.newscard .cov::after{content:"";position:absolute;left:0;right:0;bottom:0;height:70%;background:linear-gradient(180deg,rgba(11,26,51,0),rgba(11,26,51,.66));pointer-events:none}
+.newscard .cov span{z-index:1;margin:0 0 14px 18px;padding:6px 11px;border-radius:999px;background:rgba(11,26,51,.58);font-size:10.5px}
+.newscard[data-cat="news"] .cov{--cv:url(../assets/brands/hero.webp?v=08676624);--cvp:14% 55%}
+.newscard[data-cat="sale"] .cov{--cv:url(../assets/brands/hero.webp?v=08676624);--cvp:52% 62%}
+.newscard[data-cat="novelty"] .cov{--cv:url(../assets/academy/mag-s.webp?v=08676624);--cvp:62% 62%}
+.newscard[data-cat="edu"] .cov{--cv:url(../assets/academy/hall-s.webp?v=08676624);--cvp:36% 64%;--cs:190% auto}
+.newscard[data-cat="event"] .cov{--cv:url(../assets/academy/hall-s.webp?v=08676624);--cvp:90% 50%}
 .newscard .meta{align-items:center}
 .newscard .meta .lnk{font-size:11px}
 .adv{display:flex;flex-direction:column;gap:10px}

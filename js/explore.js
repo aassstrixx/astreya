@@ -181,7 +181,8 @@
   function countdown() {
     if (!X.countdown) return; $$('.cd').forEach(e => e.remove()); clearInterval(cdTimer);
     const page = document.body.getAttribute('data-page'), slot = $('.cd-slot'), ev = nextEvent();
-    const put = (box, fallback) => { if (slot) { slot.appendChild(box); slot.classList.add('on'); } else if (fallback) fallback.insertAdjacentElement('afterend', box); };
+    /* в блоке появляются таймер и кнопка записи — скрывать их от скринридеров (aria-hidden у заглушки) нельзя */
+    const put = (box, fallback) => { if (slot) { slot.appendChild(box); slot.classList.add('on'); slot.removeAttribute('aria-hidden'); } else if (fallback) fallback.insertAdjacentElement('afterend', box); };
     if (!ev) { if (slot) slot.hidden = true; return; }
     if (page === 'training') put(cdBox(ev, 'Ближайшее мероприятие'), $('[data-training] .page-head'));
     else if (page === 'home') put(cdBox(ev, 'До начала'), $('.hp-acad-copy .hp-next, .rd-train-copy .rd-next'));

@@ -477,7 +477,10 @@
     if (store.get('astreya:hero') || reloaded) { store.del('astreya:hero'); const ht = M.heroTop(); if (ht > 0) window.scrollTo({top: ht, left: 0, behavior: 'instant'}); }
     const fromNav = html.classList.contains('nav-in');
     if (html.classList.contains('nav-quiet')) { store.del('astreya:nav'); html.classList.remove('nav-quiet'); const sq = $('#splash'); if (sq) sq.remove(); finish(40); return; }          // тихий переход обычной загрузкой (поиск): ни заставки, ни шторки
-    if ($('#splash') && !fromNav) { requestAnimationFrame(() => setTimeout(runSplash, 0)); return; }   // заставка — при каждой загрузке/обновлении страницы
+    /* заставка — фирменный момент входа на сайт: на главной и один раз за сессию (раньше шла при каждой загрузке любой страницы и держала контент ≈3 с;
+       в разметке она теперь есть только у главной). Нажатие по заставке пропускает её, как и раньше. */
+    let introSeen = false; try { introSeen = window.sessionStorage.getItem('astreya:intro') === '1'; } catch (e) {}
+    if ($('#splash') && !fromNav && !introSeen) { try { window.sessionStorage.setItem('astreya:intro', '1'); } catch (e) {} requestAnimationFrame(() => setTimeout(runSplash, 0)); return; }
     const sp = $('#splash'); if (sp) sp.remove();
     if (fromNav) { M.liftAfterNav(); finish(340); } else finish(60);
   };

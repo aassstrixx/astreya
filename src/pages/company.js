@@ -16,6 +16,8 @@ module.exports = function company(ctx, C, P) {
       </div>
     </section>
 
+    <figure class="ph-band reveal" aria-hidden="true"><img src="${C.u(P, 'assets/brands/hero.webp')}" alt="" width="3200" height="900" loading="lazy" decoding="async"></figure>
+
     <section class="sec">
       ${C.secHead('Направления', 'Чем занимается компания')}
       ${C.advantageCards(cp.directions, 'g4')}

@@ -18,7 +18,7 @@ const FONT_PRELOAD = fs.readdirSync(path.join(__dirname, '..', 'assets', 'fonts'
 /* Ранний скрипт: класс js, «уже видели заставку», «пришли с переходом» — до первой отрисовки, чтобы не было мигания */
 /* Совместимость со старыми ссылками одностраничной версии (#/catalog?brand=…, #/brand/keenwell, #/academy…) — только на главной */
 const LEGACY = `(function(l){var m=l.hash.match(/^#\\/(catalog|brands|brand\\/[\\w-]+|academy|news|company)(\\?.*)?$/);if(!m)return;var t=m[1],q=m[2]||'',u=t==='academy'?'training.html':t.indexOf('brand/')===0?'brands/'+t.slice(6)+'.html':t+'.html';l.replace(u+q);})(location);`;
-const EARLY = `(function(d){var h=d.documentElement;h.classList.add('js');try{if(top!==self){try{void top.location.href}catch(e){h.style.display='none'}}}catch(e){}if(/[?&]pv=/.test(location.search))h.classList.add('nav-quiet');try{var n=sessionStorage.getItem('astreya:nav');if(n){var o=JSON.parse(n);if(o&&Date.now()-o.t<8000)h.classList.add(o.q?'nav-quiet':'nav-in');else sessionStorage.removeItem('astreya:nav')}}catch(e){}})(document);`;
+const EARLY = `(function(d){var h=d.documentElement;h.classList.add('js');try{if(top!==self){try{void top.location.href}catch(e){h.style.display='none'}}}catch(e){}if(/[?&]pv=/.test(location.search))h.classList.add('nav-quiet');try{if(sessionStorage.getItem('astreya:intro')==='1')h.classList.add('intro-seen')}catch(e){}try{var n=sessionStorage.getItem('astreya:nav');if(n){var o=JSON.parse(n);if(o&&Date.now()-o.t<8000)h.classList.add(o.q?'nav-quiet':'nav-in');else sessionStorage.removeItem('astreya:nav')}}catch(e){}})(document);`;
 
 module.exports = function layout(ctx, C) {
   const {site} = ctx, {u} = C;
@@ -82,6 +82,7 @@ module.exports = function layout(ctx, C) {
       </div>
     </nav>
     <div class="hdr-cta" style="--i:2">
+      <a class="icon-btn hdr-tel" href="tel:${c.phoneRaw}" aria-label="Позвонить: ${esc(c.phone)}" title="${esc(c.phone)}" data-track="phone_click" data-place="header">${I.phone}</a>
       <button class="icon-btn" type="button" data-act="search" aria-label="Открыть поиск" aria-expanded="false" aria-controls="srch">${I.search}</button>
       <a class="btn btn-fill btn-sm hdr-partner" href="${u(P, 'partners.html')}" data-track="partner_cta" data-place="header">Стать партнёром</a>
       <button class="burger" id="burger" type="button" data-act="menu" aria-label="Меню" aria-expanded="false" aria-controls="nav"><i></i></button>
@@ -251,7 +252,7 @@ ${ld.map(o => `<script type="application/ld+json">${JSON.stringify(o)}</script>`
 <a class="skip" href="#main">К основному содержимому</a>
 ${logoDefs}
 <div id="progress" aria-hidden="true"></div>
-${P.key === 'notfound' ? '' : splash}
+${P.key === 'home' ? splash : ''}
 <div id="curtain" aria-hidden="true"><div class="cs">${Array.from({length: 8}, (_, i) => `<i style="--i:${i}"></i>`).join('')}</div><div class="ct" aria-hidden="true"></div></div>
 
 ${header(P)}

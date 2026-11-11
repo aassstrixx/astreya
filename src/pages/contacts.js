@@ -15,7 +15,7 @@ module.exports = function contacts(ctx, C, P) {
     {ic: I.pin, t: 'Центральный офис', v: esc(c.address), s: esc(c.addressNote)}
   ];
   return `<div class="wrap">
-    ${C.pageHead('Контакты', 'Свяжитесь с Астрея', 'Центральный офис в Москве и представительства в регионах. Позвоните, напишите или оставьте заявку — ответим в рабочее время.', '', {src: C.u(P, 'assets/academy/hall-s.webp'), w: 1500, h: 589, pos: '93% 50%', ar: '5/4'})}
+    ${C.pageHead('Контакты', 'Свяжитесь с Астрея', 'Центральный офис в Москве и представительства в регионах. Позвоните, напишите или оставьте заявку — ответим в рабочее время.', `<div class="row reveal">${C.callbackBtn('btn btn-fill', 'contacts-hero')}<a class="btn btn-ghost" href="tel:${c.phoneRaw}" data-track="phone_click" data-place="contacts-hero">${I.phone} ${esc(c.phone)}</a></div>`, {src: C.u(P, 'assets/academy/hall-s.webp'), w: 1500, h: 589, pos: '93% 50%', ar: '5/4'})}
     <h2 class="sr">Способы связи</h2>
     <div class="grid ${cards.length >= 4 ? 'g4' : 'g3'} contact-cards">${cards.map(k => `<article class="card card-pad ccard${k.off ? ' ccard-off' : ''} reveal"><span class="adv-ic">${k.ic}</span><h3>${k.t}</h3><p class="cv">${k.v}</p><p class="muted small">${k.s}</p></article>`).join('')}</div>
 

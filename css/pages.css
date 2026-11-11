@@ -70,7 +70,7 @@
 .bcard{position:relative;min-height:300px;border-radius:var(--r-lg);background:#fff;box-shadow:var(--sh);cursor:pointer;overflow:hidden;z-index:1;display:flex;flex-direction:column;
   transition:translate .85s var(--ease) var(--rd,0ms),opacity .85s var(--ease) var(--rd,0ms),transform .55s var(--ease),box-shadow .5s var(--ease)}
 .bcard::before{content:"";position:absolute;inset:0;background:rgba(11,26,51,.6);opacity:0;transition:opacity .45s ease;z-index:6;pointer-events:none;border-radius:inherit}
-.bgrid:not(.has-active) .bcard:hover{box-shadow:var(--sh),0 0 0 1px color-mix(in srgb,var(--cc,#2f5bd6) 60%,transparent)}
+.bgrid:not(.has-active) .bcard:hover{box-shadow:var(--sh),0 0 0 1px color-mix(in srgb,var(--cc,var(--blue)) 60%,transparent)}
 .bcard .band{position:relative;height:124px;flex:none;background:linear-gradient(105deg,var(--c1) 0%,var(--c2) 100%);color:var(--ink);padding:18px 22px;display:flex;align-items:flex-end;justify-content:space-between;overflow:hidden}
 /* вместо жемчужины в углу шапки — белый логотип «Астрея» */
 .bcard .band::after{display:none}
@@ -94,7 +94,7 @@
 .bc-back .row{gap:8px;margin-top:auto}
 .bgrid.has-active .bcard:not(.is-active){box-shadow:none}
 .bgrid.has-active .bcard:not(.is-active)::before{opacity:1}
-.bcard.is-active{z-index:20;box-shadow:var(--sh),0 0 0 2px var(--cc,#2f5bd6);cursor:default}
+.bcard.is-active{z-index:20;box-shadow:var(--sh),0 0 0 2px var(--cc,var(--blue));cursor:default}
 .bcard.is-active .bc-front{opacity:0;transform:translateY(-8px);pointer-events:none}
 .bcard.is-active .bc-back{opacity:1;transform:none;pointer-events:all;transition-delay:.12s}
 .bcard.is-active .hint{display:none}
@@ -251,6 +251,10 @@ input[type=range]::-moz-range-thumb{width:16px;height:16px;border-radius:50%;bac
 .page-head.has-art>.row{margin-top:clamp(18px,2.4vw,30px)}
 .ph-art{position:relative;margin:0;overflow:hidden;border-radius:var(--r-xl);aspect-ratio:var(--ar,5/4);background:linear-gradient(135deg,#fdfcf8,#f7f2e6 52%,#efe6d2);box-shadow:var(--sh)}
 .ph-art img{display:block;width:100%;height:100%;object-fit:cover;object-position:var(--pos,50% 50%)}
+/* панорамная полоса-рендер между блоками текстовой страницы */
+.ph-band{position:relative;margin:clamp(6px,1.6vw,22px) 0 0;overflow:hidden;border-radius:var(--r-xl);aspect-ratio:3.2/1;background:linear-gradient(135deg,#fdfcf8,#f7f2e6 52%,#efe6d2);box-shadow:var(--sh)}
+.ph-band img{display:block;width:100%;height:100%;object-fit:cover;object-position:50% 58%}
+@media (max-width:700px){.ph-band{aspect-ratio:2/1}}
 .ph-art::after{content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;box-shadow:inset 0 0 0 1px rgba(16,31,55,.08)}
 @media (max-width:900px){
   .page-head.has-art{display:block}

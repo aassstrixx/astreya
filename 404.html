@@ -2,7 +2,7 @@
 <html lang="ru">
 <head>
 <meta charset="utf-8">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-0IpCG+7cnUJ37GWe6wHSsw+/3HzCBNKDBqrj9JQs8uA='; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self'; frame-src 'none'; child-src 'none'; worker-src 'self' blob:; media-src 'self'; manifest-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-qwvF4pO7/rHrn9KgqoY/Z+TFj12j8pP3YtHG8F5yBjU='; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self'; frame-src 'none'; child-src 'none'; worker-src 'self' blob:; media-src 'self'; manifest-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="referrer" content="strict-origin-when-cross-origin">
 <title>Страница не найдена — ошибка 404 | Астрея</title>
@@ -28,25 +28,25 @@
 <link rel="icon" href="/astreya/assets/favicon-32.png" type="image/png" sizes="32x32">
 <link rel="apple-touch-icon" href="/astreya/assets/apple-touch-icon.png">
 <link rel="manifest" href="/astreya/manifest.webmanifest">
-<script>(function(d){var h=d.documentElement;h.classList.add('js');try{if(top!==self){try{void top.location.href}catch(e){h.style.display='none'}}}catch(e){}if(/[?&]pv=/.test(location.search))h.classList.add('nav-quiet');try{var n=sessionStorage.getItem('astreya:nav');if(n){var o=JSON.parse(n);if(o&&Date.now()-o.t<8000)h.classList.add(o.q?'nav-quiet':'nav-in');else sessionStorage.removeItem('astreya:nav')}}catch(e){}})(document);</script>
+<script>(function(d){var h=d.documentElement;h.classList.add('js');try{if(top!==self){try{void top.location.href}catch(e){h.style.display='none'}}}catch(e){}if(/[?&]pv=/.test(location.search))h.classList.add('nav-quiet');try{if(sessionStorage.getItem('astreya:intro')==='1')h.classList.add('intro-seen')}catch(e){}try{var n=sessionStorage.getItem('astreya:nav');if(n){var o=JSON.parse(n);if(o&&Date.now()-o.t<8000)h.classList.add(o.q?'nav-quiet':'nav-in');else sessionStorage.removeItem('astreya:nav')}}catch(e){}})(document);</script>
 <!-- У Fraunces нет кириллицы, поэтому русские заголовки набираются парным по контрасту Playfair Display; латиница и цифры — Fraunces. Шрифты — свои (css/fonts.css), не с серверов Google. -->
 <link rel="preload" href="/astreya/assets/fonts/manrope-cyrillic-e58feb.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="preload" href="/astreya/assets/fonts/manrope-latin-938c6e.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="preload" href="/astreya/assets/fonts/playfair-display-cyrillic-66a1a9.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="preload" href="/astreya/assets/fonts/playfair-display-latin-ef05b3.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="stylesheet" href="/astreya/css/fonts.css?v=018499f4">
-<link rel="stylesheet" href="/astreya/css/base.css?v=018499f4">
-<link rel="stylesheet" href="/astreya/css/components.css?v=018499f4">
-<link rel="stylesheet" href="/astreya/css/pages.css?v=018499f4">
-<link rel="stylesheet" href="/astreya/css/responsive.css?v=018499f4">
-<link rel="stylesheet" href="/astreya/css/motion.css?v=018499f4">
-<link rel="stylesheet" href="/astreya/css/consent.css?v=018499f4">
-<link rel="stylesheet" href="/astreya/css/redesign.css?v=018499f4">
-<link rel="stylesheet" href="/astreya/css/backdrops.css?v=018499f4">
-<link rel="stylesheet" href="/astreya/css/extras.css?v=018499f4">
-<link rel="stylesheet" href="/astreya/css/guide.css?v=018499f4">
-<link rel="stylesheet" href="/astreya/css/sales.css?v=018499f4">
-<link rel="stylesheet" href="/astreya/css/sales-pages.css?v=018499f4">
+<link rel="stylesheet" href="/astreya/css/fonts.css?v=08676624">
+<link rel="stylesheet" href="/astreya/css/base.css?v=08676624">
+<link rel="stylesheet" href="/astreya/css/components.css?v=08676624">
+<link rel="stylesheet" href="/astreya/css/pages.css?v=08676624">
+<link rel="stylesheet" href="/astreya/css/responsive.css?v=08676624">
+<link rel="stylesheet" href="/astreya/css/motion.css?v=08676624">
+<link rel="stylesheet" href="/astreya/css/consent.css?v=08676624">
+<link rel="stylesheet" href="/astreya/css/redesign.css?v=08676624">
+<link rel="stylesheet" href="/astreya/css/backdrops.css?v=08676624">
+<link rel="stylesheet" href="/astreya/css/extras.css?v=08676624">
+<link rel="stylesheet" href="/astreya/css/guide.css?v=08676624">
+<link rel="stylesheet" href="/astreya/css/sales.css?v=08676624">
+<link rel="stylesheet" href="/astreya/css/sales-pages.css?v=08676624">
 
 
 </head>
@@ -109,6 +109,7 @@
       </div>
     </nav>
     <div class="hdr-cta" style="--i:2">
+      <a class="icon-btn hdr-tel" href="tel:+74959255162" aria-label="Позвонить: +7 (495) 925-51-62" title="+7 (495) 925-51-62" data-track="phone_click" data-place="header"><svg class="ic" viewBox="0 0 20 20" aria-hidden="true" focusable="false"><path d="M5 3h3l1.4 3.6-1.8 1.2a9 9 0 0 0 4.6 4.6l1.2-1.8L17 12v3a2 2 0 0 1-2 2A12 12 0 0 1 3 5a2 2 0 0 1 2-2Z"/></svg></a>
       <button class="icon-btn" type="button" data-act="search" aria-label="Открыть поиск" aria-expanded="false" aria-controls="srch"><svg class="ic" viewBox="0 0 20 20" aria-hidden="true" focusable="false"><circle cx="9" cy="9" r="5.5"/><path d="m13.2 13.2 3.8 3.8"/></svg></button>
       <a class="btn btn-fill btn-sm hdr-partner" href="/astreya/partners.html" data-track="partner_cta" data-place="header">Стать партнёром</a>
       <button class="burger" id="burger" type="button" data-act="menu" aria-label="Меню" aria-expanded="false" aria-controls="nav"><i></i></button>
@@ -175,22 +176,22 @@
 <div id="modal" aria-hidden="true"></div>
 <div id="toast" role="status" aria-live="polite"></div>
 
-<script src="/astreya/js/shared.js?v=018499f4" defer></script>
-<script src="/astreya/js/data.js?v=018499f4" defer></script>
-<script src="/astreya/js/core.js?v=018499f4" defer></script>
-<script src="/astreya/js/consent.js?v=018499f4" defer></script>
-<script src="/astreya/js/motion.js?v=018499f4" defer></script>
-<script src="/astreya/js/pages.js?v=018499f4" defer></script>
-<script src="/astreya/js/hero-mark.js?v=018499f4" defer></script>
-<script src="/astreya/js/redesign.js?v=018499f4" defer></script>
-<script src="/astreya/js/backdrops.js?v=018499f4" defer></script>
-<script src="/astreya/js/extras.js?v=018499f4" defer></script>
-<script src="/astreya/js/explore.js?v=018499f4" defer></script>
-<script src="/astreya/js/assistant-brain.js?v=018499f4" defer></script>
-<script src="/astreya/js/stella-policy.js?v=018499f4" defer></script>
-<script src="/astreya/js/assistant.js?v=018499f4" defer></script>
-<script src="/astreya/js/guide.js?v=018499f4" defer></script>
-<script src="/astreya/js/sales.js?v=018499f4" defer></script>
-<script src="/astreya/js/sales-pages.js?v=018499f4" defer></script>
+<script src="/astreya/js/shared.js?v=08676624" defer></script>
+<script src="/astreya/js/data.js?v=08676624" defer></script>
+<script src="/astreya/js/core.js?v=08676624" defer></script>
+<script src="/astreya/js/consent.js?v=08676624" defer></script>
+<script src="/astreya/js/motion.js?v=08676624" defer></script>
+<script src="/astreya/js/pages.js?v=08676624" defer></script>
+<script src="/astreya/js/hero-mark.js?v=08676624" defer></script>
+<script src="/astreya/js/redesign.js?v=08676624" defer></script>
+<script src="/astreya/js/backdrops.js?v=08676624" defer></script>
+<script src="/astreya/js/extras.js?v=08676624" defer></script>
+<script src="/astreya/js/explore.js?v=08676624" defer></script>
+<script src="/astreya/js/assistant-brain.js?v=08676624" defer></script>
+<script src="/astreya/js/stella-policy.js?v=08676624" defer></script>
+<script src="/astreya/js/assistant.js?v=08676624" defer></script>
+<script src="/astreya/js/guide.js?v=08676624" defer></script>
+<script src="/astreya/js/sales.js?v=08676624" defer></script>
+<script src="/astreya/js/sales-pages.js?v=08676624" defer></script>
 </body>
 </html>

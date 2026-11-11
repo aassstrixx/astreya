@@ -242,6 +242,7 @@ function brandsWall(ctx, C, P) {
           <div class="chips bw-task-chips" id="bw-task-chips" role="group" aria-label="${esc(tk.title)}">${usedList.map(t => C.chip(esc(t.label), 'bw-task', t.id, false)).join('')}</div>
           <p class="bw-tr-empty muted">${esc(tk.empty)}</p>
           ${taskRes}
+          <p class="bw-tasks-more">${C.lnk(C.u(P, 'partners.html') + '#calc', 'Условия закупки и калькулятор скидки', 'data-track="partner_cta" data-place="brands-tasks"')}</p>
         </section>
         <section class="bw-ask" aria-labelledby="bw-ask-h"><span class="bw-ask-pe" data-pe="happy" aria-hidden="true"></span><div><h2 id="bw-ask-h">${esc(ask.title)}</h2><p>${esc(ask.lead)}</p></div>${helpBtn('bw-ask-help', ask.btn)}</section>
       </div>
