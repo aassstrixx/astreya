@@ -6,7 +6,7 @@ module.exports = function company(ctx, C, P) {
   const today = new Date().toISOString().slice(0, 10);
   const upcoming = ctx.sortedEvents.filter(e => e.date >= today).length;
   return `<div class="wrap">
-    ${C.pageHead(cp.eyebrow, esc(cp.h1), esc(cp.lead))}
+    ${C.pageHead(cp.eyebrow, esc(cp.h1), esc(cp.lead), '', {src: C.u(P, 'assets/academy/hall-s.webp'), w: 1500, h: 589, pos: '34% 60%', ar: '4/3'})}
     <section class="about-grid">
       <div class="txt reveal">${cp.who.map(t => `<p>${esc(t)}</p>`).join('')}</div>
       <div class="why reveal">

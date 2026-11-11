@@ -9,15 +9,15 @@ module.exports = function contacts(ctx, C, P) {
   const cards = [
     {ic: I.phone, t: 'Телефон', v: `<a href="tel:${c.phoneRaw}" data-track="phone_click">${esc(c.phone)}</a>`, s: esc(c.hours)},
     {ic: I.mail, t: 'Email', v: `<a href="mailto:${c.email}" data-track="email_click">${esc(c.email)}</a>`, s: 'Ответим в рабочее время'},
-    ...MSG.cells(c).map(ch => ch.url
-      ? {ic: I.msg, t: ch.name, v: `<a href="${esc(ch.url)}" target="_blank" rel="noopener" data-track="messenger_click" data-place="contacts">${ch.cta}</a>`, s: ch.sub}
-      : {ic: I.msg, t: ch.name, v: '<span class="tbd">Скоро</span>', s: 'Ссылка появится позже', off: true}),
+    /* мессенджеры без ссылки не показываем («Скоро» выглядит недоделкой): карточка появится сама, когда ссылка будет задана в настройках */
+    ...MSG.cells(c).filter(ch => ch.url).map(ch =>
+      ({ic: I.msg, t: ch.name, v: `<a href="${esc(ch.url)}" target="_blank" rel="noopener" data-track="messenger_click" data-place="contacts">${ch.cta}</a>`, s: ch.sub})),
     {ic: I.pin, t: 'Центральный офис', v: esc(c.address), s: esc(c.addressNote)}
   ];
   return `<div class="wrap">
-    ${C.pageHead('Контакты', 'Свяжитесь с Астрея', 'Центральный офис в Москве и представительства в регионах. Позвоните, напишите или оставьте заявку — ответим в рабочее время.')}
+    ${C.pageHead('Контакты', 'Свяжитесь с Астрея', 'Центральный офис в Москве и представительства в регионах. Позвоните, напишите или оставьте заявку — ответим в рабочее время.', '', {src: C.u(P, 'assets/academy/hall-s.webp'), w: 1500, h: 589, pos: '93% 50%', ar: '5/4'})}
     <h2 class="sr">Способы связи</h2>
-    <div class="grid g4 contact-cards">${cards.map(k => `<article class="card card-pad ccard${k.off ? ' ccard-off' : ''} reveal"><span class="adv-ic">${k.ic}</span><h3>${k.t}</h3><p class="cv">${k.v}</p><p class="muted small">${k.s}</p></article>`).join('')}</div>
+    <div class="grid ${cards.length >= 4 ? 'g4' : 'g3'} contact-cards">${cards.map(k => `<article class="card card-pad ccard${k.off ? ' ccard-off' : ''} reveal"><span class="adv-ic">${k.ic}</span><h3>${k.t}</h3><p class="cv">${k.v}</p><p class="muted small">${k.s}</p></article>`).join('')}</div>
 
     <section class="sec">
       <div class="map-row">

@@ -131,8 +131,8 @@
 .feat{display:grid;grid-template-columns:1.15fr .85fr;border-radius:var(--r-xl);overflow:hidden;background:var(--navy);color:var(--milk);margin-bottom:clamp(30px,4vw,56px)}
 .feat .fb{padding:clamp(26px,4.5vw,60px);display:flex;flex-direction:column;gap:18px;justify-content:center}
 .feat .fb p{color:var(--silver)}
-.feat .fv{position:relative;min-height:240px;background:linear-gradient(140deg,var(--blue),#8ea8f0);display:grid;place-items:center;overflow:hidden}
-.feat .fv::before{content:"";position:absolute;width:120%;aspect-ratio:1;border-radius:50%;border:1px dashed rgba(255,255,255,.45)}
+.feat .fv{position:relative;min-height:240px;background:radial-gradient(120% 90% at 78% 12%,rgba(224,204,160,.22),transparent 58%),linear-gradient(150deg,#1a2e52,#101f37 62%,#0b1a33);display:grid;place-items:center;overflow:hidden}
+.feat .fv::before{content:"";position:absolute;inset:clamp(14px,1.6vw,22px);border-radius:calc(var(--r-xl) - 10px);border:1px solid rgba(224,204,160,.28);pointer-events:none}
 .feat .fv b{position:relative;font:500 clamp(70px,9vw,132px)/1 var(--serif);color:#fff}
 .feat .fv b small{font-size:.38em}
 /* ============ Footer ============ */

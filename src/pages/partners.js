@@ -5,8 +5,7 @@ module.exports = function partners(ctx, C, P) {
   const {content, site} = ctx, pt = content.partners, c = site.contacts;
   const max = Math.max(...site.discounts.map(d => d.pct));
   return `<div class="wrap">
-    ${C.pageHead(pt.eyebrow, esc(pt.h1), esc(pt.lead))}
-    <div class="row reveal"><a class="btn btn-fill" href="#form" data-act="scroll" data-target="form">Оставить заявку ${I.arrow}</a><a class="btn btn-ghost" href="tel:${c.phoneRaw}" data-track="phone_click">${I.phone} ${esc(c.phone)}</a></div>
+    ${C.pageHead(pt.eyebrow, esc(pt.h1), esc(pt.lead), `<div class="row reveal"><a class="btn btn-fill" href="#form" data-act="scroll" data-target="form">Оставить заявку ${I.arrow}</a><a class="btn btn-ghost" href="tel:${c.phoneRaw}" data-track="phone_click">${I.phone} ${esc(c.phone)}</a></div>`, {src: C.u(P, 'assets/brands/hero.webp'), w: 3200, h: 900, pos: '50% 60%', ar: '5/4'})}
   </div>
 
   <section class="sec"><div class="wrap">

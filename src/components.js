@@ -34,8 +34,10 @@ module.exports = function components(ctx) {
   const crumbs = (P, items) => `<nav class="crumbs" aria-label="Хлебные крошки">${items.map((it, i) =>
     i === items.length - 1 ? `<span aria-current="page">${esc(it[0])}</span>` : `<a href="${u(P, it[1])}">${esc(it[0])}</a><span aria-hidden="true">/</span>`).join('')}</nav>`;
 
-  const pageHead = (eyebrow, title, lead, extra = '') =>
-    `<header class="page-head"><span class="eyebrow reveal">${eyebrow}</span><h1 class="reveal">${title}</h1>${lead ? `<p class="lead reveal">${lead}</p>` : ''}${extra}</header>`;
+  /* art — необязательная иллюстрация справа от заголовка (готовый рендер сайта): {src, w, h, pos?}; декоративная, поэтому alt пустой.
+     Остальные блоки (кнопки, статус работы, таймер ближайшего события) JS добавляет в конец шапки — они остаются в левой колонке. */
+  const pageHead = (eyebrow, title, lead, extra = '', art = null) =>
+    `<header class="page-head${art ? ' has-art' : ''}"><span class="eyebrow reveal">${eyebrow}</span><h1 class="reveal">${title}</h1>${lead ? `<p class="lead reveal">${lead}</p>` : ''}${extra}${art ? `<figure class="ph-art reveal" aria-hidden="true"><img src="${art.src}" alt="" width="${art.w}" height="${art.h}" decoding="async"${art.pos || art.ar ? ` style="--pos:${art.pos}${art.ar ? `;--ar:${art.ar}` : ''}"` : ''}></figure>` : ''}</header>`;
 
   const secHead = (eyebrow, title, right = '') =>
     `<div class="sec-head"><div><span class="eyebrow">${eyebrow}</span><h2>${title}</h2></div>${right}</div>`;

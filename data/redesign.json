@@ -621,7 +621,7 @@
       "custom": {"top": {"tex": "cream", "pos": "tr"}, "end": {"tex": "silk", "pos": "br"}},
       "news": {"top": {"tex": "film", "pos": "tr"}, "end": {"tex": "smear", "pos": "br"}},
       "article": {"top": {"tex": "cream", "pos": "tr"}, "end": {"tex": "film", "pos": "br"}},
-      "company": {"logo": {"pos": "c", "o": 7}, "mid": [{"sel": "section.sec", "n": 3, "tex": "smear", "pos": "bl", "o": 7}], "end": {"tex": "silk", "pos": "c"}},
+      "company": {"mid": [{"sel": "section.sec", "n": 3, "tex": "smear", "pos": "bl", "o": 7}], "end": {"tex": "silk", "pos": "c"}},
       "contacts": {"top": {"tex": "silk", "pos": "tr"}, "end": {"tex": "cream", "pos": "br"}},
       "partners": {"top": {"tex": "molecules", "pos": "c"}, "mid": [{"sel": "section.sec#calc", "tex": "film", "pos": "r", "o": 6}], "end": {"tex": "ribbon", "pos": "b"}},
       "search": {"top": {"tex": "cream", "pos": "tr", "o": 7}},

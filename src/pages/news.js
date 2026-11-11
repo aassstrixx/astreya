@@ -7,7 +7,7 @@ function newsPage(ctx, C, P) {
   const sale = news.find(n => n.category === 'sale');
   const tabs = [['all', 'Все', news.length], ...newsCats.map(c => [c.id, c.name, news.filter(n => n.category === c.id).length])];
   return `<div class="wrap" data-news>
-    ${C.pageHead('Новости', 'Новости, акции и новинки', 'Новинки каталога, программы для партнёров, события учебного центра и жизнь компании.')}
+    ${C.pageHead('Новости', 'Новости, акции и новинки', 'Новинки каталога, программы для партнёров, события учебного центра и жизнь компании.', '', {src: C.u(P, 'assets/academy/mag-s.webp'), w: 1100, h: 880, pos: '62% 58%', ar: '5/4'})}
     ${sale ? `<article class="feat reveal pushin">
       <div class="fb">
         <span class="tag" style="align-self:flex-start;border-color:rgba(185,194,208,.45);color:var(--silver)">Акция</span>
