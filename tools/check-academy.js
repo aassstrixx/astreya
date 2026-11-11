@@ -53,11 +53,11 @@ const t = (cond, name, info) => { if (cond) ok++; else bad.push(name + (info !==
     return {render: !w.classList.contains('no-wall'), img: !!im && im.complete && im.naturalWidth >= 3000, w: wr.width, h: wr.height, ar: parseFloat(getComputedStyle(w).aspectRatio) || 0, n: w.querySelectorAll('.ac-tc').length,
       cells: [...w.querySelectorAll('.ac-tc')].map(li => ({f: r(li.querySelector('.ac-tc-frame')), c: r(li.querySelector('.ac-tc-cap')), ph: r(li.querySelector('.ac-tc-ph')), name: li.querySelector('.ac-tc-cap b').textContent + '|' + li.querySelector('.ac-tc-cap em').textContent}))};
   });
-  t(gal.n === NT && gal.render && gal.img, 'преподаватели: рендер галереи загружен (≥ 3000 px), портретов столько же, сколько в данных', {n: gal.n, render: gal.render, img: gal.img});
+  t(gal.n === NT && gal.render && gal.img, 'преподаватели: рендер витрины загружен (≥ 3000 px), портретов столько же, сколько в данных', {n: gal.n, render: gal.render, img: gal.img});
   t(gal.w > 1300 && Math.abs(gal.w / gal.h - gal.ar) < .02, 'галерея: рендер показан целиком, без обрезки и растяжения', {w: gal.w, h: gal.h, ar: gal.ar});
-  t(gal.cells.every(c => c.f.l >= 0 && c.f.r <= gal.w && c.c.l >= 0 && c.c.r <= gal.w && c.c.b <= gal.h && c.ph.l >= c.f.l && c.ph.r <= c.f.r && c.ph.t >= c.f.t && c.ph.b <= c.f.b), 'галерея: кнопки, проёмы и таблички лежат внутри рендера, проём — внутри рамы');
-  t(gal.cells.every(c => c.c.t >= c.f.b - 4 && c.c.t - c.f.b < gal.h * .06 && Math.abs((c.c.l + c.c.r) / 2 - (c.f.l + c.f.r) / 2) < 3), 'галерея: подпись лежит на табличке сразу под своей рамой');
-  t(new Set(gal.cells.map(c => Math.round(c.f.t / 8))).size === 2 && new Set(gal.cells.map(c => Math.round(c.f.l / 8))).size === 4, 'галерея: два ряда по четыре портрета');
+  t(gal.cells.every(c => c.f.l >= 0 && c.f.r <= gal.w && c.c.l >= 0 && c.c.r <= gal.w && c.c.b <= gal.h && c.ph.l >= c.f.l - 1 && c.ph.r <= c.f.r + 1 && c.ph.t >= c.f.t - 1 && c.ph.b <= c.f.b + 1), 'галерея: кнопки, фотопечати и таблички лежат внутри рендера, фото-«лампа» совпадает с кнопкой');
+  t(gal.cells.every(c => c.c.t >= c.f.b - 4 && c.c.t - c.f.b < gal.h * .06 && Math.abs((c.c.l + c.c.r) / 2 - (c.f.l + c.f.r) / 2) < 3), 'галерея: подпись лежит на табличке сразу под своим портретом');
+  t(new Set(gal.cells.map(c => Math.round(c.f.t / 8))).size === 2 && new Set(gal.cells.map(c => Math.round(c.f.l / 8))).size === 5, 'галерея: два ряда по четыре портрета (ряды сдвинуты: в первом свободна правая ниша, во втором — левая)');
   t(gal.cells.every((c, i) => c.name === RD.teachers.items[i].last + '|' + RD.teachers.items[i].first), 'галерея: на табличках — фамилия и имя-отчество по порядку из данных');
   t(await p.evaluate(() => [...document.querySelectorAll('#teachers .ac-tc-ph img')].every(i => { i.loading = 'eager'; return true; })), 'преподаватели: фото для «зажигания» подгружаются');
   await p.waitForTimeout(900);
@@ -76,7 +76,7 @@ const t = (cond, name, info) => { if (cond) ok++; else bad.push(name + (info !==
       locked: document.body.classList.contains('locked'), foc: document.activeElement.className, counter: s.querySelector('.ac-sp-nav span').textContent.replace(/\s+/g, ' ').trim()};
   });
   t(!!sp1 && sp1.on && sp1.s === T0.last && sp1.n === T0.first && sp1.role === T0.role && sp1.facts === (T0.facts || []).length && sp1.src === (T0.sources || []).length, 'карточка: ФИО, должность, сведения и ссылки на источники преподавателя', sp1);
-  t(!!sp1 && sp1.bg > .95 && sp1.ring > .95 && sp1.img && sp1.pw > 200 && sp1.cy > .25 && sp1.cy < .75 && sp1.cx < .5 && sp1.cardR <= innerWidth + 1, 'карточка: портрет в раме вышел на передний план (слева в центре), фон затемнён', sp1);
+  t(!!sp1 && sp1.bg > .95 && sp1.img && sp1.pw > 200 && sp1.cy > .25 && sp1.cy < .75 && sp1.cx < .5 && sp1.cardR <= innerWidth + 1, 'карточка: портрет без рамы вышел на передний план (слева в центре), фон затемнён', sp1);
   t(!!sp1 && sp1.dlg === 'dialog/true' && sp1.locked && /ac-sp-x/.test(sp1.foc) && sp1.counter === '1 из ' + NT, 'карточка: диалог, прокрутка страницы заблокирована, фокус на «Закрыть», счётчик «1 из ' + NT + '»', sp1);
   t(await p.evaluate(id => document.querySelector('#teachers .ac-tc[data-id="' + id + '"]').classList.contains('is-lifted') && +getComputedStyle(document.querySelector('#teachers .ac-tc[data-id="' + id + '"] .ac-tc-void')).opacity > .9, T0.id), 'на стене остаётся пустой проём — портрет «снят»');
   await p.keyboard.press('ArrowRight'); await p.waitForTimeout(900);
@@ -150,7 +150,7 @@ const t = (cond, name, info) => { if (cond) ok++; else bad.push(name + (info !==
     t(await p.evaluate(() => [...document.querySelectorAll('.ac-page > section')].every(s => s.getBoundingClientRect().width >= innerWidth - 1)), w + ' px: зоны на всю ширину');
     t(await p.evaluate(() => { const c = document.querySelector('#sem-list .sem-item:not([hidden])'); if (!c) return false; const r = c.getBoundingClientRect(); return r.left >= -1 && r.right <= innerWidth + 1; }), w + ' px: карточка мероприятия помещается');
     t(await p.evaluate(() => { const w = document.querySelector('[data-ac-wall]'), cs = [...w.querySelectorAll('.ac-tc-frame')].map(f => f.getBoundingClientRect()); return cs.length === 8 && cs.every(r => r.left >= -1 && r.right <= innerWidth + 1 && r.width > 40); }), w + ' px: все портреты преподавателей помещаются');
-    if (w <= 1100) t(await p.evaluate(() => { const w = document.querySelector('[data-ac-wall]'); return !w.querySelector('.ac-wall-pic') || getComputedStyle(w.querySelector('.ac-wall-pic')).display === 'none'; }), w + ' px: узкий экран — вместо рендера те же портреты в латунных рамах на синем фоне');
+    if (w <= 1100) t(await p.evaluate(() => { const w = document.querySelector('[data-ac-wall]'); return !w.querySelector('.ac-wall-pic') || getComputedStyle(w.querySelector('.ac-wall-pic')).display === 'none'; }), w + ' px: узкий экран — вместо рендера те же портреты-фотопечати на рифлёном тёплом фоне');
     if (w <= 1100) { await jc(p, '#teachers .ac-tc:nth-child(3) .ac-tc-frame'); await p.waitForTimeout(1300); t(await p.evaluate(() => { const s = document.querySelector('.ac-sp'); if (!s || s.hidden) return false; const c = s.querySelector('.ac-sp-card').getBoundingClientRect(), ph = s.querySelector('.ac-sp-photo').getBoundingClientRect(); return c.left >= -1 && c.right <= innerWidth + 1 && ph.left >= -1 && ph.right <= innerWidth + 1 && s.scrollWidth <= innerWidth + 1; }), w + ' px: карточка преподавателя помещается'); await p.keyboard.press('Escape'); await p.waitForTimeout(1100); }
     t(p._errs.length === 0, w + ' px: нет ошибок в консоли', p._errs); await p._ctx.close();
   }

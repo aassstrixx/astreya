@@ -291,7 +291,7 @@
       };
       const build = () => {
         sp = document.createElement('div'); sp.className = 'ac-sp'; sp.hidden = true; sp.setAttribute('role', 'dialog'); sp.setAttribute('aria-modal', 'true'); sp.setAttribute('aria-labelledby', 'ac-sp-h');
-        sp.innerHTML = '<div class="ac-sp-bg" data-sp-x></div><div class="ac-sp-stage"><div class="ac-sp-photo"><span class="ac-sp-ring"></span><span class="ac-sp-img"><img alt="" decoding="async"></span></div><div class="ac-sp-card">' +
+        sp.innerHTML = '<div class="ac-sp-bg" data-sp-x></div><div class="ac-sp-stage"><div class="ac-sp-photo"><span class="ac-sp-img"><img alt="" decoding="async"></span></div><div class="ac-sp-card">' +
           '<button class="ac-sp-x" type="button" data-sp-x aria-label="' + esc(SPD.close || 'Закрыть') + '"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 3l10 10M13 3L3 13"/></svg></button>' +
           '<p class="ac-sp-eyebrow"></p><h2 class="ac-sp-name" id="ac-sp-h"><span class="s"></span><span class="n"></span></h2><p class="ac-sp-role"></p><div class="ac-sp-sec"><h4></h4><ul></ul></div><p class="ac-sp-note"></p>' +
           '<div class="ac-sp-act"><a class="ac-sp-btn" href="#sem-list" data-sp-go>' + esc(SPD.cta || 'Выбрать семинар') + '</a><button class="ac-sp-btn o" type="button" data-act="form" data-type="question" data-ref="">' + esc(SPD.ask || 'Задать вопрос') + '</button></div>' +

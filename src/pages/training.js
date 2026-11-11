@@ -65,10 +65,10 @@ function academyPage(ctx, C, P) {
     <ol class="ac-steps">${steps}</ol>
   </div></section>`;
 
-  /* 04 · преподаватели — галерея-витрина: отдельный рендер (tools/showroom-assets/academy_gallery.py → assets/academy/gallery.webp): стена в тёмно-синем бархате, восемь арочных рам с портретами под стеклом,
-     латунные софиты, каменные таблички под каждым портретом. Фото и рамы уже внутри рендера; вёрстка кладёт поверх только прозрачные кнопки (по раскладке gallery.json в долях кадра), подписи на таблички и карточку преподавателя
-     (js/pages.js → «acad-t»: портрет «снимается со стены» и выезжает на передний план, остальное затухает, проявляются ФИО и сведения). Тексты карточки лежат в разметке (скрыты) — их видят поисковики и программы чтения.
-     На экранах уже 1100 px и без рендера — те же портреты в латунных арочных рамах на синем фоне сеткой. */
+  /* 04 · преподаватели — витрина-кабинет, отдельный рендер (tools/showroom-assets/academy_gallery.py → assets/academy/gallery.webp): светлый стеллаж из известняка, десять ниш с рифлёными панелями, в восьми — портреты-фотопечати
+     без рам на латунных стойках с табличками, в двух — косметологические полки (флаконы, кремы, ампулы, зеркало, спа-полотенца). Фото уже внутри рендера; вёрстка кладёт поверх только прозрачные кнопки
+     (по раскладке gallery.json в долях кадра), подписи на таблички и карточку преподавателя (js/pages.js → «acad-t»: портрет «снимается со стены» и выезжает на передний план, остальное затухает, проявляются ФИО и сведения).
+     Тексты карточки лежат в разметке (скрыты) — их видят поисковики и программы чтения. На экранах уже 1100 px и без рендера — те же портреты-фотопечати сеткой на рифлёном фоне. */
   const hq = f => f ? f.replace('assets/teachers/', 'assets/teachers/hq2/') : f;
   const SP = F.sp || {}, WL = readJson('assets/academy/gallery.json'), wallOk = !!(T && WL && WL.cells && WL.cells.length >= T.items.length && exists('assets/academy/gallery.webp') && exists('assets/teachers/hq2/' + T.items[0].id + '.webp'));
   const fx = v => Math.round(v * 100000) / 100000, host = u => u.replace(/^https?:\/\/(www\.)?/, '').replace(/\/$/, '');
@@ -82,7 +82,7 @@ function academyPage(ctx, C, P) {
       <div class="ac-tc-cap" data-act="acad-t" data-id="${esc(p.id)}" aria-hidden="true"><b>${esc(p.last)}</b><em>${esc(p.first)}</em>${p.tag ? `<small>${esc(p.tag)}</small>` : ''}</div>
       <div class="ac-tc-more" hidden><h3>${esc(p.last)} ${esc(p.first)}</h3><p class="ac-tc-role">${esc(p.role)}</p>${(p.facts || []).length ? `<ul>${p.facts.map(f => `<li>${esc(f)}</li>`).join('')}</ul>` : ''}${src ? `<p class="ac-tc-src">${esc(SP.source || 'Источник')}: ${src}</p>` : ''}</div>
     </li>`; };
-  const wallPic = wallOk ? `<picture class="ac-wall-pic"><source media="(max-width: 1700px)" srcset="${esc(C.u(P, 'assets/academy/gallery-s.webp'))}"><img class="ac-wall-img" src="${esc(C.u(P, 'assets/academy/gallery.webp'))}" alt="Галерея преподавателей учебного центра «Астрея»: восемь портретов в латунных рамах на стене из тёмно-синего бархата" width="${WL.plate.w}" height="${WL.plate.h}" loading="lazy" decoding="async"></picture>` : '';
+  const wallPic = wallOk ? `<picture class="ac-wall-pic"><source media="(max-width: 1700px)" srcset="${esc(C.u(P, 'assets/academy/gallery-s.webp'))}"><img class="ac-wall-img" src="${esc(C.u(P, 'assets/academy/gallery.webp'))}" alt="Витрина преподавателей учебного центра «Астрея»: восемь портретов на рифлёных панелях светлого стеллажа и косметологические полки с флаконами, кремами и ампулами" width="${WL.plate.w}" height="${WL.plate.h}" loading="lazy" decoding="async"></picture>` : '';
   const faculty = T ? `<section class="ac-tch" id="teachers" aria-labelledby="ac-fac-h">${bd('faculty')}<div class="ac-in">
     <header class="rd-head ac-head-row reveal"><div class="ac-head-t"><span class="ac-eyebrow">${esc(F.eyebrow || T.eyebrow)}</span><h2 id="ac-fac-h">${esc(F.title || T.title)}</h2></div><p class="ac-side-p">${esc(F.lead || T.lead)}</p><p class="ac-hint">${esc(F.hint || '')}</p></header></div>
     <div class="ac-wall${wallOk ? '' : ' no-wall'} reveal" data-ac-wall style="${wallOk ? `--ar:${WL.plate.w}/${WL.plate.h}` : ''}"
