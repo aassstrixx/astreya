@@ -75,12 +75,11 @@ function academyPage(ctx, C, P) {
   const tcard = (p, i) => { const c = wallOk ? WL.cells[i] : null;
     const st = c ? `--i:${i};--x:${fx(c.ap.x)};--y:${fx(c.ap.y)};--w:${fx(c.ap.w)};--h:${fx(c.ap.h)};--fx:${fx(c.frame.x)};--fy:${fx(c.frame.y)};--fw:${fx(c.frame.w)};--fh:${fx(c.frame.h)};--px:${fx(c.plaque.x)};--py:${fx(c.plaque.y)};--pw:${fx(c.plaque.w)};--ph:${fx(c.plaque.h)}` : `--i:${i}`;
     const pic = p.photo ? `<img src="${C.u(P, hq(p.photo))}" alt="" width="1120" height="1200" loading="lazy" decoding="async">` : `<span class="ac-tc-mono" aria-hidden="true">${esc(p.last.charAt(0) + p.first.charAt(0))}</span>`;
-    const src = (p.sources || []).map(u => `<a href="${esc(u)}" target="_blank" rel="noopener">${esc(host(u))}</a>`).join(', ');
     return `<li class="ac-tc" data-id="${esc(p.id)}" data-n="${i + 1}" style="${st}">
       <span class="ac-tc-ph" aria-hidden="true">${pic}</span><span class="ac-tc-void" aria-hidden="true"></span>
       <button class="ac-tc-frame" type="button" data-act="acad-t" data-id="${esc(p.id)}" aria-haspopup="dialog" aria-label="${esc(p.last + ' ' + p.first + ' — открыть карточку')}"></button>
       <div class="ac-tc-cap" data-act="acad-t" data-id="${esc(p.id)}" aria-hidden="true"><b>${esc(p.last)}</b><em>${esc(p.first)}</em>${p.tag ? `<small>${esc(p.tag)}</small>` : ''}</div>
-      <div class="ac-tc-more" hidden><h3>${esc(p.last)} ${esc(p.first)}</h3><p class="ac-tc-role">${esc(p.role)}</p>${(p.facts || []).length ? `<ul>${p.facts.map(f => `<li>${esc(f)}</li>`).join('')}</ul>` : ''}${src ? `<p class="ac-tc-src">${esc(SP.source || 'Источник')}: ${src}</p>` : ''}</div>
+      <div class="ac-tc-more" hidden><h3>${esc(p.last)} ${esc(p.first)}</h3><p class="ac-tc-role">${esc(p.role)}</p>${(p.facts || []).length ? `<ul>${p.facts.map(f => `<li>${esc(f)}</li>`).join('')}</ul>` : ''}</div>
     </li>`; };
   const wallPic = wallOk ? `<picture class="ac-wall-pic"><source media="(max-width: 1700px)" srcset="${esc(C.u(P, 'assets/academy/gallery-s.webp'))}"><img class="ac-wall-img" src="${esc(C.u(P, 'assets/academy/gallery.webp'))}" alt="Витрина преподавателей учебного центра «Астрея»: восемь портретов на рифлёных панелях светлого стеллажа и косметологические полки с флаконами, кремами и ампулами" width="${WL.plate.w}" height="${WL.plate.h}" loading="lazy" decoding="async"></picture>` : '';
   const faculty = T ? `<section class="ac-tch" id="teachers" aria-labelledby="ac-fac-h">${bd('faculty')}<div class="ac-in">

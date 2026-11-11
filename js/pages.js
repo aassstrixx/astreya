@@ -276,8 +276,8 @@
       let sp = null, cur = -1, opener = null, closing = false, backT = 0;
       const chev = '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M6 3l5 5-5 5"/></svg>';
       const data = li => {
-        const more = $('.ac-tc-more', li), cap = $('.ac-tc-cap', li), im = $('.ac-tc-ph img', li), role = $('.ac-tc-role', more), src = $('.ac-tc-src', more);
-        return {last: $('b', cap).textContent, first: $('em', cap).textContent, role: role ? role.textContent : '', facts: $$('li', more).map(x => x.textContent), src: src ? src.innerHTML : '', img: im ? im.getAttribute('src') : ''};
+        const more = $('.ac-tc-more', li), cap = $('.ac-tc-cap', li), im = $('.ac-tc-ph img', li), role = $('.ac-tc-role', more);
+        return {last: $('b', cap).textContent, first: $('em', cap).textContent, role: role ? role.textContent : '', facts: $$('li', more).map(x => x.textContent), img: im ? im.getAttribute('src') : ''};
       };
       const rectOf = li => ($('.ac-tc-ph', li) || li).getBoundingClientRect();
       const flip = (src, dst) => 'translate(' + (src.left - dst.left).toFixed(1) + 'px,' + (src.top - dst.top).toFixed(1) + 'px) scale(' + (src.width / dst.width).toFixed(4) + ')';
@@ -286,7 +286,7 @@
         if (d.img) { img.hidden = false; img.src = d.img; } else img.hidden = true;
         $('.ac-sp-eyebrow', sp).textContent = SPD.eyebrow || ''; $('.ac-sp-name .s', sp).textContent = d.last; $('.ac-sp-name .n', sp).textContent = d.first; $('.ac-sp-role', sp).textContent = d.role;
         const sec = $('.ac-sp-sec', sp); sec.hidden = !d.facts.length; $('h4', sec).textContent = SPD.factsTitle || ''; $('ul', sec).innerHTML = d.facts.map(f => '<li>' + esc(f) + '</li>').join('');
-        $('.ac-sp-note', sp).innerHTML = (d.src ? d.src + '<br>' : '') + esc(SPD.note || '');
+        $('.ac-sp-note', sp).textContent = SPD.note || '';
         $('.ac-sp-nav b', sp).textContent = String(cur + 1);
       };
       const build = () => {
