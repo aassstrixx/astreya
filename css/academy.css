@@ -123,9 +123,8 @@ body[data-page="training"].menu-open .hdr,body[data-page="training"].search-open
 .ac-tc-frame:focus-visible{outline:2px solid #f2dca4;outline-offset:3px}
 .ac-tc-cap{position:absolute;left:calc(var(--px) * 100%);top:calc(var(--py) * 100%);width:calc(var(--pw) * 100%);height:calc(var(--ph) * 100%);z-index:2;display:grid;align-content:center;justify-items:center;gap:.1em;padding:0 3%;text-align:center;cursor:pointer;overflow:hidden}
 .ac-tc-cap b{font:400 max(12.5px,1.12cqw)/1.05 var(--serif);letter-spacing:-.006em;color:#16223e;transition:color .4s var(--ac-ease)}
-.ac-tc-cap em{font:600 max(9px,.7cqw)/1.2 var(--sans);font-style:normal;color:#16223e;text-wrap:balance}
-.ac-tc-cap small{display:none;margin-top:.14em;font:500 max(8.5px,.56cqw)/1.2 var(--sans);color:#5c4f40;text-wrap:balance}
-@container (min-width:1240px){.ac-tc-cap small{display:-webkit-box;-webkit-line-clamp:1;-webkit-box-orient:vertical;overflow:hidden}}
+.ac-tc-cap em{font:600 max(9px,.68cqw)/1.2 var(--sans);font-style:normal;color:#16223e;white-space:nowrap}
+.ac-tc-cap small{display:none}
 @media (hover:hover){
   .ac-tc:hover .ac-tc-ph,.ac-tc:has(.ac-tc-frame:focus-visible) .ac-tc-ph{opacity:1}
   .ac-tc:hover .ac-tc-ph img{transform:scale(1.07)}
