@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /* Проверка страницы «Обучение» (ASTREYA ACADEMY) в браузере: нужны Playwright и Chromium (без них проверка пропускается).
    Что проверяется: восемь зон по порядку (по макету заказчика); первый экран (текст слева, рендер аудитории справа, товары на столе внутри кадра); «Как пройти регистрацию?» — четыре шага со стрелками;
-   преподаватели: четыре карточки, «О преподавателях» раскрывает всех восьмерых; расписание: города (Москва, Санкт-Петербург, Ростов-на-Дону, Симферополь, Онлайн) и выпадающий список «Все форматы» меняют карточки и календарь,
+   преподаватели: рендер галереи (бархатная стена, восемь рам с портретами), подписи на табличках, подсветка при наведении, карточка со «снятым со стены» портретом (стрелки, Esc, фокус, «Выбрать семинар»); расписание: города (Москва, Санкт-Петербург, Ростов-на-Дону, Симферополь, Онлайн) и выпадающий список «Все форматы» меняют карточки и календарь,
    «Показать ещё» раскрывает остальные; выбранное мероприятие — тёмно-синяя карточка, тот же день подсвечен в календаре; «Записаться» открывает форму семинара; практическое обучение — панорама из настоящих фото;
    видеотека — настоящие заставки видео канала (файлы из assets/academy/videos.json) со ссылками на youtube.com/watch; вопросы раскрываются; статьи и финальный баннер на месте; адаптив без горизонтальной прокрутки; нет ошибок в консоли.
    Запуск: node tools/check-academy.js (после node tools/build.js). Код возврата ≠ 0 при ошибках. */
@@ -45,15 +45,54 @@ const t = (cond, name, info) => { if (cond) ok++; else bad.push(name + (info !==
   t(await p.evaluate(() => { const h = document.querySelector('.ac-hero'); return /Бесплатные семинары и мастер-классы/.test(h.textContent) && /10:30 до 18:00/.test(h.textContent) && !!h.querySelector('a.btn-fill[data-target="sched"]') && !!h.querySelector('a.ac-more[data-target="lab"]'); }), 'первый экран: подзаголовок, время семинара, кнопка «Расписание семинаров» и ссылка «О центре»');
   t(await p.evaluate(() => { const r = document.querySelector('.ac-reg h2'), n = [...document.querySelectorAll('.ac-steps .ac-st .ac-st-n')].map(x => x.textContent.trim()); return /Как пройти регистрацию\?/.test(r.textContent) && n.join() === '01,02,03,04' && document.querySelectorAll('.ac-st-ic svg').length === 4 && document.querySelectorAll('.ac-st-tip').length === 4; }), 'маршрут записи: четыре шага 01–04 со значками и пояснениями');
   t(await p.evaluate(() => { const c = document.querySelector('.ac-cal').getBoundingClientRect(), r = document.querySelector('.ac-reg').getBoundingClientRect(), h = document.querySelector('.ac-hero').getBoundingClientRect(); return Math.abs(c.top - h.bottom) < 2 && Math.abs(r.top - c.bottom) < 2; }), 'календарь идёт сразу после первого экрана, маршрут записи — сразу после календаря');
-  t(await p.evaluate(() => document.querySelectorAll('#teachers .ac-tc').length) === RD.teachers.items.length && await p.evaluate(() => !!document.querySelector('#teachers .rd-head')), 'преподаватели: карточек столько же, сколько в данных');
-  t(await p.evaluate(() => { const m = document.getElementById('ac-tmore'); return document.querySelectorAll('#teachers > .ac-in > .ac-tgrid .ac-tc').length === 4 && m.getBoundingClientRect().height < 2 && m.hasAttribute('inert'); }), 'преподаватели: сначала четыре карточки, остальные свёрнуты');
-  await jc(p, '#teachers [data-act="acad-more"]'); await p.waitForTimeout(1300);
-  t(await p.evaluate(() => { const m = document.getElementById('ac-tmore'), b = document.querySelector('#teachers [data-act="acad-more"]'); return m.getBoundingClientRect().height > 200 && !m.hasAttribute('inert') && b.getAttribute('aria-expanded') === 'true' && /Свернуть/.test(b.textContent); }), '«О преподавателях» плавно раскрывает остальных (кнопка меняется на «Свернуть»)');
-  t(await p.evaluate(() => [...document.querySelectorAll('#teachers .ac-tc img')].filter(i => { i.loading = 'eager'; return true; }).length) === RD.teachers.items.filter(x => x.photo).length, 'преподаватели: фото у всех');
+  /* --- преподаватели: галерея-рендер (бархатная стена, рамы с портретами), кнопки и подписи поверх, карточка со «снятым со стены» портретом --- */
+  const NT = RD.teachers.items.length, T0 = RD.teachers.items[0], T1 = RD.teachers.items[1];
+  await p.evaluate(() => document.getElementById('teachers').scrollIntoView({block: 'start'})); await p.waitForTimeout(1300);
+  const gal = await p.evaluate(() => {
+    const w = document.querySelector('[data-ac-wall]'), im = w.querySelector('.ac-wall-img'), wr = w.getBoundingClientRect(), r = e => { const b = e.getBoundingClientRect(); return {l: b.left - wr.left, t: b.top - wr.top, r: b.right - wr.left, b: b.bottom - wr.top}; };
+    return {render: !w.classList.contains('no-wall'), img: !!im && im.complete && im.naturalWidth >= 3000, w: wr.width, h: wr.height, ar: parseFloat(getComputedStyle(w).aspectRatio) || 0, n: w.querySelectorAll('.ac-tc').length,
+      cells: [...w.querySelectorAll('.ac-tc')].map(li => ({f: r(li.querySelector('.ac-tc-frame')), c: r(li.querySelector('.ac-tc-cap')), ph: r(li.querySelector('.ac-tc-ph')), name: li.querySelector('.ac-tc-cap b').textContent + '|' + li.querySelector('.ac-tc-cap em').textContent}))};
+  });
+  t(gal.n === NT && gal.render && gal.img, 'преподаватели: рендер галереи загружен (≥ 3000 px), портретов столько же, сколько в данных', {n: gal.n, render: gal.render, img: gal.img});
+  t(gal.w > 1300 && Math.abs(gal.w / gal.h - gal.ar) < .02, 'галерея: рендер показан целиком, без обрезки и растяжения', {w: gal.w, h: gal.h, ar: gal.ar});
+  t(gal.cells.every(c => c.f.l >= 0 && c.f.r <= gal.w && c.c.l >= 0 && c.c.r <= gal.w && c.c.b <= gal.h && c.ph.l >= c.f.l && c.ph.r <= c.f.r && c.ph.t >= c.f.t && c.ph.b <= c.f.b), 'галерея: кнопки, проёмы и таблички лежат внутри рендера, проём — внутри рамы');
+  t(gal.cells.every(c => c.c.t >= c.f.b - 4 && c.c.t - c.f.b < gal.h * .06 && Math.abs((c.c.l + c.c.r) / 2 - (c.f.l + c.f.r) / 2) < 3), 'галерея: подпись лежит на табличке сразу под своей рамой');
+  t(new Set(gal.cells.map(c => Math.round(c.f.t / 8))).size === 2 && new Set(gal.cells.map(c => Math.round(c.f.l / 8))).size === 4, 'галерея: два ряда по четыре портрета');
+  t(gal.cells.every((c, i) => c.name === RD.teachers.items[i].last + '|' + RD.teachers.items[i].first), 'галерея: на табличках — фамилия и имя-отчество по порядку из данных');
+  t(await p.evaluate(() => [...document.querySelectorAll('#teachers .ac-tc-ph img')].every(i => { i.loading = 'eager'; return true; })), 'преподаватели: фото для «зажигания» подгружаются');
   await p.waitForTimeout(900);
-  t(await p.evaluate(() => [...document.querySelectorAll('#teachers .ac-tc img')].filter(i => i.complete && i.naturalWidth >= 500).length) === RD.teachers.items.filter(x => x.photo).length, 'преподаватели: портреты всех загружены в высоком разрешении');
-  await jc(p, '#teachers [data-act="acad-more"]'); await p.waitForTimeout(1200);
-  t(await p.evaluate(() => document.getElementById('ac-tmore').getBoundingClientRect().height < 2), '«Свернуть» убирает раскрытых преподавателей');
+  t(await p.evaluate(() => [...document.querySelectorAll('#teachers .ac-tc-ph img')].filter(i => i.complete && i.naturalWidth >= 1100).length) === RD.teachers.items.filter(x => x.photo).length, 'преподаватели: улучшенные портреты (×2, 1120 px) загружены у всех');
+  t(await p.evaluate(() => { const a = document.getElementById('ac-tmore'); return !a || !document.querySelector('#teachers [data-act="acad-more"]'); }), 'преподаватели: нет кнопки «О преподавателях» — все восемь на стене сразу');
+  t(await p.evaluate(() => /rgb\(16, 31, 55\)/.test(getComputedStyle(document.querySelector('.hdr-partner')).backgroundColor) && /rgb\(16, 31, 55\)/.test(getComputedStyle(document.querySelector('.hdr .logo')).getPropertyValue('--lm') ? 'rgb(16, 31, 55)' : '')), 'шапка: кнопка «Стать партнёром» — тёмно-синяя, как на каталоге');
+  await p.hover('#teachers .ac-tc[data-id="' + T0.id + '"] .ac-tc-frame'); await p.waitForTimeout(800);
+  t(await p.evaluate(id => +getComputedStyle(document.querySelector('#teachers .ac-tc[data-id="' + id + '"] .ac-tc-ph')).opacity > .95, T0.id), 'наведение «зажигает» портрет (фото без стекла поверх рендера)');
+  await p.mouse.move(5, 5); await p.waitForTimeout(700);
+  t(await p.evaluate(id => +getComputedStyle(document.querySelector('#teachers .ac-tc[data-id="' + id + '"] .ac-tc-ph')).opacity < .05, T0.id), 'без наведения в проёме виден только рендер');
+  await jc(p, '#teachers .ac-tc[data-id="' + T0.id + '"] .ac-tc-frame'); await p.waitForTimeout(1500);
+  const sp1 = await p.evaluate(() => {
+    const s = document.querySelector('.ac-sp'); if (!s || s.hidden) return null; const ph = s.querySelector('.ac-sp-photo').getBoundingClientRect(), im = s.querySelector('.ac-sp-img img'), card = s.querySelector('.ac-sp-card').getBoundingClientRect();
+    return {on: s.classList.contains('is-in'), s: s.querySelector('.ac-sp-name .s').textContent, n: s.querySelector('.ac-sp-name .n').textContent, role: s.querySelector('.ac-sp-role').textContent, facts: s.querySelectorAll('.ac-sp-sec li').length, src: s.querySelectorAll('.ac-sp-note a').length,
+      bg: +getComputedStyle(s.querySelector('.ac-sp-bg')).opacity, ring: +getComputedStyle(s.querySelector('.ac-sp-ring')).opacity, img: im.complete && im.naturalWidth >= 1100, cx: (ph.left + ph.right) / 2 / innerWidth, cy: (ph.top + ph.bottom) / 2 / innerHeight, pw: ph.width, ph: ph.height, cardR: card.right, dlg: s.getAttribute('role') + '/' + s.getAttribute('aria-modal'),
+      locked: document.body.classList.contains('locked'), foc: document.activeElement.className, counter: s.querySelector('.ac-sp-nav span').textContent.replace(/\s+/g, ' ').trim()};
+  });
+  t(!!sp1 && sp1.on && sp1.s === T0.last && sp1.n === T0.first && sp1.role === T0.role && sp1.facts === (T0.facts || []).length && sp1.src === (T0.sources || []).length, 'карточка: ФИО, должность, сведения и ссылки на источники преподавателя', sp1);
+  t(!!sp1 && sp1.bg > .95 && sp1.ring > .95 && sp1.img && sp1.pw > 200 && sp1.cy > .25 && sp1.cy < .75 && sp1.cx < .5 && sp1.cardR <= innerWidth + 1, 'карточка: портрет в раме вышел на передний план (слева в центре), фон затемнён', sp1);
+  t(!!sp1 && sp1.dlg === 'dialog/true' && sp1.locked && /ac-sp-x/.test(sp1.foc) && sp1.counter === '1 из ' + NT, 'карточка: диалог, прокрутка страницы заблокирована, фокус на «Закрыть», счётчик «1 из ' + NT + '»', sp1);
+  t(await p.evaluate(id => document.querySelector('#teachers .ac-tc[data-id="' + id + '"]').classList.contains('is-lifted') && +getComputedStyle(document.querySelector('#teachers .ac-tc[data-id="' + id + '"] .ac-tc-void')).opacity > .9, T0.id), 'на стене остаётся пустой проём — портрет «снят»');
+  await p.keyboard.press('ArrowRight'); await p.waitForTimeout(900);
+  t(await p.evaluate(([l, f, id0, id1]) => { const s = document.querySelector('.ac-sp'); return s.querySelector('.ac-sp-name .s').textContent === l && s.querySelector('.ac-sp-name .n').textContent === f && !document.querySelector('#teachers .ac-tc[data-id="' + id0 + '"]').classList.contains('is-lifted') && document.querySelector('#teachers .ac-tc[data-id="' + id1 + '"]').classList.contains('is-lifted') && /2 из/.test(s.querySelector('.ac-sp-nav span').textContent); }, [T1.last, T1.first, T0.id, T1.id]), 'карточка: стрелка → переключает на следующего преподавателя (портрет возвращается на стену, выходит следующий)');
+  await p.keyboard.press('ArrowLeft'); await p.waitForTimeout(900);
+  t(await p.evaluate(l => document.querySelector('.ac-sp .ac-sp-name .s').textContent === l, T0.last), 'карточка: стрелка ← возвращает к предыдущему');
+  await p.keyboard.press('Escape'); await p.waitForTimeout(1300);
+  t(await p.evaluate(id => { const s = document.querySelector('.ac-sp'); return s.hidden && !document.body.classList.contains('locked') && !document.querySelector('#teachers .ac-tc.is-lifted') && document.activeElement === document.querySelector('#teachers .ac-tc[data-id="' + id + '"] .ac-tc-frame'); }, T0.id), 'Esc закрывает карточку: портрет вернулся, прокрутка свободна, фокус вернулся на рамку');
+  await jc(p, '#teachers .ac-tc[data-id="' + T1.id + '"] .ac-tc-cap'); await p.waitForTimeout(1300);
+  t(await p.evaluate(l => !document.querySelector('.ac-sp').hidden && document.querySelector('.ac-sp .ac-sp-name .s').textContent === l, T1.last), 'клик по табличке открывает ту же карточку');
+  await jc(p, '.ac-sp .ac-sp-bg'); await p.waitForTimeout(1300);
+  t(await p.evaluate(() => document.querySelector('.ac-sp').hidden), 'клик по затемнённому фону закрывает карточку');
+  await jc(p, '#teachers .ac-tc[data-id="' + T0.id + '"] .ac-tc-frame'); await p.waitForTimeout(1300);
+  await jc(p, '.ac-sp [data-sp-go]'); await p.waitForTimeout(2200);
+  t(await p.evaluate(() => document.querySelector('.ac-sp').hidden && Math.abs(document.getElementById('sem-list').getBoundingClientRect().top) < innerHeight * .6), '«Выбрать семинар» закрывает карточку и ведёт к расписанию');
+  t(p._errs.length === 0, 'галерея и карточка: нет ошибок в консоли', p._errs);
 
   /* --- календарь и фильтры --- */
   const total = await p.evaluate(() => document.querySelectorAll('#sem-list .sem-item').length);
@@ -110,6 +149,9 @@ const t = (cond, name, info) => { if (cond) ok++; else bad.push(name + (info !==
     t(await p.evaluate(() => { const c = document.querySelector('.ac-hero .cd'); if (!c) return false; const r = c.getBoundingClientRect(); return r.left >= -1 && r.right <= innerWidth + 1 && r.width > 200; }), w + ' px: панель ближайшего мероприятия помещается');
     t(await p.evaluate(() => [...document.querySelectorAll('.ac-page > section')].every(s => s.getBoundingClientRect().width >= innerWidth - 1)), w + ' px: зоны на всю ширину');
     t(await p.evaluate(() => { const c = document.querySelector('#sem-list .sem-item:not([hidden])'); if (!c) return false; const r = c.getBoundingClientRect(); return r.left >= -1 && r.right <= innerWidth + 1; }), w + ' px: карточка мероприятия помещается');
+    t(await p.evaluate(() => { const w = document.querySelector('[data-ac-wall]'), cs = [...w.querySelectorAll('.ac-tc-frame')].map(f => f.getBoundingClientRect()); return cs.length === 8 && cs.every(r => r.left >= -1 && r.right <= innerWidth + 1 && r.width > 40); }), w + ' px: все портреты преподавателей помещаются');
+    if (w <= 1100) t(await p.evaluate(() => { const w = document.querySelector('[data-ac-wall]'); return !w.querySelector('.ac-wall-pic') || getComputedStyle(w.querySelector('.ac-wall-pic')).display === 'none'; }), w + ' px: узкий экран — вместо рендера те же портреты в латунных рамах на синем фоне');
+    if (w <= 1100) { await jc(p, '#teachers .ac-tc:nth-child(3) .ac-tc-frame'); await p.waitForTimeout(1300); t(await p.evaluate(() => { const s = document.querySelector('.ac-sp'); if (!s || s.hidden) return false; const c = s.querySelector('.ac-sp-card').getBoundingClientRect(), ph = s.querySelector('.ac-sp-photo').getBoundingClientRect(); return c.left >= -1 && c.right <= innerWidth + 1 && ph.left >= -1 && ph.right <= innerWidth + 1 && s.scrollWidth <= innerWidth + 1; }), w + ' px: карточка преподавателя помещается'); await p.keyboard.press('Escape'); await p.waitForTimeout(1100); }
     t(p._errs.length === 0, w + ' px: нет ошибок в консоли', p._errs); await p._ctx.close();
   }
 

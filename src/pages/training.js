@@ -65,17 +65,30 @@ function academyPage(ctx, C, P) {
     <ol class="ac-steps">${steps}</ol>
   </div></section>`;
 
-  /* 04 · преподаватели: редакционная галерея — заголовок, вводка и «О преподавателях» в строке, ниже четыре крупных вертикальных портрета с подписью; кнопка плавно раскрывает остальных */
-  const hq = f => f ? f.replace('assets/teachers/', 'assets/teachers/hq/') : f;
-  const tcard = (p, rv = true) => `<figure class="ac-tc${rv ? ' reveal' : ''}"><div class="ac-tc-frame">${p.photo ? `<img src="${C.u(P, hq(p.photo))}" alt="${esc(p.last + ' ' + p.first)}" width="560" height="600" loading="lazy" decoding="async">` : `<span class="ac-tc-mono" aria-hidden="true">${esc(p.last.charAt(0) + p.first.charAt(0))}</span>`}</div>
-      <figcaption><b>${esc(p.last)}</b><em>${esc(p.first)}</em><small>${esc(p.role)}</small>${p.bio ? `<p>${esc(p.bio)}</p>` : ''}</figcaption></figure>`;
-  const nShow = F.shown || 4, more = T && T.items.length > nShow;
+  /* 04 · преподаватели — галерея-витрина: отдельный рендер (tools/showroom-assets/academy_gallery.py → assets/academy/gallery.webp): стена в тёмно-синем бархате, восемь арочных рам с портретами под стеклом,
+     латунные софиты, каменные таблички под каждым портретом. Фото и рамы уже внутри рендера; вёрстка кладёт поверх только прозрачные кнопки (по раскладке gallery.json в долях кадра), подписи на таблички и карточку преподавателя
+     (js/pages.js → «acad-t»: портрет «снимается со стены» и выезжает на передний план, остальное затухает, проявляются ФИО и сведения). Тексты карточки лежат в разметке (скрыты) — их видят поисковики и программы чтения.
+     На экранах уже 1100 px и без рендера — те же портреты в латунных арочных рамах на синем фоне сеткой. */
+  const hq = f => f ? f.replace('assets/teachers/', 'assets/teachers/hq2/') : f;
+  const SP = F.sp || {}, WL = readJson('assets/academy/gallery.json'), wallOk = !!(T && WL && WL.cells && WL.cells.length >= T.items.length && exists('assets/academy/gallery.webp') && exists('assets/teachers/hq2/' + T.items[0].id + '.webp'));
+  const fx = v => Math.round(v * 100000) / 100000, host = u => u.replace(/^https?:\/\/(www\.)?/, '').replace(/\/$/, '');
+  const tcard = (p, i) => { const c = wallOk ? WL.cells[i] : null;
+    const st = c ? `--i:${i};--x:${fx(c.ap.x)};--y:${fx(c.ap.y)};--w:${fx(c.ap.w)};--h:${fx(c.ap.h)};--fx:${fx(c.frame.x)};--fy:${fx(c.frame.y)};--fw:${fx(c.frame.w)};--fh:${fx(c.frame.h)};--px:${fx(c.plaque.x)};--py:${fx(c.plaque.y)};--pw:${fx(c.plaque.w)};--ph:${fx(c.plaque.h)}` : `--i:${i}`;
+    const pic = p.photo ? `<img src="${C.u(P, hq(p.photo))}" alt="" width="1120" height="1200" loading="lazy" decoding="async">` : `<span class="ac-tc-mono" aria-hidden="true">${esc(p.last.charAt(0) + p.first.charAt(0))}</span>`;
+    const src = (p.sources || []).map(u => `<a href="${esc(u)}" target="_blank" rel="noopener">${esc(host(u))}</a>`).join(', ');
+    return `<li class="ac-tc" data-id="${esc(p.id)}" data-n="${i + 1}" style="${st}">
+      <span class="ac-tc-ph" aria-hidden="true">${pic}</span><span class="ac-tc-void" aria-hidden="true"></span>
+      <button class="ac-tc-frame" type="button" data-act="acad-t" data-id="${esc(p.id)}" aria-haspopup="dialog" aria-label="${esc(p.last + ' ' + p.first + ' — открыть карточку')}"></button>
+      <div class="ac-tc-cap" data-act="acad-t" data-id="${esc(p.id)}" aria-hidden="true"><b>${esc(p.last)}</b><em>${esc(p.first)}</em>${p.tag ? `<small>${esc(p.tag)}</small>` : ''}</div>
+      <div class="ac-tc-more" hidden><h3>${esc(p.last)} ${esc(p.first)}</h3><p class="ac-tc-role">${esc(p.role)}</p>${(p.facts || []).length ? `<ul>${p.facts.map(f => `<li>${esc(f)}</li>`).join('')}</ul>` : ''}${src ? `<p class="ac-tc-src">${esc(SP.source || 'Источник')}: ${src}</p>` : ''}</div>
+    </li>`; };
+  const wallPic = wallOk ? `<picture class="ac-wall-pic"><source media="(max-width: 1700px)" srcset="${esc(C.u(P, 'assets/academy/gallery-s.webp'))}"><img class="ac-wall-img" src="${esc(C.u(P, 'assets/academy/gallery.webp'))}" alt="Галерея преподавателей учебного центра «Астрея»: восемь портретов в латунных рамах на стене из тёмно-синего бархата" width="${WL.plate.w}" height="${WL.plate.h}" loading="lazy" decoding="async"></picture>` : '';
   const faculty = T ? `<section class="ac-tch" id="teachers" aria-labelledby="ac-fac-h">${bd('faculty')}<div class="ac-in">
-    <header class="rd-head ac-head-row reveal"><div class="ac-head-t"><span class="ac-eyebrow">${esc(F.eyebrow || T.eyebrow)}</span><h2 id="ac-fac-h">${esc(F.title || T.title)}</h2></div><p class="ac-side-p">${esc(F.lead || T.lead)}</p>
-      ${more ? `<button class="ac-btn-o" type="button" data-act="acad-more" data-target="ac-tmore" aria-expanded="false" aria-controls="ac-tmore" data-more="${esc(F.more || 'О преподавателях')}" data-less="${esc(F.less || 'Свернуть')}"><span>${esc(F.more || 'О преподавателях')}</span> ${arrow}</button>` : ''}</header>
-    <div class="ac-tgrid">${T.items.slice(0, nShow).map(p => tcard(p)).join('')}</div>
-    ${more ? `<div class="ac-tmore" id="ac-tmore" aria-hidden="true" inert><div class="ac-tmore-in"><div class="ac-tgrid">${T.items.slice(nShow).map(p => tcard(p, false)).join('')}</div></div></div>` : ''}
-  </div></section>` : '';
+    <header class="rd-head ac-head-row reveal"><div class="ac-head-t"><span class="ac-eyebrow">${esc(F.eyebrow || T.eyebrow)}</span><h2 id="ac-fac-h">${esc(F.title || T.title)}</h2></div><p class="ac-side-p">${esc(F.lead || T.lead)}</p><p class="ac-hint">${esc(F.hint || '')}</p></header></div>
+    <div class="ac-wall${wallOk ? '' : ' no-wall'} reveal" data-ac-wall style="${wallOk ? `--ar:${WL.plate.w}/${WL.plate.h}` : ''}"
+      data-sp='${esc(JSON.stringify({eyebrow: SP.eyebrow, factsTitle: SP.factsTitle, note: SP.note, cta: SP.cta, ask: SP.ask, close: SP.close, prev: SP.prev, next: SP.next, of: SP.of}))}'>
+      ${wallPic}<ul class="ac-tl">${T.items.map(tcard).join('')}</ul></div>
+  </section>` : '';
 
   /* 02 · календарь семинаров: города — чипы, формат — «Все форматы», календарь месяца (js/sales-pages.js кладёт его в [data-acad-cal]), карточки мероприятий: фото, дата, формат и город, спикер, бренд, «Записаться» */
   const cityChips = ['all', ...training.cities].map((c, i) => C.chip(c === 'all' ? esc(K.allCities) : esc(c), 'city', c, i === 0)).join('');

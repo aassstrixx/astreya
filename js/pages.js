@@ -268,6 +268,79 @@
       const reg = $('.ac-reg', acad);
       if (reg) { if ('IntersectionObserver' in window) { const io = new IntersectionObserver(es => es.forEach(e => { if (e.isIntersecting) { reg.classList.add('is-in'); io.disconnect(); } }), {threshold: .35}); io.observe(reg); } else reg.classList.add('is-in'); }
     }
+    /* ---------- галерея преподавателей: портрет «снимается со стены», выезжает на передний план (FLIP: из проёма рамы в рендере — в центр экрана), остальное затухает и размывается, проявляются ФИО и сведения ---------- */
+    const wall = $('[data-ac-wall]');
+    if (wall) {
+      const items = $$('.ac-tc', wall), still = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+      let SPD = {}; try { SPD = JSON.parse(wall.getAttribute('data-sp') || '{}'); } catch (e) {}
+      let sp = null, cur = -1, opener = null, closing = false, backT = 0;
+      const chev = '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M6 3l5 5-5 5"/></svg>';
+      const data = li => {
+        const more = $('.ac-tc-more', li), cap = $('.ac-tc-cap', li), im = $('.ac-tc-ph img', li), role = $('.ac-tc-role', more), src = $('.ac-tc-src', more);
+        return {last: $('b', cap).textContent, first: $('em', cap).textContent, role: role ? role.textContent : '', facts: $$('li', more).map(x => x.textContent), src: src ? src.innerHTML : '', img: im ? im.getAttribute('src') : ''};
+      };
+      const rectOf = li => ($('.ac-tc-ph', li) || li).getBoundingClientRect();
+      const flip = (src, dst) => 'translate(' + (src.left - dst.left).toFixed(1) + 'px,' + (src.top - dst.top).toFixed(1) + 'px) scale(' + (src.width / dst.width).toFixed(4) + ')';
+      const fill = d => {
+        const img = $('.ac-sp-img img', sp);
+        if (d.img) { img.hidden = false; img.src = d.img; } else img.hidden = true;
+        $('.ac-sp-eyebrow', sp).textContent = SPD.eyebrow || ''; $('.ac-sp-name .s', sp).textContent = d.last; $('.ac-sp-name .n', sp).textContent = d.first; $('.ac-sp-role', sp).textContent = d.role;
+        const sec = $('.ac-sp-sec', sp); sec.hidden = !d.facts.length; $('h4', sec).textContent = SPD.factsTitle || ''; $('ul', sec).innerHTML = d.facts.map(f => '<li>' + esc(f) + '</li>').join('');
+        $('.ac-sp-note', sp).innerHTML = (d.src ? d.src + '<br>' : '') + esc(SPD.note || '');
+        $('.ac-sp-nav b', sp).textContent = String(cur + 1);
+      };
+      const build = () => {
+        sp = document.createElement('div'); sp.className = 'ac-sp'; sp.hidden = true; sp.setAttribute('role', 'dialog'); sp.setAttribute('aria-modal', 'true'); sp.setAttribute('aria-labelledby', 'ac-sp-h');
+        sp.innerHTML = '<div class="ac-sp-bg" data-sp-x></div><div class="ac-sp-stage"><div class="ac-sp-photo"><span class="ac-sp-ring"></span><span class="ac-sp-img"><img alt="" decoding="async"></span></div><div class="ac-sp-card">' +
+          '<button class="ac-sp-x" type="button" data-sp-x aria-label="' + esc(SPD.close || 'Закрыть') + '"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 3l10 10M13 3L3 13"/></svg></button>' +
+          '<p class="ac-sp-eyebrow"></p><h2 class="ac-sp-name" id="ac-sp-h"><span class="s"></span><span class="n"></span></h2><p class="ac-sp-role"></p><div class="ac-sp-sec"><h4></h4><ul></ul></div><p class="ac-sp-note"></p>' +
+          '<div class="ac-sp-act"><a class="ac-sp-btn" href="#sem-list" data-sp-go>' + esc(SPD.cta || 'Выбрать семинар') + '</a><button class="ac-sp-btn o" type="button" data-act="form" data-type="question" data-ref="">' + esc(SPD.ask || 'Задать вопрос') + '</button></div>' +
+          '<div class="ac-sp-nav"><button class="prev" type="button" data-sp-d="-1" aria-label="' + esc(SPD.prev || '') + '">' + chev + '</button><button class="next" type="button" data-sp-d="1" aria-label="' + esc(SPD.next || '') + '">' + chev + '</button><span><b></b> ' + esc(SPD.of || 'из') + ' ' + items.length + '</span></div></div></div>';
+        document.body.appendChild(sp);
+        sp.addEventListener('click', e => {
+          const go = e.target.closest('[data-sp-go]'), dn = e.target.closest('[data-sp-d]');
+          if (go) { e.preventDefault(); close(); setTimeout(() => { const el = document.getElementById('sem-list'); if (el) el.scrollIntoView({behavior: still ? 'auto' : 'smooth', block: 'start'}); }, 360); }
+          else if (dn) step(+dn.getAttribute('data-sp-d'));
+          else if (e.target.closest('[data-sp-x]')) close();
+        });
+        sp.addEventListener('keydown', e => {
+          if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); close(); }
+          else if (e.key === 'ArrowLeft') { e.preventDefault(); step(-1); } else if (e.key === 'ArrowRight') { e.preventDefault(); step(1); }
+          else if (e.key === 'Tab') { const f = $$('button,a[href]', sp).filter(x => !x.disabled && x.offsetParent !== null); if (!f.length) return; const a = f[0], z = f[f.length - 1]; if (e.shiftKey && document.activeElement === a) { e.preventDefault(); z.focus(); } else if (!e.shiftKey && document.activeElement === z) { e.preventDefault(); a.focus(); } }
+        });
+      };
+      const open = (i, btn) => {
+        if (closing) return; if (!sp) build();
+        clearTimeout(backT); items.forEach(x => x.classList.remove('is-back'));
+        cur = i; opener = btn || opener; const li = items[i];
+        sp.hidden = false; sp.classList.remove('is-in', 'is-out'); document.body.classList.add('locked'); document.documentElement.classList.add('ac-sp-on');
+        fill(data(li)); li.classList.add('is-lifted');
+        const photo = $('.ac-sp-photo', sp), src = rectOf(li), dst = photo.getBoundingClientRect();
+        requestAnimationFrame(() => sp.classList.add('is-in'));
+        if (!still && src.width) photo.animate([{transform: flip(src, dst)}, {transform: 'none'}], {duration: 900, easing: 'cubic-bezier(.2,.75,.15,1)'});
+        setTimeout(() => { const x = $('.ac-sp-x', sp); if (x) x.focus({preventScroll: true}); }, 80);
+        A.track && A.track('teacher_open', {teacher: li.dataset.id});
+      };
+      const close = () => {
+        if (!sp || sp.hidden || closing) return; closing = true; const li = items[cur], photo = $('.ac-sp-photo', sp);
+        sp.classList.remove('is-in'); sp.classList.add('is-out');
+        let fin = false; const done = () => {
+          if (fin) return; fin = true; sp.hidden = true; sp.classList.remove('is-out'); closing = false;
+          li.classList.remove('is-lifted'); li.classList.add('is-back'); backT = setTimeout(() => li.classList.remove('is-back'), 700);
+          document.body.classList.remove('locked'); document.documentElement.classList.remove('ac-sp-on'); if (opener && opener.focus) opener.focus({preventScroll: true});
+        };
+        if (still) { done(); return; }
+        const src = rectOf(li), dst = photo.getBoundingClientRect(), an = photo.animate([{transform: 'none'}, {transform: flip(src, dst)}], {duration: 640, easing: 'cubic-bezier(.5,0,.2,1)', fill: 'forwards'});
+        an.onfinish = () => { done(); an.cancel(); }; setTimeout(done, 950);
+      };
+      const step = d => {
+        if (closing || !sp || sp.hidden) return; const n = (cur + d + items.length) % items.length, photo = $('.ac-sp-photo', sp), card = $('.ac-sp-card', sp);
+        items[cur].classList.remove('is-lifted'); items[n].classList.add('is-lifted'); cur = n; opener = $('.ac-tc-frame', items[n]);
+        const swap = () => { fill(data(items[n])); photo.classList.remove('is-swap'); card.classList.remove('is-swap'); };
+        if (still) { swap(); return; } photo.classList.add('is-swap'); card.classList.add('is-swap'); setTimeout(swap, 230);
+      };
+      A.actions['acad-t'] = (t, id) => { const i = items.findIndex(x => x.dataset.id === id); if (i >= 0) open(i, $('.ac-tc-frame', items[i])); };
+    }
   };
   A.pages.event = function () {
     const w = $('[data-event]'); if (!w) return;
