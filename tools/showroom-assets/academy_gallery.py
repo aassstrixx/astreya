@@ -113,10 +113,10 @@ def fluted(name, col, rough, coat=0.0, pitch=.9, depth=.55, tone=.10, noise=.08)
 
 def mats():
     M = {}
-    M['wall'] = MT.lime_plaster('g_back', S.E3('BACKC', (.90, .82, .72)), wave=F('WAVE', 1.0), scale=.4, tone=.8)
-    M['flute'] = fluted('g_flute', S.E3('FLUTEC', (.80, .68, .54)), .46, .15, tone=.10)
+    M['wall'] = MT.lime_plaster('g_back', S.E3('BACKC', (.97, .89, .75)), wave=F('WAVE', 1.0), scale=.4, tone=.8)
+    M['flute'] = fluted('g_flute', S.E3('FLUTEC', (.93, .83, .68)), .46, .15, tone=.10)
     M['flute_navy'] = fluted('g_flute_navy', S.E3('FLUTEN', (.030, .058, .150)), .30, .55, tone=.30, depth=.6, noise=.04)
-    M['frame'] = MT.limestone('g_limestone', S.E3('LIMEC', (.98, .94, .87)), scale=.5)
+    M['frame'] = MT.limestone('g_limestone', S.E3('LIMEC', (.98, .91, .79)), scale=.5)
     M['plinth'] = AH.trav_veined('g_plinth', (.95, .86, .72), 'Z', F('VEINB', 1.8), sc=F('BSC', .8))
     M['navy'] = S.mat_simple('g_navy_metal', S.E3('NAVYM', (.016, .034, .092)), F('NAVYR', .36), .82); M['brass'] = DC.brass('g_brass')
     M['stone'] = MT.limestone('g_plaque', (1.0, .98, .94), .6)
@@ -271,9 +271,6 @@ def build(sc):
             i = pi; pi += 1; ab = c['ab']; at = c['at']; ap0, ap1 = cx - g['apw'] / 2, cx + g['apw'] / 2; fb = c['fb']; yp = PAN_Y - .55                                         # фотопечать парит на .55 ед. над панелью
             rect_plane('photo%d' % i, photo_mat('g_photo%d' % i, '/tmp/ag_%s.png' % paths[i]), ap0, ap1, ab, at, yp - .24 - F('PHOFF', .05), uv=True)                                       # поверхность печати (глянцевая)
             bev(S.box('print%d' % i, M['white'], ap0 + .01, ap1 - .01, yp - .24, yp, ab + .01, at - .01, G), .07, 2)                                                     # основа печати 1,2 см — тонкий белый торец, без рамы
-            for sx_, sz_ in ((ap0 + .55, ab + .55), (ap1 - .55, ab + .55), (ap0 + .55, at - .55), (ap1 - .55, at - .55)):                                                 # четыре латунные стойки с шляпками
-                bpy.ops.mesh.primitive_cylinder_add(vertices=24, radius=.15, depth=.56, location=(sx_, yp + .28, sz_), rotation=(math.pi / 2, 0, 0)); st = bpy.context.object; st.name = 'standoff'; st.data.materials.append(M['brass']); bpy.ops.object.shade_smooth(); st['grp'] = G
-                bpy.ops.mesh.primitive_cylinder_add(vertices=24, radius=.26, depth=.10, location=(sx_, yp - .29, sz_), rotation=(math.pi / 2, 0, 0)); cp = bpy.context.object; cp.name = 'standoff_cap'; cp.data.materials.append(M['brass']); bpy.ops.object.shade_smooth(); cp['grp'] = G
             ow_ = g['ow']; bev(S.box('plq%d' % i, M['stone'], cx - ow_ / 2, cx + ow_ / 2, PAN_Y - .30, PAN_Y, c['pz0'], c['pz1'], G), .05, 2); S.box('plq_line', M['brass'], cx - ow_ / 2 + .18, cx + ow_ / 2 - .18, PAN_Y - .32, PAN_Y - .29, c['pz1'] - .26, c['pz1'] - .23, G)
         else:
             z0 = c['z0']; yb = Y0 - 2.2; x0c = c['x0']
@@ -300,9 +297,9 @@ def build(sc):
 
 
 def lights(sc):
-    g = GAL; sun = bpy.data.lights.new('sun', 'SUN'); sun.energy = F('SUN', 5.0); sun.angle = math.radians(F('SUN_ANGLE', 2.0)); sun.color = S.E3('SUNC', (1.0, .90, .76))
+    g = GAL; sun = bpy.data.lights.new('sun', 'SUN'); sun.energy = F('SUN', 12.0); sun.angle = math.radians(F('SUN_ANGLE', 2.0)); sun.color = S.E3('SUNC', (1.0, .90, .76))
     so = bpy.data.objects.new('sun', sun); bpy.context.collection.objects.link(so); so.rotation_euler = AH.SUN_DIR.to_track_quat('-Z', 'Y').to_euler(); so.location = (-70, -70, 60)
-    fl = bpy.data.lights.new('fill', 'AREA'); fl.energy = F('FILL', 2400.0); fl.size = 90; fl.size_y = 40; fl.color = S.E3('FILLC', (1.0, .90, .78))
+    fl = bpy.data.lights.new('fill', 'AREA'); fl.energy = F('FILL', 2200.0); fl.size = 90; fl.size_y = 40; fl.color = S.E3('FILLC', (1.0, .90, .78))
     fo = bpy.data.objects.new('fill', fl); bpy.context.collection.objects.link(fo); fo.location = (-50, -90, 50); fo.rotation_euler = (Vector((32, Y0, g['H'] / 2)) - Vector(fo.location)).to_track_quat('-Z', 'Y').to_euler(); fo.visible_camera = False
     w = bpy.data.worlds.new('w'); w.use_nodes = True; bg = w.node_tree.nodes['Background']; bg.inputs['Color'].default_value = (*S.E3('WORLDC', (.98, .88, .76)), 1); bg.inputs['Strength'].default_value = F('WORLD', .22); sc.world = w
 
@@ -331,14 +328,14 @@ def layout(sc, cam, pw, ph):
 def export(raw):
     from PIL import Image
     import numpy as np
-    im = Image.open(raw); rgb = np.asarray(im.convert('RGB')); g = S.grade(rgb, sat=F('AH_SAT', 1.22), gamma=F('AH_GAMMA', .90), lift=F('AH_LIFT', .02))
-    g = np.clip(g * np.array([float(x) for x in os.environ.get('AH_WARM', '1.0,.99,.96').split(',')], np.float32), 0, 255).astype(np.uint8); im2 = Image.fromarray(g)
+    im = Image.open(raw); rgb = np.asarray(im.convert('RGB')); g = S.grade(rgb, sat=F('AH_SAT', 1.38), gamma=F('AH_GAMMA', .85), lift=F('AH_LIFT', .05))
+    g = np.clip(g * np.array([float(x) for x in os.environ.get('AH_WARM', '1.0,.99,.955').split(',')], np.float32), 0, 255).astype(np.uint8); im2 = Image.fromarray(g)
     im2.save(os.path.join(OUT, 'gallery.webp'), quality=90, method=6); im2.resize((1600, round(1600 * im2.height / im2.width)), Image.LANCZOS).save(os.path.join(OUT, 'gallery-s.webp'), quality=88, method=6)
 
 
 def main():
     cells(); H = GAL['H']; pw = int(os.environ.get('AH_W', 1280 if MODE == 'preview' else PW)); ph = round(pw * H / GAL['W']); spp = int(os.environ.get('AH_SPP', 24 if MODE == 'preview' else 96))
-    bpy.ops.wm.read_factory_settings(use_empty=True); sc = bpy.context.scene; S.settings(sc, pw, ph, spp); sc.view_settings.exposure = F('EXPO', -0.8)
+    bpy.ops.wm.read_factory_settings(use_empty=True); sc = bpy.context.scene; S.settings(sc, pw, ph, spp); sc.view_settings.exposure = F('EXPO', -0.7)
     cr = os.environ.get('CROP')
     if cr and MODE == 'preview':
         x0, x1, y0, y1 = [float(v) for v in cr.split(',')]; sc.render.use_border = True; sc.render.use_crop_to_border = True; sc.render.border_min_x, sc.render.border_max_x = x0, x1; sc.render.border_min_y, sc.render.border_max_y = 1 - y1, 1 - y0
@@ -351,8 +348,8 @@ def main():
         try:
             from PIL import Image
             import numpy as np
-            g = S.grade(np.asarray(Image.open(sc.render.filepath).convert('RGB')), sat=F('AH_SAT', 1.22), gamma=F('AH_GAMMA', .90), lift=F('AH_LIFT', .02))
-            g = np.clip(g * np.array([float(x) for x in os.environ.get('AH_WARM', '1.0,.99,.96').split(',')], np.float32), 0, 255).astype(np.uint8); Image.fromarray(g).save(sc.render.filepath.replace('.png', '_g.jpg'), quality=92)
+            g = S.grade(np.asarray(Image.open(sc.render.filepath).convert('RGB')), sat=F('AH_SAT', 1.38), gamma=F('AH_GAMMA', .85), lift=F('AH_LIFT', .05))
+            g = np.clip(g * np.array([float(x) for x in os.environ.get('AH_WARM', '1.0,.99,.955').split(',')], np.float32), 0, 255).astype(np.uint8); Image.fromarray(g).save(sc.render.filepath.replace('.png', '_g.jpg'), quality=92)
         except Exception as e: print('grade skipped', e)
         print('preview done'); return
     raw = '/tmp/ag_full.png'; nt_ = int(os.environ.get('AH_TILES', 1))
