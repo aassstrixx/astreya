@@ -1,0 +1,594 @@
+{
+ "license": "CC0 1.0",
+ "normal_convention": "OpenGL (+Y), Non-Color",
+ "assets": [
+  {
+   "slug": "travertine-ivory",
+   "title": "Travertine 009",
+   "category": "1 травертин",
+   "source": "ambientCG",
+   "source_url": "https://ambientcg.com/a/Travertine009",
+   "asset_id": "Travertine009",
+   "license": "CC0 1.0 (public domain)",
+   "resolution": "2K",
+   "resolution_px": 2048,
+   "physical_size_m": [
+    1.2,
+    1.2
+   ],
+   "maps": [
+    "color",
+    "normal",
+    "rough",
+    "ao",
+    "disp"
+   ],
+   "astreya_usage": "Главная: пол и стены витрины/ресепшена; каталог: подиумы под продукцию"
+  },
+  {
+   "slug": "travertine-sand",
+   "title": "Travertine 001",
+   "category": "1 травертин",
+   "source": "ambientCG",
+   "source_url": "https://ambientcg.com/a/Travertine001",
+   "asset_id": "Travertine001",
+   "license": "CC0 1.0 (public domain)",
+   "resolution": "1K",
+   "resolution_px": 1024,
+   "physical_size_m": [
+    1.2,
+    1.2
+   ],
+   "maps": [
+    "color",
+    "normal",
+    "rough",
+    "ao",
+    "disp"
+   ],
+   "astreya_usage": "Бренды: плиты-подложки под логотипы; запасной вариант потемнее"
+  },
+  {
+   "slug": "limestone-tiles-warm",
+   "title": "Tiles 143",
+   "category": "2 известняк",
+   "source": "ambientCG",
+   "source_url": "https://ambientcg.com/a/Tiles143",
+   "asset_id": "Tiles143",
+   "license": "CC0 1.0 (public domain)",
+   "resolution": "2K",
+   "resolution_px": 2048,
+   "physical_size_m": [
+    2.0,
+    2.0
+   ],
+   "maps": [
+    "color",
+    "normal",
+    "rough",
+    "disp"
+   ],
+   "astreya_usage": "Каталог: пол шоурума, плитка 2 м; тёплая гамма сайта"
+  },
+  {
+   "slug": "limestone-blocks-ph",
+   "title": "Marble 01",
+   "category": "2 известняк",
+   "source": "Poly Haven",
+   "source_url": "https://polyhaven.com/a/marble_01",
+   "asset_id": "marble_01",
+   "license": "CC0 1.0 (public domain)",
+   "resolution": "1K",
+   "resolution_px": 1024,
+   "physical_size_m": [
+    15.0,
+    15.0
+   ],
+   "maps": [
+    "color",
+    "normal",
+    "rough",
+    "ao",
+    "disp"
+   ],
+   "astreya_usage": "Главная/бренды: крупная кладка стен (в источнике называется marble_01, фактически известняк)"
+  },
+  {
+   "slug": "plaster-light-smooth",
+   "title": "Plaster 002",
+   "category": "3 штукатурка",
+   "source": "ambientCG",
+   "source_url": "https://ambientcg.com/a/Plaster002",
+   "asset_id": "Plaster002",
+   "license": "CC0 1.0 (public domain)",
+   "resolution": "2K",
+   "resolution_px": 2048,
+   "physical_size_m": null,
+   "maps": [
+    "color",
+    "normal",
+    "rough",
+    "disp"
+   ],
+   "astreya_usage": "Главная: фон стен, общий свет; нейтрально-светлая"
+  },
+  {
+   "slug": "plaster-light-trowel",
+   "title": "Plaster 003",
+   "category": "3 штукатурка",
+   "source": "ambientCG",
+   "source_url": "https://ambientcg.com/a/Plaster003",
+   "asset_id": "Plaster003",
+   "license": "CC0 1.0 (public domain)",
+   "resolution": "2K",
+   "resolution_px": 2048,
+   "physical_size_m": null,
+   "maps": [
+    "color",
+    "normal",
+    "rough",
+    "disp"
+   ],
+   "astreya_usage": "Бренды/обучение: стена-акцент с фактурой шпателя"
+  },
+  {
+   "slug": "plaster-warm-wall",
+   "title": "Plastered Wall 02",
+   "category": "3 штукатурка",
+   "source": "Poly Haven",
+   "source_url": "https://polyhaven.com/a/plastered_wall_02",
+   "asset_id": "plastered_wall_02",
+   "license": "CC0 1.0 (public domain)",
+   "resolution": "1K",
+   "resolution_px": 1024,
+   "physical_size_m": [
+    22.3,
+    22.3
+   ],
+   "maps": [
+    "color",
+    "normal",
+    "rough",
+    "ao",
+    "disp"
+   ],
+   "astreya_usage": "Главная/новости: тёплая бежевая стена-фон (физ. размер в источнике завышен — масштабировать вручную)"
+  },
+  {
+   "slug": "ribbed-concrete-boards",
+   "title": "Concrete 045",
+   "category": "4 рифлёная панель",
+   "source": "ambientCG",
+   "source_url": "https://ambientcg.com/a/Concrete045",
+   "asset_id": "Concrete045",
+   "license": "CC0 1.0 (public domain)",
+   "resolution": "1K",
+   "resolution_px": 1024,
+   "physical_size_m": [
+    2.0,
+    2.0
+   ],
+   "maps": [
+    "color",
+    "normal",
+    "rough",
+    "ao",
+    "disp"
+   ],
+   "astreya_usage": "Бренды: рейки на стене за стойкой (опалубочный бетон, вертикальные доски; НЕ классический fluted)"
+  },
+  {
+   "slug": "ribbed-concrete-dark",
+   "title": "Ribbed Concrete Wall",
+   "category": "4 рифлёная панель",
+   "source": "Poly Haven",
+   "source_url": "https://polyhaven.com/a/ribbed_concrete_wall",
+   "asset_id": "ribbed_concrete_wall",
+   "license": "CC0 1.0 (public domain)",
+   "resolution": "1K",
+   "resolution_px": 1024,
+   "physical_size_m": [
+    20.0,
+    20.0
+   ],
+   "maps": [
+    "color",
+    "normal",
+    "rough",
+    "ao",
+    "disp"
+   ],
+   "astreya_usage": "Обучение: тёмная рифлёная стена зала; вертикальные канавки"
+  },
+  {
+   "slug": "velvet-velour-red",
+   "title": "Velour Velvet",
+   "category": "5 бархат",
+   "source": "Poly Haven",
+   "source_url": "https://polyhaven.com/a/velour_velvet",
+   "asset_id": "velour_velvet",
+   "license": "CC0 1.0 (public domain)",
+   "resolution": "1K",
+   "resolution_px": 1024,
+   "physical_size_m": [
+    2.842,
+    2.735
+   ],
+   "maps": [
+    "color",
+    "normal",
+    "rough",
+    "ao",
+    "disp"
+   ],
+   "astreya_usage": "Обучение: кресла/пуфы; СИНЕГО бархата нет — красный, перекрашивается Hue/Saturation нодой в тёмно-синий"
+  },
+  {
+   "slug": "boucle-cream-teddy",
+   "title": "Curly Teddy Natural",
+   "category": "6 букле",
+   "source": "Poly Haven",
+   "source_url": "https://polyhaven.com/a/curly_teddy_natural",
+   "asset_id": "curly_teddy_natural",
+   "license": "CC0 1.0 (public domain)",
+   "resolution": "1K",
+   "resolution_px": 1024,
+   "physical_size_m": [
+    3.358,
+    3.309
+   ],
+   "maps": [
+    "color",
+    "normal",
+    "rough",
+    "ao",
+    "disp"
+   ],
+   "astreya_usage": "Главная/каталог: кресла и пуфы кремового цвета (ближайшее к букле — тедди-флис)"
+  },
+  {
+   "slug": "knit-wool-white",
+   "title": "Fabric 019",
+   "category": "6 букле/шерсть",
+   "source": "ambientCG",
+   "source_url": "https://ambientcg.com/a/Fabric019",
+   "asset_id": "Fabric019",
+   "license": "CC0 1.0 (public domain)",
+   "resolution": "1K",
+   "resolution_px": 1024,
+   "physical_size_m": null,
+   "maps": [
+    "color",
+    "normal",
+    "rough",
+    "disp"
+   ],
+   "astreya_usage": "Обучение/новости: вязаный плед, подушки (белый трикотаж)"
+  },
+  {
+   "slug": "knit-wool-blue",
+   "title": "Fabric 020",
+   "category": "6 шерсть",
+   "source": "ambientCG",
+   "source_url": "https://ambientcg.com/a/Fabric020",
+   "asset_id": "Fabric020",
+   "license": "CC0 1.0 (public domain)",
+   "resolution": "1K",
+   "resolution_px": 1024,
+   "physical_size_m": null,
+   "maps": [
+    "color",
+    "normal",
+    "rough",
+    "disp"
+   ],
+   "astreya_usage": "Акцент: синий вязаный текстиль под палитру бренда"
+  },
+  {
+   "slug": "linen-cream-weave",
+   "title": "Fabric 032",
+   "category": "7 лён/хлопок",
+   "source": "ambientCG",
+   "source_url": "https://ambientcg.com/a/Fabric032",
+   "asset_id": "Fabric032",
+   "license": "CC0 1.0 (public domain)",
+   "resolution": "1K",
+   "resolution_px": 1024,
+   "physical_size_m": null,
+   "maps": [
+    "color",
+    "normal",
+    "rough",
+    "disp"
+   ],
+   "astreya_usage": "Каталог/обучение: полотенца, салфетки, обивка (кремовая рогожка)"
+  },
+  {
+   "slug": "linen-blue-ph",
+   "title": "Rough Linen",
+   "category": "7 лён",
+   "source": "Poly Haven",
+   "source_url": "https://polyhaven.com/a/rough_linen",
+   "asset_id": "rough_linen",
+   "license": "CC0 1.0 (public domain)",
+   "resolution": "1K",
+   "resolution_px": 1024,
+   "physical_size_m": [
+    2.707,
+    2.713
+   ],
+   "maps": [
+    "color",
+    "normal",
+    "rough",
+    "ao",
+    "disp"
+   ],
+   "astreya_usage": "Акцент: синяя ткань/шторы"
+  },
+  {
+   "slug": "terry-towel-blue",
+   "title": "Terry Cloth",
+   "category": "7 хлопок",
+   "source": "Poly Haven",
+   "source_url": "https://polyhaven.com/a/terry_cloth",
+   "asset_id": "terry_cloth",
+   "license": "CC0 1.0 (public domain)",
+   "resolution": "1K",
+   "resolution_px": 1024,
+   "physical_size_m": [
+    3.671,
+    3.632
+   ],
+   "maps": [
+    "color",
+    "normal",
+    "rough",
+    "ao",
+    "disp"
+   ],
+   "astreya_usage": "Каталог: махровые полотенца (синяя петля)"
+  },
+  {
+   "slug": "marble-beige-veined",
+   "title": "Marble 014",
+   "category": "8 мрамор",
+   "source": "ambientCG",
+   "source_url": "https://ambientcg.com/a/Marble014",
+   "asset_id": "Marble014",
+   "license": "CC0 1.0 (public domain)",
+   "resolution": "2K",
+   "resolution_px": 2048,
+   "physical_size_m": null,
+   "maps": [
+    "color",
+    "normal",
+    "rough",
+    "disp"
+   ],
+   "astreya_usage": "Главная: столешницы, подиумы; тёплый бежевый с прожилками"
+  },
+  {
+   "slug": "marble-white-warm",
+   "title": "Marble 021",
+   "category": "8 мрамор",
+   "source": "ambientCG",
+   "source_url": "https://ambientcg.com/a/Marble021",
+   "asset_id": "Marble021",
+   "license": "CC0 1.0 (public domain)",
+   "resolution": "1K",
+   "resolution_px": 1024,
+   "physical_size_m": null,
+   "maps": [
+    "color",
+    "normal",
+    "rough",
+    "disp"
+   ],
+   "astreya_usage": "Каталог: светлые полки и столешницы с тонкими прожилками"
+  },
+  {
+   "slug": "brass-brushed-pale",
+   "title": "Metal 048 B",
+   "category": "9 латунь",
+   "source": "ambientCG",
+   "source_url": "https://ambientcg.com/a/Metal048B",
+   "asset_id": "Metal048B",
+   "license": "CC0 1.0 (public domain)",
+   "resolution": "2K",
+   "resolution_px": 2048,
+   "physical_size_m": null,
+   "maps": [
+    "color",
+    "normal",
+    "rough",
+    "disp",
+    "metal"
+   ],
+   "astreya_usage": "Все страницы: профили, ножки, рамки; матовый браш. Используется metal.jpg"
+  },
+  {
+   "slug": "gold-matte-champagne",
+   "title": "Metal 042 A",
+   "category": "9 шампань",
+   "source": "ambientCG",
+   "source_url": "https://ambientcg.com/a/Metal042A",
+   "asset_id": "Metal042A",
+   "license": "CC0 1.0 (public domain)",
+   "resolution": "1K",
+   "resolution_px": 1024,
+   "physical_size_m": null,
+   "maps": [
+    "color",
+    "normal",
+    "rough",
+    "disp",
+    "metal"
+   ],
+   "astreya_usage": "Бренды: инкрустации, логотипы-накладки; матовое золото. metal.jpg"
+  },
+  {
+   "slug": "oak-light",
+   "title": "Oak Veneer 03",
+   "category": "10 дуб светлый",
+   "source": "Poly Haven",
+   "source_url": "https://polyhaven.com/a/oak_veneer_03",
+   "asset_id": "oak_veneer_03",
+   "license": "CC0 1.0 (public domain)",
+   "resolution": "2K",
+   "resolution_px": 2048,
+   "physical_size_m": [
+    10.0,
+    10.0
+   ],
+   "maps": [
+    "color",
+    "normal",
+    "rough",
+    "ao",
+    "disp"
+   ],
+   "astreya_usage": "Обучение/каталог: мебель, полки, пол (светлый шпон, ~10 см = размер из источника)"
+  },
+  {
+   "slug": "oak-natural",
+   "title": "Oak Veneer 01",
+   "category": "10 дуб",
+   "source": "Poly Haven",
+   "source_url": "https://polyhaven.com/a/oak_veneer_01",
+   "asset_id": "oak_veneer_01",
+   "license": "CC0 1.0 (public domain)",
+   "resolution": "1K",
+   "resolution_px": 1024,
+   "physical_size_m": [
+    18.3,
+    18.3
+   ],
+   "maps": [
+    "color",
+    "normal",
+    "rough",
+    "ao",
+    "disp"
+   ],
+   "astreya_usage": "Контрастный вариант дерева: тёплый средний тон"
+  },
+  {
+   "slug": "terrazzo-cream",
+   "title": "Terrazzo 013",
+   "category": "11 терраццо",
+   "source": "ambientCG",
+   "source_url": "https://ambientcg.com/a/Terrazzo013",
+   "asset_id": "Terrazzo013",
+   "license": "CC0 1.0 (public domain)",
+   "resolution": "1K",
+   "resolution_px": 1024,
+   "physical_size_m": null,
+   "maps": [
+    "color",
+    "normal",
+    "rough",
+    "disp"
+   ],
+   "astreya_usage": "Каталог: пол/столешницы, кремовая основа с цветной крошкой"
+  },
+  {
+   "slug": "terrazzo-warm-chips",
+   "title": "Terrazzo 011",
+   "category": "11 терраццо",
+   "source": "ambientCG",
+   "source_url": "https://ambientcg.com/a/Terrazzo011",
+   "asset_id": "Terrazzo011",
+   "license": "CC0 1.0 (public domain)",
+   "resolution": "1K",
+   "resolution_px": 1024,
+   "physical_size_m": null,
+   "maps": [
+    "color",
+    "normal",
+    "rough",
+    "disp"
+   ],
+   "astreya_usage": "Главная: пол в тёплой гамме, крупная крошка"
+  },
+  {
+   "slug": "paper-white",
+   "title": "Paper 001",
+   "category": "12 бумага",
+   "source": "ambientCG",
+   "source_url": "https://ambientcg.com/a/Paper001",
+   "asset_id": "Paper001",
+   "license": "CC0 1.0 (public domain)",
+   "resolution": "1K",
+   "resolution_px": 1024,
+   "physical_size_m": null,
+   "maps": [
+    "color",
+    "normal",
+    "rough",
+    "disp"
+   ],
+   "astreya_usage": "Новости: страницы журнала/буклеты"
+  },
+  {
+   "slug": "paper-kraft",
+   "title": "Paper 006",
+   "category": "12 картон",
+   "source": "ambientCG",
+   "source_url": "https://ambientcg.com/a/Paper006",
+   "asset_id": "Paper006",
+   "license": "CC0 1.0 (public domain)",
+   "resolution": "1K",
+   "resolution_px": 1024,
+   "physical_size_m": null,
+   "maps": [
+    "color",
+    "normal",
+    "rough",
+    "disp"
+   ],
+   "astreya_usage": "Новости: обложка и крафт-упаковка/пакеты"
+  },
+  {
+   "slug": "microcement-light",
+   "title": "Concrete 034",
+   "category": "13 микроцемент",
+   "source": "ambientCG",
+   "source_url": "https://ambientcg.com/a/Concrete034",
+   "asset_id": "Concrete034",
+   "license": "CC0 1.0 (public domain)",
+   "resolution": "2K",
+   "resolution_px": 2048,
+   "physical_size_m": [
+    1.1,
+    0.55
+   ],
+   "maps": [
+    "color",
+    "normal",
+    "rough",
+    "disp"
+   ],
+   "astreya_usage": "Главная/каталог: гладкие стены и пол, светло-серый"
+  },
+  {
+   "slug": "plaster-concrete-smooth",
+   "title": "Painted Plaster 017",
+   "category": "13 бетон гладкий",
+   "source": "ambientCG",
+   "source_url": "https://ambientcg.com/a/PaintedPlaster017",
+   "asset_id": "PaintedPlaster017",
+   "license": "CC0 1.0 (public domain)",
+   "resolution": "1K",
+   "resolution_px": 1024,
+   "physical_size_m": null,
+   "maps": [
+    "color",
+    "normal",
+    "rough",
+    "disp"
+   ],
+   "astreya_usage": "Обучение: гладкая стена, светлый бетон"
+  }
+ ]
+}
