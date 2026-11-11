@@ -147,7 +147,7 @@ body[data-page="training"].menu-open .hdr,body[data-page="training"].search-open
 .ac-cal-col{min-width:0}
 .ac-ev-col{min-width:0}
 .ac-evs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:clamp(10px,1.45vw,30px);height:100%}
-.ac-page .ac-ev{display:flex;flex-direction:column;min-width:0;padding:0;border:0;border-radius:var(--ac-r);background:var(--ac-cardg);box-shadow:0 0 0 1px rgba(120,84,40,.09),0 26px 38px -28px rgba(70,46,18,.55);overflow:hidden;cursor:pointer;
+.ac-page .ac-ev{display:flex;flex-direction:column;align-items:stretch;min-width:0;padding:0;border:0;border-radius:var(--ac-r);background:var(--ac-cardg);box-shadow:0 0 0 1px rgba(120,84,40,.09),0 26px 38px -28px rgba(70,46,18,.55);overflow:hidden;cursor:pointer;
   transition:transform .7s var(--ac-ease),box-shadow .7s var(--ac-ease)}
 .ac-ev-pic{aspect-ratio:2.06/1;overflow:hidden;background:#e6dcc8}
 .ac-ev-pic img{display:block;width:100%;height:100%;object-fit:cover;object-position:50% 28%;transition:transform 1.2s var(--ac-ease)}
@@ -313,6 +313,10 @@ body[data-page="training"] .ftr-sub .ok .tick{background:rgba(22,34,62,.1)}
 @media (max-width:1180px){
   .ac-page{--ac-g:clamp(18px,4vw,48px)}
   .ac-hero-copy{max-width:min(64%,560px)}
+  .ac-hero-next{width:clamp(250px,27vw,330px)}
+  .ac-hero .cd{grid-template-columns:minmax(0,1fr)}
+  .ac-hero .cd-b>span{flex:1}
+  .ac-hero .cd .btn{justify-content:center}
   .ac-tgrid{gap:clamp(10px,1.6vw,20px)}
   .ac-cal-grid{grid-template-columns:minmax(0,26%) minmax(0,1fr)}
 }
