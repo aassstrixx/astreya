@@ -479,3 +479,17 @@ button.qc-item{width:100%;text-align:left}
   .sec,.p-page,.wrap{padding-top:0!important;padding-bottom:0!important}
   img,svg{max-width:100%!important}
 }
+
+/* единая цветовая ДНК: на ВСЕХ страницах вместо яркого синего — тёмно-синий, как у кнопок «Подробнее» и метки «Новинка»: логотип и меню в шапке, «Стать партнёром», фокус, полоса прокрутки (раньше — только главная, каталог, бренды, обучение и товары; новости, компания, партнёрам, контакты, статьи и события оставались ярко-синими) */
+:is(body[data-page]){--blue:#101f37;--blue-d:#1a2e52}       /* на каталоге (витрина и страницы товаров) — цвет подвала сайта (тёмно-синий с зерном: на экране ≈ rgb(16,31,55)) */
+/* то, что в основном стиле сайта жёстко задано ярко-синим (кнопка Стеллы, её аватар, кольца и блики, тени кнопок) — на каталоге в том же тёмно-синем */
+:is(body[data-page]) .asst-fab-i{background:radial-gradient(circle at 50% 30%,#41588a,#101f37 75%)}
+:is(body[data-page]) .asst-fab-glow{background:radial-gradient(closest-side,rgba(98,122,170,.8),rgba(98,122,170,.28) 55%,transparent 74%)}
+:is(body[data-page]) .asst-fab-ring{background:rgb(70,92,138)}
+:is(body[data-page]) .asst-fab.nudge .asst-fab-ring{background:#101f37}
+:is(body[data-page]) .asst-av{background:radial-gradient(circle at 50% 32%,rgba(98,122,170,.6),rgba(16,31,55,.4) 80%)}
+:is(body[data-page]) .asst-av::before{border-color:rgba(98,122,170,.6)}
+:is(body[data-page]) .qc-btn{box-shadow:0 16px 32px -12px rgba(16,31,55,.7),0 2px 6px rgba(11,26,51,.18)}
+:is(body[data-page]) .chip.chip-plan{box-shadow:0 10px 20px -12px rgba(16,31,55,.9)}
+:is(body[data-page]) .tag.blue,:is(body[data-page]) .dlg .ctx,:is(body[data-page]) .adv-ic{background:rgba(16,31,55,.08)}
+:is(body[data-page]) .hdr .logo{--lm:#101f37}
