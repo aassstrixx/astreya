@@ -147,6 +147,26 @@ def grass_mat():
     nt.links.new(n, r.inputs['Fac']); nt.links.new(r.outputs['Color'], b.inputs['Base Color']); S.val(b, .9, 'Roughness'); return m
 
 
+def smooth_prof(pts, n=8, keep=1):
+    """сглаживание профиля тела вращения сплайном Катмулла — Рома: силуэт без «граней» (keep — сколько первых отрезков оставить прямыми: донышко)"""
+    out = list(pts[:keep + 1]); P = pts[keep:]
+    for i in range(len(P) - 1):
+        p0 = P[max(i - 1, 0)]; p1 = P[i]; p2 = P[i + 1]; p3 = P[min(i + 2, len(P) - 1)]
+        for k in range(1, n + 1):
+            t = k / n; q = [.5 * (2 * p1[j] + (p2[j] - p0[j]) * t + (2 * p0[j] - 5 * p1[j] + 4 * p2[j] - p3[j]) * t * t + (3 * p1[j] - p0[j] - 3 * p2[j] + p3[j]) * t ** 3) for j in (0, 1)]
+            out.append((max(0.0, q[0]), q[1]))
+    return out
+
+
+VASE_P = [(0, 0), (.20, 0), (.27, .035), (.395, .21), (.45, .41), (.405, .60), (.27, .76), (.175, .86), (.165, .93), (.215, .995), (.19, 1.0), (.15, .94), (.0, .90)]       # амфора: плавное тулово, шейка, отогнутый венчик и настоящее горло (а не плоская крышка)
+
+
+def fine_vase(name, mat, x, y, z, H, W=None):
+    """керамическая ваза с гладким силуэтом: профиль VASE_P сглажен сплайном, 128 сегментов по окружности"""
+    sw = (W / 2 / .45) if W else H * .62
+    return DC.lathe(name, smooth_prof(VASE_P, 8), mat, G, x, y, z, 128, sx=sw, sy=sw, sz=H)
+
+
 def oliv_leaves():
     ma = RL.leaf_material('olive_leafA', (.05, .085, .035), (.16, .23, .075)); mb = RL.leaf_material('olive_leafB', (.085, .125, .05), (.23, .30, .105), under=True)
     leaves = []
@@ -174,7 +194,7 @@ def olive_stem(rnd, leaves, bark, pts, count, k, r0, r1, hide=False):
 
 def vase_with_olive(M, leaves, rnd, x, y, z, H=3.6, n=9, stem=(3.2, 5.2)):
     """керамическая ваза и пучок оливковых веток"""
-    DC.vase('vase', 'amphora', M['glaze'], x, y, z, H, G, W=H * .62)
+    fine_vase('vase', M['glaze'], x, y, z, H, W=H * .62)
     neck = Vector((x, y, z + H * .92))
     for j in range(n):
         az = rnd.uniform(0, 6.283); el = rnd.uniform(.85, 1.35) if j else 1.5; Lb = rnd.uniform(*stem) * (1.0 if j % 2 else .8)
@@ -400,11 +420,11 @@ def build_hero(sc):
     shelf_row(NB - 2.6, W2Y + 1.6, 7.9, 7.4, rr, pal, n=5, hk=1.1); shelf_row(NB, W2Y + 1.7, 13.0, 12.0, rr, pal, n=8); shelf_row(NB - 1.6, W2Y + 1.7, 18.0, 8.4, rr, pal, n=5)
     lin = RL.fabric_linen('nlinen', (.93, .89, .81), scale=10.0)
     for i in range(3): S.box('towel', lin, NB + 3.2, NB + 6.0, W2Y + .8, W2Y + 2.7, 7.9 + i * .36, 7.9 + i * .36 + .32, G, bev=.09)
-    DC.vase('nvB', 'amphora', M['glaze'], NB + 5.0, W2Y + 1.7, 18.0, 2.2, G, W=1.4)
+    fine_vase('nvB', M['glaze'], NB + 5.0, W2Y + 1.7, 18.0, 2.2, W=1.4)
     DC.eucalyptus(NB + 5.0, W2Y + 1.7, 19.9, 3.2, DC.paint('euc_leaf', (.40, .48, .38), .5, 0, .05, .1), M['bark'], rr, G, n=5, spread=.9)
     # ниша C (на месте прежнего окна): тёплая подсветка сверху, травертиновый постамент, высокая керамическая ваза с ветками, внизу — стопка камней
     S.cylinder('ped_c', M['tblock'], NC, W2Y + 1.35, 1.75, 0.0, 6.4, G, seg=96, bev=.07)
-    DC.vase('nvC', 'amphora', M['glaze'], NC, W2Y + 1.35, 6.4, 4.2, G, W=2.5)
+    fine_vase('nvC', M['glaze'], NC, W2Y + 1.35, 6.4, 4.2, W=2.5)
     rc = random.Random(11)
     for j in range(7):
         az = rc.uniform(0, 6.283); el = rc.uniform(1.0, 1.45); Lb = rc.uniform(4.0, 7.0); nk = Vector((NC, W2Y + 1.35, 6.4 + 4.2 * .92))
@@ -432,7 +452,7 @@ def build_hero(sc):
                                        ('pump', 22.3, -11.2, 1.9, amber, pal_d, paperw), ('drop', 23.6, -12.6, 1.3, amber, pal_d, paperw), ('jar', 21.9, -14.3, .62, pal_w, pal_w, None), ('pump', 17.4, -10.6, 2.0, pal_w, pal_w, None)):
         bottle(kd, x, y, th_ + (.14 if (x - 21.0) ** 2 + (y + 12.6) ** 2 < 3.3 ** 2 else 0.0), H, body, cap, lb)
     DC.lathe('tray', [(0, 0), (3.5, 0), (3.62, .05), (3.62, .2), (3.5, .24), (3.36, .14), (0, .14)], M['block'], G, 21.0, -12.6, th_, seg=96)          # каменный поднос под флаконами
-    DC.lathe('carafe', [(0, 0), (.62, 0), (.68, .08), (.70, 1.10), (.60, 1.60), (.30, 1.90), (.28, 2.60), (.40, 2.78), (.0, 2.78)], M['carafe'], G, 26.6, -6.4, th_, seg=48)
+    DC.lathe('carafe', smooth_prof([(0, 0), (.62, 0), (.68, .08), (.70, 1.10), (.60, 1.60), (.30, 1.90), (.28, 2.60), (.40, 2.78), (.36, 2.78), (.24, 2.6), (.0, 2.5)], 6), M['carafe'], G, 26.6, -6.4, th_, seg=96)
     for gx, gy in ((28.1, -6.9), (27.6, -5.4)): DC.lathe('glass', [(0, 0), (.30, 0), (.34, .06), (.42, .85), (.0, .85)], M['carafe'], G, gx, gy, th_, seg=40)
     pg = img_mat('page', paper_texture('/tmp/ac_page.png'), .5)
     S.box('mag1', pg, 25.6, 28.6, -12.4, -8.4, th_, th_ + .07, G).rotation_euler = (0, 0, math.radians(-8))
