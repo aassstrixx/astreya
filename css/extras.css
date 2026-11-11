@@ -49,7 +49,7 @@ body.dock-on #toast{bottom:calc(var(--dock-h,76px) + 24px + env(safe-area-inset-
 body.dock-on .qc{bottom:calc(var(--dock-h,66px) + 20px + env(safe-area-inset-bottom,0px))}
 body.locked .qc,body.menu-open .qc{display:none!important}
 @media (max-width:900px){.qc{display:flex}}
-.qc-btn{width:54px;height:54px;border-radius:50%;display:grid;place-items:center;background:var(--blue);color:#fff;box-shadow:0 16px 32px -12px rgba(47,91,214,.7),0 2px 6px rgba(11,26,51,.18);transition:background-color .25s,transform .35s var(--ease)}
+.qc-btn{width:54px;height:54px;border-radius:50%;display:grid;place-items:center;background:var(--blue);color:#fff;box-shadow:0 16px 32px -12px rgba(var(--blue-rgb),.7),0 2px 6px rgba(11,26,51,.18);transition:background-color .25s,transform .35s var(--ease)}
 .qc-btn:hover,.qc.open .qc-btn{background:var(--blue-d)}
 .qc-btn:active{transform:scale(.94)}
 .qc-btn .ic{width:23px;height:23px}
@@ -283,7 +283,7 @@ button.qc-item{width:100%;text-align:left}
 .asst.open .asst-h>*,.asst.open .asst-form,.asst.open .asst-note{animation:asstHeadIn .9s cubic-bezier(.22,1,.36,1) both;animation-delay:calc(var(--k,0)*90ms + 380ms)}
 .asst-h>:nth-child(2){--k:1}.asst-h>:nth-child(3){--k:2}.asst-h>:nth-child(4){--k:3}.asst-h>:nth-child(5){--k:4}.asst-form{--k:5}.asst-note{--k:6}
 .asst-h{flex:none;position:relative;display:flex;align-items:center;gap:10px;padding:16px 8px 16px 16px;color:var(--milk);background:radial-gradient(120% 240% at 0% 0%,#2f58b8 0%,var(--navy) 64%)}
-.asst-av{position:relative;flex:none;width:46px;height:46px;border-radius:50%;display:grid;place-items:center;background:radial-gradient(circle at 50% 32%,rgba(125,160,247,.6),rgba(47,91,214,.38) 80%);box-shadow:0 0 0 1px rgba(255,255,255,.24) inset}
+.asst-av{position:relative;flex:none;width:46px;height:46px;border-radius:50%;display:grid;place-items:center;background:radial-gradient(circle at 50% 32%,rgba(125,160,247,.6),rgba(var(--blue-rgb),.38) 80%);box-shadow:0 0 0 1px rgba(255,255,255,.24) inset}
 .asst-av::before{content:"";position:absolute;inset:-4px;border-radius:50%;border:1px solid rgba(157,180,245,.6);animation:asstHalo 3.4s ease-out 4}
 .asst-av .pe{width:50px;height:50px;margin:-2px}
 .asst-ht{min-width:0;flex:1}
@@ -334,7 +334,7 @@ button.qc-item{width:100%;text-align:left}
 .asst-cards,.asst-evs{display:grid;grid-template-columns:minmax(0,1fr);gap:8px;margin-top:10px}
 .asst-cards>*,.asst-evs>*{animation:asstPop .5s var(--ease) both;animation-delay:calc(var(--i,0)*80ms + 60ms)}
 .asst-card,.asst-ev{display:flex;align-items:center;gap:10px;min-width:0;padding:8px;border-radius:14px;background:var(--milk-2);border:1px solid var(--line-soft);transition:border-color .25s,box-shadow .3s,transform .35s var(--ease)}
-.asst-card:hover,.asst-ev:hover{border-color:rgba(47,91,214,.4);box-shadow:var(--sh);transform:translateY(-1px)}
+.asst-card:hover,.asst-ev:hover{border-color:rgba(var(--blue-rgb),.4);box-shadow:var(--sh);transform:translateY(-1px)}
 .asst-card-a,.asst-ev>a{flex:1;min-width:0;display:flex;align-items:center;gap:12px;color:inherit}
 .asst-card-i{flex:none;width:46px;height:46px;border-radius:12px;overflow:hidden;display:grid;place-items:center;background:radial-gradient(ellipse at 50% 30%,#fff 0,color-mix(in srgb,var(--c1) 18%,#f5f2ec) 100%)}
 .asst-card-i i{width:20px;height:28px;border-radius:6px 6px 8px 8px;background:linear-gradient(135deg,var(--c1),var(--c2))}
@@ -363,7 +363,7 @@ button.qc-item{width:100%;text-align:left}
 .asst-fb{display:flex;gap:2px;margin-top:6px;margin-left:-6px;animation:asstIn .5s var(--ease) .45s both}
 .asst-fb button{width:32px;height:32px;border-radius:50%;display:grid;place-items:center;color:var(--slate);opacity:.7;transition:background-color .2s,color .2s,opacity .2s,transform .3s var(--ease)}
 .asst-fb button:hover,.asst-fb button:focus-visible{opacity:1;background:var(--mist);color:var(--navy)}
-.asst-fb button[aria-pressed="true"]{opacity:1;color:var(--blue);background:rgba(47,91,214,.1)}
+.asst-fb button[aria-pressed="true"]{opacity:1;color:var(--blue);background:rgba(var(--blue-rgb),.1)}
 .asst-fb button:active{transform:scale(.88)}
 .asst-fb .ic{width:16px;height:16px;fill:none;stroke:currentColor}
 .asst-qr{display:flex;flex-wrap:wrap;gap:8px;padding:2px 0 6px 34px}
@@ -378,7 +378,7 @@ button.qc-item{width:100%;text-align:left}
 .asst-mic,.asst-send{flex:none;width:44px;height:44px;border-radius:50%;display:grid;place-items:center;transition:background-color .25s,color .25s,border-color .25s,transform .3s var(--ease)}
 .asst-mic{border:1px solid var(--line);color:var(--navy);background:#fff}
 .asst-mic:hover{border-color:var(--blue);color:var(--blue)}
-.asst-mic.on{background:var(--blue);border-color:var(--blue);color:#fff;animation:asstMicRing 1.4s ease-out infinite;box-shadow:0 0 0 0 rgba(47,91,214,.5)}
+.asst-mic.on{background:var(--blue);border-color:var(--blue);color:#fff;animation:asstMicRing 1.4s ease-out infinite;box-shadow:0 0 0 0 rgba(var(--blue-rgb),.5)}
 .asst-send{background:var(--blue);color:#fff}
 .asst-send:hover{background:var(--blue-d)}
 .asst-send:active,.asst-mic:active{transform:scale(.92)}
@@ -427,13 +427,13 @@ button.qc-item{width:100%;text-align:left}
 @keyframes asstFloat{0%,100%{transform:translateY(0) rotate(0)}50%{transform:translateY(-2.6px) rotate(1.8deg)}}
 @keyframes asstBreath{0%{opacity:.42;transform:scale(1)}70%,100%{opacity:0;transform:scale(1.79)}}
 @keyframes asstBurst{0%{opacity:0;transform:rotate(var(--a)) translateX(8px) scale(.2)}20%{opacity:1}100%{opacity:0;transform:rotate(var(--a)) translateX(var(--d,44px)) scale(1)}}
-@keyframes asstSent{0%{transform:scale(.72,.84) translateY(6px);box-shadow:0 0 0 0 rgba(47,91,214,.35)}50%{box-shadow:0 0 0 7px rgba(47,91,214,0)}100%{transform:none;box-shadow:0 6px 16px -12px rgba(11,26,51,.3)}}
+@keyframes asstSent{0%{transform:scale(.72,.84) translateY(6px);box-shadow:0 0 0 0 rgba(var(--blue-rgb),.35)}50%{box-shadow:0 0 0 7px rgba(var(--blue-rgb),0)}100%{transform:none;box-shadow:0 6px 16px -12px rgba(11,26,51,.3)}}
 @keyframes asstIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
 @keyframes asstHeadIn{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:none}}
 @keyframes asstPop{from{opacity:0;transform:translateY(8px) scale(.94)}to{opacity:1;transform:none}}
 @keyframes asstDot{0%,60%,100%{opacity:.35;transform:translateY(0)}30%{opacity:1;transform:translateY(-3px)}}
 @keyframes asstBlink{to{opacity:0}}
-@keyframes asstMicRing{0%{box-shadow:0 0 0 0 rgba(47,91,214,.6)}100%{box-shadow:0 0 0 20px rgba(47,91,214,0)}}
+@keyframes asstMicRing{0%{box-shadow:0 0 0 0 rgba(var(--blue-rgb),.6)}100%{box-shadow:0 0 0 20px rgba(var(--blue-rgb),0)}}
 @keyframes asstRing{0%{opacity:.6;transform:scale(1)}100%{opacity:0;transform:scale(2.05)}}
 @keyframes asstHalo{0%{transform:scale(.88);opacity:.8}100%{transform:scale(1.35);opacity:0}}
 @keyframes asstTwinkle{0%,100%{transform:rotate(0) scale(1)}50%{transform:rotate(14deg) scale(1.12)}}

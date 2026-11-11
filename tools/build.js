@@ -46,10 +46,21 @@ const ctx = load();
 ctx.assetVersion = (() => {
   const h = require('crypto').createHash('md5');
   const list = d => fs.readdirSync(path.join(__dirname, '..', d)).filter(f => /\.(css|js|json)$/.test(f) && f !== 'data.js' && f !== 'kb.js').sort().map(f => path.join(__dirname, '..', d, f));
-  [...list('css'), ...list('js'), ...list('data')].forEach(f => h.update(fs.readFileSync(f)));
+  /* в CSS ссылки url(../assets/…) сами несут ?v= (см. ниже) — для хэша их версию отбрасываем, иначе хэш зависел бы от самого себя */
+  const CSS_V = /(\.\.\/assets\/[^)"'?\s]+)\?v=[0-9a-f]{8}/g;
+  [...list('css'), ...list('js'), ...list('data')].forEach(f => h.update(/\.css$/.test(f) ? fs.readFileSync(f, 'utf8').replace(CSS_V, '$1') : fs.readFileSync(f)));
   const walk = d => fs.readdirSync(d, {withFileTypes: true}).sort((a, b) => a.name < b.name ? -1 : 1).forEach(e => e.isDirectory() ? walk(path.join(d, e.name)) : h.update(fs.readFileSync(path.join(d, e.name))));
-  ['brands', 'photos', 'teachers', 'jar-arch', 'bg', 'house-hall', 'house'].filter(d => fs.existsSync(path.join(__dirname, '..', 'assets', d))).forEach(d => walk(path.join(__dirname, '..', 'assets', d)));
+  ['brands', 'photos', 'teachers', 'jar-arch', 'bg', 'house-hall', 'house', 'academy', 'showroom', 'decor', 'products'].filter(d => fs.existsSync(path.join(__dirname, '..', 'assets', d))).forEach(d => walk(path.join(__dirname, '..', 'assets', d)));
   return h.digest('hex').slice(0, 8);
+})();
+/* url(../assets/…) в CSS получают тот же ?v=, что и src="…assets/…" в разметке: иначе картинка, которую страница берёт и в разметке, и в стилях, скачивается дважды
+   (замер: −647 КБ на каталоге, −534 КБ на брендах). Шрифты не трогаем: версия уже в имени файла. */
+(() => {
+  const dir = path.join(__dirname, '..', 'css'), RE = /(url\(\s*)(["']?)(\.\.\/assets\/(?!fonts\/)[^)"'?\s]+)(?:\?v=[0-9a-f]{8})?\2(\s*\))/g;
+  for (const f of fs.readdirSync(dir).filter(n => n.endsWith('.css'))) {
+    const p = path.join(dir, f), s = fs.readFileSync(p, 'utf8'), t = s.replace(RE, (m, a, q, u, z) => a + q + u + '?v=' + ctx.assetVersion + q + z);
+    if (t !== s) fs.writeFileSync(p, t);
+  }
 })();
 /* тексты форм из data/content.json → forms (админка: «Тексты и SEO → Тексты форм»): применяются и на страницах, и в браузере (js/data.js → forms); поля и обязательность менять нельзя */
 const FORM_KEYS = ['title', 'subject', 'lead', 'submit', 'ph', 'agree', 'done'];

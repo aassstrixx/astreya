@@ -264,7 +264,7 @@
   /* ---------- построение интерфейса ---------- */
   function build() {
     if (built) return; built = true; document.body.classList.add('has-asst');
-    const fab = document.createElement('button'); fab.type = 'button'; fab.id = 'asst-fab'; fab.className = 'asst-fab'; fab.setAttribute('data-act', 'asst-open'); fab.setAttribute('aria-haspopup', 'dialog'); fab.setAttribute('aria-expanded', 'false'); fab.setAttribute('aria-controls', 'asst'); fab.setAttribute('aria-label', 'Стелла, помощник «Астрея»: задать вопрос');
+    const fab = document.createElement('button'); fab.type = 'button'; fab.id = 'asst-fab'; fab.className = 'asst-fab'; fab.setAttribute('data-act', 'asst-open'); fab.setAttribute('aria-haspopup', 'dialog'); fab.setAttribute('aria-expanded', 'false'); fab.setAttribute('aria-controls', 'asst'); fab.setAttribute('aria-label', 'Спросить Стеллу — помощник «Астрея»');   // начинается с видимой подписи кнопки (WCAG 2.5.3 «метка в имени»)
     const sparks = [0, 1, 2, 3, 4, 5, 6, 7].map(k => '<i style="--a:' + (k * 45 + 12) + 'deg;--d:' + (40 + (k % 3) * 9) + 'px;--k:' + k + '"></i>').join('');
     fab.innerHTML = '<span class="asst-fab-glow" aria-hidden="true"></span><span class="asst-fab-fx" aria-hidden="true">' + sparks + '</span><span class="asst-fab-ring" aria-hidden="true"></span><span class="asst-fab-roll"><span class="asst-fab-i"><span class="asst-fab-pe">' + PEARL('sleep', true) + '</span></span></span><span class="asst-fab-t"><span><b>Спросить Стеллу</b></span></span>';
     document.body.insertAdjacentHTML('beforeend', PEARL_DEFS); document.body.appendChild(fab);

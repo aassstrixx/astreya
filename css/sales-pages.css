@@ -29,7 +29,7 @@
 .sx-door::before{content:"";position:absolute;left:0;right:0;top:0;height:5px;background:var(--c1,#2f5bd6)}
 .sx-door-learn{background:#fff;color:var(--navy)}
 .sx-door-buy{background:var(--navy);color:var(--milk)}
-.sx-door-buy::before{background:linear-gradient(90deg,var(--blue),#8ea8f0)}
+.sx-door-buy::before{background:linear-gradient(90deg,var(--blue),#b49a62)}
 .sx-big{display:flex;flex-direction:column;align-items:flex-start;gap:6px;min-height:100%;padding-right:clamp(14px,2vw,28px);border-right:1px dashed var(--sx-line)}
 .sx-big-k{padding:5px 8px;border-radius:4px;background:color-mix(in srgb,var(--c1,#2f5bd6) 11%,#fff);color:var(--c1,var(--blue-d));font:700 11px/1 var(--sans);letter-spacing:.14em;text-transform:uppercase}
 .sx-big-k:empty{display:none}

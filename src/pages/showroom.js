@@ -71,7 +71,7 @@ module.exports = function showroom(ctx, C, P) {
   const popActs = p => `<span class="shw-pc-ac" role="group" aria-label="Действия: ${esc(p.name)}">${C.xon('favorites') ? `<button class="shw-ab shw-fav" type="button" data-act="fav-toggle" data-fav-id="${p.id}" aria-pressed="false" aria-label="Добавить в избранное: ${esc(p.name)}" title="Добавить в избранное">${IC.heart}</button>` : ''}${C.xon('compare') ? `<button class="shw-ab shw-cmp" type="button" data-act="cmp-toggle" data-id="${p.id}" data-cmp-id="${p.id}" aria-pressed="false" aria-label="Добавить к сравнению: ${esc(p.name)}" title="Сравнить">${IC.cmp}</button>` : ''}${C.xon('quickView') ? `<button class="shw-ab shw-eye" type="button" data-act="qv-open" data-id="${p.id}" aria-label="Открыть подробную информацию: ${esc(p.name)}" title="Подробнее">${IC.eye}</button>` : `<a class="shw-ab shw-eye" href="${C.purl(P, p)}" aria-label="Открыть страницу товара: ${esc(p.name)}" title="Подробнее">${IC.eye}</a>`}</span>`;
   const popCard = (p, i) => {
     const b = ctx.brandById[p.brand], k = ctx.kindById[p.kind];
-    return `<article class="shw-pc" role="listitem" style="${S.bstyle(b)};--ph:${PH[i % PH.length]}px" data-id="${p.id}" data-nk="${NKS[i % 4]}">
+    return `<div class="shw-pc" role="listitem" style="${S.bstyle(b)};--ph:${PH[i % PH.length]}px" data-id="${p.id}" data-nk="${NKS[i % 4]}">
       ${p.isNew ? '<span class="shw-pc-tag">Новинка</span>' : ''}
       <div class="shw-pc-art" aria-hidden="true"><i class="pc-niche"></i><i class="pc-glow"></i>${imgTag(p, 'shw-pc-img')}<i class="pc-pl"></i></div>
       ${popActs(p)}
@@ -81,7 +81,7 @@ module.exports = function showroom(ctx, C, P) {
         <span class="shw-pc-k">${esc(k ? k.name : '')}${p.volume ? ' · ' + esc(p.volume) : ''}</span>
         <button class="shw-ask z3" type="button" data-act="form" data-type="product" data-ref="${p.id}">Запросить ${I.arrow}</button>
       </div>
-    </article>`;
+    </div>`;
   };
   const pop = feat.length ? `<section class="shw-pop" aria-labelledby="shw-pop-t">
       <div class="shw-pop-h"><h2 id="shw-pop-t">Рекомендуем</h2><span class="shw-pop-s">Листайте вправо — экспозиция продолжается</span><a class="lnk" href="#shw-all">Смотреть весь список ${I.arrow}</a></div>

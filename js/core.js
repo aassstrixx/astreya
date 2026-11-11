@@ -24,7 +24,10 @@
       }).catch(() => { /* офлайн — остаёмся на загруженной странице */ });
     } catch (e) { /* без sessionStorage — не проверяем */ }
   })();
-  A.assetUrl = p => window.__ASTREYA_BUNDLE ? ((A.assets || {})[p] || '') : ROOT + p;     // путь к картинке из data/ (в автономной сборке — data:-адрес)
+  /* картинки из JS берутся с тем же ?v=<сборка>, что и в разметке (src="…assets/…?v=…"): иначе один файл скачивается дважды. assetUrlRaw — без версии (для кода, который добавляет свою) */
+  const AV = !window.__ASTREYA_BUNDLE && D && D.build ? '?v=' + D.build : '';
+  A.assetUrlRaw = p => window.__ASTREYA_BUNDLE ? ((A.assets || {})[p] || '') : ROOT + p;
+  A.assetUrl = p => { const u = A.assetUrlRaw(p); return AV && /^assets\//.test(p) && u.indexOf('?') < 0 ? u + AV : u; };     // путь к картинке из data/ (в автономной сборке — data:-адрес)
 
   /* ---------- конфигурация: сюда подключаются форма и аналитика ---------- */
   A.config = {

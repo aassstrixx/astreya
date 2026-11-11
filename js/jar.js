@@ -165,7 +165,7 @@
     const JR = [jsonOf(ds.jr), jsonOf(ds.jrm)];                                     // рамки баночки по кадрам (доли кадра: x, y, w, h) — [компьютер, телефон]
     const isPortrait = () => FLY ? fm0 : portraitMQ.matches;                          // пролёт: портретный набор только если он есть в данных (иначе пролёт — только широкий экран)
     const KS = (NH - 1) / Math.max(1e-6, Phi[NH - 1] - Phi[0]);                        // ключевых кадров на единицу пути (у героя ключи по всему пути 0…1, у пролёта — на его части)
-    const urlOf = p => (A.assetUrl ? A.assetUrl(p) : p) + ver;
+    const urlOf = p => (A.assetUrlRaw ? A.assetUrlRaw(p) : A.assetUrl ? A.assetUrl(p) : p) + ver;
     const canFetch = true;
     const PRESERVE = !!window.__ASTREYA_GL_PRESERVE;                                // проверки читают пиксели холстов
 

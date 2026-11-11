@@ -219,7 +219,7 @@
     function ensureClean() {                                                       // заплатка создаётся один раз; init() вызывается дважды за загрузку (при старте и после заставки: js/motion.js → A.initPage), поэтому элемент берём готовый, если его уже создал прошлый запуск
       if (cleanEl || !pm()) return; const fly = $('.hr-fly', reader), u = reader.getAttribute('data-fly-clean'); if (!fly || !u) return;
       cleanEl = $('.hr-clean', reader); if (cleanEl) return;
-      const ver = reader.getAttribute('data-v'); cleanEl = new Image(); cleanEl.className = 'hr-clean'; cleanEl.alt = ''; cleanEl.setAttribute('aria-hidden', 'true'); cleanEl.decoding = 'async'; cleanEl.src = A.assetUrl(u) + (ver ? '?v=' + ver : ''); fly.insertAdjacentElement('afterend', cleanEl);
+      const ver = reader.getAttribute('data-v'); cleanEl = new Image(); cleanEl.className = 'hr-clean'; cleanEl.alt = ''; cleanEl.setAttribute('aria-hidden', 'true'); cleanEl.decoding = 'async'; cleanEl.src = (A.assetUrlRaw || A.assetUrl)(u) + (ver ? '?v=' + ver : ''); fly.insertAdjacentElement('afterend', cleanEl);
       if (cleanEl.decode) cleanEl.decode().catch(() => {});                          // картинка разворачивается сразу, а не в момент, когда журнал приедет (иначе на медленном телефоне первый показ — пустое место)
     }
     const bgEl = $('.hr-bg', reader), veilEl = $('.hr-veil', reader), ctlEl = $('.mag-ctl', mag), barEl = $('.mag-bar', mag), dimEl = $('.mag-dim', mag);
