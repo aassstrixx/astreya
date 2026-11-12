@@ -21,14 +21,14 @@
   /* движение: плавно и ненавязчиво */
   --ax-ease:cubic-bezier(.16,1,.3,1); --ax-t:.5s;
   /* стена и пол сцены (тот же рендер, что и у главной экспозиции) */
-  --ax-wall:url(../assets/showroom/layer-shell.webp?v=37909ebd);
+  --ax-wall:url(../assets/showroom/layer-shell.webp?v=bab464a5);
 }
 [data-showroom]{--shw-glass:var(--ax-glass);--shw-glass2:var(--ax-glass-2);--shw-rim:var(--ax-rim);--shw-line:var(--ax-line);--shw-ease:var(--ax-ease)}
 
 /* ---------- подиум-миниатюра: травертиновый цилиндр (спрайты того же рендера, что и подиумы сцены); размеры — в долях высоты кадра ---------- */
 .ax-pod{--pr:.3;position:absolute;left:50%;bottom:9%;height:20%;aspect-ratio:1/var(--pr);transform:translateX(-50%);pointer-events:none;z-index:1}
-.ax-pod::before{content:"";position:absolute;left:0;right:0;top:calc(5.13% / var(--pr));bottom:0;border-radius:0 0 50% 50%/0 0 calc(5.13% / var(--pr) / (1 - .0513 / var(--pr))) calc(5.13% / var(--pr) / (1 - .0513 / var(--pr)));background:linear-gradient(180deg,rgba(255,255,255,0) 62%,rgba(86,58,30,.22)),url(../assets/showroom/pod-body.webp?v=37909ebd) 0 0/100% 100%;box-shadow:0 9px 12px -7px rgba(78,54,26,.55)}
-.ax-pod::after{content:"";position:absolute;left:0;right:0;top:0;height:calc(10.26% / var(--pr));background:url(../assets/showroom/pod-cap.webp?v=37909ebd) 0 0/100% 100%}
+.ax-pod::before{content:"";position:absolute;left:0;right:0;top:calc(5.13% / var(--pr));bottom:0;border-radius:0 0 50% 50%/0 0 calc(5.13% / var(--pr) / (1 - .0513 / var(--pr))) calc(5.13% / var(--pr) / (1 - .0513 / var(--pr)));background:linear-gradient(180deg,rgba(255,255,255,0) 62%,rgba(86,58,30,.22)),url(../assets/showroom/pod-body.webp?v=bab464a5) 0 0/100% 100%;box-shadow:0 9px 12px -7px rgba(78,54,26,.55)}
+.ax-pod::after{content:"";position:absolute;left:0;right:0;top:0;height:calc(10.26% / var(--pr));background:url(../assets/showroom/pod-cap.webp?v=bab464a5) 0 0/100% 100%}
 
 /* ---------- витрина-миниатюра: стена сцены, каменный пол с чёткой линией, упаковка с контактной тенью ---------- */
 .ax-stage{position:relative;display:block;overflow:hidden;padding:0;height:auto;aspect-ratio:1.18/1;isolation:isolate;
@@ -63,7 +63,7 @@
 .pcard.ax .pf .lnk{display:inline-flex;align-items:center;gap:7px;padding:10px 15px;border-radius:var(--ax-r-pill);background:var(--ax-ink);color:var(--ax-milk);font:600 13px/1 var(--sans);letter-spacing:0;text-transform:none;white-space:nowrap;transition:background-color .25s}
 .pcard.ax .pf .lnk .ic{width:14px;height:14px}
 .pcard.ax .pf .btn-ghost{padding:9px 15px;font-size:13px;border-radius:var(--ax-r-pill);white-space:nowrap;border-color:rgba(11,26,51,.28);color:var(--ax-ink);background:rgba(255,255,255,.55)}
-.pcard.ax .newtag{left:var(--ax-sp-2);top:var(--ax-sp-2);padding:6px 11px 6px 9px;display:inline-flex;align-items:center;gap:6px;background:rgba(255,252,246,.86);color:var(--ax-ink);border:1px solid rgba(176,142,78,.55);font-size:9.5px;letter-spacing:.16em}
+.pcard.ax .newtag{left:var(--ax-sp-2);top:var(--ax-sp-2);padding:6px 11px 6px 9px;display:inline-flex;align-items:center;gap:6px;background:rgba(255,252,246,.86);color:var(--ax-ink);border:1px solid rgba(176,142,78,.55);font-size:11px;letter-spacing:.16em}
 .pcard.ax .newtag::before{content:"";width:6px;height:6px;border-radius:50%;background:var(--ax-gold)}
 @media (hover:hover) and (pointer:fine){
   .pcard.ax:hover .pf .lnk{background:var(--ax-ink-2)}
@@ -115,7 +115,7 @@
 .shw-task::before{content:"";position:absolute;right:-34px;top:-40px;width:136px;height:172px;border-radius:68px 68px 0 0;border:1px solid rgba(176,142,78,.3);pointer-events:none}
 .shw-task::after{content:"";position:absolute;right:-12px;top:-18px;width:92px;height:118px;border-radius:46px 46px 0 0;border:1px solid rgba(176,142,78,.22);pointer-events:none}
 .shw-task>*{position:relative;z-index:1}
-.shw-task-n{font:700 10.5px/1 var(--sans);letter-spacing:.14em;text-transform:uppercase;color:var(--ax-muted)}
+.shw-task-n{font:700 11px/1 var(--sans);letter-spacing:.14em;text-transform:uppercase;color:var(--ax-muted)}
 .shw-task b{font:500 24px/1.15 var(--serif);color:var(--ax-ink);position:relative}
 .shw-task-d{font-size:13.5px;line-height:1.55;color:var(--ax-muted);display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical;overflow:hidden}
 .shw-task-f{margin-top:auto;display:flex;align-items:center;justify-content:space-between;gap:10px;padding-top:12px;border-top:1px solid var(--ax-line)}
@@ -125,7 +125,7 @@
 .shw-brand-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:var(--ax-sp-2)}
 .shw-brand{gap:8px;padding:18px 20px 20px}
 .shw-brand-l{display:flex;align-items:center;height:44px}.shw-brand-l img{max-height:34px;max-width:150px;object-fit:contain}.shw-brand-l b{font:500 20px/1 var(--serif);color:var(--ax-ink)}
-.shw-brand-c{font:700 10.5px/1.3 var(--sans);letter-spacing:.1em;text-transform:uppercase;color:var(--ax-muted)}
+.shw-brand-c{font:700 11px/1.3 var(--sans);letter-spacing:.1em;text-transform:uppercase;color:var(--ax-muted)}
 .shw-brand-t{font-size:12.5px;line-height:1.5;color:var(--ax-muted);display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
 .shw-task[aria-pressed="true"],.shw-brand[aria-pressed="true"]{box-shadow:inset 0 1px 0 #fff,var(--ax-sh-2),0 0 0 2px var(--ax-ink)}
 @media (hover:hover) and (pointer:fine){
@@ -202,7 +202,7 @@ html.js .shw-list .pcard.ax.reveal.in .pb>:nth-child(n+3){animation-delay:calc(v
 body[data-page="catalog"] #main{overflow-x:clip}                       /* растения и вода заходят до краёв экрана: лишнего горизонтального скролла быть не должно */
 /* знак «Астреи» — основной векторный логотип без букв (гора, дуга, жемчужина; assets/bg/astreya-mark-bg.svg — те же контуры, только прозрачнее), тёмно-синий, крупно на заднем фоне только за блоком «Выберите направление…» (справа); края мягко растворяются */
 .shw-dirs,.shw-brands,.shw-list{position:relative}
-.shw-dirs::after{content:"";position:absolute;z-index:-1;width:min(1060px,66vw);aspect-ratio:412/396;background:url(../assets/bg/astreya-mark-bg.svg?v=37909ebd) 0 0/100% 100% no-repeat;pointer-events:none;-webkit-mask-image:radial-gradient(closest-side,#000 62%,transparent 100%);mask-image:radial-gradient(closest-side,#000 62%,transparent 100%)}
+.shw-dirs::after{content:"";position:absolute;z-index:-1;width:min(1060px,66vw);aspect-ratio:412/396;background:url(../assets/bg/astreya-mark-bg.svg?v=bab464a5) 0 0/100% 100% no-repeat;pointer-events:none;-webkit-mask-image:radial-gradient(closest-side,#000 62%,transparent 100%);mask-image:radial-gradient(closest-side,#000 62%,transparent 100%)}
 .shw-dirs::after{right:calc(50% - 50vw - 180px);top:-170px}
 /* палитра как на главной: «Выберите направление ухода» лежит на тёплой песочной полосе (как .rd-clinical на главной — тот же цвет #efe7d6 и мягкие края), во всю ширину экрана; текстура и знак — поверх полосы (isolation) */
 body[data-page="catalog"]{--clin:#efe7d6}

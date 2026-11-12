@@ -103,7 +103,7 @@
 .pc-quick.fill:hover{background:var(--blue-d)}
 .pchat-in{flex:none;display:flex;align-items:center;gap:8px;padding:10px clamp(12px,2.2vw,22px) 12px;border-top:1px solid var(--line-soft);background:#fff}
 .pchat-text{flex:1;min-width:0;min-height:48px;padding:0 18px;border:0;border-radius:var(--pill);background:var(--milk-2);box-shadow:0 0 0 1px var(--line) inset;font:500 15px/1 var(--sans);color:var(--navy);transition:box-shadow .25s,background-color .25s}
-.pchat-text::placeholder{color:var(--silver)}
+.pchat-text::placeholder{color:var(--muted);opacity:1}
 .pchat-text:focus{outline:0;background:#fff;box-shadow:0 0 0 2px var(--blue) inset}
 .pchat-send{flex:none;width:48px;height:48px;display:grid;place-items:center;border-radius:50%;background:var(--blue);color:#fff;transition:background-color .25s,transform .25s}
 .pchat-send:hover{background:var(--blue-d);transform:translateX(2px)}

@@ -37,7 +37,7 @@
 .ac-btn-o .ic{width:1.15em;height:1.15em;transition:transform .5s var(--ac-ease)}
 @media (hover:hover){.ac-btn-o:hover{background:var(--ac-navy);border-color:var(--ac-navy);color:#fff}.ac-btn-o:hover .ic{transform:translateX(4px)}}
 .ac-btn-o[aria-expanded="true"] .ic{transform:rotate(-90deg)}
-.ac-more{display:inline-flex;align-items:center;gap:clamp(10px,1vw,18px);font:600 var(--f-s)/1 var(--sans);color:var(--ax-ink);text-decoration:none}
+.ac-more{display:inline-flex;align-items:center;gap:clamp(10px,1vw,18px);min-height:24px;font:600 var(--f-s)/1 var(--sans);color:var(--ax-ink);text-decoration:none}
 .ac-more i{display:block;width:clamp(26px,2.6vw,50px);height:1px;background:currentColor;transform-origin:0 50%;transition:transform .6s var(--ac-ease)}
 @media (hover:hover){.ac-more:hover i{transform:scaleX(1.35)}}
 
@@ -63,11 +63,11 @@ body[data-page="training"].menu-open .hdr,body[data-page="training"].search-open
 .ac-hero .cd{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:end;gap:clamp(10px,1vw,20px);margin:0;padding:clamp(14px,1.35vw,26px) clamp(14px,1.45vw,28px);border-radius:clamp(12px,1.05vw,20px);color:#fff;
   background:linear-gradient(140deg,rgba(24,40,74,.93) 0,rgba(11,22,46,.93) 100%);border:1px solid rgba(255,255,255,.14);box-shadow:0 12px 24px -16px rgba(11,22,46,.78),inset 0 1px 0 rgba(255,255,255,.12);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px)}
 .ac-hero .cd-t{grid-column:1/-1;flex:none}
-.ac-hero .cd-t small{font:700 clamp(9.5px,.62vw,12px)/1.3 var(--sans);letter-spacing:.2em;color:rgba(255,255,255,.66)}
+.ac-hero .cd-t small{font:700 clamp(11px,.62vw,12px)/1.3 var(--sans);letter-spacing:.2em;color:rgba(255,255,255,.66)}
 .ac-hero .cd-t b{margin:clamp(5px,.5vw,10px) 0 clamp(4px,.4vw,8px);font:400 clamp(16px,1.3vw,25px)/1.18 var(--serif);text-wrap:balance}
 .ac-hero .cd-t em{font:400 clamp(11px,.72vw,14px)/1.4 var(--sans);color:rgba(255,255,255,.72)}
 .ac-hero .cd-b{gap:clamp(5px,.5vw,10px)}
-.ac-hero .cd-b>span{min-width:clamp(44px,3.5vw,66px);padding:clamp(6px,.55vw,11px) 4px clamp(5px,.5vw,10px);border-radius:clamp(8px,.6vw,12px);font:600 clamp(8.5px,.55vw,10.5px)/1 var(--sans);letter-spacing:.12em}
+.ac-hero .cd-b>span{min-width:clamp(44px,3.5vw,66px);padding:clamp(6px,.55vw,11px) 4px clamp(5px,.5vw,10px);border-radius:clamp(8px,.6vw,12px);font:600 clamp(11px,.58vw,11.5px)/1 var(--sans);letter-spacing:.1em}
 .ac-hero .cd-b b{margin-bottom:clamp(3px,.3vw,6px);font:400 clamp(19px,1.6vw,31px)/1 var(--serif)}
 .ac-hero .cd .btn-fill{min-height:0;padding:clamp(10px,.82vw,16px) clamp(16px,1.35vw,26px);border-radius:999px;background:#f3e7d0;border-color:#f3e7d0;color:var(--ac-navy);font:600 var(--f-xs)/1 var(--sans)}
 .ac-hero .cd .btn-fill:hover{background:#fff;border-color:#fff}
@@ -79,7 +79,7 @@ body[data-page="training"].menu-open .hdr,body[data-page="training"].search-open
 
 /* ---------- 03 · «Как пройти регистрацию?»: маршрут на тонкой линии ---------- */
 .ac-reg{position:relative;isolation:isolate;background:linear-gradient(180deg,#f3eee3 0,#ede4d2 26%,var(--ac-band) 58%,var(--ac-bg2) 100%)}
-.ac-reg::before{content:"";position:absolute;inset:0;z-index:-1;pointer-events:none;background:url(../assets/bg/stone-grain.webp?v=37909ebd) 0 0/512px 512px;opacity:.5}
+.ac-reg::before{content:"";position:absolute;inset:0;z-index:-1;pointer-events:none;background:url(../assets/bg/stone-grain.webp?v=bab464a5) 0 0/512px 512px;opacity:.5}
 .ac-reg-in{position:relative;align-items:start;padding:clamp(24px,3.3vw,68px) 0 clamp(24px,3.1vw,64px)}
 .ac-reg-t p{margin-top:clamp(6px,.75vw,14px)}
 .ac-steps{position:relative;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:0 clamp(10px,1.9vw,40px);margin:clamp(4px,.5vw,10px) 0 0;padding:clamp(16px,1.7vw,34px) 0 0;list-style:none}
@@ -184,17 +184,17 @@ body[data-page="training"].menu-open .hdr,body[data-page="training"].search-open
 .ac-ev-b{display:flex;flex-direction:column;flex:1;min-width:0;padding:clamp(10px,1.05vw,22px) clamp(10px,1.1vw,22px) clamp(12px,1.15vw,24px)}
 .ac-ev-top{display:flex;align-items:center;gap:clamp(8px,.9vw,18px);flex-wrap:wrap}
 .ac-ev-d{font:400 clamp(17px,1.5vw,30px)/1 var(--serif);letter-spacing:-.01em;color:var(--ax-ink)}
-.ac-ev-f{padding:.36em .9em;border:1px solid rgba(22,34,62,.3);border-radius:999px;font:500 clamp(10px,.66vw,13px)/1 var(--sans);color:var(--ax-ink);white-space:nowrap}
+.ac-ev-f{padding:.36em .9em;border:1px solid rgba(22,34,62,.3);border-radius:999px;font:500 clamp(11px,.66vw,13px)/1 var(--sans);color:var(--ax-ink);white-space:nowrap}
 .ac-page .ac-ev h3{margin:clamp(6px,.6vw,12px) 0 0;font:700 var(--f-s)/1.25 var(--sans);letter-spacing:0;color:var(--ax-ink);text-wrap:balance}
 .ac-page .ac-ev h3 a{color:inherit;text-decoration:none}
 .ac-who{display:grid;gap:2px;margin:clamp(6px,.6vw,12px) 0 0}
-.ac-who div{display:flex;gap:.4em;min-width:0;font:400 clamp(10.5px,.72vw,14px)/1.4 var(--sans);color:var(--ac-mut)}
+.ac-who div{display:flex;gap:.4em;min-width:0;font:400 clamp(11px,.72vw,14px)/1.4 var(--sans);color:var(--ac-mut)}
 .ac-who dt{flex:none;margin:0}
 .ac-who dd{margin:0;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .ac-who div:nth-child(2) dt{font-weight:700;color:var(--ax-ink)}
 .ac-page .ac-ev .go{display:flex;align-items:center;gap:clamp(10px,1vw,20px);margin-top:auto;padding-top:clamp(10px,1vw,20px)}
 .ac-page .ac-ev .btn-fill{min-height:0;padding:clamp(7px,.6vw,12px) clamp(13px,1.15vw,22px);border-radius:999px;font:600 var(--f-xs)/1 var(--sans)}
-.ac-page .ac-ev .lnk{font:600 clamp(10.5px,.7vw,13.5px)/1 var(--sans);color:var(--ac-mut);text-decoration:underline;text-decoration-style:dashed;text-underline-offset:4px}
+.ac-page .ac-ev .lnk{font:600 clamp(11px,.7vw,13.5px)/1 var(--sans);color:var(--ac-mut);text-decoration:underline;text-decoration-style:dashed;text-underline-offset:4px}
 .ac-page .ac-ev.is-sel{box-shadow:0 0 0 1.5px var(--ac-navy),0 30px 40px -26px rgba(11,26,51,.6)}
 .ac-page .ac-ev.is-sel .ac-ev-f{background:var(--ac-navy);border-color:var(--ac-navy);color:#fff}
 @media (hover:hover){.ac-page .ac-ev:hover{transform:translateY(-5px)}.ac-page .ac-ev:hover .ac-ev-pic img{transform:scale(1.05)}}
@@ -214,14 +214,14 @@ body[data-page="training"].menu-open .hdr,body[data-page="training"].search-open
 .ac-cal-col .sx-cal-h{display:flex;align-items:center;gap:2px;margin-bottom:clamp(8px,1vw,20px)}
 .ac-cal-col .sx-cal-m{order:-1;flex:1;margin:0;text-align:left;font:700 var(--f-s)/1 var(--sans);letter-spacing:0;color:var(--ax-ink);white-space:nowrap}
 .ac-cal-col .sx-cal-m small{font:inherit;letter-spacing:0;color:inherit}
-.ac-cal-col .sx-cal-nav{width:clamp(22px,1.7vw,32px);height:clamp(22px,1.7vw,32px);border:0;border-radius:50%;background:transparent;color:var(--ax-ink)}
+.ac-cal-col .sx-cal-nav{width:clamp(24px,1.7vw,32px);height:clamp(24px,1.7vw,32px);border:0;border-radius:50%;background:transparent;color:var(--ax-ink)}
 .ac-cal-col .sx-cal-nav .ic{width:clamp(11px,.8vw,15px);height:clamp(11px,.8vw,15px)}
 .ac-cal-col .sx-cal-nav:hover:not(:disabled){background:rgba(22,34,62,.08)}
 .ac-cal-col .sx-cal-wd,.ac-cal-col .sx-cal-grid{gap:clamp(1px,.16vw,4px)}
-.ac-cal-col .sx-cal-wd span{padding:2px 0 clamp(4px,.5vw,10px);font:500 clamp(9.5px,.62vw,12px)/1 var(--sans);letter-spacing:0;text-transform:none;color:var(--ac-mut)}
+.ac-cal-col .sx-cal-wd span{padding:2px 0 clamp(4px,.5vw,10px);font:500 clamp(11px,.62vw,12px)/1 var(--sans);letter-spacing:0;text-transform:none;color:var(--ac-mut)}
 .ac-cal-col .sx-cal-wd .we{color:var(--ac-mut)}
 .ac-cal-col .sx-cd{min-height:0;aspect-ratio:1;gap:0;border:0;border-radius:50%;background:transparent;box-shadow:none;transition:background-color .35s var(--ac-ease),color .35s var(--ac-ease),transform .35s var(--ac-ease)}
-.ac-cal-col .sx-cd b,.ac-cal-col .sx-cd.we b,.ac-cal-col .sx-cd.today b{font:500 clamp(10.5px,.72vw,14px)/1 var(--sans);color:#7b6d5f}
+.ac-cal-col .sx-cd b,.ac-cal-col .sx-cd.we b,.ac-cal-col .sx-cd.today b{font:500 clamp(11px,.72vw,14px)/1 var(--sans);color:#7b6d5f}
 .ac-cal-col .sx-cd.past b{color:#b9a998}
 .ac-cal-col .sx-cd.today{box-shadow:inset 0 0 0 1px rgba(22,34,62,.4)}
 .ac-cal-col .sx-cd.ev{border:0;background:rgba(22,34,62,.09);transform:none}
@@ -266,7 +266,7 @@ body[data-page="training"].menu-open .hdr,body[data-page="training"].search-open
 .ac-vid-play .ic{width:38%;height:38%;margin-left:6%;fill:currentColor;stroke:none}
 .ac-vid-dur{position:absolute;right:10px;top:10px;z-index:2;padding:4px 8px;border-radius:6px;background:rgba(11,26,51,.74);font:600 11px/1 var(--sans)}
 .ac-vid-t{position:absolute;left:0;right:0;bottom:0;z-index:2;display:grid;gap:clamp(3px,.35vw,7px);padding:clamp(10px,1.1vw,22px) clamp(12px,1.25vw,26px)}
-.ac-vid-t small{font:700 clamp(9px,.58vw,11.5px)/1 var(--sans);letter-spacing:.18em;text-transform:uppercase;opacity:.86}
+.ac-vid-t small{font:700 clamp(11px,.58vw,11.5px)/1 var(--sans);letter-spacing:.18em;text-transform:uppercase;opacity:.86}
 .ac-vid-t b{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;font:600 clamp(11.5px,.82vw,16px)/1.3 var(--sans)}
 .ac-vid.is-lead .ac-vid-t{padding:clamp(14px,1.9vw,38px) clamp(14px,2vw,40px);max-width:38em}
 .ac-vid.is-lead .ac-vid-t b{font:400 clamp(18px,1.75vw,34px)/1.16 var(--serif);letter-spacing:-.01em}
@@ -299,9 +299,9 @@ body[data-page="training"].menu-open .hdr,body[data-page="training"].search-open
 .ac-pubs{display:grid;gap:clamp(6px,.6vw,12px);max-width:46%;margin:clamp(14px,1.5vw,30px) 0 0;padding:0;list-style:none}
 .ac-pmore .ac-pubs{margin-top:clamp(6px,.6vw,12px)}
 .ac-pub{display:grid;gap:3px;padding:clamp(8px,.75vw,15px) clamp(10px,.95vw,19px);border-radius:var(--ac-r);background:rgba(253,251,246,.86);box-shadow:0 14px 22px -20px rgba(96,62,30,.6);-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);transition:transform .6s var(--ac-ease)}
-.ac-pub-tag{font:700 clamp(9px,.56vw,11px)/1 var(--sans);letter-spacing:.16em;text-transform:uppercase;color:var(--c1,var(--ax-brown,#8a6a3c))}
+.ac-pub-tag{font:700 clamp(11px,.56vw,11px)/1 var(--sans);letter-spacing:.16em;text-transform:uppercase;color:var(--c1,var(--ax-brown,#8a6a3c))}
 .ac-pub b{font:600 clamp(11.5px,.8vw,15.5px)/1.3 var(--sans);color:var(--ax-ink)}
-.ac-pub small{font:400 clamp(10px,.64vw,12.5px)/1.3 var(--sans);color:var(--ac-mut)}
+.ac-pub small{font:400 clamp(11px,.64vw,12.5px)/1.3 var(--sans);color:var(--ac-mut)}
 @media (hover:hover){.ac-pub:hover{transform:translateX(5px)}}
 
 /* ---------- 08 · финальная панель ---------- */
@@ -473,6 +473,7 @@ html.ac-sp-on .asst-fab,html.ac-sp-on .qc{opacity:0;pointer-events:none}
   .ac-cities{gap:8px}
   .ac-page .ac-cities .chip{padding:11px 16px}
   .ac-dd-b{padding:11px 16px}
+  .ac-dd-m{right:auto;left:0}                                                     /* кнопка стоит у левого края — меню не должно уходить за экран */
   .ac-evs{grid-template-columns:minmax(0,1fr);gap:14px;height:auto}
   .ac-page .ac-ev{display:grid;grid-template-columns:38% minmax(0,1fr)}
   .ac-ev-pic{aspect-ratio:auto;min-height:100%}
@@ -492,7 +493,7 @@ html.ac-sp-on .asst-fab,html.ac-sp-on .qc{opacity:0;pointer-events:none}
   .ac-vid.is-lead{grid-row:auto}
   .ac-vid.is-lead .ac-vid-cov{aspect-ratio:16/10;height:auto}
   .ac-vid.is-lead .ac-vid-t b{font-size:19px}
-  .ac-vid-t small{font-size:10px}.ac-vid-t b{font-size:13.5px}
+  .ac-vid-t small{font-size:11px}.ac-vid-t b{font-size:13.5px}
   .ac-vid-play{width:52px;height:52px}
   .ac-page .ac-faq .faq-q{padding:15px 0;font-size:14.5px}
   .ac-page .ac-faq .faq-q .pm{width:14px;height:14px}
@@ -501,7 +502,7 @@ html.ac-sp-on .asst-fab,html.ac-sp-on .qc{opacity:0;pointer-events:none}
   .ac-pub-half{padding-top:0}
   .ac-pub-half:not(:has(.ac-mag)){padding-top:26px}
   .ac-pub-copy,.ac-pubs{max-width:none}
-  .ac-pub-tag{font-size:10px}.ac-pub b{font-size:14px}.ac-pub small{font-size:12px}
+  .ac-pub-tag{font-size:11px}.ac-pub b{font-size:14px}.ac-pub small{font-size:12px}
   .ac-final-sec{padding-inline:var(--ac-g)}
   .ac-final{padding:26px 20px 150px;border-radius:16px}
   .ac-final-copy{max-width:none}

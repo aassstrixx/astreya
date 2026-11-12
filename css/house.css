@@ -12,7 +12,7 @@ body[data-page="home"]{--hs-backdrop:#c0b5a2;--hs-paper:#fbf7ec;--hs-paper-2:#f3
 .is-house .ar-facts{display:none}                                                                  /* три пункта дублируют панель внизу; на столике и у дивана — своё место */
 .arch-story.is-house ~ .hero{display:none}                                                            /* запасной герой нужен только без сцены (старый вид страницы) */
 .hall-rooms ol{display:flex;flex-wrap:wrap;gap:6px 18px;margin:0;padding:0;list-style:none}
-.hall-rooms a{display:inline-flex;align-items:baseline;gap:8px;padding:4px 0;font:600 clamp(9.5px,.72vw,12px)/1.2 var(--sans);letter-spacing:.12em;text-transform:uppercase;color:var(--slate);pointer-events:none;border-bottom:1px solid transparent;transition:color .25s,border-color .25s}
+.hall-rooms a{display:inline-flex;align-items:baseline;gap:8px;padding:4px 0;font:600 clamp(11px,.72vw,12px)/1.2 var(--sans);letter-spacing:.12em;text-transform:uppercase;color:var(--slate);pointer-events:none;border-bottom:1px solid transparent;transition:color .25s,border-color .25s}
 .js-stage.ar-live .hall-rooms a{pointer-events:auto}
 .hall-rooms a b{font:500 13px/1 var(--serif);letter-spacing:0;color:var(--hs-gold)}
 .hall-rooms a:hover,.hall-rooms a:focus-visible{color:var(--hs-ink);border-bottom-color:var(--hs-gold)}
@@ -54,7 +54,7 @@ body[data-page="home"]{--hs-backdrop:#c0b5a2;--hs-paper:#fbf7ec;--hs-paper-2:#f3
 /* лист в движении темнеет — уходит от света: тёмный слой в ::after стороны вместо filter (filter на всей стороне с фото — лишняя поверхность и перерисовка на каждом кадре) */
 .face{position:absolute;inset:0;overflow:hidden;backface-visibility:hidden;-webkit-backface-visibility:hidden;background:var(--hs-paper)}
 .face.back{transform:rotateY(180deg)}
-.face::before{content:"";position:absolute;inset:0;background:url(../assets/bg/stone-grain.webp?v=37909ebd) 0 0/420px 420px;opacity:.035;pointer-events:none;z-index:3}
+.face::before{content:"";position:absolute;inset:0;background:url(../assets/bg/stone-grain.webp?v=bab464a5) 0 0/420px 420px;opacity:.035;pointer-events:none;z-index:3}
 .face.front::after,.face.back::after{content:"";position:absolute;top:0;bottom:0;width:14%;pointer-events:none;z-index:3}
 .face.front::after{left:0;background:linear-gradient(90deg,rgba(60,40,18,.28),rgba(60,40,18,0))}
 .fx,.mag-sh,.mag-dim{display:none}
@@ -271,7 +271,7 @@ html:not(.js) .house-reader .mag .mag-ctl,html:not(.js) .house-reader .mag .mag-
    сцена читалки встаёт на тот же экран под героем, холсты героя гаснут (--hf), а текст и подсказка героя уезжают вверх вместе с прокруткой — камера продолжает полёт на тех же кадрах, без стыка и «второй страницы» снизу. */
 .hs-cue{position:absolute;z-index:4;left:50%;bottom:clamp(18px,4.4vh,44px);translate:-50% 0;display:inline-flex;align-items:center;gap:14px;margin:0;padding:13px 22px 13px 26px;border:0;border-radius:999px;background:none;
   box-shadow:none;color:var(--hs-ink);cursor:default;pointer-events:none;user-select:none;-webkit-user-select:none;-webkit-tap-highlight-color:transparent;
-  font:600 clamp(10.5px,.82vw,13px)/1 var(--sans);letter-spacing:.2em;text-transform:uppercase;white-space:nowrap;opacity:var(--h3,0);transform:translate3d(0,calc((1 - var(--h3,0)) * 30px),0)}
+  font:600 clamp(11px,.82vw,13px)/1 var(--sans);letter-spacing:.2em;text-transform:uppercase;white-space:nowrap;opacity:var(--h3,0);transform:translate3d(0,calc((1 - var(--h3,0)) * 30px),0)}
 .hs-cue i{position:relative;display:block;width:14px;height:14px;flex:none}
 .hs-cue i::before{content:"";position:absolute;left:2px;top:1px;width:8px;height:8px;border-right:2px solid currentColor;border-bottom:2px solid currentColor;transform:rotate(45deg);animation:hsCue 1.9s cubic-bezier(.45,0,.35,1) infinite}
 @keyframes hsCue{0%{transform:translate3d(0,-5px,0) rotate(45deg);opacity:0}35%{opacity:1}75%,100%{transform:translate3d(0,5px,0) rotate(45deg);opacity:0}}
@@ -303,7 +303,7 @@ body[data-page="home"] .hdr{transition:transform .6s var(--ease-out),background-
 
 /* ============ 5. Телефон ============ */
 @media (max-width:700px){
-  .hs-cue{bottom:calc(84px + env(safe-area-inset-bottom,0px));padding:10px 14px;gap:10px;letter-spacing:.14em;font-size:10.5px}                                                                    /* над круглой кнопкой Стеллы (справа внизу), а не под ней: подпись не заходит под неё */
+  .hs-cue{bottom:calc(84px + env(safe-area-inset-bottom,0px));padding:10px 14px;gap:10px;letter-spacing:.14em;font-size:11px}                                                                    /* над круглой кнопкой Стеллы (справа внизу), а не под ней: подпись не заходит под неё */
   .hall-rooms{position:static;width:auto;height:auto;overflow:visible;clip-path:none;white-space:normal;display:block;margin:14px -20px 0 0}                                         /* на телефоне список комнат — лента «пилюль» под кнопками: путь в комнаты без двери и журнала */
   .hall-rooms ol{flex-wrap:nowrap;overflow-x:auto;gap:8px;padding:2px 20px 6px 0;scrollbar-width:none;overscroll-behavior-x:contain}
   .hall-rooms ol::-webkit-scrollbar{display:none}
