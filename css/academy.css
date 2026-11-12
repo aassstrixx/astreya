@@ -51,11 +51,11 @@ html.ac-scrolled body[data-page="training"] .hdr{background:var(--milk,#f5f2ec);
 body[data-page="training"].menu-open .hdr,body[data-page="training"].search-open .hdr{background:var(--milk,#f5f2ec)}
 
 /* ---------- 01 · первый экран ---------- */
-.ac-hero{position:relative;isolation:isolate;display:grid;min-height:max(38vw,440px);overflow:hidden;background:#ebe1ce}
+.ac-hero{position:relative;isolation:isolate;display:grid;min-height:max(40vw,440px);overflow:hidden;background:#ebe1ce}
 .ac-hall{position:absolute;inset:0;z-index:-1;margin:0;overflow:hidden}
 .ac-hall-in{position:absolute;inset:-4% 0;will-change:transform}
-.ac-hall-img{display:block;width:100%;height:100%;object-fit:cover;object-position:50% 30%;user-select:none;-webkit-user-drag:none}                /* зал 16:9 по центру кадра: в полосу 2,8:1 попадают экран, ниши и пилястры, верх колец и низ пола уходят за край */
-.ac-hall::after{content:"";position:absolute;inset:0;pointer-events:none;background:linear-gradient(90deg,rgba(241,234,219,.84) 0,rgba(241,234,219,.64) 18%,rgba(241,234,219,.3) 34%,rgba(241,234,219,0) 50%),linear-gradient(180deg,rgba(245,243,238,.4) 0,rgba(245,243,238,0) 16%),linear-gradient(180deg,rgba(241,234,219,0) 72%,rgba(241,234,219,.2) 82%,rgba(241,234,219,.56) 91%,rgba(241,234,219,.88) 97%,#f1eadb 100%)}
+.ac-hall-img{display:block;width:100%;height:100%;object-fit:cover;object-position:50% 40%;user-select:none;-webkit-user-drag:none}                /* зал 16:9 по центру кадра: в полосу 2,8:1 попадают экран, ниши и пилястры, верх колец и низ пола уходят за край */
+.ac-hall::after{content:"";position:absolute;inset:0;pointer-events:none;background:linear-gradient(90deg,rgba(241,234,219,.84) 0,rgba(241,234,219,.64) 18%,rgba(241,234,219,.3) 34%,rgba(241,234,219,0) 50%),linear-gradient(180deg,rgba(245,243,238,.4) 0,rgba(245,243,238,0) 16%),linear-gradient(180deg,rgba(241,234,219,0) 80%,rgba(241,234,219,.14) 87%,rgba(241,234,219,.5) 94%,rgba(241,234,219,.88) 98.5%,#f1eadb 100%)}
 .ac-hero-in{position:relative;display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:end;gap:20px;padding:calc(var(--hdr,72px) + clamp(8px,2.6vw,54px)) 0 clamp(20px,2.3vw,46px)}
 .ac-hero-next{align-self:end;justify-self:end;width:clamp(270px,24.5vw,470px);min-width:0}
 .ac-hero .cd-slot{min-height:0;margin:0}
@@ -79,7 +79,7 @@ body[data-page="training"].menu-open .hdr,body[data-page="training"].search-open
 
 /* ---------- 03 · «Как пройти регистрацию?»: маршрут на тонкой линии ---------- */
 .ac-reg{position:relative;isolation:isolate;background:linear-gradient(180deg,#f3eee3 0,#ede4d2 26%,var(--ac-band) 58%,var(--ac-bg2) 100%)}
-.ac-reg::before{content:"";position:absolute;inset:0;z-index:-1;pointer-events:none;background:url(../assets/bg/stone-grain.webp?v=797d8bed) 0 0/512px 512px;opacity:.5}
+.ac-reg::before{content:"";position:absolute;inset:0;z-index:-1;pointer-events:none;background:url(../assets/bg/stone-grain.webp?v=614a14e4) 0 0/512px 512px;opacity:.5}
 .ac-reg-in{position:relative;align-items:start;padding:clamp(24px,3.3vw,68px) 0 clamp(24px,3.1vw,64px)}
 .ac-reg-t p{margin-top:clamp(6px,.75vw,14px)}
 .ac-steps{position:relative;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:0 clamp(10px,1.9vw,40px);margin:clamp(4px,.5vw,10px) 0 0;padding:clamp(16px,1.7vw,34px) 0 0;list-style:none}
