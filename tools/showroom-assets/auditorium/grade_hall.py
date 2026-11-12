@@ -23,7 +23,7 @@ SRC = args[0] if args else '/tmp/aud_graded.png'
 OUT = sys.argv[sys.argv.index('--out') + 1] if '--out' in sys.argv else ROOT
 if '--out' in sys.argv and OUT in args: args.remove(OUT); SRC = args[0] if args else '/tmp/aud_graded.png'
 
-T = dict(L_mean=float(os.environ.get('G_L', 67.5)), L_contrast=float(os.environ.get('G_LC', 1.09)), clarity=float(os.environ.get('G_CLARITY', .32)),
+T = dict(L_mean=float(os.environ.get('G_L', 63.5)), L_contrast=float(os.environ.get('G_LC', 1.09)), clarity=float(os.environ.get('G_CLARITY', .32)),
          a_mean=float(os.environ.get('G_A', 1.6)), b_mean=float(os.environ.get('G_B', 13.2)), chroma_max=float(os.environ.get('G_CMAX', 30)))
 
 

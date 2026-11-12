@@ -243,10 +243,10 @@ def build():
         navy=curtain('aud_navy', '#070f26'), navy_gl=flat('aud_navy_glass', '#2b4a8c', rough=.08, metal=.40, coat=.6), navy2=flat('aud_navy_lac', '#16223e', rough=.12, coat=.6),
         dark=flat('aud_dark', '#0d1526', rough=.35),
         ledw=led('aud_led', (1.0, .73, .45), E('LED_K', 42.0)), ledf=led('aud_led_floor', (1.0, .76, .5), 6.0), ledn=led('aud_led_niche', (1.0, .80, .58), E('NICHE_K', 36.0)),
-        niche=flat('aud_niche_back', '#efe0c0', rough=.4), gl=glass('aud_glass'),
+        niche=flat('aud_niche_back', '#efe0c0', rough=.4), mirror=flat('aud_mirror', '#b9a07d', rough=.05, metal=1.0), gl=glass('aud_glass'),
         fl_cols=fluted('aud_flute', '#f3ebdb', pitch=.16, depth=1.1), fl_pil=fluted('aud_flute2', '#f3ebdb', pitch=.11, depth=.9),
         screen=screen_mat(os.path.join(HERE, 'screen.png')))
-    nb = M['niche'].node_tree.nodes['Principled BSDF']; _set(nb, (1.0, .86, .60, 1), 'Emission Color', 'Emission'); _set(nb, E('NICHE_BACK', .9), 'Emission Strength')      # ниша светится изнутри, как в референсе
+    nb = M['niche'].node_tree.nodes['Principled BSDF']; _set(nb, (1.0, .86, .60, 1), 'Emission Color', 'Emission'); _set(nb, E('NICHE_BACK', 1.4), 'Emission Strength')      # ниша светится изнутри, как в референсе
     ng = M['navy_gl'].node_tree.nodes['Principled BSDF']; _set(ng, (.03, .09, .30, 1), 'Emission Color', 'Emission'); _set(ng, E('NAVY_GL_GLOW', .45), 'Emission Strength')
     if not os.environ.get('NOWEATHER'):
         weather(M['wall'], color_var=.07, cscale=.8, bump=1.3, bscale=120)
@@ -308,10 +308,15 @@ def build():
         for sd in (-1, 1):
             xs = nx_c + sd * .525; box('aud_niche_side%d_%d' % (s, sd), M['niche'], xs - .012, xs + .012, YB - .32, YB - .06, .55, 5.0, 0)
         box('aud_niche_base%d' % s, M['lac'], nx_c - .56, nx_c + .56, YB - .34, YB - .04, .35, .55, .01)
-        # LED-полоски под полками (6 шт.): тёплое свечение внутри ниши
-        for k in range(7): zz = 1.0 + k * .62; box('aud_niche_led%d_%d' % (s, k), M['ledn'], nx_c - .5, nx_c + .5, YB - .33, YB - .27, zz - .035, zz - .02, 0)
-        box('aud_niche_led_v%d' % s, M['ledn'], nx_c - .53, nx_c - .515, YB - .33, YB - .20, .6, 5.0, 0)
-        box('aud_niche_led_v2%d' % s, M['ledn'], nx_c + .515, nx_c + .53, YB - .33, YB - .20, .6, 5.0, 0)
+        # подсветка ниши: вертикальные LED-линии по внутренним кромкам (как в референсе) и LED под каждой стеклянной полкой — спереди и сзади
+        for sd in (-1, 1): box('aud_niche_led_v%d_%d' % (s, sd), M['ledn'], nx_c + sd * .455 - .022, nx_c + sd * .455 + .022, YB - .305, YB - .285, .6, 5.1, 0)
+        for k in range(7):
+            zz = 1.0 + k * .62
+            box('aud_niche_led_f%d_%d' % (s, k), M['ledn'], nx_c - .46, nx_c + .46, YB - .318, YB - .292, zz - .032, zz - .014, 0)
+            box('aud_niche_led_b%d_%d' % (s, k), M['ledn'], nx_c - .46, nx_c + .46, YB - .105, YB - .078, zz - .05, zz - .014, 0)
+        # шлем ниши: заострённая панель из шампанского зеркала (в референсе — тёмное стекло-«щит»)
+        pm = [(x + nx_c, z) for x, z in lancet(.84, 5.22, 5.3, 6.12)]
+        prism('aud_niche_mirror%d' % s, M['mirror'], pm, YB - .075, YB - .062)
         # карниз-подсветка над экраном и колоннами
     box('aud_cornice', M['lac'], -9.0, 9.0, YB - .9, YB, ZC - .35, ZC, .03)
     box('aud_cornice_led', M['ledw'], -9.0, 9.0, YB - .86, YB - .76, ZC - .37, ZC - .35, 0)
@@ -333,12 +338,12 @@ def build():
     if not os.environ.get('AUD_NOMOD'):
         try:
             import props as PR
-            lc = PR.lectern('aud_lectern', (3.9, 12.4, 0.35), yaw=math.radians(-10))
+            lc = PR.lectern('aud_lectern', (-E('LECT_X', 2.75), 12.4, 0.35), yaw=math.radians(10))        # кафедра слева от экрана: справа её закрывает панель отсчёта в первом экране страницы
             for o in (lc if isinstance(lc, (list, tuple)) else [lc]):
                 if o is not None: o.scale = (1.3, 1.3, 1.3)
             PR.chrome_vase_with_flowers('aud_vase_L', (-E('VASE_X', 5.7), 10.7, .35), scale=E('VASE_S', 1.3), seed=1); PR.chrome_vase_with_flowers('aud_vase_R', (E('VASE_X', 5.7), 10.7, .35), scale=E('VASE_S', 1.3), seed=2)
-            PR.orchid_vase('aud_orchid', (-3.7, 12.4, .35), seed=3)
-            for s in (-1, 1): PR.shelf_unit('aud_shelf%d' % s, (5.4 * s, YB - .30, 0), width=.98, height=5.0, shelves=7, seed=4 + s, prop_scale=E('PROP_S', 1.9))
+            PR.orchid_vase('aud_orchid', (-4.55, 12.2, .35), seed=3)
+            for s in (-1, 1): PR.shelf_unit('aud_shelf%d' % s, (5.4 * s, YB - .07, 0), width=.98, height=5.0, shelves=7, seed=4 + s, prop_scale=E('PROP_S', 1.9))
         except Exception as e: print('props skipped:', e)
         try:
             import chairs as CH
@@ -376,7 +381,7 @@ def lights(M):
             spot('aud_down_%d_%d' % (ix, iy), (x, y, ZC - 1.7), (x * .86, y + 1.4, 0.0), E('DOWN_K', 1500), E('DOWN_ANG', 64), .75, (1.0, .84, .64), radius=.22)
     for s in (-1, 1):
         spot('aud_spot_vase%d' % s, (6.0 * s, 8.5, ZC - .3), (7.3 * s, 11.4, .9), 1200, 38, .7)
-        spot('aud_spot_lect', (3.0 * s, 9.0, ZC - .3), (4.0 * s, 12.6, 1.3), 600, 32, .7)
+        spot('aud_spot_lect', (3.0 * s, 9.0, ZC - .3), (3.2 * s, 12.6, 1.3), 600, 32, .7)
     w = bpy.data.worlds.new('aud_w'); w.use_nodes = True; bg = w.node_tree.nodes['Background']; bg.inputs['Color'].default_value = (.95, .86, .72, 1); bg.inputs['Strength'].default_value = E('WORLD', .05); bpy.context.scene.world = w
 
 
@@ -416,7 +421,7 @@ def export(raw):
 
 def main():
     w = int(os.environ.get('AUD_W', 1280 if MODE == 'preview' else 3200)); h = round(w * 9 / 16); spp = int(os.environ.get('AUD_SPP', 24 if MODE == 'preview' else 96))
-    bpy.ops.wm.read_factory_settings(use_empty=True); sc = bpy.context.scene; S.settings(sc, w, h, spp); sc.view_settings.exposure = E('EXPO', -.55); sc.view_settings.look = os.environ.get('LOOK_AUD', 'None')
+    bpy.ops.wm.read_factory_settings(use_empty=True); sc = bpy.context.scene; S.settings(sc, w, h, spp); sc.view_settings.exposure = E('EXPO', -.75); sc.view_settings.look = os.environ.get('LOOK_AUD', 'None')
     cr = os.environ.get('CROP')
     if cr and MODE == 'preview':
         x0, x1, y0, y1 = [float(v) for v in cr.split(',')]; sc.render.use_border = True; sc.render.use_crop_to_border = True; sc.render.border_min_x = x0; sc.render.border_max_x = x1; sc.render.border_min_y = y0; sc.render.border_max_y = y1
