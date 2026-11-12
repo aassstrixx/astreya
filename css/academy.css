@@ -55,7 +55,7 @@ body[data-page="training"].menu-open .hdr,body[data-page="training"].search-open
 .ac-hall{position:absolute;inset:0;z-index:-1;margin:0;overflow:hidden}
 .ac-hall-in{position:absolute;inset:-4% 0;will-change:transform}
 .ac-hall-img{display:block;width:100%;height:100%;object-fit:cover;object-position:50% 40%;user-select:none;-webkit-user-drag:none}                /* зал 16:9 по центру кадра: в полосу 2,8:1 попадают экран, ниши и пилястры, верх колец и низ пола уходят за край */
-.ac-hall::after{content:"";position:absolute;inset:0;pointer-events:none;background:linear-gradient(90deg,rgba(241,234,219,.4) 0,rgba(241,234,219,.27) 16%,rgba(241,234,219,.09) 31%,rgba(241,234,219,0) 42%),linear-gradient(180deg,rgba(245,243,238,.22) 0,rgba(245,243,238,0) 11%),linear-gradient(180deg,rgba(241,234,219,0) 90%,rgba(241,234,219,.4) 95.5%,rgba(241,234,219,.86) 98.7%,#f1eadb 100%)}
+.ac-hall::after{content:"";position:absolute;inset:0;pointer-events:none;background:linear-gradient(180deg,rgba(245,243,238,.22) 0,rgba(245,243,238,0) 11%),linear-gradient(180deg,rgba(241,234,219,0) 90%,rgba(241,234,219,.4) 95.5%,rgba(241,234,219,.86) 98.7%,#f1eadb 100%)}
 .ac-hero-in{position:relative;display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:end;gap:20px;padding:calc(var(--hdr,72px) + clamp(8px,2.6vw,54px)) 0 clamp(20px,2.3vw,46px)}
 .ac-hero-next{align-self:end;justify-self:end;width:clamp(270px,24.5vw,470px);min-width:0}
 .ac-hero .cd-slot{min-height:0;margin:0}
@@ -71,14 +71,15 @@ body[data-page="training"].menu-open .hdr,body[data-page="training"].search-open
 .ac-hero .cd-b b{margin-bottom:clamp(3px,.3vw,6px);font:400 clamp(19px,1.6vw,31px)/1 var(--serif)}
 .ac-hero .cd .btn-fill{min-height:0;padding:clamp(10px,.82vw,16px) clamp(16px,1.35vw,26px);border-radius:999px;background:#f3e7d0;border-color:#f3e7d0;color:var(--ac-navy);font:600 var(--f-xs)/1 var(--sans)}
 .ac-hero .cd .btn-fill:hover{background:#fff;border-color:#fff}
-.ac-hero-copy{align-self:start;max-width:min(62%,760px)}
+.ac-hero-copy{position:relative;isolation:isolate;align-self:start;max-width:min(62%,760px)}
+.ac-hero-copy::before{content:"";position:absolute;z-index:-1;inset:-3% -9% -5% -7%;pointer-events:none;border-radius:50%/46%;background:radial-gradient(ellipse at 42% 56%,rgba(243,237,224,.8) 0,rgba(243,237,224,.62) 40%,rgba(243,237,224,.26) 64%,rgba(243,237,224,0) 80%);filter:blur(12px)}   /* лёгкая дымка только за текстом (по краям картинки её нет) */
 .ac-hero h1{margin:clamp(12px,1.9vw,38px) 0 0;font:400 var(--f-h1)/.98 var(--serif);letter-spacing:-.022em;color:var(--ax-ink);text-wrap:balance}
 .ac-lead{margin:clamp(14px,1.9vw,38px) 0 0;max-width:23em;font:500 var(--f-b)/1.4 var(--sans);color:var(--ax-ink)}
 .ac-hero-row{display:flex;align-items:center;flex-wrap:wrap;gap:clamp(14px,2vw,40px);margin-top:clamp(18px,2.3vw,46px)}
 
 /* ---------- 03 · «Как пройти регистрацию?»: маршрут на тонкой линии ---------- */
 .ac-reg{position:relative;isolation:isolate;background:linear-gradient(180deg,#f3eee3 0,#ede4d2 26%,var(--ac-band) 58%,var(--ac-bg2) 100%)}
-.ac-reg::before{content:"";position:absolute;inset:0;z-index:-1;pointer-events:none;background:url(../assets/bg/stone-grain.webp?v=47be33c4) 0 0/512px 512px;opacity:.5}
+.ac-reg::before{content:"";position:absolute;inset:0;z-index:-1;pointer-events:none;background:url(../assets/bg/stone-grain.webp?v=37909ebd) 0 0/512px 512px;opacity:.5}
 .ac-reg-in{position:relative;align-items:start;padding:clamp(24px,3.3vw,68px) 0 clamp(24px,3.1vw,64px)}
 .ac-reg-t p{margin-top:clamp(6px,.75vw,14px)}
 .ac-steps{position:relative;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:0 clamp(10px,1.9vw,40px);margin:clamp(4px,.5vw,10px) 0 0;padding:clamp(16px,1.7vw,34px) 0 0;list-style:none}
@@ -421,7 +422,7 @@ html.ac-sp-on .asst-fab,html.ac-sp-on .qc{opacity:0;pointer-events:none}
   .ac-head-row .ac-side-p{grid-column:1/-1;grid-row:2}
   .ac-head-row .ac-btn-o{grid-column:2;grid-row:1}
   .ac-hall-img{object-position:50% 44%}
-  .ac-hall::after{background:linear-gradient(90deg,rgba(241,234,219,.86) 0,rgba(241,234,219,.64) 38%,rgba(241,234,219,0) 72%),linear-gradient(180deg,rgba(245,243,238,.6) 0,rgba(245,243,238,0) 20%),linear-gradient(180deg,rgba(241,234,219,0) 78%,rgba(241,234,219,.6) 92%,#f1eadb 100%)}
+  .ac-hall::after{background:linear-gradient(180deg,rgba(245,243,238,.5) 0,rgba(245,243,238,0) 18%),linear-gradient(180deg,rgba(241,234,219,0) 78%,rgba(241,234,219,.6) 92%,#f1eadb 100%)}
   .ac-reg-in{gap:18px}
   .ac-cal-grid{grid-template-columns:minmax(0,1fr)}
   .ac-cal-col .sx-cal{max-width:420px}
@@ -457,6 +458,7 @@ html.ac-sp-on .asst-fab,html.ac-sp-on .qc{opacity:0;pointer-events:none}
   .ac-hall::after{background:linear-gradient(180deg,rgba(245,243,238,0) 62%,var(--ac-bg) 100%)}
   .ac-hero-in{padding:6px 0 30px}
   .ac-hero-copy{max-width:none}
+  .ac-hero-copy::before{display:none}
   .ac-steps{grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:26px 16px;padding-top:0}
   .ac-steps::before,.ac-st::before{display:none}
   .ac-hero-next{width:100%}
