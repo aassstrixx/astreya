@@ -52,7 +52,6 @@ function academyPage(ctx, C, P) {
       <span class="ac-eyebrow reveal">${esc(H.eyebrow)}</span>
       <h1 id="ac-h1" class="reveal">${esc(H.title).replace(/^(.+?)\s+(«.+»)$/, '<span class="ac-nb">$1</span> <span class="ac-nb">$2</span>')}</h1>
       <p class="ac-lead reveal">${esc(H.lead)}</p>
-      <p class="ac-sub reveal">${esc(H.sub)}</p>
       <div class="ac-hero-row reveal"><a class="btn btn-fill ac-pill" href="#sched" data-act="scroll" data-target="sched">${esc(H.cta)} ${arrow}</a><a class="ac-more" href="#lab" data-act="scroll" data-target="lab">${esc(H.more)}<i aria-hidden="true"></i></a></div>
     </div><div class="ac-hero-next reveal">${C.cdSlot()}</div></div>
   </section>`;
