@@ -240,12 +240,14 @@ def build():
         ceil=flat('aud_ceiling', '#e9dec8', rough=.5),
         brass=pbr('aud_brass', 'brass-brushed-pale', 0.6, tint='#f7e6c0', rough=.22, metal=1.0, bump=.2),
         gold=flat('aud_gold', '#caa766', rough=.18, metal=1.0),
-        navy=curtain('aud_navy', '#070f26'), navy_gl=flat('aud_navy_glass', '#1c2d55', rough=.10, metal=.55, coat=.6), navy2=flat('aud_navy_lac', '#16223e', rough=.12, coat=.6),
+        navy=curtain('aud_navy', '#070f26'), navy_gl=flat('aud_navy_glass', '#2b4a8c', rough=.08, metal=.40, coat=.6), navy2=flat('aud_navy_lac', '#16223e', rough=.12, coat=.6),
         dark=flat('aud_dark', '#0d1526', rough=.35),
         ledw=led('aud_led', (1.0, .73, .45), E('LED_K', 42.0)), ledf=led('aud_led_floor', (1.0, .76, .5), 6.0), ledn=led('aud_led_niche', (1.0, .80, .58), E('NICHE_K', 36.0)),
-        niche=flat('aud_niche_back', '#e6d6b6', rough=.4), gl=glass('aud_glass'),
+        niche=flat('aud_niche_back', '#efe0c0', rough=.4), gl=glass('aud_glass'),
         fl_cols=fluted('aud_flute', '#f3ebdb', pitch=.16, depth=1.1), fl_pil=fluted('aud_flute2', '#f3ebdb', pitch=.11, depth=.9),
         screen=screen_mat(os.path.join(HERE, 'screen.png')))
+    nb = M['niche'].node_tree.nodes['Principled BSDF']; _set(nb, (1.0, .86, .60, 1), 'Emission Color', 'Emission'); _set(nb, E('NICHE_BACK', .9), 'Emission Strength')      # ниша светится изнутри, как в референсе
+    ng = M['navy_gl'].node_tree.nodes['Principled BSDF']; _set(ng, (.03, .09, .30, 1), 'Emission Color', 'Emission'); _set(ng, E('NAVY_GL_GLOW', .45), 'Emission Strength')
     if not os.environ.get('NOWEATHER'):
         weather(M['wall'], color_var=.07, cscale=.8, bump=1.3, bscale=120)
         weather(M['floor'], color_var=.05, cscale=.5, bump=.12, bscale=120, rvar=.06, rscale=1.0)
@@ -336,7 +338,7 @@ def build():
                 if o is not None: o.scale = (1.3, 1.3, 1.3)
             PR.chrome_vase_with_flowers('aud_vase_L', (-E('VASE_X', 5.7), 10.7, .35), scale=E('VASE_S', 1.3), seed=1); PR.chrome_vase_with_flowers('aud_vase_R', (E('VASE_X', 5.7), 10.7, .35), scale=E('VASE_S', 1.3), seed=2)
             PR.orchid_vase('aud_orchid', (-3.7, 12.4, .35), seed=3)
-            for s in (-1, 1): PR.shelf_unit('aud_shelf%d' % s, (5.4 * s, YB - .30, 0), width=.98, height=5.0, shelves=7, seed=4 + s)
+            for s in (-1, 1): PR.shelf_unit('aud_shelf%d' % s, (5.4 * s, YB - .30, 0), width=.98, height=5.0, shelves=7, seed=4 + s, prop_scale=E('PROP_S', 1.9))
         except Exception as e: print('props skipped:', e)
         try:
             import chairs as CH

@@ -280,7 +280,7 @@ def m_black_plastic(name='aud_black_plastic'):
 def m_black_glass(name='aud_black_glass'):
     """чёрное стекло флакона: глубокий цвет, плотный лаковый блик (отражения ниши видны чётко)"""
     def build(nm_):
-        m, nt, b = _new(nm_); S(b, (.006, .006, .007, 1), 'Base Color'); S(b, .028, 'Roughness'); S(b, 1.52, 'IOR'); S(b, .7, 'Specular IOR Level', 'Specular'); S(b, .55, 'Coat Weight', 'Clearcoat'); S(b, .02, 'Coat Roughness', 'Clearcoat Roughness'); return m
+        m, nt, b = _new(nm_); S(b, (.006, .006, .007, 1), 'Base Color'); S(b, .028, 'Roughness'); S(b, 1.52, 'IOR'); S(b, .45, 'Specular IOR Level', 'Specular'); S(b, .3, 'Coat Weight', 'Clearcoat'); S(b, .03, 'Coat Roughness', 'Clearcoat Roughness'); return m
     return cached(name, build)
 
 
