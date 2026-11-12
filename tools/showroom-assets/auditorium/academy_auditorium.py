@@ -110,7 +110,7 @@ def glass(name, tint='#f4fbf8', rough=.02):
 
 def screen_mat(path):
     m = bpy.data.materials.new('aud_screen'); m.use_nodes = True; nt = m.node_tree; nt.nodes.clear(); N = nt.nodes; L = nt.links
-    o = N.new('ShaderNodeOutputMaterial'); em = N.new('ShaderNodeEmission'); em.inputs['Strength'].default_value = E('SCREEN_K', 5.0); L.new(em.outputs[0], o.inputs['Surface'])
+    o = N.new('ShaderNodeOutputMaterial'); em = N.new('ShaderNodeEmission'); em.inputs['Strength'].default_value = E('SCREEN_K', 4.0); L.new(em.outputs[0], o.inputs['Surface'])
     if os.path.exists(path):
         t = N.new('ShaderNodeTexImage'); t.image = bpy.data.images.load(path); t.image.colorspace_settings.name = 'sRGB'; t.extension = 'EXTEND'; L.new(t.outputs['Color'], em.inputs['Color'])
     else: em.inputs['Color'].default_value = (.95, .92, .85, 1)
@@ -234,15 +234,15 @@ ZC = 8.0                       # условная высота потолка у
 def build():
     M = dict(
         wall=pbr('aud_wall', 'plaster-light-smooth', 2.4, tint='#f6efe2', rough=.55, bump=.12),
-        floor=pbr('aud_floor', 'marble-white-warm', 1.4, tint='#d9c9ac', rough=.035, coat=1.0, bump=.06),
+        floor=pbr('aud_floor', 'marble-white-warm', 1.4, tint='#c2b192', rough=.022, coat=1.0, bump=.06),
         stage=pbr('aud_stage', 'marble-beige-veined', 1.6, tint='#f2e8d3', rough=.10, coat=.5, bump=.08),
         lac=flat('aud_lacquer', '#f4ecdc', rough=.2, coat=.7), lac2=flat('aud_lacquer2', '#ede3cf', rough=.28, coat=.5),
         ceil=flat('aud_ceiling', '#e9dec8', rough=.5),
         brass=pbr('aud_brass', 'brass-brushed-pale', 0.6, tint='#f7e6c0', rough=.22, metal=1.0, bump=.2),
         gold=flat('aud_gold', '#caa766', rough=.18, metal=1.0),
-        navy=curtain('aud_navy', '#070f26'), navy2=flat('aud_navy_lac', '#16223e', rough=.12, coat=.6),
+        navy=curtain('aud_navy', '#070f26'), navy_gl=flat('aud_navy_glass', '#1c2d55', rough=.10, metal=.55, coat=.6), navy2=flat('aud_navy_lac', '#16223e', rough=.12, coat=.6),
         dark=flat('aud_dark', '#0d1526', rough=.35),
-        ledw=led('aud_led', (1.0, .73, .45), E('LED_K', 30.0)), ledf=led('aud_led_floor', (1.0, .76, .5), 6.0), ledn=led('aud_led_niche', (1.0, .80, .58), E('NICHE_K', 11.0)),
+        ledw=led('aud_led', (1.0, .73, .45), E('LED_K', 42.0)), ledf=led('aud_led_floor', (1.0, .76, .5), 6.0), ledn=led('aud_led_niche', (1.0, .80, .58), E('NICHE_K', 36.0)),
         niche=flat('aud_niche_back', '#e6d6b6', rough=.4), gl=glass('aud_glass'),
         fl_cols=fluted('aud_flute', '#f3ebdb', pitch=.16, depth=1.1), fl_pil=fluted('aud_flute2', '#f3ebdb', pitch=.11, depth=.9),
         screen=screen_mat(os.path.join(HERE, 'screen.png')))
@@ -268,7 +268,7 @@ def build():
         if nx * (0 - cx_) + ny * (6 - cy_) < 0: nx, ny = -nx, -ny                       # нормаль внутрь зала
         pts = arch_pts(3.3, 0.35, 4.9); n_ = len(pts)
         def Pw(px, pz, d): return (cx_ + ux * px + nx * d, cy_ + uy * px + ny * d, pz)
-        mesh('aud_arch_glass%d' % s, [Pw(px, pz, .03) for px, pz in pts], [tuple(range(n_))], M['navy'])
+        mesh('aud_arch_glass%d' % s, [Pw(px, pz, .03) for px, pz in pts], [tuple(range(n_))], M['navy_gl'] if os.environ.get('NAVYGLASS', '1') == '1' else M['navy'])
         czm = sum(p[1] for p in pts) / n_
         for tag, mat, dd, tt in (('frame', M['brass'], .07, .09), ('led', M['ledw'], .085, .045)):
             out = []
@@ -278,9 +278,9 @@ def build():
                 out.append((px + ax * tt, pz + az * tt))
             verts = [Pw(px, pz, dd) for px, pz in pts] + [Pw(px, pz, dd) for px, pz in out]; faces = [(i, (i + 1) % n_, n_ + (i + 1) % n_, n_ + i) for i in range(n_)]
             mesh('aud_arch_%s%d' % (tag, s), verts, faces, mat)
-    seam = flat('aud_seam', '#cdbfa6', rough=.5)
-    for i in range(-12, 13): box('aud_seam_x%d' % i, seam, i * 1.2 - .004, i * 1.2 + .004, -8, 9.55, .0, .0015, 0)
-    for j in range(-6, 9): box('aud_seam_y%d' % j, seam, -15, 15, j * 1.2 - .004, j * 1.2 + .004, .0, .0015, 0)
+    seam = flat('aud_seam', '#d2ac62', rough=.22, metal=1.0)                                   # латунные швы пола, как в референсе
+    for i in range(-12, 13): box('aud_seam_x%d' % i, seam, i * 1.2 - .007, i * 1.2 + .007, -8, 9.55, .0, .0022, 0)
+    for j in range(-6, 9): box('aud_seam_y%d' % j, seam, -15, 15, j * 1.2 - .007, j * 1.2 + .007, .0, .0022, 0)
     # ── панель за экраном, экран, рамка
     box('aud_back_panel', M['lac2'], -4.5, 4.5, YB - .12, YB, .35, 6.6, .02)
     fw = .07; yy0, yy1 = YB - .30, YB - .16
@@ -334,7 +334,7 @@ def build():
             lc = PR.lectern('aud_lectern', (3.9, 12.4, 0.35), yaw=math.radians(-10))
             for o in (lc if isinstance(lc, (list, tuple)) else [lc]):
                 if o is not None: o.scale = (1.3, 1.3, 1.3)
-            PR.chrome_vase_with_flowers('aud_vase_L', (-6.3, 10.7, .35), scale=1.75, seed=1); PR.chrome_vase_with_flowers('aud_vase_R', (6.3, 10.7, .35), scale=1.75, seed=2)
+            PR.chrome_vase_with_flowers('aud_vase_L', (-E('VASE_X', 5.7), 10.7, .35), scale=E('VASE_S', 1.3), seed=1); PR.chrome_vase_with_flowers('aud_vase_R', (E('VASE_X', 5.7), 10.7, .35), scale=E('VASE_S', 1.3), seed=2)
             PR.orchid_vase('aud_orchid', (-3.7, 12.4, .35), seed=3)
             for s in (-1, 1): PR.shelf_unit('aud_shelf%d' % s, (5.4 * s, YB - .30, 0), width=.98, height=5.0, shelves=7, seed=4 + s)
         except Exception as e: print('props skipped:', e)
@@ -352,22 +352,30 @@ def tune_chairs():
         if 'navy' in m.name.lower() and m.use_nodes:
             for n in m.node_tree.nodes:
                 if n.bl_idname == 'ShaderNodeBsdfPrincipled':
-                    _set(n, E('NAVY_SHEEN', .20), 'Sheen Weight', 'Sheen'); _set(n, (.07, .12, .30, 1), 'Sheen Tint')
-                if n.bl_idname == 'ShaderNodeHueSaturation': n.inputs['Value'].default_value *= E('NAVY_V', .75)
+                    _set(n, E('NAVY_SHEEN', .10), 'Sheen Weight', 'Sheen'); _set(n, (.07, .12, .30, 1), 'Sheen Tint')
+                if n.bl_idname == 'ShaderNodeHueSaturation': n.inputs['Value'].default_value *= E('NAVY_V', .38)
+        elif 'boucle' in m.name.lower() and m.use_nodes:                                # кремовое букле в референсе — серо-бежевое (greige), не белое
+            b = next((n for n in m.node_tree.nodes if n.bl_idname == 'ShaderNodeBsdfPrincipled'), None)
+            if b is not None:
+                N_, L_ = m.node_tree.nodes, m.node_tree.links; src = b.inputs['Base Color']; mx = N_.new('ShaderNodeMixRGB'); mx.blend_type = 'MULTIPLY'; mx.inputs['Fac'].default_value = 1.0
+                mx.inputs['Color2'].default_value = (E('CREAM_R', .80), E('CREAM_G', .76), E('CREAM_B', .70), 1)
+                if src.links: l = src.links[0]; L_.new(l.from_socket, mx.inputs['Color1']); L_.remove(l)
+                else: mx.inputs['Color1'].default_value = src.default_value
+                L_.new(mx.outputs['Color'], b.inputs['Base Color'])
 
 
 def lights(M):
     # мягкая тёплая заливка зала сверху (как рассеянный свет колец) и тёплые «потолочные» прожекторы на сцену и проход
-    area('aud_fill_hall', (0, 5, ZC - 1.0), (0, 6, 0), E('FILL_HALL', 950), 16, 11, (1.0, .86, .70))
-    area('aud_fill_stage', (0, 10.8, ZC - .6), (0, 13.5, 1.5), E('FILL_STAGE', 1200), 14, 3, (1.0, .86, .70))
+    area('aud_fill_hall', (0, 5, ZC - 1.0), (0, 6, 0), E('FILL_HALL', 600), 16, 11, (1.0, .86, .70))
+    area('aud_fill_stage', (0, 10.8, ZC - .6), (0, 13.5, 1.5), E('FILL_STAGE', 900), 14, 3, (1.0, .86, .70))
     spot('aud_spot_screen', (0, 8.5, ZC - .2), (0, 14.1, 3.4), E('SPOT_SCREEN', 2400), 60, .8)
     for ix, x in enumerate((-6.4, -3.3, 3.3, 6.4)):                  # потолочные «даунлайты» над рядами: дают читаемые мягкие тени кресел на глянцевом полу
         for iy, y in enumerate((1.2, 4.4, 7.6)):
-            spot('aud_down_%d_%d' % (ix, iy), (x, y, ZC - 1.7), (x * .86, y + 1.4, 0.0), E('DOWN_K', 1100), E('DOWN_ANG', 64), .75, (1.0, .84, .64), radius=.22)
+            spot('aud_down_%d_%d' % (ix, iy), (x, y, ZC - 1.7), (x * .86, y + 1.4, 0.0), E('DOWN_K', 1500), E('DOWN_ANG', 64), .75, (1.0, .84, .64), radius=.22)
     for s in (-1, 1):
         spot('aud_spot_vase%d' % s, (6.0 * s, 8.5, ZC - .3), (7.3 * s, 11.4, .9), 1200, 38, .7)
         spot('aud_spot_lect', (3.0 * s, 9.0, ZC - .3), (4.0 * s, 12.6, 1.3), 600, 32, .7)
-    w = bpy.data.worlds.new('aud_w'); w.use_nodes = True; bg = w.node_tree.nodes['Background']; bg.inputs['Color'].default_value = (.95, .86, .72, 1); bg.inputs['Strength'].default_value = E('WORLD', .08); bpy.context.scene.world = w
+    w = bpy.data.worlds.new('aud_w'); w.use_nodes = True; bg = w.node_tree.nodes['Background']; bg.inputs['Color'].default_value = (.95, .86, .72, 1); bg.inputs['Strength'].default_value = E('WORLD', .05); bpy.context.scene.world = w
 
 
 def camera(sc):
@@ -399,14 +407,14 @@ def export(raw):
     from PIL import Image
     import numpy as np
     img = np.asarray(Image.open(raw).convert('RGB'))
-    g = S.grade(img, sat=E('AUD_SAT', 1.10), gamma=E('AUD_GAMMA', .90), lift=E('AUD_LIFT', .03)); g = np.clip(g * np.array([1.0, .99, .965], np.float32), 0, 255).astype(np.uint8)
+    g = S.grade(img, sat=E('AUD_SAT', 1.08), gamma=E('AUD_GAMMA', 1.0), lift=E('AUD_LIFT', .0)); g = np.clip(g * np.array([1.0, .99, .965], np.float32), 0, 255).astype(np.uint8)
     g = finish(g)
     out = os.environ.get('AUD_OUT', '/tmp/aud_graded.png'); Image.fromarray(g).save(out); print('цветокоррекция →', out)
 
 
 def main():
     w = int(os.environ.get('AUD_W', 1280 if MODE == 'preview' else 3200)); h = round(w * 9 / 16); spp = int(os.environ.get('AUD_SPP', 24 if MODE == 'preview' else 96))
-    bpy.ops.wm.read_factory_settings(use_empty=True); sc = bpy.context.scene; S.settings(sc, w, h, spp); sc.view_settings.exposure = E('EXPO', -.25); sc.view_settings.look = os.environ.get('LOOK_AUD', 'None')
+    bpy.ops.wm.read_factory_settings(use_empty=True); sc = bpy.context.scene; S.settings(sc, w, h, spp); sc.view_settings.exposure = E('EXPO', -.55); sc.view_settings.look = os.environ.get('LOOK_AUD', 'None')
     cr = os.environ.get('CROP')
     if cr and MODE == 'preview':
         x0, x1, y0, y1 = [float(v) for v in cr.split(',')]; sc.render.use_border = True; sc.render.use_crop_to_border = True; sc.render.border_min_x = x0; sc.render.border_max_x = x1; sc.render.border_min_y = y0; sc.render.border_max_y = y1

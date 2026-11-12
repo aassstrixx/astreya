@@ -286,6 +286,20 @@ def build_silk(w, h, seed=7, verbose=True, dbg=None):
     return img
 
 
+SILK_CONTRAST = 1.45       # в референсе складки шёлка читаются отчётливо: контраст относительно среднего
+
+
+def shape_silk(img):
+    """контраст складок, тёплый тон и мягкий «конус света» проектора (центр светлее, края темнее) — как на экране референса"""
+    f = img.astype(np.float32); m = f.mean()
+    f = m + (f - m) * SILK_CONTRAST + 2.0
+    f *= np.array([1.0, .988, .955], np.float32)
+    h, w = f.shape[:2]; yy, xx = np.mgrid[0:h, 0:w].astype(np.float32)
+    r = np.hypot((xx / w - .5) * 1.1, (yy / h - .40) * 1.0)
+    f *= (1.03 - .13 * np.clip(r / .75, 0, 1) ** 1.8)[..., None]
+    return np.clip(f, 0, 255)
+
+
 def finalize(img, seed=11):
     """Зерно σ≈1.2 (в основном яркостное), потолок 245, 8 бит."""
     h, w = img.shape[:2]
@@ -455,7 +469,7 @@ def main():
     tmp = Path(tempfile.mkdtemp(prefix="astreya_screen_"))
     try:
         print("Шёлк…", flush=True)
-        silk = finalize(build_silk(W, H, seed=a.seed))
+        silk = finalize(shape_silk(build_silk(W, H, seed=a.seed)))
         bg = tmp / "silk.png"
         Image.fromarray(silk, "RGB").save(bg, optimize=False)
         if a.bg_only:

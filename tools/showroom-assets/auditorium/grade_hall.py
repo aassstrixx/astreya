@@ -9,7 +9,7 @@
 и зала главной). Делаем частичный перенос цвета в Lab (не до полного совпадения — зал белый по задумке владельца):
   a, b — перенос к целевым средним, но с ВЕСОМ, который гасит правку у синих пикселей (кресла, арки, логотип): w = clip(1 + b/14, 0..1),
          поэтому тёмно-синий остаётся тёмно-синим, а кремовые стены/пол/латунь уходят в тёплый «травертиновый» тон сайта;
-  L  — среднее → TARGET_L, контраст × 1.04 вокруг среднего (тени чуть глубже, как на стене брендов).
+  L  — среднее → TARGET_L (67,5: зал чуть темнее, как просил заказчик), контраст × 1.09 вокруг среднего + мягкий локальный контраст CLAHE (clarity 0,32) — структура материалов и тени.
 Параметры считаются по самому рендеру, поэтому все размеры получают один и тот же сдвиг.
 """
 import sys, os
@@ -23,7 +23,7 @@ SRC = args[0] if args else '/tmp/aud_graded.png'
 OUT = sys.argv[sys.argv.index('--out') + 1] if '--out' in sys.argv else ROOT
 if '--out' in sys.argv and OUT in args: args.remove(OUT); SRC = args[0] if args else '/tmp/aud_graded.png'
 
-T = dict(L_mean=float(os.environ.get('G_L', 73.5)), L_contrast=float(os.environ.get('G_LC', 1.04)),
+T = dict(L_mean=float(os.environ.get('G_L', 67.5)), L_contrast=float(os.environ.get('G_LC', 1.09)), clarity=float(os.environ.get('G_CLARITY', .32)),
          a_mean=float(os.environ.get('G_A', 1.6)), b_mean=float(os.environ.get('G_B', 13.2)), chroma_max=float(os.environ.get('G_CMAX', 30)))
 
 
@@ -46,6 +46,10 @@ def regrade(img8, ref):
     L2 = (L - ref['L']) * T['L_contrast'] + T['L_mean']
     # на самых светлых местах (экран, блики) не сдвигаем L вверх — иначе пересвет
     L2 = np.where(L > 94, np.minimum(L, 99), np.clip(L2, 0, 98.5))
+    if T['clarity']:                                         # «живая» структура: мягкий локальный контраст (CLAHE по яркости) — штукатурка, ткань, камень читаются, тени глубже
+        h_, w_ = L2.shape; L16 = np.clip(L2 / 100 * 65535, 0, 65535).astype(np.uint16)
+        cl = cv2.createCLAHE(clipLimit=1.8, tileGridSize=(max(4, w_ // 360), max(3, h_ // 360))).apply(L16).astype(np.float32) / 65535 * 100
+        L2 = L2 * (1 - T['clarity']) + cl * T['clarity']
     C = np.hypot(A2, B2); k = np.where(C > T['chroma_max'], T['chroma_max'] / np.maximum(C, 1e-3), 1.0)
     out = cv2.cvtColor(np.stack([L2, A2 * k, B2 * k], -1).astype(np.float32), cv2.COLOR_LAB2RGB)
     return (np.clip(out, 0, 1) * 255 + .5).astype(np.uint8)

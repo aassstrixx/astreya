@@ -2,7 +2,7 @@
    Тот же язык, что у шоурума и брендов: арки, молочный камень с зерном, один источник света слева сверху, тёмно-синий акцент; двигаются только transform/opacity.
    Анимация первого экрана (css/home-arch.css) и герой после неё сюда не входят. */
 
-body[data-page="home"]{--hp-card:var(--ar-card,rgba(250,246,238,.94));--hp-rim:var(--ar-rim,inset 0 0 0 1px rgba(255,255,255,.75));--hp-gold:var(--ax-gold,#b08e4e);--hp-grain:url(../assets/bg/stone-grain.webp?v=3f386b2e)}
+body[data-page="home"]{--hp-card:var(--ar-card,rgba(250,246,238,.94));--hp-rim:var(--ar-rim,inset 0 0 0 1px rgba(255,255,255,.75));--hp-gold:var(--ax-gold,#b08e4e);--hp-grain:url(../assets/bg/stone-grain.webp?v=797d8bed)}
 
 /* ---------- общий заголовок раздела: слева тема, справа короткое пояснение ---------- */
 .hp-head{display:grid;grid-template-columns:minmax(0,7fr) minmax(0,5fr);gap:clamp(18px,5vw,84px);align-items:end;margin-bottom:clamp(30px,4.4vw,64px)}
