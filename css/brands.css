@@ -15,7 +15,7 @@ body[data-page="brands"] #main{overflow-x:clip}
 .br-hero{position:relative;isolation:isolate;margin-top:calc(var(--hdr) * -1);min-height:clamp(400px,29vw,580px);display:flex;align-items:center;overflow:hidden}
 .br-hero-pic{position:absolute;inset:0;z-index:-2;display:block}
 .br-hero-pic img{display:block;width:100%;height:100%;object-fit:cover;object-position:68% 56%}
-.br-hero-pic::after,.br-niche::after{content:"";position:absolute;inset:0;pointer-events:none;background:url(../assets/bg/stone-grain.webp?v=736b3c6e) 0 0/512px 512px;opacity:.5}      /* зерно камня поверх рендера: поры, крупинки, лёгкие облака тона */
+.br-hero-pic::after,.br-niche::after{content:"";position:absolute;inset:0;pointer-events:none;background:url(../assets/bg/stone-grain.webp?v=3f386b2e) 0 0/512px 512px;opacity:.5}      /* зерно камня поверх рендера: поры, крупинки, лёгкие облака тона */
 .br-niche::after{z-index:1;opacity:.42}
 .br-hero::before{content:"";position:absolute;inset:0;z-index:-1;pointer-events:none;background:linear-gradient(90deg,rgba(247,242,233,.3) 0,rgba(247,242,233,.4) 15%,rgba(247,242,233,.68) 27%,rgba(247,242,233,.5) 42%,rgba(247,242,233,.14) 54%,rgba(247,242,233,0) 62%)}      /* слева декор виден, под текстом — молочная вуаль для читаемости */
 .br-hero::after{content:"";position:absolute;left:0;right:0;bottom:-1px;height:clamp(60px,8vw,120px);z-index:-1;pointer-events:none;background:linear-gradient(180deg,rgba(245,242,236,0),rgba(245,242,236,.7) 62%,var(--br-bg))}

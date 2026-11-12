@@ -1,13 +1,8 @@
 {
  "plate": {
-  "w": 2800,
-  "h": 1100
+  "w": 2880,
+  "h": 1620
  },
- "unit_cm": 10,
- "table": {
-  "x": 0.61561,
-  "y": 0.67943
- },
- "arch_left": 0.4732,
- "slots": []
+ "slots": [],
+ "source": "Blender: tools/showroom-assets/auditorium/academy_auditorium.py → grade_hall.py"
 }
