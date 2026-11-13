@@ -53,6 +53,9 @@ for q in ([-1, 1], [1, 1], [1, -1], [-1, -1]):
 rect = [round(min(us), 5), round(min(vs), 5), round(max(us), 5), round(max(vs), 5)]
 mob = {'enabled': True, 'n': K, 'ext': 'webp', 'dir': 'assets/house-hall/ffm/', 'depth': 'assets/house-hall/fzm/', 'jar': 'assets/house-hall/fjm/', 'cam': 'assets/house-hall/cam-fm.json',
        'p': [round(w * F, 6) for w in sched], 'rects': [[round(v, 5) for v in jr]] * K, 'rect': rect, 'book': book, 'bake': bool(bake)}
+prev = d['house']['fly'].get('mobile') or {}                                            # заплатка стола (read-m.webp, clean_patch.py) пишется отдельно — при пересборке ключей не терять её
+if prev.get('clean') or os.path.exists(os.path.join(ROOT, 'assets/house-hall/read-m.webp')):
+    mob['clean'] = prev.get('clean') or 'assets/house-hall/read-m.webp'
 d['house']['fly']['mobile'] = mob
 m = re.search(r'\n    "fly": \{[^\n]*\},?', t)
 line = '\n    "fly": ' + json.dumps(d['house']['fly'], ensure_ascii=False) + ','
