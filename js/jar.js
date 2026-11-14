@@ -176,7 +176,7 @@
     const born = performance.now();
     let hall = null, jar = null, track = null, set = '', gen = 0, labelReady = false, lastDraw = null, resScale = 1;
     let flyCam = null;                                                              // дорожка камеры пролёта (для живой книги: js/house.js проецирует углы журнала камерой, которой нарисован кадр)
-    let lastJarOk = null, dtEma = 16.7, minDt = 16.7, slowRun = 0, govChanges = 0;
+    let lastJarOk = null, dtEma = 16.7, minDt = 16.7, slowRun = 0, govChanges = 0, govEdge = false;
     const perfRing = new Float32Array(240); let perfN = 0;
     /* пролёт на телефоне — как на ПК: все ключи лежат в видеопамяти целиком (900×1600 + глубина ≈ 7 МБ на ключ, ≈ 350 МБ на 49), без «быстрого режима» по уменьшенным копиям: картинка в движении такая же чёткая, как в покое.
        Герой, пока журнал открыт, свою видеопамять отдаёт (trim). После падения вкладки (A.lite) — прежнее окно кадров + копии: память вдвое меньше, пролёт тот же */
@@ -319,7 +319,7 @@
     const lowTgt = () => { const st = lowStride(); if (st !== lowTgtS) { lowTgtS = st; lowTgtV = 0; for (let k = 0; k < NH; k++) if (lowWanted(k)) lowTgtV++; } return lowTgtV; };
     function pumpLows() {
       const LD = LOWDEC[isPortrait() ? 1 : 0];
-      if ((ALLRES && !PHALL) || decL >= LD || !hall || !firstDrawn || trimmed) return;                  // пролёт на мощном устройстве держит в видеопамяти все ключи целиком — уменьшенные копии ему не нужны
+      if ((ALLRES && !PHALL) || decL >= LD || !hall || !firstDrawn || trimmed || holding()) return;                  // пролёт на мощном устройстве держит в видеопамяти все ключи целиком — уменьшенные копии ему не нужны
       const u = locate(cp), c = u.k + u.t;
       if (PHALL && pT <= 0) return;
       if (FLY && pT <= 0 && !A.flyNear) return;                          // пролёт: копии нужны, когда герой подъехал к концу (A.flyNear) — раньше они лишь занимают видеопамять рядом с героем
@@ -366,6 +366,7 @@
         if (decN >= (isPortrait() ? DECODERS_P : DECODERS) || lowOnlyF) break;
         if (upQ.length + decN >= UPQ_MAX() + 1) break;
         if (holdFar && k >= K1) continue;
+        if (holding() && k !== l.k && k !== l.k + 1) continue;                          // проявление идёт: только пара кадров у положения, остальное — после
         if (!resident[k] && keyDone(k) && !decoding[k]) {
           decoding[k] = 1; decN++; const g = gen;
           const shared = lowDone[k] === 1 && !lowSz()[2];                 // глубина уменьшенной копии — натуральная: второй раз её не разворачиваем
@@ -469,6 +470,26 @@
       return +LH.amount * (1 - x * x * (3 - 2 * x));
     }
 
+    /* ---- шторка и заставка: показ сцены ждёт, пока они начнут подниматься ----
+       Страница подменяется и сцена инициализируется, пока полосы шторки ещё закрыты (js/motion.js: go → initPage, затем 'in' → 'out'), а при первой загрузке — под заставкой. Анимация проявления
+       (css/home-arch.css: arBg, arJar, arJarFade), запущенная в этот момент, отыгрывала за шторкой — отсюда «то видно плавное появление баночки, то нет». Теперь классы показа ставятся, когда шторки/заставки
+       уже нет под рукой (с запасом 240 мс на подъём первых полос). Страховка: не дольше 4 с. Пролёт (FLY) — читалка внутри страницы, шторки там нет: сразу. */
+    /* Пока играет проявление (≈ 2,2 с после того, как шторка поднялась) и посетитель не начал листать, фоновая подгрузка (уменьшенные копии всех кадров, дальние ключи, спрайты) стоит:
+       текстуры 1920×1080 + мипы, загруженные пачкой в этот момент, занимали основной поток ровно тогда, когда поднимаются полосы шторки и баночка проявляется — «в начале подлагивает».
+       Первая пара кадров и спрайт нужны для самого показа и грузятся как раньше; с первой прокрутки (|Δp| > 0,004) ожидание снимается сразу. */
+    let holdUntil = 0, holdP = 0;
+    const holding = () => holdUntil > 0 && !FLY && performance.now() < holdUntil && Math.abs(pT - holdP) < 0.004 && !fast;
+    function startHold() { holdUntil = performance.now() + 2200; holdP = pT; setTimeout(() => { if (!dead) pumpDecode(); }, 2260); }
+    function unveiled(fn, immediate) {
+      const veil = document.getElementById('curtain'), veiled = () => !!document.getElementById('splash') || !!(veil && (veil.classList.contains('in') || veil.classList.contains('instant')));
+      if (immediate || !veiled()) { fn(); if (!immediate) startHold(); return; }
+      let done = false, mo = null, poll = 0;
+      const fin = () => { if (done) return; done = true; if (mo) mo.disconnect(); clearInterval(poll); setTimeout(() => { fn(); startHold(); }, 240); };
+      const check = () => { if (!veiled()) fin(); };
+      if (veil && window.MutationObserver) { mo = new MutationObserver(check); mo.observe(veil, {attributes: true, attributeFilter: ['class']}); }
+      poll = setInterval(check, 150); setTimeout(fin, 4000);
+    }
+
     /* ---- отрисовка ---- */
     function paint(now) {
       if (!hall) return false;
@@ -483,11 +504,11 @@
       const pair = hall.draw(pc, 0, !window.__ASTREYA_NOAA, {jk, lift});                          // сглаживание кромок — всегда, когда кадр строится перепроекцией (между ключами): раньше только в движении, а в покое сцену подтягивало к ключу (без перепроекции); теперь покой бывает между ключами, и без сглаживания кромки по глубине шли «лесенкой»
       if (!pair) return false;
       lastDraw = {ka: pair.ka, kb: pair.kb, t: pair.t, single: !!pair.single};
-      if (!firstDrawn) { firstDrawn = true; if (cp < 0.02 && !FLY) root.classList.add('ar-intro'); root.classList.add('ready'); }
+      if (!firstDrawn) { firstDrawn = true; const intro = cp < 0.02 && !FLY; unveiled(() => { if (intro) root.classList.add('ar-intro'); root.classList.add('ready'); }, FLY); }
       if (jar) {
         const ok = jar.draw(pc, pair, {jk, lift, ground, halo, fixed: FLY ? 0 : -1, base: FLY, skip: FLYBAKE}); lastJarOk = ok;
         if (FLY && A.flyOnDraw && flyCam && jar.proj) { try { A.flyOnDraw(pc, flyCam.view(pc), jar.proj); } catch (e) { /* — */ } }       // живая книга встаёт по той же камере, что и кадр
-        if (ok && !jarShown) { jarShown = true; if (cp < 0.02 && !FLY) root.classList.add('ar-intro'); root.classList.add('jar-ready'); }
+        if (ok && !jarShown) { jarShown = true; const intro = cp < 0.02 && !FLY; unveiled(() => { root.classList.add(intro ? 'ar-intro' : 'ar-soft'); root.classList.add('jar-ready'); }, FLY); }          // баночка проявляется ВСЕГДА (не только на заставке) и только когда её уже видно: раньше анимация отыгрывала за закрытой шторкой — посетитель видел то плавный выход, то готовую баночку
       }
       return true;
     }
@@ -536,9 +557,13 @@
          а резкость между ключами та же (замер: лапласиан между кадрами 95–100 % от резкости на самом кадре) */
       const target = pT;
       // критически затухающая пружина (точное решение на шаг dt): x'' = −2ω x' − ω² (x − цель)
-      const e = Math.exp(-OMEGA * dt);
-      let d = cp - target, c = vp + OMEGA * d;
-      cp = target + (d + c * dt) * e; vp = (vp - OMEGA * c * dt) * e;
+      /* пролёт, последние 6 % пути к залу: пружина жёстче (до ×4 у самого зала). Герой с «живой» баночкой уже стоит на месте и проявляется поверх кадра пролёта; кадр пролёта доезжал по обычной пружине
+         ещё ≈ 4–5 кадров (≈ 80 мс), и баночка героя «обгоняла» фон на 6–9 px — в записи заказчика это дёрганье баночки при возврате на главный экран (замер по кадрам: баночка 1 кадр смещена
+         относительно подиума и тут же возвращается, фон дотягивает 4 кадра). Жёсткость меняется непрерывно, без скачка скорости; вдали от зала пружина прежняя. */
+      const om = FLY && target < 0.06 ? OMEGA * (1 + 3 * (1 - target / 0.06)) : OMEGA;
+      const e = Math.exp(-om * dt);
+      let d = cp - target, c = vp + om * d;
+      cp = target + (d + c * dt) * e; vp = (vp - om * c * dt) * e;
       if (Math.abs(cp - target) < 2e-6 && Math.abs(vp) < 1e-4) { cp = target; vp = 0; }
       cp = clamp(cp, 0, 1);
       if (Math.abs(vp) > 1e-3) dirSign = vp > 0 ? 1 : -1;
@@ -557,7 +582,14 @@
         const base = isPortrait() ? 16.67 : minDt < 28 ? 16.67 : 33.33;          // цель — 60 кадров/с при любой частоте экрана (раньше на ПК цель равнялась кадру экрана: на 120–144 Гц любой кадр дольше 8–10 мс считался медленным); дисплей на 30 к/с — 33 мс
         const other = A.jarBusy && A.jarBusy[FLY ? 'hero' : 'fly'];          // соседний движок сейчас грузит кадры (пролёт начинает грузиться на 40 % героя): кадры героя в это время дольше не из-за его холста — их не считаем
         if (other) slowRun = 0; else if (dtEma > base * 1.35 + 0.5) slowRun++; else slowRun = 0;
-        if (slowRun >= (isPortrait() ? 12 : 24) && resScale > 0.6 && now() - lastGov > 1500) { resScale = resScale > 0.8 ? 0.8 : 0.65; govChanges++; A.bc && A.bc('gov', (FLY ? 'fly ' : 'hero ') + resScale + ' dt' + Math.round(dtEma)); slowRun = 0; lastGov = now(); sizeCanvas(); armRestore(); }          // сетку не режем: на ней держатся кромки (на половинной — пилообразные), а нагрузку даёт в основном число пикселей холста
+        /* Ступени регулятора (ПК): 1) дешёвое и незаметное — шаги уточнения кромок 20 → 7; 2) холст 0,9; 3) холст 0,8 — ниже не опускаем (раньше шло до 0,65: на записи заказчика текстуры «мылились», а кромки плит шли
+           зубчиками именно из-за сниженного холста в движении). Телефон — как было (0,8 → 0,65; регулятор там выключен, GOV_PHONE). */
+        if (slowRun >= (isPortrait() ? 12 : 24) && now() - lastGov > 1500 && (isPortrait() ? resScale > 0.6 : (!govEdge || resScale > 0.8))) {
+          if (isPortrait()) resScale = resScale > 0.8 ? 0.8 : 0.65;
+          else if (!govEdge) { govEdge = true; if (hall && hall.setRefine) hall.setRefine(7); }
+          else resScale = resScale > 0.9 ? 0.9 : 0.8;
+          govChanges++; A.bc && A.bc('gov', (FLY ? 'fly ' : 'hero ') + resScale + (govEdge ? ' e7' : '') + ' dt' + Math.round(dtEma)); slowRun = 0; lastGov = now(); sizeCanvas(); armRestore();
+        }          // сетку не режем: на ней держатся кромки (на половинной — пилообразные), а нагрузку даёт в основном число пикселей холста
       }
       if (upQ.length) { const mv = Math.abs(vp) * KS > MOVING || (FLY && PHALL && scrolling()); if (!mv || !isPortrait() || performance.now() - lastUp >= (fast ? UP_GAP_LOW : (FLY ? UP_GAP_F : UP_GAP_P))) flushUploads(mv ? 2.5 : 8); }          // телефон: в движении тяжёлая загрузка не чаще раза в UP_GAP_P мс (иначе каждый кадр с хвостом)                // по одной-две тяжёлые текстуры за кадр; в покое — быстрее
       if ((inView || !firstDrawn) && hall && (dirty || Math.abs(cp - paintedP) > 1e-7)) {
@@ -575,9 +607,9 @@
     /* качество возвращается, когда сцена остановилась: регулятор снижает холст при долгих кадрах (загрузка кадров, чужая вкладка, тяжёлая страница), но в покое кадры не считаются, а картинка должна быть
        резкой — через ≈ 1,4 с без движения холст снова полный. Если в движении опять будет медленно, регулятор снизит снова (не раньше, чем через 1,5 с и 24 медленных кадра) */
     const restoreQ = () => {
-      restoreT = 0; if (dead || !hall || resScale >= 1) return;
+      restoreT = 0; if (dead || !hall || (resScale >= 1 && !govEdge)) return;
       if (now() - lastScrollT < 1100 || Math.abs(vp) > 1e-3 || fast) { restoreT = setTimeout(restoreQ, 600); return; }
-      resScale = 1; slowRun = 0; lastGov = now(); A.bc && A.bc('gov', (FLY ? 'fly ' : 'hero ') + 'вернул 1'); sizeCanvas(); schedule();
+      resScale = 1; if (govEdge) { govEdge = false; if (hall && hall.setRefine) hall.setRefine(-1); } slowRun = 0; lastGov = now(); A.bc && A.bc('gov', (FLY ? 'fly ' : 'hero ') + 'вернул 1'); sizeCanvas(); schedule();
     };
     const armRestore = () => { clearTimeout(restoreT); restoreT = setTimeout(restoreQ, 1400); };
 

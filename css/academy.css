@@ -6,7 +6,7 @@
    js/explore.js (обратный отсчёт). Рендеры — tools/showroom-assets/academy_hall.py (hall, mag, arch). Размеры — через vw с ограничениями clamp(): на 1280–1920 px пропорции
    сохраняются, на планшете и телефоне зоны перестраиваются в один столбец. Двигаются только opacity и transform. Выключатель: redesign.json → trainingPage.academy = null. */
 
-.ac-page{--ac-navy:var(--navy,#0b1a33);--ac-bg:#f5f3ee;--ac-bg2:#f1eadb;--ac-band:#ebe1ce;--ac-card:#fdfbf6;--ac-cardg:linear-gradient(135deg,#fdfcf8 0%,#f7f2e6 52%,#efe6d2 100%);--ac-line:rgba(120,84,40,.17);--ac-mut:#625a4d;
+.ac-page{--ac-navy:var(--navy,#0b1a33);--ac-bg:#f3ecdc;--ac-bg2:#eee3cb;--ac-band:#e8dabc;--ac-card:#fbf5e5;--ac-cardg:linear-gradient(135deg,#fcf6e8 0%,#f6edd7 52%,#eddfbd 100%);--ac-line:rgba(120,84,40,.17);--ac-mut:#625a4d;
   --ac-g:clamp(18px,5.9vw,120px);--ac-r:clamp(6px,.55vw,11px);--ac-ease:var(--ax-ease,cubic-bezier(.22,.8,.2,1));
   --f-h1:clamp(38px,4.5vw,88px);--f-h2:clamp(25px,2.36vw,46px);--f-b:clamp(14px,1.02vw,19.5px);--f-s:clamp(12.5px,.88vw,17px);--f-xs:clamp(11.5px,.78vw,15px);
   position:relative;margin-top:calc(var(--hdr,72px) * -1);background:var(--ac-bg);color:var(--ax-ink,#16223e);overflow:clip}
@@ -51,11 +51,11 @@ html.ac-scrolled body[data-page="training"] .hdr{background:var(--milk,#f5f2ec);
 body[data-page="training"].menu-open .hdr,body[data-page="training"].search-open .hdr{background:var(--milk,#f5f2ec)}
 
 /* ---------- 01 · первый экран ---------- */
-.ac-hero{position:relative;isolation:isolate;display:grid;min-height:max(40vw,440px);overflow:hidden;background:#ebe1ce}
+.ac-hero{position:relative;isolation:isolate;display:grid;min-height:max(40vw,440px);overflow:hidden;background:#e8dabc}
 .ac-hall{position:absolute;inset:0;z-index:-1;margin:0;overflow:hidden}
 .ac-hall-in{position:absolute;inset:-4% 0;will-change:transform}
 .ac-hall-img{display:block;width:100%;height:100%;object-fit:cover;object-position:50% 40%;user-select:none;-webkit-user-drag:none}                /* зал 16:9 по центру кадра: в полосу 2,8:1 попадают экран, ниши и пилястры, верх колец и низ пола уходят за край */
-.ac-hall::after{content:"";position:absolute;inset:0;pointer-events:none;background:linear-gradient(180deg,rgba(245,243,238,.22) 0,rgba(245,243,238,0) 11%),linear-gradient(180deg,rgba(241,234,219,0) 90%,rgba(241,234,219,.4) 95.5%,rgba(241,234,219,.86) 98.7%,#f1eadb 100%)}
+.ac-hall::after{content:"";position:absolute;inset:0;pointer-events:none;background:linear-gradient(180deg,rgba(245,243,238,.22) 0,rgba(245,243,238,0) 11%),linear-gradient(180deg,rgba(241,234,219,0) 90%,rgba(241,234,219,.4) 95.5%,rgba(241,234,219,.86) 98.7%,#eee3cb 100%)}
 .ac-hero-in{position:relative;display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:end;gap:20px;padding:calc(var(--hdr,72px) + clamp(8px,2.6vw,54px)) 0 clamp(20px,2.3vw,46px)}
 .ac-hero-next{align-self:end;justify-self:end;width:clamp(270px,24.5vw,470px);min-width:0}
 .ac-hero .cd-slot{min-height:0;margin:0}
@@ -72,14 +72,14 @@ body[data-page="training"].menu-open .hdr,body[data-page="training"].search-open
 .ac-hero .cd .btn-fill{min-height:0;padding:clamp(10px,.82vw,16px) clamp(16px,1.35vw,26px);border-radius:999px;background:#f3e7d0;border-color:#f3e7d0;color:var(--ac-navy);font:600 var(--f-xs)/1 var(--sans)}
 .ac-hero .cd .btn-fill:hover{background:#fff;border-color:#fff}
 .ac-hero-copy{position:relative;isolation:isolate;align-self:start;max-width:min(62%,760px)}
-.ac-hero-copy::before{content:"";position:absolute;z-index:-1;inset:-3% -9% -5% -7%;pointer-events:none;border-radius:50%/46%;background:radial-gradient(ellipse at 42% 56%,rgba(243,237,224,.8) 0,rgba(243,237,224,.62) 40%,rgba(243,237,224,.26) 64%,rgba(243,237,224,0) 80%);filter:blur(12px)}   /* лёгкая дымка только за текстом (по краям картинки её нет) */
+.ac-hero-copy::before{content:"";position:absolute;z-index:-1;inset:-3% -9% -5% -7%;pointer-events:none;border-radius:50%/46%;background:radial-gradient(ellipse at 42% 56%,rgba(240,230,208,.8) 0,rgba(240,230,208,.62) 40%,rgba(240,230,208,.26) 64%,rgba(240,230,208,0) 80%);filter:blur(12px)}   /* лёгкая дымка только за текстом (по краям картинки её нет) */
 .ac-hero h1{margin:clamp(12px,1.9vw,38px) 0 0;font:400 var(--f-h1)/.98 var(--serif);letter-spacing:-.022em;color:var(--ax-ink);text-wrap:balance}
 .ac-lead{margin:clamp(14px,1.9vw,38px) 0 0;max-width:23em;font:500 var(--f-b)/1.4 var(--sans);color:var(--ax-ink)}
 .ac-hero-row{display:flex;align-items:center;flex-wrap:wrap;gap:clamp(14px,2vw,40px);margin-top:clamp(18px,2.3vw,46px)}
 
 /* ---------- 03 · «Как пройти регистрацию?»: маршрут на тонкой линии ---------- */
-.ac-reg{position:relative;isolation:isolate;background:linear-gradient(180deg,#f3eee3 0,#ede4d2 26%,var(--ac-band) 58%,var(--ac-bg2) 100%)}
-.ac-reg::before{content:"";position:absolute;inset:0;z-index:-1;pointer-events:none;background:url(../assets/bg/stone-grain.webp?v=9fff6df6) 0 0/512px 512px;opacity:.5}
+.ac-reg{position:relative;z-index:3;isolation:isolate;background:linear-gradient(180deg,#f1e8d2 0,#ebdfc4 26%,var(--ac-band) 58%,var(--ac-bg2) 100%)}
+.ac-reg::before{content:"";position:absolute;inset:0;z-index:-1;pointer-events:none;background:url(../assets/bg/stone-grain.webp?v=1471d41a) 0 0/512px 512px;opacity:.5}
 .ac-reg-in{position:relative;align-items:start;padding:clamp(24px,3.3vw,68px) 0 clamp(24px,3.1vw,64px)}
 .ac-reg-t p{margin-top:clamp(6px,.75vw,14px)}
 .ac-steps{position:relative;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:0 clamp(10px,1.9vw,40px);margin:clamp(4px,.5vw,10px) 0 0;padding:clamp(16px,1.7vw,34px) 0 0;list-style:none}
@@ -109,9 +109,9 @@ body[data-page="training"].menu-open .hdr,body[data-page="training"].search-open
 .ac-tl{position:absolute;inset:0;z-index:2;margin:0;padding:0;list-style:none}
 .ac-tc{display:contents}
 /* фото поверх рендера: ровно в проёме паспарту; при наведении «зажигается» — без стекла и бликов */
-.ac-tc-ph{position:absolute;left:calc(var(--x) * 100%);top:calc(var(--y) * 100%);width:calc(var(--w) * 100%);height:calc(var(--h) * 100%);z-index:1;overflow:hidden;pointer-events:none;background:#d9d0c0;border-radius:.25cqw;opacity:0;transition:opacity .5s var(--ac-ease)}
-.ac-tc-ph img{position:absolute;inset:0;display:block;width:100%;height:100%;object-fit:cover;object-position:50% 14%;transform:scale(1.015);transition:transform 1.4s var(--ac-ease)}
-.ac-tc-ph::after{content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;box-shadow:inset 0 .3cqw .8cqw -.2cqw rgba(18,10,2,.35)}
+.ac-tc-ph{position:absolute;left:calc(var(--x) * 100%);top:calc(var(--y) * 100%);width:calc(var(--w) * 100%);height:calc(var(--h) * 100%);z-index:1;overflow:hidden;pointer-events:none;background:#d9d0c0;border-radius:.25cqw;opacity:1;transition:opacity .5s var(--ac-ease)}
+.ac-tc-ph img{position:absolute;inset:0;display:block;width:100%;height:100%;object-fit:cover;object-position:50% 14%;transform:scale(1.015);transition:transform 1.6s var(--ac-ease)}
+.ac-tc-ph::after{content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;background:linear-gradient(118deg,rgba(255,250,236,.16) 0,rgba(255,250,236,.03) 38%,rgba(255,250,236,0) 56%);box-shadow:inset 0 .3cqw .8cqw -.2cqw rgba(18,10,2,.35)}
 .ac-tc-mono{position:absolute;inset:0;display:grid;place-items:center;font:500 clamp(24px,2.6vw,46px)/1 var(--serif);color:rgba(22,34,62,.5)}
 /* пустой проём: когда портрет «снят со стены» и вышел на передний план */
 .ac-tc-void{position:absolute;left:calc(var(--x) * 100%);top:calc(var(--y) * 100%);width:calc(var(--w) * 100%);height:calc(var(--h) * 100%);z-index:1;pointer-events:none;border-radius:.25cqw;opacity:0;transition:opacity .45s var(--ac-ease);
@@ -122,14 +122,22 @@ body[data-page="training"].menu-open .hdr,body[data-page="training"].search-open
   border-radius:.3cqw;transition:box-shadow .6s var(--ac-ease)}
 .ac-tc-frame:focus-visible{outline:2px solid #f2dca4;outline-offset:3px}
 .ac-tc-cap{position:absolute;left:calc(var(--px) * 100%);top:calc(var(--py) * 100%);width:calc(var(--pw) * 100%);height:calc(var(--ph) * 100%);z-index:2;display:grid;align-content:center;justify-items:center;gap:.1em;padding:0 3%;text-align:center;cursor:pointer;overflow:hidden}
-.ac-tc-cap b{font:400 max(12.5px,1.12cqw)/1.05 var(--serif);letter-spacing:-.006em;color:#16223e;transition:color .4s var(--ac-ease)}
-.ac-tc-cap em{font:600 max(9px,.68cqw)/1.2 var(--sans);font-style:normal;color:#16223e;white-space:nowrap}
+.ac-tc-cap b{font:400 max(12.5px,1.12cqw)/1.05 var(--serif);letter-spacing:-.006em;color:#16223e;transition:color .5s var(--ac-ease),letter-spacing .9s var(--ac-ease),transform .9s var(--ac-ease)}
+.ac-tc-cap em{font:600 max(9px,.68cqw)/1.2 var(--sans);font-style:normal;color:#16223e;white-space:nowrap;transition:color .5s var(--ac-ease),transform .9s var(--ac-ease)}
+.ac-tc-cap::before{content:"";position:absolute;inset:0;z-index:-1;pointer-events:none;opacity:0;transform:translateX(-120%);background:linear-gradient(104deg,rgba(255,248,226,0) 26%,rgba(255,248,226,.92) 50%,rgba(255,248,226,0) 74%)}
+.ac-tc-cap::after{content:"";position:absolute;left:50%;bottom:9%;width:46%;height:1px;pointer-events:none;opacity:0;transform:translateX(-50%) scaleX(0);background:linear-gradient(90deg,rgba(184,137,59,0),#b8893b 50%,rgba(184,137,59,0));transition:transform 1s var(--ac-ease),opacity .6s var(--ac-ease)}
 .ac-tc-cap small{display:none}
 @media (hover:hover){
   .ac-tc:hover .ac-tc-ph,.ac-tc:has(.ac-tc-frame:focus-visible) .ac-tc-ph{opacity:1}
-  .ac-tc:hover .ac-tc-ph img{transform:scale(1.07)}
+  .ac-tc:hover .ac-tc-ph img{transform:scale(1.045)}
   .ac-tc:hover .ac-tc-frame{box-shadow:0 0 0 .16cqw rgba(240,208,138,.85),0 0 3.2cqw rgba(238,198,112,.45)}
-  .ac-tc:hover .ac-tc-cap b{color:#1a3270}}
+  .ac-tc:hover .ac-tc-cap b{color:#1a3270;letter-spacing:.01em;transform:translateY(-.08cqw)}
+  .ac-tc:hover .ac-tc-cap em{color:#2a4a8a;transform:translateY(-.04cqw)}
+  .ac-tc:hover .ac-tc-cap::before{opacity:1;transform:translateX(120%);transition:transform 1.25s var(--ac-ease),opacity .25s ease}
+  .ac-tc:hover .ac-tc-cap::after{opacity:1;transform:translateX(-50%) scaleX(1)}
+  /* курсор на самой плашке (низ карточки): акцент сильнее — фото «подаётся» к зрителю, подсветка рамки ярче */
+  .ac-tc:has(.ac-tc-cap:hover) .ac-tc-ph img{transform:scale(1.075)}
+  .ac-tc:has(.ac-tc-cap:hover) .ac-tc-frame{box-shadow:0 0 0 .2cqw rgba(240,208,138,1),0 0 4.2cqw rgba(238,198,112,.6)}}
 .ac-tc:has(.ac-tc-frame:focus-visible) .ac-tc-ph{opacity:1}
 
 .ac-wall.no-wall{position:relative;display:block;aspect-ratio:auto;container-type:normal;overflow:visible;margin:clamp(6px,1vw,18px) auto 0;width:min(calc(100% - 2 * var(--ac-g,24px)),1560px);padding:clamp(22px,3.4vw,52px) clamp(16px,3vw,46px) clamp(26px,3.8vw,56px);border-radius:clamp(10px,1.1vw,20px);
@@ -155,7 +163,7 @@ body[data-page="training"].menu-open .hdr,body[data-page="training"].search-open
 .ac-tmore.is-open .ac-tc{opacity:1;transform:none}
 
 /* ---------- 02 · календарь семинаров ---------- */
-.ac-cal{position:relative;isolation:isolate;background:linear-gradient(180deg,var(--ac-bg2) 0,var(--ac-bg) 30%,var(--ac-bg) 78%,#f3eee3 100%);padding:clamp(26px,3.2vw,66px) 0 clamp(24px,2.8vw,58px)}
+.ac-cal{position:relative;isolation:isolate;background:linear-gradient(180deg,var(--ac-bg2) 0,var(--ac-bg) 30%,var(--ac-bg) 78%,#f1e8d2 100%);padding:clamp(26px,3.2vw,66px) 0 clamp(24px,2.8vw,58px)}
 .ac-cal .ac-side{padding-top:clamp(6px,1.1vw,24px)}
 .ac-filters{position:relative;z-index:4;display:flex;align-items:center;justify-content:space-between;gap:10px clamp(10px,1.4vw,28px)}
 .ac-cities{display:flex;flex-wrap:wrap;gap:clamp(6px,1.25vw,26px);margin:0}
@@ -291,7 +299,7 @@ body[data-page="training"].menu-open .hdr,body[data-page="training"].search-open
 .ac-page .ac-faq .faq-q .pm::after{transform:rotate(90deg)}
 .ac-page .ac-faq .faq-item.open .faq-q .pm::after{transform:rotate(0)}
 .ac-page .ac-faq .faq-a p{margin:0;padding:0 clamp(18px,2vw,40px) clamp(10px,1.1vw,22px) 0;font:400 var(--f-xs)/1.55 var(--sans);color:var(--ac-mut)}
-.ac-pub-half{position:relative;isolation:isolate;min-width:0;overflow:hidden;background:linear-gradient(105deg,#ebe1ce 0,#e6dac5 100%);padding:clamp(20px,2.7vw,56px) var(--ac-g) clamp(22px,2.6vw,54px) clamp(16px,2.3vw,48px)}
+.ac-pub-half{position:relative;isolation:isolate;min-width:0;overflow:hidden;background:linear-gradient(105deg,#e8dabc 0,#e6dac5 100%);padding:clamp(20px,2.7vw,56px) var(--ac-g) clamp(22px,2.6vw,54px) clamp(16px,2.3vw,48px)}
 .ac-mag{position:absolute;right:0;bottom:0;top:0;z-index:-1;width:66%;margin:0;-webkit-mask-image:linear-gradient(90deg,transparent 0,#000 30%);mask-image:linear-gradient(90deg,transparent 0,#000 30%)}
 .ac-mag img{display:block;width:100%;height:100%;object-fit:cover;object-position:60% 62%}
 .ac-pub-copy{max-width:46%}
@@ -328,17 +336,18 @@ body[data-page="training"].menu-open .hdr,body[data-page="training"].search-open
 /* строка «Спросите Стеллу» на этой странице — после вопросов и статей, в тёплой гамме страницы */
 .ac-page .g-entry{width:calc(100% - 2 * var(--ac-g));max-width:1800px;margin:clamp(14px,1.7vw,34px) auto clamp(2px,.4vw,8px);border:1px solid var(--ac-line);background:var(--ac-card);box-shadow:0 22px 34px -28px rgba(96,62,30,.5)}
 .ac-page .g-entry .btn-fill{background:var(--ac-navy);border-color:var(--ac-navy);color:#fff}
-.ac-page .g-entry .chip{background:#fdfbf6;border-color:var(--ac-line)}
+.ac-page .g-entry .chip{background:#fbf5e5;border-color:var(--ac-line)}
 
 /* ---------- карточка преподавателя: фото выезжает на передний план, остальное затухает и размывается, проявляются сведения ---------- */
 .ac-sp{--ac-navy:var(--navy,#0b1a33);--ac-cardg:linear-gradient(135deg,#fdfcf8 0%,#f7f2e6 52%,#efe6d2 100%);--ac-line:rgba(120,84,40,.2);--ac-mut:#625a4d;--ac-ease:cubic-bezier(.2,.75,.15,1);position:fixed;inset:0;z-index:170;display:grid;place-items:center;padding:clamp(14px,3vw,48px);overflow:auto;overscroll-behavior:contain}
 .ac-sp[hidden]{display:none}
-.ac-sp-bg{position:fixed;inset:0;background:radial-gradient(70% 90% at 28% 40%,rgba(30,44,78,.58),rgba(8,16,34,.88));-webkit-backdrop-filter:blur(16px) saturate(.8);backdrop-filter:blur(16px) saturate(.8);opacity:0;transition:opacity .6s var(--ac-ease)}
+.ac-sp-bg{position:fixed;inset:0;background:radial-gradient(70% 90% at 28% 40%,rgba(30,44,78,.58),rgba(8,16,34,.88));-webkit-backdrop-filter:blur(16px) saturate(.8);backdrop-filter:blur(16px) saturate(.8);opacity:0;transition:opacity .85s var(--ac-ease)}
 .ac-sp.is-in .ac-sp-bg{opacity:1}
 .ac-sp-stage{position:relative;display:grid;grid-template-columns:auto minmax(0,1fr);align-items:center;gap:clamp(22px,3.8vw,68px);width:min(1180px,100%);margin:auto}
 .ac-sp-photo{position:relative;z-index:2;width:min(27vw,390px,calc(66vh * var(--sp-ar,.934)));aspect-ratio:var(--sp-ar,.934);container-type:inline-size;transform-origin:0 0;will-change:transform;margin:clamp(14px,2vw,30px)}
 .ac-sp-ring{display:none}
-.ac-sp-img{position:absolute;inset:0;border-radius:.6cqw;overflow:hidden;background:#d9d0c0;box-shadow:0 3cqw 9cqw -2cqw rgba(0,0,0,.7),0 0 0 .5cqw rgba(255,255,255,.5)}
+.ac-sp-img{position:absolute;inset:0;border-radius:.6cqw;overflow:hidden;background:#d9d0c0;box-shadow:0 1cqw 3cqw -1cqw rgba(0,0,0,.45),0 0 0 .5cqw rgba(255,255,255,.5);transition:box-shadow 1.1s var(--ac-ease)}
+.ac-sp.is-in .ac-sp-img{box-shadow:0 3cqw 9cqw -2cqw rgba(0,0,0,.7),0 0 0 .5cqw rgba(255,255,255,.5)}
 .ac-sp-img img{position:absolute;inset:0;display:block;width:100%;height:100%;object-fit:cover;object-position:50% 14%;transition:opacity .28s ease}
 .ac-sp-photo.is-swap .ac-sp-img img{opacity:0}
 .ac-sp-img::after{content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;background:linear-gradient(112deg,rgba(255,255,255,.2) 0,rgba(255,255,255,.04) 32%,rgba(255,255,255,0) 50%)}
@@ -346,7 +355,9 @@ body[data-page="training"].menu-open .hdr,body[data-page="training"].search-open
 .ac-sp.is-in .ac-sp-card{opacity:1;transform:none}
 .ac-sp-card>*{--k:0}
 .ac-sp.is-in .ac-sp-card>*:not(.ac-sp-x){animation:acspUp .8s var(--ac-ease) calc(.42s + var(--k) * .08s) backwards}
-@keyframes acspUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
+@keyframes acspUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+@keyframes acspInk{from{clip-path:inset(0 100% 0 0)}to{clip-path:inset(0 -2% 0 0)}}
+.ac-sp.is-in .ac-sp-name .s{animation:acspInk 1.05s var(--ac-ease) .5s backwards}
 .ac-sp-card.is-swap{opacity:0;transform:translateX(-14px);transition:opacity .2s ease,transform .2s ease}
 .ac-sp-x{position:absolute;right:clamp(12px,1.2vw,20px);top:clamp(12px,1.2vw,20px);display:grid;place-items:center;width:42px;height:42px;border:1px solid rgba(22,34,62,.25);border-radius:50%;background:rgba(255,255,255,.7);color:#16223e;cursor:pointer;transition:background-color .3s,color .3s,transform .5s var(--ac-ease)}
 .ac-sp-x:hover{background:#16223e;color:#fff;transform:rotate(90deg)}
@@ -382,7 +393,7 @@ html.ac-sp-on .asst-fab,html.ac-sp-on .qc{opacity:0;pointer-events:none}
 .ac-sp-btn.o{background:transparent;color:#16223e}
 .ac-sp-btn.o:hover{background:#16223e;color:#fff}
 .ac-sp-btn:focus-visible,.ac-sp-nav button:focus-visible,.ac-sp-x:focus-visible{outline:2px solid #16223e;outline-offset:3px}
-@media (prefers-reduced-motion:reduce){.ac-sp-bg,.ac-sp-card,.ac-sp-ring,.ac-tc-ph,.ac-tc-ph img,.ac-tc-void,.ac-tc-frame{transition-duration:.01ms!important;transition-delay:0s!important}.ac-sp.is-in .ac-sp-card>*:not(.ac-sp-x){animation:none}}
+@media (prefers-reduced-motion:reduce){.ac-sp-bg,.ac-sp-card,.ac-sp-ring,.ac-sp-img,.ac-tc-ph,.ac-tc-ph img,.ac-tc-void,.ac-tc-frame,.ac-tc-cap b,.ac-tc-cap em,.ac-tc-cap::before,.ac-tc-cap::after{transition-duration:.01ms!important;transition-delay:0s!important}.ac-sp.is-in .ac-sp-card>*:not(.ac-sp-x),.ac-sp.is-in .ac-sp-name .s{animation:none}}
 
 /* ---------- адаптив ---------- */
 @media (max-width:1100px){
@@ -422,7 +433,7 @@ html.ac-sp-on .asst-fab,html.ac-sp-on .qc{opacity:0;pointer-events:none}
   .ac-head-row .ac-side-p{grid-column:1/-1;grid-row:2}
   .ac-head-row .ac-btn-o{grid-column:2;grid-row:1}
   .ac-hall-img{object-position:50% 44%}
-  .ac-hall::after{background:linear-gradient(180deg,rgba(245,243,238,.5) 0,rgba(245,243,238,0) 18%),linear-gradient(180deg,rgba(241,234,219,0) 78%,rgba(241,234,219,.6) 92%,#f1eadb 100%)}
+  .ac-hall::after{background:linear-gradient(180deg,rgba(245,243,238,.5) 0,rgba(245,243,238,0) 18%),linear-gradient(180deg,rgba(241,234,219,0) 78%,rgba(241,234,219,.6) 92%,#eee3cb 100%)}
   .ac-reg-in{gap:18px}
   .ac-cal-grid{grid-template-columns:minmax(0,1fr)}
   .ac-cal-col .sx-cal{max-width:420px}
@@ -451,7 +462,7 @@ html.ac-sp-on .asst-fab,html.ac-sp-on .qc{opacity:0;pointer-events:none}
 @media (max-width:760px){
   .ac-page{--f-h1:clamp(34px,9.6vw,56px);--f-h2:clamp(24px,6.6vw,34px);--f-b:15.5px;--f-s:14px;--f-xs:12.5px;--ac-r:10px;margin-top:0}
   body[data-page="training"] .hdr{background:var(--milk,#f5f2ec);border-bottom-color:var(--line-soft,rgba(0,0,0,.08))}
-  .ac-hero{display:block;background:linear-gradient(180deg,var(--ac-bg) 0,var(--ac-bg) 76%,var(--ac-bg2) 100%)}      /* нижний край зала сходится с цветом следующей зоны (#f1eadb) без ступеньки */
+  .ac-hero{display:block;background:linear-gradient(180deg,var(--ac-bg) 0,var(--ac-bg) 76%,var(--ac-bg2) 100%)}      /* нижний край зала сходится с цветом следующей зоны (#eee3cb) без ступеньки */
   .ac-hall{position:relative;inset:auto;z-index:0;aspect-ratio:1.28/1}
   .ac-hall-in{inset:0}
   .ac-hall-img{object-position:50% 50%}

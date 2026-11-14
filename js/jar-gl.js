@@ -91,7 +91,19 @@ vec2 srcUv(vec3 P, out float zs) {
   float S = 36.0 / uSL * max(zs, 0.02);
   return vec2(0.5 + dot(q, uSR) / (S * uAsp.x), 0.5 - dot(q, uSU) / (S * uAsp.y));
 }
-float zOfUv(vec2 uv) { return zAt(ivec2(floor(clamp(uv, vec2(0.0), vec2(0.99999)) * vec2(uDSize)))); }
+/* глубина кадра в точке uv. Раньше — ближайший тексель карты (960×540 на кадр 1920×1080): силуэт, найденный по лучу, шёл ступеньками в один тексель (2 px кадра) — «зубчики» на диагональных кромках плит.
+   Теперь: на гладкой поверхности — билинейная глубина; на скачке глубины (два слоя: предмет и то, что за ним) — граница слоёв проходит по нулевой линии билинейно интерполированной «разности с серединой»
+   (как контур в marching squares), поэтому диагональная кромка получается прямой, а не лесенкой; сама глубина по обе стороны остаётся точной (ближний или дальний слой, без смеси). */
+float zOfUv(vec2 uv) {
+  vec2 p = clamp(uv, vec2(0.0), vec2(0.99999)) * vec2(uDSize) - 0.5;
+  ivec2 i0 = ivec2(floor(p)); vec2 f = p - vec2(i0);
+  float z00 = zAt(i0), z10 = zAt(i0 + ivec2(1, 0)), z01 = zAt(i0 + ivec2(0, 1)), z11 = zAt(i0 + ivec2(1, 1));
+  float zlo = min(min(z00, z10), min(z01, z11)), zhi = max(max(z00, z10), max(z01, z11));
+  if (zhi - zlo <= uEdge * zlo) return mix(mix(z00, z10, f.x), mix(z01, z11, f.x), f.y);
+  float md = 0.5 * (zlo + zhi);
+  float sg = mix(mix(z00 - md, z10 - md, f.x), mix(z01 - md, z11 - md, f.x), f.y);
+  return sg < 0.0 ? zlo : zhi;
+}
 void main() {
   vec3 shade = jarShade();
   vec2 gx = dFdx(vUv * uTexSize), gy = dFdy(vUv * uTexSize);
@@ -472,7 +484,8 @@ void main() {
     const has = k => !!(keys[k] || lows[k]);
 
     const camS = {}, camT = {};
-    const refineN = () => { const o = window.__ASTREYA_GL_REFINE; return o !== undefined ? +o : (cfg.refine === undefined ? (portrait ? 14 : 20) : cfg.refine); };          // число шагов поиска пересечения на кромках (0 — прежний режим); __ASTREYA_GL_REFINE — только для сравнений
+    let refOv = -1;                                                                  // регулятор нагрузки (js/jar.js) может временно уменьшить число шагов уточнения кромок (−1 — как в настройке)
+    const refineN = () => { const o = window.__ASTREYA_GL_REFINE; return o !== undefined ? +o : refOv >= 0 ? refOv : (cfg.refine === undefined ? (portrait ? 14 : 20) : cfg.refine); };          // число шагов поиска пересечения на кромках (0 — прежний режим); __ASTREYA_GL_REFINE — только для сравнений
     const jScale = (cfg.track.jarScale || 0.02), jCz = (cfg.track.jarCenterZ || 0.057);
     function layer(i, k, t, sh) {
       const e = keys[k] || lows[k]; track.at(Phi[k], camS);
@@ -624,7 +637,7 @@ void main() {
       if (ibo) gl.deleteBuffer(ibo); [P0, P1, P2, P3, P4].forEach(q => q && gl.deleteProgram(q.p));
       if (!keepContext) { try { const ext = gl.getExtension('WEBGL_lose_context'); if (ext) ext.loseContext(); } catch (e) { /* — */ } }
     }
-    return {gl, setSize, setKey, setKeyShared, dropKey, hasKey, adoptDepth(k) { const e = keys[k]; if (e) e.shared = false; }, setLow, dropLow, hasLow, plan, draw, drawSphere, setSphereTex, setSphere, destroy, setGridScale, get sphereReady() { return !!(P4 && sph.ready); }, get hasSphere() { return !!P4; }, camAt: p => track.at(p, {}), keys, get size() { return [W, H]; }};
+    return {gl, setSize, setRefine(n) { refOv = n; }, setKey, setKeyShared, dropKey, hasKey, adoptDepth(k) { const e = keys[k]; if (e) e.shared = false; }, setLow, dropLow, hasLow, plan, draw, drawSphere, setSphereTex, setSphere, destroy, setGridScale, get sphereReady() { return !!(P4 && sph.ready); }, get hasSphere() { return !!P4; }, camAt: p => track.at(p, {}), keys, get size() { return [W, H]; }};
   }
 
 

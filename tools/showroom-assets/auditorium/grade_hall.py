@@ -14,7 +14,7 @@
 """
 import sys, os
 import numpy as np, cv2
-from PIL import Image
+from PIL import Image, ImageFilter
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.join(HERE, '..', '..', '..', 'assets', 'academy')
@@ -23,8 +23,8 @@ SRC = args[0] if args else '/tmp/aud_graded.png'
 OUT = sys.argv[sys.argv.index('--out') + 1] if '--out' in sys.argv else ROOT
 if '--out' in sys.argv and OUT in args: args.remove(OUT); SRC = args[0] if args else '/tmp/aud_graded.png'
 
-T = dict(L_mean=float(os.environ.get('G_L', 63.5)), L_contrast=float(os.environ.get('G_LC', 1.09)), clarity=float(os.environ.get('G_CLARITY', .32)),
-         a_mean=float(os.environ.get('G_A', 1.6)), b_mean=float(os.environ.get('G_B', 13.2)), chroma_max=float(os.environ.get('G_CMAX', 30)))
+T = dict(L_mean=float(os.environ.get('G_L', 64.0)), L_contrast=float(os.environ.get('G_LC', 1.09)), clarity=float(os.environ.get('G_CLARITY', .32)),
+         a_mean=float(os.environ.get('G_A', .7)), b_mean=float(os.environ.get('G_B', 10.8)), chroma_max=float(os.environ.get('G_CMAX', 24)))      # общий цвет сайта: hue ≈ 85–86°, a ≈ 0,8, b ≈ 10–13 (было a 1,6 / b 13,2 / chroma ≤ 30 — «слишком жёлтый» зал, hue 83°)
 
 
 def lab_of(rgb8):
@@ -63,13 +63,15 @@ def main():
     print('после:', stats(lab_of(full)))
     H, W = full.shape[:2]
     os.makedirs(OUT, exist_ok=True)
-    big = Image.fromarray(full); tw = 2880
+    big = Image.fromarray(full); tw = int(os.environ.get('G_W', 3840 if W >= 3840 else 2880))          # 4K-рендер → hall.webp 3840 (ретина: первый экран ≈ 1900–2000 CSS px × 2); меньше исходник — как было, 2880
     if W != tw: big = big.resize((tw, round(tw * H / W)), Image.LANCZOS)
-    big.save(os.path.join(OUT, 'hall.webp'), 'WEBP', quality=88, method=6)
-    sm = big.resize((1500, round(1500 * big.height / big.width)), Image.LANCZOS); sm.save(os.path.join(OUT, 'hall-s.webp'), 'WEBP', quality=88, method=6)
+    sharp = lambda im: im.filter(ImageFilter.UnsharpMask(radius=1.1, percent=int(os.environ.get('G_SHARP', 55)), threshold=2))      # лёгкая нерезкая маска после уменьшения: мелкий рисунок (штукатурка, ткань, латунь) читается чётче, ореолов нет
+    big = sharp(big)
+    big.save(os.path.join(OUT, 'hall.webp'), 'WEBP', quality=int(os.environ.get('G_Q', 88)), method=6)
+    sm = sharp(big.resize((1920, round(1920 * big.height / big.width)), Image.LANCZOS)); sm.save(os.path.join(OUT, 'hall-s.webp'), 'WEBP', quality=88, method=6)
     # телефон: кроп 1,28:1 вокруг экрана и первых рядов (весь кадр по высоте, центр по ширине)
     cw = round(big.height * 1.28); x0 = (big.width - cw) // 2
-    mob = big.crop((x0, 0, x0 + cw, big.height)); mob = mob.resize((1200, round(1200 * mob.height / mob.width)), Image.LANCZOS)
+    mob = big.crop((x0, 0, x0 + cw, big.height)); mob = sharp(mob.resize((1500, round(1500 * mob.height / mob.width)), Image.LANCZOS))
     mob.save(os.path.join(OUT, 'hall-m.webp'), 'WEBP', quality=86, method=6)
     for n in ('hall.webp', 'hall-s.webp', 'hall-m.webp'):
         p = os.path.join(OUT, n); print('%-12s %s  %d КБ' % (n, Image.open(p).size, os.path.getsize(p) // 1024))

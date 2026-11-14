@@ -229,11 +229,11 @@ a.tag{min-height:24px}
 .newscard .cov::before{display:none}
 .newscard .cov::after{content:"";position:absolute;left:0;right:0;bottom:0;height:70%;background:linear-gradient(180deg,rgba(11,26,51,0),rgba(11,26,51,.66));pointer-events:none}
 .newscard .cov span{z-index:1;margin:0 0 14px 18px;padding:6px 11px;border-radius:999px;background:rgba(11,26,51,.58);font-size:11px}
-.newscard[data-cat="news"] .cov{--cv:url(../assets/brands/hero.webp?v=9fff6df6);--cvp:14% 55%}
-.newscard[data-cat="sale"] .cov{--cv:url(../assets/brands/hero.webp?v=9fff6df6);--cvp:52% 62%}
-.newscard[data-cat="novelty"] .cov{--cv:url(../assets/academy/mag-s.webp?v=9fff6df6);--cvp:62% 62%}
-.newscard[data-cat="edu"] .cov{--cv:url(../assets/academy/hall-s.webp?v=9fff6df6);--cvp:36% 64%;--cs:190% auto}
-.newscard[data-cat="event"] .cov{--cv:url(../assets/academy/hall-s.webp?v=9fff6df6);--cvp:90% 50%}
+.newscard[data-cat="news"] .cov{--cv:url(../assets/brands/hero.webp?v=1471d41a);--cvp:14% 55%}
+.newscard[data-cat="sale"] .cov{--cv:url(../assets/brands/hero.webp?v=1471d41a);--cvp:52% 62%}
+.newscard[data-cat="novelty"] .cov{--cv:url(../assets/academy/mag-s.webp?v=1471d41a);--cvp:62% 62%}
+.newscard[data-cat="edu"] .cov{--cv:url(../assets/academy/hall-s.webp?v=1471d41a);--cvp:36% 64%;--cs:190% auto}
+.newscard[data-cat="event"] .cov{--cv:url(../assets/academy/hall-s.webp?v=1471d41a);--cvp:90% 50%}
 .newscard .meta{align-items:center}
 .newscard .meta .lnk{font-size:11px}
 .adv{display:flex;flex-direction:column;gap:10px}

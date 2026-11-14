@@ -544,11 +544,49 @@ def mag_page(path, side, w=1650, h=2175):
     im.save(path); return path
 
 
+TEXD = os.path.join(HERE, 'textures')                                   # общий пак CC0-текстур (docs/TEXTURES.md): те же, что в зале «Обучения», каталоге и на главной
+
+
+def pack_mat(name, slug, tile, albedo, rough=None, nstr=.5, cvar=.04, cscale=1.0):
+    """материал из пака CC0: цвет × тон (albedo — средний цвет поверхности: гамма сцены остаётся нашей), нормали и шероховатость из пака, крупные неоднородности цвета; проекция «коробкой» в мировых координатах (tile — размер плитки, ед. сцены = 10 см)"""
+    from PIL import Image
+    import numpy as np
+    m = bpy.data.materials.new(name); m.use_nodes = True; nt = m.node_tree; N = nt.nodes; Lk = nt.links
+    b = next(n for n in N if n.type == 'BSDF_PRINCIPLED')
+    tc = N.new('ShaderNodeTexCoord'); mp = N.new('ShaderNodeMapping'); mp.inputs['Scale'].default_value = (1.0 / tile,) * 3; Lk.new(tc.outputs['Object'], mp.inputs['Vector'])
+
+    def img(fn, cs):
+        pth = os.path.join(TEXD, slug, fn)
+        if not os.path.exists(pth): return None
+        t = N.new('ShaderNodeTexImage'); t.image = bpy.data.images.load(pth); t.image.colorspace_settings.name = cs; t.projection = 'BOX'; t.projection_blend = .25; Lk.new(mp.outputs[0], t.inputs['Vector']); return t
+    c = img('color.jpg', 'sRGB')
+    mean = (np.asarray(Image.open(os.path.join(TEXD, slug, 'color.jpg')).convert('RGB').resize((32, 32))).astype(np.float32) / 255) ** 2.2
+    mean = mean.reshape(-1, 3).mean(0); tint = tuple(float(albedo[i] / max(float(mean[i]), 1e-3)) for i in range(3))
+    mx = N.new('ShaderNodeMixRGB'); mx.blend_type = 'MULTIPLY'; mx.inputs['Fac'].default_value = 1.0; mx.inputs['Color2'].default_value = (*tint, 1.0); Lk.new(c.outputs['Color'], mx.inputs['Color1']); out = mx.outputs['Color']
+    if cvar:
+        nz = N.new('ShaderNodeTexNoise'); nz.inputs['Scale'].default_value = cscale / tile * .35; nz.inputs['Detail'].default_value = 5; nz.inputs['Roughness'].default_value = .55; Lk.new(tc.outputs['Object'], nz.inputs['Vector'])
+        mr = N.new('ShaderNodeMapRange'); mr.inputs['From Min'].default_value = .3; mr.inputs['From Max'].default_value = .7; mr.inputs['To Min'].default_value = 1 - cvar; mr.inputs['To Max'].default_value = 1 + cvar; Lk.new(nz.outputs['Fac'], mr.inputs['Value'])
+        m2 = N.new('ShaderNodeMixRGB'); m2.blend_type = 'MULTIPLY'; m2.inputs['Fac'].default_value = 1.0; Lk.new(out, m2.inputs['Color1']); Lk.new(mr.outputs['Result'], m2.inputs['Color2']); out = m2.outputs['Color']
+    Lk.new(out, b.inputs['Base Color'])
+    if rough is None:
+        r = img('rough.jpg', 'Non-Color')
+        if r: Lk.new(r.outputs['Color'], b.inputs['Roughness'])
+    else: b.inputs['Roughness'].default_value = rough
+    n = img('normal.jpg', 'Non-Color')
+    if n:
+        nm = N.new('ShaderNodeNormalMap'); nm.inputs['Strength'].default_value = nstr; Lk.new(n.outputs['Color'], nm.inputs['Color']); Lk.new(nm.outputs['Normal'], b.inputs['Normal'])
+    return m
+
+
 def build_mag(sc):
     """«Полезные статьи»: раскрытый журнал на каменной плите, рядом ваза с оливковыми ветками, очки и стопка книг; тёплая стена с мягкой тенью листвы (сцена в единицах по 10 см)"""
     M = mats(); rnd = random.Random(8); leaves = oliv_leaves()
-    S.box('wall', M['wall'], -80, 80, 9.0, 12.0, -10, 60, G)
-    S.box('slab', trav_veined('mag_slab', (.95, .88, .76), 'Z', F('MVEIN', .9), sc=F('MSC', 1.2)), -60, 60, -16, 9.0, -1.0, 0.0, G, bev=.06)
+    if os.environ.get('MPACK', '1') == '1':                                                  # стена и плита — из общего пака CC0 (штукатурка со следами шпателя, травертин с прожилками): живая фактура вместо процедурной; MPACK=0 — прежний вид
+        S.box('wall', pack_mat('mag_wall', 'plaster-light-trowel', F('MWT', 9.0), (.93, .87, .76), nstr=F('MWN', .7), cvar=.05), -80, 80, 9.0, 12.0, -10, 60, G)
+        S.box('slab', pack_mat('mag_slab', 'travertine-ivory', F('MST', 20.0), (.93, .86, .73), nstr=F('MSN', .6), cvar=.035), -60, 60, -16, 9.0, -1.0, 0.0, G, bev=.06)
+    else:
+        S.box('wall', M['wall'], -80, 80, 9.0, 12.0, -10, 60, G)
+        S.box('slab', trav_veined('mag_slab', (.95, .88, .76), 'Z', F('MVEIN', .9), sc=F('MSC', 1.2)), -60, 60, -16, 9.0, -1.0, 0.0, G, bev=.06)
     root = bpy.data.objects.new('mag', None); bpy.context.collection.objects.link(root); root.location = (F('MGX', -1.2), F('MGY', -1.6), 0.0); root.rotation_euler = (0, 0, math.radians(F('MGR', 13)))
     PW, PD = 2.2, 2.95
     for side in (0, 1):                                        # две страницы с изгибом к корешку и приподнятым внешним краем
@@ -611,7 +649,7 @@ def main():
     else:
         build_shade(sc); lights(sc); cam = camera(sc, (0.0, -60.0, 20.0), (0.0, 0.0, 22.0), 30.0)
     sc.render.film_transparent = (SCENE == 'arch')
-    if SCENE == 'mag': sc.view_settings.exposure = F('EXPO', -0.85)
+    if SCENE == 'mag': sc.view_settings.exposure = F('EXPO', -0.95)
     print('сцена собрана, объектов %d' % len(bpy.data.objects), flush=True)
     if MODE == 'regrade':
         export(SCENE, '/tmp/ac_%s_full.png' % SCENE); print('regrade done'); return
@@ -623,8 +661,9 @@ def main():
         try:
             from PIL import Image
             import numpy as np
-            g = S.grade(np.asarray(Image.open(sc.render.filepath).convert('RGB')), sat=F('AH_SAT', 1.30), gamma=F('AH_GAMMA', .85), lift=F('AH_LIFT', .05))
-            g = np.clip(g * np.array([float(x) for x in os.environ.get('AH_WARM', '1.0,.985,.95').split(',')], np.float32), 0, 255).astype(np.uint8); Image.fromarray(g).save(sc.render.filepath.replace('.png', '_g.jpg'), quality=92)
+            mg_ = SCENE == 'mag'
+            g = S.grade(np.asarray(Image.open(sc.render.filepath).convert('RGB')), sat=F('AH_SAT', 1.25 if mg_ else 1.30), gamma=F('AH_GAMMA', .90 if mg_ else .85), lift=F('AH_LIFT', .03 if mg_ else .05))
+            g = np.clip(g * np.array([float(x) for x in os.environ.get('AH_WARM', '1.0,.99,.972' if mg_ else '1.0,.985,.95').split(',')], np.float32), 0, 255).astype(np.uint8); Image.fromarray(g).save(sc.render.filepath.replace('.png', '_g.jpg'), quality=92)
         except Exception as e: print('grade skipped', e)
         print('preview done'); return
     os.makedirs(OUT, exist_ok=True)
@@ -664,8 +703,9 @@ def export(scene, raw):
         L = rgb.astype(np.float32) @ np.array([.299, .587, .114], np.float32); hi = np.percentile(L, 92); sh = np.clip((hi - L) / max(hi, 1), 0, 1) ** 1.2
         al = Image.fromarray(np.clip(sh * 255 * .9, 0, 255).astype(np.uint8)).filter(ImageFilter.GaussianBlur(1.2))
         base = Image.new('RGBA', al.size, (92, 62, 40, 0)); base.putalpha(al); base.save(os.path.join(OUT, 'shade.webp'), quality=80, method=6); return
-    g = S.grade(rgb, sat=F('AH_SAT', 1.30), gamma=F('AH_GAMMA', .85), lift=F('AH_LIFT', .05))
-    g = np.clip(g * np.array([float(x) for x in os.environ.get('AH_WARM', '1.0,.985,.95').split(',')], np.float32), 0, 255).astype(np.uint8)
+    mg = scene == 'mag'                                                                   # «Полезные статьи»: нейтральнее остальных сцен (на странице было «слишком жёлто» — насыщенность 1,30 и тёплый множитель 1/.985/.95 давали оранжевый тон; общий цвет сайта — hue ≈ 86°)
+    g = S.grade(rgb, sat=F('AH_SAT', 1.25 if mg else 1.30), gamma=F('AH_GAMMA', .90 if mg else .85), lift=F('AH_LIFT', .03 if mg else .05))
+    g = np.clip(g * np.array([float(x) for x in os.environ.get('AH_WARM', '1.0,.99,.972' if mg else '1.0,.985,.95').split(',')], np.float32), 0, 255).astype(np.uint8)
     im2 = Image.fromarray(g)
     if scene == 'hero':
         im2.save(os.path.join(OUT, 'hall.webp'), quality=90, method=6); im2.resize((1200, round(1200 * im2.height / im2.width)), Image.LANCZOS).save(os.path.join(OUT, 'hall-s.webp'), quality=88, method=6)

@@ -67,7 +67,7 @@ const t = (cond, name, info) => { if (cond) ok++; else bad.push(name + (info !==
   await p.hover('#teachers .ac-tc[data-id="' + T0.id + '"] .ac-tc-frame'); await p.waitForTimeout(800);
   t(await p.evaluate(id => +getComputedStyle(document.querySelector('#teachers .ac-tc[data-id="' + id + '"] .ac-tc-ph')).opacity > .95, T0.id), 'наведение «зажигает» портрет (фото без стекла поверх рендера)');
   await p.mouse.move(5, 5); await p.waitForTimeout(700);
-  t(await p.evaluate(id => +getComputedStyle(document.querySelector('#teachers .ac-tc[data-id="' + id + '"] .ac-tc-ph')).opacity < .05, T0.id), 'без наведения в проёме виден только рендер');
+  t(await p.evaluate(id => +getComputedStyle(document.querySelector('#teachers .ac-tc[data-id="' + id + '"] .ac-tc-ph')).opacity > .95, T0.id), 'в проёме всегда оригинальное фото (без ожелтения рендера), в покое и при наведении');
   await jc(p, '#teachers .ac-tc[data-id="' + T0.id + '"] .ac-tc-frame'); await p.waitForTimeout(1500);
   const sp1 = await p.evaluate(() => {
     const s = document.querySelector('.ac-sp'); if (!s || s.hidden) return null; const ph = s.querySelector('.ac-sp-photo').getBoundingClientRect(), im = s.querySelector('.ac-sp-img img'), card = s.querySelector('.ac-sp-card').getBoundingClientRect();

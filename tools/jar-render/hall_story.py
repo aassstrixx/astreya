@@ -99,6 +99,47 @@ HS = float(os.environ.get('HALL_TEX', 4.0))                              # сц�
 HALL_STYLE = os.environ.get('HALL_STYLE', '2')                    # '2' — материалы по таблице «Как использовать материалы на сайте» (известковая штукатурка, травертин, известняк, микроцемент); '1' — прежние
 
 
+TEXD = os.path.normpath(os.path.join(HERE, '..', 'showroom-assets', 'textures'))      # общий пак CC0-текстур сайта (каталог, обучение, бренды: tools/showroom-assets/textures, docs/TEXTURES.md)
+
+
+def _tex_mean(slug):
+    from PIL import Image
+    import numpy as np
+    a = (np.asarray(Image.open(os.path.join(TEXD, slug, 'color.jpg')).convert('RGB').resize((32, 32))).astype(np.float32) / 255) ** 2.2
+    return a.reshape(-1, 3).mean(0)
+
+
+def pack_mat(name, slug, tile, albedo, rough=None, nstr=.5, cvar=.05, cscale=1.2, spec=None):
+    """стена из текстур общего пака: цвет · тон (albedo — прежний средний цвет стены главной, поэтому гамма сцены не меняется, добавляются лишь живая фактура штукатурки, микрорельеф и крупные неоднородности цвета),
+    нормали и шероховатость из пака; проекция «коробкой» в координатах объекта (tile — размер плитки в единицах сцены; сцена главной — миниатюра, поэтому плитка мелкая)"""
+    m = bpy.data.materials.new(name); m.use_nodes = True; nt = m.node_tree; N = nt.nodes; Lk = nt.links
+    b = next(n for n in N if n.type == 'BSDF_PRINCIPLED')
+    tc = N.new('ShaderNodeTexCoord'); mp = N.new('ShaderNodeMapping'); mp.inputs['Scale'].default_value = (1.0 / tile,) * 3; Lk.new(tc.outputs['Object'], mp.inputs['Vector'])
+
+    def img(fn, cs):
+        pth = os.path.join(TEXD, slug, fn)
+        if not os.path.exists(pth): return None
+        t = N.new('ShaderNodeTexImage'); t.image = bpy.data.images.load(pth); t.image.colorspace_settings.name = cs; t.projection = 'BOX'; t.projection_blend = .25; Lk.new(mp.outputs[0], t.inputs['Vector']); return t
+    c = img('color.jpg', 'sRGB'); mean = _tex_mean(slug)
+    tint = tuple(float(albedo[i] / max(float(mean[i]), 1e-3)) for i in range(3))
+    mx = N.new('ShaderNodeMixRGB'); mx.blend_type = 'MULTIPLY'; mx.inputs['Fac'].default_value = 1.0; mx.inputs['Color2'].default_value = (*tint, 1.0); Lk.new(c.outputs['Color'], mx.inputs['Color1'])
+    out = mx.outputs['Color']
+    if cvar:                                                                           # крупные неоднородности цвета (±cvar): штукатурка не бывает ровной
+        nz = N.new('ShaderNodeTexNoise'); nz.inputs['Scale'].default_value = cscale / tile * .35; nz.inputs['Detail'].default_value = 5; nz.inputs['Roughness'].default_value = .55; Lk.new(tc.outputs['Object'], nz.inputs['Vector'])
+        mr = N.new('ShaderNodeMapRange'); mr.inputs['From Min'].default_value = .3; mr.inputs['From Max'].default_value = .7; mr.inputs['To Min'].default_value = 1 - cvar; mr.inputs['To Max'].default_value = 1 + cvar; Lk.new(nz.outputs['Fac'], mr.inputs['Value'])
+        m2 = N.new('ShaderNodeMixRGB'); m2.blend_type = 'MULTIPLY'; m2.inputs['Fac'].default_value = 1.0; Lk.new(out, m2.inputs['Color1']); Lk.new(mr.outputs['Result'], m2.inputs['Color2']); out = m2.outputs['Color']
+    Lk.new(out, b.inputs['Base Color'])
+    if rough is None:
+        r = img('rough.jpg', 'Non-Color')
+        if r: Lk.new(r.outputs['Color'], b.inputs['Roughness'])
+    else: b.inputs['Roughness'].default_value = rough
+    n = img('normal.jpg', 'Non-Color')
+    if n:
+        nm = N.new('ShaderNodeNormalMap'); nm.inputs['Strength'].default_value = nstr; Lk.new(n.outputs['Color'], nm.inputs['Color']); Lk.new(nm.outputs['Normal'], b.inputs['Normal'])
+    if 'Specular IOR Level' in b.inputs: b.inputs['Specular IOR Level'].default_value = .25 if spec is None else spec
+    return m
+
+
 def mats():
     M = {}
     if HALL_STYLE == '2':
@@ -110,6 +151,11 @@ def mats():
         M['stone'] = MT.travertine('hw_stone', (.88, .80, .66), 1.0, 1.2, 1.4)                   # полки и цоколь стеллажа
         M['floor'] = MT.limestone_floor('hw_floor', (.80, .72, .60), .9, .0035, .08, 5.0, rough=float(os.environ.get('HALL_FLOOR_R', .36)))                       # пол: крупноформатный известняк, отражение минимальное
         M['accent'] = MT.lime_plaster('hw_accent', tuple(float(v) for v in os.environ.get('HALL_ACCENT', '.80,.70,.54').split(',')), wave=wave, scale=HS, tone=.45)             # задняя стенка витрины слева: светлый тёплый камень-штукатурка чуть глубже тоном, чем стена (по просьбе заказчика — не синяя): тёмные флаконы и дуб читаются на ней, а свет ленты ложится мягко
+        if os.environ.get('HALL_PACK', '1') == '1':                                      # стены — из общего пака CC0 (штукатурка со следами шпателя), тон прежний; HALL_PACK=0 — прежняя процедурная штукатурка
+            slug = os.environ.get('HALL_PACK_WALL', 'plaster-light-trowel'); tl = float(os.environ.get('HALL_PACK_TILE', .34)); ns = float(os.environ.get('HALL_PACK_NS', .55)); cv = float(os.environ.get('HALL_PACK_CV', .05))
+            M['wall'] = pack_mat('hw_wall', slug, tl, (.88, .78, .61), nstr=ns, cvar=cv)
+            M['inner'] = pack_mat('hw_inner', slug, tl, (.83, .73, .57), nstr=ns, cvar=cv)
+            M['accent'] = pack_mat('hw_accent', slug, tl, tuple(float(v) for v in os.environ.get('HALL_ACCENT', '.80,.70,.54').split(',')), nstr=ns, cvar=cv)
     else:
         M['wall'] = MT.travertine('hw_wall', (1.0, .92, .80), .55, .45, 2.6, honed=True)
         M['inner'] = MT.travertine('hw_inner', (1.04, .98, .90), 1.0, .2, 1.8, honed=True)

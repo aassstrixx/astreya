@@ -211,6 +211,11 @@ const t = (cond, name, info) => { if (cond) ok++; else bad.push(name + (info !==
       await p.evaluate(() => new Promise(res => { let i = 0; const f = () => { document.body.dispatchEvent(new WheelEvent('wheel', {deltaY: 100, bubbles: true, cancelable: true})); if (++i < 16) setTimeout(f, 90); else res(); }; f(); }));
       await settle(p); const f1 = await rs(p);
       t(f1.s === f0.s + 1, 'непрерывный поток колеса — один жест: листнулся один разворот (журнал не пролетает)', {from: f0.s, to: f1.s}); }
+    { /* «вниз», а сразу следом «вверх» (хвост инерции трекпада, второй щелчок): обратный жест не гасится как продолжение прежнего — лист возвращается на разворот, откуда ушёл (раньше крутишь вверх, а журнал не отвечает) */
+      await p.evaluate(() => window.Astreya.house.openMagazine(3)); await settle(p); const r0 = await rs(p);
+      await p.evaluate(() => new Promise(res => { const w = d => document.body.dispatchEvent(new WheelEvent('wheel', {deltaY: d, bubbles: true, cancelable: true})); w(100); setTimeout(() => { w(-100); res(); }, 220); }));
+      await settle(p); const r1 = await rs(p);
+      t(r1.s === r0.s, 'колесо вниз и через 0,2 с вверх: журнал отвечает на обратный жест (возвращается на прежний разворот)', {from: r0.s, to: r1.s}); }
     { /* прокрутку остановили посередине поворота листа — лист сам доворачивается до ближайшего разворота */
       await p.evaluate(() => { window.__HOUSE_SNAP = true; window.Astreya.house.openMagazine(2); }); await settle(p);
       const bx = await p.evaluate(() => { const r = document.getElementById('house-reader'); return {top: r.getBoundingClientRect().top + scrollY, tot: r.offsetHeight - innerHeight - (parseFloat(r.style.getPropertyValue('--hrx')) || 0) * innerHeight / 100}; });

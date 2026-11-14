@@ -317,7 +317,7 @@
         fill(data(li)); li.classList.add('is-lifted');
         const photo = $('.ac-sp-photo', sp), src = rectOf(li), dst = photo.getBoundingClientRect();
         requestAnimationFrame(() => sp.classList.add('is-in'));
-        if (!still && src.width) photo.animate([{transform: flip(src, dst)}, {transform: 'none'}], {duration: 900, easing: 'cubic-bezier(.2,.75,.15,1)'});
+        if (!still && src.width) photo.animate([{transform: flip(src, dst), offset: 0, easing: 'cubic-bezier(.16,.84,.24,1)'}, {transform: 'scale(1.016)', offset: .74, easing: 'cubic-bezier(.35,0,.25,1)'}, {transform: 'none', offset: 1}], {duration: 1200});          // фото «снимается со стены» и плавно садится в центр: лёгкий «вздох» (1,6 %) в конце хода, без рывка
         setTimeout(() => { const x = $('.ac-sp-x', sp); if (x) x.focus({preventScroll: true}); }, 80);
         A.track && A.track('teacher_open', {teacher: li.dataset.id});
       };

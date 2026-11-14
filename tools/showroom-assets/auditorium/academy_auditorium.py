@@ -233,12 +233,12 @@ ZC = 8.0                       # условная высота потолка у
 
 def build():
     M = dict(
-        wall=pbr('aud_wall', 'plaster-light-smooth', 2.4, tint='#f6efe2', rough=.55, bump=.12),
-        floor=pbr('aud_floor', 'marble-white-warm', 1.4, tint='#c2b192', rough=.022, coat=1.0, bump=.06),
-        stage=pbr('aud_stage', 'marble-beige-veined', 1.6, tint='#f2e8d3', rough=.10, coat=.5, bump=.08),
+        wall=pbr('aud_wall', 'plaster-light-smooth', E('WALL_TILE', 1.7), tint=os.environ.get('WALL_TINT', '#f3eee4'), rough=.55, bump=E('WALL_NBUMP', .2)),
+        floor=pbr('aud_floor', 'marble-white-warm', 1.4, tint=os.environ.get('FLOOR_TINT', '#cdc3ae'), rough=.022, coat=1.0, bump=.06),
+        stage=pbr('aud_stage', 'marble-beige-veined', 1.6, tint=os.environ.get('STAGE_TINT', '#f0e9da'), rough=.10, coat=.5, bump=.08),
         lac=flat('aud_lacquer', '#f4ecdc', rough=.2, coat=.7), lac2=flat('aud_lacquer2', '#ede3cf', rough=.28, coat=.5),
-        ceil=flat('aud_ceiling', '#e9dec8', rough=.5),
-        brass=pbr('aud_brass', 'brass-brushed-pale', 0.6, tint='#f7e6c0', rough=.22, metal=1.0, bump=.2),
+        ceil=flat('aud_ceiling', os.environ.get('CEIL_TINT', '#e7e0d1'), rough=.5),
+        brass=pbr('aud_brass', 'brass-brushed-pale', 0.6, tint=os.environ.get('BRASS_TINT', '#f3e6cb'), rough=.22, metal=1.0, bump=.2),
         gold=flat('aud_gold', '#caa766', rough=.18, metal=1.0),
         navy=curtain('aud_navy', '#070f26'), navy_gl=flat('aud_navy_glass', '#2b4a8c', rough=.08, metal=.40, coat=.6), navy2=flat('aud_navy_lac', '#16223e', rough=.12, coat=.6),
         dark=flat('aud_dark', '#0d1526', rough=.35),
@@ -249,7 +249,7 @@ def build():
     nb = M['niche'].node_tree.nodes['Principled BSDF']; _set(nb, (1.0, .86, .60, 1), 'Emission Color', 'Emission'); _set(nb, E('NICHE_BACK', 1.4), 'Emission Strength')      # ниша светится изнутри, как в референсе
     ng = M['navy_gl'].node_tree.nodes['Principled BSDF']; _set(ng, (.03, .09, .30, 1), 'Emission Color', 'Emission'); _set(ng, E('NAVY_GL_GLOW', .45), 'Emission Strength')
     if not os.environ.get('NOWEATHER'):
-        weather(M['wall'], color_var=.07, cscale=.8, bump=1.3, bscale=120)
+        weather(M['wall'], color_var=.07, cscale=.8, bump=E('WALL_BUMP', 2.0), bscale=E('WALL_BSCALE', 150))
         weather(M['floor'], color_var=.05, cscale=.5, bump=.12, bscale=120, rvar=.06, rscale=1.0)
         weather(M['stage'], color_var=.04, cscale=.7, bump=.12, bscale=160, rvar=.04, rscale=1.4)
         weather(M['fl_cols'], color_var=.035, cscale=2.2, bump=.18, bscale=420); weather(M['fl_pil'], color_var=.035, cscale=2.2, bump=.18, bscale=420)
@@ -414,7 +414,7 @@ def export(raw):
     from PIL import Image
     import numpy as np
     img = np.asarray(Image.open(raw).convert('RGB'))
-    g = S.grade(img, sat=E('AUD_SAT', 1.08), gamma=E('AUD_GAMMA', 1.0), lift=E('AUD_LIFT', .0)); g = np.clip(g * np.array([1.0, .99, .965], np.float32), 0, 255).astype(np.uint8)
+    g = S.grade(img, sat=E('AUD_SAT', 1.08), gamma=E('AUD_GAMMA', 1.0), lift=E('AUD_LIFT', .0)); wm = [float(v) for v in os.environ.get('AUD_WARM', '1.0,.997,.985').split(',')]; g = np.clip(g * np.array(wm, np.float32), 0, 255).astype(np.uint8)
     g = finish(g)
     out = os.environ.get('AUD_OUT', '/tmp/aud_graded.png'); Image.fromarray(g).save(out); print('цветокоррекция →', out)
 
@@ -428,7 +428,7 @@ def main():
     M = build(); lights(M); camera(sc); print('сцена: объектов %d, кадр %dx%d, %d сэмплов' % (len(bpy.data.objects), w, h, spp), flush=True)
     if MODE == 'preview':
         sc.render.filepath = os.environ.get('PREVIEW_OUT', '/tmp/aud_preview.png'); bpy.ops.render.render(write_still=True); print('preview done'); return
-    raw = '/tmp/aud_full.png'; n = int(os.environ.get('AUD_TILES', 1))
+    raw = os.environ.get('AUD_RAW', '/tmp/aud_full.png'); n = int(os.environ.get('AUD_TILES', 1))
     if n > 1:
         import academy_hall as AH
         AH.render_tiles(sc, raw, n)

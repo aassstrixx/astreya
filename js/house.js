@@ -405,7 +405,7 @@
        Жест — серия событий с паузами меньше 130 мс (щелчки подряд, инерция трекпада); пока лист идёт, события колеса гасятся; следующий разворот — после паузы в 130 мс и после остановки листа.
        Край журнала (первый разворот вверх, последний вниз) колесо не перехватывает. */
     const GESTURE_GAP = 130;
-    const wg = {t: 0, fired: false};
+    const wg = {t: 0, fired: false, dir: 0};
     const navStop = () => {};
     on(window, 'wheel', e => {
       if (e.ctrlKey || e.defaultPrevented || flat() || phone() || !reader.classList.contains('is-live') || Math.abs(e.deltaX) > Math.abs(e.deltaY)) return;
@@ -418,8 +418,11 @@
       e.preventDefault(); e.__houseStep = true;
       if (A.motion && A.motion.cancelSmooth) A.motion.cancelSmooth();
       const now = performance.now();
-      if (now - wg.t > GESTURE_GAP) wg.fired = false; wg.t = now;
-      if (wg.fired || glideRaf) return;                                          // этот жест уже листнул разворот / лист ещё идёт
+      /* смена направления — всегда новый жест: «вниз», а сразу следом «вверх» (хвост инерции трекпада, второй щелчок колеса) раньше гасилась как продолжение прежнего жеста, пока лист ещё шёл или не прошла пауза в 130 мс, —
+         посетитель крутил вверх, а журнал не отвечал. Теперь лист разворачивается к предыдущему развороту сразу (цель — от текущей цели: «вниз» не успело дойти — вернётся туда, откуда ушло). Шум в хвосте инерции (дельта < 10) направление не меняет */
+      const rev = wg.dir !== 0 && dir !== wg.dir && Math.abs(dy) >= 10;
+      if (now - wg.t > GESTURE_GAP || rev) wg.fired = false; wg.t = now; if (Math.abs(dy) >= 10 || !wg.dir) wg.dir = dir;
+      if (wg.fired || (glideRaf && !rev)) return;                                // этот жест уже листнул разворот / лист ещё идёт (в ту же сторону)
       wg.fired = true; step(dir);
     }, {passive: false, capture: true});
 
