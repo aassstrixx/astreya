@@ -273,14 +273,38 @@
       try { n.setAttribute(at, new URL(v, url).href); } catch (e) {}
     }));
   };
-  const pages = new Map();
+  const pages = new Map(), warmed = new Set();
+  /* Картинки первого экрана будущей страницы подгружаются и разворачиваются заранее (пока курсор над ссылкой или пока идёт шторка): первый кадр после подмены не ждёт сеть и разворачивание больших webp на основном потоке —
+     раньше именно в этот момент («в начале перехода») шли подлагивания. Берутся только картинки без loading="lazy" и первые в <picture> (по media-запросу, как выбрал бы браузер), не больше четырёх. */
+  function warmFirstScreen(doc, base) {
+    try {
+      const main = doc.getElementById('main'); if (!main) return;
+      const list = [];
+      main.querySelectorAll('img').forEach(im => {
+        if (list.length >= 4 || im.getAttribute('loading') === 'lazy') return;
+        let src = im.getAttribute('src'); const pic = im.parentElement && im.parentElement.tagName === 'PICTURE' ? im.parentElement : null;
+        if (pic) { for (const so of pic.querySelectorAll('source[srcset]')) { const md = so.getAttribute('media'); if (!md || (window.matchMedia && matchMedia(md).matches)) { src = so.getAttribute('srcset').trim().split(/\s+/)[0]; break; } } }
+        if (src && !/^data:/.test(src)) list.push(src);
+      });
+      list.forEach(src => {
+        let u; try { u = new URL(src, base).href; } catch (e) { return; }
+        if (warmed.has(u)) return; warmed.add(u);
+        const im = new Image(); im.decoding = 'async'; im.src = u; if (im.decode) im.decode().catch(() => {});
+      });
+    } catch (e) { /* — */ }
+  }
   function fetchPage(url) {
     const key = url.split('#')[0];
     if (!pages.has(key)) pages.set(key, fetch(key, {credentials: 'same-origin', cache: 'no-cache'}).then(r => { if (!r.ok) throw new Error(r.status); return r.text(); })
-      .then(t => new DOMParser().parseFromString(t, 'text/html')).catch(e => { pages.delete(key); throw e; }));
+      .then(t => { const d = new DOMParser().parseFromString(t, 'text/html'); warmFirstScreen(d, new URL(key, location.href).href); return d; }).catch(e => { pages.delete(key); throw e; }));
     return pages.get(key);
   }
   document.addEventListener('focusin', e => { if (canSwap && e.target && (e.target.id === 'srch-q' || (e.target.closest && e.target.closest('.nav-search')))) { try { fetchPage(new URL('search.html', location.href.replace(/[^/]*$/, '')).href).catch(() => {}); } catch (err) {} } });
+  document.addEventListener('touchstart', e => {            // телефон: палец коснулся ссылки — страница и картинки её первого экрана начинают грузиться за ≈ 100–300 мс до перехода
+    if (!canSwap) return;
+    const a = e.target.closest && e.target.closest('a[href]'); if (!a) return;
+    try { const u = new URL(a.href, location.href); if (u.host === location.host && /\.html$/.test(u.pathname) && u.pathname !== location.pathname) fetchPage(u.href).catch(() => {}); } catch (err) {}
+  }, {passive: true});
   document.addEventListener('pointerover', e => {            // страницу можно подгрузить заранее, пока курсор над ссылкой
     if (!canSwap) return;
     const a = e.target.closest && e.target.closest('a[href]'); if (!a) return;

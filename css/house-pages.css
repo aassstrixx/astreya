@@ -133,7 +133,7 @@
 .mp-pc>span:nth-child(2){display:grid;gap:.1em;flex:1;min-width:0}
 .mp-pl{display:inline-flex;align-items:center;font:600 .78em/1.2 var(--sans);color:var(--hs-ink)}
 .mp-stone{position:relative;display:grid;place-items:center;align-content:center;gap:.1em;height:10.5em;margin:-.2em 0 .5em;border-radius:999px 999px .5em .5em;overflow:hidden;background:radial-gradient(120% 90% at 30% 20%,#fbf6ea,#eadfc8 60%,#d9c8a6);box-shadow:inset 0 0 0 1px rgba(176,142,78,.35),0 .7em 1.5em -1em rgba(58,38,16,.5)}
-.mp-stone::before{content:"";position:absolute;inset:0;background:url(../assets/bg/stone-grain.webp?v=1471d41a) 0 0/420px 420px;opacity:.55;mix-blend-mode:multiply}
+.mp-stone::before{content:"";position:absolute;inset:0;background:url(../assets/bg/stone-grain.webp?v=e13e22ac) 0 0/420px 420px;opacity:.55;mix-blend-mode:multiply}
 .mp-stone i{position:relative;font:italic 400 6.4em/.9 var(--serif);color:#efe6d3;text-shadow:-1px -1px 1px #fff,1px 2px 2px rgba(120,90,50,.55),3px 6px 10px rgba(120,90,50,.35)}
 .mp-stone b{position:relative;font:600 .78em/1 var(--sans);letter-spacing:.5em;text-indent:.5em;color:var(--hs-gold)}
 .mp-steps-s{grid-template-columns:1fr;gap:.55em;margin-top:.3em}

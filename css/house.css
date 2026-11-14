@@ -54,7 +54,7 @@ body[data-page="home"]{--hs-backdrop:#c0b5a2;--hs-paper:#fbf7ec;--hs-paper-2:#f3
 /* лист в движении темнеет — уходит от света: тёмный слой в ::after стороны вместо filter (filter на всей стороне с фото — лишняя поверхность и перерисовка на каждом кадре) */
 .face{position:absolute;inset:0;overflow:hidden;backface-visibility:hidden;-webkit-backface-visibility:hidden;background:var(--hs-paper)}
 .face.back{transform:rotateY(180deg)}
-.face::before{content:"";position:absolute;inset:0;background:url(../assets/bg/stone-grain.webp?v=1471d41a) 0 0/420px 420px;opacity:.035;pointer-events:none;z-index:3}
+.face::before{content:"";position:absolute;inset:0;background:url(../assets/bg/stone-grain.webp?v=e13e22ac) 0 0/420px 420px;opacity:.035;pointer-events:none;z-index:3}
 .face.front::after,.face.back::after{content:"";position:absolute;top:0;bottom:0;width:14%;pointer-events:none;z-index:3}
 .face.front::after{left:0;background:linear-gradient(90deg,rgba(60,40,18,.28),rgba(60,40,18,0))}
 .fx,.mag-sh,.mag-dim{display:none}
