@@ -446,7 +446,7 @@ const J = f => JSON.parse(fs.readFileSync(path.join(ROOT, f), 'utf8'));
   ok(rg.tel === 'tel:+79214204735', 'компания: у Санкт-Петербурга — свой телефон', rg);
   { const todayIso = new Date(CLOCK.NOW).toISOString().slice(0, 10), want = await p.evaluate(t => (ASTREYA_DATA.events || []).some(e => e.date >= t && e.city === 'Санкт-Петербург'), todayIso);      // семинар показывается, пока он ещё впереди (от даты проверки зависит)
     ok(!!rg.ev === want, 'компания: рядом — ближайший семинар в этом городе' + (want ? '' : ' (в этом городе впереди встреч нет — блок без семинара)'), rg); }
-  ok(/Познакомимся/.test(await p.evaluate(() => document.querySelector('.cta-band h2').textContent)), 'компания: завершающий призыв — «Познакомимся на практике»');
+  ok(/Познакомимся/.test(await p.evaluate(() => document.querySelector('.cta-band h2, .ca-final h2').textContent)), 'компания: завершающий призыв — «Познакомимся на практике»');
   ok(await p.evaluate(() => { const t = document.querySelector('.sx-trust'); return !!t && /можно доверять/.test(t.querySelector('h2').textContent) && t.querySelectorAll('.sx-tl li').length === 4 && !document.querySelector('.sx-next'); }), 'компания: из общих структур остаётся только блок «Почему «Астрея» можно доверять» (4 факта сайта)');
   ok(await p.evaluate(() => { const w = [...document.querySelectorAll('.sx-reg-n')].map(b => Math.round(b.getBoundingClientRect().width)), h = [...document.querySelectorAll('.sx-reg-n')].map(b => Math.round(b.getBoundingClientRect().height)); return w.length >= 3 && Math.max(...w) - Math.min(...w) <= 2 && Math.max(...h) - Math.min(...h) <= 1; }), 'компания: ячейки городов одинакового размера');
   await p.click('[data-sx-region-cb]'); await p.waitForSelector('#modal.open form');
