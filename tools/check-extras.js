@@ -7,6 +7,7 @@
 let pw; for (const p of ['playwright', '/opt/node22/lib/node_modules/playwright']) { try { pw = require(p); break; } catch (e) {} }
 if (!pw) { console.log('Playwright не найден — проверка пропущена.'); process.exit(0); }
 const http = require('http'), fs = require('fs'), pth = require('path');
+const CLOCK = require('./fixed-clock');
 const ROOT = pth.join(__dirname, '..'), CHROME = process.env.CHROMIUM || ['/opt/pw-browsers/chromium-1194/chrome-linux/chrome'].find(p => fs.existsSync(p));
 const MIME = {'.html': 'text/html; charset=utf-8', '.js': 'text/javascript', '.css': 'text/css', '.json': 'application/json', '.webp': 'image/webp', '.svg': 'image/svg+xml', '.png': 'image/png', '.jpg': 'image/jpeg'};
 let pass = 0, fail = 0; const ok = (c, m, x) => { if (c) { pass++; console.log('  ✓', m); } else { fail++; console.log('  ✗ FAIL:', m, x !== undefined ? JSON.stringify(x) : ''); } };
@@ -20,7 +21,7 @@ const cfg = JSON.parse(fs.readFileSync(pth.join(ROOT, 'data/redesign.json'), 'ut
 
   for (const [name, W, H, mobile] of [['компьютер', 1440, 900, false], ['телефон', 390, 844, true]]) {
     console.log(`\n[${name}]`);
-    const ctx = await b.newContext({viewport: {width: W, height: H}, isMobile: mobile, hasTouch: mobile, deviceScaleFactor: 1}); await ctx.addInitScript(() => { document.addEventListener('DOMContentLoaded', () => { const d = document.querySelector('[data-shw-list]'); if (d) d.open = true; }); }); await ctx.route(/^https:\/\/fonts\./, r => r.abort()); await ctx.addInitScript(() => { window.__mcp = []; try { Object.defineProperty(navigator, 'modelContext', {value: {registerTool(t) { window.__mcp.push(t); }}, configurable: true}); } catch (e) {} });          // «браузер с WebMCP» для проверки
+    const ctx = await b.newContext({viewport: {width: W, height: H}, isMobile: mobile, hasTouch: mobile, deviceScaleFactor: 1}); await CLOCK.install(ctx); await ctx.addInitScript(() => { document.addEventListener('DOMContentLoaded', () => { const d = document.querySelector('[data-shw-list]'); if (d) d.open = true; }); }); await ctx.route(/^https:\/\/fonts\./, r => r.abort()); await ctx.addInitScript(() => { window.__mcp = []; try { Object.defineProperty(navigator, 'modelContext', {value: {registerTool(t) { window.__mcp.push(t); }}, configurable: true}); } catch (e) {} });          // «браузер с WebMCP» для проверки
     await ctx.route('**/api/assistant/status', r => r.fulfill({status: 200, contentType: 'application/json', body: '{"ai":false}'}));      // статический сервер проверки не знает про /api
     const p = await ctx.newPage(); p.errs = []; p.on('pageerror', e => p.errs.push(e.message)); p.on('console', m => { if (m.type() === 'error' && !/ERR_FAILED|fonts\./.test(m.text())) p.errs.push(m.text()); });
     const skipSplash = async () => { const s = await p.$('#sp-in'); if (s) { try { await s.click({timeout: 1500}); } catch (e) {} } await wait(900); };
