@@ -431,29 +431,29 @@
   function resultHTML() {
     const pl = compute(UI.st), st = pl.st, goal = pl.goal;
     const chips = summaryLines(pl).map(l => '<li>' + esc(l) + '</li>').join('');
-    const brandsH = pl.brands.length ? '<section class="plan-sec"><h3>' + esc(RES.brandsTitle) + '</h3><div class="plan-brands">' + pl.brands.map(id => {
+    const brandsH = pl.brands.length ? '<section class="plan-sec plan-sec--brands"><h3>' + esc(RES.brandsTitle) + '</h3><div class="plan-brands">' + pl.brands.map(id => {
       const b = B[id], why = pl.tasks.filter(t => ((SX.taskBrands || {})[t] || []).indexOf(id) >= 0).map(t => T[t].label);
       return link(bUrl(b), 'plan-brand', '<span class="plan-bsw" style="--c1:' + esc(b.c1) + ';--c2:' + esc(b.c2) + '" aria-hidden="true"></span><span><b>' + esc(b.name) + '</b>' + (why.length ? '<small>' + esc(why.join(', ')) + '</small>' : '') + '</span>' + I.arrow, 'plan-brand');
     }).join('') + '</div></section>' : '';
-    const prodH = pl.products.length ? '<section class="plan-sec"><h3>' + esc(RES.productsTitle) + '</h3><ul class="plan-prods">' + pl.products.map(p => {
+    const prodH = pl.products.length ? '<section class="plan-sec plan-sec--prods"><h3>' + esc(RES.productsTitle) + '</h3><ul class="plan-prods">' + pl.products.map(p => {
       const b = B[p.brand] || {name: ''}, inList = A.rlHas && A.rlHas(p.id);
-      return '<li>' + link(pUrl(p), 'plan-pn', '<b>' + esc(p.name) + '</b><small>' + esc(b.name) + '</small>', 'plan-product') +
+      return '<li>' + link(pUrl(p), 'plan-pn', '<span class="st-pk" data-pk="' + esc(p.brand) + '/' + esc(p.t || 'jar') + '" aria-hidden="true"></span><span class="plan-pt"><b>' + esc(p.name) + '</b><small>' + esc(b.name) + '</small></span>', 'plan-product') +
         (X.requestList ? '<button class="plan-add" type="button" data-act="rl-add" data-id="' + esc(p.id) + '" data-rl-id="' + esc(p.id) + '" aria-pressed="' + (inList ? 'true' : 'false') + '" aria-label="Добавить в список запроса: ' + esc(p.name) + '">' + PLUS + '</button>' : '') + '</li>';
-    }).join('') + '</ul></section>' : '<section class="plan-sec"><p class="muted">' + esc(RES.empty) + '</p></section>';
-    const evH = '<section class="plan-sec"><h3>' + esc(RES.trainTitle) + '</h3>' + (pl.events.length ? '<ul class="plan-evs">' + pl.events.map(e => {
+    }).join('') + '</ul></section>' : '<section class="plan-sec plan-sec--prods"><p class="muted">' + esc(RES.empty) + '</p></section>';
+    const evH = '<section class="plan-sec plan-sec--train"><h3>' + esc(RES.trainTitle) + '</h3>' + (pl.events.length ? '<ul class="plan-evs">' + pl.events.map(e => {
       const b = B[e.b] || {name: ''};
       return '<li><div class="plan-ed"><b>' + esc(dShort(e.date)) + '</b><small>' + esc(e.city) + '</small></div><div class="plan-et">' + link(evUrl(e), 'plan-en', esc(e.title), 'plan-event') + '<small>' + esc(b.name) + ' · ' + esc(e.fm || '') + '</small></div>' +
         '<button class="btn btn-ghost btn-sm" type="button" data-pl="signup" data-id="' + esc(e.id) + '">Записаться</button></li>';
     }).join('') + '</ul>' : '<p class="muted">' + esc(RES.trainNone) + '</p>') + '</section>';
-    const tiersH = '<section class="plan-sec"><h3>' + esc(RES.termsTitle) + '</h3><p class="muted">' + esc(RES.termsText) + '</p><div class="plan-tiers">' + pl.tiers.map((d, k) => '<div class="plan-tier' + (pl.tier && pl.tier === d ? ' on' : '') + '"><b>' + d.pct + '%</b><span>от ' + rub(d.from) + '</span></div>').join('') + '</div>' +
+    const tiersH = '<section class="plan-sec plan-sec--terms"><h3>' + esc(RES.termsTitle) + '</h3><p class="muted">' + esc(RES.termsText) + '</p><div class="plan-tiers">' + pl.tiers.map((d, k) => '<div class="plan-tier' + (pl.tier && pl.tier === d ? ' on' : '') + '"><b>' + d.pct + '%</b><span>от ' + rub(d.from) + '</span></div>').join('') + '</div>' +
       (pl.tier ? '<p class="plan-tn">При закупке от ' + rub(pl.tier.from) + ' — ориентировочно ' + pl.tier.pct + '%. Точные условия подтверждает менеджер.</p>' : st.volume === 'u50' ? '<p class="plan-tn">Скидки по объёму начинаются от ' + rub((pl.tiers[0] || {}).from || 0) + '. Условия первой закупки уточнит менеджер.</p>' : '') + '</section>';
-    const order = goal === 'train' ? [evH, brandsH, prodH, tiersH] : goal === 'range' ? [brandsH, prodH, evH, tiersH] : [brandsH, evH, prodH, tiersH];
-    return '<div class="plan-res"><div class="plan-card card"><span class="eyebrow in">' + esc(PL.eyebrow || '') + '</span><h2 id="plan-h" tabindex="-1">' + esc(RES.title) + '</h2><ul class="plan-sum">' + chips + '</ul><p class="plan-fine muted">' + esc(RES.fine) + '</p></div>' + factsHTML(pl) +
-      order.join('') +
+    const order = goal === 'train' ? [evH, brandsH, prodH] : goal === 'range' ? [brandsH, prodH, evH] : [brandsH, evH, prodH];          // условия закупки — в боковой колонке рядом с заявкой (стили — css/pg-start.css)
+    return '<div class="plan-res"><div class="plan-card card"><span class="eyebrow in">' + esc(PL.eyebrow || '') + '</span><h2 id="plan-h" tabindex="-1">' + esc(RES.title) + '</h2><ul class="plan-sum">' + chips + '</ul><p class="plan-fine muted">' + esc(RES.fine) + '</p></div>' +
+      '<div class="plan-body"><div class="plan-colA">' + order.join('') + '</div><aside class="plan-colB" aria-label="Условия и заявка">' + tiersH +
       '<div class="plan-cta card"><button class="btn btn-fill btn-lg plan-main" type="button" data-pl="main" data-sx="plan-main">' + esc(RES.main) + ' ' + I.arrow + '</button><p class="plan-mainfine muted">' + esc(RES.mainFine) + '</p>' +
       '<div class="plan-sec-actions">' + (isRange(st) ? link(catalogPath(st), 'btn btn-ghost', esc(fill(RES.catalog, {task: T[pl.tasks[0]].label})) + ' ' + I.arrow, 'plan-range-card') : '') + (X.requestList && pl.products.length ? '<button class="btn btn-ghost" type="button" data-pl="addall">' + esc(RES.addList) + '</button>' : '') +
       '<button class="btn btn-ghost" type="button" data-pl="copy">' + esc(RES.copyLink) + '</button>' + (A.stella ? '<button class="btn btn-ghost" type="button" data-pl="ask">' + esc(RES.ask) + '</button>' : '') +
-      '<button class="btn btn-lnk" type="button" data-pl="again">' + esc(RES.restart) + '</button></div></div></div>';
+      '<button class="btn btn-lnk" type="button" data-pl="again">' + esc(RES.restart) + '</button></div></div></aside></div>' + factsHTML(pl) + '</div>';
   }
   function finish() {
     UI.result = true; savePlan(UI.st, true); sess.del(KD); const pl = compute(UI.st);

@@ -34,19 +34,20 @@
 <link rel="preload" href="assets/fonts/manrope-latin-938c6e.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="preload" href="assets/fonts/playfair-display-cyrillic-66a1a9.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="preload" href="assets/fonts/playfair-display-latin-ef05b3.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="stylesheet" href="css/fonts.css?v=b1148b7a">
-<link rel="stylesheet" href="css/base.css?v=b1148b7a">
-<link rel="stylesheet" href="css/components.css?v=b1148b7a">
-<link rel="stylesheet" href="css/pages.css?v=b1148b7a">
-<link rel="stylesheet" href="css/responsive.css?v=b1148b7a">
-<link rel="stylesheet" href="css/motion.css?v=b1148b7a">
-<link rel="stylesheet" href="css/consent.css?v=b1148b7a">
-<link rel="stylesheet" href="css/redesign.css?v=b1148b7a">
-<link rel="stylesheet" href="css/backdrops.css?v=b1148b7a">
-<link rel="stylesheet" href="css/extras.css?v=b1148b7a">
-<link rel="stylesheet" href="css/guide.css?v=b1148b7a">
-<link rel="stylesheet" href="css/sales.css?v=b1148b7a">
-<link rel="stylesheet" href="css/sales-pages.css?v=b1148b7a">
+<link rel="stylesheet" href="css/fonts.css?v=2d2fb88e">
+<link rel="stylesheet" href="css/base.css?v=2d2fb88e">
+<link rel="stylesheet" href="css/components.css?v=2d2fb88e">
+<link rel="stylesheet" href="css/pages.css?v=2d2fb88e">
+<link rel="stylesheet" href="css/responsive.css?v=2d2fb88e">
+<link rel="stylesheet" href="css/motion.css?v=2d2fb88e">
+<link rel="stylesheet" href="css/consent.css?v=2d2fb88e">
+<link rel="stylesheet" href="css/redesign.css?v=2d2fb88e">
+<link rel="stylesheet" href="css/backdrops.css?v=2d2fb88e">
+<link rel="stylesheet" href="css/extras.css?v=2d2fb88e">
+<link rel="stylesheet" href="css/guide.css?v=2d2fb88e">
+<link rel="stylesheet" href="css/sales.css?v=2d2fb88e">
+<link rel="stylesheet" href="css/sales-pages.css?v=2d2fb88e">
+<link rel="stylesheet" href="css/pg-search.css?v=2d2fb88e">
 
 
 </head>
@@ -119,16 +120,26 @@
 
 <main id="main" tabindex="-1" data-page="search">
 <div class="bd-fill bd-top" data-bd="cream" data-bd-pos="tr" data-bd-o="7" aria-hidden="true"></div>
-<div class="wrap" data-search>
-    <header class="page-head"><span class="eyebrow reveal">Поиск</span><h1 class="reveal">Поиск по сайту</h1><p class="lead reveal">Товары, бренды, новости и обучение.</p></header>
-    <form class="search-page reveal" role="search" action="search.html" method="get">
-      <label class="search"><span class="sr">Запрос</span><svg class="ic" viewBox="0 0 20 20" aria-hidden="true" focusable="false"><circle cx="9" cy="9" r="5.5"/><path d="m13.2 13.2 3.8 3.8"/></svg><input id="sp-q" type="search" name="q" placeholder="Например: Heliocare, пилинг, семинар" autocomplete="off" enterkeyhint="search"></label>
-      <button class="btn btn-fill" type="submit">Найти</button>
-    </form>
-    <div class="s-tabs" id="s-tabs" role="group" aria-label="Тип результатов" hidden></div>
-    <div id="s-out" aria-live="polite"><p class="muted">Введите запрос, чтобы найти товары, бренды, новости и мероприятия.</p></div>
-    <div class="srch-hints" style="margin-top:28px"><span>Популярное:</span><a class="chip" href="search.html?q=Heliocare">Heliocare</a><a class="chip" href="search.html?q=%D0%9F%D0%B8%D0%BB%D0%B8%D0%BD%D0%B3%D0%B8">Пилинги</a><a class="chip" href="search.html?q=%D0%9F%D0%B8%D0%B3%D0%BC%D0%B5%D0%BD%D1%82%D0%B0%D1%86%D0%B8%D1%8F">Пигментация</a><a class="chip" href="search.html?q=%D0%A1%D0%B5%D0%BC%D0%B8%D0%BD%D0%B0%D1%80">Семинар</a><a class="chip" href="search.html?q=%D0%90%D0%BA%D1%86%D0%B8%D0%B8">Акции</a><a class="chip" href="search.html?q=Dermatime">Dermatime</a></div>
-    <div style="height:clamp(60px,8vw,110px)"></div>
+<div class="qx-page" data-search>
+    <section class="qx-scene" aria-labelledby="qx-h">
+      <div class="qx-bg" aria-hidden="true"><picture><source media="(max-width:700px)" srcset="assets/utility/wall-s.webp"><img class="qx-bg-img" src="assets/utility/wall.webp?v=2d2fb88e" width="3072" height="1390" alt="" decoding="async"></picture><i class="qx-wash"></i><i class="qx-fade"></i></div>
+      <div class="qx-in">
+        <span class="qx-eyebrow">Поиск</span>
+        <h1 id="qx-h">Поиск по сайту</h1>
+        <p class="qx-lead">Товары, бренды, новости и обучение.</p>
+        <form class="search-page qx-form" role="search" action="search.html" method="get">
+          <label class="search"><span class="sr">Запрос</span><svg class="ic" viewBox="0 0 20 20" aria-hidden="true" focusable="false"><circle cx="9" cy="9" r="5.5"/><path d="m13.2 13.2 3.8 3.8"/></svg><input id="sp-q" type="search" name="q" placeholder="Например: Heliocare, пилинг, семинар" autocomplete="off" enterkeyhint="search"></label>
+          <button class="btn btn-fill" type="submit">Найти</button>
+        </form>
+        <div class="srch-hints qx-hints"><span>Популярное:</span><a class="chip" href="search.html?q=Heliocare">Heliocare</a><a class="chip" href="search.html?q=%D0%9F%D0%B8%D0%BB%D0%B8%D0%BD%D0%B3%D0%B8">Пилинги</a><a class="chip" href="search.html?q=%D0%9F%D0%B8%D0%B3%D0%BC%D0%B5%D0%BD%D1%82%D0%B0%D1%86%D0%B8%D1%8F">Пигментация</a><a class="chip" href="search.html?q=%D0%A1%D0%B5%D0%BC%D0%B8%D0%BD%D0%B0%D1%80">Семинар</a><a class="chip" href="search.html?q=%D0%90%D0%BA%D1%86%D0%B8%D0%B8">Акции</a><a class="chip" href="search.html?q=Dermatime">Dermatime</a></div>
+      </div>
+    </section>
+    <section class="qx-res">
+      <div class="qx-res-in">
+        <div class="s-tabs" id="s-tabs" role="group" aria-label="Тип результатов" hidden></div>
+        <div id="s-out" aria-live="polite"><p class="muted">Введите запрос, чтобы найти товары, бренды, новости и мероприятия.</p></div>
+      </div>
+    </section>
   </div>
 </main>
 
@@ -178,22 +189,23 @@
 <div id="modal" aria-hidden="true"></div>
 <div id="toast" role="status" aria-live="polite"></div>
 
-<script src="js/shared.js?v=b1148b7a" defer></script>
-<script src="js/data.js?v=b1148b7a" defer></script>
-<script src="js/core.js?v=b1148b7a" defer></script>
-<script src="js/consent.js?v=b1148b7a" defer></script>
-<script src="js/motion.js?v=b1148b7a" defer></script>
-<script src="js/pages.js?v=b1148b7a" defer></script>
-<script src="js/hero-mark.js?v=b1148b7a" defer></script>
-<script src="js/redesign.js?v=b1148b7a" defer></script>
-<script src="js/backdrops.js?v=b1148b7a" defer></script>
-<script src="js/extras.js?v=b1148b7a" defer></script>
-<script src="js/explore.js?v=b1148b7a" defer></script>
-<script src="js/assistant-brain.js?v=b1148b7a" defer></script>
-<script src="js/stella-policy.js?v=b1148b7a" defer></script>
-<script src="js/assistant.js?v=b1148b7a" defer></script>
-<script src="js/guide.js?v=b1148b7a" defer></script>
-<script src="js/sales.js?v=b1148b7a" defer></script>
-<script src="js/sales-pages.js?v=b1148b7a" defer></script>
+<script src="js/shared.js?v=2d2fb88e" defer></script>
+<script src="js/data.js?v=2d2fb88e" defer></script>
+<script src="js/core.js?v=2d2fb88e" defer></script>
+<script src="js/consent.js?v=2d2fb88e" defer></script>
+<script src="js/motion.js?v=2d2fb88e" defer></script>
+<script src="js/pages.js?v=2d2fb88e" defer></script>
+<script src="js/hero-mark.js?v=2d2fb88e" defer></script>
+<script src="js/redesign.js?v=2d2fb88e" defer></script>
+<script src="js/backdrops.js?v=2d2fb88e" defer></script>
+<script src="js/extras.js?v=2d2fb88e" defer></script>
+<script src="js/explore.js?v=2d2fb88e" defer></script>
+<script src="js/assistant-brain.js?v=2d2fb88e" defer></script>
+<script src="js/stella-policy.js?v=2d2fb88e" defer></script>
+<script src="js/assistant.js?v=2d2fb88e" defer></script>
+<script src="js/guide.js?v=2d2fb88e" defer></script>
+<script src="js/sales.js?v=2d2fb88e" defer></script>
+<script src="js/sales-pages.js?v=2d2fb88e" defer></script>
+<script src="js/pg-search.js?v=2d2fb88e" defer></script>
 </body>
 </html>
