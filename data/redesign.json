@@ -847,8 +847,18 @@
     "_comment": "Собственные стили и скрипты страницы (css/<имя>.css, js/<имя>.js): подключаются только странице с этим ключом и только если файл есть; идут после общих",
     "product": {"css": ["pg-product"], "js": ["pg-product"]},
     "brand": {"css": ["pg-brand"], "js": ["pg-brand"]},
+    "event": {"css": ["pg-event"], "js": ["pg-event"]},
+    "article": {"css": ["news-article"], "js": ["news-article"]},
     "start": {"css": ["pg-start"], "js": ["pg-start"]},
+    "search": {"css": ["pg-search"], "js": ["pg-search"]},
+    "privacy": {"css": ["pg-legal"], "js": ["pg-legal"]},
+    "terms": {"css": ["pg-legal"], "js": ["pg-legal"]},
+    "consent": {"css": ["pg-legal"], "js": ["pg-legal"]},
+    "notfound": {"css": ["pg-404"], "js": ["pg-404"]},
+    "partners": {"css": ["pg-partners"], "js": ["pg-partners"]},
+    "contacts": {"css": ["pg-contacts"], "js": ["pg-contacts"]},
     "news": {"css": ["news-paper"], "js": ["news-paper"]},
-    "company": {"css": ["company-atrium"], "js": ["company-atrium"]}
+    "company": {"css": ["company-atrium"], "js": ["company-atrium"]},
+    "custom": {"css": ["pg-custom"], "js": ["pg-custom"]}
   }
 }
