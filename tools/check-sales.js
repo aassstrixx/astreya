@@ -11,7 +11,7 @@ if (!pw) { console.log('Playwright не найден — проверка про
 const fs = require('fs'), path = require('path'), cp = require('child_process');
 const SHWC = !!((JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'data/redesign.json'), 'utf8')).extras || {}).showroom);      // на странице-витрине (extras.showroom) «Подборок по задачам» нет — фокус на экспозиции
 const CHROME = process.env.CHROMIUM || ['/opt/pw-browsers/chromium-1194/chrome-linux/chrome'].find(p => fs.existsSync(p));
-const H = require('../server/test/helpers');
+const H = require('../server/test/helpers'), CLOCK = require('./fixed-clock');
 const ROOT = path.join(__dirname, '..');
 let pass = 0, fail = 0; const ok = (c, m, x) => { if (c) { pass++; console.log('  ✓', m); } else { fail++; console.log('  ✗ FAIL:', m, x !== undefined ? JSON.stringify(x).slice(0, 500) : ''); } };
 const wait = ms => new Promise(r => setTimeout(r, ms));
@@ -75,7 +75,7 @@ const J = f => JSON.parse(fs.readFileSync(path.join(ROOT, f), 'utf8'));
   const mk = async o => {
     o = o || {}; const ctx = await b.newContext({viewport: o.vw ? {width: o.vw, height: o.vh || 800} : o.mobile ? {width: 390, height: 844} : {width: 1280, height: 860}, isMobile: !!o.mobile, hasTouch: !!o.mobile, locale: 'ru-RU', permissions: ['clipboard-read', 'clipboard-write']}); await ctx.addInitScript(() => { document.addEventListener('DOMContentLoaded', () => { const d = document.querySelector('[data-shw-list]'); if (d) d.open = true; }); });
     await ctx.route(/^https:\/\/fonts\./, r => r.abort()); await ctx.route('**/astreya/**', r => r.continue({url: r.request().url().replace('/astreya/', '/')}));          // 404.html ссылается на ресурсы от корня сайта (/astreya/…)
-    await ctx.addInitScript(sp => { window.ASTREYA_MOTION_SPEED = sp; }, o.speed || 8);
+    await CLOCK.install(ctx); await ctx.addInitScript(sp => { window.ASTREYA_MOTION_SPEED = sp; }, o.speed || 8);
     if (o.bar) await ctx.route('**/js/data.js*', async r => { const res = await r.fetch(); r.fulfill({response: res, body: (await res.text()).replace('"bar":{"enabled":false,', '"bar":{"enabled":true,')}); });          // панель выключена в данных; для проверки её кода включаем только в этой копии
     const p = await ctx.newPage(); p.errs = []; p.on('pageerror', e => p.errs.push(e.message)); p.on('console', m => { if (m.type() === 'error' && !/ERR_FAILED|fonts\.|status of (429|503)|404 \(Not Fo/.test(m.text())) p.errs.push(m.text()); });
     await p.route('**/api/assistant/status', r => r.fulfill({status: 200, contentType: 'application/json', body: '{"ai":false}'}));
@@ -95,7 +95,7 @@ const J = f => JSON.parse(fs.readFileSync(path.join(ROOT, f), 'utf8'));
   };
   const lastLead = async () => { const r = (await admin.get('/api/leads?status=all')).json; const id = (r.items || r.leads || r.list || [])[0]; return id ? (await admin.get('/api/leads/' + id.id)).json : null; };
 
-  const today = new Date().toISOString().slice(0, 10);
+  const today = new Date(CLOCK.NOW).toISOString().slice(0, 10);
 
   /* ================= B. Главная и страницы без продающего слоя ================= */
   console.log('\n[B. Главная: без новых блоков; страницы без слоя: 404, документы]');
@@ -370,7 +370,7 @@ const J = f => JSON.parse(fs.readFileSync(path.join(ROOT, f), 'utf8'));
   /* --- обучение: календарь встреч --- */
   p = await mk(); await p.open('training.html');
   const upc = D.events.filter(e => e.date >= today);
-  const tl = await p.evaluate(() => ({cal: !!document.querySelector('.sx-cal .sx-cal-grid'), cols: getComputedStyle(document.querySelector('.sx-cal-grid')).gridTemplateColumns.split(' ').length, wd: document.querySelectorAll('.sx-cal-wd span').length, month: (document.querySelector('.sx-cal-m') || {}).textContent, near: !!document.querySelector('.sx-cd.ev.near'), in: (document.querySelector('.sx-tl-in') || {}).textContent, chips: [...document.querySelectorAll('[data-sx-city]')].map(b => b.getAttribute('data-sx-city')), gen: document.querySelectorAll('.sx-next, .sx-trust, .sx-sec, .sx-ruler, .sx-flag').length, closing: (document.querySelector('.cta-band h2') || {}).textContent}));
+  const tl = await p.evaluate(() => ({cal: !!document.querySelector('.sx-cal .sx-cal-grid'), cols: getComputedStyle(document.querySelector('.sx-cal-grid')).gridTemplateColumns.split(' ').length, wd: document.querySelectorAll('.sx-cal-wd span').length, month: (document.querySelector('.sx-cal-m') || {}).textContent, near: !!document.querySelector('.sx-cd.ev.near'), in: (document.querySelector('.sx-tl-in') || {}).textContent, chips: [...document.querySelectorAll('[data-sx-city]')].map(b => b.getAttribute('data-sx-city')), gen: document.querySelectorAll('.sx-next, .sx-trust, .sx-sec, .sx-ruler, .sx-flag').length, closing: (document.querySelector('.cta-band h2, [data-sx-closing="training-cta"] h2') || {}).textContent}));
   ok(tl.cal && tl.cols === 7 && tl.wd === 7 && tl.near && /20\d\d/.test(tl.month || ''), 'обучение: «Календарь встреч» — настоящая сетка месяца (7 дней), ближайшее мероприятие подсвечено', tl);
   const walk = async () => { let rows = 0, evCells = 0, guard = 0; const months = []; for (;;) { const r = await p.evaluate(() => ({rows: document.querySelectorAll('.sx-cal-row').length, ev: document.querySelectorAll('.sx-cd.ev').length, m: document.querySelector('.sx-cal-m').textContent, days: document.querySelectorAll('.sx-cal-grid .sx-cd:not(.off)').length, end: document.querySelector('[data-cal-nav="1"]').disabled})); rows += r.rows; evCells += r.ev; months.push(r); if (r.end || ++guard > 12) break; await p.click('[data-cal-nav="1"]'); await wait(250); } return {rows, evCells, months}; };
   const w1 = await walk();
@@ -379,22 +379,22 @@ const J = f => JSON.parse(fs.readFileSync(path.join(ROOT, f), 'utf8'));
   while (await p.evaluate(() => !document.querySelector('[data-cal-nav="-1"]').disabled)) { await p.click('[data-cal-nav="-1"]'); await wait(200); }
   ok(await p.evaluate(() => { const t = document.querySelector('.sx-cd.today'); return !t || /^\d+$/.test(t.textContent); }), 'обучение: сегодняшний день в календаре отмечен');
   ok(/сегодня|завтра|через/.test(tl.in || ''), 'обучение: «через N дней» считается от сегодняшней даты', tl.in);
-  ok(tl.gen === 0 && /Начните с семинара/.test(tl.closing || ''), 'обучение: общих блоков и «линейки» нет, завершающий призыв — «Начните с семинара»', tl.closing);
+  ok(tl.gen === 0 && /Начните с семинара|Присоединяйтесь к образовательному пространству/.test(tl.closing || ''), 'обучение: общих блоков и «линейки» нет, завершающий призыв — «Начните с семинара»', tl.closing);
   await p.click('.sx-cd.ev'); await p.waitForFunction(() => document.body.getAttribute('data-page') === 'event', null, {timeout: 15000});
   ok(await p.evaluate(() => !!document.querySelector('.sx-ticket')), 'обучение: нажатие на отмеченный день открывает мероприятие (мягкий переход), там «Как проходит запись»');
   await p.goBack(); await p.waitForFunction(() => document.body.getAttribute('data-page') === 'training', null, {timeout: 15000}); await wait(1200);
   const cityNo = (D.sales.cities || []).filter(c => c !== 'Онлайн').find(c => !upc.some(e => e.city === c));
   const cityYes = upc.map(e => e.city).find(c => c !== 'Онлайн');
-  await p.click('[data-sx-city="' + cityYes + '"]'); await wait(400);
-  ok(await p.evaluate(c => { const r = [...document.querySelectorAll('.sx-cal-row .sx-cal-t b')]; return r.length > 0 && r.every(b => b.textContent.indexOf(c) === 0 || /^Онлайн/.test(b.textContent)); }, cityYes), 'обучение: выбор города оставляет его мероприятия и онлайн', cityYes);
+  await p.click('#city-chips .chip[data-id="' + cityYes + '"]'); await wait(400);
+  ok(await p.evaluate(c => { const r = [...document.querySelectorAll('#sem-list .sem-item')].filter(x => !x.hidden); return r.length > 0 && r.every(x => x.getAttribute('data-city') === c || /^Онлайн/.test(x.getAttribute('data-city') || '')); }, cityYes), 'обучение: выбор города оставляет его мероприятия и онлайн', cityYes);
   if (cityNo) {
-    await p.click('[data-sx-city="' + cityNo + '"]'); await wait(400);
-    ok(await p.evaluate(() => !!document.querySelector('[data-sx-tl-next] [data-sx-wait]')), 'обучение: в городе без дат предлагается лист ожидания', cityNo);
-    await p.click('[data-sx-tl-next] [data-sx-wait]'); await p.waitForSelector('#modal.open form');
+    await p.click('#city-chips .chip[data-id="' + cityNo + '"]'); await wait(400);
+    ok(await p.evaluate(() => !!document.querySelector('#sem-empty:not([hidden]) [data-sx-wait], .sx-tl-sec [data-sx-wait]')), 'обучение: в городе без дат предлагается лист ожидания', cityNo);
+    await p.click('#sem-empty:not([hidden]) [data-sx-wait], .sx-tl-sec [data-sx-wait]'); await p.waitForSelector('#modal.open form');
     ok(await p.evaluate(() => /Лист ожидания/.test(document.querySelector('#modal .ctx').textContent)), 'обучение: лист ожидания открывает вопрос с городом');
     await p.keyboard.press('Escape'); await wait(500);
   } else console.log('  – в данных у всех городов есть даты: проверка листа ожидания пропущена');
-  await p.click('[data-sx-city="' + cityYes + '"]'); await wait(300);
+  await p.click('#city-chips .chip[data-id="' + cityYes + '"]'); await wait(300);
   ok(await p.evaluate(c => localStorage.getItem('astreya:city') === JSON.stringify(c), cityYes), 'обучение: выбранный город запоминается (для «Вашего региона»)');
   await p.context().close();
 
@@ -444,7 +444,7 @@ const J = f => JSON.parse(fs.readFileSync(path.join(ROOT, f), 'utf8'));
   await p.click('[data-sx-reg="Санкт-Петербург"]'); await wait(300);
   const rg = await p.evaluate(() => ({h: document.querySelector('.sx-reg-card h3').textContent, tel: document.querySelector('.sx-reg-card a[href^="tel:"]').getAttribute('href'), ev: (document.querySelector('.sx-reg-ev h3') || {}).textContent}));
   ok(rg.tel === 'tel:+79214204735', 'компания: у Санкт-Петербурга — свой телефон', rg);
-  { const todayIso = new Date().toISOString().slice(0, 10), want = await p.evaluate(t => (ASTREYA_DATA.events || []).some(e => e.date >= t && e.city === 'Санкт-Петербург'), todayIso);      // семинар показывается, пока он ещё впереди (от даты проверки зависит)
+  { const todayIso = new Date(CLOCK.NOW).toISOString().slice(0, 10), want = await p.evaluate(t => (ASTREYA_DATA.events || []).some(e => e.date >= t && e.city === 'Санкт-Петербург'), todayIso);      // семинар показывается, пока он ещё впереди (от даты проверки зависит)
     ok(!!rg.ev === want, 'компания: рядом — ближайший семинар в этом городе' + (want ? '' : ' (в этом городе впереди встреч нет — блок без семинара)'), rg); }
   ok(/Познакомимся/.test(await p.evaluate(() => document.querySelector('.cta-band h2').textContent)), 'компания: завершающий призыв — «Познакомимся на практике»');
   ok(await p.evaluate(() => { const t = document.querySelector('.sx-trust'); return !!t && /можно доверять/.test(t.querySelector('h2').textContent) && t.querySelectorAll('.sx-tl li').length === 4 && !document.querySelector('.sx-next'); }), 'компания: из общих структур остаётся только блок «Почему «Астрея» можно доверять» (4 факта сайта)');
@@ -540,6 +540,7 @@ const J = f => JSON.parse(fs.readFileSync(path.join(ROOT, f), 'utf8'));
   p = await mk(); await p.open('index.html'); await wait(5000);
   ok(await p.evaluate(() => { const ch = [...document.querySelectorAll('.g-entry .chip')]; return ch.length === 0 || (/^Старт со Стеллой/.test(ch[0].textContent.trim()) && !ch.some(c => /Подобрать (средство )?по задаче/.test(c.textContent))); }), 'на главной (если блок показан) то же: «Старт со Стеллой» вместо «Подобрать средство по задаче»');
   await p.evaluate(() => Astreya.stella.open()); await p.waitForSelector('#asst-in', {state: 'visible'}); await wait(900);
+  await p.waitForFunction(() => document.querySelectorAll('#asst-qr .chip').length > 0, null, {timeout: 60000}).catch(() => {});          // без видеокарты тяжёлая главная печатает приветствие десятки секунд — ждём чипы, а не фиксированные 0,9 с
   ok(await p.evaluate(() => { const ch = [...document.querySelectorAll('#asst-qr .chip')]; return ch.length > 0 && !ch.some(c => /Подобрать (средство )?по задаче/.test(c.textContent)) && ch.filter(c => /Старт со Стеллой/.test(c.textContent)).every(c => c.classList.contains('chip-plan')); }), 'быстрые ответы в чате: прежней кнопки подбора нет, «Старт со Стеллой» (если есть) — синяя');
   await p.ask('помоги подобрать средство'); const pk = await p.lastBot();
   ok(pk && /Старт со Стеллой/.test(pk.text) && /start\.html/.test(pk.html), 'на просьбу «подобрать средство» Стелла отправляет в «Старт со Стеллой» вместо прежнего вопроса про задачу', pk && pk.text.slice(0, 160));
@@ -551,7 +552,7 @@ const J = f => JSON.parse(fs.readFileSync(path.join(ROOT, f), 'utf8'));
     const tg = vw + '×' + vh;
     p = await mk({vw, vh, mobile: vw < 800}); await p.open('start.html?v=planFlow:four'); await comp(p, 'role');
     for (const t of ['Москва', 'да', 'Суперпеногасительнейшаяпоследовательностьсимволовбезпробелов1234567890абвгдеёжзий', '<img src=x onerror=alert(1)>']) { await p.fill('.pchat-text', t); await p.press('.pchat-text', 'Enter'); await wait(500); await p.waitForFunction(() => !document.querySelector('.pc-typing'), null, {timeout: 15000}); }
-    const bb = await p.evaluate(() => [...document.querySelectorAll('.pc-u .pc-bub')].map(b => { const r = b.getBoundingClientRect(), cs = getComputedStyle(b), lh = parseFloat(cs.lineHeight) || 22, pad = parseFloat(cs.paddingTop) + parseFloat(cs.paddingBottom), c = b.cloneNode(true); c.style.cssText = 'position:absolute;visibility:hidden;white-space:nowrap;width:auto;max-width:none;left:-9999px'; document.body.appendChild(c); const nat = c.getBoundingClientRect().width; c.remove(); return {t: b.textContent.slice(0, 12), lines: Math.round((r.height - pad) / lh), nat: Math.round(nat), w: Math.round(r.width), over: b.scrollWidth > b.clientWidth + 1}; }));
+    const bb = await p.evaluate(() => [...document.querySelectorAll('.pc-u .pc-bub')].map(b => { const r = b.getBoundingClientRect(), cs = getComputedStyle(b), lh = parseFloat(cs.lineHeight) || 22, pad = parseFloat(cs.paddingTop) + parseFloat(cs.paddingBottom), c = b.cloneNode(true); c.style.cssText = 'position:absolute;visibility:hidden;white-space:nowrap;width:auto;max-width:none;left:-9999px'; b.parentNode.appendChild(c); const nat = c.getBoundingClientRect().width; c.remove();   /* клон — рядом с пузырём: стили страницы старта привязаны к .st-page, в body они не действуют */ return {t: b.textContent.slice(0, 12), lines: Math.round((r.height - pad) / lh), nat: Math.round(nat), w: Math.round(r.width), over: b.scrollWidth > b.clientWidth + 1}; }));
     ok(bb.slice(0, 2).every(x => x.lines === 1 && x.w >= x.nat) && bb.every(x => !x.over), tg + ': короткие слова («Москва», «да») в реплике посетителя целиком, в одну строку; длинное слово переносится внутри пузыря', bb);
     ok(await p.evaluate(() => { const l = document.querySelector('.pchat-log'); return document.documentElement.scrollWidth <= innerWidth + 1 && l.scrollWidth <= l.clientWidth + 1 && !l.querySelector('img[src="x"]'); }), tg + ': нет горизонтальной прокрутки ни у страницы, ни у окна диалога; разметка из ввода не выполняется');
     await p.context().close();

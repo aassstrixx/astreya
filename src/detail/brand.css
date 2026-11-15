@@ -1,0 +1,56 @@
+/* ---------- страница бренда: логотип в нише, упаковки на подставках, паспорт, арки линеек ---------- */
+.dtb-stage .dt-plaque .eyebrow{display:inline-flex;margin:0 0 12px}
+.dtb-stats{display:flex;margin:clamp(16px,1.6cqw,24px) 0 0;padding:0;list-style:none;border-block:1px solid var(--ax-line)}
+.dtb-stats li{flex:1;display:flex;flex-direction:column;gap:6px;padding:12px 14px;border-left:1px solid var(--ax-line);min-width:0}
+.dtb-stats li:first-child{border-left:0;padding-left:0}
+.dtb-stats b{font:500 clamp(24px,2.4cqw,38px)/1 var(--serif);color:var(--ax-ink)}
+.dtb-stats small{font:700 10px/1.2 var(--sans);letter-spacing:.14em;text-transform:uppercase;color:var(--ax-muted)}
+.dtb-stage .dt-plaque>.row{margin-top:clamp(16px,1.6cqw,24px)}
+
+/* «Путь с брендом» (js/sales-pages.js) встаёт сразу за кадром — в ширину страницы */
+.dtb>.sx-mod{max-width:var(--maxw);margin-inline:auto;padding-inline:var(--gut);box-sizing:border-box}
+
+/* о бренде: текст слева, паспорт плитками справа */
+.dtb-about{display:grid;grid-template-columns:minmax(0,.9fr) minmax(0,1.2fr);gap:clamp(26px,3.4vw,60px);align-items:start;padding-top:clamp(36px,4.8vw,80px);padding-bottom:clamp(36px,4.8vw,72px)}
+.dtb-story{position:sticky;top:calc(var(--hdr) + 24px)}
+.dtb-story p{margin:0 0 1em;font:400 clamp(16px,1.3vw,18.5px)/1.72 var(--serif);color:#2c3550}
+.dtb-story p:first-of-type{font-size:clamp(21px,1.9vw,27px);line-height:1.42;letter-spacing:-.005em;color:var(--ax-ink)}
+.dtb-story .tasks-line{margin-top:22px}
+.dtb-passport{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:clamp(12px,1.4vw,20px)}
+.dtb-passport .dt-tile{min-height:150px}
+.dtb-passport .dt-tile p{font-size:15.5px;color:var(--ax-ink)}
+
+/* линейки: арки каменной стены с числом позиций; в нише — упаковка из линейки */
+.dtb-lines{padding-bottom:clamp(36px,4.8vw,72px)}
+.dtb-arches{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,300px));gap:clamp(18px,2.2vw,32px);justify-content:center;margin-top:clamp(18px,2vw,30px)}
+.dtb-arch{position:relative;display:flex;flex-direction:column;align-items:center;text-align:center;gap:8px;padding:clamp(16px,1.6vw,22px) 20px 22px;border-radius:150px 150px 22px 22px;color:var(--ax-ink);
+  background:linear-gradient(180deg,#f8f4ea,#eae1cd);border:1px solid rgba(255,255,255,.75);
+  box-shadow:inset 0 1px 0 #fff,inset 0 -1px 0 rgba(86,60,30,.14),2px 3px 5px rgba(66,44,20,.12),24px 32px 42px -24px rgba(66,44,20,.55)}
+.dtb-in{position:relative;display:block;width:100%;aspect-ratio:1/1.04;border-radius:999px 999px 14px 14px;overflow:hidden;
+  background:radial-gradient(120% 90% at 34% 16%,#fdf8ec 0,#f0e7d2 52%,#e1d5bb);box-shadow:inset 9px 11px 20px -5px rgba(86,60,30,.3),inset -3px -2px 8px rgba(255,255,255,.7)}
+.dtb-in::after{content:"";position:absolute;left:19%;right:19%;bottom:7%;height:11%;border-radius:50%/60%;background:linear-gradient(180deg,#f3ead6,#d8c9a8);box-shadow:inset 0 1px 0 rgba(255,255,255,.8),5px 7px 8px -3px rgba(66,44,20,.4)}
+.dtb-ap{position:absolute;left:50%;bottom:13%;z-index:1;height:calc(var(--hp) * .66%);aspect-ratio:var(--sar);transform:translateX(-50%)}
+.dtb-ap img{display:block;width:100%;height:100%;object-fit:contain;filter:drop-shadow(8px 7px 6px rgba(66,44,20,.32))}
+.dtb-num{display:flex;align-items:baseline;gap:8px;margin-top:8px}
+.dtb-num b{font:500 clamp(38px,3.4vw,50px)/1 var(--serif);color:var(--ax-ink)}
+.dtb-num small{font:700 10.5px/1 var(--sans);letter-spacing:.14em;text-transform:uppercase;color:var(--ax-muted)}
+.dtb-arch h3{margin:0;font:500 clamp(20px,1.7vw,24px)/1.2 var(--serif)}
+.dtb-arch p{margin:0;font-size:13.5px;line-height:1.5;color:var(--ax-muted)}
+.dtb-arch .lnk{margin-top:6px}
+@media (hover:hover) and (pointer:fine){.dtb-arch{transition:transform .55s var(--ax-ease),box-shadow .55s var(--ax-ease)}.dtb-arch:hover{transform:translateY(-5px);box-shadow:inset 0 1px 0 #fff,inset 0 -1px 0 rgba(86,60,30,.14),2px 3px 5px rgba(66,44,20,.12),24px 38px 48px -22px rgba(66,44,20,.6)}}
+.dtb-arch:focus-visible{outline:2px solid var(--dt-navy);outline-offset:4px}
+
+.dtb-shelf .sec-head{margin-bottom:clamp(18px,2vw,30px)}
+.dt-bar-a{display:flex;align-items:center;gap:10px;flex:none}
+
+@media (max-width:900px){
+  .dtb-about{grid-template-columns:minmax(0,1fr)}
+  .dtb-story{position:static}
+}
+@media (max-width:560px){
+  .dtb-arches{grid-template-columns:minmax(0,300px)}
+  .dtb-passport{grid-template-columns:minmax(0,1fr)}
+  .dtb-passport .dt-tile{min-height:0}
+  .dt-bar-a .btn-ghost{display:none}
+  .dtb-stats b{font-size:26px}
+}
