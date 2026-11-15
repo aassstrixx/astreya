@@ -305,9 +305,9 @@ def lights():
 CAMS = {
     'main': dict(loc=(0.0, 1.0, 1.7), rot=(2.5, 0, 0), lens=24),
     'wide': dict(loc=(0.0, LEN - 2.6, 2.4), rot=(1.5, 0, 180), lens=22),
-    'sculpture': dict(loc=(2.2, SY - 9.2, 1.6), rot=(10.0, 0, 3), lens=42),
+    'sculpture': dict(loc=(0.0, SY - 13.2, 1.5), rot=(9.0, 0, 0), lens=33),
     'arch': dict(loc=(-3.2, 9.5, 1.5), rot=(5.0, 0, -38), lens=30),
-    'side': dict(loc=(-7.4, 14.0, 1.6), rot=(1.0, 0, -76), lens=26),
+    'side': dict(loc=(-8.6, 4.0, 1.6), rot=(2.0, 0, 14), lens=32),
     'mobile': dict(loc=(0.0, 6.0, 1.7), rot=(7.0, 0, 0), lens=20),
 }
 
