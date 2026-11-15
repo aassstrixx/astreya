@@ -86,7 +86,7 @@
 
 /* ---------- полка ---------- */
 /* ---------- полка ---------- */
-.pdp-shelf,.dtb-shelf{padding:clamp(40px,5vw,72px) 0 clamp(52px,6vw,88px);background:linear-gradient(180deg,rgba(233,220,197,0),rgba(233,220,197,.55) 18%,rgba(233,220,197,.55) 82%,rgba(233,220,197,0))}
+.pdp-shelf,.dtb-shelf{isolation:isolate;padding:clamp(40px,5vw,72px) 0 clamp(52px,6vw,88px);background:linear-gradient(180deg,rgba(233,220,197,0),rgba(233,220,197,.55) 18%,rgba(233,220,197,.55) 82%,rgba(233,220,197,0))}
 .pdp-shelf .grid,.dtb-shelf .grid{position:relative;padding-bottom:30px}
 .pdp-shelf .grid::after,.dtb-shelf .grid::after{content:"";position:absolute;left:-1.5%;right:-1.5%;bottom:0;height:24px;border-radius:5px;z-index:-1;background:linear-gradient(180deg,#eadfc8,#d5c3a2);box-shadow:inset 0 1px 0 rgba(255,255,255,.7),0 22px 26px -14px rgba(86,60,30,.55)}
 
