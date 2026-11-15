@@ -1,0 +1,84 @@
+/* ============ 404 — «потерялись в галерее» ============
+   Первый экран — рендер пустого зала с тремя арками (assets/utility/arches.webp, цвет подогнан под общий). Крупное «404» вырезано в камне, рядом растерянно плывёт жемчужина Стеллы
+   (шар из js/assistant.js, js/pg-404.js ведёт её взгляд за указателем и меняет настроение). Под рендером — четыре «таблички» с номерами: каталог, бренды, обучение, поиск.
+   Разметка — src/pages/misc.js (notFoundPage). Все правила — под .nf-page. Двигаются только opacity и transform. */
+
+.nf-page{--nf-plaster:#f4eee1;--nf-ink:var(--navy,#0b1a33);--nf-mut:#665f4f;--nf-line:rgba(120,84,40,.16);--nf-line-2:rgba(120,84,40,.3);--nf-gold:#b08e4e;--nf-gold-d:#8a6a30;
+  --nf-sh:0 1px 2px rgba(86,60,30,.1),0 40px 70px -36px rgba(86,60,30,.6);--nf-sh-s:0 1px 2px rgba(86,60,30,.09),0 16px 26px -18px rgba(86,60,30,.5);--nf-ease:cubic-bezier(.16,1,.3,1);--nf-g:clamp(16px,5vw,96px);
+  position:relative;margin-top:calc(var(--hdr,84px) * -1);background:var(--nf-plaster);color:var(--nf-ink);overflow-x:clip}
+
+body[data-page="notfound"] .hdr{background:transparent;border-bottom-color:transparent;transition:transform .6s var(--ease-out,ease),background-color .5s ease,border-color .5s ease}
+html.ut-scrolled body[data-page="notfound"] .hdr,body[data-page="notfound"].menu-open .hdr,body[data-page="notfound"].search-open .hdr{background:var(--milk,#f5f2ec);border-bottom-color:var(--line-soft,rgba(0,0,0,.08))}
+body[data-page="notfound"] .hdr .logo{--lm:#101f37}
+body[data-page="notfound"] .nav a.nl:hover,body[data-page="notfound"] .nav a.nl.on{color:#101f37}
+
+/* ---------- сцена ---------- */
+.nf-scene{position:relative;isolation:isolate;min-height:min(880px,100svh);padding:calc(var(--hdr,84px) + clamp(30px,5vw,80px)) var(--nf-g) clamp(60px,7vw,110px);display:flex;align-items:flex-start}
+.nf-bg{position:absolute;inset:0;z-index:-1;overflow:hidden;pointer-events:none;background:#e6dcc6}
+.nf-bg picture{display:contents}
+.nf-bg-img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:50% 70%}
+.nf-wash{position:absolute;inset:0;background:linear-gradient(90deg,rgba(247,242,230,.74) 0,rgba(247,242,230,.4) 38%,rgba(247,242,230,0) 66%),linear-gradient(180deg,rgba(247,242,230,.5) 0,rgba(247,242,230,0) 26%)}
+.nf-fade{position:absolute;left:0;right:0;bottom:0;height:20%;background:linear-gradient(180deg,rgba(244,238,225,0),var(--nf-plaster) 94%)}
+.nf-in{position:relative;width:100%;max-width:1520px;margin-inline:auto}
+.nf-in>*:not(.nf-orb){max-width:min(620px,100%)}
+.nf-eyebrow{display:inline-flex;align-items:center;gap:14px;font:700 12px/1 var(--sans);letter-spacing:.2em;text-transform:uppercase;color:var(--nf-gold-d)}
+.nf-eyebrow::before{content:"";width:34px;height:1px;background:currentColor}
+.nf-num{margin:clamp(6px,1vw,14px) 0 0;font:400 clamp(110px,17vw,260px)/.86 var(--serif);letter-spacing:-.04em;color:transparent;background:linear-gradient(180deg,#fffaf0 0,#e5d8bb 46%,#b99d68 100%);-webkit-background-clip:text;background-clip:text;filter:drop-shadow(0 2px 0 rgba(255,255,255,.7)) drop-shadow(0 18px 18px rgba(86,60,30,.34));user-select:none}
+.nf-in h1{margin:clamp(6px,1vw,14px) 0 0;font:400 clamp(30px,3.6vw,54px)/1.08 var(--serif);letter-spacing:-.015em;color:var(--nf-ink);text-wrap:balance}
+.nf-lead{margin:clamp(12px,1.4vw,20px) 0 0;font:400 clamp(16px,1.15vw,18px)/1.6 var(--sans);color:#3c4660;text-shadow:0 0 14px rgba(247,242,230,.95),0 0 3px rgba(247,242,230,.85)}
+
+/* Стелла в зале */
+.nf-orb{position:absolute;right:clamp(8%,16vw,26%);top:clamp(30px,8vw,130px);width:clamp(84px,9.5vw,150px);aspect-ratio:1;pointer-events:none;transform:translate(var(--nf-x,0),var(--nf-y,0))}
+.nf-orb::before{content:"";position:absolute;inset:-60%;border-radius:50%;background:radial-gradient(closest-side,rgba(255,244,214,.92),rgba(255,236,190,.45) 46%,rgba(255,236,190,0) 72%);animation:nfGlow 5.6s ease-in-out infinite}
+.nf-orb svg{position:relative;display:block;width:100%;height:100%;filter:drop-shadow(0 18px 18px rgba(86,60,30,.34));animation:nfDrift 7.4s ease-in-out infinite}
+.nf-orb::after{content:"?";position:absolute;left:62%;top:-18%;width:34px;height:34px;display:flex;align-items:center;justify-content:center;border-radius:50%;background:#fcf8ee;border:1px solid var(--nf-line-2);box-shadow:var(--nf-sh-s);font:400 20px/1 var(--serif);color:var(--nf-ink);animation:nfAsk 3.6s ease-in-out infinite}
+@keyframes nfGlow{50%{opacity:.7;transform:scale(1.06)}}
+@keyframes nfDrift{0%,100%{transform:translate(0,0) rotate(-2deg)}50%{transform:translate(-14px,-12px) rotate(3deg)}}
+@keyframes nfAsk{0%,100%{opacity:0;transform:translateY(6px) scale(.8)}20%,70%{opacity:1;transform:none}}
+
+/* строка запроса и подсказки */
+.nf-page .nf-form{margin-top:clamp(20px,2.4vw,32px);padding:clamp(8px,.8vw,10px);gap:10px;align-items:center;border-radius:20px;background:linear-gradient(180deg,rgba(253,250,242,.96),rgba(245,237,221,.94));border:1px solid var(--nf-line-2);box-shadow:var(--nf-sh),inset 0 1px 0 rgba(255,255,255,.85)}
+.nf-page .nf-form .search{min-width:0}
+.nf-page .nf-form .search .ic{left:18px;width:20px;height:20px;color:var(--nf-gold-d)}
+.nf-page .nf-form .search input{height:54px;padding:0 16px 0 48px;border-radius:12px;border:1px solid transparent;background:transparent;font:500 18px/1.2 var(--serif);color:var(--nf-ink);box-shadow:none}
+.nf-page .nf-form .search input::placeholder{color:#80786a;font-style:italic}
+.nf-page .nf-form .search input:focus{background:rgba(255,255,255,.7);border-color:var(--nf-gold);box-shadow:0 0 0 3px rgba(176,142,78,.22)}
+.nf-page .nf-form .btn{flex:none;min-height:54px;padding-inline:26px;border-radius:12px}
+.nf-page .nf-hints{margin-top:16px;gap:8px 10px}
+.nf-page .nf-hints>span{font:700 11px/1 var(--sans);letter-spacing:.18em;text-transform:uppercase;color:var(--nf-gold-d);margin-right:4px}
+.nf-page .nf-hints .chip{min-height:44px;display:inline-flex;align-items:center;padding:0 18px;font:600 14px/1 var(--sans);color:var(--nf-ink);border-radius:999px;background:linear-gradient(180deg,rgba(253,250,242,.94),rgba(244,236,219,.92));border:1px solid var(--nf-line-2);box-shadow:0 1px 1px rgba(86,60,30,.08),0 8px 14px -10px rgba(86,60,30,.5);transition:transform .35s var(--nf-ease),border-color .25s}
+.nf-page .nf-hints .chip:hover{border-color:var(--nf-gold);transform:translateY(-2px)}
+.nf-page .nf-hints .chip:focus-visible,.nf-page .nf-go a:focus-visible,.nf-page .nf-form .btn:focus-visible,.nf-page .nf-home:focus-visible{outline:2px solid var(--nf-gold-d);outline-offset:3px}
+
+/* ---------- таблички-разделы ---------- */
+.nf-go{position:relative;padding:0 var(--nf-g) clamp(70px,8vw,130px);background:var(--nf-plaster)}
+.nf-go-l{list-style:none;margin:0 auto;padding:0;max-width:1520px;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:clamp(12px,1.6vw,22px)}
+.nf-go-l a{position:relative;display:grid;grid-template-columns:1fr auto;grid-template-areas:"n n" "t a" "s s";gap:6px 10px;align-items:end;min-height:150px;padding:18px 20px 18px;border-radius:18px;background:linear-gradient(180deg,#fdfaf2,#f3e9d3);border:1px solid var(--nf-line);box-shadow:var(--nf-sh-s),inset 0 1px 0 rgba(255,255,255,.8);color:var(--nf-ink);transition:transform .45s var(--nf-ease),box-shadow .3s,border-color .25s}
+.nf-go-l a:hover{transform:translateY(-4px);border-color:var(--nf-line-2);box-shadow:0 1px 2px rgba(86,60,30,.1),0 26px 32px -20px rgba(86,60,30,.62),inset 0 1px 0 rgba(255,255,255,.8)}
+.nf-go-n{grid-area:n;align-self:start;font:700 12px/1 var(--sans);letter-spacing:.2em;color:var(--nf-gold-d)}
+.nf-go-l b{grid-area:t;font:400 clamp(24px,2.2vw,32px)/1.1 var(--serif)}
+.nf-go-l small{grid-area:s;font:400 14px/1.45 var(--sans);color:var(--nf-mut)}
+.nf-go-l a .ic{grid-area:a;width:36px;height:36px;padding:9px;border-radius:50%;background:#0b1a33;color:#f6efe0;transition:transform .4s var(--nf-ease)}
+.nf-go-l a:hover .ic{transform:translateX(4px)}
+.nf-home{display:flex;width:max-content;margin:clamp(22px,2.4vw,34px) auto 0}
+
+@media (max-width:1100px){
+  .nf-go-l{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .nf-orb{right:6%;top:calc(var(--hdr,84px) + 10px)}
+}
+@media (max-width:760px){
+  .nf-scene{min-height:0;padding-top:calc(var(--hdr,64px) + 20px);padding-bottom:56px}
+  .nf-bg-img{object-position:50% 100%}
+  .nf-wash{background:linear-gradient(180deg,rgba(247,242,230,.82) 0,rgba(247,242,230,.58) 56%,rgba(247,242,230,.12) 100%)}
+  .nf-num{font-size:clamp(96px,30vw,140px)}
+  .nf-orb{width:74px;right:8%;top:calc(var(--hdr,64px) + 4px)}
+  .nf-page .nf-form{flex-wrap:wrap}
+  .nf-page .nf-form .search{flex:1 1 100%}
+  .nf-page .nf-form .btn{flex:1 1 100%;justify-content:center}
+  .nf-go-l{grid-template-columns:1fr}
+  .nf-go-l a{min-height:0;grid-template-areas:"n a" "t a" "s s";padding:16px 18px}
+  .nf-home{width:100%;justify-content:center}
+}
+@media print{.nf-bg,.nf-orb,.nf-form,.nf-hints{display:none!important}.nf-page{margin-top:0}}
+@media (prefers-reduced-motion:reduce){.nf-orb::before,.nf-orb svg,.nf-orb::after{animation:none}.nf-orb::after{opacity:1}.nf-page *{transition-duration:.01ms!important}}
+.nf-in>*:not(.nf-orb){margin-left:0;margin-right:auto}

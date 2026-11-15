@@ -1,0 +1,48 @@
+/* ---------- страница товара: упаковка на подиуме, паспорт, запрос, полка ---------- */
+
+/* ---------- паспорт: коротко ---------- */
+.pdp-spec{padding-top:clamp(8px,1vw,16px)}
+.pdp .specs{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));margin:0;padding:0;border-block:1px solid var(--ax-line);background:linear-gradient(180deg,rgba(255,255,255,.4),rgba(255,255,255,0))}
+.pdp .specs>div{display:flex;flex-direction:column;gap:7px;padding:clamp(16px,1.7vw,24px) clamp(14px,1.6vw,24px);border-left:1px solid var(--ax-line);min-width:0}
+.pdp .specs>div:first-child{border-left:0}
+.pdp .specs dt{font:700 10px/1 var(--sans);letter-spacing:.16em;text-transform:uppercase;color:var(--ax-muted)}
+.pdp .specs dd{margin:0;font:500 clamp(16px,1.35vw,20px)/1.25 var(--serif);color:var(--ax-ink);overflow-wrap:anywhere}
+.pdp .specs dd a{border-bottom:1px dashed rgba(86,60,30,.45)}
+.pdp .specs .tbd{font:italic 400 14px/1.35 var(--sans);color:var(--ax-muted)}
+
+/* ---------- паспорт: плитки ---------- */
+.pdp-passport{padding-top:clamp(26px,3.4vw,52px);padding-bottom:clamp(40px,5vw,76px)}
+.pdp-mosaic{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:clamp(14px,1.6vw,22px)}
+.pdp-mosaic .is-wide{grid-column:span 2}
+.pdp-mosaic .dt-tile.is-wide p:first-of-type{font:400 clamp(17px,1.4vw,20px)/1.6 var(--serif);color:var(--ax-ink)}
+
+/* запрос: тёмно-синяя плита справа от документов; «что будет после запроса» (js/sales-pages.js) — рядом */
+.pdp-side{display:grid;grid-template-columns:minmax(0,1.05fr) minmax(0,1fr);gap:clamp(14px,1.6vw,22px);align-items:stretch}
+.pdp-side .p-req{display:flex;flex-direction:column;align-items:flex-start;gap:12px;margin:0;padding:clamp(24px,2.3vw,34px);border-radius:var(--ax-r-l);background:linear-gradient(155deg,#16294b,#0b1a33 70%);border:1px solid rgba(255,255,255,.1);color:#f4efe4;box-shadow:inset 0 1px 0 rgba(255,255,255,.12),0 30px 46px -26px rgba(11,26,51,.7)}
+.pdp-side .p-req .eyebrow{color:rgba(244,239,228,.66)}
+.pdp-side .p-req h3{margin:0;font:500 clamp(22px,1.9vw,28px)/1.15 var(--serif);color:#fbf7ee}
+.pdp-side .p-req .muted{color:rgba(244,239,228,.72);margin:0}
+.pdp-side .p-req .btn-fill{background:#f6f0e2;color:var(--navy);border-color:transparent}
+.pdp-side .p-req .lnk{color:#f4efe4;border-color:rgba(244,239,228,.4)}
+.pdp-side .sx-after-steps{margin:0;height:100%;padding:clamp(22px,2.1vw,30px);border-radius:var(--ax-r-l);background:var(--dt-card-2);border:1px solid var(--ax-line);box-shadow:inset 0 1px 0 rgba(255,255,255,.9),var(--ax-sh-1)}
+.pdp-side .sx-after-steps>b{color:var(--ax-muted)}
+.pdp-side .sx-sq{border-color:rgba(176,142,78,.6);border-radius:50%;background:rgba(255,255,255,.7);color:var(--ax-ink)}
+.pdp-side .sx-after-steps li:not(:last-child)::before{border-left-color:rgba(176,142,78,.5)}
+
+
+@media (max-width:1100px){
+  .pdp .specs{grid-template-columns:repeat(3,minmax(0,1fr))}
+  .pdp .specs>div:nth-child(4){border-left:0}
+  .pdp .specs>div:nth-child(n+4){border-top:1px solid var(--ax-line)}
+  .pdp-mosaic{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .pdp-side{grid-column:1/-1}
+}
+@media (max-width:760px){
+  .pdp-mosaic{grid-template-columns:minmax(0,1fr)}
+  .pdp-mosaic .is-wide{grid-column:auto}
+  .pdp-side{grid-template-columns:minmax(0,1fr)}
+  .pdp .specs{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .pdp .specs>div:nth-child(n){border-left:1px solid var(--ax-line);border-top:0}
+  .pdp .specs>div:nth-child(odd){border-left:0}
+  .pdp .specs>div:nth-child(n+3){border-top:1px solid var(--ax-line)}
+}

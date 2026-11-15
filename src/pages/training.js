@@ -220,57 +220,6 @@ function trainingPage(ctx, C, P) {
   ${C.ctaBand(P, 'training-cta', C.closingCfg('training') && Object.assign({}, C.closingCfg('training'), {vars: {}}))}`;
 }
 
-function eventPage(ctx, C, P, e) {
-  const b = ctx.brandById[e.brand], t = ctx.teacherById[e.teacher], d = dparts(e.date);
-  const others = ctx.sortedEvents.filter(x => x.id !== e.id).slice(0, 3);
-  const online = e.fmt !== 'Очно';
-  const facts = [['Дата', C.timeTag(e.date)], ['Время', esc(e.time)], ['Город', esc(e.city)], ['Формат', esc(e.fmt)], [online ? 'Подключение' : 'Место', esc(e.place)],
-    ['Преподаватель', esc(e.speaker)], ['Бренд', `<a href="${C.burl(P, b)}">${esc(b.name)}</a>`], ['Места', e.seats ? esc(String(e.seats)) : 'Количество мест уточняйте при регистрации']];
-  return `<div class="wrap" style="${bstyle(b)}" data-event="${e.id}" data-date="${e.date}">
-    <section class="e-hero">
-      ${C.crumbs(P, [['Главная', 'index.html'], ['Обучение', 'training.html'], [e.title, `training/${e.slug}.html`]])}
-      <div class="e-top">
-        <div class="date big reveal"><b>${d.d}</b><span>${d.m}</span><em>${d.y}</em></div>
-        <div>
-          <span class="tag blue reveal">${esc(e.fmt)} · ${esc(e.city)}</span>
-          <h1 class="reveal">${esc(e.title)}</h1>
-          <p class="lead reveal">${esc(e.description)}</p>
-          ${e.date >= new Date().toISOString().slice(0, 10) ? C.cdSlot() : ''}
-          <div class="notice past reveal" id="past-note" hidden>${I.info}<span>Мероприятие уже прошло. Актуальные даты — в <a href="${C.u(P, 'training.html')}">расписании</a>.</span></div>
-          <div class="row reveal" id="e-cta"><button class="btn btn-fill" type="button" data-act="form" data-type="seminar" data-ref="${e.id}" data-track="event_register" data-place="event-hero">Записаться ${I.arrow}</button>
-            <a class="btn btn-ghost" href="${C.u(P, 'training.html')}">Все мероприятия</a></div>
-        </div>
-      </div>
-    </section>
-
-    <section class="sec" style="padding-top:clamp(20px,3vw,40px)">
-      <div class="e-cols">
-        <div class="e-main">
-          <article class="p-block reveal"><h2>О мероприятии</h2><p>${esc(e.description)}</p>
-            <p>${online ? 'Формат — вебинар: ссылку на подключение присылаем после регистрации.' : 'Базовые семинары проходят с 10:30 до 18:00: теоретические блоки чередуются с практическими мастер-классами.'}</p></article>
-          <article class="p-block reveal"><h2>Программа</h2><p><span class="tbd">Уточняется — программу пришлёт менеджер учебного центра при подтверждении участия.</span></p></article>
-          <article class="p-block reveal"><h2>Участие</h2><p>Базовые семинары и мастер-классы учебного центра «Астрея» бесплатные. Условия отдельных программ уточняйте у менеджера при регистрации.</p></article>
-          ${t ? `<article class="card tcard card-pad reveal e-teacher"><div class="avatar" aria-hidden="true">${esc(t.mono)}</div><div><span class="eyebrow in">Преподаватель</span><h3>${esc(t.name)}</h3><p>${esc(t.spec)}</p><div class="tasks-line">${t.topics.map(x => C.tag(x)).join('')}</div></div></article>` : ''}
-        </div>
-        <aside class="e-side reveal">
-          <dl class="facts-dl card card-pad">${facts.map(([k, v]) => `<div><dt>${k}</dt><dd>${v}</dd></div>`).join('')}</dl>
-        </aside>
-      </div>
-    </section>
-
-    <section class="sec" id="register" style="padding-top:0">
-      <div class="reg-card card card-pad reveal">
-        <div><span class="eyebrow in">Регистрация</span><h2>Записаться на мероприятие</h2><p class="muted">Оставьте контакты — менеджер учебного центра подтвердит участие и вышлет детали.</p>
-          <p class="muted small">${esc(e.title)} — ${d.full}, ${esc(e.city)}</p></div>
-        <div>${S.formHTML('seminar', {root: P.root, uid: 'ev', ref: e.id})}</div>
-      </div>
-    </section>
-
-    <section class="sec" style="padding-top:0">
-      ${C.secHead('Обучение', 'Другие мероприятия', C.lnk(C.u(P, 'training.html'), 'Всё расписание'))}
-      <div class="grid g3 events-grid">${others.map(x => C.eventCard(P, x)).join('')}</div>
-    </section>
-  </div>`;
-}
+const eventPage = (ctx, C, P, e) => require('./event-page.js')(ctx, C, P, e);   // страница мероприятия v2 — src/pages/event-page.js
 
 module.exports = {trainingPage, eventPage};

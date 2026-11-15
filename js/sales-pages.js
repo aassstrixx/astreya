@@ -292,6 +292,11 @@
     /* лист ожидания и в пустой выдаче расписания */
     const emp = $('#sem-empty', main); if (emp && !$('[data-sx-wait]', emp)) emp.insertAdjacentHTML('beforeend', '<div class="row" style="justify-content:center;margin-top:14px"><button class="btn btn-fill btn-sm" type="button" data-sx-wait="" data-sx="schedule-wait">' + esc(cfg.noneCta) + '</button></div>');
   }
+  /* фильтр городов страницы «Обучение» (#city-chips): выбранный город запоминается для «Вашего региона», как и прежний переключатель */
+  document.addEventListener('click', e => {
+    const c = e.target.closest && e.target.closest('#city-chips .chip[data-id]'); if (!c) return;
+    const city = c.getAttribute('data-id'); K.setCity(city === 'all' || city === 'Онлайн' ? '' : city);
+  });
   document.addEventListener('click', e => {
     const w = e.target.closest && e.target.closest('[data-sx-wait]'); if (!w) return;
     let city = w.getAttribute('data-sx-wait') || ''; if (!city) { const on = $('#city-chips .chip.on'); city = on && on.getAttribute('data-id') !== 'all' ? (on.getAttribute('data-v') || on.textContent.trim()) : ''; }

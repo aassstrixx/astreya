@@ -1,0 +1,46 @@
+/* ============ Статья (news/*.html): страница газеты на каменном столе ============
+   Разметка — src/pages/news.js (articlePage), поведение — js/news-article.js. Всё под корнем .na.
+   Лист бумаги (assets/news/paper.webp) лежит на плите травертина (assets/news/table-s.webp); под листом — связанные товары, события и «Читайте также» на обычном фоне сайта.
+   Действия (CTA, связанные блоки, соседние материалы) — те же, что и раньше; меняется только оформление. */
+.na{--na-ink:#171b29;--na-ink2:#434858;--na-paper:#f1ead9;--na-brass:#98763a;--na-brass2:#c7a460;--na-navy:#101f37;--na-line:rgba(23,27,41,.2);
+  --na-serif:'Fraunces','Playfair Display',Georgia,serif;--na-disp:'Playfair Display','Fraunces',Georgia,serif;--na-sans:'Manrope',system-ui,sans-serif;color:var(--na-ink)}
+.na-stone{position:relative;isolation:isolate;overflow:hidden;padding:clamp(28px,5vw,64px) var(--gut,20px) clamp(54px,7vw,96px);background:#a99a82 url(../assets/news/table-s.webp?v=d5703c31) center/cover no-repeat}
+.na-stone::after{content:"";position:absolute;left:0;right:0;bottom:0;height:90px;z-index:-1;background:linear-gradient(180deg,transparent,var(--milk,#f5f2ec));pointer-events:none}
+.na-light{position:absolute;inset:0;z-index:-1;pointer-events:none;background:radial-gradient(60% 50% at 22% 8%,rgba(255,246,224,.26),transparent 70%),radial-gradient(90% 60% at 50% 110%,rgba(60,42,16,.28),transparent 70%)}
+.na-sheet{position:relative;max-width:880px;margin:0 auto;padding:clamp(22px,4vw,48px) clamp(20px,5.5vw,72px) clamp(26px,4vw,46px);background:var(--na-paper) url(../assets/news/paper.webp?v=d5703c31) 0 0/420px;border-radius:3px;
+  box-shadow:0 1px 0 rgba(255,255,255,.7) inset,0 .5px 0 rgba(60,40,12,.2),.3em .6em 1.2em -.4em rgba(48,32,12,.42),1.2em 2.4em 3.6em -1em rgba(48,32,12,.4),0 0 0 1px rgba(60,40,12,.12)}
+.na-sheet::before{content:"";position:absolute;inset:0;pointer-events:none;border-radius:inherit;background:radial-gradient(120% 90% at 50% 40%,transparent 58%,rgba(110,84,36,.12))}
+.na-sheet>*{position:relative}
+.na-prog{position:sticky!important;top:var(--hdr-h,76px);z-index:3;display:block;height:3px;margin:calc(-1 * clamp(22px,4vw,48px)) calc(-1 * clamp(20px,5.5vw,72px)) clamp(18px,3vw,30px);background:linear-gradient(90deg,var(--na-brass),var(--na-brass2));transform-origin:0 50%;transform:scaleX(var(--p,0));opacity:.85;border-radius:3px 0 0 0}
+.na .crumbs{flex-wrap:wrap;gap:4px 9px;font-size:11px;letter-spacing:.1em;line-height:1.3;color:var(--na-ink2)}
+.na-mast{display:flex;align-items:center;justify-content:space-between;gap:1em;margin:clamp(14px,2vw,22px) 0 clamp(16px,2.4vw,26px);padding-bottom:.7em;border-bottom:3px double rgba(23,27,41,.55);font:700 11px/1 var(--na-sans);letter-spacing:.2em;text-transform:uppercase;color:var(--na-ink2)}
+.na-mast em{font:italic 400 clamp(14px,1.6vw,18px)/1 var(--na-disp);letter-spacing:.02em;text-transform:none;color:var(--na-brass)}
+.na-meta{display:flex;align-items:center;flex-wrap:wrap;gap:.6em 1.2em;margin:0 0 14px;font:500 13px/1 var(--na-sans);color:var(--na-ink2)}
+.na .np-tag{display:inline-flex;align-items:center;gap:.55em;font:700 11px/1 var(--na-sans);letter-spacing:.16em;text-transform:uppercase;color:var(--na-ink2)}
+.na .np-tag i{width:.7em;height:.7em;border-radius:50%;background:var(--c1,var(--na-navy));box-shadow:0 0 0 1px rgba(255,255,255,.6)}
+.na h1{font:600 clamp(32px,5.4vw,60px)/1.05 var(--na-disp);letter-spacing:-.02em;margin:0 0 .35em;color:var(--na-ink);text-wrap:balance}
+.na-dek{font:italic 400 clamp(18px,2.2vw,23px)/1.45 var(--na-disp);color:var(--na-ink2);margin:0 0 clamp(18px,3vw,30px);text-wrap:pretty;max-width:36em}
+.na-cover{position:relative;margin:0 calc(-1 * clamp(0px,2vw,24px)) clamp(22px,3.4vw,36px);box-shadow:0 0 0 1px rgba(23,27,41,.2)}
+.na-cover img{display:block;width:100%;height:auto;aspect-ratio:16/9;object-fit:cover}
+.na-type{display:grid;place-items:center;aspect-ratio:16/9;background:linear-gradient(165deg,#18305a,#0d1830 72%);color:#f4ecda}
+.na-type span{font:600 clamp(54px,12vw,150px)/.9 var(--na-disp);letter-spacing:-.04em;background:linear-gradient(180deg,#fbf3df,#d9c38f 90%);-webkit-background-clip:text;background-clip:text;color:transparent;text-align:center;padding:0 .2em}
+.na-pk{position:absolute!important;inset:0;display:flex;align-items:flex-end;justify-content:center;gap:2.2%;padding:3% 0 4%;pointer-events:none;background:linear-gradient(180deg,rgba(231,220,195,.55),rgba(239,231,211,.92))}
+.na-pk .np-pk{display:block;width:auto;height:88%;filter:drop-shadow(.5em .7em .7em rgba(60,40,10,.34))}
+.na-pk .np-pk-c{height:72%}
+.na-body{max-width:36em;font:400 clamp(17px,1.5vw,19px)/1.7 var(--na-serif);color:#232738}
+.na-body p{margin:0 0 1.1em;text-wrap:pretty;hyphens:auto;-webkit-hyphens:auto}
+.na-body .na-first::first-letter{font:600 4.1em/.8 var(--na-disp);float:left;padding:.07em .1em 0 0;color:var(--na-navy)}
+.na-cta{display:flex;flex-wrap:wrap;gap:12px 14px;margin:clamp(22px,3vw,34px) 0 0;padding-top:clamp(18px,2.6vw,26px);border-top:1px solid var(--na-line)}
+.na-sib{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:clamp(26px,4vw,44px);padding-top:18px;border-top:3px double rgba(23,27,41,.5)}
+.na-sib a{display:flex;flex-direction:column;gap:6px;padding:12px 14px;border-radius:6px;background:rgba(255,252,243,.55);box-shadow:inset 0 0 0 1px rgba(23,27,41,.16);transition:background .3s,transform .4s cubic-bezier(.16,1,.3,1)}
+.na-sib a:hover,.na-sib a:focus-visible{background:#fffdf6;transform:translateY(-2px)}
+.na-sib .nx{text-align:right;align-items:flex-end}
+.na-sib small{display:inline-flex;align-items:center;gap:6px;font:700 11px/1 var(--na-sans);letter-spacing:.14em;text-transform:uppercase;color:var(--na-brass)}
+.na-sib small svg{width:14px;height:14px}
+.na-sib span{font:600 clamp(15px,1.5vw,17px)/1.3 var(--na-disp);color:var(--na-ink)}
+.na-after{padding-top:clamp(8px,2vw,24px)}
+/* появление листа: ложится на стол (только transform/opacity; при «меньше движения» — сразу) */
+.na[data-na-ready] .na-sheet{opacity:0;transform:translateY(26px) rotate(-.5deg)}
+.na[data-na-ready].is-in .na-sheet{opacity:1;transform:none;transition:opacity .7s cubic-bezier(.16,1,.3,1),transform 1.1s cubic-bezier(.16,1,.3,1)}
+@media (max-width:640px){.na-sib{grid-template-columns:1fr}.na-sib .nx{text-align:left;align-items:flex-start}.na-cover{margin-left:0;margin-right:0}.na-mast span:last-child{display:none}}
+@media (prefers-reduced-motion:reduce){.na[data-na-ready] .na-sheet,.na[data-na-ready].is-in .na-sheet{opacity:1;transform:none;transition:none}.na-sib a{transition:none}}
