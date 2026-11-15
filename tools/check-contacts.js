@@ -37,7 +37,7 @@ const norm = s => String(s || '').replace(/[\s  ]+/g, ' ').trim();
   const read = p => p.evaluate(() => ({sum: document.getElementById('calc-sum').textContent, tier: document.getElementById('calc-tier').textContent, save: document.getElementById('calc-save').textContent, on: [...document.querySelectorAll('.tier')].map(x => x.classList.contains('on') ? 1 : 0).join(''), reached: [...document.querySelectorAll('.tier')].map(x => x.classList.contains('reached') ? 1 : 0).join(''), val: +document.getElementById('calc-range').value, vt: document.getElementById('calc-range').getAttribute('aria-valuetext'), pressed: [...document.querySelectorAll('[data-pp-set]')].filter(x => x.getAttribute('aria-pressed') === 'true').map(x => +x.getAttribute('data-pp-set'))}));
 
   /* ================= КОНТАКТЫ ================= */
-  p = await open('contacts.html', 1440, 900);
+  let p = await open('contacts.html', 1440, 900);
   const O = SITE.offices, C0 = SITE.contacts;
   t(await p.evaluate(() => document.body.dataset.page === 'contacts' && !!document.querySelector('.cp[data-cp]') && document.querySelectorAll('h1').length === 1), 'контакты: страница v2 включена, один заголовок первого уровня');
   const keys = await p.evaluate(() => [...document.querySelectorAll('.contact-cards .cp-key')].map(k => ({h: k.querySelector('h3').textContent, a: (k.querySelector('.cv a') || {getAttribute: () => ''}).getAttribute('href')})));
