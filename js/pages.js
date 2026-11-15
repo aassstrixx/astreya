@@ -317,7 +317,10 @@
         fill(data(li)); li.classList.add('is-lifted');
         const photo = $('.ac-sp-photo', sp), src = rectOf(li), dst = photo.getBoundingClientRect();
         requestAnimationFrame(() => sp.classList.add('is-in'));
-        if (!still && src.width) photo.animate([{transform: flip(src, dst), offset: 0, easing: 'cubic-bezier(.16,.84,.24,1)'}, {transform: 'scale(1.016)', offset: .74, easing: 'cubic-bezier(.35,0,.25,1)'}, {transform: 'none', offset: 1}], {duration: 1200});          // фото «снимается со стены» и плавно садится в центр: лёгкий «вздох» (1,6 %) в конце хода, без рывка
+        if (!still && src.width) {
+          const dx = src.left - dst.left, dy = src.top - dst.top, k = src.width / dst.width, mid = 'translate(' + (dx * .34).toFixed(1) + 'px,' + (dy * .34 - 26).toFixed(1) + 'px) scale(' + (k + (1 - k) * .72).toFixed(4) + ') rotate(-1.6deg)';          // дуга: фото выходит из проёма вверх, слегка поворачиваясь, и садится в центр
+          photo.animate([{transform: flip(src, dst), offset: 0, easing: 'cubic-bezier(.3,.05,.25,1)'}, {transform: mid, offset: .52, easing: 'cubic-bezier(.3,.1,.25,1)'}, {transform: 'scale(1.02) rotate(.4deg)', offset: .82, easing: 'cubic-bezier(.3,0,.2,1)'}, {transform: 'none', offset: 1}], {duration: 1500});
+        }
         setTimeout(() => { const x = $('.ac-sp-x', sp); if (x) x.focus({preventScroll: true}); }, 80);
         A.track && A.track('teacher_open', {teacher: li.dataset.id});
       };
@@ -330,8 +333,8 @@
           document.body.classList.remove('locked'); document.documentElement.classList.remove('ac-sp-on'); if (opener && opener.focus) opener.focus({preventScroll: true});
         };
         if (still) { done(); return; }
-        const src = rectOf(li), dst = photo.getBoundingClientRect(), an = photo.animate([{transform: 'none'}, {transform: flip(src, dst)}], {duration: 640, easing: 'cubic-bezier(.5,0,.2,1)', fill: 'forwards'});
-        an.onfinish = () => { done(); an.cancel(); }; setTimeout(done, 950);
+        const src = rectOf(li), dst = photo.getBoundingClientRect(), an = photo.animate([{transform: 'none', offset: 0, easing: 'cubic-bezier(.4,0,.2,1)'}, {transform: 'scale(1.02) rotate(.5deg)', offset: .2, easing: 'cubic-bezier(.4,0,.2,1)'}, {transform: flip(src, dst), offset: 1}], {duration: 900, fill: 'forwards'});
+        an.onfinish = () => { done(); an.cancel(); }; setTimeout(done, 1250);
       };
       const step = d => {
         if (closing || !sp || sp.hidden) return; const n = (cur + d + items.length) % items.length, photo = $('.ac-sp-photo', sp), card = $('.ac-sp-card', sp);
