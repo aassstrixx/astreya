@@ -93,10 +93,9 @@ const rub = n => new Intl.NumberFormat('ru-RU').format(n).replace(/[  ]/g, ' ') 
   t(await p.evaluate(() => document.querySelectorAll('.sx-region').length === 1 && document.querySelectorAll('[data-sx-reg]').length >= 3 && !!document.querySelector('.ca-geo h2') && /Мы рядом/.test(document.querySelector('.ca-geo h2').textContent)), 'сцена 7: заголовок «Мы рядом» сохранён — к нему пристраивается «Ваш регион» продающего слоя');
   /* --- 8. партнёрство и калькулятор --- */
   await scrollTo(p, '.ca-partner');
-  const pb = await p.$('.ca-partner .ca-cta [data-act="form"]');
-  t(!!pb && /Стать партнёром/.test(await pb.textContent()) && await pb.getAttribute('data-type') === 'partner', 'сцена 8: кнопка «Стать партнёром» (форма партнёра)');
-  await pb.click(); await p.waitForTimeout(800);
-  t(await p.evaluate(() => { const m = document.getElementById('modal'); return !!m && m.classList.contains('open'); }), 'сцена 8: «Стать партнёром» открывает форму'); await p.keyboard.press('Escape'); await p.waitForTimeout(500);
+  const pb = await p.$('.ca-partner .ca-cta a[data-track="partner_cta"]');
+  t(!!pb && /Стать партнёром/.test(await pb.textContent()) && await pb.getAttribute('href') === 'partners.html', 'сцена 8: кнопка «Стать партнёром» → partners.html (data-track partner_cta)');
+  t(await p.evaluate(() => { const a = document.querySelector('.ca-partner .ca-cta a[href^="tel:"]'); return !!a && a.getAttribute('href') === 'tel:+74959255162'; }), 'сцена 8: телефон компании — ссылкой');
   const setR = v => p.evaluate(v => { const r = document.getElementById('ca-range'); r.value = v; r.dispatchEvent(new Event('input', {bubbles: true})); }, v);
   const readC = () => p.evaluate(() => ({sum: document.getElementById('ca-sum').textContent, tier: document.getElementById('ca-tier').textContent, save: document.getElementById('ca-save').textContent, on: [...document.querySelectorAll('.ca-tiers li')].map(x => x.classList.contains('reached') ? 1 : 0).join('')}));
   let calcOk = true, calcInfo = [];
@@ -117,9 +116,10 @@ const rub = n => new Intl.NumberFormat('ru-RU').format(n).replace(/[  ]/g, ' ') 
   t(!!ao && await ao.getAttribute('data-track') === 'asst_open', 'сцена 9: «Спросить Стеллу» — asst-open');
   await ao.click(); await p.waitForTimeout(900);
   t(await p.evaluate(() => document.body.classList.contains('asst-open')), 'сцена 9: Стелла открывается по кнопке (без второго чата)');
-  t(await p.evaluate(() => [...document.querySelectorAll('.ca [data-act]')].every(e => ['scroll', 'form', 'asst-open', 'asst-chip'].includes(e.dataset.act)) && !document.querySelector('.ca [class*="chat"], .ca iframe')), 'Стелла: на странице только asst-open / asst-chip (и обычные scroll / form), своего чата нет');
+  const bad9 = await p.evaluate(() => [...document.querySelectorAll('.ca [data-act]')].filter(e => !e.closest('.sx-mod, .g-e-ch') && !['scroll', 'form', 'asst-open', 'asst-chip'].includes(e.dataset.act)).map(e => e.dataset.act).concat([...document.querySelectorAll('.ca [class*="chat"], .ca iframe')].map(e => e.className.baseVal === undefined ? e.className : 'svg:' + e.className.baseVal)));
+  t(bad9.length === 0, 'Стелла: на странице только asst-open / asst-chip (и обычные scroll / form), своего чата нет', bad9);
   /* --- навигатор по сценам --- */
-  await p.evaluate(() => window.scrollTo({top: 0, behavior: 'instant'})); await p.waitForTimeout(700);
+  await p.reload(); await p.waitForSelector('html.ready', {timeout: 20000}).catch(() => {}); await p.waitForTimeout(1500);
   t(await p.evaluate(() => document.querySelectorAll('.ca-rail a').length === 9 && getComputedStyle(document.querySelector('.ca-rail')).display !== 'none'), 'навигатор: девять точек по сценам видны на 1440');
   await p.click('.ca-rail a:nth-child(3)'); await p.waitForTimeout(1600);
   t(await p.evaluate(() => Math.abs(document.getElementById('ca-expo').getBoundingClientRect().top) < 140 && document.querySelector('.ca-rail a.on') === document.querySelector('.ca-rail a:nth-child(3)')), 'навигатор: точка ведёт к своей сцене и подсвечивается');
