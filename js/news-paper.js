@@ -39,11 +39,11 @@
       const vw = window.innerWidth, H = window.innerHeight - S.hh;
       let mode = vw < 860 || vw / H < 1.05 ? 'single' : 'spread', pw, ph;
       if (mode === 'spread') { pw = Math.min((vw - 56) / 2, (H - 150) * .74); ph = pw / .74; if (pw < 395) mode = 'single'; }
-      if (mode === 'single') { ph = Math.max(300, H - 134); pw = Math.min(vw - 28, 540, ph * .86); }
+      if (mode === 'single') { ph = Math.max(300, H - 150); pw = Math.min(vw - 28, 540, ph * .86); }
       const was = S.mode; S.mode = mode; S.pw = Math.round(pw); S.ph = Math.round(ph);
       root.dataset.mode = mode;
       book.style.setProperty('--pw', S.pw + 'px'); book.style.setProperty('--ph', S.ph + 'px');
-      if (mode === 'spread') book.style.fontSize = (S.pw * .0235).toFixed(2) + 'px'; else book.style.fontSize = '';
+      if (mode === 'spread') book.style.fontSize = (S.pw * .0255).toFixed(2) + 'px'; else book.style.fontSize = '';
       S.introDist = reduced ? 0 : Math.max(240, Math.round(window.innerHeight * 1.5));
       root.style.setProperty('--np-intro', S.introDist + 'px');
       return was !== mode;
@@ -65,8 +65,8 @@
       const n = nLeaves();
       for (let k = 0; k < n; k++) {
         const L = {k, el: el('div', 'np-leaf'), f: 0, v: 0, tf: 0, peel: 0, tp: 0, startAt: 0, drag: false, strips: null, rest: false, key: ''};
-        if (S.mode === 'spread') { L.front = mkFace('np-f', pageEls[2 * k]); L.back = mkFace('np-b', pageEls[2 * k + 1]); }
-        else { L.front = mkFace('np-f', pageEls[k]); L.back = mkFace('np-b', null); L.back.classList.add('np-blank'); }
+        if (S.mode === 'spread') { L.front = mkFace('np-fa', pageEls[2 * k]); L.back = mkFace('np-bk', pageEls[2 * k + 1]); }
+        else { L.front = mkFace('np-fa', pageEls[k]); L.back = mkFace('np-bk', null); L.back.classList.add('np-blank'); }
         L.el.appendChild(L.front); L.el.appendChild(L.back);
         book.appendChild(L.el); leaves.push(L);
       }
@@ -87,7 +87,7 @@
       };
       const pgF = L.front.querySelector('.np-pg'), pgB = L.back.querySelector('.np-pg');
       for (let i = 0; i < NS; i++) {
-        const st = el('div', 'np-st'); st.style.width = (w + .8) + 'px'; if (i) st.style.left = w + 'px';
+        const st = el('div', 'np-st'); st.style.width = (w + 1.7) + "px"; if (i) st.style.left = w + 'px';
         const sf = el('div', 'np-sl np-sf'), sb = el('div', 'np-sl np-sb');
         if (pgF) sf.appendChild(clone(pgF, -i * w));
         if (pgB) sb.appendChild(clone(pgB, -(S.pw - (i + 1) * w)));
@@ -126,6 +126,7 @@
     let shaded = [];
     function paintLeaf(L, force) {
       const f = clamp(L.f, -.05, 1.05), th = f * 180;
+      L.el.style.zIndex = (f < .5 ? nLeaves() - L.k : L.k + 1);                       // порядок стопок в покое: сверху — ближний к читателю лист
       const atRest = Math.abs(L.f - L.tf) < 1e-3 && !L.v && L.peel < .008 && !L.drag && (L.f === 0 || L.f === 1);
       const key = atRest ? 'r' + L.f : f.toFixed(4) + '|' + L.peel.toFixed(3) + '|' + L.v.toFixed(2);
       if (!force && key === L.key) return; L.key = key;
@@ -173,12 +174,15 @@
     /* ---------- физика: пружина по реальному времени кадра ---------- */
     function frame(ts) {
       raf = 0; if (!alive || !root.isConnected) return;
-      const dt = Math.min(.05, last ? (ts - last) / 1000 : .016); last = ts;
+      const dt = clamp(last ? (ts - last) / 1000 : .016, 0, .05); last = ts;
       const n = Math.max(1, Math.ceil(dt / (1 / 240))), h = dt / n; let moving = false;
       leaves.forEach(L => {
         if (L.drag) { moving = true; return; }
         if (ts < L.startAt) { moving = true; return; }
-        for (let i = 0; i < n; i++) { const a = -OMEGA * OMEGA * (L.f - L.tf) - 2 * ZETA * OMEGA * L.v; L.v += a * h; L.f += L.v * h; }
+        for (let i = 0; i < n; i++) {
+          const a = -OMEGA * OMEGA * (L.f - L.tf) - 2 * ZETA * OMEGA * L.v; L.v += a * h; L.f += L.v * h;
+          if (L.f > 1) { L.f = 1; if (L.v > 0) L.v *= -.25; } else if (L.f < 0) { L.f = 0; if (L.v < 0) L.v *= -.25; }        // лист не проходит сквозь стопку: касается и чуть отскакивает
+        }
         if (Math.abs(L.f - L.tf) < .0006 && Math.abs(L.v) < .012) { L.f = L.tf; L.v = 0; } else moving = true;
         const pd = L.tp - L.peel; if (Math.abs(pd) > .003) { L.peel += pd * Math.min(1, dt * 9); moving = true; } else L.peel = L.tp;
       });
@@ -202,7 +206,7 @@
       const now = performance.now();
       leaves.forEach(L => { const t = L.k < s ? 1 : 0; if (inst) { L.f = L.tf = t; L.v = 0; L.peel = L.tp = 0; L.startAt = 0; } else { L.tp = 0; } });
       ks.forEach((L, i) => { L.tf = L.k < s ? 1 : 0; if (!inst) L.startAt = now + i * 110; });
-      if (inst) { paintAll(true); fade(); updateUI(); } else kick();
+      if (inst) { paintAll(true); fade(); updateUI(); } else { if (ks.length) S.moving = true; kick(); }
       if (!o.noHash) writeHash();
       updateUI();
     }
@@ -221,8 +225,8 @@
       if (p >= .999) { cam.classList.add('is-flat'); cam.classList.remove('is-moving'); cam.style.removeProperty('--rx'); cam.style.removeProperty('--tz'); cam.style.removeProperty('--ty'); rig.style.removeProperty('--rgz'); rig.style.removeProperty('--rgx'); rig.style.removeProperty('--rgy'); }
       else {
         cam.classList.remove('is-flat'); cam.classList.add('is-moving');
-        cam.style.setProperty('--rx', lerp(54, 0, e).toFixed(2) + 'deg'); cam.style.setProperty('--tz', lerp(-300, 0, e).toFixed(1) + 'px'); cam.style.setProperty('--ty', lerp(70, 0, e).toFixed(1) + 'px');
-        rig.style.setProperty('--rgz', lerp(-4.2, 0, e).toFixed(2) + 'deg'); rig.style.setProperty('--rgx', lerp(S.pw * .2, 0, e).toFixed(1) + 'px'); rig.style.setProperty('--rgy', lerp(S.ph * .06, 0, e).toFixed(1) + 'px');
+        cam.style.setProperty('--rx', lerp(54, 0, e).toFixed(2) + 'deg'); cam.style.setProperty('--tz', lerp(-170, 0, e).toFixed(1) + 'px'); cam.style.setProperty('--ty', lerp(70, 0, e).toFixed(1) + 'px');
+        rig.style.setProperty('--rgz', lerp(-4.2, 0, e).toFixed(2) + 'deg'); rig.style.setProperty('--rgx', lerp(S.pw * .2, 0, e).toFixed(1) + 'px'); rig.style.setProperty('--rgy', lerp(-S.ph * .13, 0, e).toFixed(1) + 'px');
       }
       const open = p >= .5; if (open !== root.classList.contains('is-open')) root.classList.toggle('is-open', open);
     }
@@ -292,7 +296,8 @@
       const d = S.drag; if (!d || (e && e.pointerId !== d.id)) return; S.drag = null; root.classList.remove('is-drag');
       if (!d.started) return;
       d.moved = true; setTimeout(() => { d.moved = false; }, 0); S.justDragged = true; setTimeout(() => { S.justDragged = false; }, 60);
-      const L = d.L, sm = d.samples, a = sm[0], b = sm[sm.length - 1]; let vx = b[0] > a[0] ? (b[1] - a[1]) / (b[0] - a[0]) * 1000 : 0;             // px/с
+      const L = d.L, sm = d.samples, a = sm[0], b = sm[sm.length - 1]; let vx = b[0] > a[0] ? (b[1] - a[1]) / (b[0] - a[0]) * 1000 : 0;
+      if (e && e.timeStamp - b[0] > 90) vx = 0;                                       // рука остановилась перед отпусканием — скорости нет, решает положение листа             // px/с
       const vf = clamp((S.mode === 'spread' ? 1 : 1) * (d.dir > 0 ? -vx : vx) / (S.pw * .85), -6, 6);                                              // доля поворота в секунду «вперёд» относительно листа
       const fwdSpeed = d.dir > 0 ? vf : -vf, flip = d.dir > 0 ? (L.f > .5 && vf > -.6) || vf > 1.1 : (L.f < .5 && vf > -.6) || vf > 1.1;
       L.drag = false; L.v = (L.f < .5 ? 1 : -1) * 0 + (d.dir > 0 ? vf : -vf) * (flip ? 1 : 1) * (d.dir > 0 ? 1 : 1); L.v = clamp(L.v * (d.dir > 0 ? 1 : 1), -6, 6);

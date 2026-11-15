@@ -429,7 +429,7 @@ const J = f => JSON.parse(fs.readFileSync(path.join(ROOT, f), 'utf8'));
 
   /* --- новости и статьи --- */
   p = await mk(); await p.open('news.html');
-  ok(await p.evaluate(() => [...document.querySelectorAll('.newscard[data-cat="sale"] .sx-nact')].every(a => /Рассчитать скидку/.test(a.textContent)) && document.querySelectorAll('.sx-nact').length >= 4), 'новости: у акций — «Рассчитать скидку», у новинок и обучения — свои действия');
+  ok(await p.evaluate(() => [...document.querySelectorAll('.np-ai[data-cat="sale"] .sx-nact')].every(a => /Рассчитать скидку/.test(a.textContent)) && document.querySelectorAll('.sx-nact').length >= 4), 'новости: у акций — «Рассчитать скидку», у новинок и обучения — свои действия');
   for (const [slug, cat, rx] of [['skidki-po-obemu-zakupki', 'sale', /выгоду/], ['novinki-dermatime', 'novelty', /новинки/i], ['zapis-na-osennie-seminary', 'edu', /дату/]]) {
     await p.open('news/' + slug + '.html');
     const cl = await p.evaluate(() => (document.querySelector('.cta-band h2') || {}).textContent);

@@ -59,7 +59,7 @@ function newsPage(ctx, C, P) {
   const cover = `<div class="np-cover">
       <header class="np-mast"><div class="np-mast-top"><span>${esc(issueTxt)}</span><span>Москва · Санкт-Петербург · Ростов-на-Дону · Симферополь</span></div>
         <div class="np-mast-t" aria-hidden="true">АСТРЕЯ</div><div class="np-mast-sub">Новости · акции · новинки</div></header>
-      <article class="np-art np-lead" data-id="${lead.id}" data-cat="${lead.category}">
+      <article class="np-art np-lead np-grow" data-id="${lead.id}" data-cat="${lead.category}">
         ${meta(lead)}${head(lead, 2, 'np-h-xl')}
         <figure class="np-fig">${img('ph-seminar-a.webp', 'Семинар учебного центра «Астрея»: зал и экран с презентацией', 960, 540)}<figcaption>Учебный центр «Астрея»</figcaption></figure>
         <p class="np-dek">${esc(lead.excerpt)}</p>
@@ -78,7 +78,7 @@ function newsPage(ctx, C, P) {
       ${stella('Спросите Стеллу', ['Как рассчитать скидку на закупку?', 'С какой суммы начинается скидка?'])}
     </div>` : '';
   const ledger = `<table class="np-ledger"><caption>Ступени скидки по объёму закупки</caption><thead><tr><th scope="col">Закупка</th><th scope="col">Скидка</th></tr></thead><tbody>${site.discounts.map(d => `<tr><th scope="row">от ${esc(S.rub(d.from))}</th><td><span class="np-bar" style="--w:${Math.round(d.pct / maxPct * 100)}%"></span><b>${d.pct}%</b></td></tr>`).join('')}</tbody></table>`;
-  const promoR = nPromo ? `<article class="np-art" data-id="${nPromo.id}" data-cat="${nPromo.category}">
+  const promoR = nPromo ? `<article class="np-art np-promo-r" data-id="${nPromo.id}" data-cat="${nPromo.category}">
       <span class="np-kick">Акции · условия</span>${meta(nPromo)}
       <div class="np-body">${paras(nPromo, 0, 1)}</div>${ledger}<div class="np-body">${paras(nPromo, 1)}</div>${act(nPromo)}
     </article>` : '';
@@ -112,15 +112,15 @@ function newsPage(ctx, C, P) {
   /* ---- 7–8. Обучение и события ---- */
   const evs = ctx.sortedEvents.filter(e => e.date >= new Date().toISOString().slice(0, 10)).slice(0, 3);
   const evList = (evs.length ? evs : ctx.sortedEvents.slice(-3)).map(e => `<li><a href="${C.eurl(P, e)}" data-track="news_event"><time datetime="${e.date}"><b>${dparts(e.date).d}</b>${esc(dparts(e.date).m)}</time><span>${esc(e.title)}<small>${esc(e.city)} · ${esc(e.fmt)}</small></span></a></li>`).join('');
-  const small = (n, extra = '') => n ? `<article class="np-art np-sm" data-id="${n.id}" data-cat="${n.category}">${meta(n)}${head(n, 3, 'np-h-m')}${extra}<p class="np-dek">${esc(n.excerpt)}</p><div class="np-body">${paras(n, 0, 2)}</div>${act(n)}</article>` : '';
-  const eduL = `<span class="np-kick">Обучение · события</span>${nE1 ? `<article class="np-art" data-id="${nE1.id}" data-cat="${nE1.category}">${meta(nE1)}${head(nE1, 2, 'np-h-l')}<figure class="np-fig">${img('ph-seminar-b.webp', 'Спикер у экрана на семинаре', 960, 540)}</figure><p class="np-dek">${esc(nE1.excerpt)}</p><div class="np-body np-cols">${paras(nE1)}</div>${act(nE1)}</article>` : ''}${small(nE2)}`;
-  const eduR = `<span class="np-kick">Обучение · события</span>${small(nE3, `<figure class="np-fig np-fig-side">${img('ph-presenter.webp', 'Спикер вебинара с каталогом Dermatime', 540, 720)}</figure>`)}${small(nE4)}
-      <section class="np-evs"><h3 class="np-h np-h-s">Ближайшие мероприятия</h3><ul>${evList}</ul><a class="np-lnk" href="${u('training.html')}" data-track="news_training">Всё расписание ${I.arrow}</a></section>`;
+  const small = (n, extra = '', np = 2) => n ? `<article class="np-art np-sm${extra ? ' np-row' : ''}" data-id="${n.id}" data-cat="${n.category}">${extra}<div class="np-sm-t">${meta(n)}${head(n, 3, 'np-h-m')}<p class="np-dek">${esc(n.excerpt)}</p>${np ? `<div class="np-body">${paras(n, 0, np)}</div>` : ''}${act(n)}</div></article>` : '';
+  const eduL = `<div class="np-col"><span class="np-kick">Обучение · события</span>${nE1 ? `<article class="np-art np-grow" data-id="${nE1.id}" data-cat="${nE1.category}">${meta(nE1)}${head(nE1, 2, 'np-h-l')}<figure class="np-fig">${img('ph-seminar-b.webp', 'Спикер у экрана на семинаре', 960, 540)}</figure><p class="np-dek">${esc(nE1.excerpt)}</p><div class="np-body np-cols">${paras(nE1, 0, 1)}</div>${act(nE1)}</article>` : ''}${small(nE2, '', 0)}</div>`;
+  const eduR = `<div class="np-col"><span class="np-kick">Обучение · события</span>${small(nE3, `<figure class="np-fig np-fig-side">${img('ph-presenter.webp', 'Спикер вебинара с каталогом Dermatime', 540, 720)}</figure>`, 1)}${small(nE4, '', 1)}
+      <section class="np-evs"><h3 class="np-h np-h-s">Ближайшие мероприятия</h3><ul>${evList}</ul><a class="np-lnk" href="${u('training.html')}" data-track="news_training">Всё расписание ${I.arrow}</a></section></div>`;
 
   /* ---- 9–10. Компания и регионы + подписка ---- */
   const offices = site.offices.map(o => `<li><b>${esc(o.city)}</b><span>${esc(o.role)}</span>${o.addr && !/уточняйте/.test(o.addr) ? `<small>${esc(o.addr)}</small>` : ''}${o.phones && o.phones[0] ? `<a href="tel:${o.phones[0][0].replace(/[^\d+]/g, '')}">${esc(o.phones[0][0])}</a>` : ''}</li>`).join('');
-  const regL = `<span class="np-kick">Компания · регионы</span>${nR ? `<article class="np-art" data-id="${nR.id}" data-cat="${nR.category}">${meta(nR)}${head(nR, 2, 'np-h-l')}<figure class="np-fig">${img('ph-team.webp', 'Команда «Астрея» на ресепшене', 800, 533)}</figure><p class="np-dek">${esc(nR.excerpt)}</p><div class="np-body np-cols">${paras(nR)}</div>${act(nR)}</article>` : ''}
-      <ul class="np-offices" aria-label="Представительства">${offices}</ul>`;
+  const regL = `<div class="np-col"><span class="np-kick">Компания · регионы</span>${nR ? `<article class="np-art np-grow" data-id="${nR.id}" data-cat="${nR.category}">${meta(nR)}${head(nR, 2, 'np-h-l')}<figure class="np-fig">${img('ph-team.webp', 'Команда «Астрея» на ресепшене', 800, 533)}</figure><p class="np-dek">${esc(nR.excerpt)}</p><div class="np-body np-cols">${paras(nR)}</div>${act(nR)}</article>` : ''}
+      <ul class="np-offices" aria-label="Представительства">${offices}</ul></div>`;
   const subR = `<div class="np-coupon"><span class="np-kick">Подписка</span><h2 class="np-h np-h-l">${esc(sub.title)}</h2><p class="np-dek">${esc(sub.lead)}</p>
       <div class="np-cut" aria-hidden="true"></div>${S.formHTML('subscribe', {uid: 'np-sub', root: u('')})}</div>`;
 
@@ -151,7 +151,7 @@ function newsPage(ctx, C, P) {
     discounts: site.discounts};
 
   const tabs = [['all', 'Все', news.length], ...newsCats.map(c => [c.id, c.name, news.filter(n => n.category === c.id).length])];
-  const arch = news.map(n => `<li class="np-ai" data-cat="${n.category}" data-id="${n.id}">${tag(n)}${time(n)}<h3><a href="${C.nurl(P, n)}" data-np-open="${n.id}" data-track="news_open" data-place="archive">${esc(n.title)}</a></h3><p>${esc(n.excerpt)}</p><div class="np-ai-f"><a class="np-lnk" href="${C.nurl(P, n)}" data-np-open="${n.id}">Читать ${I.arrow}</a>${where(n) ? `<button class="np-lnk" type="button" data-np-show="${n.id}">В газете, стр. ${where(n)}</button>` : ''}</div></li>`).join('');
+  const arch = news.map(n => `<li class="np-ai" data-cat="${n.category}" data-id="${n.id}">${tag(n)}${time(n)}<h3><a href="${C.nurl(P, n)}" data-np-open="${n.id}" data-track="news_open" data-place="archive">${esc(n.title)}</a></h3><p>${esc(n.excerpt)}</p><div class="np-ai-f">${(c => c ? `<a class="np-lnk sx-nact" href="${c.href}" ${c.attrs}>${esc(c.label)} ${I.arrow}</a>` : '')(ctaOf(ctx, C, P, n))}<a class="np-lnk" href="${C.nurl(P, n)}" data-np-open="${n.id}">Читать ${I.arrow}</a>${where(n) ? `<button class="np-lnk" type="button" data-np-show="${n.id}">В газете, стр. ${where(n)}</button>` : ''}</div></li>`).join('');
 
   return `<div class="np" data-np data-np-n="${news.length}" data-np-issue="${esc(issueTxt)}">
     <section class="np-stage" data-np-stage aria-labelledby="np-title">
@@ -205,8 +205,9 @@ function articlePage(ctx, C, P, n) {
   const photo = {sale: null, novelty: null, edu: 'ph-seminar-b.webp', event: 'ph-seminar-a.webp', news: n.id === 'n9' ? 'ph-team.webp' : n.id === 'n4' ? 'ph-care.webp' : null}[n.category];
   const sprites = {n3: ['eva-device'], n5: ['dermatime-bottle', 'dermatime-box'], n4: ['heliocare-bottle', 'neoretin-bottle'], n6: ['iraltone-bottle', 'iraltone-box']}[n.id];
   const lead = n.excerpt, paras = n.body;
-  return `<div class="wrap na" style="--c1:${cat.c1};--c2:${cat.c2}" data-cat="${n.category}" data-art="${n.id}">
-    <div class="na-sheet">
+  return `<div class="na" style="--c1:${cat.c1};--c2:${cat.c2}" data-cat="${n.category}" data-art="${n.id}" data-na>
+    <section class="na-stone" aria-label="Статья"><i class="na-light" aria-hidden="true"></i>
+    <article class="na-sheet" data-na-sheet><i class="na-prog" data-na-prog aria-hidden="true"></i>
       <header class="na-head">
         ${C.crumbs(P, [['Главная', 'index.html'], ['Новости', 'news.html'], [n.title, `news/${n.slug}.html`]])}
         <div class="na-mast" aria-hidden="true"><span>АСТРЕЯ</span><em>Новости · акции · новинки</em><span>${esc(dparts(n.date).full)}</span></div>
@@ -221,8 +222,9 @@ function articlePage(ctx, C, P, n) {
       <div class="na-body reveal">${paras.map((p, i) => `<p${i === 0 ? ' class="na-first"' : ''}>${esc(p)}</p>`).join('')}</div>
       ${cta ? `<div class="na-cta reveal"><a class="btn btn-fill" href="${cta.href}" ${cta.attrs}>${esc(cta.label)} ${I.arrow}</a><a class="btn btn-ghost" href="${u('news.html')}${sp ? '#s' + sp : ''}">К газете${sp ? ', стр. ' + WHERE[kk][1] : ''}</a></div>` : `<div class="na-cta reveal"><a class="btn btn-ghost" href="${u('news.html')}">Все новости</a></div>`}
       <nav class="na-sib" aria-label="Соседние материалы">${prev ? `<a href="${C.nurl(P, prev)}"><small>${I.back} Предыдущий</small><span>${esc(prev.title)}</span></a>` : '<span></span>'}${next ? `<a class="nx" href="${C.nurl(P, next)}"><small>Следующий ${I.arrow}</small><span>${esc(next.title)}</span></a>` : '<span></span>'}</nav>
-    </div>
+    </article></section>
 
+    <div class="wrap na-after">
     ${(prods.length || evs.length || brs.length) ? `<section class="sec na-rel" style="padding-top:0">
       ${prods.length ? `${C.secHead('Товары', 'По теме')}<div class="grid g4" style="margin-bottom:clamp(28px,4vw,48px)">${prods.map((p, i) => C.productCard(P, p, i)).join('')}</div>` : ''}
       ${evs.length ? `${C.secHead('Обучение', 'Мероприятия по теме')}<div class="grid g3 events-grid" style="margin-bottom:clamp(28px,4vw,48px)">${evs.slice(0, 3).map(e => C.eventCard(P, e)).join('')}</div>` : ''}
@@ -233,6 +235,7 @@ function articlePage(ctx, C, P, n) {
       ${C.secHead('Новости', 'Читайте также', C.lnk(u('news.html'), 'Все новости'))}
       <div class="grid g3">${more.map(x => C.newsCard(P, x)).join('')}</div>
     </section>
+    </div>
   </div>
   ${C.ctaBand(P, 'article-cta', C.closingCfg('article', n.category) && Object.assign({}, C.closingCfg('article', n.category), {vars: {}}))}`;
 }
