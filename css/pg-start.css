@@ -259,10 +259,12 @@ body[data-page="start"] .nav a.nl:hover,body[data-page="start"] .nav a.nl.on{col
   .st-scene{padding:clamp(14px,4vw,22px) 12px 56px}
   .st-bg-img{object-position:50% 100%}
   .st-bg{height:min(720px,100%)}
-  .st-pledge{gap:6px 16px}
-  .st-lead{font-size:14.5px}
+  .st-head{padding:6px 2px 0}
+  .st-head h1{margin-top:10px;font-size:clamp(27px,8vw,34px)}
+  .st-lead,.st-pledge{display:none}          /* то же самое Стелла говорит первой репликой — диалог начинается сразу, без прокрутки */
   .st-orb{display:none}
-  .st-page .pchat{height:clamp(480px,calc(var(--st-vvh,100svh) - var(--hdr,84px) - 56px),760px);border-radius:6px}
+  .st-in{row-gap:16px}
+  .st-page .pchat{height:clamp(470px,calc(var(--st-vvh,100svh) - var(--hdr,64px) - 120px),760px);border-radius:6px}
   .st-page .pchat-h{padding:12px 14px 10px;flex-wrap:wrap;row-gap:8px}
   .st-page .pchat-av{width:46px;height:46px}.st-page .pchat-av svg{width:38px;height:38px}
   .st-page .pchat-ht b{font-size:18px}
