@@ -1,0 +1,8 @@
+{
+ "plate": {
+  "w": 3840,
+  "h": 2160
+ },
+ "slots": [],
+ "source": "Blender: tools/showroom-assets/auditorium/academy_auditorium.py → grade_hall.py"
+}
