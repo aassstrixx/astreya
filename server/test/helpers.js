@@ -8,7 +8,7 @@ process.env.ALLOW_PRIVATE_NETWORK = process.env.ALLOW_PRIVATE_NETWORK || '1';   
 /* копия сайта без тяжёлых кадров вступления (нужны только первые кадры, на них ссылаются страницы) */
 function makeSite(dir) {
   fs.mkdirSync(dir, {recursive: true});
-  const skip = new Set(['.git', 'node_modules']);
+  const skip = new Set(['.git', 'node_modules', '.claude']);
   for (const e of fs.readdirSync(REPO, {withFileTypes: true})) {
     if (skip.has(e.name)) continue;
     const src = path.join(REPO, e.name), dst = path.join(dir, e.name);
