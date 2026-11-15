@@ -354,7 +354,7 @@
 
     /* ---------- автоматический плавный ход страницы: клик по «Откройте журнал», «Далее/Назад», оглавление, список разделов.
        Страницу ведёт одна кривая (rAF, по реальному времени кадра), журнал и камера считаются от прокрутки так же, как при колесе, — лист поворачивается тем же способом ---------- */
-    let glideRaf = 0, goal = null, homing = false;
+    let glideRaf = 0, goal = null, homing = false, glideDir = 0;
     const eIO = x => x < .5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2;           // долгий ход: мягкий старт и мягкая остановка
     const eSoft = x => .5 * x + .5 * x * x * (3 - 2 * x);                                // листание: почти равномерно — лист успевает повернуться на виду
     const glideStop = () => { if (glideRaf) { cancelAnimationFrame(glideRaf); glideRaf = 0; } goal = null; homing = false; releaseHold(); navStop(); };
@@ -370,7 +370,7 @@
       const y0 = window.pageYOffset, dist = y - y0; if (glideRaf) { cancelAnimationFrame(glideRaf); glideRaf = 0; } navStop();
       if (Math.abs(dist) < 2) { goal = null; return; }
       const far = Math.abs(dist) > window.innerHeight * 1.2, dur = o && o.dur ? o.dur : clamp(1050 + Math.abs(dist) / window.innerHeight * 330, 1200, 4200), ease = o && o.ease ? o.ease : far ? eIO : eSoft; let t0 = 0;
-      goal = g === undefined ? null : g;
+      goal = g === undefined ? null : g; glideDir = goal === null ? 0 : Math.sign(goal - (pm() ? Math.round(Q) : s));
       const frame = ts => {
         if (!t0) t0 = ts; const k = clamp((ts - t0) / dur, 0, 1);
         window.scrollTo({top: y0 + dist * ease(k), behavior: 'instant'}); readerUpdate();
@@ -405,24 +405,32 @@
        Жест — серия событий с паузами меньше 130 мс (щелчки подряд, инерция трекпада); пока лист идёт, события колеса гасятся; следующий разворот — после паузы в 130 мс и после остановки листа.
        Край журнала (первый разворот вверх, последний вниз) колесо не перехватывает. */
     const GESTURE_GAP = 130;
-    const wg = {t: 0, fired: false, dir: 0};
+    const wg = {t: 0, fired: false, dir: 0, rc: 0};
     const navStop = () => {};
     on(window, 'wheel', e => {
       if (e.ctrlKey || e.defaultPrevented || flat() || phone() || !reader.classList.contains('is-live') || Math.abs(e.deltaX) > Math.abs(e.deltaY)) return;
       if (e.target.closest && e.target.closest('.mp-chat')) return;                // над чатом Стеллы колесо принадлежит переписке (js ниже: плавная прокрутка), журнал не листается — даже у края переписки
       const t = readerT(); if (t < RD.open - .002 || t > RD.from + RD.span + .02) return;
       let dy = e.deltaY; if (e.deltaMode === 1) dy *= 34; else if (e.deltaMode === 2) dy *= window.innerHeight;
-      if (Math.abs(dy) < 3) return;                                              // хвост инерции трекпада — шум
-      const dir = dy > 0 ? 1 : -1, base = goal !== null ? goal : s;
+      if (!dy) return;
+      const dir = dy > 0 ? 1 : -1, base = goal !== null ? goal : s, now = performance.now();
       if ((dir > 0 && base >= N - 1) || (dir < 0 && base <= 1)) return;          // край журнала — обычная прокрутка (вверх с первого разворота — назад к пролёту камеры)
+      if (Math.abs(dy) < 3) {                                                    // хвост инерции трекпада — шум: пока жест или лист идёт, гасим (иначе дельты по 1–2 px сдвигают страницу под листом), в покое не трогаем
+        if (glideRaf || now - wg.t < 450) { e.preventDefault(); e.__houseStep = true; }
+        return;
+      }
       e.preventDefault(); e.__houseStep = true;
       if (A.motion && A.motion.cancelSmooth) A.motion.cancelSmooth();
-      const now = performance.now();
-      /* смена направления — всегда новый жест: «вниз», а сразу следом «вверх» (хвост инерции трекпада, второй щелчок колеса) раньше гасилась как продолжение прежнего жеста, пока лист ещё шёл или не прошла пауза в 130 мс, —
-         посетитель крутил вверх, а журнал не отвечал. Теперь лист разворачивается к предыдущему развороту сразу (цель — от текущей цели: «вниз» не успело дойти — вернётся туда, откуда ушло). Шум в хвосте инерции (дельта < 10) направление не меняет */
-      const rev = wg.dir !== 0 && dir !== wg.dir && Math.abs(dy) >= 10;
-      if (now - wg.t > GESTURE_GAP || rev) wg.fired = false; wg.t = now; if (Math.abs(dy) >= 10 || !wg.dir) wg.dir = dir;
-      if (wg.fired || (glideRaf && !rev)) return;                                // этот жест уже листнул разворот / лист ещё идёт (в ту же сторону)
+      /* Смена направления — всегда новый жест. Хвост инерции знак не меняет никогда, поэтому «вверх» после «вниз» — это рука, а не хвост: если лист ещё идёт (или предыдущий жест не закончился), листаем назад сразу, от текущей цели
+         («вниз» не успело дойти — вернётся туда, откуда ушло). Раньше обратное движение признавалось только при дельте ≥ 10, а плавный жест на трекпаде и колесо мыши на Mac дают 3–9 — посетитель крутил вверх, журнал молчал, пока хвост
+         прежнего жеста не затихнет. Теперь: одна заметная дельта (≥ 6) или две подряд против прежнего движения; после паузы в 130 мс любое движение — новый жест. */
+      const fresh = now - wg.t > GESTURE_GAP;
+      const opp = wg.dir !== 0 && dir !== wg.dir; wg.rc = opp ? wg.rc + 1 : 0;
+      const rev = opp && !fresh && (Math.abs(dy) >= 6 || wg.rc >= 2);
+      if (fresh || rev) { wg.fired = false; wg.dir = dir; wg.rc = 0; } else if (!wg.dir) wg.dir = dir;
+      wg.t = now;
+      if (wg.fired && !fresh && !rev) return;                                    // этот жест уже листнул разворот
+      if (glideRaf && (glideDir === 0 || dir === glideDir)) return;               // лист (или возврат «На главную») идёт в ту же сторону — ждём его конца; в обратную — разворачиваем сразу
       wg.fired = true; step(dir);
     }, {passive: false, capture: true});
 

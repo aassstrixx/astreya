@@ -842,5 +842,13 @@
         }
       }
     }
+  },
+  "pageAssets": {
+    "_comment": "Собственные стили и скрипты страницы (css/<имя>.css, js/<имя>.js): подключаются только странице с этим ключом и только если файл есть; идут после общих",
+    "product": {"css": ["pg-product"], "js": ["pg-product"]},
+    "brand": {"css": ["pg-brand"], "js": ["pg-brand"]},
+    "start": {"css": ["pg-start"], "js": ["pg-start"]},
+    "news": {"css": ["news-paper"], "js": ["news-paper"]},
+    "company": {"css": ["company-atrium"], "js": ["company-atrium"]}
   }
 }

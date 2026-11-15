@@ -216,6 +216,22 @@ const t = (cond, name, info) => { if (cond) ok++; else bad.push(name + (info !==
       await p.evaluate(() => new Promise(res => { const w = d => document.body.dispatchEvent(new WheelEvent('wheel', {deltaY: d, bubbles: true, cancelable: true})); w(100); setTimeout(() => { w(-100); res(); }, 220); }));
       await settle(p); const r1 = await rs(p);
       t(r1.s === r0.s, 'колесо вниз и через 0,2 с вверх: журнал отвечает на обратный жест (возвращается на прежний разворот)', {from: r0.s, to: r1.s}); }
+    { /* плавные жесты на трекпаде и колесо мыши на Mac дают дельты 3–9: обратное движение признаётся по знаку (хвост инерции знак не меняет), а не только по дельте ≥ 10 — иначе «вверх» после «вниз» молчало.
+         События шлются синхронно на виртуальных часах (performance.now подменяется на время пачки): паузы точные при любой нагрузке страницы */
+      const burst = (arr, gap, pause) => p.evaluate(([a, g, pa]) => { const real = window.__real || (window.__real = performance.now.bind(performance)); window.__V = Math.max(window.__V || 0, real()) + pa; performance.now = () => window.__V; try { a.forEach(d => { document.body.dispatchEvent(new WheelEvent('wheel', {deltaY: d, bubbles: true, cancelable: true})); window.__V += g; }); } finally { performance.now = real; } }, [arr, gap, pause]);
+      const dn = [40, 60, 70, 55, 38, 26, 18, 12, 9, 7, 5, 4, 3, 3, 3];
+      await p.evaluate(() => window.Astreya.house.openMagazine(3)); await settle(p); const g0 = (await rs(p)).s;
+      await burst(dn, 16, 700); await burst([-3, -4, -5, -5, -6, -7, -8, -8, -7, -6, -5, -4, -3], 16, 150); await settle(p); const g1 = (await rs(p)).s;
+      t(g1 === g0, 'плавный жест вверх (дельты 3–8) сразу после жеста вниз: лист возвращается на прежний разворот', {from: g0, to: g1});
+      await burst(dn, 16, 700); await settle(p); const g2 = (await rs(p)).s;
+      await burst(Array.from({length: 24}, (_, i) => -(3 + (i % 3))), 20, 700); await settle(p); const g3 = (await rs(p)).s;
+      t(g2 === g0 + 1 && g3 === g0, 'после покоя плавный жест вверх (дельты 3–5) листает назад ровно на один разворот', {g2, g3});
+      await burst(dn.concat([-4]), 16, 700); await settle(p); const g4 = (await rs(p)).s;
+      t(g4 === g0 + 1, 'одиночная обратная дельта в хвосте инерции — шум, а не жест', {g4});
+      await burst([30, 20, 10, 5, -4, -4, -5], 16, 700); await settle(p); const g5 = (await rs(p)).s;
+      t(g5 === g4, 'две обратные дельты подряд — рука: лист возвращается туда, откуда ушёл', {g4, g5});
+      await burst([50, 40], 16, 700); const y1 = await p.evaluate(() => scrollY); await burst([2, 1, 2, 1, 2, 1, 2, 1], 16, 30); const y2 = await p.evaluate(() => scrollY); await settle(p);
+      t(Math.abs(y2 - y1) < 90, 'хвост инерции ±1–2 px не двигает страницу под листом', {y1, y2}); }
     { /* прокрутку остановили посередине поворота листа — лист сам доворачивается до ближайшего разворота */
       await p.evaluate(() => { window.__HOUSE_SNAP = true; window.Astreya.house.openMagazine(2); }); await settle(p);
       const bx = await p.evaluate(() => { const r = document.getElementById('house-reader'); return {top: r.getBoundingClientRect().top + scrollY, tot: r.offsetHeight - innerHeight - (parseFloat(r.style.getPropertyValue('--hrx')) || 0) * innerHeight / 100}; });
