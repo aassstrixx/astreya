@@ -79,8 +79,8 @@ module.exports = function company(ctx, C, P) {
   <section class="sec ca-s ca-niches" id="ca-niches" data-scene="2" data-title="Направления" aria-labelledby="ca-h2">
     <div class="ca-in">
       <header class="ca-head"><span class="ca-eyebrow">Направления</span><h2 id="ca-h2">Чем занимается компания</h2></header>
-      <div class="ca-who">
-        <div class="ca-who-t reveal">${cp.who.map(t => `<p>${esc(t)}</p>`).join('')}</div>
+      <div class="ca-who about-grid">
+        <div class="ca-who-t txt reveal">${cp.who.map(t => `<p>${esc(t)}</p>`).join('')}</div>
         <ol class="ca-why reveal">
           <li><i>01</i><div><b>Оригинальная продукция</b><p>Работа с официальным дистрибьютором защищает от подделок.</p></div></li>
           <li><i>02</i><div><b>Учебный центр</b><p>Более 20 лет развиваем методику семинаров: теория и практика в одном дне.</p></div></li>
