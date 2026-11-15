@@ -34,19 +34,20 @@
 <link rel="preload" href="/astreya/assets/fonts/manrope-latin-938c6e.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="preload" href="/astreya/assets/fonts/playfair-display-cyrillic-66a1a9.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="preload" href="/astreya/assets/fonts/playfair-display-latin-ef05b3.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="stylesheet" href="/astreya/css/fonts.css?v=0300d129">
-<link rel="stylesheet" href="/astreya/css/base.css?v=0300d129">
-<link rel="stylesheet" href="/astreya/css/components.css?v=0300d129">
-<link rel="stylesheet" href="/astreya/css/pages.css?v=0300d129">
-<link rel="stylesheet" href="/astreya/css/responsive.css?v=0300d129">
-<link rel="stylesheet" href="/astreya/css/motion.css?v=0300d129">
-<link rel="stylesheet" href="/astreya/css/consent.css?v=0300d129">
-<link rel="stylesheet" href="/astreya/css/redesign.css?v=0300d129">
-<link rel="stylesheet" href="/astreya/css/backdrops.css?v=0300d129">
-<link rel="stylesheet" href="/astreya/css/extras.css?v=0300d129">
-<link rel="stylesheet" href="/astreya/css/guide.css?v=0300d129">
-<link rel="stylesheet" href="/astreya/css/sales.css?v=0300d129">
-<link rel="stylesheet" href="/astreya/css/sales-pages.css?v=0300d129">
+<link rel="stylesheet" href="/astreya/css/fonts.css?v=2d2fb88e">
+<link rel="stylesheet" href="/astreya/css/base.css?v=2d2fb88e">
+<link rel="stylesheet" href="/astreya/css/components.css?v=2d2fb88e">
+<link rel="stylesheet" href="/astreya/css/pages.css?v=2d2fb88e">
+<link rel="stylesheet" href="/astreya/css/responsive.css?v=2d2fb88e">
+<link rel="stylesheet" href="/astreya/css/motion.css?v=2d2fb88e">
+<link rel="stylesheet" href="/astreya/css/consent.css?v=2d2fb88e">
+<link rel="stylesheet" href="/astreya/css/redesign.css?v=2d2fb88e">
+<link rel="stylesheet" href="/astreya/css/backdrops.css?v=2d2fb88e">
+<link rel="stylesheet" href="/astreya/css/extras.css?v=2d2fb88e">
+<link rel="stylesheet" href="/astreya/css/guide.css?v=2d2fb88e">
+<link rel="stylesheet" href="/astreya/css/sales.css?v=2d2fb88e">
+<link rel="stylesheet" href="/astreya/css/sales-pages.css?v=2d2fb88e">
+<link rel="stylesheet" href="/astreya/css/pg-404.css?v=2d2fb88e">
 
 
 </head>
@@ -118,15 +119,26 @@
 </header>
 
 <main id="main" tabindex="-1" data-page="notfound">
-<div class="wrap nf">
-    <header class="page-head"><span class="eyebrow reveal">Ошибка 404</span><h1 class="reveal">Такой страницы нет</h1><p class="lead reveal">Возможно, ссылка устарела или в адресе опечатка. Найдите нужное через поиск или перейдите в один из разделов.</p></header>
-    <form class="search-page reveal" role="search" action="/astreya/search.html" method="get">
-      <label class="search"><span class="sr">Запрос</span><svg class="ic" viewBox="0 0 20 20" aria-hidden="true" focusable="false"><circle cx="9" cy="9" r="5.5"/><path d="m13.2 13.2 3.8 3.8"/></svg><input type="search" name="q" placeholder="Например: Heliocare, пилинг, семинар" autocomplete="off" enterkeyhint="search"></label>
-      <button class="btn btn-fill" type="submit">Найти</button>
-    </form>
-    <div class="row reveal" style="margin-top:28px;flex-wrap:wrap"><a class="btn btn-fill" href="/astreya/index.html">На главную <svg class="ic" viewBox="0 0 20 20" aria-hidden="true" focusable="false"><path d="M3.5 10h13M11.5 5l5 5-5 5"/></svg></a><a class="chip" href="/astreya/catalog.html">Каталог</a><a class="chip" href="/astreya/brands.html">Бренды</a><a class="chip" href="/astreya/training.html">Обучение</a><a class="chip" href="/astreya/news.html">Новости</a><a class="chip" href="/astreya/contacts.html">Контакты</a></div>
-    <div class="srch-hints" style="margin-top:28px"><span>Популярное:</span><a class="chip" href="/astreya/search.html?q=Heliocare">Heliocare</a><a class="chip" href="/astreya/search.html?q=%D0%9F%D0%B8%D0%BB%D0%B8%D0%BD%D0%B3%D0%B8">Пилинги</a><a class="chip" href="/astreya/search.html?q=%D0%9F%D0%B8%D0%B3%D0%BC%D0%B5%D0%BD%D1%82%D0%B0%D1%86%D0%B8%D1%8F">Пигментация</a><a class="chip" href="/astreya/search.html?q=%D0%A1%D0%B5%D0%BC%D0%B8%D0%BD%D0%B0%D1%80">Семинар</a><a class="chip" href="/astreya/search.html?q=%D0%90%D0%BA%D1%86%D0%B8%D0%B8">Акции</a><a class="chip" href="/astreya/search.html?q=Dermatime">Dermatime</a></div>
-    <div style="height:clamp(60px,8vw,110px)"></div>
+<div class="nf-page" data-nf>
+    <section class="nf-scene" aria-labelledby="nf-h">
+      <div class="nf-bg" aria-hidden="true"><picture><source media="(max-width:700px)" srcset="/astreya/assets/utility/arches-m.webp"><img class="nf-bg-img" src="/astreya/assets/utility/arches.webp" width="1920" height="1080" alt="" decoding="async"></picture><i class="nf-wash"></i><i class="nf-fade"></i></div>
+      <div class="nf-in">
+        <span class="nf-eyebrow">Ошибка 404</span>
+        <p class="nf-num" aria-hidden="true">404</p>
+        <h1 id="nf-h">Такой страницы нет</h1>
+        <p class="nf-lead">Возможно, ссылка устарела или в адресе опечатка. Найдите нужное через поиск или перейдите в один из разделов.</p>
+        <div class="nf-orb" data-nf-orb aria-hidden="true"></div>
+        <form class="search-page nf-form" role="search" action="/astreya/search.html" method="get">
+          <label class="search"><span class="sr">Запрос</span><svg class="ic" viewBox="0 0 20 20" aria-hidden="true" focusable="false"><circle cx="9" cy="9" r="5.5"/><path d="m13.2 13.2 3.8 3.8"/></svg><input type="search" name="q" placeholder="Например: Heliocare, пилинг, семинар" autocomplete="off" enterkeyhint="search"></label>
+          <button class="btn btn-fill" type="submit">Найти</button>
+        </form>
+        <div class="srch-hints nf-hints"><span>Популярное:</span><a class="chip" href="/astreya/search.html?q=Heliocare">Heliocare</a><a class="chip" href="/astreya/search.html?q=%D0%9F%D0%B8%D0%BB%D0%B8%D0%BD%D0%B3%D0%B8">Пилинги</a><a class="chip" href="/astreya/search.html?q=%D0%9F%D0%B8%D0%B3%D0%BC%D0%B5%D0%BD%D1%82%D0%B0%D1%86%D0%B8%D1%8F">Пигментация</a><a class="chip" href="/astreya/search.html?q=%D0%A1%D0%B5%D0%BC%D0%B8%D0%BD%D0%B0%D1%80">Семинар</a><a class="chip" href="/astreya/search.html?q=%D0%90%D0%BA%D1%86%D0%B8%D0%B8">Акции</a><a class="chip" href="/astreya/search.html?q=Dermatime">Dermatime</a></div>
+      </div>
+    </section>
+    <section class="nf-go" aria-label="Разделы сайта">
+      <ul class="nf-go-l"><li><a href="/astreya/catalog.html"><span class="nf-go-n">01</span><b>Каталог</b><small>Товары по задачам и брендам</small><svg class="ic" viewBox="0 0 20 20" aria-hidden="true" focusable="false"><path d="M3.5 10h13M11.5 5l5 5-5 5"/></svg></a></li><li><a href="/astreya/brands.html"><span class="nf-go-n">02</span><b>Бренды</b><small>Девять линеек на одной стене</small><svg class="ic" viewBox="0 0 20 20" aria-hidden="true" focusable="false"><path d="M3.5 10h13M11.5 5l5 5-5 5"/></svg></a></li><li><a href="/astreya/training.html"><span class="nf-go-n">03</span><b>Обучение</b><small>Семинары и учебный центр</small><svg class="ic" viewBox="0 0 20 20" aria-hidden="true" focusable="false"><path d="M3.5 10h13M11.5 5l5 5-5 5"/></svg></a></li><li><a href="/astreya/search.html"><span class="nf-go-n">04</span><b>Поиск</b><small>Товары, бренды, новости и события</small><svg class="ic" viewBox="0 0 20 20" aria-hidden="true" focusable="false"><path d="M3.5 10h13M11.5 5l5 5-5 5"/></svg></a></li></ul>
+      <a class="btn btn-fill nf-home" href="/astreya/index.html">На главную <svg class="ic" viewBox="0 0 20 20" aria-hidden="true" focusable="false"><path d="M3.5 10h13M11.5 5l5 5-5 5"/></svg></a>
+    </section>
   </div>
 </main>
 
@@ -176,22 +188,23 @@
 <div id="modal" aria-hidden="true"></div>
 <div id="toast" role="status" aria-live="polite"></div>
 
-<script src="/astreya/js/shared.js?v=0300d129" defer></script>
-<script src="/astreya/js/data.js?v=0300d129" defer></script>
-<script src="/astreya/js/core.js?v=0300d129" defer></script>
-<script src="/astreya/js/consent.js?v=0300d129" defer></script>
-<script src="/astreya/js/motion.js?v=0300d129" defer></script>
-<script src="/astreya/js/pages.js?v=0300d129" defer></script>
-<script src="/astreya/js/hero-mark.js?v=0300d129" defer></script>
-<script src="/astreya/js/redesign.js?v=0300d129" defer></script>
-<script src="/astreya/js/backdrops.js?v=0300d129" defer></script>
-<script src="/astreya/js/extras.js?v=0300d129" defer></script>
-<script src="/astreya/js/explore.js?v=0300d129" defer></script>
-<script src="/astreya/js/assistant-brain.js?v=0300d129" defer></script>
-<script src="/astreya/js/stella-policy.js?v=0300d129" defer></script>
-<script src="/astreya/js/assistant.js?v=0300d129" defer></script>
-<script src="/astreya/js/guide.js?v=0300d129" defer></script>
-<script src="/astreya/js/sales.js?v=0300d129" defer></script>
-<script src="/astreya/js/sales-pages.js?v=0300d129" defer></script>
+<script src="/astreya/js/shared.js?v=2d2fb88e" defer></script>
+<script src="/astreya/js/data.js?v=2d2fb88e" defer></script>
+<script src="/astreya/js/core.js?v=2d2fb88e" defer></script>
+<script src="/astreya/js/consent.js?v=2d2fb88e" defer></script>
+<script src="/astreya/js/motion.js?v=2d2fb88e" defer></script>
+<script src="/astreya/js/pages.js?v=2d2fb88e" defer></script>
+<script src="/astreya/js/hero-mark.js?v=2d2fb88e" defer></script>
+<script src="/astreya/js/redesign.js?v=2d2fb88e" defer></script>
+<script src="/astreya/js/backdrops.js?v=2d2fb88e" defer></script>
+<script src="/astreya/js/extras.js?v=2d2fb88e" defer></script>
+<script src="/astreya/js/explore.js?v=2d2fb88e" defer></script>
+<script src="/astreya/js/assistant-brain.js?v=2d2fb88e" defer></script>
+<script src="/astreya/js/stella-policy.js?v=2d2fb88e" defer></script>
+<script src="/astreya/js/assistant.js?v=2d2fb88e" defer></script>
+<script src="/astreya/js/guide.js?v=2d2fb88e" defer></script>
+<script src="/astreya/js/sales.js?v=2d2fb88e" defer></script>
+<script src="/astreya/js/sales-pages.js?v=2d2fb88e" defer></script>
+<script src="/astreya/js/pg-404.js?v=2d2fb88e" defer></script>
 </body>
 </html>

@@ -540,6 +540,7 @@ const J = f => JSON.parse(fs.readFileSync(path.join(ROOT, f), 'utf8'));
   p = await mk(); await p.open('index.html'); await wait(5000);
   ok(await p.evaluate(() => { const ch = [...document.querySelectorAll('.g-entry .chip')]; return ch.length === 0 || (/^Старт со Стеллой/.test(ch[0].textContent.trim()) && !ch.some(c => /Подобрать (средство )?по задаче/.test(c.textContent))); }), 'на главной (если блок показан) то же: «Старт со Стеллой» вместо «Подобрать средство по задаче»');
   await p.evaluate(() => Astreya.stella.open()); await p.waitForSelector('#asst-in', {state: 'visible'}); await wait(900);
+  await p.waitForFunction(() => document.querySelectorAll('#asst-qr .chip').length > 0, null, {timeout: 60000}).catch(() => {});          // без видеокарты тяжёлая главная печатает приветствие десятки секунд — ждём чипы, а не фиксированные 0,9 с
   ok(await p.evaluate(() => { const ch = [...document.querySelectorAll('#asst-qr .chip')]; return ch.length > 0 && !ch.some(c => /Подобрать (средство )?по задаче/.test(c.textContent)) && ch.filter(c => /Старт со Стеллой/.test(c.textContent)).every(c => c.classList.contains('chip-plan')); }), 'быстрые ответы в чате: прежней кнопки подбора нет, «Старт со Стеллой» (если есть) — синяя');
   await p.ask('помоги подобрать средство'); const pk = await p.lastBot();
   ok(pk && /Старт со Стеллой/.test(pk.text) && /start\.html/.test(pk.html), 'на просьбу «подобрать средство» Стелла отправляет в «Старт со Стеллой» вместо прежнего вопроса про задачу', pk && pk.text.slice(0, 160));
