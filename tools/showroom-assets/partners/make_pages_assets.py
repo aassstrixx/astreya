@@ -62,7 +62,8 @@ def stone():
     band = fft_noise(N, N, 160, 5.5, 1) * .55 + fft_noise(N, N, 60, 3.2, 2) * .3             # горизонтальные прожилки (слои породы)
     mott = fft_noise(N, N, 22, 22, 3) * .5 + fft_noise(N, N, 7, 7, 4) * .25                     # пятнистость
     vein = np.clip(fft_noise(N, N, 220, 1.6, 5), 0, None) ** 1.5       # тонкие тёмные прожилки
-    lum = band * 5.2 + mott * 3.6 - vein * 3.2
+    sand = fft_noise(N, N, 1.8, 1.8, 6)                                  # песчаное зерно: камень, а не дерево
+    lum = band * 2.1 + mott * 4.6 - vein * 1.3 + sand * 1.5
     # поры: вытянутые вдоль слоёв тёмные эллипсы с мягким светлым краем
     pores = np.zeros((N, N), np.float32); r = np.random.default_rng(11)
     for _ in range(560):
@@ -73,7 +74,7 @@ def stone():
     pores = gaussian_filter(pores, .45)
     rim = np.roll(pores, -1, 0) - pores                                # чуть света на нижней кромке поры (объём)
     img = base[None, None, :] + lum[..., None] * np.array([1, 1, 1.05], np.float32)
-    img -= pores[..., None] * np.array([46, 51, 58], np.float32)
+    img -= pores[..., None] * np.array([38, 43, 50], np.float32)
     img += np.clip(rim, 0, 1)[..., None] * 16
     img += rng.standard_normal((N, N, 1)) * 1.6                       # мелкое зерно
     rgb = np.clip(img, 0, 255).astype(np.uint8)
