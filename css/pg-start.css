@@ -38,6 +38,8 @@ body[data-page="start"] .nav a.nl:hover,body[data-page="start"] .nav a.nl.on{col
 .st-pledge li::before{content:"";flex:none;width:6px;height:6px;border-radius:50%;background:var(--st-gold);box-shadow:0 0 0 3px rgba(176,142,78,.2)}
 .st-pledge b{font-weight:600}
 .st-pledge span{display:none}
+.st-pledge{padding:12px 18px;border-radius:12px;background:linear-gradient(180deg,rgba(253,250,242,.9),rgba(246,239,224,.88));border:1px solid var(--st-line);box-shadow:var(--st-sh-s);width:max-content;max-width:100%}
+.st-lead{text-shadow:0 0 14px rgba(247,242,230,.9),0 0 3px rgba(247,242,230,.8)}
 
 /* световой шар Стеллы над стойкой: живой аватар сайта, реагирует на ход диалога (js/pg-start.js) */
 .st-orb{grid-column:1;grid-row:1;align-self:end;justify-self:start;position:relative;width:clamp(84px,9vw,140px);aspect-ratio:1;margin:0 0 clamp(70px,12vh,150px) clamp(110px,15vw,250px);pointer-events:none}
@@ -264,7 +266,7 @@ body[data-page="start"] .nav a.nl:hover,body[data-page="start"] .nav a.nl.on{col
   .st-lead,.st-pledge{display:none}          /* то же самое Стелла говорит первой репликой — диалог начинается сразу, без прокрутки */
   .st-orb{display:none}
   .st-in{row-gap:16px}
-  .st-page .pchat{height:clamp(470px,calc(var(--st-vvh,100svh) - var(--hdr,64px) - 120px),760px);border-radius:6px}
+  .st-page .pchat{height:clamp(470px,calc(var(--st-vvh,100svh) - var(--hdr,64px) - 158px),760px);border-radius:6px}
   .st-page .pchat-h{padding:12px 14px 10px;flex-wrap:wrap;row-gap:8px}
   .st-page .pchat-av{width:46px;height:46px}.st-page .pchat-av svg{width:38px;height:38px}
   .st-page .pchat-ht b{font-size:18px}

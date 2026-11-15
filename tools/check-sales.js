@@ -385,16 +385,16 @@ const J = f => JSON.parse(fs.readFileSync(path.join(ROOT, f), 'utf8'));
   await p.goBack(); await p.waitForFunction(() => document.body.getAttribute('data-page') === 'training', null, {timeout: 15000}); await wait(1200);
   const cityNo = (D.sales.cities || []).filter(c => c !== 'Онлайн').find(c => !upc.some(e => e.city === c));
   const cityYes = upc.map(e => e.city).find(c => c !== 'Онлайн');
-  await p.click('[data-sx-city="' + cityYes + '"]'); await wait(400);
-  ok(await p.evaluate(c => { const r = [...document.querySelectorAll('.sx-cal-row .sx-cal-t b')]; return r.length > 0 && r.every(b => b.textContent.indexOf(c) === 0 || /^Онлайн/.test(b.textContent)); }, cityYes), 'обучение: выбор города оставляет его мероприятия и онлайн', cityYes);
+  await p.click('#city-chips .chip[data-id="' + cityYes + '"]'); await wait(400);
+  ok(await p.evaluate(c => { const r = [...document.querySelectorAll('#sem-list .sem-item')].filter(x => !x.hidden); return r.length > 0 && r.every(x => x.getAttribute('data-city') === c || /^Онлайн/.test(x.getAttribute('data-city') || '')); }, cityYes), 'обучение: выбор города оставляет его мероприятия и онлайн', cityYes);
   if (cityNo) {
-    await p.click('[data-sx-city="' + cityNo + '"]'); await wait(400);
-    ok(await p.evaluate(() => !!document.querySelector('[data-sx-tl-next] [data-sx-wait]')), 'обучение: в городе без дат предлагается лист ожидания', cityNo);
-    await p.click('[data-sx-tl-next] [data-sx-wait]'); await p.waitForSelector('#modal.open form');
+    await p.click('#city-chips .chip[data-id="' + cityNo + '"]'); await wait(400);
+    ok(await p.evaluate(() => !!document.querySelector('#sem-empty:not([hidden]) [data-sx-wait], .sx-tl-sec [data-sx-wait]')), 'обучение: в городе без дат предлагается лист ожидания', cityNo);
+    await p.click('#sem-empty:not([hidden]) [data-sx-wait], .sx-tl-sec [data-sx-wait]'); await p.waitForSelector('#modal.open form');
     ok(await p.evaluate(() => /Лист ожидания/.test(document.querySelector('#modal .ctx').textContent)), 'обучение: лист ожидания открывает вопрос с городом');
     await p.keyboard.press('Escape'); await wait(500);
   } else console.log('  – в данных у всех городов есть даты: проверка листа ожидания пропущена');
-  await p.click('[data-sx-city="' + cityYes + '"]'); await wait(300);
+  await p.click('#city-chips .chip[data-id="' + cityYes + '"]'); await wait(300);
   ok(await p.evaluate(c => localStorage.getItem('astreya:city') === JSON.stringify(c), cityYes), 'обучение: выбранный город запоминается (для «Вашего региона»)');
   await p.context().close();
 

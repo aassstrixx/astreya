@@ -11,6 +11,15 @@
   const rootPath = () => body.getAttribute('data-root') || '';
   let M = null;
 
+  /* Названия брендов в индексе латиницей; русские написания («Дерматайм») ведут к ним. Это только подсказка поиску: ничего нового на страницах не утверждается. */
+  const ALIAS = {'дерматайм': 'dermatime', 'дерматайм.': 'dermatime', 'гелиокеа': 'heliocare', 'хелиокеа': 'heliocare', 'хелиокер': 'heliocare', 'гелиокер': 'heliocare', 'эндокеа': 'endocare', 'эндокер': 'endocare', 'эланцил': 'elancyl', 'эланси': 'elancyl', 'кинвелл': 'keenwell', 'кинвел': 'keenwell', 'иралтон': 'iraltone', 'иралтоне': 'iraltone', 'неоретин': 'neoretin', 'биретикс': 'biretix'};
+  const aliasQ = q => String(q || '').toLowerCase().replace(/[а-яё.]+/g, w => ALIAS[w] || w);
+  if (A.search && !A.search.__qxAlias) {
+    const orig = A.search;
+    A.search = function (q) { const r = orig.apply(this, arguments); if (r.length) return r; const q2 = aliasQ(q); return q2 === String(q).toLowerCase() ? r : orig.call(this, q2); };
+    A.search.__qxAlias = true;
+  }
+
   const byKey = (arr, key) => { const m = {}; (arr || []).forEach(x => { m[x[key]] = x; }); return m; };
   const NEWS_IC = '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M5 5h11v14H7a2 2 0 0 1-2-2V5Zm11 3h3v9a2 2 0 0 1-2 2M8 9h5M8 12h5M8 15h3"/></svg>';
 
@@ -43,9 +52,20 @@
     walk(el);
   }
 
+  /* пустой результат: предложения вместо тупика — популярные запросы (те же, что под строкой), разделы сайта и Стелла (через общий asst-open) */
+  function suggest() {
+    const e = $('#s-out .empty'); if (!e || $('.qx-sug', e)) return;
+    const box = document.createElement('div'), R = rootPath(); box.className = 'qx-sug';
+    const hints = $$('.qx-hints a.chip').map(a => '<a class="chip" href="' + a.getAttribute('href') + '" data-track="search_suggest">' + a.innerHTML + '</a>').join('');
+    const go = [['Каталог', 'catalog.html'], ['Бренды', 'brands.html'], ['Обучение', 'training.html'], ['Контакты', 'contacts.html']].map(g => '<a class="chip" href="' + R + g[1] + '" data-track="search_suggest">' + g[0] + '</a>').join('');
+    box.innerHTML = (hints ? '<p>Попробуйте так</p><div class="qx-sug-row">' + hints + '</div>' : '') + '<p>Или откройте раздел</p><div class="qx-sug-row">' + go + '</div>';
+    e.appendChild(box);
+  }
+
   function decorate() {
     if (!M) return; M.raf = 0;
-    const q = ($('#sp-q') || {}).value || '', toks = q.toLowerCase().split(/[\s,;]+/).filter(t => t.length > 1).slice(0, 6);
+    suggest();
+    const q = ($('#sp-q') || {}).value || '', toks = aliasQ(q).split(/[\s,;]+/).filter(t => t.length > 1).slice(0, 6);
     $$('#s-out .sr-item').forEach(it => {
       if (it.__qx) return; it.__qx = true;
       const t = $('b', it), s = $('small', it), ty = $('.sr-type', it);

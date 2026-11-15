@@ -60,7 +60,7 @@ function legalPage(ctx, C, P, kind) {
 
 /* Страница 404. GitHub Pages отдаёт её на любой неверный адрес, на любой глубине (/a/b/c), поэтому все пути в ней — от корня сайта (P.root), а не «../» */
 function notFoundPage(ctx, C, P) {
-  const go = [['Каталог', 'catalog.html', 'Товары по задачам и брендам'], ['Бренды', 'brands.html', 'Девять линеек на одной стене'], ['Обучение', 'training.html', 'Семинары и учебный центр'], ['Новости', 'news.html', 'Акции, новинки, события'], ['Контакты', 'contacts.html', 'Офисы и связь']];
+  const go = [['Каталог', 'catalog.html', 'Товары по задачам и брендам'], ['Бренды', 'brands.html', 'Девять линеек на одной стене'], ['Обучение', 'training.html', 'Семинары и учебный центр'], ['Поиск', 'search.html', 'Товары, бренды, новости и события']];
   return `<div class="nf-page" data-nf>
     <section class="nf-scene" aria-labelledby="nf-h">
       <div class="nf-bg" aria-hidden="true"><picture><source media="(max-width:700px)" srcset="${esc(C.u(P, 'assets/utility/arches-m.webp'))}">${img(C, P, 'assets/utility/arches.webp', 1920, 1080, 'nf-bg-img')}</picture><i class="nf-wash"></i><i class="nf-fade"></i></div>
