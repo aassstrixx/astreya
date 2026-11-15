@@ -73,6 +73,35 @@
 .dt-tile .docs a{display:flex;align-items:center;gap:10px;padding:10px 14px;border-radius:12px;background:rgba(255,255,255,.7);border:1px solid var(--ax-line)}
 @media (hover:hover) and (pointer:fine){.dt-tile{transition:transform .55s var(--ax-ease),box-shadow .55s var(--ax-ease)}.dt-tile:hover{transform:translateY(-3px);box-shadow:inset 0 1px 0 rgba(255,255,255,.9),var(--ax-sh-2)}}
 
+/* ---------- упаковка на подиуме / нише ---------- */
+/* упаковка: спрайт того же рендера, что на стене брендов; тень от солнца слева — как у ниш (css/brands-wall.css .bw-pk) */
+.pdp-pack{position:absolute;left:calc(var(--px) * 100%);top:calc(var(--py) * 100% + .5%);height:calc(var(--hp) * 1%);aspect-ratio:var(--sar);transform:translate(-50%,-100%);z-index:2;translate:calc(var(--mx,0) * 7px) calc(var(--my,0) * 3px);transition:translate .5s var(--ax-ease)}
+.pdp-pack::before{content:"";position:absolute;left:50%;bottom:-3%;width:150%;height:12%;transform:translateX(-50%);border-radius:50%;background:radial-gradient(closest-side,rgba(66,44,20,.42),rgba(66,44,20,.14) 62%,rgba(66,44,20,0));pointer-events:none}
+.pdp-pk,.pdp-cs{display:block;width:100%;height:100%;object-fit:contain;max-width:none;user-select:none;-webkit-user-drag:none}
+.pdp-pk{position:relative}
+.pdp-cs{position:absolute;left:0;top:0;transform-origin:50% 100%;transform:translateX(3%) skewX(-44deg) scaleY(.2);filter:brightness(0) blur(1.6px);opacity:.28}
+.pdp-photo{position:absolute;left:calc(var(--px) * 100%);top:calc(var(--py) * 100% + .5%);height:calc(var(--hp) * 1%);transform:translate(-50%,-100%);z-index:2;border-radius:18px;overflow:hidden;box-shadow:var(--ax-sh-2);background:#fff}
+.pdp-photo img{display:block;height:100%;width:auto;max-width:none}
+@media (prefers-reduced-motion:no-preference){.pdp-pack{animation:pdpRise 1.1s var(--ax-ease) .15s both}}
+@keyframes pdpRise{from{opacity:0;transform:translate(-50%,-96%)}to{opacity:1;transform:translate(-50%,-100%)}}
+
+/* ---------- полка ---------- */
+/* ---------- полка ---------- */
+.pdp-shelf,.dtb-shelf{padding:clamp(40px,5vw,72px) 0 clamp(52px,6vw,88px);background:linear-gradient(180deg,rgba(233,220,197,0),rgba(233,220,197,.55) 18%,rgba(233,220,197,.55) 82%,rgba(233,220,197,0))}
+.pdp-shelf .grid,.dtb-shelf .grid{position:relative;padding-bottom:30px}
+.pdp-shelf .grid::after,.dtb-shelf .grid::after{content:"";position:absolute;left:-1.5%;right:-1.5%;bottom:0;height:24px;border-radius:5px;z-index:-1;background:linear-gradient(180deg,#eadfc8,#d5c3a2);box-shadow:inset 0 1px 0 rgba(255,255,255,.7),0 22px 26px -14px rgba(86,60,30,.55)}
+
+
+/* ---------- ниша бренда: логотип и упаковки (страницы «Бренд» и «Мероприятие») ---------- */
+.dtb-stage,.dtev-stage{--ay:var(--py)}
+/* логотип стоит в нише на штукатурке: тушь, без блика (multiply), лёгкая тень вправо-вниз */
+.dtb-logo{position:absolute;left:var(--cx);top:33%;width:21%;height:14%;transform:translate(-50%,-50%);z-index:2;display:flex;align-items:center;justify-content:center;pointer-events:none;translate:calc(var(--mx,0) * -3px) calc(var(--my,0) * -2px)}
+.dtb-logo img{display:block;width:100%;height:100%;object-fit:contain;mix-blend-mode:multiply;filter:drop-shadow(1px 2px 1px rgba(66,44,20,.2))}
+.dtb-logo.is-text b{font:500 clamp(22px,3.4vw,56px)/1 var(--serif);letter-spacing:.04em;color:var(--ax-ink);text-shadow:1px 2px 1px rgba(66,44,20,.18);white-space:nowrap}
+.dtb-pk{z-index:3}
+@media (prefers-reduced-motion:no-preference){.dtb-logo{animation:dtbLogo 1.1s var(--ax-ease) .1s both}.dtb-pk{animation-delay:calc(.25s + var(--k,0) * .12s)}}
+@keyframes dtbLogo{from{opacity:0}to{opacity:1}}
+
 /* ---------- соседи (предыдущий / следующий) ---------- */
 .dt-sib{display:grid;grid-template-columns:1fr 1fr;gap:clamp(14px,1.6vw,22px);padding-bottom:clamp(40px,5vw,72px)}
 .dt-sib a{display:flex;align-items:center;gap:clamp(14px,1.6vw,24px);padding:clamp(16px,1.6vw,24px) clamp(18px,2vw,30px);border-radius:var(--ax-r-l);background:var(--dt-card);border:1px solid var(--ax-line);box-shadow:inset 0 1px 0 rgba(255,255,255,.9),var(--ax-sh-1);min-width:0;transition:transform .55s var(--ax-ease),box-shadow .55s var(--ax-ease)}
@@ -88,7 +117,7 @@
 .dt-sib a:focus-visible{outline:2px solid var(--dt-navy);outline-offset:3px}
 
 /* ---------- липкая панель: появляется, когда табличка ушла с экрана (шапка в это время уехала вверх; показывается — закрывает панель) ---------- */
-.dt-bar{position:fixed;left:0;right:0;top:0;z-index:58;padding:10px 0;background:rgba(248,243,233,.94);border-bottom:1px solid var(--ax-line);box-shadow:0 14px 26px -18px rgba(86,60,30,.5);transform:translateY(-102%);transition:transform .5s var(--ax-ease)}
+.dt-bar{position:fixed;left:0;right:0;top:0;z-index:58;padding:10px 0;background:rgba(248,243,233,.94);border-bottom:1px solid var(--ax-line);box-shadow:0 14px 26px -18px rgba(86,60,30,.5);transform:translateY(-102%);transition:transform .5s var(--ax-ease),top .35s var(--ax-ease)}
 .dt-bar[hidden]{display:block!important;visibility:hidden}
 .dt-bar.is-on{transform:none;visibility:visible}
 .dt-bar .wrap{display:flex;align-items:center;justify-content:space-between;gap:16px}
@@ -112,16 +141,17 @@ html.pg-top body[data-page="product"] .hdr,html.pg-top body[data-page="brand"] .
 @media (max-width:1100px){.dt-plaque{width:min(43%,440px)}}
 /* ---------- телефон и узкий планшет: кадр кадрируется вокруг опорной точки, табличка — под ним ---------- */
 @media (max-width:900px){
-  .dt-stage{--ws:1.6;--ax:.5;--ay:.86;container-type:normal;display:flex;flex-direction:column}
+  .dt-stage{--ws:1.75;--ax:.5;--ay:.78;container-type:normal;display:flex;flex-direction:column}
   .dt-view{aspect-ratio:auto;height:clamp(440px,118vw,600px)}
   .dt-over{position:static;pointer-events:auto}
   .dt-route{left:var(--gut);right:var(--gut);top:calc(var(--hdr) + 8px);z-index:6;flex-wrap:wrap}
   .dt-route ol{overflow-x:auto;scrollbar-width:none;max-width:100%}
   .dt-route ol::-webkit-scrollbar{display:none}
   .dt-back{display:none}
-  .dt-plaque{position:relative;right:auto;top:auto;transform:none;width:auto;margin:-26px var(--gut) 0;animation:none}
+  .dt-plaque{position:relative;right:auto;top:auto;transform:none;width:auto;margin:-26px 0 0;animation:none}
 }
-@media (max-width:560px){.dt-stage{--ws:2.2}}
+@media (max-width:700px){.dt-stage{--ws:2.1}}
+@media (max-width:560px){.dt-stage{--ws:2.4}}
 @media (max-width:760px){
   .dt-sib{grid-template-columns:minmax(0,1fr)}
   .dt-route li b{max-width:15ch}
@@ -129,4 +159,66 @@ html.pg-top body[data-page="product"] .hdr,html.pg-top body[data-page="brand"] .
 }
 @media (max-width:420px){.dt-route li>a,.dt-route li[aria-current]{padding:6px 10px 7px}.dt-route li+li{margin-left:14px}.dt-route li+li::before{left:-11px;width:8px}}
 @media print{.dt-bar,.dt-glint{display:none!important}.dt-stage{margin-top:0}}
+/* якоря ниши на телефоне и планшете — после общих правил кадра */
+@media (max-width:900px){.dtb-stage,.dtev-stage{--ay:.92}}
+@media (min-width:701px) and (max-width:900px){.dtb-stage,.dtev-stage{--ax:.43}}
+/* секции .sec.wrap: у базового .sec боковые поля обнуляются — возвращаем поля страницы */
+.dt .sec.wrap{padding-inline:var(--gut)}
+@media (max-width:560px){.dt-plaque .sx-hook{flex-wrap:wrap}.dt-plaque .sx-hook-t{flex:1 1 150px}.dt-plaque .sx-hook-a{flex:1 1 100%}}
 
+/* ---------- страница бренда: логотип в нише, упаковки на подставках, паспорт, арки линеек ---------- */
+.dtb-stage .dt-plaque .eyebrow{display:inline-flex;margin:0 0 12px}
+.dtb-stats{display:flex;margin:clamp(16px,1.6cqw,24px) 0 0;padding:0;list-style:none;border-block:1px solid var(--ax-line)}
+.dtb-stats li{flex:1;display:flex;flex-direction:column;gap:6px;padding:12px 14px;border-left:1px solid var(--ax-line);min-width:0}
+.dtb-stats li:first-child{border-left:0;padding-left:0}
+.dtb-stats b{font:500 clamp(24px,2.4cqw,38px)/1 var(--serif);color:var(--ax-ink)}
+.dtb-stats small{font:700 10px/1.2 var(--sans);letter-spacing:.14em;text-transform:uppercase;color:var(--ax-muted)}
+.dtb-stage .dt-plaque>.row{margin-top:clamp(16px,1.6cqw,24px)}
+
+/* «Путь с брендом» (js/sales-pages.js) встаёт сразу за кадром — в ширину страницы */
+.dtb>.sx-mod{max-width:var(--maxw);margin-inline:auto;padding-inline:var(--gut);box-sizing:border-box}
+
+/* о бренде: текст слева, паспорт плитками справа */
+.dtb-about{display:grid;grid-template-columns:minmax(0,.9fr) minmax(0,1.2fr);gap:clamp(26px,3.4vw,60px);align-items:start;padding-top:clamp(36px,4.8vw,80px);padding-bottom:clamp(36px,4.8vw,72px)}
+.dtb-story{position:sticky;top:calc(var(--hdr) + 24px)}
+.dtb-story p{margin:0 0 1em;font:400 clamp(16px,1.3vw,18.5px)/1.72 var(--serif);color:#2c3550}
+.dtb-story p:first-of-type{font-size:clamp(21px,1.9vw,27px);line-height:1.42;letter-spacing:-.005em;color:var(--ax-ink)}
+.dtb-story .tasks-line{margin-top:22px}
+.dtb-passport{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:clamp(12px,1.4vw,20px)}
+.dtb-passport .dt-tile{min-height:150px}
+.dtb-passport .dt-tile p{font-size:15.5px;color:var(--ax-ink)}
+
+/* линейки: арки каменной стены с числом позиций; в нише — упаковка из линейки */
+.dtb-lines{padding-bottom:clamp(36px,4.8vw,72px)}
+.dtb-arches{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,300px));gap:clamp(18px,2.2vw,32px);justify-content:center;margin-top:clamp(18px,2vw,30px)}
+.dtb-arch{position:relative;display:flex;flex-direction:column;align-items:center;text-align:center;gap:8px;padding:clamp(16px,1.6vw,22px) 20px 22px;border-radius:150px 150px 22px 22px;color:var(--ax-ink);
+  background:linear-gradient(180deg,#f8f4ea,#eae1cd);border:1px solid rgba(255,255,255,.75);
+  box-shadow:inset 0 1px 0 #fff,inset 0 -1px 0 rgba(86,60,30,.14),2px 3px 5px rgba(66,44,20,.12),24px 32px 42px -24px rgba(66,44,20,.55)}
+.dtb-in{position:relative;display:block;width:100%;aspect-ratio:1/1.04;border-radius:999px 999px 14px 14px;overflow:hidden;
+  background:radial-gradient(120% 90% at 34% 16%,#fdf8ec 0,#f0e7d2 52%,#e1d5bb);box-shadow:inset 9px 11px 20px -5px rgba(86,60,30,.3),inset -3px -2px 8px rgba(255,255,255,.7)}
+.dtb-in::after{content:"";position:absolute;left:19%;right:19%;bottom:7%;height:11%;border-radius:50%/60%;background:linear-gradient(180deg,#f3ead6,#d8c9a8);box-shadow:inset 0 1px 0 rgba(255,255,255,.8),5px 7px 8px -3px rgba(66,44,20,.4)}
+.dtb-ap{position:absolute;left:50%;bottom:13%;z-index:1;height:calc(var(--hp) * .66%);aspect-ratio:var(--sar);transform:translateX(-50%)}
+.dtb-ap img{display:block;width:100%;height:100%;object-fit:contain;filter:drop-shadow(8px 7px 6px rgba(66,44,20,.32))}
+.dtb-num{display:flex;align-items:baseline;gap:8px;margin-top:8px}
+.dtb-num b{font:500 clamp(38px,3.4vw,50px)/1 var(--serif);color:var(--ax-ink)}
+.dtb-num small{font:700 10.5px/1 var(--sans);letter-spacing:.14em;text-transform:uppercase;color:var(--ax-muted)}
+.dtb-arch h3{margin:0;font:500 clamp(20px,1.7vw,24px)/1.2 var(--serif)}
+.dtb-arch p{margin:0;font-size:13.5px;line-height:1.5;color:var(--ax-muted)}
+.dtb-arch .lnk{margin-top:6px}
+@media (hover:hover) and (pointer:fine){.dtb-arch{transition:transform .55s var(--ax-ease),box-shadow .55s var(--ax-ease)}.dtb-arch:hover{transform:translateY(-5px);box-shadow:inset 0 1px 0 #fff,inset 0 -1px 0 rgba(86,60,30,.14),2px 3px 5px rgba(66,44,20,.12),24px 38px 48px -22px rgba(66,44,20,.6)}}
+.dtb-arch:focus-visible{outline:2px solid var(--dt-navy);outline-offset:4px}
+
+.dtb-shelf .sec-head{margin-bottom:clamp(18px,2vw,30px)}
+.dt-bar-a{display:flex;align-items:center;gap:10px;flex:none}
+
+@media (max-width:900px){
+  .dtb-about{grid-template-columns:minmax(0,1fr)}
+  .dtb-story{position:static}
+}
+@media (max-width:560px){
+  .dtb-arches{grid-template-columns:minmax(0,300px)}
+  .dtb-passport{grid-template-columns:minmax(0,1fr)}
+  .dtb-passport .dt-tile{min-height:0}
+  .dt-bar-a .btn-ghost{display:none}
+  .dtb-stats b{font-size:26px}
+}

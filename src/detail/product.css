@@ -1,14 +1,4 @@
 /* ---------- страница товара: упаковка на подиуме, паспорт, запрос, полка ---------- */
-/* упаковка: спрайт того же рендера, что на стене брендов; тень от солнца слева — как у ниш (css/brands-wall.css .bw-pk) */
-.pdp-pack{position:absolute;left:calc(var(--px) * 100%);top:calc(var(--py) * 100% + .5%);height:calc(var(--hp) * 1%);aspect-ratio:var(--sar);transform:translate(-50%,-100%);z-index:2;translate:calc(var(--mx,0) * 7px) calc(var(--my,0) * 3px);transition:translate .5s var(--ax-ease)}
-.pdp-pack::before{content:"";position:absolute;left:50%;bottom:-3%;width:150%;height:12%;transform:translateX(-50%);border-radius:50%;background:radial-gradient(closest-side,rgba(66,44,20,.42),rgba(66,44,20,.14) 62%,rgba(66,44,20,0));pointer-events:none}
-.pdp-pk,.pdp-cs{display:block;width:100%;height:100%;object-fit:contain;max-width:none;user-select:none;-webkit-user-drag:none}
-.pdp-pk{position:relative}
-.pdp-cs{position:absolute;left:0;top:0;transform-origin:50% 100%;transform:translateX(3%) skewX(-44deg) scaleY(.2);filter:brightness(0) blur(1.6px);opacity:.28}
-.pdp-photo{position:absolute;left:calc(var(--px) * 100%);top:calc(var(--py) * 100% + .5%);height:calc(var(--hp) * 1%);transform:translate(-50%,-100%);z-index:2;border-radius:18px;overflow:hidden;box-shadow:var(--ax-sh-2);background:#fff}
-.pdp-photo img{display:block;height:100%;width:auto;max-width:none}
-@media (prefers-reduced-motion:no-preference){.pdp-pack{animation:pdpRise 1.1s var(--ax-ease) .15s both}}
-@keyframes pdpRise{from{opacity:0;transform:translate(-50%,-96%)}to{opacity:1;transform:translate(-50%,-100%)}}
 
 /* ---------- паспорт: коротко ---------- */
 .pdp-spec{padding-top:clamp(8px,1vw,16px)}
@@ -39,10 +29,6 @@
 .pdp-side .sx-sq{border-color:rgba(176,142,78,.6);border-radius:50%;background:rgba(255,255,255,.7);color:var(--ax-ink)}
 .pdp-side .sx-after-steps li:not(:last-child)::before{border-left-color:rgba(176,142,78,.5)}
 
-/* ---------- полка ---------- */
-.pdp-shelf{padding:clamp(40px,5vw,72px) 0 clamp(52px,6vw,88px);background:linear-gradient(180deg,rgba(233,220,197,0),rgba(233,220,197,.55) 18%,rgba(233,220,197,.55) 82%,rgba(233,220,197,0))}
-.pdp-shelf .grid{position:relative;padding-bottom:30px}
-.pdp-shelf .grid::after{content:"";position:absolute;left:-1.5%;right:-1.5%;bottom:0;height:24px;border-radius:5px;z-index:-1;background:linear-gradient(180deg,#eadfc8,#d5c3a2);box-shadow:inset 0 1px 0 rgba(255,255,255,.7),0 22px 26px -14px rgba(86,60,30,.55)}
 
 @media (max-width:1100px){
   .pdp .specs{grid-template-columns:repeat(3,minmax(0,1fr))}

@@ -17,12 +17,18 @@
   window.addEventListener('scroll', kick, {passive: true}); window.addEventListener('resize', kick, {passive: true});
   document.addEventListener('astreya:page', () => setTimeout(top, 60));
 
+  /* липкая панель встаёт под шапку, пока шапка видна (при прокрутке вверх), и поднимается к краю, когда шапка ушла (класс .hide ставит js/motion.js) */
+  let curBar = null, hmo = null;
+  const sync = () => { const h = $('#hdr'); if (curBar && curBar.isConnected && h) curBar.style.top = (h.classList.contains('hide') ? 0 : h.offsetHeight) + 'px'; };
+  const watchHdr = () => { const h = $('#hdr'); if (hmo || !h || !('MutationObserver' in window)) return; hmo = new MutationObserver(sync); hmo.observe(h, {attributes: true, attributeFilter: ['class']}); window.addEventListener('resize', sync, {passive: true}); };
+
   D.init = function (root) {
     root = root || document;
     const stage = $('.dt-stage', root); top(); if (!stage) return null;
 
     /* липкая панель: когда табличка ушла вверх за край экрана — сверху появляется название и кнопка запроса */
-    const bar = $('[data-dt-bar]', root), plaque = $('.dt-plaque', stage);
+    const bar = $('[data-dt-bar]', root); curBar = bar; watchHdr(); sync();
+    const plaque = $('.dt-plaque, .dt-ticket', stage);
     if (bar && plaque && 'IntersectionObserver' in window) {
       const io = new IntersectionObserver(es => es.forEach(e => {
         const on = !e.isIntersecting && e.boundingClientRect.bottom < 0;
@@ -49,3 +55,23 @@
   };
 })();
 
+(function () {
+  'use strict';
+  const A = window.Astreya; if (!A || !A.detail) return;
+  /* js/pages.js уже вешает на страницу мероприятия «прошло» (прячет запись) — это сохраняем и добавляем общую часть */
+  const prev = A.pages.event;
+  if (prev && prev.__dt) return;
+  const fn = A.pages.event = function (root) {
+    if (prev) prev.apply(this, arguments);
+    A.detail.init(root);
+    const w = document.querySelector('[data-event]'), bar = document.querySelector('[data-dt-bar]');
+    /* «Как проходит запись» вставляется js/sales-pages.js после #e-cta — переносим под программу (узел тот же: обработчики на документе) */
+    const slot = document.querySelector('[data-dt-ticket-slot]');
+    if (slot && w) {
+      const move = () => { const t = w.querySelector('.sx-ticket'); if (t && t.parentNode !== slot) slot.appendChild(t); return !!t; };
+      if (!move() && 'MutationObserver' in window) { const mo = new MutationObserver(() => { if (move()) mo.disconnect(); }); mo.observe(w, {childList: true, subtree: true}); setTimeout(() => mo.disconnect(), 12000); }
+    }
+    if (w && bar && w.getAttribute('data-date') < new Date().toISOString().slice(0, 10)) bar.remove();   // прошедшее: липкой кнопки записи нет
+  };
+  fn.__dt = true;
+})();

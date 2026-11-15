@@ -17,12 +17,18 @@
   window.addEventListener('scroll', kick, {passive: true}); window.addEventListener('resize', kick, {passive: true});
   document.addEventListener('astreya:page', () => setTimeout(top, 60));
 
+  /* липкая панель встаёт под шапку, пока шапка видна (при прокрутке вверх), и поднимается к краю, когда шапка ушла (класс .hide ставит js/motion.js) */
+  let curBar = null, hmo = null;
+  const sync = () => { const h = $('#hdr'); if (curBar && curBar.isConnected && h) curBar.style.top = (h.classList.contains('hide') ? 0 : h.offsetHeight) + 'px'; };
+  const watchHdr = () => { const h = $('#hdr'); if (hmo || !h || !('MutationObserver' in window)) return; hmo = new MutationObserver(sync); hmo.observe(h, {attributes: true, attributeFilter: ['class']}); window.addEventListener('resize', sync, {passive: true}); };
+
   D.init = function (root) {
     root = root || document;
     const stage = $('.dt-stage', root); top(); if (!stage) return null;
 
     /* липкая панель: когда табличка ушла вверх за край экрана — сверху появляется название и кнопка запроса */
-    const bar = $('[data-dt-bar]', root), plaque = $('.dt-plaque', stage);
+    const bar = $('[data-dt-bar]', root); curBar = bar; watchHdr(); sync();
+    const plaque = $('.dt-plaque, .dt-ticket', stage);
     if (bar && plaque && 'IntersectionObserver' in window) {
       const io = new IntersectionObserver(es => es.forEach(e => {
         const on = !e.isIntersecting && e.boundingClientRect.bottom < 0;
@@ -49,3 +55,8 @@
   };
 })();
 
+(function () {
+  'use strict';
+  const A = window.Astreya; if (!A || !A.detail) return;
+  A.pages.brand = function (root) { A.detail.init(root); };
+})();
