@@ -42,7 +42,7 @@ body[data-page="start"] .nav a.nl:hover,body[data-page="start"] .nav a.nl.on{col
 .st-lead{text-shadow:0 0 14px rgba(247,242,230,.9),0 0 3px rgba(247,242,230,.8)}
 
 /* световой шар Стеллы над стойкой: живой аватар сайта, реагирует на ход диалога (js/pg-start.js) */
-.st-orb{grid-column:1;grid-row:1;align-self:end;justify-self:start;position:relative;width:clamp(84px,9vw,140px);aspect-ratio:1;margin:0 0 clamp(70px,12vh,150px) clamp(110px,15vw,250px);pointer-events:none}
+.st-orb{grid-column:1;grid-row:1;align-self:end;justify-self:start;position:relative;width:clamp(150px,15.5vw,250px);aspect-ratio:1;margin:0 0 clamp(4px,1.2vh,22px) clamp(60px,9vw,160px);pointer-events:none}
 .st-orb::before{content:"";position:absolute;inset:-60%;border-radius:50%;background:radial-gradient(closest-side,rgba(255,244,214,.92),rgba(255,236,190,.45) 46%,rgba(255,236,190,0) 72%);animation:stGlow 5.6s ease-in-out infinite}
 .st-orb svg{position:relative;display:block;width:100%;height:100%;filter:drop-shadow(0 18px 18px rgba(86,60,30,.34));animation:stFloat 6.4s ease-in-out infinite}
 @keyframes stFloat{0%,100%{transform:translateY(-5px)}50%{transform:translateY(7px)}}
@@ -247,7 +247,7 @@ body[data-page="start"] .nav a.nl:hover,body[data-page="start"] .nav a.nl.on{col
   .st-in{grid-template-columns:minmax(0,1fr);row-gap:clamp(22px,3vw,36px)}
   .st-head{grid-column:1;grid-row:1;max-width:680px;padding:clamp(8px,2vw,20px) 0 0}
   .st-head h1{font-size:clamp(34px,6.4vw,56px)}
-  .st-orb{grid-row:1;align-self:start;justify-self:end;margin:0;width:clamp(76px,12vw,110px)}
+  .st-orb{grid-row:1;align-self:start;justify-self:end;margin:0;width:clamp(104px,17vw,150px)}
   .st-page .pchat{grid-column:1;grid-row:2;height:clamp(520px,calc(100svh - var(--hdr,84px) - 40px),780px)}
   .st-page [data-plan-result]{grid-row:3}
   .st-wash{background:linear-gradient(180deg,rgba(247,242,230,.88) 0,rgba(247,242,230,.66) 46%,rgba(247,242,230,.12) 100%)}
@@ -315,3 +315,16 @@ body[data-page="start"] .nav a.nl:hover,body[data-page="start"] .nav a.nl.on{col
   .st-orb::before,.st-orb svg,.st-page .pc-m,.st-page .plan-res,.st-page .plan-btile{animation:none!important}
   .st-page .plan-opt,.st-page .plan-brand,.st-page .plan-evs li,.st-page .plan-tier,.st-page .plan-dots i{transition:none!important}
 }
+
+
+/* Стелла живая: моргает постоянно, дышит, звёздочка мерцает, взгляд следует за курсором (js/pg-start.js задаёт --ex/--ey), в «думает/говорит/спит» остаются штатные состояния */
+.st-orb .pe.live:not([data-m="think"]):not([data-m="sleep"]) .pe-e{animation:peBlink 5.2s ease-in-out infinite}
+.st-orb .pe.live .pe-st:not(:only-child){animation:peTwinkle 3.2s ease-in-out infinite}
+.st-orb .pe .pe-b{animation:stBreath 4.6s ease-in-out infinite}
+.st-orb .pe{overflow:visible}
+@keyframes stBreath{0%,100%{transform:scale(1,1)}50%{transform:scale(1.03,.975)}}
+@media (prefers-reduced-motion:reduce){.st-orb .pe .pe-b,.st-orb .pe .pe-e,.st-orb .pe .pe-st{animation:none!important}}
+
+/* белая дымка под всем текстом первого экрана */
+.st-head{isolation:isolate}
+.st-head::before{content:"";position:absolute;z-index:-1;inset:-4% -10% -6% -14%;pointer-events:none;border-radius:50%/44%;background:radial-gradient(ellipse at 46% 50%,rgba(255,255,255,.9) 0,rgba(255,255,255,.74) 40%,rgba(255,255,255,.34) 66%,rgba(255,255,255,0) 82%);filter:blur(14px)}

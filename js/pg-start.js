@@ -121,6 +121,14 @@
     M = {host: host, offs: [], obs: [], raf: 0, mood: 'idle', moodT: 0, kb: false, step: '', typing: false, orb: null};
     const orb = $('[data-st-orb]');
     if (orb && A.pearl) { orb.innerHTML = A.pearl('idle', true, ''); M.orb = orb; }
+    if (orb && M.orb) {
+      const bg = $('.st-bg'), still = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      let gz = 0, px = 0, py = 0;
+      const place = () => { const r = orb.getBoundingClientRect(), b = bg && bg.getBoundingClientRect(); if (bg && b && r.width) { bg.style.setProperty('--ox', Math.round(r.left + r.width / 2 - b.left) + 'px'); bg.style.setProperty('--oy', Math.round(r.top + r.height / 2 - b.top) + 'px'); } };
+      const look = () => { gz = 0; const svg = $('svg', orb), r = orb.getBoundingClientRect(); if (!svg || !r.width || (svg.getAttribute('data-m') === 'think' || svg.getAttribute('data-m') === 'sleep')) return; const dx = px - (r.left + r.width / 2), dy = py - (r.top + r.height / 2), k = Math.max(1, Math.hypot(dx, dy) / 260); svg.style.setProperty('--ex', (Math.max(-1, Math.min(1, dx / 260 / k * 1.4)) * 1.9).toFixed(2) + 'px'); svg.style.setProperty('--ey', (Math.max(-1, Math.min(1, dy / 260 / k * 1.4)) * 1.4).toFixed(2) + 'px'); };
+      if (!still) on(window, 'pointermove', e => { px = e.clientX; py = e.clientY; if (!gz) gz = requestAnimationFrame(look); }, {passive: true});
+      on(window, 'resize', place, {passive: true}); place(); setTimeout(place, 400); setTimeout(place, 1600);
+    }
     if (window.MutationObserver) { const mo = new MutationObserver(() => { if (M && !M.raf) M.raf = requestAnimationFrame(sync); }); mo.observe(host, {childList: true, subtree: true, attributes: true, attributeFilter: ['hidden', 'data-step', 'aria-valuenow']}); M.obs.push(mo); }
     on(window, 'scroll', onScroll, {passive: true}); on(document, 'keydown', onKey); on(document, 'click', onClick);
     on(document, 'pointerdown', () => { if (M) M.kb = false; }, {passive: true}); on(document, 'focusin', onFocusIn);

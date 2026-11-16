@@ -16,7 +16,8 @@ module.exports = function start(ctx, C, P) {
     <section class="st-scene" aria-labelledby="st-h">
       <div class="st-bg" aria-hidden="true">
         <picture><source media="(max-width:700px)" srcset="${esc(u('assets/utility/salon-wide-m.webp'))}">${img('assets/utility/salon-wide.webp', 2880, 1620, 'st-bg-img', ' fetchpriority="high"')}</picture>
-        <i class="st-wash"></i><i class="st-sun"></i><i class="st-fade"></i>
+        <i class="st-wash"></i><i class="st-sun"></i>
+        <i class="st-fade"></i>
       </div>
       <div class="st-in">
         <header class="st-head">
