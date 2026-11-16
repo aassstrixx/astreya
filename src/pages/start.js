@@ -15,10 +15,8 @@ module.exports = function start(ctx, C, P) {
   return `<div class="st-page" data-start-page>
     <section class="st-scene" aria-labelledby="st-h">
       <div class="st-bg" aria-hidden="true">
-        <picture><source media="(max-width:700px)" srcset="${esc(u('assets/bg/water-m.webp'))}">${img('assets/bg/water.webp', 1600, 1100, 'st-bg-img', ' fetchpriority="high"')}</picture>
+        <picture>${img('assets/house/room-editorial.webp', 1920, 1080, 'st-bg-img', ' fetchpriority="high"')}</picture>
         <i class="st-wash"></i><i class="st-sun"></i>
-        <i class="st-orbit st-o1"></i><i class="st-orbit st-o2"></i><i class="st-orbit st-o3"></i>
-        <i class="st-pebble st-p1"></i><i class="st-pebble st-p2"></i><i class="st-pebble st-p3"></i><i class="st-pebble st-p4"></i><i class="st-pebble st-p5"></i><i class="st-pebble st-p6"></i>
         <i class="st-fade"></i>
       </div>
       <div class="st-in">
