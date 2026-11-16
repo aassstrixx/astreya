@@ -41,9 +41,9 @@ body[data-page="company"] #main{background:linear-gradient(180deg,#f4ecdc 0,#f5e
 .ca-hero{display:flex;align-items:flex-end;min-height:clamp(620px,100svh,1000px);padding-block:calc(var(--hdr,84px) + clamp(24px,5vh,60px)) clamp(48px,9vh,110px);overflow:hidden;isolation:isolate;background:#e9dfc8}
 .ca-hero-art{position:absolute;inset:0;z-index:-1;overflow:hidden}
 .ca-hero-art picture{display:block;position:absolute;inset:0}
-/* кадр по центру: центр арки со знаком (≈ 61,75 % ширины рендера) стоит ровно по середине экрана; картинка шире экрана (131 %), чтобы справа и слева хватало изображения */
-.ca-hero-art picture img{display:block;position:absolute;top:0;left:calc(50% - 80.89%);width:131%;max-width:none;height:100%;object-fit:cover;object-position:50% 50%;transform-origin:61.75% 50%;scale:1.04;translate:0 calc(var(--p,0) * 12px);animation:caHeroIn 1.8s var(--ease) both}
-@keyframes caHeroIn{from{opacity:0;scale:1.1}to{opacity:1;scale:1.04}}
+/* кадр по центру: ось знака «А» с шаром (вершина и шар, ≈ 59,65 % ширины рендера — выбор владельца) стоит ровно по середине экрана; картинка шире экрана (131 %), чтобы справа и слева хватало изображения */
+.ca-hero-art picture img{display:block;position:absolute;top:0;left:calc(50% - 78.14%);width:131%;max-width:none;height:100%;object-fit:cover;object-position:50% 50%;transform-origin:59.65% 50%;scale:1.04;translate:0 calc(var(--p,0) * 12px);animation:caHeroIn 2.6s var(--ease-out,var(--ease)) both}
+@keyframes caHeroIn{from{opacity:0;scale:1.07}to{opacity:1;scale:1.04}}
 .ca-hero-veil{position:absolute;inset:0;background:linear-gradient(90deg,rgba(244,238,224,.78) 0,rgba(244,238,224,.5) 13%,rgba(244,238,224,.1) 28%,rgba(244,238,224,0) 38%),linear-gradient(0deg,rgba(244,238,224,.88),rgba(244,238,224,0) 22%)}
 .ca-hero-in{z-index:2}
 .ca-copy{max-width:min(100%,38em)}
@@ -63,7 +63,7 @@ html.js .ca-stat.in+.ca-stat::before,html.js .ca-stat+.ca-stat.in::before{transf
 .ca-stat>span{display:block;margin-top:6px;max-width:15em;font:500 var(--f-xs)/1.4 var(--sans);color:#4a4f5c}
 
 /* ---------- 3. направления ---------- */
-.ca-dirs{padding:clamp(34px,4vw,64px) 0;background:radial-gradient(70% 90% at 22% 40%,rgba(255,250,236,.55),rgba(255,250,236,0))}
+.ca-dirs{padding:clamp(34px,4vw,64px) 0;background:radial-gradient(ellipse 62% 50% at 24% 50%,rgba(255,250,236,.55),rgba(255,250,236,0))}
 .ca-dir-in{display:grid;grid-template-columns:minmax(0,.7fr) minmax(0,2.5fr);gap:clamp(16px,2.6vw,48px);align-items:center}
 .ca-dirs-h h2{margin-top:.5em}
 .ca-dl{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:clamp(10px,1.1vw,18px)}
@@ -88,13 +88,13 @@ html.js .ca-stat.in+.ca-stat::before,html.js .ca-stat+.ca-stat.in::before{transf
 .ca-dc a:hover .ca-rb-d,.ca-dc a:focus-visible .ca-rb-d{background:var(--navy);color:#fff;border-color:var(--navy);translate:2px 0}
 
 /* ---------- 4. портфель брендов ---------- */
-.ca-brands{padding:clamp(34px,4vw,64px) 0;background:radial-gradient(60% 90% at 78% 50%,rgba(255,250,236,.5),rgba(255,250,236,0))}
+.ca-brands{padding:clamp(34px,4vw,64px) 0;background:radial-gradient(ellipse 60% 50% at 78% 50%,rgba(255,250,236,.5),rgba(255,250,236,0))}
 .ca-br-in{display:grid;grid-template-columns:minmax(0,.9fr) minmax(0,1.55fr);gap:clamp(18px,3vw,56px);align-items:center}
 .ca-br-t .ca-p{max-width:44ch}
 .ca-note{display:flex;align-items:center;gap:10px;margin-top:12px;color:var(--mut);font-size:var(--f-xs);line-height:1.45}
 .ca-mkl{height:22px;width:auto;max-width:110px;flex:none}
 .ca-bgrid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));border-radius:16px;background:rgba(251,247,236,.78);box-shadow:inset 0 0 0 1px var(--line),0 20px 34px -30px rgba(60,40,18,.5);overflow:hidden}
-.ca-bc{position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;min-height:clamp(78px,6.8vw,98px);padding:10px 12px;border-right:1px solid var(--line);border-bottom:1px solid var(--line);color:var(--ink);text-decoration:none;transition:background-color .3s}
+.ca-bc{position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;min-height:clamp(78px,6.8vw,98px);padding:10px 12px;border-right:1px solid var(--line);border-bottom:1px solid var(--line);color:var(--ink);text-decoration:none;transition:opacity .85s var(--ease) var(--rd,0ms),translate .85s var(--ease) var(--rd,0ms),background-color .3s}
 .ca-bc:nth-child(3n){border-right:0}.ca-bc:nth-last-child(-n+3){border-bottom:0}
 .ca-bc::after{content:"";position:absolute;left:22%;right:22%;bottom:8px;height:1.5px;background:linear-gradient(90deg,rgba(168,133,63,0),var(--gold),rgba(168,133,63,0));transform:scaleX(0);transition:transform .45s var(--ease)}
 .ca-bc:hover,.ca-bc:focus-visible{background:rgba(255,253,246,.95)}.ca-bc:hover::after,.ca-bc:focus-visible::after{transform:scaleX(1)}
@@ -105,7 +105,7 @@ html.js .ca-stat.in+.ca-stat::before,html.js .ca-stat+.ca-stat.in::before{transf
 
 /* ---------- 5. философия и преимущества ---------- */
 .ca-phil{padding:clamp(36px,4.4vw,72px) 0;background:linear-gradient(180deg,rgba(236,222,190,0),rgba(236,222,190,.42) 45%,rgba(236,222,190,0));overflow:hidden;isolation:isolate}
-.ca-ribbon{position:absolute;right:-4%;top:-30%;width:64%;height:170%;z-index:-1;background:url(../assets/bg/silk-t.webp?v=66d08a71) 50% 50%/cover no-repeat;opacity:.5;-webkit-mask-image:linear-gradient(90deg,transparent,#000 40%,#000 85%,transparent);mask-image:linear-gradient(90deg,transparent,#000 40%,#000 85%,transparent);pointer-events:none}
+.ca-ribbon{position:absolute;right:-4%;top:0;width:64%;height:100%;z-index:-1;background:url(../assets/bg/silk-t.webp?v=98dca3e6) 50% 50%/cover no-repeat;opacity:.5;-webkit-mask-image:radial-gradient(ellipse 50% 50% at 50% 50%,#000 28%,rgba(0,0,0,.5) 62%,rgba(0,0,0,0) 100%);mask-image:radial-gradient(ellipse 50% 50% at 50% 50%,#000 28%,rgba(0,0,0,.5) 62%,rgba(0,0,0,0) 100%);pointer-events:none}
 .ca-phil-in{display:grid;grid-template-columns:minmax(0,.95fr) minmax(0,1.75fr);gap:clamp(18px,3.2vw,60px);align-items:center}
 .ca-phil-t h2{font-size:clamp(26px,2.9vw,50px);line-height:1.12;max-width:11em}
 .ca-adv{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));border-radius:16px;background:rgba(251,247,236,.7);box-shadow:inset 0 0 0 1px var(--line)}
@@ -117,7 +117,7 @@ html.js .ca-stat.in+.ca-stat::before,html.js .ca-stat+.ca-stat.in::before{transf
 .ca-av span{display:block;margin-top:4px;color:#4a4f5c;font:400 var(--f-xs)/1.5 var(--sans)}
 
 /* ---------- 6. география ---------- */
-.ca-geo{padding:clamp(34px,4vw,64px) 0;background:radial-gradient(70% 90% at 50% 50%,rgba(255,250,236,.55),rgba(255,250,236,0))}
+.ca-geo{padding:clamp(34px,4vw,64px) 0;background:radial-gradient(ellipse 70% 50% at 50% 50%,rgba(255,250,236,.55),rgba(255,250,236,0))}
 .ca-geo-in{display:grid;grid-template-columns:minmax(0,.85fr) minmax(0,1.5fr) minmax(0,.75fr);gap:clamp(16px,2.4vw,44px);align-items:center}
 .ca-map{position:relative;margin:0;width:100%;max-width:560px;justify-self:center}
 .ca-mapbox{position:relative;aspect-ratio:560/320}
