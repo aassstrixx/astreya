@@ -328,3 +328,35 @@ body[data-page="start"] .nav a.nl:hover,body[data-page="start"] .nav a.nl.on{col
 /* белая дымка под всем текстом первого экрана */
 .st-head{isolation:isolate}
 .st-head::before{content:"";position:absolute;z-index:-1;inset:-4% -10% -6% -14%;pointer-events:none;border-radius:50%/44%;background:radial-gradient(ellipse at 46% 50%,rgba(255,255,255,.9) 0,rgba(255,255,255,.74) 40%,rgba(255,255,255,.34) 66%,rgba(255,255,255,0) 82%);filter:blur(14px)}
+
+/* ---------- «Пространство Стеллы»: светлая жемчужная сцена вместо рендера зала ----------
+   Перламутр и дневной голубой свет, вода и шёлк из общих текстур фона (assets/bg), тонкие золотые орбиты вокруг Стеллы и стеклянные шары-пузыри. Двигаются только transform и opacity. */
+.st-bg{background:linear-gradient(118deg,#f9f6ef 0%,#eef1f3 32%,#e3eaf2 58%,#f5ecd9 100%)}
+.st-bg-img{object-position:50% 40%;opacity:.55}
+.st-wash{inset:-8%;background:radial-gradient(52% 50% at 20% 34%,rgba(255,255,255,.9),rgba(255,255,255,0) 70%),radial-gradient(46% 50% at 80% 26%,rgba(204,218,238,.8),rgba(204,218,238,0) 72%),radial-gradient(54% 56% at 68% 94%,rgba(240,224,192,.85),rgba(240,224,192,0) 74%);animation:stDrift 26s ease-in-out infinite alternate}
+.st-sun{inset:-8%;background:radial-gradient(44% 42% at 86% 8%,rgba(255,244,212,.85),rgba(255,244,212,0) 72%);animation:stDrift 32s ease-in-out -8s infinite alternate-reverse}
+.st-orbit{position:absolute;left:27%;top:77%;border-radius:50%;border:1px solid rgba(176,142,78,.42);aspect-ratio:1;translate:-50% -50%;animation:stSpin 90s linear infinite}
+.st-orbit::after{content:"";position:absolute;left:50%;top:-4px;width:8px;height:8px;margin-left:-4px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#fff,#e8d29a 55%,#b08e4e);box-shadow:0 0 12px 2px rgba(214,184,116,.55)}
+.st-o1{width:21vw;animation-duration:70s}
+.st-o2{width:36vw;animation-duration:110s;animation-direction:reverse;border-color:rgba(176,142,78,.3)}
+.st-o3{width:54vw;animation-duration:160s;border-color:rgba(176,142,78,.2)}
+.st-pebble{position:absolute;border-radius:50%;background:radial-gradient(circle at 31% 27%,rgba(255,255,255,.96) 0,rgba(255,255,255,.55) 22%,rgba(214,226,242,.42) 56%,rgba(176,198,226,.6) 100%);box-shadow:inset -6px -8px 14px rgba(120,150,190,.28),inset 4px 5px 10px rgba(255,255,255,.7),0 18px 30px -10px rgba(70,90,120,.32);animation:stBob 9s ease-in-out infinite alternate}
+.st-p1{left:7%;top:20%;width:46px;animation-duration:8s}
+.st-p2{left:44%;top:12%;width:28px;animation-duration:10s;animation-delay:-3s}
+.st-p3{left:3%;top:58%;width:72px;animation-duration:11s;animation-delay:-5s}
+.st-p4{right:4%;top:9%;width:58px;animation-duration:9s;animation-delay:-2s}
+.st-p5{right:2.5%;top:46%;width:34px;animation-duration:12s;animation-delay:-7s}
+.st-p6{left:46%;top:70%;width:22px;animation-duration:7s;animation-delay:-4s}
+@keyframes stDrift{from{transform:translate3d(-2%,-1.5%,0) scale(1)}to{transform:translate3d(2.5%,2%,0) scale(1.06)}}
+@keyframes stSpin{to{transform:rotate(360deg)}}
+@keyframes stBob{from{transform:translate3d(0,-10px,0)}to{transform:translate3d(6px,12px,0)}}
+@media (max-width:900px){.st-orbit{left:50%;top:22%}.st-o1{width:46vw}.st-o2{width:74vw}.st-o3{display:none}.st-p3,.st-p5{display:none}}
+@media (prefers-reduced-motion:reduce){.st-wash,.st-sun,.st-orbit,.st-pebble{animation:none}}
+
+/* комната «Редакция» (assets/house/room-editorial.webp) — только в арочной рамке под текстом слева, а не на всём экране; поверх неё белая дымка .st-head::before */
+.st-head::after{content:"";position:absolute;z-index:-2;left:-34px;right:-40px;top:-30px;bottom:-44px;border-radius:999px 999px 26px 26px;overflow:hidden;pointer-events:none;
+  background:linear-gradient(180deg,rgba(255,255,255,.08),rgba(255,255,255,0) 40%),url(../assets/house/room-editorial.webp?v=f2e1502c) 28% 62%/cover no-repeat;
+  box-shadow:0 0 0 1px rgba(176,142,78,.45),0 0 0 7px rgba(255,255,255,.55),0 0 0 8px rgba(176,142,78,.22),0 34px 60px -26px rgba(60,72,98,.42)}
+@media (max-width:1100px){.st-head::after{left:-18px;right:-18px;top:-18px;bottom:-26px;border-radius:200px 200px 22px 22px}}
+@media (max-width:700px){.st-head::after{border-radius:120px 120px 18px 18px}}
+
