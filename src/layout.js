@@ -208,7 +208,8 @@ module.exports = function layout(ctx, C) {
 
   /* P: {key, path, depth, root, nav, title, description, ogType, image, noindex, jsonld:[]} */
   /* картинки из assets/ получают ?v=<хэш> (как css/js): после замены файла браузер/CDN не показывают старый кэш */
-  const verAssets = html => ver ? html.replace(/(\ssrc=")((?:\.\.\/)*assets\/[^"?#]+)(")/g, '$1$2' + ver + '$3') : html;
+  const verAssets = html => ver ? html.replace(/(\ssrc=")((?:\.\.\/)*assets\/[^"?#]+)(")/g, '$1$2' + ver + '$3')
+    .replace(/(\ssrcset=")((?:\.\.\/)*assets\/[^"?#\s,]+)(")/g, '$1$2' + ver + '$3') : html;   // и одиночные srcset (без дескрипторов): иначе планшет/телефон держат старый кадр из кэша
   function shell(P, body) {
     body = DC.apply(P, BD.apply(P, body));
     const url = absUrl(P.path), img = base + (P.image || site.ogImage || 'assets/og-image.png');
