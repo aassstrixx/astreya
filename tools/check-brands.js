@@ -68,7 +68,7 @@ const t = (cond, name, info) => { if (cond) ok++; else bad.push(name + (info !==
     t(fs.existsSync(path.join(ROOT, 'brands', br.id + '.html')), br.id + ': страница бренда собрана');
   }
   t(g.niches.every(n => n.hit.t >= g.barB + 4), 'ряд фильтров не пересекает арки ниш (1672)', [Math.round(g.barB), Math.round(Math.min(...g.niches.map(n => n.hit.t)))]);
-  t(await p.evaluate(() => { const a = document.querySelector('.bw-plate'), r = a.getBoundingClientRect(); return r.width >= 900 && r.width <= 1181 && r.height <= 545; }), 'стена-витрина компактная: не шире 1180 и не выше 540 px (версия 3), без огромной сцены на весь экран');
+  t(await p.evaluate(() => { const a = document.querySelector('.bw-plate'), r = a.getBoundingClientRect(); return r.width > 1600; }), 'стена на всю ширину экрана');
 
   /* --- наведение, нажатие, панель --- */
   await p.hover('.bw-n[data-id="dermatime"] .bw-hit'); await p.waitForTimeout(900);
@@ -92,7 +92,7 @@ const t = (cond, name, info) => { if (cond) ok++; else bad.push(name + (info !==
 
   /* --- панель одного размера, прямо под стеной; затемнение; нижняя полоса --- */
   const pg = await p.evaluate(() => { const pn = [...document.querySelectorAll('.bw-pn')].map(a => Math.round(a.getBoundingClientRect().height)), st = document.querySelector('[data-bw-stage]').getBoundingClientRect(), pa = document.getElementById('bw-panel').getBoundingClientRect(), sp = document.querySelector('.bw-strip').getBoundingClientRect(); return {pn, gap: Math.round(pa.top - st.bottom), beforeStrip: pa.top < sp.top}; });
-  t(pg.pn.length === BRANDS.length && pg.pn.every(h => h === pg.pn[0] && h > 380), 'панели всех брендов одного размера', pg.pn); t(pg.gap >= -2 && pg.gap <= 32 && pg.beforeStrip, 'панель раскрывается сразу под стеной (выше нижней полосы)', pg);
+  t(pg.pn.length === BRANDS.length && pg.pn.every(h => h === pg.pn[0] && h > 380), 'панели всех брендов одного размера', pg.pn); t(pg.gap >= -2 && pg.gap <= 6 && pg.beforeStrip, 'панель раскрывается сразу под стеной (выше нижней полосы)', pg);
   t(await p.evaluate(() => { const d = document.querySelector('.bw-dim'); return !!d && !d.classList.contains('on') && document.querySelectorAll('.bw-hole').length === 9; }), 'слой затемнения есть и в покое выключен (9 «окон» по аркам)');
   t(await p.evaluate(() => { const s = document.querySelector('.bw-strip'); return s.querySelectorAll('li img.bw-strip-logo').length === 9 && !/ASTREYA/i.test(s.textContent) && !!s.querySelector('use[href="#logo-art"]'); }), 'нижняя полоса: логотипы брендов вместо названий, знак «Астреи» вместо надписи ASTREYA');
   /* --- поиск и фильтры: стена остаётся целой, лишние ниши приглушены --- */
@@ -148,7 +148,7 @@ const t = (cond, name, info) => { if (cond) ok++; else bad.push(name + (info !==
     p = await open(w, h, '', {touch: !desk}); await p.evaluate(() => document.querySelectorAll('.bw-page img[loading="lazy"]').forEach(i => { i.loading = 'eager'; })); await p.waitForTimeout(900); g = await geom(p); const sc = await p.evaluate(() => { const s = document.querySelector('[data-bw-scroll]'); return {sw: s.scrollWidth, cw: s.clientWidth}; });
     t(await noOverflow(p), w + ' px: нет горизонтальной прокрутки страницы');
     if (desk) {
-      t(g.plane.w <= 1181 && g.plane.w >= Math.min(w * .8, 1000) && sc.sw <= sc.cw + 2, w + ' px: компактная стена целиком на экране (до 1180 px, по центру)', [g.plane.w, sc.sw, sc.cw]);
+      t(Math.abs(g.plane.w - w) < 3 && sc.sw <= sc.cw + 2, w + ' px: стена целиком на экране (панорама)', [g.plane.w, sc.sw, sc.cw]);
       t(g.niches.every(n => n.hit.t >= g.barB + 2), w + ' px: фильтры не пересекают арки', [Math.round(g.barB), Math.round(Math.min(...g.niches.map(n => n.hit.t)))]);
       t(g.niches.every(n => n.logo && n.logo.ok && n.logo.w >= 34), w + ' px: логотипы читаемы (≥ 34 px шириной)', g.niches.map(n => n.logo && Math.round(n.logo.w)));
     } else {

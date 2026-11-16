@@ -54,35 +54,3 @@
   .dt-bar-a .btn-ghost{display:none}
   .dtb-stats b{font-size:26px}
 }
-
-/* ============ Версия 3 — компактная витрина слева, карточка бренда справа (по просьбе владельца); всё под .dtb ============ */
-.dtb-desc{margin:12px 0 0;font-size:clamp(14px,1vw,16px);line-height:1.6;color:#3b4660;display:-webkit-box;-webkit-line-clamp:5;-webkit-box-orient:vertical;overflow:hidden}
-.dt-plaque .dtb-dirs{margin:14px 0 0}
-@media (min-width:901px){
-  .dtb .dtb-stage{margin:clamp(12px,1.4vw,22px) auto 0;width:calc(100% - 2 * var(--gut));max-width:1560px;display:grid;grid-template-columns:minmax(0,.46fr) minmax(0,.54fr);grid-template-areas:"route route" "art card";gap:clamp(14px,1.5vw,24px) clamp(20px,2.8vw,52px);align-items:center;background:transparent;--ax:.38;container-type:inline-size}
-  .dtb .dtb-stage .dt-over{display:contents}
-  .dtb .dtb-stage .dt-route{grid-area:route;position:static}
-  .dtb .dtb-stage .dt-view{grid-area:art;aspect-ratio:auto;height:clamp(380px,35vw,520px);max-width:none;border-radius:22px;box-shadow:0 0 0 1px rgba(120,84,40,.22),0 30px 50px -34px rgba(60,40,18,.55);-webkit-mask-image:none;mask-image:none}
-  .dtb .dtb-stage .dt-world{width:auto;height:100%}
-  .dtb .dtb-stage .dt-plaque{grid-area:card;position:static;transform:none;width:auto;max-width:640px;justify-self:start;padding:clamp(20px,2vw,34px);animation:dtbCard .9s var(--ax-ease) .15s both}
-  .dtb .dtb-stage .dt-plaque h1{font-size:clamp(28px,2.7vw,46px)}
-}
-@media (max-width:900px){
-  .dtb .dtb-stage{--ws:1.75}
-  .dtb .dtb-stage .dt-view{height:clamp(300px,84vw,400px)}
-  .dtb .dtb-stage .dt-over{display:contents}
-  .dtb .dtb-stage .dt-route{order:-1;position:static;margin:calc(var(--hdr) + 4px) var(--gut) 12px}
-  .dtb .dtb-stage .dt-plaque{order:1;margin:14px var(--gut) 0;animation:none}
-}
-@media (max-width:560px){.dtb .dtb-stage{--ws:1.75}}
-@keyframes dtbCard{from{opacity:0;translate:0 14px}to{opacity:1;translate:0 0}}
-@media (prefers-reduced-motion:reduce){.dtb .dtb-stage .dt-plaque{animation:none}}
-/* линейки бренда: арки меньше (3–5 в ряд на ПК, по две на телефоне) */
-.dtb-arches{grid-template-columns:repeat(auto-fill,minmax(190px,232px));gap:clamp(12px,1.5vw,22px)}
-.dtb-arch{padding:clamp(12px,1.2vw,16px) 14px 16px;border-radius:120px 120px 18px 18px}
-.dtb-num b{font-size:clamp(30px,2.6vw,40px)}
-@media (max-width:560px){
-  .dtb-arches{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
-  .dtb-arch{padding:10px 8px 14px;border-radius:90px 90px 14px 14px}
-  .dtb-arch h3{font-size:16px}.dtb-arch p{font-size:12px}
-}
