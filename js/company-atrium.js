@@ -19,12 +19,6 @@
     const html = document.documentElement, hero = $('.ca-entry', root), vis = new Set(), tick = {raf: 0};
     const alive = () => root.isConnected && document.body.getAttribute('data-page') === 'company';
 
-    /* ---- навигатор по сценам ---- */
-    const scenes = $$('[data-scene]', root), rail = document.createElement('nav'); rail.className = 'ca-rail'; rail.setAttribute('aria-label', 'Сцены страницы');
-    rail.innerHTML = scenes.map(s => '<a href="#' + s.id + '" data-act="scroll" data-target="' + s.id + '"><span>' + s.getAttribute('data-scene') + ' · ' + s.getAttribute('data-title') + '</span></a>').join('');
-    root.appendChild(rail); off.push(() => rail.remove());
-    const links = $$('a', rail);
-
     /* ---- кадр: шапка, шаг вглубь, параллакс ---- */
     const pars = $$('[data-ca-par]', root);
     function frame() {
@@ -35,7 +29,6 @@
         root.style.setProperty('--hp', clamp(-hb.top / Math.max(1, hb.height), 0, 1).toFixed(3));
         pars.forEach(el => { if (!vis.has(el)) return; const r = el.getBoundingClientRect(); el.style.setProperty('--p', clamp((r.top + r.height / 2 - vh / 2) / vh, -1, 1).toFixed(3)); });
       }
-      const rr = root.getBoundingClientRect(); rail.classList.toggle('off', rr.bottom < vh * .55 || rr.top > vh * .5);
     }
     const ask = () => { if (!tick.raf) tick.raf = requestAnimationFrame(frame); };
     on(window, 'scroll', ask, {passive: true}); on(window, 'resize', ask); off.push(() => { if (tick.raf) cancelAnimationFrame(tick.raf); });
@@ -43,10 +36,6 @@
     if ('IntersectionObserver' in window) {
       const pio = new IntersectionObserver(es => { es.forEach(e => { if (e.isIntersecting) vis.add(e.target); else vis.delete(e.target); }); ask(); }, {rootMargin: '20% 0px'});
       pars.forEach(el => pio.observe(el)); off.push(() => pio.disconnect());
-      const sio = new IntersectionObserver(es => {
-        es.forEach(e => { if (e.isIntersecting) { const i = scenes.indexOf(e.target); links.forEach((l, k) => { l.classList.toggle('on', k === i); if (k === i) l.setAttribute('aria-current', 'true'); else l.removeAttribute('aria-current'); }); } });
-      }, {rootMargin: '-45% 0px -50% 0px'});
-      scenes.forEach(s => sio.observe(s)); off.push(() => sio.disconnect());
     } else { pars.forEach(el => vis.add(el)); }
     ask();
 

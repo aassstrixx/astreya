@@ -120,9 +120,9 @@ const rub = n => new Intl.NumberFormat('ru-RU').format(n).replace(/[  ]/g, ' ') 
   t(bad9.length === 0, 'Стелла: на странице только asst-open / asst-chip (и обычные scroll / form), своего чата нет', bad9);
   /* --- навигатор по сценам --- */
   await p.reload(); await p.waitForSelector('html.ready', {timeout: 20000}).catch(() => {}); await p.waitForTimeout(1500);
-  t(await p.evaluate(() => document.querySelectorAll('.ca-rail a').length === 9 && getComputedStyle(document.querySelector('.ca-rail')).display !== 'none'), 'навигатор: девять точек по сценам видны на 1440');
-  await p.click('.ca-rail a:nth-child(3)'); await p.waitForTimeout(1600);
-  t(await p.evaluate(() => Math.abs(document.getElementById('ca-expo').getBoundingClientRect().top) < 140 && document.querySelector('.ca-rail a.on') === document.querySelector('.ca-rail a:nth-child(3)')), 'навигатор: точка ведёт к своей сцене и подсвечивается');
+  t(await p.evaluate(() => !document.querySelector('.ca-rail') && !document.querySelector('.ca-scroll')), 'по просьбе заказчика убраны точки-навигатор справа и круглая стрелка «вниз» (CTA «Познакомиться» осталась)');
+  t(await p.evaluate(() => !!document.querySelector('.ca-entry .ca-cta a[data-act="scroll"]')), 'кнопка «Познакомиться с компанией» на месте');
+  t(await p.evaluate(() => document.querySelectorAll('.ca-stat [data-count]').length === 4), 'цифры компании: четыре счётчика из данных');
   /* --- движение --- */
   await p.evaluate(() => window.scrollTo({top: 0, behavior: 'instant'})); await p.waitForTimeout(500); await p.evaluate(() => window.scrollTo({top: 420, behavior: 'instant'})); await p.waitForTimeout(700);
   const hp = await p.evaluate(() => +getComputedStyle(document.querySelector('.ca')).getPropertyValue('--hp') || 0);
@@ -150,7 +150,7 @@ const rub = n => new Intl.NumberFormat('ru-RU').format(n).replace(/[  ]/g, ' ') 
   /* ================= 1024 ================= */
   p = await open(1024, 768);
   t(await noOverflow(p) && await p.evaluate(() => document.querySelectorAll('[data-scene]').length === 9 && [...document.querySelectorAll('[data-scene]')].every(s => s.getBoundingClientRect().width <= innerWidth + 1)), 'компания 1024: девять сцен, нет горизонтальной прокрутки');
-  t(await p.evaluate(() => getComputedStyle(document.querySelector('.ca-rail')).display === 'none'), 'компания 1024: навигатор по сценам скрыт (узкий экран)');
+  t(await p.evaluate(() => document.querySelectorAll('.ca .reveal').length >= 30), 'компания 1024: блоки страницы проявляются общим механизмом (reveal)');
   await scrollTo(p, '.ca-geo'); await p.hover('.ca-city[data-city="Онлайн"] .ca-node'); await p.waitForTimeout(700);
   t(await p.evaluate(() => { const c = document.querySelector('.ca-city.on .ca-cd').getBoundingClientRect(); return document.querySelector('.ca-city.on').dataset.city === 'Онлайн' && c.right <= innerWidth && c.left >= 0; }), 'компания 1024: карточка города не выходит за экран');
   t(p._errs.length === 0, 'компания 1024: ошибок в консоли нет', p._errs); await p._ctx.close();
