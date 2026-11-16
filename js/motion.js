@@ -189,7 +189,7 @@
     walk(el);
     el.classList.remove('reveal'); el.classList.add('split');
   }
-  const splitAll = root => $$('h1:not(.b-title), .sec-head h2, .promo h2, .feat h2, .cta-band h2, .ca h2', root).forEach(el => { if (!el.classList.contains('split')) splitWords(el); });
+  const splitAll = root => $$('h1:not(.b-title), .sec-head h2, .promo h2, .feat h2, .cta-band h2', root).forEach(el => { if (!el.classList.contains('split')) splitWords(el); });
 
   /* ---------- появление блоков и счётчики ---------- */
   let io = null, revealTok = 0;
