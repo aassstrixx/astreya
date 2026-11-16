@@ -1,14 +1,14 @@
 #!/usr/bin/env python3
 """Доводка сырых кадров атриума (/tmp/at_raw/<имя>.png из render_all.sh) в WebP сайта: цвет под общий цвет сайта (regrade_site.py, hue 83–89°, a ≈ 0,3–1,1, b ≈ 8–13),
 лёгкая нерезкая маска после уменьшения, качество подбирается так, чтобы кадр был ≤ 480 КБ.
-  python3 finish.py main            → assets/company/atrium.webp (2400) и atrium-s.webp (1200)
+  python3 finish.py main            → assets/company/atrium.webp (2400) и atrium-s.webp (1200); с FIN_SUFFIX=-v2 — atrium-v2.webp, atrium-v2-s.webp, atrium-v2-m.webp
   python3 finish.py mobile|wide|arch|side|sculpture   → atrium-m.webp | atrium-wide.webp | atrium-arch.webp | atrium-side.webp | atrium-sculpture.webp
 Переменные: FIN_A (0.8), FIN_B (10.5) — целевые a/b; FIN_LC (1.7) — контраст L; FIN_RAW (папка сырых кадров, по умолчанию /tmp/at_raw)."""
 import os, subprocess, sys, shutil
 from PIL import Image, ImageFilter
 
 HERE = os.path.dirname(os.path.abspath(__file__)); ROOT = os.path.join(HERE, '..', '..', '..'); OUT = os.path.join(ROOT, 'assets', 'company')
-RAW = os.environ.get('FIN_RAW', '/tmp/at_raw'); TMP = '/tmp/at_fin'
+RAW = os.environ.get('FIN_RAW', '/tmp/at_raw'); TMP = '/tmp/at_fin'; SUF = os.environ.get('FIN_SUFFIX', '')       # FIN_SUFFIX=-v2 → atrium-v2.webp, atrium-v2-s.webp, atrium-v2-m.webp (v1 не трогается)
 TARGETS = {'main': [('atrium.webp', 2400), ('atrium-s.webp', 1200)], 'mobile': [('atrium-m.webp', 1080)], 'wide': [('atrium-wide.webp', 1800)],
            'arch': [('atrium-arch.webp', 1800)], 'side': [('atrium-side.webp', 1800)], 'sculpture': [('atrium-sculpture.webp', 1800)]}
 
@@ -35,7 +35,7 @@ def main():
     for fn, w in TARGETS[name]:
         im = big if w >= big.width else big.resize((w, round(big.height * w / big.width)), Image.LANCZOS)
         if w < big.width: im = im.filter(ImageFilter.UnsharpMask(radius=1.0, percent=45, threshold=2))
-        save_fit(im, os.path.join(OUT, fn))
+        save_fit(im, os.path.join(OUT, fn.replace('atrium', 'atrium' + SUF, 1)))
 
 
 if __name__ == '__main__':
