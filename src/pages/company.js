@@ -77,7 +77,7 @@ module.exports = function company(ctx, C, P) {
   return `<div class="ca" data-ca>
   <section class="sec ca-s ca-entry" id="ca-entry" data-scene="1" data-title="О компании" aria-labelledby="ca-h1">
     <div class="ca-bg" aria-hidden="true" data-ca-hero>
-      <picture><source media="(max-width:760px)" srcset="${u('assets/company/atrium-m.webp')}"><img src="${u('assets/company/atrium-s.webp')}" srcset="${u('assets/company/atrium-s.webp')} 1200w, ${u('assets/company/atrium.webp')} 2400w" sizes="100vw" alt="" width="2400" height="1350" fetchpriority="high" decoding="async"></picture>
+      <picture><source media="(max-width:760px)" srcset="${u('assets/company/atrium-v2-m.webp')}"><img src="${u('assets/company/atrium-v2-s.webp')}" srcset="${u('assets/company/atrium-v2-s.webp')} 1200w, ${u('assets/company/atrium-v2.webp')} 2400w" sizes="100vw" alt="" width="2400" height="1350" fetchpriority="high" decoding="async"></picture>
       <i class="ca-shaft ca-sh1"></i><i class="ca-shaft ca-sh2"></i><canvas class="ca-dust" data-ca-dust></canvas><i class="ca-veil"></i>
     </div>
     <div class="ca-in ca-entry-in" data-ca-copy>
@@ -151,7 +151,7 @@ module.exports = function company(ctx, C, P) {
   <section class="sec ca-s ca-pro" id="ca-pro" data-scene="6" data-title="Профессионалам" aria-labelledby="ca-h5">
     <div class="ca-in">
       <div class="ca-pro-in">
-        <figure class="ca-pro-art reveal" aria-hidden="true"><img src="${u('assets/company/atrium-side.webp')}" alt="" width="1800" height="1012" loading="lazy" decoding="async"></figure>
+        <figure class="ca-pro-art reveal" aria-hidden="true"><img src="${u('assets/company/atrium-v2.webp')}" alt="" width="2400" height="1350" loading="lazy" decoding="async"></figure>
         <div class="ca-pro-copy">
           <span class="ca-eyebrow reveal">Профессионалам</span>
           <h2 id="ca-h5">${esc(cp.professionals.title)}</h2>
@@ -168,7 +168,7 @@ module.exports = function company(ctx, C, P) {
   </section>
 
   <section class="sec ca-s ca-final" id="ca-final" data-scene="7" data-title="Финал" aria-labelledby="ca-h9">
-    <div class="ca-fin-bg" aria-hidden="true" data-ca-par><img src="${u('assets/company/atrium-wide.webp')}" alt="" width="2400" height="1350" loading="lazy" decoding="async"></div>
+    <div class="ca-fin-bg" aria-hidden="true" data-ca-par><img src="${u('assets/company/atrium-v2.webp')}" alt="" width="2400" height="1350" loading="lazy" decoding="async"></div>
     <div class="ca-in ca-fin-g">
       <div class="ca-fin-in" data-sx-closing="company-cta">
         <span class="ca-eyebrow reveal">${esc(closing.eyebrow || 'Знакомство без обязательств')}</span><h2 id="ca-h9">${esc(closing.title || 'Познакомимся на практике')}</h2>

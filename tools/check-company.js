@@ -169,7 +169,7 @@ const rub = n => new Intl.NumberFormat('ru-RU').format(n).replace(/[  ]/g, ' ') 
   /* ================= 390 ================= */
   p = await open(390, 844);
   t(await noOverflow(p) && await p.evaluate(() => [...document.querySelectorAll('[data-scene]')].every(s => s.getBoundingClientRect().width <= innerWidth + 1)), 'компания 390: нет горизонтальной прокрутки');
-  t(await p.evaluate(() => { const i = document.querySelector('.ca-entry img'); return i.currentSrc.includes('atrium-m.webp') && i.complete; }), 'компания 390: на телефоне — вертикальный кадр атриума (atrium-m)');
+  t(await p.evaluate(() => { const i = document.querySelector('.ca-entry img'); return i.currentSrc.includes('atrium-v2-m.webp') && i.complete; }), 'компания 390: на телефоне — вертикальный кадр атриума (atrium-v2-m)');
   await p.evaluate(async () => { for (let y = 0; y < document.documentElement.scrollHeight; y += 600) { window.scrollTo(0, y); await new Promise(r => setTimeout(r, 90)); } window.scrollTo(0, 0); });
   await p.waitForTimeout(800);
   t(await noOverflow(p), 'компания 390: после прокрутки всей страницы нет горизонтальной прокрутки');
