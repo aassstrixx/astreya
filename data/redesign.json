@@ -632,7 +632,9 @@
       "partners": {"top": {"tex": "molecules", "pos": "c"}, "mid": [{"sel": "section.sec#calc", "tex": "film", "pos": "r", "o": 6}], "end": {"tex": "ribbon", "pos": "b"}},
       "search": {"top": {"tex": "cream", "pos": "tr", "o": 7}},
       "privacy": {"top": {"tex": "film", "pos": "tr", "o": 5}},
-      "terms": {"top": {"tex": "film", "pos": "tr", "o": 5}}
+      "terms": {"top": {"tex": "film", "pos": "tr", "o": 5}},
+      "consent": {"top": {"tex": "film", "pos": "tr", "o": 5}},
+      "notfound": {"top": {"tex": "film", "pos": "tr", "o": 7}, "end": {"tex": "silk", "pos": "br", "o": 7}}
     }
   },
   "extras": {

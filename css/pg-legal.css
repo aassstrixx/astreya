@@ -89,3 +89,7 @@ body[data-page="privacy"] .hdr .logo,body[data-page="terms"] .hdr .logo,body[dat
 @media (prefers-reduced-motion:reduce){.lg-page *{transition-duration:.01ms!important}}
 .lg-band-img{transform:scaleX(-1)}
 @media (max-width:760px){.lg-page .legal-body table{display:block;overflow-x:auto;-webkit-overflow-scrolling:touch}.lg-page .legal-body th,.lg-page .legal-body td{min-width:150px;hyphens:manual}}
+
+/* фоновые текстуры (общая система backdrops): обёртка прозрачна, цвет страницы лежит на #main, текстурные полосы лежат над ним и под содержимым */
+.lg-page{background:transparent}
+body[data-page="privacy"] #main,body[data-page="terms"] #main,body[data-page="consent"] #main{background:#f4eee1;isolation:isolate}

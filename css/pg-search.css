@@ -94,3 +94,7 @@ body[data-page="search"] .nav a.nl:hover,body[data-page="search"] .nav a.nl.on{c
 @media print{.qx-bg,.qx-form,.qx-hints,.s-tabs{display:none!important}.qx-page{margin-top:0}}
 @media (prefers-reduced-motion:reduce){.qx-page *{transition-duration:.01ms!important}}
 .qx-bg-img{transform:scaleX(-1)}
+
+/* фоновые текстуры (общая система backdrops): обёртка прозрачна, цвет страницы лежит на #main, текстурные полосы лежат над ним и под содержимым */
+.qx-page{background:transparent}
+body[data-page="search"] #main{background:#f4eee1;isolation:isolate}
