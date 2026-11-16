@@ -5,7 +5,7 @@
 
 .ca{--ink:#101f37;--navy:#0b1a33;--bg:#f4eee0;--bg2:#ece2cc;--card:#fbf7ec;--line:rgba(120,84,40,.2);--mut:#575043;--gold:#a8853f;--gold2:#d9bd83;--ease:cubic-bezier(.22,.8,.2,1);
   --g:clamp(18px,5.9vw,120px);--f-h1:clamp(30px,3.3vw,60px);--f-h2:clamp(23px,2.05vw,40px);--f-h3:clamp(16px,1.18vw,22px);--f-b:clamp(14.5px,.98vw,18px);--f-s:clamp(13.5px,.88vw,16.5px);--f-xs:clamp(11.5px,.74vw,14px);
-  --trav:url(../assets/showroom/pg-travertine.webp?v=778458e4);
+  --trav:url(../assets/showroom/pg-travertine.webp?v=73bb5c19);
   position:relative;margin-top:calc(var(--hdr,84px) * -1);background:var(--bg);color:var(--ink);overflow:clip;font-size:var(--f-b)}
 .ca *,.ca *::before,.ca *::after{box-sizing:border-box}
 .ca-s{position:relative;padding-block:clamp(34px,4vw,68px)}
@@ -181,7 +181,7 @@ body[data-page="company"] .nav a.nl.on{border-bottom-color:#101f37}
 
 /* ---------- 7. профессионалы и преимущества ---------- */
 .ca-pro{background:linear-gradient(180deg,rgba(240,231,210,.9),rgba(232,220,194,.88)),var(--trav)}
-.ca-pro-in{display:grid;grid-template-columns:minmax(0,.55fr) minmax(0,1.45fr);gap:clamp(18px,3vw,56px);align-items:center}
+.ca-pro-in{display:grid;grid-template-columns:minmax(0,.6fr) minmax(0,1.1fr) minmax(0,.62fr);gap:clamp(18px,3vw,56px);align-items:center}
 .ca-pro-art{margin:0;justify-self:center;width:min(100%,clamp(220px,20vw,290px))}
 .ca-pro-art img{display:block;width:100%;height:auto;aspect-ratio:1/1.12;object-fit:cover;object-position:57% 50%;border-radius:999px 999px 14px 14px;box-shadow:0 0 0 1px rgba(168,133,63,.6),0 0 0 8px rgba(251,247,236,.7),0 24px 34px -24px rgba(60,40,18,.6)}
 .ca-pro-copy>p{margin-top:12px;max-width:60ch;font-size:var(--f-s);color:#2a3550;line-height:1.6}
@@ -284,3 +284,59 @@ body[data-page="company"] .nav a.nl.on{border-bottom-color:#101f37}
 /* без JS: все карточки городов раскрыты, ничего не скрыто */
 .ca:not(.is-js) .ca-cd{grid-template-rows:1fr;opacity:1;visibility:visible}
 .ca:not(.is-js) .ca-cdi{overflow:visible}
+
+/* ============ Версия 3.1 (17.11): мягкие структурные переходы фонов, настоящие фото из банка сайта, анимации появления текста, «Как начинается сотрудничество» ============ */
+/* туманные швы между зонами: молочная полоса растворяет границу, тонкий орнамент из трёх арок проявляется при прокрутке */
+.ca-seam{position:relative;height:0;z-index:3;pointer-events:none}
+.ca-seam::before{content:"";position:absolute;left:0;right:0;top:calc(var(--seam,clamp(48px,5.4vw,92px)) * -1);height:calc(var(--seam,clamp(48px,5.4vw,92px)) * 2);background:linear-gradient(180deg,rgba(244,238,224,0),rgba(244,238,224,.9) 50%,rgba(244,238,224,0))}
+.ca-seam i{position:absolute;left:50%;top:-13px;width:clamp(110px,13vw,190px);height:26px;margin-left:calc(clamp(110px,13vw,190px) / -2);background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 190 26' fill='none' stroke='%23a8853f' stroke-width='1.2' stroke-linecap='round'%3E%3Cpath d='M8 25V13a9 9 0 0 1 18 0v12M86 25V9a9 9 0 0 1 18 0v16M164 25V13a9 9 0 0 1 18 0v12M0 25h190' opacity='.85'/%3E%3C/svg%3E") center/100% 100% no-repeat}
+/* настоящие фото: рамка проявляется, снимок мягко оседает, подпись выезжает при наведении; в браузерах со scroll-driven animation — лёгкий параллакс внутри рамки */
+.ca-pmos{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));grid-template-rows:clamp(130px,12.5vw,190px) clamp(130px,13vw,200px);gap:clamp(8px,.9vw,14px);width:min(100%,clamp(300px,31vw,440px));justify-self:center}
+.ca-pm,.ca-ep{position:relative;margin:0;overflow:hidden;border-radius:clamp(10px,1vw,16px);background:#e5dac3;box-shadow:0 0 0 1px rgba(120,84,40,.2),0 20px 30px -24px rgba(60,40,18,.6)}
+.ca-pm-1{grid-column:1/3}
+.ca-pm img,.ca-ep img{display:block;width:100%;height:100%;object-fit:cover;scale:1.08;transition:scale 1.2s var(--ease)}
+.ca-pm figcaption{position:absolute;left:0;right:0;bottom:0;padding:clamp(24px,2.4vw,38px) clamp(8px,.9vw,14px) clamp(7px,.8vw,12px);background:linear-gradient(0deg,rgba(11,26,51,.78),rgba(11,26,51,0));color:#fff;font:500 var(--f-xs)/1.4 var(--sans);opacity:0;translate:0 8px;transition:opacity .5s ease,translate .6s var(--ease)}
+.ca-pm:hover figcaption,.ca-pm:focus-within figcaption{opacity:1;translate:0 0}
+@media (hover:hover){.ca-pm:hover img,.ca-ep:hover img{scale:1.14}}
+@media (hover:none){.ca-pm figcaption{opacity:1;translate:none}}
+html.js .ca-pm.reveal,html.js .ca-ep.reveal{opacity:1;translate:none;clip-path:inset(10% 10% 10% 10% round 16px);transition:clip-path 1.1s var(--ease) var(--rd,0ms)}
+html.js .ca-pm.reveal.in,html.js .ca-ep.reveal.in{clip-path:inset(0 0 0 0 round 16px)}
+html.js .ca-pm.reveal img,html.js .ca-ep.reveal img{scale:1.22}html.js .ca-pm.reveal.in img,html.js .ca-ep.reveal.in img{scale:1.08}
+@supports (animation-timeline:view()){
+  html.js .ca-pm.in img,html.js .ca-ep.in img{animation:caMpar linear both;animation-timeline:view();animation-range:cover 0% cover 100%}
+  @keyframes caMpar{from{translate:0 -3.5%}to{translate:0 3.5%}}
+}
+/* фото семинаров в блоке «Ближайшие семинары» и в карточках направлений */
+.ca-edu-ph{display:grid;grid-template-columns:minmax(0,.55fr) minmax(0,1fr);gap:clamp(8px,.9vw,14px)}
+.ca-ep{height:clamp(84px,8vw,120px)}
+.ca-ill-ph2 img{object-position:50% 30%}
+/* «Как начинается сотрудничество» */
+.ca-steps{background:linear-gradient(180deg,rgba(246,241,230,.94),rgba(238,229,208,.9)),var(--trav)}
+.ca-stp{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:clamp(10px,1.3vw,22px);counter-reset:cs}
+.ca-sp{position:relative;padding:clamp(14px,1.4vw,22px) clamp(14px,1.4vw,22px) clamp(14px,1.4vw,20px);border-radius:14px;background:rgba(251,247,236,.88);box-shadow:inset 0 0 0 1px var(--line),0 16px 26px -24px rgba(60,40,18,.55);transition:translate .35s var(--ease),box-shadow .35s}
+.ca-sp::after{content:"";position:absolute;top:clamp(34px,3.2vw,50px);right:calc(clamp(10px,1.3vw,22px) / -2 - 5px);width:10px;height:10px;border-top:1.4px solid var(--gold);border-right:1.4px solid var(--gold);rotate:45deg;opacity:.8}
+.ca-sp:last-child::after{display:none}
+.ca-sp:hover{translate:0 -4px;box-shadow:inset 0 0 0 1px rgba(168,133,63,.7),0 24px 32px -22px rgba(60,40,18,.6)}
+.ca-spn{display:block;font:400 clamp(30px,3vw,48px)/1 var(--serif);color:transparent;-webkit-text-stroke:1px var(--gold);letter-spacing:-.01em}
+.ca-sp h3{margin-top:clamp(8px,.8vw,12px);font-size:var(--f-h3)}
+.ca-sp p{margin-top:6px;color:#3a4458;font-size:var(--f-s);line-height:1.5}
+/* анимации появления текста: линия у надписи вырастает, вводные абзацы выплывают следом за заголовком (слова заголовков раскладывает общий .split) */
+html.js .ca-eyebrow.reveal::before{transform:scaleX(0);transform-origin:0 50%;transition:transform 1s var(--ease) .2s}
+html.js .ca-eyebrow.reveal.in::before{transform:scaleX(1)}
+html.js .ca-sub.reveal,html.js .ca-lead.reveal,html.js .ca-dist.reveal{--rd:260ms}
+html.js .ca-head .ca-cta.reveal,html.js .ca-copy .ca-cta.reveal{--rd:420ms}
+@media (max-width:1100px){.ca-stp{grid-template-columns:repeat(2,minmax(0,1fr))}.ca-sp:nth-child(2n)::after{display:none}.ca-pmos{width:min(100%,480px)}}
+@media (max-width:900px){.ca-pmos{justify-self:start}}
+@media (max-width:560px){.ca-stp{grid-template-columns:1fr}.ca-sp::after{display:none}.ca-edu-ph{grid-template-columns:minmax(0,.5fr) minmax(0,1fr)}.ca-ep{height:92px}}
+@media (prefers-reduced-motion:reduce){
+  html.js .ca-pm.reveal,html.js .ca-ep.reveal{clip-path:none}html.js .ca-pm.reveal img,html.js .ca-pm.reveal.in img,html.js .ca-ep.reveal img,html.js .ca-ep.reveal.in img{scale:1.08}html.js .ca-pm.in img,html.js .ca-ep.in img{animation:none}
+  html.js .ca-eyebrow.reveal::before{transform:none}
+}
+
+
+/* блок «Профессионалам»: фото — карточки преимуществ третьей колонкой; фото докладчика без чёрных полос оригинала */
+.ca-pro-in .ca-slabs-2{grid-template-columns:1fr;margin:0;align-self:center}
+.ca-ep:first-child img{width:134%;max-width:none;margin-left:-17%}
+@media (max-width:1100px){.ca-pro-in{grid-template-columns:minmax(0,.8fr) minmax(0,1.2fr)}.ca-pro-in .ca-slabs-2{grid-column:1/-1;grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media (max-width:900px){.ca-pro-in{grid-template-columns:minmax(0,1fr)}}
+@media (max-width:560px){.ca-pro-in .ca-slabs-2{grid-template-columns:1fr}}

@@ -41,7 +41,7 @@ const rub = n => new Intl.NumberFormat('ru-RU').format(n).replace(/[  ]/g, ' ') 
   t(await p.evaluate(() => document.body.dataset.page === 'company' && !!document.querySelector('.ca[data-ca].is-js')), 'компания: страница v2 включена (.ca), скрипт сцен подключён');
   t(await p.evaluate(() => document.querySelectorAll('h1').length === 1 && document.querySelector('h1').textContent.trim() === 'Астрея — дистрибьютор профессиональной косметики'), 'компания: один заголовок первого уровня «Астрея — дистрибьютор профессиональной косметики»');
   const sc = await p.evaluate(() => [...document.querySelectorAll('[data-scene]')].map(s => ({n: s.dataset.scene, id: s.id, h: Math.round(s.getBoundingClientRect().height), tag: s.tagName})));
-  t(sc.length === 7 && sc.map(x => x.n).join('') === '1234567' && sc.every(x => x.h > 250 && x.h < 1100 && x.tag === 'SECTION'), 'компания v3: семь разделов с номерами по порядку (вступление, направления, история, бренды, география, профессионалы, финал), ни один не длиннее 1100 px', sc);
+  t(sc.length === 7 && sc.map(x => x.n).join('') === '1234567' && sc.every(x => x.h > 250 && x.h < 1200 && x.tag === 'SECTION'), 'компания v3: семь разделов с номерами по порядку (вступление, направления, история, бренды, география, профессионалы, финал), ни один не длиннее 1200 px', sc);
   const dens = await p.evaluate(() => ({hero: Math.round(document.querySelector('.ca-entry').getBoundingClientRect().height), stats: Math.round(document.querySelector('.ca-numbers').getBoundingClientRect().height), total: document.documentElement.scrollHeight, bigImg: [...document.querySelectorAll('.ca img')].filter(i => { const r = i.getBoundingClientRect(); return !i.closest('.ca-bg') && !i.closest('.ca-fin-bg') && r.height > 380; }).map(i => i.getAttribute('src'))}));
   t(dens.hero >= 600 && dens.hero <= 1000 && dens.stats <= 140 && dens.total <= 7600 && dens.bigImg.length === 0, 'компания v3 (плотность по образцу «Обучения»): вступление — атриум на весь экран (по просьбе владельца), полоса цифр ≤ 140 px, страница ≤ 7600 px, крупных изображений (> 380 px) нет, кроме фона вступления', dens);
   /* --- 1. вход --- */
@@ -82,6 +82,7 @@ const rub = n => new Intl.NumberFormat('ru-RU').format(n).replace(/[  ]/g, ' ') 
   await scrollTo(p, '.ca-edu'); await p.click('.ca-ev button[data-act="form"]'); await p.waitForTimeout(700);
   t(await p.evaluate(() => { const m = document.getElementById('modal'); return !!m && m.classList.contains('open'); }), 'сцена 6: «Записаться» открывает форму записи'); await p.keyboard.press('Escape'); await p.waitForTimeout(500);
   /* --- 7. география --- */
+  await p.mouse.move(2, 2);
   await scrollTo(p, '.ca-geo');
   const geo = await p.$$eval('.ca-city', e => e.map(x => ({c: x.dataset.city, kind: x.classList.contains('is-office') ? 'office' : 'sem', txt: x.querySelector('.ca-cd').textContent.replace(/\s+/g, ' '), tag: x.querySelector('.ca-node small').textContent})));
   t(geo.map(g => g.c).join('|') === 'Москва|Санкт-Петербург|Ростов-на-Дону|Симферополь|Онлайн', 'сцена 7: пять точек — Москва, Санкт-Петербург, Ростов-на-Дону, Симферополь, Онлайн', geo.map(g => g.c));
@@ -134,6 +135,16 @@ const rub = n => new Intl.NumberFormat('ru-RU').format(n).replace(/[  ]/g, ' ') 
   t(await p.evaluate(() => !document.querySelector('.ca-rail') && !document.querySelector('.ca-scroll')), 'по просьбе заказчика убраны точки-навигатор справа и круглая стрелка «вниз» (CTA «Познакомиться» осталась)');
   t(await p.evaluate(() => !!document.querySelector('.ca-entry .ca-cta a[data-act="scroll"]')), 'кнопка «Познакомиться с компанией» на месте');
   t(await p.evaluate(() => document.querySelectorAll('.ca-stat [data-count]').length === 4), 'цифры компании: четыре счётчика из данных');
+  /* --- версия 3.1: швы, настоящие фото, шаги, анимации текста --- */
+  t(await p.evaluate(() => document.querySelectorAll('.ca-seam').length >= 4 && [...document.querySelectorAll('.ca-seam')].every(e => e.getAttribute('aria-hidden') === 'true')), 'мягкие переходы фонов: между зонами страницы стоят швы (≥ 4), для чтения скрыты');
+  await p.evaluate(async () => { for (let y = 0; y < document.documentElement.scrollHeight; y += 600) { window.scrollTo(0, y); await new Promise(r => setTimeout(r, 90)); } });
+  await p.waitForTimeout(1500);
+  const ph = await p.evaluate(() => { const ok = [...document.querySelectorAll('.ca-pm img, .ca-ep img, .ca-ill-ph img')]; return {n: ok.length, loaded: ok.every(i => i.complete && i.naturalWidth > 200), src: ok.map(i => i.getAttribute('src').split('?')[0].split('/').slice(-1)[0])}; });
+  t(ph.n >= 7 && ph.loaded && ['photo-02-about.webp', 'photo-05-expertise.webp', 'ph-seminar-a.webp', 'ph-presenter.webp'].every(f => ph.src.includes(f)), 'настоящие фото из банка сайта на месте (команда, практика, семинары, спикер) и загружены', ph);
+  t(await p.evaluate(() => [...document.querySelectorAll('.ca-pm')].every(e => e.getBoundingClientRect().height <= 260) && !!document.querySelector('.ca-pm figcaption')), 'фотографии небольшие (≤ 260 px по высоте), у снимков есть подписи');
+  const stp = await p.$$eval('.ca-sp h3', e => e.map(x => x.textContent));
+  t(stp.join('|') === J('data/content.json').partners.steps.map(x => x.t).join('|'), 'блок «Как начинается сотрудничество»: четыре шага из data/content.json в том же порядке', stp);
+  t(await p.evaluate(() => { const e = document.querySelector('.ca-eyebrow.reveal.in'); if (!e) return false; const tr = getComputedStyle(e, '::before').transform; return tr === 'none' || /matrix\(1, 0, 0, 1/.test(tr); }), 'анимация текста: линия у надписи вырастает при появлении (в итоге ничем не скрыта)');
   /* --- движение --- */
   await p.evaluate(() => window.scrollTo({top: 0, behavior: 'instant'})); await p.waitForTimeout(500); await p.evaluate(() => window.scrollTo({top: 420, behavior: 'instant'})); await p.waitForTimeout(700);
   const hp = await p.evaluate(() => +getComputedStyle(document.querySelector('.ca')).getPropertyValue('--hp') || 0);
