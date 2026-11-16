@@ -18,23 +18,24 @@
     const vis = new Set(), tick = {raf: 0};
     const alive = () => root.isConnected && document.body.getAttribute('data-page') === 'company';
 
-    /* ---- кадр: параллакс картинки первого экрана ---- */
-    const pars = $$('[data-ca-par]', root);
+    /* ---- кадр: прозрачная шапка над первым экраном и параллакс картинок (атриум первого экрана и заключения) ---- */
+    const html = document.documentElement, hero = $('.ca-hero', root), pars = $$('[data-ca-par]', root);
     function frame() {
       tick.raf = 0; if (!alive()) return teardown();
+      if (hero) html.classList.toggle('ca-scrolled', hero.getBoundingClientRect().bottom < 90);
       if (still) return;
       const vh = window.innerHeight || 800;
       pars.forEach(el => { if (!vis.has(el)) return; const r = el.getBoundingClientRect(); el.style.setProperty('--p', clamp((r.top + r.height / 2 - vh / 2) / vh, -1, 1).toFixed(3)); });
     }
-    const ask = () => { if (!still && !tick.raf) tick.raf = requestAnimationFrame(frame); };
+    const ask = () => { if (!tick.raf) tick.raf = requestAnimationFrame(frame); };
+    on(window, 'scroll', ask, {passive: true}); on(window, 'resize', ask); off.push(() => { if (tick.raf) cancelAnimationFrame(tick.raf); });
     if (pars.length && !still) {
-      on(window, 'scroll', ask, {passive: true}); on(window, 'resize', ask); off.push(() => { if (tick.raf) cancelAnimationFrame(tick.raf); });
       if ('IntersectionObserver' in window) {
         const pio = new IntersectionObserver(es => { es.forEach(e => { if (e.isIntersecting) vis.add(e.target); else vis.delete(e.target); }); ask(); }, {rootMargin: '20% 0px'});
         pars.forEach(el => pio.observe(el)); off.push(() => pio.disconnect());
       } else { pars.forEach(el => vis.add(el)); }
-      ask();
     }
+    ask();
 
     /* ---- география: подсказки маркеров ---- */
     const mws = $$('.ca-mw', root);
@@ -49,7 +50,7 @@
       on(document, 'pointerdown', e => { if (!e.target.closest || !e.target.closest('.ca-mw')) closeAll(); });
     }
 
-    function teardown() { if (!td) return; const f = off.slice(); td = null; f.forEach(x => { try { x(); } catch (e) {} }); }
+    function teardown() { if (!td) return; const f = off.slice(); td = null; f.forEach(x => { try { x(); } catch (e) {} }); document.documentElement.classList.remove('ca-scrolled'); }
     td = teardown;
     on(document, 'astreya:page', () => { setTimeout(() => { if (!alive()) teardown(); }, 0); });
   }

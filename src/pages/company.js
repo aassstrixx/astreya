@@ -4,8 +4,8 @@
    Данные — из прежних источников (data/content.json → company, advantages; data/brands.json; data/site.json → offices/contacts; data/events.json); ничего не выдумано: города проведения
    семинаров не названы офисами. Оформление — css/company-atrium.css (всё под .ca), поведение — js/company-atrium.js (без JS страница читаема).
    Крючки: h2 «Астрея по всей России» — к нему js/sales-pages.js пристраивает «Ваш регион»; блок преимуществ помечен data-sx-mod="trust" (продающий слой не дублирует «Почему доверять»);
-   data-sx-closing="company-cta" в заключении; Стелла — только data-act="asst-open"; все data-track сохранены. Предметная композиция первого экрана — assets/company/hero-still.webp
-   (рендер); пока файла нет, показывается запасная композиция из настоящих фото продукции на стеклянных арках. */
+   data-sx-closing="company-cta" в заключении; Стелла — только data-act="asst-open"; все data-track сохранены. Первый экран — атриум на весь экран (assets/company/atrium-v2*.webp, шапка прозрачная поверх него),
+   тот же кадр — фон заключения под тёмной вуалью: так страница выглядела до v4 и так её просил владелец (в v4 я по ошибке заменил его предметной композицией; возвращено 17.11.2026). */
 const fs = require('fs');
 const path = require('path');
 const S = require('../../js/shared.js');
@@ -33,10 +33,7 @@ module.exports = function company(ctx, C, P) {
   const img = (f, w, h, cls, alt, pos) => `<img${cls ? ` class="${cls}"` : ''} src="${u(f)}" alt="${esc(alt || '')}" width="${w}" height="${h}" loading="lazy" decoding="async"${pos ? ` style="object-position:${pos}"` : ''}>`;
 
   /* ---- 1 · портрет компании ---- */
-  const still = has('assets/company/hero-still.webp');
-  const heroArt = still
-    ? `<picture><source media="(max-width:760px)" srcset="${u(has('assets/company/hero-still-s.webp') ? 'assets/company/hero-still-s.webp' : 'assets/company/hero-still.webp')}"><img src="${u('assets/company/hero-still.webp')}" alt="" width="3200" height="1100" fetchpriority="high" decoding="async"></picture>`
-    : `<div class="ca-fall"><i class="ca-fall-a1"></i><i class="ca-fall-a2"></i><i class="ca-fall-pl"></i><span class="ca-fall-pk">${img('assets/photos/keenwell-mask.webp', 397, 900)}${img('assets/photos/dermatime-micellar.webp', 279, 900)}${img('assets/photos/iraltone-shampoo.webp', 329, 900)}</span><i class="ca-fall-sp"></i></div>`;
+  const heroArt = `<picture><source media="(max-width:760px)" srcset="${u('assets/company/atrium-v2-m.webp')}"><img src="${u('assets/company/atrium-v2-s.webp')}" srcset="${u('assets/company/atrium-v2-s.webp')} 1200w, ${u('assets/company/atrium-v2.webp')} 2400w" sizes="100vw" alt="" width="2400" height="1350" fetchpriority="high" decoding="async"></picture>`;
 
   /* ---- 2 · в цифрах ---- */
   const stats = [[brands.length, '', 'Брендов и линий'], [ctx.products.length, '', 'Позиций в каталоге'], [20, '+', 'Лет развития методики семинаров'], [4, '', 'Города проведения семинаров и онлайн']];
@@ -148,8 +145,8 @@ module.exports = function company(ctx, C, P) {
   </section>
 
   <section class="ca-s ca-final" id="ca-final" data-scene="7" data-title="Заключение" aria-labelledby="ca-h9">
+    <div class="ca-fin-bg" aria-hidden="true" data-ca-par><img src="${u(finImg)}" alt="" width="2400" height="1350" loading="lazy" decoding="async"></div>
     <div class="ca-in ca-fin reveal" data-sx-closing="company-cta">
-      <figure class="ca-fin-ph" aria-hidden="true"><img src="${u(finImg)}" alt="" width="2400" height="1350" loading="lazy" decoding="async"></figure>
       <h2 id="ca-h9">Астрея — профессиональное партнёрство, основанное на знаниях и доверии</h2>
       <div class="ca-fin-b"><a class="ca-btn ca-btn-fill" href="${u('training.html')}" data-track="closing_cta" data-place="company-cta">Посмотреть обучение ${arrow}</a>${C.partnerBtn(P, 'company', 'ca-btn ca-btn-ghost')}${stella ? `<button class="ca-ask" type="button" data-act="asst-open" data-track="asst_open" data-place="company">${I.chat || ''}<span>Спросить Стеллу</span></button>` : ''}</div>
     </div>

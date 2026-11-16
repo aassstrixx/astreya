@@ -54,8 +54,9 @@ const rub = n => new Intl.NumberFormat('ru-RU').format(n).replace(/[  ]/g, ' ') 
   t(nbsp(hero.h1) === H.h1, 'раздел 1: заголовок по ТЗ', hero.h1);
   t(nbsp(hero.lead) === H.lead, 'раздел 1: подводка по ТЗ', hero.lead);
   t(nbsp(hero.btn) === 'Узнать больше' && hero.target === 'ca-stats', 'раздел 1: кнопка «Узнать больше» ведёт к цифрам', hero);
-  t(hero.h >= 330 && hero.h <= 520, 'раздел 1: умеренная высота (не на весь экран)', hero.h);
-  t(hero.anyArt, 'раздел 1: справа предметная композиция (картинка)');
+  t(hero.h >= 620 && hero.h <= 1000, 'раздел 1: атриум на весь экран (как просил владелец)', hero.h);
+  t(hero.anyArt && hero.art && /atrium-v2/.test(await p.evaluate(() => document.querySelector('#ca-entry .ca-hero-art img').currentSrc)), 'раздел 1: фоном — атриум (assets/company/atrium-v2*), картинка загружена');
+  t(await p.evaluate(() => { const h = document.querySelector('.hdr'); return !!h && getComputedStyle(h).backgroundColor === 'rgba(0, 0, 0, 0)'; }), 'раздел 1: шапка прозрачная поверх атриума');
 
   /* 2 · цифры */
   await scrollTo(p, '#ca-stats'); await p.waitForTimeout(1800);
@@ -127,12 +128,12 @@ const rub = n => new Intl.NumberFormat('ru-RU').format(n).replace(/[  ]/g, ' ') 
 
   /* 7 · заключение */
   await scrollTo(p, '#ca-final'); await p.waitForTimeout(1500);
-  const fi = await p.evaluate(() => { const f = document.querySelector('#ca-final'), b = [...f.querySelectorAll('.ca-fin-b a, .ca-fin-b button')]; const im = f.querySelector('.ca-fin-ph img'); const r = f.querySelector('.ca-fin-ph').getBoundingClientRect(), h = f.querySelector('h2').getBoundingClientRect(), bb = f.querySelector('.ca-fin-b').getBoundingClientRect();
-    return {h2: f.querySelector('h2').textContent.trim(), btn: b.map(x => x.textContent.trim().replace(/\s+/g, ' ')), hrefs: b.map(x => (x.getAttribute('href') || '').split('?')[0]), closing: f.querySelector('.ca-fin').getAttribute('data-sx-closing'), img: !!im && im.complete && im.naturalWidth > 0, order: r.left < h.left && h.left < bb.left, h: Math.round(f.getBoundingClientRect().height),
+  const fi = await p.evaluate(() => { const f = document.querySelector('#ca-final'), b = [...f.querySelectorAll('.ca-fin-b a, .ca-fin-b button')]; const im = f.querySelector('.ca-fin-bg img'); const r = f.querySelector('.ca-fin-bg').getBoundingClientRect(), h = f.querySelector('h2').getBoundingClientRect(), bb = f.querySelector('.ca-fin-b').getBoundingClientRect();
+    return {h2: f.querySelector('h2').textContent.trim(), btn: b.map(x => x.textContent.trim().replace(/\s+/g, ' ')), hrefs: b.map(x => (x.getAttribute('href') || '').split('?')[0]), closing: f.querySelector('.ca-fin').getAttribute('data-sx-closing'), img: !!im && im.complete && im.naturalWidth > 0, order: r.width >= f.getBoundingClientRect().width - 2 && h.left < bb.left, h: Math.round(f.getBoundingClientRect().height),
       ask: !!f.querySelector('[data-act="asst-open"]'), askTrack: (f.querySelector('[data-act="asst-open"]') || {getAttribute: () => ''}).getAttribute('data-track'), partner: b.find(x => /партн/i.test(x.textContent)) ? b.find(x => /партн/i.test(x.textContent)).getAttribute('href') : ''}; });
   t(nbsp(fi.h2) === 'Астрея — профессиональное партнёрство, основанное на знаниях и доверии', 'раздел 7: заключение по ТЗ', fi.h2);
   t(fi.btn.some(x => x === 'Посмотреть обучение') && fi.btn.some(x => /^Стать партн[её]ром/.test(x)) && fi.hrefs.includes('training.html') && /partners\.html/.test(fi.partner), 'раздел 7: кнопки «Посмотреть обучение» и «Стать партнёром» ведут по назначению', fi);
-  t(fi.img && fi.order && fi.h <= 360, 'раздел 7: слева небольшое фото интерьера, в центре фраза, справа кнопки (горизонтально, компактно)', fi);
+  t(fi.img && fi.order && fi.h <= 480, 'раздел 7: атриум снова на заднем плане, слева фраза, справа кнопки (горизонтально, компактно)', fi);
   t(fi.closing === 'company-cta' && fi.ask && fi.askTrack === 'asst_open', 'раздел 7: крючок завершающего блока и «Спросить Стеллу» (asst-open) на месте');
   await p.click('#ca-final [data-act="asst-open"]'); await p.waitForTimeout(900);
   t(await p.evaluate(() => document.body.classList.contains('asst-open')), 'раздел 7: Стелла открывается по кнопке (без второго чата)');
@@ -142,7 +143,7 @@ const rub = n => new Intl.NumberFormat('ru-RU').format(n).replace(/[  ]/g, ' ') 
   t(await noOverflow(p), 'компания 1440: нет горизонтальной прокрутки');
   const bad1440 = await p.evaluate(() => [...document.querySelectorAll('.ca img')].filter(i => i.getBoundingClientRect().width > 0 && i.complete && i.naturalWidth === 0).map(i => i.src));
   t(bad1440.length === 0, 'компания 1440: битых картинок нет', bad1440);
-  const tiny = await p.evaluate(() => [...document.querySelectorAll('.ca-hero, .ca-stats, .ca-dirs, .ca-brands, .ca-phil, .ca-geo, .ca-final')].map(e => Math.round(e.getBoundingClientRect().height)));
+  const tiny = await p.evaluate(() => [...document.querySelectorAll('.ca-stats, .ca-dirs, .ca-brands, .ca-phil, .ca-geo, .ca-final')].map(e => Math.round(e.getBoundingClientRect().height)));
   t(tiny.every(v => v <= 640), 'компания 1440: ни один раздел не превращается в огромную витрину (≤ 640 px)', tiny);
   t(p._errs.length === 0, 'компания 1440: ошибок в консоли нет', p._errs); await p._ctx.close();
 
