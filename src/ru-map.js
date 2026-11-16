@@ -23,9 +23,10 @@ const ISLANDS = [
   [[32.5, 45.4], [33.5, 44.5], [34.4, 44.5], [35.4, 45.0], [36.5, 45.3], [35.6, 45.6], [35.0, 46.1], [33.7, 46.2], [33.0, 45.9]],
   [[52.0, 71.5], [56.0, 73.5], [60.0, 76.0], [68.0, 77.0], [65.0, 75.5], [58.0, 72.2], [54.0, 70.7]]];
 
-module.exports = function ruMap(W, H, pad) {
+/* view = {lon: [от, до], lat: [от, до]} — показать только часть карты (рамка кадра, а не контур); без view — вся страна. Нужен, чтобы четыре города на западе не слипались. */
+module.exports = function ruMap(W, H, pad, view) {
   pad = pad == null ? 8 : pad;
-  const pts = LAND.concat(...ISLANDS).map(([a, b]) => raw(a, b));
+  const pts = view ? [raw(view.lon[0], view.lat[1]), raw(view.lon[1], view.lat[0])] : LAND.concat(...ISLANDS).map(([a, b]) => raw(a, b));
   const xs = pts.map(p => p[0]), ys = pts.map(p => p[1]), x0 = Math.min(...xs), x1 = Math.max(...xs), y0 = Math.min(...ys), y1 = Math.max(...ys);
   const k = Math.min((W - 2 * pad) / (x1 - x0), (H - 2 * pad) / (y1 - y0)), ox = (W - k * (x1 - x0)) / 2, oy = (H - k * (y1 - y0)) / 2;
   const prj = (lon, lat) => { const [x, y] = raw(lon, lat); return [ox + (x - x0) * k, oy + (y - y0) * k]; };

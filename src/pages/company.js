@@ -1,208 +1,157 @@
-/* «Компания» — страница v3 «компактная презентация»: восемь плотных блоков вместо девяти больших сцен (по образцу плотности страницы «Обучение»):
-   1 вступление (≤ 520 px) · 2 компания в цифрах · 3 четыре направления + ближайшие семинары · 4 история и развитие (data/company-history.json) · 5 бренды (логотипы небольшие) ·
-   6 география (стилизованная карта России + карточки городов) · 7 работа с профессионалами и преимущества · 8 финал: «Посмотреть обучение» / «Стать партнёром» + мини-калькулятор.
-   Содержание прежней страницы сохранено (data/content.json → company, advantages; data/site.json; data/brands.json; data/events.json; data/sales.json → closing.company);
-   ничего не выдумано: хронология — только подтверждённое, остальное «Уточняется». Атриум-рендер больше не занимает экран (его кадры остаются в assets/company/ и используются как небольшие акценты).
-   Оформление — css/company-atrium.css (всё под .ca), поведение — js/company-atrium.js (без JS страница читаема: карточки городов раскрыты).
-   Крючки: «Мы рядом» (h2) — к нему js/sales-pages.js пристраивает «Ваш регион»; Стелла — только data-act="asst-open" / "asst-chip"; все data-track сохранены. */
+/* «Компания» — страница v4 «CORPORATE EDITORIAL ATLAS» (по визуальному референсу владельца, 17.11.2026): корпоративная презентация в виде страниц премиального журнала —
+   семь разделов в одной ленте: 1 портрет компании (текст слева, предметная композиция косметики на стеклянных арках справа) · 2 Астрея в цифрах · 3 направления деятельности (четыре
+   компактные фото-карточки) · 4 портфель брендов (настоящие логотипы сеткой) · 5 философия и преимущества · 6 география (стилизованная карта России с подсказками) · 7 заключение.
+   Данные — из прежних источников (data/content.json → company, advantages; data/brands.json; data/site.json → offices/contacts; data/events.json); ничего не выдумано: города проведения
+   семинаров не названы офисами. Оформление — css/company-atrium.css (всё под .ca), поведение — js/company-atrium.js (без JS страница читаема).
+   Крючки: h2 «Астрея по всей России» — к нему js/sales-pages.js пристраивает «Ваш регион»; блок преимуществ помечен data-sx-mod="trust" (продающий слой не дублирует «Почему доверять»);
+   data-sx-closing="company-cta" в заключении; Стелла — только data-act="asst-open"; все data-track сохранены. Предметная композиция первого экрана — assets/company/hero-still.webp
+   (рендер); пока файла нет, показывается запасная композиция из настоящих фото продукции на стеклянных арках. */
+const fs = require('fs');
+const path = require('path');
 const S = require('../../js/shared.js');
 const ruMap = require('../ru-map.js');
-const HISTORY = require('../../data/company-history.json');
-const {esc, I, dparts, rub} = S;
+const {esc, I, dparts} = S;
+const ROOT = path.join(__dirname, '..', '..');
+const has = f => { try { return fs.existsSync(path.join(ROOT, f)); } catch (e) { return false; } };
 
-const PACK = {dermatime: 'dermatime-bottle', keenwell: 'keenwell-jar', endocare: 'endocare-box', neoretin: 'neoretin-dropper', heliocare: 'heliocare-tube', biretix: 'biretix-jar', iraltone: 'iraltone-bottle', elancyl: 'elancyl-tube', eva: 'eva-device'};
-
-/* авторские знаки преимуществ (тонкая линия, без стандартных иконок): печать-арки · ступени · кабинет и дом · дуга с точками · скрещённые клинки · три порога */
-const SEAL = [
-  '<path d="M10 52V30a18 18 0 0 1 36 0v22"/><path d="M17 52V31a11 11 0 0 1 22 0v21"/><path d="M24 52V32a4 4 0 0 1 8 0v20"/><path d="M6 52h44"/>',
-  '<path d="M6 52h44M10 52V42h12M22 52V32h12M34 52V22h12M46 52V12"/>',
-  '<circle cx="21" cy="30" r="15"/><circle cx="35" cy="30" r="15"/><path d="M28 17.5a15 15 0 0 1 0 25"/>',
-  '<path d="M6 46C16 18 40 18 50 46"/><circle cx="6" cy="46" r="3"/><circle cx="28" cy="25" r="3"/><circle cx="50" cy="46" r="3"/>',
-  '<path d="M8 52 29 6l5 46H8Z"/><path d="M48 52 27 12l-5 40h26Z"/><ellipse cx="28" cy="30" rx="24" ry="8" transform="rotate(-14 28 30)"/>',
-  '<path d="M6 52h44"/><path d="M10 52V40h8v12M24 52V28h8v24M38 52V14h8v38"/>'];
-
-/* города карты: [ключ, широта/долгота, сторона подписи] */
-const GEO = {'Москва': [37.62, 55.75, 'r'], 'Санкт-Петербург': [30.32, 59.94, 'tr'], 'Ростов-на-Дону': [39.72, 47.22, 'r'], 'Симферополь': [34.1, 44.95, 'b']};
+/* тонкие авторские значки преимуществ (линия 1.5): бриллиант · шапка выпускника · дом · метка · люди · столбики */
+const ICON = [
+  '<path d="M6 4h12l4 6-10 11L2 10z"/><path d="M2 10h20M9 4l-2 6 5 11M15 4l2 6-5 11"/>',
+  '<path d="M2 9l10-5 10 5-10 5z"/><path d="M6 11.5V16c0 1.4 2.7 3 6 3s6-1.6 6-3v-4.5"/><path d="M22 9v6"/>',
+  '<path d="M3 11l9-7 9 7"/><path d="M5 10v10h14V10"/><path d="M10 20v-6h4v6"/>',
+  '<path d="M12 21s7-5.6 7-11a7 7 0 0 0-14 0c0 5.4 7 11 7 11z"/><circle cx="12" cy="10" r="2.6"/>',
+  '<circle cx="9" cy="8" r="3.2"/><path d="M3 20c0-3.6 2.7-6 6-6s6 2.4 6 6"/><circle cx="17" cy="9" r="2.4"/><path d="M16 14c3 .2 5 2 5 5"/>',
+  '<path d="M4 20V10M10 20V5M16 20v-8M22 20H2"/>'];
+const GEO = {'Москва': [37.62, 55.75], 'Санкт-Петербург': [30.32, 59.94], 'Ростов-на-Дону': [39.72, 47.22], 'Симферополь': [34.1, 44.95]};
 
 module.exports = function company(ctx, C, P) {
-  const {content, brands, site, sortedEvents} = ctx, cp = content.company, c = site.contacts, u = f => C.u(P, f), no = i => String(i + 1).padStart(2, '0');
-  const today = new Date().toISOString().slice(0, 10);
-  const up = sortedEvents.filter(e => e.date >= today), two = (up.length >= 2 ? up : up.concat(sortedEvents.slice(-(2 - up.length)))).slice(0, 2);
-  const closing = C.closingCfg('company') || {};
+  const {content, brands, site, sortedEvents} = ctx, cp = content.company, u = f => C.u(P, f);
+  const today = new Date().toISOString().slice(0, 10), up = sortedEvents.filter(e => e.date >= today);
   const stella = C.xon('assistant');
-  const chip = (q, label, place) => stella ? `<button class="ca-ask" type="button" data-act="asst-chip" data-q="${esc(q)}" data-track="asst_chip" data-place="${place || 'company'}">${I.chat || ''}<span>${esc(label)}</span></button>` : '';
-  const pk = id => u('assets/showroom/pack-' + id + '-s.webp');
-  const pimg = id => `<img src="${pk(id)}" alt="" loading="lazy" decoding="async">`;
+  const arrow = I.arrow;
+  const rb = `<span class="ca-rb" aria-hidden="true">${arrow}</span>`;
+  const img = (f, w, h, cls, alt, pos) => `<img${cls ? ` class="${cls}"` : ''} src="${u(f)}" alt="${esc(alt || '')}" width="${w}" height="${h}" loading="lazy" decoding="async"${pos ? ` style="object-position:${pos}"` : ''}>`;
 
-  /* ---- бренды: производители и линии отдельно, логотипы небольшие ---- */
-  const spain = brands.filter(b => b.group === 'Испания'), lines = brands.filter(b => b.group === 'Cantabria Labs'), dev = brands.filter(b => b.group === 'Аппаратное решение');
-  const bcard = b => `<a class="ca-frame reveal" href="${C.burl(P, b)}" style="--c1:${esc(b.c1)};--c2:${esc(b.c2)}" data-track="brand_click" data-place="company-expo">
-      <span class="ca-bl"><img class="ca-blogo" src="${u(b.logo)}" alt="${esc(b.name)}" loading="lazy" decoding="async"></span>
-      <span class="ca-bt"><b>${esc(b.name)}</b><small>${esc(b.tag)}</small></span>${PACK[b.id] ? `<span class="ca-bp" aria-hidden="true">${pimg(PACK[b.id])}</span>` : ''}</a>`;
+  /* ---- 1 · портрет компании ---- */
+  const still = has('assets/company/hero-still.webp');
+  const heroArt = still
+    ? `<picture><source media="(max-width:760px)" srcset="${u(has('assets/company/hero-still-s.webp') ? 'assets/company/hero-still-s.webp' : 'assets/company/hero-still.webp')}"><img src="${u('assets/company/hero-still.webp')}" alt="" width="3200" height="1100" fetchpriority="high" decoding="async"></picture>`
+    : `<div class="ca-fall"><i class="ca-fall-a1"></i><i class="ca-fall-a2"></i><i class="ca-fall-pl"></i><span class="ca-fall-pk">${img('assets/photos/keenwell-mask.webp', 397, 900)}${img('assets/photos/dermatime-micellar.webp', 279, 900)}${img('assets/photos/iraltone-shampoo.webp', 329, 900)}</span><i class="ca-fall-sp"></i></div>`;
 
-  /* ---- география ---- */
-  const map = ruMap(520, 300, 10);
-  const evIn = city => up.find(e => e.city === city);
-  const evLine = city => { const e = evIn(city); return e ? `<a class="ca-cev" href="${C.eurl(P, e)}" data-track="event_click" data-place="company-geo"><time datetime="${e.date}">${dparts(e.date).d} ${esc(dparts(e.date).m)}</time><span>${esc(e.title)}</span></a>` : ''; };
+  /* ---- 2 · в цифрах ---- */
+  const stats = [[brands.length, '', 'Брендов и линий'], [ctx.products.length, '', 'Позиций в каталоге'], [20, '+', 'Лет развития методики семинаров'], [4, '', 'Города проведения семинаров и онлайн']];
+
+  /* ---- 3 · направления ---- */
+  const miniMap = ruMap(300, 190, 6);
+  const mapPic = `<span class="ca-dp ca-dp-map" aria-hidden="true"><svg viewBox="0 0 300 190" focusable="false"><path class="g" d="${miniMap.grid}"/><path class="l" d="${miniMap.land}"/>${Object.keys(GEO).map(k => { const p = miniMap.at(GEO[k][0], GEO[k][1]); return `<circle cx="${(p.x * 3).toFixed(1)}" cy="${(p.y * 1.9).toFixed(1)}" r="3.2"/>`; }).join('')}</svg></span>`;
+  const dirs = [
+    {t: 'Дистрибуция косметики', p: 'Оригинальные бренды и надёжные поставки профессиональной косметики', href: u('catalog.html'), tr: 'catalog_click', pl: 'company-dir-1',
+      pic: `<span class="ca-dp ca-dp-pk" aria-hidden="true">${img('assets/photos/dermatime-micellar.webp', 279, 900)}${img('assets/photos/iraltone-shampoo.webp', 329, 900)}${img('assets/photos/keenwell-mask.webp', 397, 900)}</span>`},
+    {t: 'Учебный центр', p: 'Обучение специалистов, семинары и профессиональное развитие', href: u('training.html'), tr: 'training_click', pl: 'company-dir-2',
+      pic: `<span class="ca-dp ca-dp-ph" aria-hidden="true">${img('assets/news/ph-seminar-a.webp', 960, 540, '', '', '50% 36%')}</span>`},
+    {t: 'Работа с регионами', p: 'Развитие профессионального сообщества и регионального присутствия', href: u('contacts.html'), tr: 'contacts_click', pl: 'company-dir-3', pic: mapPic},
+    {t: 'Поддержка партнёров', p: 'Надёжное партнёрство, консультации и индивидуальный подход', href: u('partners.html'), tr: 'partner_cta', pl: 'company-dir-4',
+      pic: `<span class="ca-dp ca-dp-ph" aria-hidden="true">${img('assets/photos/photo-02b-about.webp', 768, 768, '', '', '50% 30%')}</span>`}];
+
+  /* ---- 4 · бренды ---- */
+  const tagOf = b => b.group === 'Cantabria Labs' ? 'линия Cantabria Labs' : b.group;
+  const bcell = (b, i) => `<a class="ca-bc reveal" style="--rd:${i * 60}ms;--c1:${esc(b.c1)}" href="${C.burl(P, b)}" data-track="brand_click" data-place="company-brands" aria-label="${esc(b.name)}"><span class="ca-bl"><img class="ca-blogo" src="${u(b.logo)}" alt="${esc(b.name)}" loading="lazy" decoding="async"></span><small>${esc(tagOf(b))}</small></a>`;
+
+  /* ---- 6 · география ---- */
   const [o1, o2] = site.offices;
-  const office = (o, i) => `<li class="ca-city is-office" data-city="${esc(o.city)}" style="--x:${i}"><button class="ca-node" type="button" aria-expanded="false" aria-controls="ca-c${i}"><i aria-hidden="true"></i><span><small>${esc(o.role)}</small><b>${esc(o.city)}</b></span></button>
-      <div class="ca-cd" id="ca-c${i}" role="group" aria-label="${esc(o.city)}"><div class="ca-cdi">
-        <div class="ca-li">${I.pin}<span>${esc(o.addr)}</span></div>
-        ${o.hours ? `<div class="ca-li">${I.clock}<span>${esc(o.hours)}</span></div>` : ''}
-        ${o.phones.map(([p, l]) => `<div class="ca-li">${I.phone}<span><a href="tel:${p.replace(/[^+\d]/g, '')}" data-track="phone_click">${esc(p)}</a> · ${esc(l)}</span></div>`).join('')}
-        ${o.emails.map(m => `<div class="ca-li">${I.mail}<span><a href="mailto:${m}" data-track="email_click">${esc(m)}</a></span></div>`).join('')}
-        ${evLine(o.city)}</div></div></li>`;
-  const sem = (city, i) => `<li class="ca-city is-sem" data-city="${esc(city)}" style="--x:${i}"><button class="ca-node" type="button" aria-expanded="false" aria-controls="ca-c${i}"><i aria-hidden="true"></i><span><small>Город семинаров</small><b>${esc(city)}</b></span></button>
-      <div class="ca-cd" id="ca-c${i}" role="group" aria-label="${esc(city)}"><div class="ca-cdi"><p>Здесь проходят семинары учебного центра «Астрея».</p>${evLine(city) || `<a class="ca-cev is-plain" href="${u('training.html')}" data-track="training_click" data-place="company-geo"><span>Даты — в расписании</span></a>`}</div></div></li>`;
-  const online = `<li class="ca-city is-sem is-online" data-city="Онлайн" style="--x:4"><button class="ca-node" type="button" aria-expanded="false" aria-controls="ca-c4"><i aria-hidden="true"></i><span><small>Вебинары</small><b>Онлайн</b></span></button>
-      <div class="ca-cd" id="ca-c4" role="group" aria-label="Онлайн"><div class="ca-cdi"><p>Вебинары и онлайн-мероприятия учебного центра.</p>${evLine('Онлайн') || `<a class="ca-cev is-plain" href="${u('training.html')}" data-track="training_click" data-place="company-geo"><span>Даты — в расписании</span></a>`}</div></div></li>`;
-  const mk = Object.keys(GEO).map(city => { const [lo, la, side] = GEO[city], p = map.at(lo, la), off = city === o1.city || city === o2.city;
-    return `<button class="ca-mk ${off ? 'is-office' : 'is-sem'} s-${side}" type="button" data-city="${esc(city)}" style="left:${p.x}%;top:${p.y}%" aria-label="${esc(city)}${off ? ' — офис' : ' — город семинаров'}"><i aria-hidden="true"></i><span>${esc(city)}</span></button>`; }).join('');
+  const roleOf = city => city === o1.city ? o1.role : city === o2.city ? o2.role : 'Город проведения семинаров';
+  const officeOf = city => city === o1.city ? o1 : city === o2.city ? o2 : null;
+  const evIn = city => up.find(e => e.city === city);
+  const map = ruMap(560, 320, 0, {lon: [22, 136], lat: [42.5, 78]});   /* кадр: от западной границы до Байкала и дальше на восток (правый край в CSS растворяется) */
+  const mk = Object.keys(GEO).map((city, i) => {
+    const p = map.at(GEO[city][0], GEO[city][1]), o = officeOf(city), ev = evIn(city), role = roleOf(city), id = 'ca-tip-' + i;
+    const side = i === 0 ? 'r' : i === 1 ? 'tr' : i === 2 ? 'r' : 'b';
+    const body = o ? `<span class="ca-tl">${esc(o.addr)}</span>${o.phones[0] ? `<a href="tel:${o.phones[0][0].replace(/[^+\d]/g, '')}" data-track="phone_click">${esc(o.phones[0][0])}</a>` : ''}`
+      : `<span class="ca-tl">Семинары учебного центра «Астрея»</span>${ev ? `<a href="${C.eurl(P, ev)}" data-track="event_click" data-place="company-geo"><time datetime="${ev.date}">${dparts(ev.date).d} ${esc(dparts(ev.date).m)}</time> · ${esc(ev.title)}</a>` : `<a href="${u('training.html')}" data-track="training_click" data-place="company-geo">Даты — в расписании</a>`}`;
+    return `<div class="ca-mw s-${side}${o ? ' is-office' : ' is-sem'}" data-city="${esc(city)}" style="left:${p.x}%;top:${p.y}%;--i:${i}">
+      <button class="ca-mk" type="button" aria-describedby="${id}" aria-label="${esc(city)} — ${esc(role)}"><i aria-hidden="true"></i><span class="ca-mn">${esc(city)}</span></button>
+      <div class="ca-tip" id="${id}" role="tooltip"><b>${esc(city)}</b><em>${esc(role)}</em>${body}</div></div>`; }).join('');
+  const globe = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c3 3 3 15 0 18M12 3c-3 3-3 15 0 18"/></svg>';
+  const geoItems = [
+    {ic: I.pin, k: '2', t: 'офиса', d: `${o1.city} — ${o1.role.toLowerCase()}; ${o2.city} — ${o2.role.toLowerCase()}`},
+    {ic: I.pin, k: '2', t: 'города семинаров', d: 'Ростов-на-Дону и Симферополь', hollow: true},
+    {ic: globe, k: 'Онлайн', t: 'по всей России', d: 'Вебинары и онлайн-мероприятия учебного центра'}];
 
-  /* ---- цифры и хронология ---- */
-  const stats = [[brands.length, '', 'брендов и линий в портфеле'], [ctx.products.length, '', 'позиций в каталоге'], [20, '+', 'лет развиваем методику семинаров'], [4, '', 'города семинаров и онлайн']];
-  const fill = t => String(t || '').replace('{brands}', brands.length).replace('{products}', ctx.products.length);
-  const hist = (HISTORY.items || []).map((h, i) => {
-    const ok = h.confirmed && (h.text || '').trim(), yr = (h.year || '').trim(), txt = fill(h.text).trim();
-    return `<li class="ca-hi reveal${ok ? '' : ' is-tbd'}" style="--rd:${i * 70}ms"><span class="ca-hy">${esc(yr || 'Уточняется')}</span><i class="ca-hn" aria-hidden="true"></i><h3>${esc(h.title)}</h3><p>${txt ? esc(txt) : 'Уточняется — сведения будут добавлены после подтверждения.'}</p></li>`; }).join('');
-  const ds = site.discounts, RMAX = 500000, RSTEP = 10000, RSTART = 100000;
-
-  /* ---- иллюстрации четырёх направлений: небольшие окна-арки ---- */
-  const ILL = [
-    () => `<span class="ca-ill ca-ill-pk" aria-hidden="true">${pimg('dermatime-bottle')}${pimg('keenwell-jar')}${pimg('endocare-box')}</span>`,
-    () => `<span class="ca-ill ca-ill-ph" aria-hidden="true"><img src="${u('assets/news/ph-seminar-a.webp')}" alt="" width="960" height="540" loading="lazy" decoding="async"></span>`,
-    () => `<span class="ca-ill ca-ill-rg" aria-hidden="true"><svg viewBox="0 0 160 110" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><path d="M22 78 54 34l36 22 40 26" class="l"/><circle cx="22" cy="78" r="5"/><circle cx="54" cy="34" r="5"/><circle cx="90" cy="56" r="5"/><circle cx="130" cy="82" r="5"/><circle cx="76" cy="92" r="3.4" class="o"/><text x="60" y="30">СПб</text><text x="96" y="52">Москва</text><text x="104" y="98">Ростов</text><text x="2" y="96">Крым</text></svg></span>`,
-    () => `<span class="ca-ill ca-ill-ph ca-ill-ph2" aria-hidden="true"><img src="${u('assets/photos/photo-02b-about.webp')}" alt="" width="768" height="768" loading="lazy" decoding="async"></span>`
-  ];
-
-  const seam = '<div class="ca-seam" aria-hidden="true"><i class="reveal"></i></div>';
-  const steps = (content.partners && content.partners.steps) || [];
-  const stepsHtml = steps.length ? `<section class="sec ca-s ca-steps" id="ca-steps" aria-labelledby="ca-hs"><div class="ca-in">
-      <header class="ca-head ca-head-row"><div><span class="ca-eyebrow reveal">Сотрудничество</span><h2 id="ca-hs">Как начинается сотрудничество</h2><p class="ca-sub reveal">Четыре шага от заявки до начала работы; точные условия подтверждает менеджер.</p></div>
-        <a class="ca-more" href="${u('partners.html')}" data-track="partner_cta" data-place="company-steps">Подробнее для партнёров ${I.arrow}</a></header>
-      <ol class="ca-stp">${steps.map((st, i) => `<li class="ca-sp reveal" style="--rd:${i * 90}ms"><span class="ca-spn" aria-hidden="true">${no(i)}</span><h3>${esc(st.t)}</h3><p>${esc(st.p)}</p></li>`).join('')}</ol>
-    </div></section>` : '';
+  /* ---- 7 · заключение ---- */
+  const finImg = has('assets/company/atrium-v2.webp') ? 'assets/company/atrium-v2.webp' : 'assets/company/atrium.webp';
 
   return `<div class="ca" data-ca>
-  <section class="sec ca-s ca-entry" id="ca-entry" data-scene="1" data-title="О компании" aria-labelledby="ca-h1">
-    <div class="ca-bg" aria-hidden="true" data-ca-hero>
-      <picture><source media="(max-width:760px)" srcset="${u('assets/company/atrium-v2-m.webp')}"><img src="${u('assets/company/atrium-v2-s.webp')}" srcset="${u('assets/company/atrium-v2-s.webp')} 1200w, ${u('assets/company/atrium-v2.webp')} 2400w" sizes="100vw" alt="" width="2400" height="1350" fetchpriority="high" decoding="async"></picture>
-      <i class="ca-shaft ca-sh1"></i><i class="ca-shaft ca-sh2"></i><canvas class="ca-dust" data-ca-dust></canvas><i class="ca-veil"></i>
-    </div>
-    <div class="ca-in ca-entry-in" data-ca-copy>
-      <span class="ca-eyebrow reveal">О компании</span>
-      <h1 id="ca-h1">${esc(cp.h1)}</h1>
-      <p class="ca-lead reveal">${esc(cp.lead)}</p>
-      <p class="ca-dist reveal">Официальный дистрибьютор: оригинальная продукция, учебный центр и менеджеры, которые помогают с ассортиментом.</p>
-      <div class="ca-cta reveal"><a class="btn btn-fill ca-pill" href="#ca-niches" data-act="scroll" data-target="ca-niches" data-track="company_intro" data-place="company-hero">Познакомиться с компанией ${I.arrow}</a><a class="btn btn-ghost ca-pill" href="${u('brands.html')}" data-track="brands_click" data-place="company-hero">Все бренды</a></div>
-    </div>
-  </section>
-
-  <section class="ca-numbers" aria-label="Компания в цифрах">
-    <ul class="ca-in ca-stats">${stats.map(([n, sf, t]) => `<li class="ca-stat reveal"><b><span data-count="${n}">${n}</span>${sf}</b><span>${esc(t)}</span></li>`).join('')}</ul>
-  </section>
-
-  <section class="sec ca-s ca-niches" id="ca-niches" data-scene="2" data-title="Направления" aria-labelledby="ca-h2">
-    <div class="ca-in ca-dir">
-      <div class="ca-dir-t">
-        <span class="ca-eyebrow reveal">Направления</span><h2 id="ca-h2">Чем занимается компания</h2>
-        <div class="ca-who about-grid"><div class="ca-who-t txt reveal">${cp.who.map(t => `<p>${esc(t)}</p>`).join('')}</div></div>
-      </div>
-      <div class="ca-dir-r">
-      <ul class="ca-nrow">${cp.directions.map((d, i) => `<li class="ca-nich reveal" style="--rd:${i * 80}ms">${ILL[i % ILL.length]()}<span class="ca-no">${no(i)}</span><h3>${esc(d.title)}</h3><p>${esc(d.text)}</p></li>`).join('')}</ul>
-    <div class="ca-edu" id="ca-edu">
-      <div class="ca-edu-copy"><span class="ca-eyebrow reveal">Учебный центр</span><h3 class="ca-edu-h">Ближайшие семинары</h3>
-        <p>Семинары, мастер-классы и вебинары для специалистов: очно в четырёх городах и онлайн.${up.length ? ` В расписании мероприятий: ${up.length}.` : ''}</p>
-        <div class="ca-cta reveal"><a class="btn btn-fill ca-pill" href="${u('training.html')}" data-track="training_click" data-place="company-edu">Посмотреть расписание ${I.arrow}</a></div></div>
-      <div class="ca-edu-ph" aria-hidden="true">${[['assets/news/ph-presenter.webp', 540, 720, '50% 28%'], ['assets/news/ph-seminar-b.webp', 960, 540, '45% 40%']].map((f, i) => `<figure class="ca-ep reveal" style="--rd:${i * 110}ms"><img src="${u(f[0])}" alt="" width="${f[1]}" height="${f[2]}" loading="lazy" decoding="async" style="object-position:${f[3]}"></figure>`).join('')}</div>
-      <ul class="ca-evs">${two.map(e => { const d = dparts(e.date), b = ctx.brandById[e.brand]; return `<li class="ca-ev reveal" data-date="${e.date}" data-city="${esc(e.city)}">
-        <time datetime="${e.date}"><b>${d.d}</b><span>${esc(d.m)}</span></time>
-        <div class="ca-evb"><span class="ca-evt">${esc(e.fmt)} · ${esc(e.city)}</span><h3><a href="${C.eurl(P, e)}" data-track="event_click" data-place="company-edu">${esc(e.title)}</a></h3>
-          <p>${esc(e.time)} · ${esc(e.speaker)}${b ? ` · ${esc(b.name)}` : ''}</p>
-          <button class="btn btn-ghost btn-sm" type="button" data-act="form" data-type="seminar" data-ref="${e.id}">Записаться</button></div></li>`; }).join('')}</ul>
-    </div>
+  <section class="ca-s ca-hero" id="ca-entry" data-scene="1" data-title="О компании" aria-labelledby="ca-h1">
+    <div class="ca-hero-art" aria-hidden="true" data-ca-par>${heroArt}<i class="ca-hero-veil"></i></div>
+    <div class="ca-in ca-hero-in">
+      <div class="ca-copy" data-ca-copy>
+        <span class="ca-eyebrow reveal">О компании</span>
+        <h1 id="ca-h1">Астрея — пространство профессиональной косметологии</h1>
+        <p class="ca-lead reveal">Мы объединяем ведущие бренды, экспертизу и современные технологии, чтобы создавать красоту, вдохновлять и развивать индустрию.</p>
+        <div class="ca-cta reveal"><a class="ca-btn-o" href="#ca-stats" data-act="scroll" data-target="ca-stats" data-track="company_intro" data-place="company-hero"><span>Узнать больше</span>${rb}</a></div>
       </div>
     </div>
   </section>
 
-  ${seam}
-  <section class="sec ca-s ca-hist" id="ca-hist" data-scene="3" data-title="История" aria-labelledby="ca-h4">
-    <div class="ca-in">
-      <header class="ca-head"><span class="ca-eyebrow reveal">История и развитие</span><h2 id="ca-h4">Путь компании</h2><p class="ca-sub reveal">Только подтверждённые сведения; этапы без даты — «Уточняется».</p></header>
-      <ol class="ca-tl">${hist}</ol>
+  <section class="ca-s ca-stats" id="ca-stats" data-scene="2" data-title="В цифрах" aria-label="Астрея в цифрах">
+    <i class="ca-spark" aria-hidden="true"><svg viewBox="0 0 120 60" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round"><path d="M0 30h46M74 30h46"/><path d="M60 6c1 14 6 20 16 24-10 4-15 10-16 24-1-14-6-20-16-24 10-4 15-10 16-24z" fill="currentColor" fill-opacity=".14"/></svg></i>
+    <ul class="ca-in ca-stl">${stats.map(([n, sf, t], i) => `<li class="ca-stat reveal" style="--rd:${i * 120}ms"><b><span data-count="${n}">${n}</span>${sf}</b><span>${esc(t)}</span></li>`).join('')}</ul>
+  </section>
+
+  <section class="ca-s ca-dirs" id="ca-niches" data-scene="3" data-title="Направления" aria-labelledby="ca-h2">
+    <div class="ca-in ca-dir-in">
+      <header class="ca-dirs-h"><span class="ca-eyebrow reveal">Направления деятельности</span><h2 id="ca-h2">Комплексный подход к красоте и развитию</h2></header>
+      <ul class="ca-dl">${dirs.map((d, i) => `<li class="ca-dc reveal" style="--rd:${i * 110}ms"><a href="${d.href}" data-track="${d.tr}" data-place="${d.pl}" aria-label="${esc(d.t)}">
+        <span class="ca-dpw">${d.pic}</span><span class="ca-dt"><b>${esc(d.t)}</b><small>${esc(d.p)}</small></span><span class="ca-rb ca-rb-d" aria-hidden="true">${arrow}</span></a></li>`).join('')}</ul>
     </div>
   </section>
 
-  ${seam}
-  <section class="sec ca-s ca-expo" id="ca-expo" data-scene="4" data-title="Бренды" aria-labelledby="ca-h3">
-    <div class="ca-in">
-      <header class="ca-head ca-head-row"><div><span class="ca-eyebrow reveal">Бренды</span><h2 id="ca-h3">Бренды «Астрея»</h2><p class="ca-sub reveal">Производитель и его линии показаны отдельно: Cantabria Labs — производитель, Endocare, Neoretin, Heliocare, Biretix, Iraltone и Elancyl — его линии.</p></div>
-        <div class="ca-cta reveal"><a class="btn btn-fill ca-pill" href="${u('brands.html')}" data-track="brands_click" data-place="company-expo">Все бренды ${I.arrow}</a><a class="btn btn-ghost ca-pill" href="${u('catalog.html')}" data-track="catalog_click" data-place="company-expo">Перейти в каталог</a></div></header>
-      <div class="ca-wall">
-        <div class="ca-grp ca-g-spain"><h3 class="ca-gt">Испания</h3><div class="ca-fr2">${spain.map(bcard).join('')}</div></div>
-        <div class="ca-grp ca-g-cl"><h3 class="ca-gt"><img class="ca-mkl" src="${u('assets/brands/cantabria-labs-h.svg')}" alt="Cantabria Labs" loading="lazy" decoding="async"><small>производитель · линии</small></h3><div class="ca-fr6">${lines.map(bcard).join('')}</div></div>
-        <div class="ca-grp ca-g-dev"><h3 class="ca-gt">Аппаратное решение</h3><div class="ca-fr1">${dev.map(bcard).join('')}</div></div>
+  <section class="ca-s ca-brands" id="ca-expo" data-scene="4" data-title="Бренды" aria-labelledby="ca-h3">
+    <div class="ca-in ca-br-in">
+      <div class="ca-br-t">
+        <span class="ca-eyebrow reveal">Портфель брендов</span><h2 id="ca-h3">Проверенные бренды — ваш выбор</h2>
+        <p class="ca-p reveal">${esc(cp.who[0])}</p>
+        <p class="ca-note reveal"><img class="ca-mkl" src="${u('assets/brands/cantabria-labs-h.svg')}" alt="Cantabria Labs" loading="lazy" decoding="async"><span>Cantabria Labs — производитель; Endocare, Neoretin, Heliocare, Biretix, Iraltone и Elancyl — его линии.</span></p>
+        <div class="ca-cta reveal"><a class="ca-btn-o" href="${u('brands.html')}" data-track="brands_click" data-place="company-brands"><span>Перейти к брендам</span>${rb}</a></div>
       </div>
+      <div class="ca-bgrid">${brands.map(bcell).join('')}</div>
     </div>
   </section>
 
-  ${seam}
-  <section class="sec ca-s ca-geo" id="ca-geo" data-scene="5" data-title="География" aria-labelledby="ca-h7">
-    <div class="ca-in">
-      <header class="ca-head ca-head-row"><div><span class="ca-eyebrow reveal">Представительства</span><h2 id="ca-h7">Мы рядом</h2><p class="ca-sub reveal">Офисы — в Москве и Санкт-Петербурге; Ростов-на-Дону и Симферополь — города семинаров; вебинары — онлайн.</p></div>
-        <a class="ca-more" href="${u('contacts.html')}" data-track="contacts_click" data-place="company-geo">Все контакты ${I.arrow}</a></header>
-      <div class="ca-geo-g">
-        <figure class="ca-map reveal" aria-label="Схема: офисы и города семинаров на карте России (стилизованная, не картографический источник)">
-          <div class="ca-mapbox"><svg viewBox="0 0 ${map.W} ${map.H}" role="img" aria-hidden="true" focusable="false"><path class="g" d="${map.grid}"/><path class="l" d="${map.land}"/></svg>${mk}</div>
-          <figcaption><span><i class="d-o"></i>Офис</span><span><i class="d-s"></i>Город семинаров</span><span class="on">Онлайн — по всей России</span></figcaption>
-        </figure>
-        <ol class="ca-cities">${office(o1, 0)}${office(o2, 1)}${sem('Ростов-на-Дону', 2)}${sem('Симферополь', 3)}${online}</ol>
+  <section class="ca-s ca-phil" id="ca-phil" data-scene="5" data-title="Преимущества" aria-labelledby="ca-h5">
+    <i class="ca-ribbon" aria-hidden="true"></i>
+    <div class="ca-in ca-phil-in">
+      <header class="ca-phil-t"><span class="ca-eyebrow reveal">Преимущества</span><h2 id="ca-h5">Профессиональная косметология начинается с доверия</h2>
+        <p class="ca-p reveal">${esc(cp.who[2])}</p>
+        <figure class="ca-ph ca-ph-team reveal" aria-hidden="true">${img('assets/photos/photo-02-about.webp', 800, 533, '', '', '50% 20%')}</figure></header>
+      <ul class="ca-adv" data-sx-mod="trust" aria-label="Преимущества работы с Астрея">${content.advantages.map((a, i) => `<li class="ca-av reveal" style="--rd:${i * 90}ms"><span class="ca-ai" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">${ICON[i % ICON.length]}</svg></span>
+        <div><b>${esc(a.title)}</b><span>${esc(a.text)}</span></div></li>`).join('')}</ul>
+    </div>
+  </section>
+
+  <section class="ca-s ca-geo" id="ca-geo" data-scene="6" data-title="География" aria-labelledby="ca-h7">
+    <div class="ca-in ca-geo-in">
+      <div class="ca-geo-t">
+        <span class="ca-eyebrow reveal">География</span><h2 id="ca-h7">Астрея по всей России</h2>
+        <p class="ca-p reveal">Мы развиваем профессиональное сообщество в ключевых городах страны и проводим образовательные события онлайн. Офисы — в Москве и Санкт-Петербурге; Ростов-на-Дону и Симферополь — города проведения семинаров.</p>
+        <div class="ca-cta reveal"><a class="ca-btn-o" href="${u('contacts.html')}" data-track="contacts_click" data-place="company-geo"><span>Все контакты</span>${rb}</a></div>
       </div>
-    </div>
-  </section>
-
-  ${seam}
-  <section class="sec ca-s ca-pro" id="ca-pro" data-scene="6" data-title="Профессионалам" aria-labelledby="ca-h5">
-    <div class="ca-in">
-      <div class="ca-pro-in">
-        <div class="ca-pmos" role="group" aria-label="Фотографии специалистов и практики">
-          ${[['assets/photos/photo-02-about.webp', 800, 533, 'Команда специалистов в клинике эстетической медицины', 'Команда специалистов клиники', '50% 30%'], ['assets/photos/photo-02c-about.webp', 683, 1024, 'Косметолог с профессиональным препаратом', 'Косметолог с препаратом', '50% 28%'], ['assets/photos/photo-05-expertise.webp', 683, 1024, 'Косметолог проводит уходовую процедуру', 'Уходовая процедура', '50% 34%']].map((f, i) => `<figure class="ca-pm ca-pm-${i + 1} reveal" style="--rd:${i * 120}ms"><img src="${u(f[0])}" alt="${esc(f[3])}" width="${f[1]}" height="${f[2]}" loading="lazy" decoding="async" style="object-position:${f[5]}"><figcaption>${esc(f[4])}</figcaption></figure>`).join('')}
-        </div>
-        <div class="ca-pro-copy">
-          <span class="ca-eyebrow reveal">Профессионалам</span>
-          <h2 id="ca-h5">${esc(cp.professionals.title)}</h2>
-          <p>${esc(cp.professionals.text[0])}</p>
-          <aside class="ca-plate reveal" role="note"><b>Подбор ориентировочный</b><p>${esc(cp.professionals.text[1])}</p></aside>
-          <div class="ca-asks reveal" aria-label="Спросить Стеллу">${chip('Подобрать ассортимент для кабинета косметолога', 'Косметологу')}${chip('Какие средства подойдут врачу-косметологу?', 'Врачу-косметологу')}${chip('Подобрать ассортимент для салона или клиники', 'Салону и клинике')}</div>
-          <div class="ca-cta reveal"><a class="btn btn-fill ca-pill" href="${u('catalog.html')}" data-track="catalog_click" data-place="company">Перейти в каталог ${I.arrow}</a></div>
-        </div>
-        <ul class="ca-slabs ca-slabs-2">${[2, 4].map(i => content.advantages[i]).filter(Boolean).map((a, k) => `<li class="ca-slab reveal" style="--rd:${k * 80}ms">
-        <span class="ca-seal" aria-hidden="true"><svg viewBox="0 0 56 56" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">${SEAL[k % SEAL.length].replace(/<(path|circle|ellipse)/g, '<$1 pathLength="1"')}</svg></span>
-        <div><h3>${esc(a.title)}</h3><p>${esc(a.text)}</p></div></li>`).join('')}</ul>
+      <figure class="ca-map reveal" aria-label="Схема: офисы и города проведения семинаров на карте России (стилизованная, не картографический источник)">
+        <div class="ca-mapbox"><svg viewBox="0 0 ${map.W} ${map.H}" aria-hidden="true" focusable="false"><path class="g" d="${map.grid}"/><path class="l" d="${map.land}"/></svg>${mk}</div>
+        <figcaption><span><i class="d-o"></i>Офис</span><span><i class="d-s"></i>Город проведения семинаров</span></figcaption>
+      </figure>
+      <div class="ca-geo-r">
+        <ul class="ca-gi">${geoItems.map((g, i) => `<li class="ca-gic reveal" style="--rd:${i * 110}ms"><span class="ca-gii${g.hollow ? ' is-h' : ''}" aria-hidden="true">${g.ic}</span><div><b>${esc(g.k)}</b> <span>${esc(g.t)}</span><small>${esc(g.d)}</small></div></li>`).join('')}</ul>
+        <div class="ca-phr reveal" aria-hidden="true"><figure class="ca-ph">${img('assets/news/ph-seminar-a.webp', 960, 540, '', '', '50% 40%')}</figure><figure class="ca-ph">${img('assets/news/ph-seminar-b.webp', 960, 540, '', '', '50% 40%')}</figure></div>
       </div>
     </div>
   </section>
 
-  ${stepsHtml}
-
-  <section class="sec ca-s ca-final" id="ca-final" data-scene="7" data-title="Финал" aria-labelledby="ca-h9">
-    <div class="ca-fin-bg" aria-hidden="true" data-ca-par><img src="${u('assets/company/atrium-v2.webp')}" alt="" width="2400" height="1350" loading="lazy" decoding="async"></div>
-    <div class="ca-in ca-fin-g">
-      <div class="ca-fin-in" data-sx-closing="company-cta">
-        <span class="ca-eyebrow reveal">${esc(closing.eyebrow || 'Знакомство без обязательств')}</span><h2 id="ca-h9">${esc(closing.title || 'Познакомимся на практике')}</h2>
-        <p class="ca-sub reveal">${esc(closing.text || 'Приезжайте на семинар или пройдите «Старт со Стеллой» — сотрудничество можно начать с небольшого шага.')}</p>
-        <div class="ca-cta reveal"><a class="btn btn-fill ca-pill" href="${u('training.html')}" data-track="closing_cta" data-place="company-cta">Посмотреть обучение ${I.arrow}</a>${C.partnerBtn(P, 'company', 'btn btn-ghost ca-pill')}</div>
-        <p class="ca-fin-ask reveal"><a class="ca-more" href="${u((closing.secondary || {}).href || 'start.html')}" data-track="closing_cta" data-place="company-cta">${esc((closing.secondary || {}).label || 'Старт со Стеллой')} ${I.arrow}</a>${stella ? `<button class="ca-ask" type="button" data-act="asst-open" data-track="asst_open" data-place="company">${I.chat || ''}<span>Спросить Стеллу</span></button>` : ''}<a class="ca-tel" href="tel:${c.phoneRaw}" data-track="phone_click">${I.phone} ${esc(c.phone)}</a></p>
-      </div>
-      <div class="ca-slab-calc reveal" data-ca-calc>
-        <h3>Скидка по объёму закупки</h3>
-        <div class="ca-sumrow"><small id="ca-sum-l">Сумма закупки</small><output id="ca-sum" for="ca-range" aria-labelledby="ca-sum-l">${rub(RSTART)}</output></div>
-        <div class="ca-track"><input type="range" id="ca-range" min="0" max="${RMAX}" step="${RSTEP}" value="${RSTART}" aria-label="Сумма закупки">
-          <ol class="ca-ticks" aria-hidden="true">${ds.map(d => `<li style="--x:${(d.from / RMAX).toFixed(4)}"><i></i><span>${d.pct}%</span></li>`).join('')}</ol></div>
-        <ul class="ca-tiers" aria-label="Пороги скидок">${ds.map((d, i) => `<li data-tier="${i}"><b>${d.pct}%</b><span>от ${rub(d.from)}</span></li>`).join('')}</ul>
-        <div class="ca-res" aria-live="polite"><div><small>Результат</small><span id="ca-tier">${ds[0] ? `До первой скидки — ${rub(Math.max(0, ds[0].from - RSTART))}` : ''}</span></div><div><small>Экономия</small><b id="ca-save">—</b></div></div>
-        <p class="ca-fine">Расчёт ориентировочный (пример). Точные условия и пороги скидок подтверждает менеджер.</p>
-      </div>
+  <section class="ca-s ca-final" id="ca-final" data-scene="7" data-title="Заключение" aria-labelledby="ca-h9">
+    <div class="ca-in ca-fin reveal" data-sx-closing="company-cta">
+      <figure class="ca-fin-ph" aria-hidden="true"><img src="${u(finImg)}" alt="" width="2400" height="1350" loading="lazy" decoding="async"></figure>
+      <h2 id="ca-h9">Астрея — профессиональное партнёрство, основанное на знаниях и доверии</h2>
+      <div class="ca-fin-b"><a class="ca-btn ca-btn-fill" href="${u('training.html')}" data-track="closing_cta" data-place="company-cta">Посмотреть обучение ${arrow}</a>${C.partnerBtn(P, 'company', 'ca-btn ca-btn-ghost')}${stella ? `<button class="ca-ask" type="button" data-act="asst-open" data-track="asst_open" data-place="company">${I.chat || ''}<span>Спросить Стеллу</span></button>` : ''}</div>
     </div>
   </section>
 </div>`;

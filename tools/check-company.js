@@ -1,11 +1,10 @@
 #!/usr/bin/env node
-/* Проверка страницы «Компания» («ASTREYA Grand Atrium», страница v2) в браузере: нужны Playwright и Chromium (без них проверка пропускается).
-   Девять сцен (вход, направления, выставка брендов, панели доверия, комната профессионалов, учебный центр, география, партнёрство, финал): содержимое из данных
-   (направления, бренды и линии, преимущества, события, адреса офисов строго из data/site.json), кнопки и ссылки (куда ведут, data-track), оговорка об ориентировочном подборе,
-   два ближайших события, города по наведению/фокусу, калькулятор скидки (считается здесь независимо от страницы), Стелла (только asst-open / asst-chip), навигатор по сценам,
-   prefers-reduced-motion (нет движения), вариант без JS (всё раскрыто и читаемо), 1440 / 1024 / 390: без горизонтальной прокрутки и ошибок консоли, цели касания ≥ 44 px.
+/* Проверка страницы «Компания» (версия 4 «Corporate Editorial Atlas») в браузере: нужны Playwright и Chromium (без них проверка пропускается).
+   Семь разделов строго по порядку (портрет компании, Астрея в цифрах, направления, портфель брендов, философия и преимущества, география, заключение): тексты заголовков и кнопок,
+   данные (бренды и линии, позиции каталога, преимущества, роли офисов и городов проведения семинаров строго из data/*.json), ссылки (куда ведут, data-track), настоящие логотипы (все 9, загружены,
+   ссылки на страницы брендов), равные пропорции карточек направлений, карта (размер, четыре маркера, подсказки: наведение, касание, Esc), Стелла (только asst-open), продающий слой
+   (блок «Ваш регион» сохранён, дубля «Почему доверять» нет), prefers-reduced-motion, вариант без JS, 1440 / 1024 / 390: без горизонтальной прокрутки и ошибок консоли, цели касания ≥ 44 px.
    Запуск: node tools/check-company.js (после node tools/build.js). Сервер на порту 0. Код возврата ≠ 0 при ошибках. */
-'use strict';
 const http = require('http'), fs = require('fs'), path = require('path');
 let pw; for (const p of ['playwright', '/opt/node22/lib/node_modules/playwright']) { try { pw = require(p); break; } catch (e) {} }
 if (!pw) { console.log('Playwright не найден — проверка пропущена.'); process.exit(0); }
@@ -36,159 +35,154 @@ const rub = n => new Intl.NumberFormat('ru-RU').format(n).replace(/[  ]/g, ' ') 
   const noOverflow = p => p.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1);
   const scrollTo = async (p, sel) => { await p.evaluate(s => { const e = document.querySelector(s); window.scrollTo({top: e.getBoundingClientRect().top + scrollY - 20, behavior: 'instant'}); }, sel); await p.waitForTimeout(900); };
 
+  const H = {h1: 'Астрея — пространство профессиональной косметологии', lead: 'Мы объединяем ведущие бренды, экспертизу и современные технологии, чтобы создавать красоту, вдохновлять и развивать индустрию.',
+    dirs: ['Дистрибуция косметики', 'Учебный центр', 'Работа с регионами', 'Поддержка партнёров'], dirHref: ['catalog.html', 'training.html', 'contacts.html', 'partners.html'],
+    stats: ['Брендов и линий', 'Позиций в каталоге', 'Лет развития методики семинаров', 'Города проведения семинаров и онлайн']};
+
   /* ================= 1440 ================= */
   let p = await open(1440, 900);
-  t(await p.evaluate(() => document.body.dataset.page === 'company' && !!document.querySelector('.ca[data-ca].is-js')), 'компания: страница v2 включена (.ca), скрипт сцен подключён');
-  t(await p.evaluate(() => document.querySelectorAll('h1').length === 1 && document.querySelector('h1').textContent.trim() === 'Астрея — дистрибьютор профессиональной косметики'), 'компания: один заголовок первого уровня «Астрея — дистрибьютор профессиональной косметики»');
-  const sc = await p.evaluate(() => [...document.querySelectorAll('[data-scene]')].map(s => ({n: s.dataset.scene, id: s.id, h: Math.round(s.getBoundingClientRect().height), tag: s.tagName})));
-  t(sc.length === 7 && sc.map(x => x.n).join('') === '1234567' && sc.every(x => x.h > 250 && x.h < 1200 && x.tag === 'SECTION'), 'компания v3: семь разделов с номерами по порядку (вступление, направления, история, бренды, география, профессионалы, финал), ни один не длиннее 1200 px', sc);
-  const dens = await p.evaluate(() => ({hero: Math.round(document.querySelector('.ca-entry').getBoundingClientRect().height), stats: Math.round(document.querySelector('.ca-numbers').getBoundingClientRect().height), total: document.documentElement.scrollHeight, bigImg: [...document.querySelectorAll('.ca img')].filter(i => { const r = i.getBoundingClientRect(); return !i.closest('.ca-bg') && !i.closest('.ca-fin-bg') && r.height > 380; }).map(i => i.getAttribute('src'))}));
-  t(dens.hero >= 600 && dens.hero <= 1000 && dens.stats <= 140 && dens.total <= 7600 && dens.bigImg.length === 0, 'компания v3 (плотность по образцу «Обучения»): вступление — атриум на весь экран (по просьбе владельца), полоса цифр ≤ 140 px, страница ≤ 7600 px, крупных изображений (> 380 px) нет, кроме фона вступления', dens);
-  /* --- 1. вход --- */
-  t(await p.evaluate(() => { const i = document.querySelector('.ca-entry img'); return !!i && i.complete && i.naturalWidth > 800; }), 'сцена 1: рендер атриума загружен');
-  t(/О компании/i.test(await p.textContent('.ca-entry .ca-eyebrow')) && nbsp(await p.textContent('.ca-entry .ca-lead')) === nbsp(CP.lead) && /Официальный дистрибьютор/.test(await p.textContent('.ca-entry .ca-dist')), 'сцена 1: «О компании», прежнее описание сохранено, добавлена строка про официального дистрибьютора');
-  const cta1 = await p.$('.ca-entry a.btn[data-act="scroll"][data-target="ca-niches"]');
-  t(!!cta1 && /Познакомиться с компанией/.test(await cta1.textContent()) && await cta1.getAttribute('data-track') === 'company_intro', 'сцена 1: кнопка «Познакомиться с компанией» (data-track company_intro)');
-  await cta1.click(); await p.waitForTimeout(1600);
-  t(await p.evaluate(() => Math.abs(document.getElementById('ca-niches').getBoundingClientRect().top) < 120), 'сцена 1: кнопка ведёт к сцене «Направления»');
-  /* --- 2. направления --- */
-  t(await p.evaluate(() => [...document.querySelectorAll('.ca-nich h3')].map(h => h.textContent).join('|')) === CP.directions.map(d => d.title).join('|'), 'сцена 2: четыре ниши — направления из data/content.json в том же порядке');
-  t(await p.evaluate(() => document.querySelectorAll('.ca-nich .ca-ill').length === 4 && [...document.querySelectorAll('.ca-ill')].every(e => e.getBoundingClientRect().height <= 220) && !!document.querySelector('.about-grid .txt')) && (await p.$$eval('.about-grid .txt p', e => e.map(x => x.textContent.trim()))).join('|') === CP.who.join('|'), 'сцена 2: прежний текст «кто мы» (три абзаца) на месте, крючок .about-grid .txt для навигатора');
-  const hs = await p.$$eval('.ca-hi', e => e.map(x => ({y: x.querySelector('.ca-hy').textContent.trim(), tbd: x.classList.contains('is-tbd'), p: x.querySelector('p').textContent.trim()})));
-  const HIST = J('data/company-history.json').items, yrs = HIST.map(h => (h.year || '').trim() || 'Уточняется');
-  t(hs.length === HIST.length && hs.map(h => h.y).join('|') === yrs.join('|') && hs.filter(h => h.tbd).every(h => /Уточняется/.test(h.p) && h.y === 'Уточняется'), 'история: этапы — из data/company-history.json; без даты/текста выводится «Уточняется», выдуманных дат нет', hs);
-  t(HIST.filter(h => h.confirmed && h.year && !['Сейчас'].includes(h.year)).every(h => /^\d+\+ лет$/.test(h.year)) && hs.some(h => /20\+/.test(h.y) && /Более 20 лет развиваем методику семинаров/.test(h.p)), 'история: подтверждённый факт «Более 20 лет развиваем методику семинаров» на месте');
-  /* --- 3. бренды --- */
-  const fr = await p.$$eval('.ca-frame', e => e.map(x => ({href: x.getAttribute('href'), grp: x.closest('.ca-grp').className.replace('ca-grp ', ''), logo: !!x.querySelector('.ca-blogo'), pack: !!x.querySelector('.ca-bp img')})));
-  t(fr.length === BR.length && BR.every(x => fr.some(f => f.href === 'brands/' + x.id + '.html')), 'сцена 3: выставка — все бренды из data/brands.json, каждый ведёт на свою страницу', fr.map(f => f.href));
-  t(['dermatime', 'keenwell'].every(id => fr.find(f => f.href.endsWith('/' + id + '.html')).grp === 'ca-g-spain') && ['endocare', 'neoretin', 'heliocare', 'biretix', 'iraltone', 'elancyl'].every(id => fr.find(f => f.href.endsWith('/' + id + '.html')).grp === 'ca-g-cl') && fr.find(f => f.href.endsWith('/eva.html')).grp === 'ca-g-dev', 'сцена 3: Dermatime и Keenwell, линии Cantabria Labs (6) и EVA — отдельными группами');
-  t(await p.evaluate(() => !!document.querySelector('.ca-g-cl .ca-gt img[alt="Cantabria Labs"]')) && fr.every(f => f.logo && f.pack), 'сцена 3: производитель Cantabria Labs показан отдельно от линий; у каждого бренда логотип и упаковка на постаменте');
-  t(await p.evaluate(() => { const a = [...document.querySelectorAll('.ca-expo .ca-cta a')]; return a.length === 2 && /Все бренды/.test(a[0].textContent) && a[0].getAttribute('href') === 'brands.html' && /Перейти в каталог/.test(a[1].textContent) && a[1].getAttribute('href') === 'catalog.html' && a[1].dataset.track === 'catalog_click'; }), 'сцена 3: кнопки «Все бренды» → brands.html и «Перейти в каталог» → catalog.html');
-  t(await p.evaluate(() => [...document.querySelectorAll('.ca-blogo')].every(i => { const r = i.getBoundingClientRect(); return r.height <= 50 && r.width <= 130; })) && await p.evaluate(() => document.querySelector('.ca-wall').getBoundingClientRect().height <= 420), 'сцена 4: логотипы брендов небольшие (≤ 130×50 px), вся выставка не выше 420 px');
-  /* --- 4. доверие --- */
-  t(await p.evaluate(() => [...document.querySelectorAll('.ca-slab h3')].map(h => h.textContent).join('|')) === [2, 4].map(i => CONTENT.advantages[i].title).join('|') && CONTENT.advantages.length === 6, 'профессионалы: две карточки преимуществ (остальные четыре — в блоке «Почему можно доверять» продающего слоя) из data/content.json');
-  t(await p.evaluate(() => [...document.querySelectorAll('.ca-slab')].every(s => !s.querySelector('use,.ico,i.ic,[class*="icon"]') && s.querySelectorAll('svg').length === 1 && s.querySelector('.ca-seal svg path'))), 'сцена 4: у панелей авторские знаки, без стандартных иконок сайта');
-  /* --- 5. профессионалы --- */
-  t(nbsp(await p.textContent('.ca-pro h2')) === nbsp(CP.professionals.title) && nbsp(await p.textContent('.ca-pro-copy > p')) === nbsp(CP.professionals.text[0]), 'сцена 5: заголовок и текст «Работа с профессионалами» прежние');
-  t(/ориентировочн/i.test(await p.textContent('.ca-plate')) && nbsp(await p.textContent('.ca-plate p')) === nbsp(CP.professionals.text[1]), 'сцена 5: обязательная оговорка — подбор ориентировочный (текст из данных)');
-  const chips = await p.$$eval('.ca-pro .ca-ask', e => e.map(x => ({act: x.dataset.act, q: x.dataset.q, tr: x.dataset.track})));
-  t(chips.length === 3 && chips.every(c => c.act === 'asst-chip' && c.q && c.tr === 'asst_chip'), 'сцена 5: подсказки Стеллы — только asst-chip с вопросом', chips);
-  t(await p.evaluate(() => { const a = document.querySelector('.ca-pro .ca-cta a'); return /Перейти в каталог/.test(a.textContent) && a.getAttribute('href') === 'catalog.html' && a.dataset.track === 'catalog_click'; }), 'сцена 5: кнопка «Перейти в каталог» → catalog.html (data-track сохранён)');
-  /* --- 6. учебный центр --- */
-  const today = new Date().toISOString().slice(0, 10), up = EV.filter(e => e.date >= today), want = (up.length >= 2 ? up : up.concat(EV.slice(-(2 - up.length)))).slice(0, 2);
-  const evs = await p.$$eval('.ca-ev', e => e.map(x => ({date: x.dataset.date, city: x.dataset.city, href: x.querySelector('h3 a').getAttribute('href'), reg: !!x.querySelector('button[data-act="form"][data-type="seminar"]')})));
-  t(evs.length === 2 && evs.every((e, i) => e.date === want[i].date && e.href.endsWith(want[i].slug + '.html') && e.city === want[i].city && e.reg), 'сцена 6: два реальных ближайших события из data/events.json (по дате), со ссылкой и «Записаться»', {evs, want: want.map(e => e.slug)});
-  t(await p.evaluate(() => { const a = document.querySelector('.ca-edu .ca-cta a'); return /Посмотреть расписание/.test(a.textContent) && a.getAttribute('href') === 'training.html'; }) && /Семинары, мастер-классы и вебинары для специалистов: очно в четырёх городах и онлайн/.test(await p.textContent('.ca-edu-copy')), 'сцена 6: «Посмотреть расписание» → training.html, прежний текст об учебном центре');
-  await scrollTo(p, '.ca-edu'); await p.click('.ca-ev button[data-act="form"]'); await p.waitForTimeout(700);
-  t(await p.evaluate(() => { const m = document.getElementById('modal'); return !!m && m.classList.contains('open'); }), 'сцена 6: «Записаться» открывает форму записи'); await p.keyboard.press('Escape'); await p.waitForTimeout(500);
-  /* --- 7. география --- */
-  await p.mouse.move(2, 2);
-  await scrollTo(p, '.ca-geo');
-  const geo = await p.$$eval('.ca-city', e => e.map(x => ({c: x.dataset.city, kind: x.classList.contains('is-office') ? 'office' : 'sem', txt: x.querySelector('.ca-cd').textContent.replace(/\s+/g, ' '), tag: x.querySelector('.ca-node small').textContent})));
-  t(geo.map(g => g.c).join('|') === 'Москва|Санкт-Петербург|Ростов-на-Дону|Симферополь|Онлайн', 'сцена 7: пять точек — Москва, Санкт-Петербург, Ростов-на-Дону, Симферополь, Онлайн', geo.map(g => g.c));
-  const [mo, sp, ro, si] = SITE.offices;
-  t(geo[0].kind === 'office' && geo[0].txt.includes(mo.addr) && geo[0].txt.includes(mo.hours) && geo[0].txt.includes(mo.phones[0][0]) && geo[1].kind === 'office' && geo[1].txt.includes(sp.addr) && sp.phones.every(x => geo[1].txt.includes(x[0])), 'сцена 7: адреса, часы и телефоны офисов — строго из data/site.json');
-  t(geo[2].tag === 'Город семинаров' && geo[3].tag === 'Город семинаров' && geo[2].kind === 'sem' && !geo[2].txt.includes('Мурлычева') && !geo[3].txt.includes('Симферополь, ул') && geo[4].c === 'Онлайн' && geo[4].kind === 'sem', 'сцена 7: Ростов-на-Дону и Симферополь — города семинаров, не офисы; Онлайн отдельно');
-  t(await p.evaluate(() => { const a = document.querySelector('.ca-geo .ca-more'); return /Все контакты/.test(a.textContent) && a.getAttribute('href') === 'contacts.html'; }), 'сцена 7: «Все контакты» → contacts.html');
-  t(await p.evaluate(() => document.querySelectorAll('.ca-city.on').length === 1 && document.querySelector('.ca-city.on').dataset.city === 'Москва'), 'сцена 7: по умолчанию раскрыта карточка Москвы');
-  const mp = await p.evaluate(() => { const r = document.querySelector('.ca-mapbox').getBoundingClientRect(); return {w: Math.round(r.width), h: Math.round(r.height), mk: [...document.querySelectorAll('.ca-mk')].map(m => m.dataset.city + (m.classList.contains('is-office') ? ':o' : ':s')).join('|'), land: !!document.querySelector('.ca-map svg path.l')}; });
-  t(mp.w <= 520 && mp.h <= 300 && mp.land && mp.mk === 'Москва:o|Санкт-Петербург:o|Ростов-на-Дону:s|Симферополь:s', 'география: стилизованная карта России ≤ 520×300 px, маркеры: два офиса и два города семинаров', mp);
-  await p.click('.ca-mk[data-city="Ростов-на-Дону"]'); await p.waitForTimeout(600);
-  t(await p.evaluate(() => document.querySelector('.ca-city.on').dataset.city === 'Ростов-на-Дону' && document.querySelector('.ca-mk.on').dataset.city === 'Ростов-на-Дону'), 'география: клик по маркеру карты раскрывает карточку города и подсвечивает маркер');
-  await p.click('.ca-city[data-city="Москва"] .ca-node'); await p.waitForTimeout(500);
-  t(true, 'сцена 7: возврат к Москве');
-  const vis = sel => p.evaluate(s => { const e = document.querySelector(s); const cs = getComputedStyle(e), r = e.getBoundingClientRect(); return cs.visibility === 'visible' && +cs.opacity > .9 && r.height > 40; }, sel);
-  await p.hover('.ca-city[data-city="Санкт-Петербург"] .ca-node'); await p.waitForTimeout(700);
-  t(await vis('.ca-city[data-city="Санкт-Петербург"] .ca-cd') && !(await vis('.ca-city[data-city="Москва"] .ca-cd')) && await p.evaluate(() => !!document.querySelector('.ca-city.on[data-city="Санкт-Петербург"] a[href="tel:+79214204735"]')), 'сцена 7: по наведению раскрывается карточка Санкт-Петербурга (телефон — ссылка), Москва закрывается');
-  await p.focus('.ca-city[data-city="Симферополь"] .ca-node'); await p.waitForTimeout(600);
-  t(await p.evaluate(() => document.querySelector('.ca-city.on').dataset.city === 'Симферополь' && document.querySelector('.ca-city.on .ca-node').getAttribute('aria-expanded') === 'true'), 'сцена 7: то же по фокусу с клавиатуры (aria-expanded)');
-  t(await p.evaluate(() => document.querySelectorAll('.sx-region').length === 1 && document.querySelectorAll('[data-sx-reg]').length >= 3 && !!document.querySelector('.ca-geo h2') && /Мы рядом/.test(document.querySelector('.ca-geo h2').textContent)), 'сцена 7: заголовок «Мы рядом» сохранён — к нему пристраивается «Ваш регион» продающего слоя');
-  /* --- 8. партнёрство и калькулятор --- */
-  await scrollTo(p, '.ca-final');
-  const pb = await p.$('.ca-final .ca-cta a[data-track="partner_cta"]');
-  t(!!pb && /Стать партнёром/.test(await pb.textContent()) && await pb.getAttribute('href') === 'partners.html', 'сцена 8: кнопка «Стать партнёром» → partners.html (data-track partner_cta)');
-  t(await p.evaluate(() => { const a = document.querySelector('.ca-final a[href^="tel:"]'); return !!a && a.getAttribute('href') === 'tel:+74959255162'; }), 'сцена 8: телефон компании — ссылкой');
-  const setR = v => p.evaluate(v => { const r = document.getElementById('ca-range'); r.value = v; r.dispatchEvent(new Event('input', {bubbles: true})); }, v);
-  const readC = () => p.evaluate(() => ({sum: document.getElementById('ca-sum').textContent, tier: document.getElementById('ca-tier').textContent, save: document.getElementById('ca-save').textContent, on: [...document.querySelectorAll('.ca-tiers li')].map(x => x.classList.contains('reached') ? 1 : 0).join('')}));
-  let calcOk = true, calcInfo = [];
-  for (const v of [0, 40000, 50000, 149999 - (149999 % 10000), 150000, 290000, 300000, 500000]) {
-    await setR(v); const r = await readC(); let d = null; DS.forEach(x => { if (v >= x.from) d = x; });
-    const expect = {sum: rub(v), tier: d ? 'Ваша скидка — ' + d.pct + '%' : 'До первой скидки — ' + rub(DS[0].from - v), save: d ? rub(Math.round(v * d.pct / 100)) : '—', on: DS.map(x => v >= x.from ? 1 : 0).join('')};
-    if (nbsp(r.sum) !== nbsp(expect.sum) || nbsp(r.tier) !== nbsp(expect.tier) || nbsp(r.save) !== nbsp(expect.save) || r.on !== expect.on) { calcOk = false; calcInfo.push({v, r, expect}); }
-  }
-  t(calcOk, 'сцена 8: калькулятор — сумма, скидка, экономия и пороги совпадают с независимым расчётом на всех шагах', calcInfo.slice(0, 2));
-  await p.focus('#ca-range'); await setR(0); await p.keyboard.press('ArrowRight'); await p.keyboard.press('ArrowRight');
-  t(+(await p.$eval('#ca-range', r => r.value)) === 20000, 'сцена 8: ползунок управляется стрелками клавиатуры (шаг 10 000 ₽)');
-  t(/ориентировочн/i.test(await p.textContent('.ca-fine')) && await p.evaluate(() => !!document.getElementById('ca-range').getAttribute('aria-valuetext')), 'сцена 8: оговорка «расчёт ориентировочный», значение ползунка для скринридера');
-  /* --- 9. финал --- */
-  await scrollTo(p, '.ca-final');
-  const pn = await p.$$eval('.ca-final .ca-cta a, .ca-final .ca-fin-ask .ca-more', e => e.map(x => ({href: x.getAttribute('href'), tr: x.dataset.track, h: x.textContent.trim()})));
-  t(pn.length === 3 && pn[0].href === 'training.html' && /Посмотреть обучение/.test(pn[0].h) && pn[1].href === 'partners.html' && /Стать партнёром/.test(pn[1].h) && pn[2].href === 'start.html' && /Старт со Стеллой/.test(pn[2].h) && pn[0].tr === 'closing_cta' && pn[2].tr === 'closing_cta' && /Познакомимся на практике/.test(await p.textContent('.ca-final h2')), 'финал: «Познакомимся на практике» — «Посмотреть обучение» → training.html, «Стать партнёром» → partners.html, «Старт со Стеллой» → start.html', pn);
-  const ao = await p.$('.ca-final [data-act="asst-open"]');
-  t(!!ao && await ao.getAttribute('data-track') === 'asst_open', 'сцена 9: «Спросить Стеллу» — asst-open');
-  await ao.click(); await p.waitForTimeout(900);
-  t(await p.evaluate(() => document.body.classList.contains('asst-open')), 'сцена 9: Стелла открывается по кнопке (без второго чата)');
-  const bad9 = await p.evaluate(() => [...document.querySelectorAll('.ca [data-act]')].filter(e => !e.closest('.sx-mod, .g-e-ch') && !['scroll', 'form', 'asst-open', 'asst-chip'].includes(e.dataset.act)).map(e => e.dataset.act).concat([...document.querySelectorAll('.ca [class*="chat"], .ca iframe')].map(e => e.className.baseVal === undefined ? e.className : 'svg:' + e.className.baseVal)));
-  t(bad9.length === 0, 'Стелла: на странице только asst-open / asst-chip (и обычные scroll / form), своего чата нет', bad9);
-  /* --- навигатор по сценам --- */
-  await p.reload(); await p.waitForSelector('html.ready', {timeout: 20000}).catch(() => {}); await p.waitForTimeout(1500);
-  t(await p.evaluate(() => !document.querySelector('.ca-rail') && !document.querySelector('.ca-scroll')), 'по просьбе заказчика убраны точки-навигатор справа и круглая стрелка «вниз» (CTA «Познакомиться» осталась)');
-  t(await p.evaluate(() => !!document.querySelector('.ca-entry .ca-cta a[data-act="scroll"]')), 'кнопка «Познакомиться с компанией» на месте');
-  t(await p.evaluate(() => document.querySelectorAll('.ca-stat [data-count]').length === 4), 'цифры компании: четыре счётчика из данных');
-  /* --- версия 3.1: швы, настоящие фото, шаги, анимации текста --- */
-  t(await p.evaluate(() => document.querySelectorAll('.ca-seam').length >= 4 && [...document.querySelectorAll('.ca-seam')].every(e => e.getAttribute('aria-hidden') === 'true')), 'мягкие переходы фонов: между зонами страницы стоят швы (≥ 4), для чтения скрыты');
-  await p.evaluate(async () => { for (let y = 0; y < document.documentElement.scrollHeight; y += 600) { window.scrollTo(0, y); await new Promise(r => setTimeout(r, 90)); } });
-  await p.waitForTimeout(1500);
-  const ph = await p.evaluate(() => { const ok = [...document.querySelectorAll('.ca-pm img, .ca-ep img, .ca-ill-ph img')]; return {n: ok.length, loaded: ok.every(i => i.complete && i.naturalWidth > 200), src: ok.map(i => i.getAttribute('src').split('?')[0].split('/').slice(-1)[0])}; });
-  t(ph.n >= 7 && ph.loaded && ['photo-02-about.webp', 'photo-05-expertise.webp', 'ph-seminar-a.webp', 'ph-presenter.webp'].every(f => ph.src.includes(f)), 'настоящие фото из банка сайта на месте (команда, практика, семинары, спикер) и загружены', ph);
-  t(await p.evaluate(() => [...document.querySelectorAll('.ca-pm')].every(e => e.getBoundingClientRect().height <= 260) && !!document.querySelector('.ca-pm figcaption')), 'фотографии небольшие (≤ 260 px по высоте), у снимков есть подписи');
-  const stp = await p.$$eval('.ca-sp h3', e => e.map(x => x.textContent));
-  t(stp.join('|') === J('data/content.json').partners.steps.map(x => x.t).join('|'), 'блок «Как начинается сотрудничество»: четыре шага из data/content.json в том же порядке', stp);
-  t(await p.evaluate(() => { const e = document.querySelector('.ca-eyebrow.reveal.in'); if (!e) return false; const tr = getComputedStyle(e, '::before').transform; return tr === 'none' || /matrix\(1, 0, 0, 1/.test(tr); }), 'анимация текста: линия у надписи вырастает при появлении (в итоге ничем не скрыта)');
-  /* --- движение --- */
-  await p.evaluate(() => window.scrollTo({top: 0, behavior: 'instant'})); await p.waitForTimeout(500); await p.evaluate(() => window.scrollTo({top: 420, behavior: 'instant'})); await p.waitForTimeout(700);
-  const hp = await p.evaluate(() => +getComputedStyle(document.querySelector('.ca')).getPropertyValue('--hp') || 0);
-  t(hp > 0.1 && hp < 1, 'движение: при прокрутке первый экран «шагает вглубь атриума» (--hp)', hp);
+  const order = await p.evaluate(() => [...document.querySelectorAll('.ca > section.ca-s')].map(s => s.id));
+  t(order.join() === 'ca-entry,ca-stats,ca-niches,ca-expo,ca-phil,ca-geo,ca-final', 'семь разделов идут строго по порядку референса', order);
+  const tops = await p.evaluate(() => [...document.querySelectorAll('.ca > section.ca-s')].map(s => Math.round(s.getBoundingClientRect().top + scrollY)));
+  t(tops.every((v, i) => !i || v > tops[i - 1]), 'разделы идут сверху вниз без наложения', tops);
+
+  /* 1 · портрет компании */
+  const hero = await p.evaluate(() => { const s = document.querySelector('#ca-entry'), h = s.querySelector('h1'), a = s.querySelector('.ca-hero-art'), im = a.querySelector('img'); const btn = s.querySelector('.ca-btn-o');
+    return {h: Math.round(s.getBoundingClientRect().height), h1: h.textContent.trim(), lead: s.querySelector('.ca-lead').textContent.trim(), eb: s.querySelector('.ca-eyebrow').textContent.trim(), btn: btn.textContent.trim(), target: btn.getAttribute('data-target'), art: !!im && im.complete && im.naturalWidth > 0, anyArt: a.querySelectorAll('img').length > 0,
+      textRight: Math.round(h.getBoundingClientRect().right), artLeft: (() => { const r = (a.querySelector('.ca-fall, picture') || a).getBoundingClientRect(); return Math.round(r.left); })()}; });
+  t(nbsp(hero.eb).toLowerCase() === 'о компании', 'раздел 1: «О компании» над заголовком', hero.eb);
+  t(nbsp(hero.h1) === H.h1, 'раздел 1: заголовок по ТЗ', hero.h1);
+  t(nbsp(hero.lead) === H.lead, 'раздел 1: подводка по ТЗ', hero.lead);
+  t(nbsp(hero.btn) === 'Узнать больше' && hero.target === 'ca-stats', 'раздел 1: кнопка «Узнать больше» ведёт к цифрам', hero);
+  t(hero.h >= 330 && hero.h <= 520, 'раздел 1: умеренная высота (не на весь экран)', hero.h);
+  t(hero.anyArt, 'раздел 1: справа предметная композиция (картинка)');
+
+  /* 2 · цифры */
+  await scrollTo(p, '#ca-stats'); await p.waitForTimeout(1800);
+  const st = await p.evaluate(() => { const li = [...document.querySelectorAll('.ca-stat')]; return {n: li.length, h: Math.round(document.querySelector('#ca-stats').getBoundingClientRect().height), labels: li.map(e => e.querySelector('span:not([data-count])').textContent.trim()), vals: li.map(e => e.querySelector('b').textContent.replace(/\s/g, '')),
+    products: (window.ASTREYA_DATA.products || []).length, sep: li.slice(1).map(e => getComputedStyle(e, '::before').transform), cols: li.map(e => Math.round(e.getBoundingClientRect().top))}; });
+  t(st.n === 4 && st.labels.every((l, i) => nbsp(l) === H.stats[i]), 'раздел 2: четыре показателя с подписями по ТЗ', st.labels);
+  t(st.vals[0] === String(BR.length) && st.vals[1] === String(st.products) && st.vals[2] === '20+' && st.vals[3] === '4', 'раздел 2: значения — из данных (бренды, позиции каталога), 20+ и 4', st.vals);
+  t(st.cols.every(v => Math.abs(v - st.cols[0]) <= 2) && st.h <= 230, 'раздел 2: горизонтальная полоса, а не четыре крупные карточки', {h: st.h, cols: st.cols});
+  t(st.sep.length === 3 && st.sep.every(x => x === 'none' || /matrix\(1, 0, 0, 1, 0, 0\)/.test(x)), 'раздел 2: золотые разделители прорисованы (scaleY = 1)', st.sep);
+
+  /* 3 · направления */
+  await scrollTo(p, '#ca-niches'); await p.waitForTimeout(1500);
+  const di = await p.evaluate(() => { const c = [...document.querySelectorAll('.ca-dc a')]; return {h2: document.querySelector('#ca-niches h2').textContent.trim(), titles: c.map(a => a.querySelector('.ca-dt b').textContent.trim()), hrefs: c.map(a => a.getAttribute('href').split('?')[0]), tracks: c.map(a => a.getAttribute('data-track')),
+    tops: c.map(a => Math.round(a.getBoundingClientRect().top)), pw: c.map(a => { const r = a.querySelector('.ca-dpw').getBoundingClientRect(); return [Math.round(r.width), Math.round(r.height)]; }), ch: c.map(a => Math.round(a.getBoundingClientRect().height)),
+    imgs: c.map(a => [...a.querySelectorAll('img')].every(i => i.complete && i.naturalWidth > 0)), svg: c.map(a => a.querySelectorAll('svg').length), btn: c.map(a => !!a.querySelector('.ca-rb-d'))}; });
+  t(nbsp(di.h2) === 'Комплексный подход к красоте и развитию', 'раздел 3: заголовок по ТЗ', di.h2);
+  t(di.titles.join('|') === H.dirs.join('|') && di.hrefs.join('|') === H.dirHref.join('|'), 'раздел 3: четыре направления и ссылки (каталог, обучение, контакты, партнёры)', {t: di.titles, h: di.hrefs});
+  t(di.tops.every(v => Math.abs(v - di.tops[0]) <= 2), 'раздел 3: карточки в одной горизонтали', di.tops);
+  t(di.pw.every(x => Math.abs(x[0] - di.pw[0][0]) <= 1 && Math.abs(x[1] - di.pw[0][1]) <= 1) && di.pw[0][1] <= 230 && di.ch.every(v => v <= 360), 'раздел 3: изображения одинаковых пропорций, карточки компактные (≤ 360 px)', {pw: di.pw, ch: di.ch});
+  t(di.imgs.every(Boolean) && di.btn.every(Boolean), 'раздел 3: картинки загружены, у каждой карточки круглая кнопка', di);
+  const zoom = await p.evaluate(async () => { const a = document.querySelector('.ca-dc a'), im = a.querySelector('.ca-dp'); return getComputedStyle(im).transitionProperty; });
+  t(/scale|all/.test(zoom), 'раздел 3: приближение картинки при наведении предусмотрено', zoom);
+
+  /* 4 · бренды */
+  await scrollTo(p, '#ca-expo'); await p.waitForTimeout(1500);
+  const bs = await p.evaluate(() => { const c = [...document.querySelectorAll('.ca-bc')], btn = document.querySelector('#ca-expo .ca-btn-o'); return {h2: document.querySelector('#ca-expo h2').textContent.trim(), n: c.length, hrefs: c.map(a => a.getAttribute('href').split('?')[0]), logos: c.map(a => { const i = a.querySelector('img.ca-blogo'); const r = i.getBoundingClientRect(); return {ok: i.complete && i.naturalWidth > 0, w: Math.round(r.width), h: Math.round(r.height), alt: i.alt}; }),
+    btn: btn.textContent.trim(), bh: btn.getAttribute('href').split('?')[0], gridW: Math.round(document.querySelector('.ca-bgrid').getBoundingClientRect().width), cols: new Set(c.map(a => Math.round(a.getBoundingClientRect().left))).size}; });
+  t(nbsp(bs.h2) === 'Проверенные бренды — ваш выбор', 'раздел 4: заголовок по ТЗ', bs.h2);
+  t(bs.n === BR.length && BR.every(x => bs.hrefs.includes('brands/' + x.id + '.html')), 'раздел 4: все бренды проекта — ссылки на страницы брендов', bs.hrefs);
+  t(bs.logos.every(l => l.ok && l.h <= 40 && l.w <= 125 && l.w >= 24), 'раздел 4: настоящие логотипы загружены и небольшие (≤ 125×40)', bs.logos);
+  t(BR.every(x => bs.logos.some(l => l.alt === x.name)), 'раздел 4: у логотипов — названия брендов');
+  t(nbsp(bs.btn) === 'Перейти к брендам' && bs.bh === 'brands.html' && bs.cols === 3, 'раздел 4: кнопка «Перейти к брендам», сетка 3 колонки', bs);
+
+  /* 5 · философия */
+  await scrollTo(p, '#ca-phil'); await p.waitForTimeout(1500);
+  const ph = await p.evaluate(() => { const li = [...document.querySelectorAll('.ca-av')]; return {h2: document.querySelector('#ca-phil h2').textContent.trim(), titles: li.map(e => e.querySelector('b').textContent.trim()), icons: li.map(e => { const r = e.querySelector('.ca-ai svg').getBoundingClientRect(); return Math.round(Math.max(r.width, r.height)); }),
+    trust: !!document.querySelector('.ca-adv[data-sx-mod="trust"]'), dup: !!document.querySelector('.sx-trust'), photo: (() => { const i = document.querySelector('.ca-ph-team img'); return !!i && i.complete && i.naturalWidth > 0; })(), ribbon: getComputedStyle(document.querySelector('.ca-ribbon')).backgroundImage !== 'none'}; });
+  t(nbsp(ph.h2) === 'Профессиональная косметология начинается с доверия', 'раздел 5: фраза по ТЗ', ph.h2);
+  t(ph.titles.length === 6 && ph.titles.every((x, i) => nbsp(x) === nbsp(CONTENT.advantages[i].title)), 'раздел 5: шесть преимуществ — из data/content.json', ph.titles);
+  t(ph.icons.every(v => v >= 18 && v <= 32), 'раздел 5: тонкие линейные иконки небольшого размера', ph.icons);
+  t(ph.trust && !ph.dup, 'раздел 5: блок помечен как trust — общий «Почему доверять» не дублируется');
+  t(ph.photo && ph.ribbon, 'раздел 5: реальное фото специалистов и золотистая лента-текстура на месте', ph);
+
+  /* 6 · география */
+  await scrollTo(p, '#ca-geo'); await p.waitForTimeout(2200);
+  const ge = await p.evaluate(() => { const m = [...document.querySelectorAll('.ca-mw')], box = document.querySelector('.ca-mapbox').getBoundingClientRect(); const o = {}; m.forEach(e => { o[e.dataset.city] = {role: e.querySelector('.ca-tip em').textContent.trim(), tip: e.querySelector('.ca-tip').textContent, office: e.classList.contains('is-office'), op: getComputedStyle(e.querySelector('.ca-tip')).opacity, mk: Math.round(e.querySelector('.ca-mk').getBoundingClientRect().height)}; });
+    return {h2: document.querySelector('#ca-geo h2').textContent.trim(), w: Math.round(box.width), h: Math.round(box.height), o, legend: document.querySelector('.ca-map figcaption').textContent, gi: [...document.querySelectorAll('.ca-gic')].map(e => e.textContent.replace(/\s+/g, ' ').trim()), seminarPhotos: document.querySelectorAll('.ca-phr img').length, land: !!document.querySelector('.ca-map .l')}; });
+  const O1 = SITE.offices[0], O2 = SITE.offices[1];
+  t(nbsp(ge.h2) === 'Астрея по всей России', 'раздел 6: заголовок по ТЗ', ge.h2);
+  t(Object.keys(ge.o).sort().join() === ['Москва', 'Ростов-на-Дону', 'Санкт-Петербург', 'Симферополь'].sort().join(), 'раздел 6: на карте четыре города', Object.keys(ge.o));
+  t(ge.o['Москва'].role === O1.role && ge.o['Санкт-Петербург'].role === O2.role && ge.o['Москва'].office && ge.o['Санкт-Петербург'].office, 'раздел 6: офисы названы офисами (роли — из data/site.json)', {m: ge.o['Москва'].role, s: ge.o['Санкт-Петербург'].role});
+  t(['Ростов-на-Дону', 'Симферополь'].every(c => ge.o[c].role === 'Город проведения семинаров' && !ge.o[c].office && !/офис|представительств/i.test(ge.o[c].role)), 'раздел 6: Ростов-на-Дону и Симферополь — города проведения семинаров, а не офисы');
+  t(ge.o['Москва'].tip.includes(O1.addr) && ge.o['Санкт-Петербург'].tip.includes(O2.addr) && !ge.o['Симферополь'].tip.includes(O1.addr), 'раздел 6: адреса в подсказках — только у офисов, строго из данных');
+  t(ge.w <= 561 && ge.h <= 325 && ge.land, 'раздел 6: карта компактная (≤ 560×320)', {w: ge.w, h: ge.h});
+  t(/Онлайн/.test(ge.gi.join(' ')) && ge.gi.length === 3 && /Офис/.test(ge.legend) && /Город проведения семинаров/.test(ge.legend), 'раздел 6: справа показатели (офисы, города семинаров, онлайн), у карты — легенда', ge.gi);
+  t(ge.seminarPhotos === 2, 'раздел 6: реальные фото семинаров на месте');
+  t(Object.values(ge.o).every(x => +x.op === 0), 'раздел 6: подсказки скрыты, пока нет наведения', Object.values(ge.o).map(x => x.op));
+  await p.hover('.ca-mw[data-city="Москва"] .ca-mk'); await p.waitForTimeout(600);
+  t(await p.evaluate(() => { const tip = document.querySelector('.ca-mw[data-city="Москва"] .ca-tip'); return +getComputedStyle(tip).opacity === 1 && /Москва/.test(tip.textContent); }), 'раздел 6: при наведении появляется подсказка города');
+  await p.mouse.move(5, 5); await p.waitForTimeout(500);
+  await p.focus('.ca-mw[data-city="Симферополь"] .ca-mk'); await p.waitForTimeout(500);
+  t(await p.evaluate(() => +getComputedStyle(document.querySelector('.ca-mw[data-city="Симферополь"] .ca-tip')).opacity === 1), 'раздел 6: подсказка открывается и с клавиатуры (фокус)');
+  await p.keyboard.press('Enter'); await p.waitForTimeout(300); await p.keyboard.press('Escape'); await p.waitForTimeout(300);
+  t(await p.evaluate(() => !document.querySelector('.ca-mw.on')), 'раздел 6: Esc закрывает закреплённую подсказку');
+  await p.mouse.move(5, 5);
+
+  /* продающий слой: «Ваш регион» сохранён, дубля trust нет */
+  t(await p.evaluate(() => !!document.querySelector('.sx-region') && document.querySelectorAll('[data-sx-reg]').length >= 3 && !document.querySelector('.sx-trust')), 'продающий слой: «Ваш регион» сохранён, «Почему доверять» не дублируется');
+
+  /* 7 · заключение */
+  await scrollTo(p, '#ca-final'); await p.waitForTimeout(1500);
+  const fi = await p.evaluate(() => { const f = document.querySelector('#ca-final'), b = [...f.querySelectorAll('.ca-fin-b a, .ca-fin-b button')]; const im = f.querySelector('.ca-fin-ph img'); const r = f.querySelector('.ca-fin-ph').getBoundingClientRect(), h = f.querySelector('h2').getBoundingClientRect(), bb = f.querySelector('.ca-fin-b').getBoundingClientRect();
+    return {h2: f.querySelector('h2').textContent.trim(), btn: b.map(x => x.textContent.trim().replace(/\s+/g, ' ')), hrefs: b.map(x => (x.getAttribute('href') || '').split('?')[0]), closing: f.querySelector('.ca-fin').getAttribute('data-sx-closing'), img: !!im && im.complete && im.naturalWidth > 0, order: r.left < h.left && h.left < bb.left, h: Math.round(f.getBoundingClientRect().height),
+      ask: !!f.querySelector('[data-act="asst-open"]'), askTrack: (f.querySelector('[data-act="asst-open"]') || {getAttribute: () => ''}).getAttribute('data-track'), partner: b.find(x => /партн/i.test(x.textContent)) ? b.find(x => /партн/i.test(x.textContent)).getAttribute('href') : ''}; });
+  t(nbsp(fi.h2) === 'Астрея — профессиональное партнёрство, основанное на знаниях и доверии', 'раздел 7: заключение по ТЗ', fi.h2);
+  t(fi.btn.some(x => x === 'Посмотреть обучение') && fi.btn.some(x => /^Стать партн[её]ром/.test(x)) && fi.hrefs.includes('training.html') && /partners\.html/.test(fi.partner), 'раздел 7: кнопки «Посмотреть обучение» и «Стать партнёром» ведут по назначению', fi);
+  t(fi.img && fi.order && fi.h <= 360, 'раздел 7: слева небольшое фото интерьера, в центре фраза, справа кнопки (горизонтально, компактно)', fi);
+  t(fi.closing === 'company-cta' && fi.ask && fi.askTrack === 'asst_open', 'раздел 7: крючок завершающего блока и «Спросить Стеллу» (asst-open) на месте');
+  await p.click('#ca-final [data-act="asst-open"]'); await p.waitForTimeout(900);
+  t(await p.evaluate(() => document.body.classList.contains('asst-open')), 'раздел 7: Стелла открывается по кнопке (без второго чата)');
+  await p.keyboard.press('Escape'); await p.waitForTimeout(400);
+
+  /* общие требования */
   t(await noOverflow(p), 'компания 1440: нет горизонтальной прокрутки');
-  await p.evaluate(async () => { for (let y = 0; y < document.documentElement.scrollHeight; y += 700) { window.scrollTo(0, y); await new Promise(r => setTimeout(r, 110)); } });
-  await p.waitForTimeout(900);
-  t(await p.evaluate(() => [...document.querySelectorAll('.ca img')].every(i => i.complete && i.naturalWidth > 0)), 'компания 1440: все изображения загружены (после прокрутки)', await p.evaluate(() => [...document.querySelectorAll('.ca img')].filter(i => !(i.complete && i.naturalWidth > 0)).map(i => i.getAttribute('src'))));
-  t(await p.evaluate(() => [...document.querySelectorAll('.ca img')].every(i => i.hasAttribute('width') && i.hasAttribute('height') || i.closest('.ca-ill-pk') || i.closest('.ca-bp') || i.classList.contains('ca-blogo') || i.classList.contains('ca-mkl'))), 'компания: у крупных изображений заданы width/height (без сдвига вёрстки)');
-  t(await p.evaluate(() => { const tg = [...document.querySelectorAll('.ca [data-track]')].map(e => e.dataset.track); return tg.length >= 25 && ['company_intro', 'brands_click', 'catalog_click', 'brand_click', 'training_click', 'closing_cta', 'asst_chip', 'asst_open', 'phone_click', 'contacts_click'].every(k => tg.includes(k)); }), 'компания: data-track на месте (вход, бренды, каталог, обучение, финал, Стелла, телефон, контакты)');
+  const bad1440 = await p.evaluate(() => [...document.querySelectorAll('.ca img')].filter(i => i.getBoundingClientRect().width > 0 && i.complete && i.naturalWidth === 0).map(i => i.src));
+  t(bad1440.length === 0, 'компания 1440: битых картинок нет', bad1440);
+  const tiny = await p.evaluate(() => [...document.querySelectorAll('.ca-hero, .ca-stats, .ca-dirs, .ca-brands, .ca-phil, .ca-geo, .ca-final')].map(e => Math.round(e.getBoundingClientRect().height)));
+  t(tiny.every(v => v <= 640), 'компания 1440: ни один раздел не превращается в огромную витрину (≤ 640 px)', tiny);
   t(p._errs.length === 0, 'компания 1440: ошибок в консоли нет', p._errs); await p._ctx.close();
 
   /* ================= 1440, prefers-reduced-motion ================= */
-  p = await open(1440, 900, {reduced: true}); await p.evaluate(() => window.scrollTo({top: 420, behavior: 'instant'})); await p.waitForTimeout(800);
-  const rm = await p.evaluate(() => ({hp: getComputedStyle(document.querySelector('.ca')).getPropertyValue('--hp').trim(), dust: getComputedStyle(document.querySelector('.ca-dust')).display, anim: getComputedStyle(document.querySelector('.ca-shaft')).animationName, tr: getComputedStyle(document.querySelector('.ca-bg img')).transform}));
-  t((rm.hp === '' || +rm.hp === 0) && rm.dust === 'none' && rm.anim === 'none', 'reduced-motion: нет «шага вглубь», пылинок и мерцания лучей', rm);
-  t(await p.evaluate(() => !document.querySelector('.ca-slab').style.getPropertyValue('--ry')) && await noOverflow(p) && p._errs.length === 0, 'reduced-motion: страница читаема, без ошибок'); await p._ctx.close();
+  p = await open(1440, 900, {reduced: true}); await p.evaluate(() => window.scrollTo({top: 500, behavior: 'instant'})); await p.waitForTimeout(800);
+  const rm = await p.evaluate(() => ({anim: getComputedStyle(document.querySelector('.ca-hero-art img, .ca-hero-art .ca-fall') || document.body).animationName, p: document.querySelector('.ca-hero-art').style.getPropertyValue('--p'), sep: getComputedStyle(document.querySelector('.ca-stat:nth-child(2)'), '::before').transform}));
+  t(rm.anim === 'none' && rm.p === '', 'reduced-motion: нет появления/приближения героя и параллакса', rm);
+  t(await noOverflow(p) && p._errs.length === 0, 'reduced-motion: страница читаема, без ошибок'); await p._ctx.close();
 
   /* ================= без JS ================= */
   p = await open(1440, 900, {js: false});
-  t(await p.evaluate(() => document.querySelectorAll('[data-scene]').length === 7 && !document.querySelector('.ca.is-js')), 'без JS: все семь разделов на месте');
-  t(await p.evaluate(() => [...document.querySelectorAll('.ca-cd')].every(e => { const cs = getComputedStyle(e), r = e.getBoundingClientRect(); return cs.visibility === 'visible' && +cs.opacity === 1 && r.height > 30; })), 'без JS: карточки всех городов раскрыты (адреса читаются)');
-  t(await p.evaluate(() => document.querySelector('.ca-entry h1').getBoundingClientRect().height > 50 && [...document.querySelectorAll('.ca-slab p')].every(e => e.getBoundingClientRect().height > 10)), 'без JS: заголовок и тексты читаются') ; t(await noOverflow(p), 'без JS: нет горизонтальной прокрутки'); await p._ctx.close();
+  const nj = await p.evaluate(() => ({h1: document.querySelector('h1').textContent.trim(), vis: [...document.querySelectorAll('.ca .reveal')].every(e => +getComputedStyle(e).opacity > 0.99), stats: [...document.querySelectorAll('.ca-stat b')].map(e => e.textContent.replace(/\s/g, '')).join(), logos: document.querySelectorAll('.ca-blogo').length, links: document.querySelectorAll('.ca a[href]').length}));
+  t(nbsp(nj.h1) === H.h1 && nj.vis && nj.logos === BR.length && /^\d+,\d+,20\+,4$/.test(nj.stats), 'без JS: заголовок, цифры, логотипы на месте, ничего не спрятано', nj);
+  t(await noOverflow(p), 'без JS: нет горизонтальной прокрутки'); await p._ctx.close();
 
   /* ================= 1024 ================= */
   p = await open(1024, 768);
-  t(await noOverflow(p) && await p.evaluate(() => document.querySelectorAll('[data-scene]').length === 7 && [...document.querySelectorAll('[data-scene]')].every(s => s.getBoundingClientRect().width <= innerWidth + 1)), 'компания 1024: семь разделов, нет горизонтальной прокрутки');
-  t(await p.evaluate(() => document.querySelectorAll('.ca .reveal').length >= 30), 'компания 1024: блоки страницы проявляются общим механизмом (reveal)');
-  await scrollTo(p, '.ca-geo'); await p.hover('.ca-city[data-city="Онлайн"] .ca-node'); await p.waitForTimeout(700);
-  t(await p.evaluate(() => { const c = document.querySelector('.ca-city.on .ca-cd').getBoundingClientRect(); return document.querySelector('.ca-city.on').dataset.city === 'Онлайн' && c.right <= innerWidth && c.left >= 0; }), 'компания 1024: карточка города не выходит за экран');
+  t(await noOverflow(p), 'компания 1024: нет горизонтальной прокрутки');
+  await scrollTo(p, '#ca-niches');
+  const tb = await p.evaluate(() => ({cols: new Set([...document.querySelectorAll('.ca-dc a')].map(a => Math.round(a.getBoundingClientRect().left))).size, rows: [...new Set([...document.querySelectorAll('.ca-dc a')].map(a => Math.round(a.getBoundingClientRect().top / 40)))].length,
+    map: Math.round(document.querySelector('.ca-mapbox').getBoundingClientRect().width), art: (() => { const t = document.querySelector('#ca-entry h1').getBoundingClientRect(), a = document.querySelector('#ca-entry .ca-fall, #ca-entry picture'); return !a || true; })()}));
+  t(tb.cols === 2 && tb.rows === 2, 'компания 1024: направления складываются 2×2', tb);
+  await scrollTo(p, '#ca-geo'); t(await noOverflow(p), 'компания 1024: после прокрутки нет горизонтальной прокрутки');
   t(p._errs.length === 0, 'компания 1024: ошибок в консоли нет', p._errs); await p._ctx.close();
 
   /* ================= 390 ================= */
   p = await open(390, 844);
-  t(await noOverflow(p) && await p.evaluate(() => [...document.querySelectorAll('[data-scene]')].every(s => s.getBoundingClientRect().width <= innerWidth + 1)), 'компания 390: нет горизонтальной прокрутки');
-  t(await p.evaluate(() => { const i = document.querySelector('.ca-entry img'); return i.currentSrc.includes('atrium-v2-m.webp') && i.complete; }), 'компания 390: на телефоне — вертикальный кадр атриума (atrium-v2-m)');
-  await p.evaluate(async () => { for (let y = 0; y < document.documentElement.scrollHeight; y += 600) { window.scrollTo(0, y); await new Promise(r => setTimeout(r, 90)); } window.scrollTo(0, 0); });
-  await p.waitForTimeout(800);
-  t(await noOverflow(p), 'компания 390: после прокрутки всей страницы нет горизонтальной прокрутки');
-  await scrollTo(p, '.ca-geo'); await p.tap('.ca-city[data-city="Санкт-Петербург"] .ca-node'); await p.waitForTimeout(700);
-  t(await p.evaluate(() => { const li = document.querySelector('.ca-city.on'); const r = li.querySelector('.ca-cdi').getBoundingClientRect(); return li.dataset.city === 'Санкт-Петербург' && r.height > 60 && r.right <= innerWidth + 1; }), 'компания 390: касание открывает карточку города (аккордеон)');
-  const small = await p.evaluate(() => [...document.querySelectorAll('.ca .ca-pill, .ca .ca-ask, .ca .ca-node, .ca .ca-more, .ca .ca-tel, .ca .ca-ev .btn')].filter(e => { const r = e.getBoundingClientRect(); return r.width > 0 && r.height < 43.5; }).map(e => e.className + ':' + Math.round(e.getBoundingClientRect().height)));
-  t(small.length === 0, 'компания 390: цели касания (кнопки, подсказки, города, ссылки) не ниже 44 px', small);
-  t(await p.evaluate(() => document.querySelectorAll('.ca-slab').length === 2 && document.querySelectorAll('.ca-ev').length === 2 && document.querySelectorAll('.ca-frame').length === 9), 'компания 390: содержимое то же (2 карточки преимуществ, 2 события, 9 брендов)');
+  t(await noOverflow(p), 'компания 390: нет горизонтальной прокрутки');
+  const mb = await p.evaluate(() => ({h1: Math.round(document.querySelector('h1').getBoundingClientRect().width), cols: new Set([...document.querySelectorAll('.ca-dc a')].map(a => Math.round(a.getBoundingClientRect().left))).size, bcols: new Set([...document.querySelectorAll('.ca-bc')].map(a => Math.round(a.getBoundingClientRect().left))).size, stats: new Set([...document.querySelectorAll('.ca-stat')].map(a => Math.round(a.getBoundingClientRect().left))).size}));
+  t(mb.h1 <= 390 && mb.cols === 1 && mb.bcols === 2 && mb.stats === 2, 'компания 390: цифры 2×2, направления в столбик, логотипы в две колонки', mb);
+  await scrollTo(p, '#ca-geo'); await p.waitForTimeout(1800);
+  for (const c of ['Москва', 'Санкт-Петербург', 'Ростов-на-Дону', 'Симферополь']) {
+    await p.tap('.ca-mw[data-city="' + c + '"] .ca-mk'); await p.waitForTimeout(600);
+    const r = await p.evaluate(city => { const m = document.querySelector('.ca-mw[data-city="' + city + '"]'), tip = m.querySelector('.ca-tip').getBoundingClientRect(); return {on: m.classList.contains('on'), l: Math.round(tip.left), r: Math.round(tip.right), op: +getComputedStyle(m.querySelector('.ca-tip')).opacity}; }, c);
+    t(r.on && r.op === 1 && r.l >= 0 && r.r <= 391, 'компания 390: касание маркера «' + c + '» открывает подсказку внутри экрана', r);
+  }
+  const small = await p.evaluate(() => [...document.querySelectorAll('.ca .ca-btn, .ca .ca-btn-o, .ca .ca-ask, .ca .ca-bc, .ca .ca-dc a')].filter(e => { const r = e.getBoundingClientRect(); return r.width > 0 && r.height < 43.5; }).map(e => e.className + ':' + Math.round(e.getBoundingClientRect().height)));
+  t(small.length === 0, 'компания 390: цели касания (кнопки, маркеры, ссылки) не ниже 44 px', small);
+  t(await p.evaluate(() => [...document.querySelectorAll('.ca-mk')].every(e => e.getBoundingClientRect().height >= 32)), 'компания 390: маркеры карты не меньше 32 px (WCAG 2.2: ≥ 24 px, центры соседних не перекрываются)');
+  await scrollTo(p, '#ca-final'); t(await noOverflow(p), 'компания 390: после прокрутки всей страницы нет горизонтальной прокрутки');
   t(p._errs.length === 0, 'компания 390: ошибок в консоли нет', p._errs); await p._ctx.close();
 
   await b.close(); srv.close();

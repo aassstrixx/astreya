@@ -621,12 +621,12 @@
       "custom": {"top": {"tex": "cream", "pos": "tr"}, "end": {"tex": "silk", "pos": "br"}},
       "news": {"top": {"tex": "film", "pos": "tr"}, "end": {"tex": "smear", "pos": "br"}},
       "article": {"top": {"tex": "cream", "pos": "tr"}, "end": {"tex": "film", "pos": "br"}},
-      "company": {"mid": [
+      "company": {"top": {"tex": "silk", "pos": "tr", "o": 8}, "mid": [
         {"sel": "section#ca-niches", "tex": "cream", "pos": "tl", "o": 10},
-        {"sel": "section#ca-hist", "tex": "swatch", "pos": "l", "o": 10},
         {"sel": "section#ca-expo", "tex": "film", "pos": "r", "o": 9},
+        {"sel": "section#ca-phil", "tex": "swatch", "pos": "l", "o": 8},
         {"sel": "section#ca-geo", "tex": "molecules", "pos": "c", "o": 8},
-        {"sel": "section#ca-pro", "tex": "smear", "pos": "r", "o": 10}
+        {"sel": "section#ca-final", "tex": "cream", "pos": "br", "o": 7}
       ], "end": {"tex": "silk", "pos": "c"}},
       "contacts": {"top": {"tex": "silk", "pos": "tr"}, "end": {"tex": "cream", "pos": "br"}},
       "partners": {"top": {"tex": "molecules", "pos": "c"}, "mid": [{"sel": "section.sec#calc", "tex": "film", "pos": "r", "o": 6}, {"sel": "section.sec#training", "tex": "cream", "pos": "tl", "o": 8}], "end": {"tex": "ribbon", "pos": "b"}},

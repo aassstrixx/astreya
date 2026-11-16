@@ -356,7 +356,7 @@
   /* ================= КОМПАНИЯ: «Ваш регион» ================= */
   function company(c, main) {
     if (mod('region', main)) return; const cfg = PG.company || {}, offs = SX.offices || []; if (!offs.length) return;
-    const near = findSection(main, /Мы рядом/), anchorEl = near || $$('section', main).filter(s => $('.cta-band', s)).pop(); if (!anchorEl) return;
+    const near = findSection(main, /Мы рядом|по всей России/), anchorEl = near || $$('section', main).filter(s => $('.cta-band', s)).pop(); if (!anchorEl) return;
     const pref = K.city(), start = offs.find(o => o.city === pref) || offs[0];
     const sec = el('section', 'sx-mod sx-region', '<div class="wrap"><header class="sx-head"><span class="eyebrow">' + esc(cfg.eyebrow) + '</span><h2>' + esc(cfg.title) + '</h2><p class="lead">' + esc(cfg.lead) + '</p></header>' +
       '<div class="sx-reg-tabs" style="--n:' + offs.length + '" role="group" aria-label="' + esc(cfg.eyebrow) + '">' + offs.map((o, i) => '<button type="button" class="sx-reg-n' + (o.city === start.city ? ' on' : '') + '" data-sx-reg="' + esc(o.city) + '" aria-pressed="' + (o.city === start.city) + '"><small>0' + (i + 1) + '</small><span>' + esc(o.city) + '</span></button>').join('') + '</div>' +
