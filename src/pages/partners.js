@@ -8,13 +8,18 @@ const {esc, I, rub} = S;
 
 const RANGE_MAX = 500000, RANGE_STEP = 10000, RANGE_START = 100000;      // как в прежнем калькуляторе (js/pages.js читает те же значения из разметки)
 /* упаковки в нишах: по одной-три на преимущество (спрайты рендера сайта, assets/showroom) — только украшение, alt пустой */
+/* условия сотрудничества — нейтральные формулировки без цифр и сроков: всё, что не подтверждено данными сайта, подтверждает менеджер */
+const COND = [['Подбор продукции', 'Менеджер подбирает продукцию под задачи вашего кабинета, салона или клиники.'], ['Работа с ассортиментом', 'Бренды, линии и позиции — в каталоге; состав первой закупки обсуждается на консультации.'],
+  ['Обучение специалистов', 'Семинары, мастер-классы и вебинары учебного центра «Астрея».'], ['Сопровождение менеджера', 'Менеджер на связи по вопросам заказов, документов и применения продукции.'], ['Условия поставок', 'Уточняются и подтверждаются менеджером при согласовании условий.']];
 const NICHE_PACKS = [['dermatime-bottle'], ['dermatime-box'], ['biretix-jar'], ['dermatime-dropper'], ['bottle', 'biretix-tube', 'box'], ['heliocare-tube']];
 
 module.exports = function partners(ctx, C, P) {
-  const {content, site} = ctx, pt = content.partners, c = site.contacts, u = f => C.u(P, f);
+  const {content, site, sortedEvents} = ctx, pt = content.partners, c = site.contacts, u = f => C.u(P, f);
+  const today = new Date().toISOString().slice(0, 10), up = sortedEvents.filter(e => e.date >= today), two = (up.length >= 2 ? up : up.concat(sortedEvents.slice(-(2 - up.length)))).slice(0, 2);
   const ds = site.discounts, max = Math.max(...ds.map(d => d.pct)), n = ds.length;
   const pack = id => `<img src="${u('assets/showroom/pack-' + id + '-s.webp')}" alt="" loading="lazy" decoding="async" draggable="false">`;
   const no = i => String(i + 1).padStart(2, '0');
+  const {dparts} = S;
   const stella = C.xon('assistant') ? `<button class="pp-ask" type="button" data-act="asst-chip" data-q="Какие условия для партнёров?" data-track="asst_chip" data-place="partners">${I.chat || ''}<span>Спросить Стеллу об условиях</span></button>` : '';
 
   return `<div class="pp" data-pp>
@@ -58,9 +63,10 @@ module.exports = function partners(ctx, C, P) {
 
   <section class="sec pp-sec pp-calc" id="calc"><div class="pp-in pp-calc-in">
     <div class="pp-calc-copy reveal">
-      <span class="pp-eyebrow">Партнёрская программа</span>
-      <h2>Скидки по объёму закупки</h2>
+      <span class="pp-eyebrow">Условия сотрудничества</span>
+      <h2>Условия и скидки по объёму закупки</h2>
       <p>Чем крупнее закупка, тем выгоднее условия. Передвиньте ползунок и посмотрите, какая скидка вам доступна — до ${max}%.</p>
+      <ul class="pp-cond" aria-label="Что входит в сотрудничество">${COND.map(([t, x]) => `<li><b>${esc(t)}</b><span>${esc(x)}</span></li>`).join('')}</ul>
       <p class="pp-fine">Расчёт ориентировочный (пример). Точные условия и пороги скидок подтверждает менеджер.</p>
       ${stella}
     </div>
@@ -82,6 +88,20 @@ module.exports = function partners(ctx, C, P) {
         </div>
       </div>
     </div>
+  </div></section>
+
+  <section class="sec pp-sec pp-edu" id="training"><div class="pp-in pp-edu-in">
+    <div class="pp-edu-copy reveal">
+      <span class="pp-eyebrow">Обучение партнёров</span>
+      <h2>Учебный центр — для вашей команды</h2>
+      <p>Семинары, мастер-классы и вебинары для специалистов: очно в Москве, Санкт-Петербурге, Ростове-на-Дону, Симферополе и онлайн. Партнёры обучают команду работать с препаратами на практике.</p>
+      <div class="pp-cta"><a class="btn btn-fill pp-pill" href="${u('training.html')}" data-track="training_click" data-place="partners-edu">Расписание ${I.arrow}</a></div>
+    </div>
+    <ul class="pp-evs">${two.map(e => { const d = dparts(e.date), b = ctx.brandById[e.brand]; return `<li class="pp-ev reveal" data-date="${e.date}">
+      <time datetime="${e.date}"><b>${d.d}</b><span>${esc(d.m)}</span></time>
+      <div><span class="pp-evt">${esc(e.fmt)} · ${esc(e.city)}</span><h3><a href="${C.eurl(P, e)}" data-track="event_click" data-place="partners-edu">${esc(e.title)}</a></h3>
+        <p>${esc(e.time)} · ${esc(e.speaker)}${b ? ` · ${esc(b.name)}` : ''}</p>
+        <button class="btn btn-ghost btn-sm" type="button" data-act="form" data-type="seminar" data-ref="${e.id}">Записаться</button></div></li>`; }).join('')}</ul>
   </div></section>
 
   <section class="sec pp-sec pp-apply" id="form"><div class="pp-in pp-apply-in">

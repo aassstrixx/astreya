@@ -6,7 +6,7 @@
 
 .pp{--pp-ink:#16223e;--pp-navy:#0b1a33;--pp-bg:#f5f0e4;--pp-bg2:#efe5d0;--pp-card:#fcf8ee;--pp-line:rgba(120,84,40,.17);--pp-mut:#5f574a;--pp-gold:#b08e4e;--pp-ease:cubic-bezier(.22,.8,.2,1);
   --pp-g:clamp(18px,5.9vw,120px);--f-h1:clamp(38px,4.5vw,88px);--f-h2:clamp(27px,2.6vw,50px);--f-h3:clamp(18px,1.4vw,26px);--f-b:clamp(15px,1.06vw,20px);--f-s:clamp(13.5px,.92vw,17.5px);--f-xs:clamp(11.5px,.78vw,15px);
-  --pp-trav:url(../assets/showroom/pg-travertine.webp?v=adc2d6e3);
+  --pp-trav:url(../assets/showroom/pg-travertine.webp?v=69db0763);
   position:relative;margin-top:calc(var(--hdr,84px) * -1);background:var(--pp-bg);color:var(--pp-ink);overflow:clip}
 .pp-in{width:calc(100% - 2 * var(--pp-g));max-width:1800px;margin-inline:auto}
 .pp-eyebrow{display:inline-flex;align-items:center;gap:14px;font:700 var(--f-xs)/1 var(--sans);letter-spacing:.3em;text-transform:uppercase;color:var(--pp-ink)}
@@ -236,6 +236,75 @@ body[data-page="partners"] .nav a.nl.on{border-bottom-color:#101f37}
   .pp-sun{animation:none;opacity:.3}
   .pp-stairs.is-pre .pp-tread{clip-path:none}.pp-stairs.is-pre .pp-sk{opacity:1;transform:none}
   .pp *,.pp *::before,.pp *::after{transition-duration:.01ms!important}
+}
+
+/* ============ Версия 3 — компактные размеры (по просьбе владельца): без огромных арок и пустот, образец плотности — «Обучение» ============ */
+.pp{--f-h1:clamp(32px,3.5vw,62px);--f-h2:clamp(23px,2.05vw,40px);--f-h3:clamp(16px,1.18vw,22px);--f-b:clamp(14.5px,.98vw,18px);--f-s:clamp(13.5px,.88vw,16.5px)}
+.pp .pp-sec{padding:clamp(34px,4vw,68px) 0}
+.pp-head{margin-bottom:clamp(18px,2.2vw,38px)}
+.pp h2{margin-top:.4em}
+.pp-pill{padding:clamp(10px,.8vw,15px) clamp(18px,1.6vw,30px);min-height:44px}
+/* первый экран: прежняя дверь, но ≈ 540–580 px вместе с прозрачной шапкой */
+.pp-hero{min-height:clamp(470px,40vw,600px);padding-top:calc(var(--hdr,84px) + clamp(8px,1.6vh,22px))}
+.pp-copy h1{margin:.3em 0 .28em;line-height:1.05}
+.pp-cta{margin-top:clamp(14px,1.5vw,26px)}
+.pp-plate{width:clamp(170px,14vw,250px);padding:clamp(12px,1.1vw,20px) clamp(14px,1.3vw,24px)}
+.pp-plate b{font-size:clamp(34px,3.6vw,64px)}
+.pp-rail{padding-block:clamp(10px,1.6vh,20px) clamp(12px,2vh,24px)}
+/* преимущества: компактные карточки 3 × 2 с небольшой аркой-витриной */
+.pp .pp-niches.grid{grid-template-columns:repeat(3,minmax(0,1fr));gap:clamp(10px,1.2vw,20px)}
+.pp-niche{flex-direction:row;align-items:center;gap:clamp(12px,1.2vw,20px);padding:clamp(10px,1vw,16px);border-radius:14px;background:rgba(251,247,236,.88);box-shadow:inset 0 0 0 1px var(--pp-line),0 16px 26px -24px rgba(60,40,18,.55);transition:transform .45s var(--pp-ease),box-shadow .45s}
+.pp-arch{flex:none;width:clamp(76px,7vw,104px);box-shadow:inset 6px 8px 16px -6px rgba(96,66,30,.3),inset -5px -4px 10px -4px rgba(255,255,255,.7),0 0 0 3px #f9f4e8,0 0 0 4px rgba(176,142,78,.4)}
+.pp-no{font-size:clamp(14px,1.1vw,19px)}
+.pp-nt{padding-inline:0;min-width:0}
+.pp-nt h3{margin:.55em 0 .25em}
+.pp-nt p{line-height:1.45}
+@media (hover:hover) and (pointer:fine){.pp-niche:hover{transform:translate3d(0,-3px,0);box-shadow:inset 0 0 0 1px rgba(176,142,78,.7),0 22px 30px -22px rgba(60,40,18,.6)}}
+/* шаги: те же ступени, но ниже */
+.pp-n{font-size:clamp(30px,3vw,52px)}
+.pp-sk{padding-bottom:clamp(12px,1.3vw,20px)}
+.pp-sk h3{margin:.4em 0 .25em}
+.pp-tread{height:calc(var(--k) * clamp(14px,1.55vw,28px))}
+/* калькулятор и условия */
+.pp-calc-in{grid-template-columns:minmax(0,.9fr) minmax(0,1.3fr);gap:clamp(18px,3.2vw,60px);align-items:start}
+.pp-calc-copy p{max-width:34em;margin-top:clamp(8px,.9vw,14px)}
+.pp-cond{list-style:none;margin:clamp(12px,1.3vw,20px) 0 0;padding:0;display:grid;gap:0;border-top:1px solid var(--pp-line)}
+.pp-cond li{display:grid;grid-template-columns:minmax(0,.9fr) minmax(0,1.6fr);gap:4px 16px;padding:9px 2px;border-bottom:1px solid var(--pp-line);font:400 var(--f-s)/1.45 var(--sans)}
+.pp-cond b{font:600 var(--f-s)/1.45 var(--sans);color:var(--pp-ink)}
+.pp-cond span{color:var(--pp-mut)}
+.pp-slab{padding:clamp(16px,1.8vw,30px);border-radius:clamp(16px,1.5vw,26px)}
+.pp-sumbox span{font-size:clamp(32px,3.3vw,58px)}
+.pp-track{margin-top:clamp(6px,.8vw,12px);padding-bottom:36px}
+.pp .pp-tiers.tiers{height:clamp(104px,9.2vw,150px);margin-top:clamp(10px,1.2vw,20px)}
+.pp .pp-tiers .tier{padding:clamp(8px,.8vw,14px)}
+.pp .pp-tiers .tier b{font-size:clamp(22px,2.2vw,38px)}
+.pp .pp-plaque.save{padding:clamp(10px,1vw,18px) clamp(22px,2vw,36px)}
+.pp-pl-l span{font-size:clamp(18px,1.7vw,30px)}
+.pp .pp-plaque b{font-size:clamp(24px,2.3vw,42px)}
+/* обучение партнёров */
+.pp-edu{background:linear-gradient(180deg,rgba(228,236,241,.9),rgba(241,236,221,.9))}
+.pp-edu-in{display:grid;grid-template-columns:minmax(0,.9fr) minmax(0,1.5fr);gap:clamp(16px,3vw,56px);align-items:center}
+.pp-edu-copy p{margin:clamp(8px,.9vw,14px) 0 0;max-width:36em;font:400 var(--f-s)/1.55 var(--sans);color:var(--pp-mut)}
+.pp-evs{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:clamp(10px,1.1vw,18px)}
+.pp-ev{display:grid;grid-template-columns:clamp(56px,4.8vw,80px) 1fr;gap:clamp(10px,1.2vw,18px);padding:clamp(12px,1.2vw,18px);border-radius:12px;background:rgba(252,248,238,.96);box-shadow:inset 0 0 0 1px var(--pp-line),0 16px 26px -22px rgba(60,40,18,.6)}
+.pp-ev time{display:flex;flex-direction:column;align-items:center;justify-content:center;border-radius:5px 5px 0 0 / 40% 40% 0 0;background:var(--pp-navy);color:#fff;padding:8px 4px;text-align:center}
+.pp-ev time b{font:400 clamp(22px,2vw,34px)/1 var(--serif)}.pp-ev time span{margin-top:3px;font:600 var(--f-xs)/1.2 var(--sans);letter-spacing:.14em;text-transform:uppercase;color:#d9bd83}
+.pp-evt{font:700 var(--f-xs)/1.2 var(--sans);letter-spacing:.14em;text-transform:uppercase;color:#8a6c33}
+.pp-ev h3{margin:5px 0 0;font-size:clamp(15px,1.05vw,19px);line-height:1.25}.pp-ev h3 a{color:inherit;text-decoration:none}.pp-ev h3 a:hover{text-decoration:underline}
+.pp-ev p{margin:5px 0 0;color:var(--pp-mut);font-size:var(--f-xs);line-height:1.45}.pp-ev .btn{margin-top:8px;min-height:44px}
+/* заявка */
+.pp-apply-in{gap:clamp(18px,3.4vw,64px)}
+.pp-paper{padding:clamp(18px,2vw,34px)}
+.pp-contact{margin-top:clamp(14px,1.6vw,26px)}
+@media (max-width:1180px){.pp .pp-niches.grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media (max-width:1000px){.pp-edu-in,.pp-calc-in{grid-template-columns:minmax(0,1fr)}}
+@media (max-width:760px){
+  .pp-niche{flex-direction:row;align-items:center}
+  .pp .pp-niches.grid{grid-template-columns:minmax(0,1fr)}
+  .pp-arch{width:78px}
+  .pp-evs{grid-template-columns:1fr}
+  .pp-cond li{grid-template-columns:1fr}
+  .pp-hero{min-height:0;padding-top:0}
 }
 
 /* фоновые текстуры (общая система backdrops): обёртка прозрачна, цвет страницы лежит на #main, текстурные полосы лежат над ним и под содержимым */

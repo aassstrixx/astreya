@@ -66,8 +66,10 @@
     /* ---- география: одна раскрытая карточка (наведение, фокус, касание) ---- */
     const cities = $$('.ca-city', root);
     if (cities.length) {
-      const open = li => cities.forEach(c => { const o = c === li; c.classList.toggle('on', o); const b = $('.ca-node', c); if (b) b.setAttribute('aria-expanded', String(o)); });
+      const mks = $$('.ca-mk', root);
+      const open = li => { cities.forEach(c => { const o = c === li; c.classList.toggle('on', o); const b = $('.ca-node', c); if (b) b.setAttribute('aria-expanded', String(o)); }); mks.forEach(m => m.classList.toggle('on', m.getAttribute('data-city') === li.getAttribute('data-city'))); };
       open(cities[0]);
+      mks.forEach(m => { const li = cities.filter(c => c.getAttribute('data-city') === m.getAttribute('data-city'))[0]; if (!li) return; on(m, 'click', () => open(li)); on(m, 'focus', () => open(li)); on(m, 'pointerenter', e => { if (e.pointerType === 'mouse') open(li); }); });
       cities.forEach(li => {
         on(li, 'pointerenter', e => { if (e.pointerType === 'mouse') open(li); });
         on(li, 'focusin', () => open(li));

@@ -39,29 +39,34 @@ const rub = n => new Intl.NumberFormat('ru-RU').format(n).replace(/[  ]/g, ' ') 
   /* ================= 1440 ================= */
   let p = await open(1440, 900);
   t(await p.evaluate(() => document.body.dataset.page === 'company' && !!document.querySelector('.ca[data-ca].is-js')), 'компания: страница v2 включена (.ca), скрипт сцен подключён');
-  t(await p.evaluate(() => document.querySelectorAll('h1').length === 1 && document.querySelector('h1').textContent.trim() === 'Астрея — пространство профессиональной косметологии'), 'компания: один заголовок первого уровня «Астрея — пространство профессиональной косметологии»');
+  t(await p.evaluate(() => document.querySelectorAll('h1').length === 1 && document.querySelector('h1').textContent.trim() === 'Астрея — дистрибьютор профессиональной косметики'), 'компания: один заголовок первого уровня «Астрея — дистрибьютор профессиональной косметики»');
   const sc = await p.evaluate(() => [...document.querySelectorAll('[data-scene]')].map(s => ({n: s.dataset.scene, id: s.id, h: Math.round(s.getBoundingClientRect().height), tag: s.tagName})));
-  t(sc.length === 9 && sc.map(x => x.n).join('') === '123456789' && sc.every(x => x.h > 250 && x.tag === 'SECTION'), 'компания: девять сцен по порядку, каждая — раздел с высотой', sc);
+  t(sc.length === 7 && sc.map(x => x.n).join('') === '1234567' && sc.every(x => x.h > 250 && x.h < 1100 && x.tag === 'SECTION'), 'компания v3: семь разделов с номерами по порядку (вступление, направления, история, бренды, география, профессионалы, финал), ни один не длиннее 1100 px', sc);
+  const dens = await p.evaluate(() => ({hero: Math.round(document.querySelector('.ca-entry').getBoundingClientRect().height), stats: Math.round(document.querySelector('.ca-numbers').getBoundingClientRect().height), total: document.documentElement.scrollHeight, bigImg: [...document.querySelectorAll('.ca img')].filter(i => { const r = i.getBoundingClientRect(); return !i.closest('.ca-bg') && !i.closest('.ca-fin-bg') && r.height > 380; }).map(i => i.getAttribute('src'))}));
+  t(dens.hero >= 600 && dens.hero <= 1000 && dens.stats <= 140 && dens.total <= 7600 && dens.bigImg.length === 0, 'компания v3 (плотность по образцу «Обучения»): вступление — атриум на весь экран (по просьбе владельца), полоса цифр ≤ 140 px, страница ≤ 7600 px, крупных изображений (> 380 px) нет, кроме фона вступления', dens);
   /* --- 1. вход --- */
   t(await p.evaluate(() => { const i = document.querySelector('.ca-entry img'); return !!i && i.complete && i.naturalWidth > 800; }), 'сцена 1: рендер атриума загружен');
-  t(/О компании/i.test(await p.textContent('.ca-entry .ca-eyebrow')) && nbsp(await p.textContent('.ca-entry .ca-lead')) === nbsp(CP.lead) && nbsp(await p.textContent('.ca-entry .ca-dist')) === nbsp(CP.h1), 'сцена 1: «О компании», прежнее описание и прежний заголовок сохранены');
+  t(/О компании/i.test(await p.textContent('.ca-entry .ca-eyebrow')) && nbsp(await p.textContent('.ca-entry .ca-lead')) === nbsp(CP.lead) && /Официальный дистрибьютор/.test(await p.textContent('.ca-entry .ca-dist')), 'сцена 1: «О компании», прежнее описание сохранено, добавлена строка про официального дистрибьютора');
   const cta1 = await p.$('.ca-entry a.btn[data-act="scroll"][data-target="ca-niches"]');
   t(!!cta1 && /Познакомиться с компанией/.test(await cta1.textContent()) && await cta1.getAttribute('data-track') === 'company_intro', 'сцена 1: кнопка «Познакомиться с компанией» (data-track company_intro)');
   await cta1.click(); await p.waitForTimeout(1600);
   t(await p.evaluate(() => Math.abs(document.getElementById('ca-niches').getBoundingClientRect().top) < 120), 'сцена 1: кнопка ведёт к сцене «Направления»');
   /* --- 2. направления --- */
   t(await p.evaluate(() => [...document.querySelectorAll('.ca-nich h3')].map(h => h.textContent).join('|')) === CP.directions.map(d => d.title).join('|'), 'сцена 2: четыре ниши — направления из data/content.json в том же порядке');
-  t(await p.evaluate(() => document.querySelectorAll('.ca-nich .ca-arch').length === 4 && !!document.querySelector('.about-grid .txt')) && (await p.$$eval('.about-grid .txt p', e => e.map(x => x.textContent.trim()))).join('|') === CP.who.join('|'), 'сцена 2: прежний текст «кто мы» (три абзаца) на месте, крючок .about-grid .txt для навигатора');
-  t(await p.evaluate(() => document.querySelectorAll('.ca-why li').length === 3), 'сцена 2: три прежних тезиса «почему мы»');
+  t(await p.evaluate(() => document.querySelectorAll('.ca-nich .ca-ill').length === 4 && [...document.querySelectorAll('.ca-ill')].every(e => e.getBoundingClientRect().height <= 220) && !!document.querySelector('.about-grid .txt')) && (await p.$$eval('.about-grid .txt p', e => e.map(x => x.textContent.trim()))).join('|') === CP.who.join('|'), 'сцена 2: прежний текст «кто мы» (три абзаца) на месте, крючок .about-grid .txt для навигатора');
+  const hs = await p.$$eval('.ca-hi', e => e.map(x => ({y: x.querySelector('.ca-hy').textContent.trim(), tbd: x.classList.contains('is-tbd'), p: x.querySelector('p').textContent.trim()})));
+  const HIST = J('data/company-history.json').items, yrs = HIST.map(h => (h.year || '').trim() || 'Уточняется');
+  t(hs.length === HIST.length && hs.map(h => h.y).join('|') === yrs.join('|') && hs.filter(h => h.tbd).every(h => /Уточняется/.test(h.p) && h.y === 'Уточняется'), 'история: этапы — из data/company-history.json; без даты/текста выводится «Уточняется», выдуманных дат нет', hs);
+  t(HIST.filter(h => h.confirmed && h.year && !['Сейчас'].includes(h.year)).every(h => /^\d+\+ лет$/.test(h.year)) && hs.some(h => /20\+/.test(h.y) && /Более 20 лет развиваем методику семинаров/.test(h.p)), 'история: подтверждённый факт «Более 20 лет развиваем методику семинаров» на месте');
   /* --- 3. бренды --- */
-  const fr = await p.$$eval('.ca-frame', e => e.map(x => ({href: x.getAttribute('href'), grp: x.closest('.ca-grp').className.replace('ca-grp ', ''), logo: !!x.querySelector('.ca-blogo'), pack: !!x.querySelector('.ca-on-plinth')})));
+  const fr = await p.$$eval('.ca-frame', e => e.map(x => ({href: x.getAttribute('href'), grp: x.closest('.ca-grp').className.replace('ca-grp ', ''), logo: !!x.querySelector('.ca-blogo'), pack: !!x.querySelector('.ca-bp img')})));
   t(fr.length === BR.length && BR.every(x => fr.some(f => f.href === 'brands/' + x.id + '.html')), 'сцена 3: выставка — все бренды из data/brands.json, каждый ведёт на свою страницу', fr.map(f => f.href));
   t(['dermatime', 'keenwell'].every(id => fr.find(f => f.href.endsWith('/' + id + '.html')).grp === 'ca-g-spain') && ['endocare', 'neoretin', 'heliocare', 'biretix', 'iraltone', 'elancyl'].every(id => fr.find(f => f.href.endsWith('/' + id + '.html')).grp === 'ca-g-cl') && fr.find(f => f.href.endsWith('/eva.html')).grp === 'ca-g-dev', 'сцена 3: Dermatime и Keenwell, линии Cantabria Labs (6) и EVA — отдельными группами');
   t(await p.evaluate(() => !!document.querySelector('.ca-g-cl .ca-gt img[alt="Cantabria Labs"]')) && fr.every(f => f.logo && f.pack), 'сцена 3: производитель Cantabria Labs показан отдельно от линий; у каждого бренда логотип и упаковка на постаменте');
   t(await p.evaluate(() => { const a = [...document.querySelectorAll('.ca-expo .ca-cta a')]; return a.length === 2 && /Все бренды/.test(a[0].textContent) && a[0].getAttribute('href') === 'brands.html' && /Перейти в каталог/.test(a[1].textContent) && a[1].getAttribute('href') === 'catalog.html' && a[1].dataset.track === 'catalog_click'; }), 'сцена 3: кнопки «Все бренды» → brands.html и «Перейти в каталог» → catalog.html');
-  t(await p.evaluate(() => [...document.querySelectorAll('.ca-niche-img > img:first-child')].every(i => { i.scrollIntoView({block: 'center'}); return true; })) && (await p.waitForTimeout(1200), await p.evaluate(() => [...document.querySelectorAll('.ca-niche-img > img:first-child')].every(i => i.complete && i.naturalWidth > 300))), 'сцена 3: изображения ниш загружены');
+  t(await p.evaluate(() => [...document.querySelectorAll('.ca-blogo')].every(i => { const r = i.getBoundingClientRect(); return r.height <= 50 && r.width <= 130; })) && await p.evaluate(() => document.querySelector('.ca-wall').getBoundingClientRect().height <= 420), 'сцена 4: логотипы брендов небольшие (≤ 130×50 px), вся выставка не выше 420 px');
   /* --- 4. доверие --- */
-  t(await p.evaluate(() => [...document.querySelectorAll('.ca-slab h3')].map(h => h.textContent).join('|')) === CONTENT.advantages.map(a => a.title).join('|') && CONTENT.advantages.length === 6, 'сцена 4: шесть панелей доверия — преимущества из data/content.json');
+  t(await p.evaluate(() => [...document.querySelectorAll('.ca-slab h3')].map(h => h.textContent).join('|')) === [2, 4].map(i => CONTENT.advantages[i].title).join('|') && CONTENT.advantages.length === 6, 'профессионалы: две карточки преимуществ (остальные четыре — в блоке «Почему можно доверять» продающего слоя) из data/content.json');
   t(await p.evaluate(() => [...document.querySelectorAll('.ca-slab')].every(s => !s.querySelector('use,.ico,i.ic,[class*="icon"]') && s.querySelectorAll('svg').length === 1 && s.querySelector('.ca-seal svg path'))), 'сцена 4: у панелей авторские знаки, без стандартных иконок сайта');
   /* --- 5. профессионалы --- */
   t(nbsp(await p.textContent('.ca-pro h2')) === nbsp(CP.professionals.title) && nbsp(await p.textContent('.ca-pro-copy > p')) === nbsp(CP.professionals.text[0]), 'сцена 5: заголовок и текст «Работа с профессионалами» прежние');
@@ -85,6 +90,12 @@ const rub = n => new Intl.NumberFormat('ru-RU').format(n).replace(/[  ]/g, ' ') 
   t(geo[2].tag === 'Город семинаров' && geo[3].tag === 'Город семинаров' && geo[2].kind === 'sem' && !geo[2].txt.includes('Мурлычева') && !geo[3].txt.includes('Симферополь, ул') && geo[4].c === 'Онлайн' && geo[4].kind === 'sem', 'сцена 7: Ростов-на-Дону и Симферополь — города семинаров, не офисы; Онлайн отдельно');
   t(await p.evaluate(() => { const a = document.querySelector('.ca-geo .ca-more'); return /Все контакты/.test(a.textContent) && a.getAttribute('href') === 'contacts.html'; }), 'сцена 7: «Все контакты» → contacts.html');
   t(await p.evaluate(() => document.querySelectorAll('.ca-city.on').length === 1 && document.querySelector('.ca-city.on').dataset.city === 'Москва'), 'сцена 7: по умолчанию раскрыта карточка Москвы');
+  const mp = await p.evaluate(() => { const r = document.querySelector('.ca-mapbox').getBoundingClientRect(); return {w: Math.round(r.width), h: Math.round(r.height), mk: [...document.querySelectorAll('.ca-mk')].map(m => m.dataset.city + (m.classList.contains('is-office') ? ':o' : ':s')).join('|'), land: !!document.querySelector('.ca-map svg path.l')}; });
+  t(mp.w <= 520 && mp.h <= 300 && mp.land && mp.mk === 'Москва:o|Санкт-Петербург:o|Ростов-на-Дону:s|Симферополь:s', 'география: стилизованная карта России ≤ 520×300 px, маркеры: два офиса и два города семинаров', mp);
+  await p.click('.ca-mk[data-city="Ростов-на-Дону"]'); await p.waitForTimeout(600);
+  t(await p.evaluate(() => document.querySelector('.ca-city.on').dataset.city === 'Ростов-на-Дону' && document.querySelector('.ca-mk.on').dataset.city === 'Ростов-на-Дону'), 'география: клик по маркеру карты раскрывает карточку города и подсвечивает маркер');
+  await p.click('.ca-city[data-city="Москва"] .ca-node'); await p.waitForTimeout(500);
+  t(true, 'сцена 7: возврат к Москве');
   const vis = sel => p.evaluate(s => { const e = document.querySelector(s); const cs = getComputedStyle(e), r = e.getBoundingClientRect(); return cs.visibility === 'visible' && +cs.opacity > .9 && r.height > 40; }, sel);
   await p.hover('.ca-city[data-city="Санкт-Петербург"] .ca-node'); await p.waitForTimeout(700);
   t(await vis('.ca-city[data-city="Санкт-Петербург"] .ca-cd') && !(await vis('.ca-city[data-city="Москва"] .ca-cd')) && await p.evaluate(() => !!document.querySelector('.ca-city.on[data-city="Санкт-Петербург"] a[href="tel:+79214204735"]')), 'сцена 7: по наведению раскрывается карточка Санкт-Петербурга (телефон — ссылка), Москва закрывается');
@@ -92,10 +103,10 @@ const rub = n => new Intl.NumberFormat('ru-RU').format(n).replace(/[  ]/g, ' ') 
   t(await p.evaluate(() => document.querySelector('.ca-city.on').dataset.city === 'Симферополь' && document.querySelector('.ca-city.on .ca-node').getAttribute('aria-expanded') === 'true'), 'сцена 7: то же по фокусу с клавиатуры (aria-expanded)');
   t(await p.evaluate(() => document.querySelectorAll('.sx-region').length === 1 && document.querySelectorAll('[data-sx-reg]').length >= 3 && !!document.querySelector('.ca-geo h2') && /Мы рядом/.test(document.querySelector('.ca-geo h2').textContent)), 'сцена 7: заголовок «Мы рядом» сохранён — к нему пристраивается «Ваш регион» продающего слоя');
   /* --- 8. партнёрство и калькулятор --- */
-  await scrollTo(p, '.ca-partner');
-  const pb = await p.$('.ca-partner .ca-cta a[data-track="partner_cta"]');
+  await scrollTo(p, '.ca-final');
+  const pb = await p.$('.ca-final .ca-cta a[data-track="partner_cta"]');
   t(!!pb && /Стать партнёром/.test(await pb.textContent()) && await pb.getAttribute('href') === 'partners.html', 'сцена 8: кнопка «Стать партнёром» → partners.html (data-track partner_cta)');
-  t(await p.evaluate(() => { const a = document.querySelector('.ca-partner .ca-cta a[href^="tel:"]'); return !!a && a.getAttribute('href') === 'tel:+74959255162'; }), 'сцена 8: телефон компании — ссылкой');
+  t(await p.evaluate(() => { const a = document.querySelector('.ca-final a[href^="tel:"]'); return !!a && a.getAttribute('href') === 'tel:+74959255162'; }), 'сцена 8: телефон компании — ссылкой');
   const setR = v => p.evaluate(v => { const r = document.getElementById('ca-range'); r.value = v; r.dispatchEvent(new Event('input', {bubbles: true})); }, v);
   const readC = () => p.evaluate(() => ({sum: document.getElementById('ca-sum').textContent, tier: document.getElementById('ca-tier').textContent, save: document.getElementById('ca-save').textContent, on: [...document.querySelectorAll('.ca-tiers li')].map(x => x.classList.contains('reached') ? 1 : 0).join('')}));
   let calcOk = true, calcInfo = [];
@@ -110,8 +121,8 @@ const rub = n => new Intl.NumberFormat('ru-RU').format(n).replace(/[  ]/g, ' ') 
   t(/ориентировочн/i.test(await p.textContent('.ca-fine')) && await p.evaluate(() => !!document.getElementById('ca-range').getAttribute('aria-valuetext')), 'сцена 8: оговорка «расчёт ориентировочный», значение ползунка для скринридера');
   /* --- 9. финал --- */
   await scrollTo(p, '.ca-final');
-  const pn = await p.$$eval('.ca-panel', e => e.map(x => ({href: x.getAttribute('href'), tr: x.dataset.track, h: x.querySelector('h3').textContent})));
-  t(pn.length === 2 && pn[0].href === 'training.html' && pn[0].h === 'Учебный центр' && pn[1].href === 'start.html' && pn[1].h === 'Старт со Стеллой' && pn.every(x => x.tr === 'closing_cta') && /Познакомимся на практике/.test(await p.textContent('.ca-final h2')), 'сцена 9: «Познакомимся на практике» — две панели: «Учебный центр» → training.html, «Старт со Стеллой» → start.html', pn);
+  const pn = await p.$$eval('.ca-final .ca-cta a, .ca-final .ca-fin-ask .ca-more', e => e.map(x => ({href: x.getAttribute('href'), tr: x.dataset.track, h: x.textContent.trim()})));
+  t(pn.length === 3 && pn[0].href === 'training.html' && /Посмотреть обучение/.test(pn[0].h) && pn[1].href === 'partners.html' && /Стать партнёром/.test(pn[1].h) && pn[2].href === 'start.html' && /Старт со Стеллой/.test(pn[2].h) && pn[0].tr === 'closing_cta' && pn[2].tr === 'closing_cta' && /Познакомимся на практике/.test(await p.textContent('.ca-final h2')), 'финал: «Познакомимся на практике» — «Посмотреть обучение» → training.html, «Стать партнёром» → partners.html, «Старт со Стеллой» → start.html', pn);
   const ao = await p.$('.ca-final [data-act="asst-open"]');
   t(!!ao && await ao.getAttribute('data-track') === 'asst_open', 'сцена 9: «Спросить Стеллу» — asst-open');
   await ao.click(); await p.waitForTimeout(900);
@@ -131,7 +142,7 @@ const rub = n => new Intl.NumberFormat('ru-RU').format(n).replace(/[  ]/g, ' ') 
   await p.evaluate(async () => { for (let y = 0; y < document.documentElement.scrollHeight; y += 700) { window.scrollTo(0, y); await new Promise(r => setTimeout(r, 110)); } });
   await p.waitForTimeout(900);
   t(await p.evaluate(() => [...document.querySelectorAll('.ca img')].every(i => i.complete && i.naturalWidth > 0)), 'компания 1440: все изображения загружены (после прокрутки)', await p.evaluate(() => [...document.querySelectorAll('.ca img')].filter(i => !(i.complete && i.naturalWidth > 0)).map(i => i.getAttribute('src'))));
-  t(await p.evaluate(() => [...document.querySelectorAll('.ca img')].every(i => i.hasAttribute('width') && i.hasAttribute('height') || i.closest('.ca-niche-img') || i.classList.contains('ca-blogo') || i.classList.contains('ca-mk') || i.closest('.ca-pk') || i.classList.contains('ca-on-plinth'))), 'компания: у крупных изображений заданы width/height (без сдвига вёрстки)');
+  t(await p.evaluate(() => [...document.querySelectorAll('.ca img')].every(i => i.hasAttribute('width') && i.hasAttribute('height') || i.closest('.ca-ill-pk') || i.closest('.ca-bp') || i.classList.contains('ca-blogo') || i.classList.contains('ca-mkl'))), 'компания: у крупных изображений заданы width/height (без сдвига вёрстки)');
   t(await p.evaluate(() => { const tg = [...document.querySelectorAll('.ca [data-track]')].map(e => e.dataset.track); return tg.length >= 25 && ['company_intro', 'brands_click', 'catalog_click', 'brand_click', 'training_click', 'closing_cta', 'asst_chip', 'asst_open', 'phone_click', 'contacts_click'].every(k => tg.includes(k)); }), 'компания: data-track на месте (вход, бренды, каталог, обучение, финал, Стелла, телефон, контакты)');
   t(p._errs.length === 0, 'компания 1440: ошибок в консоли нет', p._errs); await p._ctx.close();
 
@@ -143,13 +154,13 @@ const rub = n => new Intl.NumberFormat('ru-RU').format(n).replace(/[  ]/g, ' ') 
 
   /* ================= без JS ================= */
   p = await open(1440, 900, {js: false});
-  t(await p.evaluate(() => document.querySelectorAll('[data-scene]').length === 9 && !document.querySelector('.ca.is-js')), 'без JS: все девять сцен на месте');
+  t(await p.evaluate(() => document.querySelectorAll('[data-scene]').length === 7 && !document.querySelector('.ca.is-js')), 'без JS: все семь разделов на месте');
   t(await p.evaluate(() => [...document.querySelectorAll('.ca-cd')].every(e => { const cs = getComputedStyle(e), r = e.getBoundingClientRect(); return cs.visibility === 'visible' && +cs.opacity === 1 && r.height > 30; })), 'без JS: карточки всех городов раскрыты (адреса читаются)');
   t(await p.evaluate(() => document.querySelector('.ca-entry h1').getBoundingClientRect().height > 50 && [...document.querySelectorAll('.ca-slab p')].every(e => e.getBoundingClientRect().height > 10)), 'без JS: заголовок и тексты читаются') ; t(await noOverflow(p), 'без JS: нет горизонтальной прокрутки'); await p._ctx.close();
 
   /* ================= 1024 ================= */
   p = await open(1024, 768);
-  t(await noOverflow(p) && await p.evaluate(() => document.querySelectorAll('[data-scene]').length === 9 && [...document.querySelectorAll('[data-scene]')].every(s => s.getBoundingClientRect().width <= innerWidth + 1)), 'компания 1024: девять сцен, нет горизонтальной прокрутки');
+  t(await noOverflow(p) && await p.evaluate(() => document.querySelectorAll('[data-scene]').length === 7 && [...document.querySelectorAll('[data-scene]')].every(s => s.getBoundingClientRect().width <= innerWidth + 1)), 'компания 1024: семь разделов, нет горизонтальной прокрутки');
   t(await p.evaluate(() => document.querySelectorAll('.ca .reveal').length >= 30), 'компания 1024: блоки страницы проявляются общим механизмом (reveal)');
   await scrollTo(p, '.ca-geo'); await p.hover('.ca-city[data-city="Онлайн"] .ca-node'); await p.waitForTimeout(700);
   t(await p.evaluate(() => { const c = document.querySelector('.ca-city.on .ca-cd').getBoundingClientRect(); return document.querySelector('.ca-city.on').dataset.city === 'Онлайн' && c.right <= innerWidth && c.left >= 0; }), 'компания 1024: карточка города не выходит за экран');
@@ -164,9 +175,9 @@ const rub = n => new Intl.NumberFormat('ru-RU').format(n).replace(/[  ]/g, ' ') 
   t(await noOverflow(p), 'компания 390: после прокрутки всей страницы нет горизонтальной прокрутки');
   await scrollTo(p, '.ca-geo'); await p.tap('.ca-city[data-city="Санкт-Петербург"] .ca-node'); await p.waitForTimeout(700);
   t(await p.evaluate(() => { const li = document.querySelector('.ca-city.on'); const r = li.querySelector('.ca-cdi').getBoundingClientRect(); return li.dataset.city === 'Санкт-Петербург' && r.height > 60 && r.right <= innerWidth + 1; }), 'компания 390: касание открывает карточку города (аккордеон)');
-  const small = await p.evaluate(() => [...document.querySelectorAll('.ca .ca-pill, .ca .ca-ask, .ca .ca-node, .ca .ca-more, .ca .ca-panel, .ca .ca-ev .btn')].filter(e => { const r = e.getBoundingClientRect(); return r.width > 0 && r.height < 43.5; }).map(e => e.className + ':' + Math.round(e.getBoundingClientRect().height)));
+  const small = await p.evaluate(() => [...document.querySelectorAll('.ca .ca-pill, .ca .ca-ask, .ca .ca-node, .ca .ca-more, .ca .ca-tel, .ca .ca-ev .btn')].filter(e => { const r = e.getBoundingClientRect(); return r.width > 0 && r.height < 43.5; }).map(e => e.className + ':' + Math.round(e.getBoundingClientRect().height)));
   t(small.length === 0, 'компания 390: цели касания (кнопки, подсказки, города, ссылки) не ниже 44 px', small);
-  t(await p.evaluate(() => document.querySelectorAll('.ca-slab').length === 6 && document.querySelectorAll('.ca-ev').length === 2 && document.querySelectorAll('.ca-frame').length === 9), 'компания 390: содержимое сцен то же (6 панелей, 2 события, 9 брендов)');
+  t(await p.evaluate(() => document.querySelectorAll('.ca-slab').length === 2 && document.querySelectorAll('.ca-ev').length === 2 && document.querySelectorAll('.ca-frame').length === 9), 'компания 390: содержимое то же (2 карточки преимуществ, 2 события, 9 брендов)');
   t(p._errs.length === 0, 'компания 390: ошибок в консоли нет', p._errs); await p._ctx.close();
 
   await b.close(); srv.close();

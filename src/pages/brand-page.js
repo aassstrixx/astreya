@@ -92,6 +92,8 @@ module.exports = function brandPage(ctx, C, P, b) {
           <span class="eyebrow in">${esc(b.group)}${b.country && b.country !== b.group ? ' · ' + esc(b.country) : ''}</span>
           <h1 class="b-title">${esc(b.name)}</h1>
           <p class="lead">${esc(b.tag)}</p>
+          ${(b.long || [])[0] ? `<p class="dtb-desc">${esc(b.long[0])}</p>` : ''}
+          ${b.tasks && b.tasks.length ? `<div class="tasks-line dtb-dirs" aria-label="Направления">${b.tasks.map(t => C.tag(ctx.taskById[t].label, 'blue')).join('')}</div>` : ''}
           <ul class="dtb-stats" aria-label="Бренд в цифрах"><li><b>${prods.length}</b><small>${S.plural(prods.length, 'позиция', 'позиции', 'позиций')}</small></li><li><b>${groups.length}</b><small>${S.plural(groups.length, 'линейка', 'линейки', 'линеек')}</small></li><li><b>${events.length}</b><small>${S.plural(events.length, 'семинар', 'семинара', 'семинаров')}</small></li></ul>
           <div class="row">
             <a class="btn btn-fill" href="${catalogHref}" data-track="catalog_click" data-place="brand-hero">Смотреть ассортимент ${I.arrow}</a>
@@ -105,7 +107,6 @@ module.exports = function brandPage(ctx, C, P, b) {
       <div class="dtb-story reveal">
         <span class="eyebrow in">О бренде</span>
         ${(b.long || []).map(t => `<p>${esc(t)}</p>`).join('')}
-        ${b.tasks && b.tasks.length ? `<div class="tasks-line">${b.tasks.map(t => C.tag(ctx.taskById[t].label, 'blue')).join('')}</div>` : ''}
       </div>
       <div class="dtb-passport" aria-label="Паспорт бренда">${passport}</div>
     </section>
