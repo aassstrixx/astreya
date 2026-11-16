@@ -226,7 +226,7 @@ function articlePage(ctx, C, P, n) {
 
     <div class="wrap na-after">
     ${(prods.length || evs.length || brs.length) ? `<section class="sec na-rel" style="padding-top:0">
-      ${prods.length ? `${C.secHead('Товары', 'По теме')}<div class="grid g4" style="margin-bottom:clamp(28px,4vw,48px)">${prods.map((p, i) => C.productCard(P, p, i)).join('')}</div>` : ''}
+      ${prods.length ? `${C.secHead('Товары', 'По теме')}<div class="grid g4" style="margin-bottom:clamp(28px,4vw,48px)">${prods.map((p, i) => C.productCardX(P, p, i)).join('')}</div>` : ''}
       ${evs.length ? `${C.secHead('Обучение', 'Мероприятия по теме')}<div class="grid g3 events-grid" style="margin-bottom:clamp(28px,4vw,48px)">${evs.slice(0, 3).map(e => C.eventCard(P, e)).join('')}</div>` : ''}
       ${brs.length ? `<div class="tasks-line">${brs.map(b => `<a class="tag blue" href="${C.burl(P, b)}">${esc(b.name)}</a>`).join('')}</div>` : ''}
     </section>` : ''}

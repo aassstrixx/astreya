@@ -164,3 +164,21 @@ html.pg-top body[data-page="product"] .hdr,html.pg-top body[data-page="brand"] .
 /* секции .sec.wrap: у базового .sec боковые поля обнуляются — возвращаем поля страницы */
 .dt .sec.wrap{padding-inline:var(--gut)}
 @media (max-width:560px){.dt-plaque .sx-hook{flex-wrap:wrap}.dt-plaque .sx-hook-t{flex:1 1 150px}.dt-plaque .sx-hook-a{flex:1 1 100%}}
+
+/* Хлебные крошки v3: одна стеклянная капсула вместо россыпи плиток со стрелками. Шаги разделены тонкими шевронами, текущая позиция — тёмная таблетка внутри капсулы; подписи «Раздел/Бренд/…» остаются для скринридеров */
+.dt-route ol{align-items:center;gap:0;padding:4px;border-radius:999px;background:linear-gradient(180deg,rgba(253,250,243,.84),rgba(246,240,228,.76));border:1px solid rgba(176,142,78,.34);box-shadow:inset 0 1px 0 rgba(255,255,255,.75),0 14px 26px -18px rgba(60,48,28,.5)}
+.dt-route li+li{margin-left:0}
+.dt-route li+li::before{position:static;content:"";flex:none;align-self:center;width:6px;height:6px;margin:0 4px 0 2px;border:0;border-top:1.5px solid rgba(150,118,56,.85);border-right:1.5px solid rgba(150,118,56,.85);border-radius:0;background:none;transform:rotate(45deg)}
+.dt-route li+li::after{display:none}
+.dt-route li>a,.dt-route li[aria-current]{flex-direction:row;align-items:center;gap:0;min-height:38px;padding:0 15px;border-radius:999px;background:none;border:0;box-shadow:none}
+.dt-route li.is-home>a{min-width:38px;justify-content:center;padding:0}
+.dt-route li.is-home .ic{width:18px;height:18px}
+.dt-route small{position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip:rect(0 0 0 0);clip-path:inset(50%);white-space:nowrap}
+.dt-route li b{font:600 13.5px/1 var(--sans);max-width:24ch}
+.dt-route li[aria-current]{background:linear-gradient(180deg,#14284a,#0b1a33);color:#f4efe4;box-shadow:inset 0 1px 0 rgba(255,255,255,.12),0 8px 14px -8px rgba(11,26,51,.7)}
+@media (hover:hover) and (pointer:fine){.dt-route li>a:hover{transform:none;background:rgba(176,142,78,.16);box-shadow:none}}
+@media (max-width:900px){.dt-route ol{padding:3px}.dt-route li>a,.dt-route li[aria-current]{min-height:36px;padding:0 12px}.dt-route li b{max-width:16ch}}
+
+.dt-route li[aria-current]{background:none;box-shadow:none;padding:0;min-height:0;color:inherit}
+.dt-route li[aria-current] b{display:flex;align-items:center;min-height:38px;padding:0 15px;border-radius:999px;background:linear-gradient(180deg,#14284a,#0b1a33);color:#f4efe4;box-shadow:inset 0 1px 0 rgba(255,255,255,.12),0 8px 14px -8px rgba(11,26,51,.7);max-width:28ch}
+@media (max-width:900px){.dt-route li[aria-current] b{min-height:36px;padding:0 12px}}

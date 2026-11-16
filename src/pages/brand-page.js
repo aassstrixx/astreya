@@ -115,7 +115,7 @@ module.exports = function brandPage(ctx, C, P, b) {
     <section class="sec dtb-shelf" aria-label="Ассортимент">
       <div class="wrap">
         ${C.secHead('Ассортимент', `Товары ${esc(b.name)}`, C.lnk(catalogHref, 'В каталоге'))}
-        <div class="grid g3">${prods.map((p, k) => C.productCard(P, p, k)).join('')}</div>
+        <div class="grid g3">${prods.map((p, k) => C.productCardX(P, p, k)).join('')}</div>
       </div>
     </section>
 

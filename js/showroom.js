@@ -230,7 +230,7 @@
     c.classList.add('swap'); c._id = id; c._t = setTimeout(() => { c.innerHTML = cardHTML(P[id]); c.classList.remove('swap'); favSync(); A.cmpSync && A.cmpSync(); }, 230);
   }
   function preview(id) { if (!S || S.sel) return; clearTimeout(S.hovT); clearTimeout(S.cardT); S.hov = id; S.root.classList.add('has-hov'); S.items.forEach((r, k) => r.el.classList.toggle('is-hov', k === id)); if (S.stack) paintCard(id, false); else showTip(id); const rec = S.items.get(id), pd = rec && S.pods.find(q => q.g === rec.g); if (pd) pd.el.classList.add('is-lit'); }
-  function unpreview() { if (!S) return; clearTimeout(S.hovT); S.hovT = setTimeout(() => { if (!S) return; if (S.tipHover) return; S.hov = null; S.root.classList.remove('has-hov'); S.items.forEach(r => r.el.classList.remove('is-hov')); S.pods.forEach(q => q.el.classList.remove('is-lit')); hideTip(); if (S.stack && !S.sel) paintCard(S.defId, false); }, 170); }
+  function unpreview() { if (!S) return; clearTimeout(S.hovT); S.hovT = setTimeout(() => { if (!S) return; if (S.tipHover) return; S.hov = null; S.root.classList.remove('has-hov'); S.items.forEach(r => r.el.classList.remove('is-hov')); S.pods.forEach(q => q.el.classList.remove('is-lit')); hideTip(); if (S.stack && !S.sel) paintCard(S.defId, false); }, 460); }
 
   /* ---------- панель при наведении: название, бренд, краткое описание, назначение и три действия ---------- */
   function tipHTML(p) {
@@ -247,7 +247,7 @@
     tip.style.left = x.toFixed(1) + 'px'; tip.style.top = y.toFixed(1) + 'px'; tip.classList.toggle('on-left', !right);
     tip.classList.add('is-on');
   }
-  function hideTip() { const tip = S && S.tip; if (!tip || tip.hidden) return; tip.classList.remove('is-on'); clearTimeout(S.tipT); S.tipT = setTimeout(() => { if (S && S.tip && !S.tip.classList.contains('is-on')) { S.tip.hidden = true; S.tip._id = null; } }, 380); }
+  function hideTip() { const tip = S && S.tip; if (!tip || tip.hidden) return; tip.classList.remove('is-on'); clearTimeout(S.tipT); S.tipT = setTimeout(() => { if (S && S.tip && !S.tip.classList.contains('is-on')) { S.tip.hidden = true; S.tip._id = null; } }, 560); }
 
   /* ---------- выбор ---------- */
   function positionSel() {
@@ -362,7 +362,7 @@
     S = {root: rootEl, room: $('[data-shw-room]', rootEl), vw: $('.shw-vw', rootEl), view: $('[data-shw-view]', rootEl), stage: $('[data-shw-stage]', rootEl), card: $('[data-shw-card]', rootEl), pager: $('[data-shw-pager]', rootEl), pgText: $('[data-shw-pg]', rootEl), empty: $('[data-shw-empty]', rootEl),
       panel: $('.shw-aside .shw-panel', rootEl), hero: $('.shw-hero', rootEl), head: $('.shw-head', rootEl), aside: $('.shw-aside', rootEl), grid: $('#cat-grid'), ids: [], pageIds: [], page: 0, per: 10, W: 0, H: 0, s: 1, stack: false, panOn: false, centered: false, variant: 0, items: new Map(), pods: [], anims: new Set(), sel: null, hov: null, defId: null, rendered: false, rz: 0, rect: null};
     S.card.addEventListener('pointerenter', e => { if (e.pointerType === 'touch') return; S.cardHover = true; clearTimeout(S.cardT); });
-    S.card.addEventListener('pointerleave', e => { if (e.pointerType === 'touch') return; S.cardHover = false; clearTimeout(S.cardT); S.cardT = setTimeout(() => { if (S && !S.stack && !S.sel && !S.hov && !S.cardHover) paintCard(null); }, 380); });
+    S.card.addEventListener('pointerleave', e => { if (e.pointerType === 'touch') return; S.cardHover = false; clearTimeout(S.cardT); S.cardT = setTimeout(() => { if (S && !S.stack && !S.sel && !S.hov && !S.cardHover) paintCard(null); }, 700); });
     S.tip = document.createElement('div'); S.tip.className = 'shw-tip'; S.tip.hidden = true; S.tip.setAttribute('role', 'group'); S.tip.setAttribute('aria-label', 'Краткие сведения о товаре');
     S.tip.addEventListener('pointerenter', e => { if (e.pointerType === 'touch') return; S.tipHover = true; clearTimeout(S.hovT); clearTimeout(S.tipT); });
     S.tip.addEventListener('pointerleave', e => { if (e.pointerType === 'touch') return; S.tipHover = false; unpreview(); });
