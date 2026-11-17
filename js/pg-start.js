@@ -125,16 +125,15 @@
       const bg = $('.st-bg'), still = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce) and (min-width: 100000px)').matches;
       let gz = 0, px = 0, py = 0;
       const place = () => { const r = orb.getBoundingClientRect(), b = bg && bg.getBoundingClientRect(); if (bg && b && r.width) { bg.style.setProperty('--ox', Math.round(r.left + r.width / 2 - b.left) + 'px'); bg.style.setProperty('--oy', Math.round(r.top + r.height / 2 - b.top) + 'px'); } };
-      /* взгляд Стеллы: направление на курсор, амплитуда растёт с расстоянием (у самого орба — лёгкий поворот, от ~200 px — предел). Глаза едут на ±3,2 ед. вьюбокса (≈ ±17 px на орбе в 250 px),
-         лицо целиком — на 30 % от этого (поворот головы), поэтому щёки и рот чуть следуют за взглядом. Звёздочка и корпус стоят. Состояния «думает/спит» ведёт CSS. */
-      const AX = 3.2, AY = 2.5;
+      /* «взгляд» Стеллы: лицо целиком поворачивается к курсору, глаза на лице неподвижны (иначе они «разъезжаются» с ртом и щеками). Поворот зависит только от движения курсора: направление на курсор,
+         амплитуда растёт с расстоянием (предел ≈ 200 px) — до ±3,6 ед. вьюбокса по горизонтали и ±2,8 по вертикали (≈ ±19 px на орбе 250 px). Прокрутка страницы положение не меняет. «Думает/спит» ведёт CSS. */
+      const AX = 3.6, AY = 2.8;
       const look = () => { gz = 0; const svg = $('svg', orb), r = orb.getBoundingClientRect(); if (!svg || !r.width) return; const m = svg.getAttribute('data-m'); if (m === 'think' || m === 'sleep') return;
         const dx = px - (r.left + r.width * .5), dy = py - (r.top + r.height * .56), d = Math.hypot(dx, dy) || 1, a = Math.min(1, d / 200);
         svg.style.setProperty('--ex', (dx / d * Math.pow(a, .8) * AX).toFixed(2) + 'px'); svg.style.setProperty('--ey', (dy / d * Math.pow(a, .8) * AY).toFixed(2) + 'px'); };
       const rest = () => { const svg = $('svg', orb); if (svg) { svg.style.setProperty('--ex', '0px'); svg.style.setProperty('--ey', '0px'); } };
       if (!still) {
         on(window, 'pointermove', e => { if (e.pointerType === 'touch') return; px = e.clientX; py = e.clientY; M.seen = true; if (!gz) gz = requestAnimationFrame(look); }, {passive: true});
-        on(window, 'scroll', () => { if (M && M.seen && !gz) gz = requestAnimationFrame(look); }, {passive: true});          // страница уехала — взгляд остаётся на курсоре
         on(document.documentElement, 'mouseleave', () => { M.seen = false; rest(); });
       }
       on(window, 'resize', place, {passive: true}); place(); setTimeout(place, 400); setTimeout(place, 1600);

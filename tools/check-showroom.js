@@ -37,6 +37,8 @@ const items = p => p.evaluate(() => [...document.querySelectorAll('.shw-it:not(.
 const vis = p => p.evaluate(() => [...document.querySelectorAll('#cat-grid .pcard')].filter(c => !c.hidden).length);
 const setSel = (p, id, v) => p.evaluate(([i, val]) => { const s = document.getElementById(i); s.value = val; s.dispatchEvent(new Event('change', {bubbles: true})); }, [id, v]);
 const hv = async (p, sel) => { await p.evaluate(() => { if (window.scrollY > 0) window.scrollTo({top: 0, behavior: 'instant'}); }); await wait(120); const r = await p.evaluate(s => { const b = document.querySelector(s).getBoundingClientRect(); return {x: b.x + b.width / 2, y: b.y + b.height * .55}; }, sel); await p.mouse.move(r.x, r.y, {steps: 4}); };
+const viaCard = async (p, id, act) => { await p.mouse.move(2, 2); await wait(500); await p.evaluate(() => window.scrollTo({top: 0, behavior: 'instant'})); await wait(250); await p.click('.shw-it[data-id="' + id + '"]'); await wait(1500); await p.click('.shw-card [data-act="' + act + '"]'); await wait(500); };
+const closeCard = async p => { await p.keyboard.press('Escape'); await wait(1300); await p.mouse.move(2, 2); await wait(400); };
 const hvTip = async (p, id) => { for (let k = 0; k < 4; k++) { await p.evaluate(() => window.scrollTo({top: 0, behavior: 'instant'})); await wait(250); await hv(p, '.shw-it[data-id="' + id + '"]'); await wait(800); if (await p.evaluate(i => { const t = document.querySelector('.shw-tip'); return t._id === i && !t.hidden && t.classList.contains('is-on'); }, id)) return true; await p.mouse.move(2, 2); await wait(900); } return false; };
 const overflowX = p => p.evaluate(() => document.documentElement.scrollWidth - innerWidth);
 const stellaReply = async (p, ms) => { const t0 = Date.now(); let last = '', same = 0; while (Date.now() - t0 < (ms || 16000)) { await wait(500); const t = await p.evaluate(() => { const m = [...document.querySelectorAll('.asst-bub')].filter(x => !x.closest('.asst-u')); return m.length > 1 ? m[m.length - 1].textContent.replace(/\s+/g, ' ').trim() : ''; }); if (t && t === last) { if (++same >= 2) return t; } else { last = t; same = 0; } } return last; };
@@ -123,7 +125,7 @@ const userMsgs = p => p.evaluate(() => [...document.querySelectorAll('.asst-u .a
   ok(H.zoom > 1.04 && H.zoom < 1.1 && +H.gl > .9 && H.dim < .85 && H.dim > .5 && H.z === '60' && !H.label, 'наведение: товар выходит вперёд (z-index 60), приподнимается и увеличивается мягко (×' + H.zoom.toFixed(2) + ', 5–8 %), под ним включается свет; остальные теряют акцент (' + H.dim + '); подписи на предмете нет', H);
   const pname = PR.find(x => x.id === hid).name, pbrand = (JSON.parse(fs.readFileSync(path.join(ROOT, 'data/brands.json'), 'utf8')).find(b => b.id === PR.find(x => x.id === hid).brand) || {}).name;
   const TIP = await p.evaluate(s => { const t = document.querySelector('.shw-tip'), r = e => e.getBoundingClientRect(), tr = r(t), ir = r(document.querySelector(s)), pop = document.querySelector('.shw-pop'); return {on: t.classList.contains('is-on') && !t.hidden && +getComputedStyle(t).opacity > .9, name: (t.querySelector('.t-n') || {}).textContent, brand: (t.querySelector('.t-br') || {}).textContent, d: ((t.querySelector('.t-d') || {}).textContent || '').length, acts: [...t.querySelectorAll('.t-act [data-act]')].map(b => b.getAttribute('data-act')), overlap: !(tr.right < ir.left || tr.left > ir.right || tr.bottom < ir.top || tr.top > ir.bottom), fits: pop ? tr.bottom <= r(pop).top + 2 : true, price: /₽|руб|скидк|\d\s?%/i.test(t.textContent), card: !document.querySelector('.shw-card') || document.querySelector('.shw-card').hidden || document.querySelector('.shw-card').classList.contains('is-idle')}; }, sel);
-  ok(TIP.on && TIP.name === pname && TIP.brand === pbrand && TIP.d > 10 && TIP.acts.length === 3 && ['fav-toggle', 'cmp-toggle', 'qv-open'].every(a => TIP.acts.indexOf(a) >= 0), 'наведение: рядом проявляется полупрозрачная панель — название «' + pname + '», бренд, краткое описание и три действия (избранное, сравнение, подробнее)', TIP);
+  ok(TIP.on && TIP.name === pname && TIP.brand === pbrand && TIP.d > 10 && TIP.acts.length === 0, 'наведение: рядом проявляется полупрозрачная панель — название «' + pname + '», бренд, краткое описание и назначение; кнопок в ней нет (убраны по просьбе владельца)', TIP);
   ok(!TIP.overlap && TIP.fits && !TIP.price && TIP.card, 'панель не закрывает товар, целиком над рядом «Рекомендуем», без цен и скидок; боковая карточка при наведении не показывается', TIP);
   await p.mouse.move(2, 2); await wait(1600);
   ok(await p.evaluate(() => document.querySelector('.shw-card').hidden && document.querySelector('.shw-tip').hidden && !document.querySelector('.shw').classList.contains('has-sel') && document.querySelectorAll('.shw-it.is-hov').length === 0 && getComputedStyle(document.querySelector('.shw-it')).opacity === '1'), 'панель появляется только при наведении на предмет и плавно пропадает, когда курсор уходит: подсветка снята, остальные товары возвращают яркость');
@@ -149,9 +151,9 @@ const userMsgs = p => p.evaluate(() => [...document.querySelectorAll('.asst-u .a
   ok(F.open, '«Запросить» открывает форму заявки на товар', F); await p.keyboard.press('Escape'); await wait(700);
   await p.click(sel).catch(() => {}); await wait(900);
   if (!await p.evaluate(() => document.querySelector('.shw').classList.contains('has-sel'))) { await p.click(sel); await wait(900); }
-  await p.keyboard.press('Escape'); await wait(1200); await p.mouse.move(2, 2); await wait(900); await hv(p, sel); await wait(1100); await p.click('.shw-tip [data-act="qv-open"]'); await wait(1200);
+  await p.keyboard.press('Escape'); await wait(1200); await p.mouse.move(2, 2); await wait(900); await p.click('.shw-pop-t .shw-pc:nth-child(1) .shw-pc-ac [data-act="qv-open"]'); await wait(1200);
   const Q = await p.evaluate(() => ({open: document.querySelector('#modal').classList.contains('open'), art: !!document.querySelector('.qv-art .art-render img'), ask: !!document.querySelector('[data-act="qv-ask"]'), help: !!document.querySelector('[data-act="qv-stella"]')}));
-  ok(Q.open && Q.art && Q.ask && Q.help, 'быстрый просмотр открывается «глазом» панели при наведении, упаковка — тот же 3D-макет', Q); await p.keyboard.press('Escape'); await wait(800);
+  ok(Q.open && Q.art && Q.ask && Q.help, 'быстрый просмотр открывается «глазом» на полке «Рекомендуем», упаковка — тот же 3D-макет', Q); await p.keyboard.press('Escape'); await wait(800);
   await p.click(sel); await wait(900); if (!await p.evaluate(() => document.querySelector('.shw-card').classList.contains('is-open'))) { await p.click(sel); await wait(900); }
   await p.click('.shw-card [data-act="qv-stella"]'); const rep = await stellaReply(p, 20000); const um = await userMsgs(p);
   ok(um.length > 0 && /Помоги с подбором/.test(um[um.length - 1]) && rep.length > 30, 'Стелла: передан товар «' + pname + '», получен ответ (' + rep.slice(0, 50) + '…)', {um: um.slice(-1), rep: rep.slice(0, 80)});
@@ -166,18 +168,6 @@ const userMsgs = p => p.evaluate(() => [...document.querySelectorAll('.asst-u .a
   await p.mouse.move(1000, 300, {steps: 4}); await wait(500);
   const PXD = await p.evaluate(() => { const tx = k => parseFloat((getComputedStyle(document.querySelector('.shw-ly-' + k)).translate || '0').split(' ')[0]) || 0; return {px: +document.querySelector('.shw-view').style.getPropertyValue('--px'), shell: tx('shell'), dais: tx('dais'), plant: tx('plant'), stage: parseFloat((getComputedStyle(document.querySelector('.shw-stage')).translate || '0').split(' ')[0]) || 0}; });
   ok(!PXD.px && Math.abs(PXD.plant) < .01 && Math.abs(PXD.dais) < .01 && Math.abs(PXD.shell) < .01 && Math.abs(PXD.stage) < .01, 'курсор не двигает фон: --px не задаётся, слои зала (стена, подиумы, ваза) и сцена стоят на месте (параллакс убран по просьбе владельца)', PXD);
-  /* панель при наведении держится на пути к ней: по телу панели (кнопки — только верхняя строка) и на паузах; на соседний товар по дороге не прыгает */
-  await p.mouse.move(2, 2); await wait(1300);
-  const hid0 = (await st(p)).pageIds[3], sel0 = '.shw-it[data-id="' + hid0 + '"]';
-  const ri = await p.evaluate(s => { const r = document.querySelector(s).getBoundingClientRect(); return {x: r.x + r.width / 2, y: r.y + r.height / 2}; }, sel0);
-  await p.mouse.move(ri.x, ri.y, {steps: 4}); await wait(700);
-  const rt = await p.evaluate(() => { const r = document.querySelector('.shw-tip').getBoundingClientRect(); return {x: r.x + r.width * .5, y: r.y + r.height * .72}; });
-  let lost = false; for (let i = 1; i <= 12; i++) { await p.mouse.move(ri.x + (rt.x - ri.x) * i / 12, ri.y + (rt.y - ri.y) * i / 12); await wait(110); if (!await p.evaluate(() => document.querySelector('.shw-tip').classList.contains('is-on'))) lost = true; }
-  await wait(900);
-  const TH = await p.evaluate(() => ({on: document.querySelector('.shw-tip').classList.contains('is-on'), id: document.querySelector('.shw-tip')._id}));
-  ok(!lost && TH.on && TH.id === hid0, 'панель не пропадает на пути к ней и при остановке на её теле (кнопки — верхняя строка), на соседний товар по дороге не переключается', TH);
-  await p.mouse.move(2, 2, {steps: 5}); await wait(2300);
-  ok(!await p.evaluate(() => document.querySelector('.shw-tip').classList.contains('is-on')), 'курсор ушёл от панели и товара — панель скрывается');
   const hid2 = (await st(p)).pageIds[4], sel2 = '.shw-it[data-id="' + hid2 + '"]';
   const r0 = await p.evaluate(s => { const r = document.querySelector(s).getBoundingClientRect(); return {x: r.x, y: r.y, w: r.width}; }, sel2);
   await p.mouse.move(2, 2); await wait(1200);
@@ -213,9 +203,10 @@ const userMsgs = p => p.evaluate(() => [...document.querySelectorAll('.asst-u .a
   await p.click('.shw-favs'); await wait(500);
   ok(favBtn0.pressed === 'false' && favBtn0.n === '0' && await p.evaluate(() => document.querySelector('.shw-favs').getAttribute('aria-pressed')) === 'false', '«Только избранное» при пустом избранном ничего не прячет', favBtn0);
   const ids10 = (await st(p)).pageIds, fa = ids10[1], fb = ids10[5];
-  await hvTip(p, fa); await p.click('.shw-tip [data-act="fav-toggle"]'); await wait(500);
-  const FV1 = await p.evaluate(a => ({ls: JSON.parse(localStorage.getItem('astreya:fav') || '[]'), n: document.querySelector('[data-shw-favn]').textContent, tip: document.querySelector('.shw-tip [data-act="fav-toggle"]').getAttribute('aria-pressed'), has: document.querySelector('.shw-favs').classList.contains('has')}), fa);
-  ok(FV1.ls.length === 1 && FV1.ls[0] === fa && FV1.n === '1' && FV1.tip === 'true' && FV1.has, 'избранное: сердечко в панели добавляет товар (хранится в браузере), счётчик в левой панели = 1', FV1);
+  await viaCard(p, fa, 'fav-toggle');
+  const FV1 = await p.evaluate(a => ({ls: JSON.parse(localStorage.getItem('astreya:fav') || '[]'), n: document.querySelector('[data-shw-favn]').textContent, tip: document.querySelector('.shw-card [data-act="fav-toggle"]').getAttribute('aria-pressed'), has: document.querySelector('.shw-favs').classList.contains('has')}), fa);
+  ok(FV1.ls.length === 1 && FV1.ls[0] === fa && FV1.n === '1' && FV1.tip === 'true' && FV1.has, 'избранное: «В избранное» в карточке добавляет товар (хранится в браузере), счётчик в левой панели = 1', FV1);
+  await closeCard(p);
   await p.mouse.move(2, 2); await wait(700); await p.click('.shw-it[data-id="' + fb + '"]'); await wait(1400);
   await p.evaluate(() => document.querySelector('.shw-card .c-fav').click()); await wait(500);
   const FV2 = await p.evaluate(() => ({ls: JSON.parse(localStorage.getItem('astreya:fav') || '[]'), n: document.querySelector('[data-shw-favn]').textContent}));
@@ -226,13 +217,13 @@ const userMsgs = p => p.evaluate(() => [...document.querySelectorAll('.asst-u .a
   ok(FV3.on === 'true' && FV3.ids.length === 2 && FV3.ids.indexOf(fa) >= 0 && FV3.ids.indexOf(fb) >= 0, 'фильтр «Только избранное»: в экспозиции остаются только отмеченные товары (' + FV3.ids.length + ')', FV3);
   await p.click('.shw-favs'); await wait(2800);
   ok((await items(p)).length === PAGE, 'повторное нажатие возвращает всю экспозицию');
-  await hvTip(p, fa); await p.click('.shw-tip [data-act="fav-toggle"]'); await wait(400);
-  await p.mouse.move(2, 2); await wait(600); await hvTip(p, fb); await p.click('.shw-tip [data-act="fav-toggle"]'); await wait(400);
+  await viaCard(p, fa, 'fav-toggle'); await closeCard(p);
+  await viaCard(p, fb, 'fav-toggle'); await closeCard(p);
   ok(await p.evaluate(() => JSON.parse(localStorage.getItem('astreya:fav') || '[]').length) === 0, 'повторное нажатие на сердечко убирает товар из избранного');
-  await p.mouse.move(2, 2); await wait(600); await hvTip(p, fa); await p.click('.shw-tip [data-act="cmp-toggle"]'); await wait(500);
-  const CM1 = await p.evaluate(a => ({ls: JSON.parse(localStorage.getItem('astreya:cmp') || '[]'), tip: document.querySelector('.shw-tip [data-act="cmp-toggle"]').getAttribute('aria-pressed'), bar: !document.querySelector('.cmp-bar, [data-cmp-bar]') || true}), fa);
-  ok(CM1.ls.length === 1 && CM1.ls[0] === fa && CM1.tip === 'true', 'сравнение: кнопка в панели при наведении добавляет товар в общий список сравнения сайта', CM1);
-  await p.click('.shw-tip [data-act="cmp-toggle"]'); await wait(400);
+  await viaCard(p, fa, 'cmp-toggle');
+  const CM1 = await p.evaluate(a => ({ls: JSON.parse(localStorage.getItem('astreya:cmp') || '[]'), tip: document.querySelector('.shw-card [data-act="cmp-toggle"]').getAttribute('aria-pressed'), bar: !document.querySelector('.cmp-bar, [data-cmp-bar]') || true}), fa);
+  ok(CM1.ls.length === 1 && CM1.ls[0] === fa && CM1.tip === 'true', 'сравнение: кнопка «Сравнить» в карточке добавляет товар в общий список сравнения сайта', CM1);
+  await p.click('.shw-card [data-act="cmp-toggle"]'); await wait(400); await closeCard(p);
   ok(await p.evaluate(() => JSON.parse(localStorage.getItem('astreya:cmp') || '[]').length) === 0, 'сравнение: повторное нажатие убирает товар');
 
   /* «Рекомендуем»: полки с нишами и цоколями разной высоты */
