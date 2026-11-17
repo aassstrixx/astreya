@@ -1,6 +1,6 @@
-"""Чистка стены в слое assets/showroom/layer-shell.webp: убирает две тонкие тёмные дуги-«волоски» на штукатурке (след рендера) слева над плинтусом.
-Дуга ведётся по контрольным точкам, уточняется по минимуму яркости поперёк линии, затем закрашивается: низкие частоты — cv2.inpaint, зерно штукатурки — из соседнего участка.
-Запуск: python3 tools/showroom-assets/clean_wall.py [--preview out.png]"""
+"""Чистка стены в слое assets/showroom/layer-shell.webp: убирает тонкое тёмное кольцо-«волосок» вокруг места, где в рендере стояла ваза-шар (контур убранного объекта, радиус ≈ 233 px слоя, центр ≈ (780, 1160)).
+Кольцо не двигается вместе с шаром при наезде камеры (слой стены масштабируется меньше), поэтому «волосики» отрывались от шара. Закрашивается весь видимый на стене дуговой участок:
+низкие частоты — cv2.inpaint, зерно штукатурки — из соседнего участка (радиальный сдвиг 22 px).  Запуск: python3 tools/showroom-assets/clean_wall.py [--preview out.png]"""
 import cv2, numpy as np, os, sys
 from PIL import Image
 
@@ -9,44 +9,30 @@ SRC = os.path.join(ROOT, 'assets', 'showroom', 'layer-shell.webp')
 ORIG = os.path.join(os.path.dirname(__file__), 'orig', 'layer-shell.webp')
 img = cv2.cvtColor(np.array(Image.open(ORIG).convert('RGB')), cv2.COLOR_RGB2BGR); H, W = img.shape[:2]
 g = cv2.GaussianBlur(cv2.cvtColor(img, cv2.COLOR_BGR2GRAY).astype(np.float32), (0, 0), 1.2)
+CX, CY, R = 780.43, 1160.40, 233.17                              # кольцо: подгонка окружности по двум видимым дугам
+TH0, TH1 = 170, 352                                              # углы (градусы, ось y вниз), где кольцо видно на стене/плинтусе (ниже — пол в тенях, там это не «волосок»)
 
-# контрольные точки дуг (пиксели слоя 3072×2048) и сдвиг, из которого берётся зерно (перпендикулярно дуге, 24 px)
-ARCS = {
-    'left': dict(pts=[(565, 1072), (580, 1035), (602, 1011), (631, 984), (651, 969), (670, 956), (691, 945)], shift=(14, 20)),
-    'right': dict(pts=[(803, 924), (840, 934), (870, 945), (905, 965), (940, 995), (965, 1020), (986, 1044)], shift=(-11, 21)),
-}
-
-def refine(pts, rad=6):
-    """точки вдоль ломаной с шагом 2 px; каждая сдвигается по нормали к минимуму яркости (±rad), смещения сглаживаются"""
-    pts = np.array(pts, np.float64); seg = np.hypot(*np.diff(pts, axis=0).T); L = np.r_[0, np.cumsum(seg)]
-    t = np.arange(0, L[-1], 2.0); x = np.interp(t, L, pts[:, 0]); y = np.interp(t, L, pts[:, 1])
-    dx, dy = np.gradient(x), np.gradient(y); n = np.hypot(dx, dy); nx, ny = -dy / n, dx / n
-    off = np.zeros(len(t))
-    for i in range(len(t)):
-        best, bv = 0, 1e9
-        for o in np.arange(-rad, rad + .1, .5):
-            px, py = x[i] + nx[i] * o, y[i] + ny[i] * o
-            v = cv2.getRectSubPix(g, (1, 1), (float(px), float(py)))[0, 0]
-            if v < bv: bv, best = v, o
-        off[i] = best
-    off = cv2.GaussianBlur(off.reshape(-1, 1).astype(np.float32), (1, 0), sigmaX=0.1, sigmaY=6).ravel()      # сглаживание вдоль дуги
-    return np.c_[x + nx * off, y + ny * off]
-
-work = img.astype(np.float32).copy()
-for name, cfg in ARCS.items():
-    line = refine(cfg['pts']); m = np.zeros((H, W), np.uint8)
-    cv2.polylines(m, [np.round(line).astype(np.int32).reshape(-1, 1, 2)], False, 255, 7, cv2.LINE_AA)
-    m = (m > 0).astype(np.uint8)
-    low = cv2.inpaint(img, cv2.dilate(m, np.ones((3, 3), np.uint8)) * 255, 6, cv2.INPAINT_TELEA).astype(np.float32)
-    lowb = cv2.GaussianBlur(low, (0, 0), 2.4)
-    hf = img.astype(np.float32) - cv2.GaussianBlur(img.astype(np.float32), (0, 0), 2.4)                       # зерно штукатурки
-    dx, dy = cfg['shift']; hfs = np.roll(np.roll(hf, -dy, 0), -dx, 1)
-    fill = lowb + hfs
-    mf = np.clip(cv2.GaussianBlur(cv2.dilate(m, np.ones((3, 3), np.uint8)).astype(np.float32), (0, 0), 1.6)[..., None] * 1.3, 0, 1)
-    work = work * (1 - mf) + fill * mf
-    print(name, 'точек', len(line), 'пикселей маски', int(m.sum()))
+th = np.deg2rad(np.arange(TH0, TH1 + .01, .25)); rad = np.zeros(len(th))
+for i, a in enumerate(th):                                       # радиус кольца в каждом угле: минимум яркости поперёк
+    nx, ny = np.cos(a), np.sin(a); best, bv = 0.0, 1e9
+    for o in np.arange(-6, 6.1, .5):
+        v = cv2.getRectSubPix(g, (1, 1), (float(CX + (R + o) * nx), float(CY + (R + o) * ny)))[0, 0]
+        if v < bv: bv, best = v, o
+    rad[i] = best
+k = 25; pad = np.pad(rad, k // 2, mode='edge'); rad = np.array([np.median(pad[i:i + k]) for i in range(len(rad))])      # медиана — устойчиво к зерну
+rad = np.convolve(np.pad(rad, 8, mode='edge'), np.ones(17) / 17, mode='valid')                                         # плавная кривая
+line = np.c_[CX + (R + rad) * np.cos(th), CY + (R + rad) * np.sin(th)]
+m = np.zeros((H, W), np.uint8); cv2.polylines(m, [np.round(line).astype(np.int32).reshape(-1, 1, 2)], False, 255, 7, cv2.LINE_AA); m = (m > 0).astype(np.uint8)
+low = cv2.inpaint(img, cv2.dilate(m, np.ones((3, 3), np.uint8)) * 255, 6, cv2.INPAINT_TELEA).astype(np.float32)
+lowb = cv2.GaussianBlur(low, (0, 0), 2.4)
+f = img.astype(np.float32); hf = f - cv2.GaussianBlur(f, (0, 0), 2.4)                                                   # зерно штукатурки
+yy, xx = np.mgrid[0:H, 0:W].astype(np.float32); dx, dy = xx - CX, yy - CY; n = np.maximum(np.hypot(dx, dy), 1)
+hfs = cv2.remap(hf, xx + 22 * dx / n, yy + 22 * dy / n, cv2.INTER_LINEAR, borderMode=cv2.BORDER_REPLICATE)               # источник зерна — на 22 px дальше от центра, вне кольца
+mf = np.clip(cv2.GaussianBlur(cv2.dilate(m, np.ones((3, 3), np.uint8)).astype(np.float32), (0, 0), 1.6)[..., None] * 1.3, 0, 1)
+work = f * (1 - mf) + (lowb + hfs) * mf
+print('кольцо: точек', len(line), 'пикселей маски', int(m.sum()))
 out = cv2.cvtColor(np.clip(work, 0, 255).astype(np.uint8), cv2.COLOR_BGR2RGB)
 Image.fromarray(out).save(SRC, quality=90, method=6); print('layer-shell.webp', os.path.getsize(SRC) // 1024, 'КБ')
 if '--preview' in sys.argv:
     from PIL import ImageEnhance
-    c = Image.fromarray(out).crop((560, 880, 1060, 1180)); c = ImageEnhance.Contrast(c).enhance(2.2).resize((1000, 600), Image.LANCZOS); c.save(sys.argv[sys.argv.index('--preview') + 1])
+    c = Image.fromarray(out).crop((520, 880, 1060, 1200)); c = ImageEnhance.Contrast(c).enhance(2.4).resize((1080, 640), Image.LANCZOS); c.save(sys.argv[sys.argv.index('--preview') + 1])
