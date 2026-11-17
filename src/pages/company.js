@@ -105,7 +105,7 @@ module.exports = function company(ctx, C, P) {
   </section>
 
   <section class="ca-s ca-stats" id="ca-stats" data-scene="2" data-title="В цифрах" aria-label="Астрея в цифрах">
-    <i class="ca-spark" aria-hidden="true"><svg viewBox="0 0 120 60" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round"><path d="M0 30h46M74 30h46"/><path d="M60 6c1 14 6 20 16 24-10 4-15 10-16 24-1-14-6-20-16-24 10-4 15-10 16-24z" fill="currentColor" fill-opacity=".14"/></svg></i>
+    
     <ul class="ca-in ca-stl">${stats.map(([n, sf, t], i) => `<li class="ca-stat reveal"><b><span>${n}</span>${sf}</b><span>${esc(t)}</span></li>`).join('')}</ul>
   </section>
 
