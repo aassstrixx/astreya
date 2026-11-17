@@ -44,10 +44,7 @@ body[data-page="company"] #main{background:linear-gradient(180deg,#f4ecdc 0,#f5e
 .ca-copy{max-width:min(100%,38em)}
 .ca-copy h1{margin-top:20px;font-size:clamp(30px,3.3vw,60px);line-height:1.06;letter-spacing:-.018em;max-width:14ch}
 .ca-lead{margin-top:16px;max-width:36ch;color:#2c364c;font-size:var(--f-b);line-height:1.55}
-/* Плавное появление (просьба владельца 17.11: «плавнее, не резко, текст появляется плавно, а не по буквам»): блоки и заголовок первого экрана проявляются целиком, без разбиения на слова;
-   сдвиг меньше и мягче, проявление дольше (прозрачность 1,6 с, сдвиг 1,9 с), кривая мягкого замедления (--ac-soft) */
-html.js .ca .reveal{translate:0 26px;transition:opacity 1.6s var(--ac-soft) var(--rd,0ms),translate 1.9s var(--ac-soft) var(--rd,0ms),scale 1.9s var(--ac-soft) var(--rd,0ms),transform .45s var(--ease-out),box-shadow .45s var(--ease),background-color .3s,border-color .3s,color .3s}
-html.js .ca .reveal.in{opacity:1;translate:0 0}
+/* Проявление блоков — общая система сайта (css/motion.css, js/motion.js), без собственных значений: те же время, сдвиг и кривая, что на «Обучении» */
 
 /* ---------- 2. Астрея в цифрах ---------- */
 .ca-stats{padding:clamp(18px,2.2vw,34px) 0;background:linear-gradient(180deg,rgba(255,252,243,0),rgba(255,252,243,.5) 50%,rgba(255,252,243,0));overflow:hidden}
@@ -95,7 +92,7 @@ html.js .ca .reveal.in{opacity:1;translate:0 0}
 
 /* ---------- 5. философия и преимущества ---------- */
 .ca-phil{padding:clamp(36px,4.4vw,72px) 0;background:linear-gradient(180deg,rgba(236,222,190,0),rgba(236,222,190,.42) 45%,rgba(236,222,190,0));overflow:hidden;isolation:isolate}
-.ca-ribbon{position:absolute;right:-4%;top:0;width:64%;height:100%;z-index:-1;background:url(../assets/bg/silk-t.webp?v=3085414d) 50% 50%/cover no-repeat;opacity:.5;-webkit-mask-image:radial-gradient(ellipse 50% 50% at 50% 50%,#000 28%,rgba(0,0,0,.5) 62%,rgba(0,0,0,0) 100%);mask-image:radial-gradient(ellipse 50% 50% at 50% 50%,#000 28%,rgba(0,0,0,.5) 62%,rgba(0,0,0,0) 100%);pointer-events:none}
+.ca-ribbon{position:absolute;right:-4%;top:0;width:64%;height:100%;z-index:-1;background:url(../assets/bg/silk-t.webp?v=d1a5dea1) 50% 50%/cover no-repeat;opacity:.5;-webkit-mask-image:radial-gradient(ellipse 50% 50% at 50% 50%,#000 28%,rgba(0,0,0,.5) 62%,rgba(0,0,0,0) 100%);mask-image:radial-gradient(ellipse 50% 50% at 50% 50%,#000 28%,rgba(0,0,0,.5) 62%,rgba(0,0,0,0) 100%);pointer-events:none}
 .ca-phil-in{display:grid;grid-template-columns:minmax(0,.95fr) minmax(0,1.75fr);gap:clamp(18px,3.2vw,60px);align-items:center}
 .ca-phil-t h2{font-size:clamp(26px,2.9vw,50px);line-height:1.12;max-width:11em}
 .ca-adv{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));border-radius:16px;background:rgba(251,247,236,.7);box-shadow:inset 0 0 0 1px var(--line)}
@@ -195,9 +192,4 @@ html.js .ca .reveal.in{opacity:1;translate:0 0}
   .ca-bgrid{grid-template-columns:repeat(2,minmax(0,1fr))}.ca-bc:nth-child(3n){border-right:1px solid var(--line)}.ca-bc:nth-child(2n){border-right:0}.ca-bc:nth-last-child(-n+3){border-bottom:1px solid var(--line)}.ca-bc:nth-last-child(-n+1){border-bottom:0}
   .ca-adv{grid-template-columns:minmax(0,1fr)}.ca-av:nth-child(n){border-left:0}.ca-av:nth-child(n+2){border-top:1px solid var(--line)}
   .ca-fin-b .ca-btn{flex:1 1 100%}
-}
-@media (prefers-reduced-motion:reduce){
-  .ca *,.ca *::before,.ca *::after{animation:none !important;transition-duration:.01ms !important}
-  html.js .ca-map.reveal .ca-mw{opacity:1;scale:1}html.js .ca-map.reveal .l{fill-opacity:1}
-  html.js .ca-stat+.ca-stat::before{transform:scaleY(1)}
 }

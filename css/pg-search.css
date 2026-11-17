@@ -92,7 +92,7 @@ body[data-page="search"] .nav a.nl:hover,body[data-page="search"] .nav a.nl.on{c
   .qx-page .s-tabs .chip{flex:none}
 }
 @media print{.qx-bg,.qx-form,.qx-hints,.s-tabs{display:none!important}.qx-page{margin-top:0}}
-@media (prefers-reduced-motion:reduce){.qx-page *{transition-duration:.01ms!important}}
+@media (prefers-reduced-motion:reduce) and (min-width:100000px){.qx-page *{transition-duration:.01ms!important}}
 .qx-bg-img{transform:scaleX(-1)}
 
 /* фоновые текстуры (общая система backdrops): обёртка прозрачна, цвет страницы лежит на #main, текстурные полосы лежат над ним и под содержимым */

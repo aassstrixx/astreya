@@ -80,5 +80,5 @@ body[data-page="notfound"] .nav a.nl:hover,body[data-page="notfound"] .nav a.nl.
   .nf-home{width:100%;justify-content:center}
 }
 @media print{.nf-bg,.nf-orb,.nf-form,.nf-hints{display:none!important}.nf-page{margin-top:0}}
-@media (prefers-reduced-motion:reduce){.nf-orb::before,.nf-orb svg,.nf-orb::after{animation:none}.nf-orb::after{opacity:1}.nf-page *{transition-duration:.01ms!important}}
+@media (prefers-reduced-motion:reduce) and (min-width:100000px){.nf-orb::before,.nf-orb svg,.nf-orb::after{animation:none}.nf-orb::after{opacity:1}.nf-page *{transition-duration:.01ms!important}}
 .nf-in>*:not(.nf-orb){margin-left:0;margin-right:auto}

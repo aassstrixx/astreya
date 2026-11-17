@@ -14,7 +14,6 @@
     if (td) td();
     root.setAttribute('data-ca-bound', '1'); root.classList.add('is-js');
     const off = [], on = (t, ev, fn, o) => { t.addEventListener(ev, fn, o); off.push(() => t.removeEventListener(ev, fn, o)); };
-    const mq = window.matchMedia ? window.matchMedia('(prefers-reduced-motion: reduce)') : null, still = !!(mq && mq.matches);
     const tick = {raf: 0};
     const alive = () => root.isConnected && document.body.getAttribute('data-page') === 'company';
 

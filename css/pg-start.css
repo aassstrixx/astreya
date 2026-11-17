@@ -336,4 +336,4 @@ body[data-page="start"] .nav a.nl:hover,body[data-page="start"] .nav a.nl.on{col
 .st-wash{background:linear-gradient(90deg,rgba(250,246,236,.74) 0,rgba(250,246,236,.5) 34%,rgba(250,246,236,0) 60%),linear-gradient(180deg,rgba(247,242,230,.55) 0,rgba(247,242,230,0) 24%)}
 
 /* фоновые текстуры (общая система backdrops): обёртка прозрачна, цвет страницы лежит на #main, текстурные полосы лежат над ним и под содержимым */
-.st-bg::after{content:"";position:absolute;inset:0;pointer-events:none;background:url(../assets/bg/silk-t.webp?v=3085414d) 50% 40%/cover no-repeat;opacity:.38}
+.st-bg::after{content:"";position:absolute;inset:0;pointer-events:none;background:url(../assets/bg/silk-t.webp?v=d1a5dea1) 50% 40%/cover no-repeat;opacity:.38}

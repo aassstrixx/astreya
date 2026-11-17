@@ -86,7 +86,7 @@ body[data-page="privacy"] .hdr .logo,body[data-page="terms"] .hdr .logo,body[dat
   .lg-foot .btn{flex:1 1 auto;justify-content:center}
 }
 @media print{.lg-band,.lg-side,.lg-foot,.lg-ver{display:none!important}.lg-page{margin-top:0}.lg-main{box-shadow:none;border:0;padding:0}.lg-cols{display:block}}
-@media (prefers-reduced-motion:reduce){.lg-page *{transition-duration:.01ms!important}}
+@media (prefers-reduced-motion:reduce) and (min-width:100000px){.lg-page *{transition-duration:.01ms!important}}
 .lg-band-img{transform:scaleX(-1)}
 @media (max-width:760px){.lg-page .legal-body table{display:block;overflow-x:auto;-webkit-overflow-scrolling:touch}.lg-page .legal-body th,.lg-page .legal-body td{min-width:150px;hyphens:manual}}
 

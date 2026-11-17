@@ -4,7 +4,7 @@
    Данные — из прежних источников (data/content.json → company, advantages; data/brands.json; data/site.json → offices/contacts; data/events.json); ничего не выдумано: города проведения
    семинаров не названы офисами. Оформление — css/company-atrium.css (всё под .ca), поведение — js/company-atrium.js (без JS страница читаема).
    Крючки: h2 «Астрея по всей России» — к нему js/sales-pages.js пристраивает «Ваш регион»; блок преимуществ помечен data-sx-mod="trust" (продающий слой не дублирует «Почему доверять»);
-   data-sx-closing="company-cta" в заключении; Стелла — только data-act="asst-open"; все data-track сохранены. Первый экран — атриум на весь экран (assets/company/atrium-v2*.webp, шапка прозрачная поверх него),
+   data-sx-closing="company-cta" в заключении; Стелла — только data-act="asst-open"; все data-track сохранены. Первый экран — атриум на весь экран (assets/company/atrium-v3*.webp, шапка прозрачная поверх него),
    тот же кадр — фон заключения под тёмной вуалью: так страница выглядела до v4 и так её просил владелец (в v4 я по ошибке заменил его предметной композицией; возвращено 17.11.2026). */
 const fs = require('fs');
 const path = require('path');
@@ -32,7 +32,7 @@ module.exports = function company(ctx, C, P) {
   const img = (f, w, h, cls, alt, pos) => `<img${cls ? ` class="${cls}"` : ''} src="${u(f)}" alt="${esc(alt || '')}" width="${w}" height="${h}" loading="lazy" decoding="async"${pos ? ` style="object-position:${pos}"` : ''}>`;
 
   /* ---- 1 · портрет компании ---- */
-  const heroArt = `<picture><source media="(max-width:760px)" srcset="${u('assets/company/atrium-v2-m.webp')}"><img src="${u('assets/company/atrium-v2-s.webp')}" srcset="${u('assets/company/atrium-v2-s.webp')} 1200w, ${u('assets/company/atrium-v2.webp')} 2400w" sizes="100vw" alt="" width="2400" height="1350" fetchpriority="high" decoding="async"></picture>`;
+  const heroArt = `<picture><source media="(max-width:760px)" srcset="${u('assets/company/atrium-v3-m.webp')}"><img src="${u('assets/company/atrium-v3-s.webp')}" srcset="${u('assets/company/atrium-v3-s.webp')} 1200w, ${u('assets/company/atrium-v3.webp')} 2400w" sizes="100vw" alt="" width="2400" height="1350" fetchpriority="high" decoding="async"></picture>`;
 
   /* ---- 2 · в цифрах ---- */
   const stats = [[brands.length, '', 'Брендов и линий'], [ctx.products.length, '', 'Позиций в каталоге'], [20, '+', 'Лет развития методики семинаров'], [4, '', 'Города проведения семинаров и онлайн']];
@@ -74,30 +74,30 @@ module.exports = function company(ctx, C, P) {
     {ic: globe, k: 'Онлайн', t: 'по всей России', d: 'Вебинары и онлайн-мероприятия учебного центра'}];
 
   /* ---- 7 · заключение ---- */
-  const finImg = has('assets/company/atrium-v2.webp') ? 'assets/company/atrium-v2.webp' : 'assets/company/atrium.webp';
+  const finImg = has('assets/company/atrium-v3.webp') ? 'assets/company/atrium-v3.webp' : 'assets/company/atrium.webp';
 
   return `<div class="ca" data-ca>
   <section class="ca-s ca-hero" id="ca-entry" data-scene="1" data-title="О компании" aria-labelledby="ca-h1">
     <div class="ca-hero-art" aria-hidden="true">${heroArt}<i class="ca-hero-veil"></i></div>
     <div class="ca-in ca-hero-in">
-      <div class="ca-copy" data-ca-copy>
-        <span class="ca-eyebrow reveal">О компании</span>
-        <h1 id="ca-h1" class="reveal" data-nosplit>Астрея — пространство профессиональной косметологии</h1>
-        <p class="ca-lead reveal">Мы объединяем ведущие бренды, экспертизу и современные технологии, чтобы создавать красоту, вдохновлять и развивать индустрию.</p>
-        <div class="ca-cta reveal"><a class="ca-btn-o" href="#ca-stats" data-act="scroll" data-target="ca-stats" data-track="company_intro" data-place="company-hero"><span>Узнать больше</span>${arrow}</a></div>
+      <div class="ca-copy reveal" data-ca-copy>
+        <span class="ca-eyebrow">О компании</span>
+        <h1 id="ca-h1" data-nosplit>Астрея — пространство профессиональной косметологии</h1>
+        <p class="ca-lead">Мы объединяем ведущие бренды, экспертизу и современные технологии, чтобы создавать красоту, вдохновлять и развивать индустрию.</p>
+        <div class="ca-cta"><a class="ca-btn-o" href="#ca-stats" data-act="scroll" data-target="ca-stats" data-track="company_intro" data-place="company-hero"><span>Узнать больше</span>${arrow}</a></div>
       </div>
     </div>
   </section>
 
   <section class="ca-s ca-stats" id="ca-stats" data-scene="2" data-title="В цифрах" aria-label="Астрея в цифрах">
     <i class="ca-spark" aria-hidden="true"><svg viewBox="0 0 120 60" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round"><path d="M0 30h46M74 30h46"/><path d="M60 6c1 14 6 20 16 24-10 4-15 10-16 24-1-14-6-20-16-24 10-4 15-10 16-24z" fill="currentColor" fill-opacity=".14"/></svg></i>
-    <ul class="ca-in ca-stl">${stats.map(([n, sf, t], i) => `<li class="ca-stat reveal"><b><span data-count="${n}">${n}</span>${sf}</b><span>${esc(t)}</span></li>`).join('')}</ul>
+    <ul class="ca-in ca-stl reveal">${stats.map(([n, sf, t], i) => `<li class="ca-stat"><b><span>${n}</span>${sf}</b><span>${esc(t)}</span></li>`).join('')}</ul>
   </section>
 
   <section class="ca-s ca-dirs" id="ca-niches" data-scene="3" data-title="Направления" aria-labelledby="ca-h2">
     <div class="ca-in ca-dir-in">
       <header class="ca-dirs-h reveal"><span class="ca-eyebrow">Направления деятельности</span><h2 id="ca-h2">Комплексный подход к красоте и развитию</h2></header>
-      <ul class="ca-dl">${dirs.map((d, i) => `<li class="ca-dc reveal"><a href="${d.href}" data-track="${d.tr}" data-place="${d.pl}" aria-label="${esc(d.t)}">
+      <ul class="ca-dl reveal">${dirs.map((d, i) => `<li class="ca-dc"><a href="${d.href}" data-track="${d.tr}" data-place="${d.pl}" aria-label="${esc(d.t)}">
         <span class="ca-dpw">${d.pic}</span><span class="ca-dt"><b>${esc(d.t)}</b><small>${esc(d.p)}</small></span><span class="ca-go" aria-hidden="true">${arrow}</span></a></li>`).join('')}</ul>
     </div>
   </section>
@@ -137,7 +137,7 @@ module.exports = function company(ctx, C, P) {
         <figcaption><span><i class="d-o"></i>Офис</span><span><i class="d-s"></i>Город проведения семинаров</span></figcaption>
       </figure>
       <div class="ca-geo-r">
-        <ul class="ca-gi">${geoItems.map((g, i) => `<li class="ca-gic reveal"><span class="ca-gii${g.hollow ? ' is-h' : ''}" aria-hidden="true">${g.ic}</span><div><b>${esc(g.k)}</b> <span>${esc(g.t)}</span><small>${esc(g.d)}</small></div></li>`).join('')}</ul>
+        <ul class="ca-gi reveal">${geoItems.map((g, i) => `<li class="ca-gic"><span class="ca-gii${g.hollow ? ' is-h' : ''}" aria-hidden="true">${g.ic}</span><div><b>${esc(g.k)}</b> <span>${esc(g.t)}</span><small>${esc(g.d)}</small></div></li>`).join('')}</ul>
         <div class="ca-phr reveal" aria-hidden="true"><figure class="ca-ph">${img('assets/news/ph-seminar-a.webp', 960, 540, '', '', '50% 40%')}</figure><figure class="ca-ph">${img('assets/news/ph-seminar-b.webp', 960, 540, '', '', '50% 40%')}</figure></div>
       </div>
     </div>

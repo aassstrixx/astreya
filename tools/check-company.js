@@ -55,12 +55,12 @@ const rub = n => new Intl.NumberFormat('ru-RU').format(n).replace(/[  ]/g, ' ') 
   t(nbsp(hero.lead) === H.lead, 'раздел 1: подводка по ТЗ', hero.lead);
   t(nbsp(hero.btn) === 'Узнать больше' && hero.target === 'ca-stats', 'раздел 1: кнопка «Узнать больше» ведёт к цифрам', hero);
   t(hero.h >= 620 && hero.h <= 1000, 'раздел 1: атриум на весь экран (как просил владелец)', hero.h);
-  t(hero.anyArt && hero.art && /atrium-v2/.test(await p.evaluate(() => document.querySelector('#ca-entry .ca-hero-art img').currentSrc)), 'раздел 1: фоном — атриум (assets/company/atrium-v2*), картинка загружена');
+  t(hero.anyArt && hero.art && /atrium-v3/.test(await p.evaluate(() => document.querySelector('#ca-entry .ca-hero-art img').currentSrc)), 'раздел 1: фоном — атриум (assets/company/atrium-v3*), картинка загружена');
   t(await p.evaluate(() => { const h = document.querySelector('.hdr'); return !!h && getComputedStyle(h).backgroundColor === 'rgba(0, 0, 0, 0)'; }), 'раздел 1: шапка прозрачная поверх атриума');
 
   /* 2 · цифры */
   await scrollTo(p, '#ca-stats'); await p.waitForTimeout(1800);
-  const st = await p.evaluate(() => { const li = [...document.querySelectorAll('.ca-stat')]; return {n: li.length, h: Math.round(document.querySelector('#ca-stats').getBoundingClientRect().height), labels: li.map(e => e.querySelector('span:not([data-count])').textContent.trim()), vals: li.map(e => e.querySelector('b').textContent.replace(/\s/g, '')),
+  const st = await p.evaluate(() => { const li = [...document.querySelectorAll('.ca-stat')]; return {n: li.length, h: Math.round(document.querySelector('#ca-stats').getBoundingClientRect().height), labels: li.map(e => e.querySelector(':scope > span').textContent.trim()), vals: li.map(e => e.querySelector('b').textContent.replace(/\s/g, '')),
     products: (window.ASTREYA_DATA.products || []).length, sep: li.slice(1).map(e => getComputedStyle(e, '::before').transform), cols: li.map(e => Math.round(e.getBoundingClientRect().top))}; });
   t(st.n === 4 && st.labels.every((l, i) => nbsp(l) === H.stats[i]), 'раздел 2: четыре показателя с подписями по ТЗ', st.labels);
   t(st.vals[0] === String(BR.length) && st.vals[1] === String(st.products) && st.vals[2] === '20+' && st.vals[3] === '4', 'раздел 2: значения — из данных (бренды, позиции каталога), 20+ и 4', st.vals);
@@ -151,6 +151,8 @@ const rub = n => new Intl.NumberFormat('ru-RU').format(n).replace(/[  ]/g, ' ') 
   p = await open(1440, 900, {reduced: true}); await p.evaluate(() => window.scrollTo({top: 500, behavior: 'instant'})); await p.waitForTimeout(800);
   const rm = await p.evaluate(() => ({anim: getComputedStyle(document.querySelector('.ca-hero-art img, .ca-hero-art .ca-fall') || document.body).animationName, p: document.querySelector('.ca-hero-art').style.getPropertyValue('--p'), sep: getComputedStyle(document.querySelector('.ca-stat:nth-child(2)'), '::before').transform}));
   t(rm.anim === 'none' && rm.p === '', 'reduced-motion: нет появления/приближения героя и параллакса', rm);
+  const rmT = await p.evaluate(() => { const e = document.querySelector('.ca .reveal'); return {d: getComputedStyle(e).transitionDuration, o: getComputedStyle(document.querySelector('.ac-btn-o, .ca-btn-o') || e).transitionDuration}; });
+  t(parseFloat(rmT.d) >= 1, 'reduced-motion: проявление блоков НЕ мгновенное (системная настройка не отключает анимации, как на всём сайте и на «Обучении»; иначе у владельца всё «выскакивало»)', rmT);
   t(await noOverflow(p) && p._errs.length === 0, 'reduced-motion: страница читаема, без ошибок'); await p._ctx.close();
 
   /* ================= без JS ================= */
