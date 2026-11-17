@@ -18,7 +18,7 @@
   const easeIO = x => x < .5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2;
   const esc = s => String(s).replace(/[&<>"]/g, c => ({'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;'}[c]));
   const el = (tag, cls) => { const e = document.createElement(tag); if (cls) e.className = cls; return e; };
-  const NS = 9, OMEGA = 8.6, ZETA = .74;                 // полос на лист; собственная частота и затухание пружины листа (≈ 1 с на полный поворот)
+  const NS = 9, OMEGA = 10.6, ZETA = 1.05;                // полос на лист; частота и затухание пружины листа: чуть выше критического — лист подходит к месту плавно, без отскока и «подтряхивания» (≈ 0,8 с на полный поворот)
   const NLEAF = 6, NPAGE = 12;
   let inst = null;
 
@@ -185,7 +185,7 @@
         if (ts < L.startAt) { moving = true; return; }
         for (let i = 0; i < n; i++) {
           const a = -OMEGA * OMEGA * (L.f - L.tf) - 2 * ZETA * OMEGA * L.v; L.v += a * h; L.f += L.v * h;
-          if (L.f > 1) { L.f = 1; if (L.v > 0) L.v *= -.25; } else if (L.f < 0) { L.f = 0; if (L.v < 0) L.v *= -.25; }        // лист не проходит сквозь стопку: касается и чуть отскакивает
+          if (L.f > 1) { L.f = 1; if (L.v > 0) L.v = 0; } else if (L.f < 0) { L.f = 0; if (L.v < 0) L.v = 0; }        // лист не проходит сквозь стопку: ложится на неё без отскока
         }
         if (Math.abs(L.f - L.tf) < .0006 && Math.abs(L.v) < .012) { L.f = L.tf; L.v = 0; } else moving = true;
         const pd = L.tp - L.peel; if (Math.abs(pd) > .003) { L.peel += pd * Math.min(1, dt * 9); moving = true; } else L.peel = L.tp;
@@ -249,7 +249,9 @@
         }
         if (S.mode === 'spread' && S.flipDist > 0 && p >= 1 && !S.drag && !S.ov) {     // листание скроллом: положение прокрутки внутри продлённой сцены = номер разворота
           const t = -stage.getBoundingClientRect().top - S.introDist;
-          const target = clamp(1 + Math.round(t / S.stepPx), 1, stepsMax());
+          const fl = (t / S.stepPx) - (S.cur - 1), H = .64;                           // fl — отклонение от центра текущего разворота в шагах; порог 0,64 (а не 0,5) — гистерезис: у границы страницы не дребезжат туда-сюда
+          let target = S.cur; if (S.cur < 1) target = 1; else if (fl > H) target = S.cur + Math.round(fl); else if (fl < -H) target = S.cur + Math.round(fl);
+          target = clamp(target, 1, stepsMax());
           if (target !== S.cur) go(target, {auto: true, fromScroll: true});
         }
       });
