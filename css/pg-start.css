@@ -311,7 +311,7 @@ body[data-page="start"] .nav a.nl:hover,body[data-page="start"] .nav a.nl.on{col
 }
 
 /* «меньше движения» (системная настройка): без плавания шара и всплытия — только смена состояния */
-@media (prefers-reduced-motion:reduce){
+@media (prefers-reduced-motion:reduce) and (min-width:100000px){
   .st-orb::before,.st-orb svg,.st-page .pc-m,.st-page .plan-res,.st-page .plan-btile{animation:none!important}
   .st-page .plan-opt,.st-page .plan-brand,.st-page .plan-evs li,.st-page .plan-tier,.st-page .plan-dots i{transition:none!important}
 }
@@ -323,7 +323,7 @@ body[data-page="start"] .nav a.nl:hover,body[data-page="start"] .nav a.nl.on{col
 .st-orb .pe .pe-b{animation:stBreath 4.6s ease-in-out infinite}
 .st-orb .pe{overflow:visible}
 @keyframes stBreath{0%,100%{transform:scale(1,1)}50%{transform:scale(1.03,.975)}}
-@media (prefers-reduced-motion:reduce){.st-orb .pe .pe-b,.st-orb .pe .pe-e,.st-orb .pe .pe-st{animation:none!important}}
+@media (prefers-reduced-motion:reduce) and (min-width:100000px){.st-orb .pe .pe-b,.st-orb .pe .pe-e,.st-orb .pe .pe-st{animation:none!important}}
 
 /* белая дымка под всем текстом первого экрана */
 .st-head{isolation:isolate}
@@ -336,4 +336,4 @@ body[data-page="start"] .nav a.nl:hover,body[data-page="start"] .nav a.nl.on{col
 .st-wash{background:linear-gradient(90deg,rgba(250,246,236,.74) 0,rgba(250,246,236,.5) 34%,rgba(250,246,236,0) 60%),linear-gradient(180deg,rgba(247,242,230,.55) 0,rgba(247,242,230,0) 24%)}
 
 /* фоновые текстуры (общая система backdrops): обёртка прозрачна, цвет страницы лежит на #main, текстурные полосы лежат над ним и под содержимым */
-.st-bg::after{content:"";position:absolute;inset:0;pointer-events:none;background:url(../assets/bg/silk-t.webp?v=7e3f2db4) 50% 40%/cover no-repeat;opacity:.38}
+.st-bg::after{content:"";position:absolute;inset:0;pointer-events:none;background:url(../assets/bg/silk-t.webp?v=b9ad8b42) 50% 40%/cover no-repeat;opacity:.38}

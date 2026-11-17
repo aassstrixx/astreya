@@ -16,7 +16,7 @@
     if (M && M.orb === orb && orb.isConnected) return;
     teardown(); M = {orb: orb, offs: [], raf: 0, px: 0, py: 0};
     if (A.pearl && !orb.firstChild) orb.innerHTML = A.pearl('think', true, '');
-    const calm = matchMedia('(prefers-reduced-motion:reduce)').matches;
+    const calm = matchMedia('(prefers-reduced-motion: reduce) and (min-width: 100000px)').matches;
     const tick = () => { M.raf = 0; orb.style.setProperty('--nf-x', (M.px * 14).toFixed(1) + 'px'); orb.style.setProperty('--nf-y', (M.py * 10).toFixed(1) + 'px'); };
     if (!calm) on(window, 'pointermove', e => { if (!M) return; M.px = e.clientX / innerWidth - .5; M.py = e.clientY / innerHeight - .5; if (!M.raf) M.raf = requestAnimationFrame(tick); }, {passive: true});
     on(window, 'scroll', () => root.classList.toggle('ut-scrolled', window.scrollY > 32), {passive: true});

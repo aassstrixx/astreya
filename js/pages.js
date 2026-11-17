@@ -258,7 +258,7 @@
         paintNext();
       }
       /* шапка прозрачна, пока под ней зал первого экрана; зал чуть отстаёт от прокрутки (параллакс); полоса шагов «дорисовывает» стрелки, когда появляется на экране */
-      const root = document.documentElement, hero = $('.ac-hero', acad), hall = $('[data-ac-par] .ac-hall-in', acad), still = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+      const root = document.documentElement, hero = $('.ac-hero', acad), hall = $('[data-ac-par] .ac-hall-in', acad), still = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce) and (min-width: 100000px)').matches;
       let raf = 0; const onScroll = () => {
         raf = 0; if (!hero) return; const r = hero.getBoundingClientRect();
         root.classList.toggle('ac-scrolled', r.bottom < 90);
@@ -271,7 +271,7 @@
     /* ---------- галерея преподавателей: портрет «снимается со стены», выезжает на передний план (FLIP: из проёма рамы в рендере — в центр экрана), остальное затухает и размывается, проявляются ФИО и сведения ---------- */
     const wall = $('[data-ac-wall]');
     if (wall) {
-      const items = $$('.ac-tc', wall), still = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+      const items = $$('.ac-tc', wall), still = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce) and (min-width: 100000px)').matches;
       let SPD = {}; try { SPD = JSON.parse(wall.getAttribute('data-sp') || '{}'); } catch (e) {}
       let sp = null, cur = -1, opener = null, closing = false, backT = 0;
       const chev = '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M6 3l5 5-5 5"/></svg>';

@@ -179,10 +179,10 @@ const norm = s => String(s || '').replace(/[\s  ]+/g, ' ').trim();
 
   /* ================= «МЕНЬШЕ ДВИЖЕНИЯ» ================= */
   p = await open('news.html', 1440, 900, {ctx: {reducedMotion: 'reduce'}}); s = await st(p);
-  t(s.p === 1 && s.cur === 1 && await p.evaluate(() => document.querySelector('[data-np]').hasAttribute('data-np-static')) && await p.evaluate(() => getComputedStyle(document.querySelector('[data-np-skip]').closest('.np-intro')).opacity === '0'), '«меньше движения»: без входа (газета сразу открыта), кнопка вступления скрыта', s);
+  t(s.p === 0 && s.cur === 0 && !(await p.evaluate(() => document.querySelector('[data-np]').hasAttribute('data-np-static'))) && await p.evaluate(() => getComputedStyle(document.querySelector('[data-np-skip]').closest('.np-intro')).opacity === '1'), 'системное «меньше движения» игнорируется (по просьбе владельца): газета встречает закрытой, вход с кнопкой «Открыть газету» работает как у всех', s);
   await p.evaluate(() => document.querySelector('[data-np-step="1"]').click()); await p.waitForTimeout(40); s = await st(p);
   const fade = await p.evaluate(() => document.querySelector('[data-np-book]').getAnimations().length);
-  t(s.cur === 2 && s.f[1] === 1 && !s.moving && fade >= 1 && s.bend === 0, '«меньше движения»: разворот меняется сразу, без пружины и изгиба, кроссфейдом', {s, fade});
+  t(s.cur >= 1 && s.moving && s.bend >= 1, 'системное «меньше движения» игнорируется: листание идёт пружиной с изгибом, как обычно', {s, fade});
   t(!(await p.$('[data-np-nomotion], .np-nomotion, button:has-text("Без анимации")')), '«меньше движения»: кнопки «Без анимации» нет'); t(p._errs.length === 0, '«меньше движения»: нет ошибок консоли', p._errs); await p.context().close();
 
   /* ================= БЕЗ JS: архив списком ================= */

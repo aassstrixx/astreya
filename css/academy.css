@@ -79,7 +79,7 @@ body[data-page="training"].menu-open .hdr,body[data-page="training"].search-open
 
 /* ---------- 03 · «Как пройти регистрацию?»: маршрут на тонкой линии ---------- */
 .ac-reg{position:relative;z-index:3;isolation:isolate;background:linear-gradient(180deg,#f3ecdc 0,#eee4cf 26%,var(--ac-band) 58%,var(--ac-bg2) 100%)}
-.ac-reg::before{content:"";position:absolute;inset:0;z-index:-1;pointer-events:none;background:url(../assets/bg/stone-grain.webp?v=7e3f2db4) 0 0/512px 512px;opacity:.5}
+.ac-reg::before{content:"";position:absolute;inset:0;z-index:-1;pointer-events:none;background:url(../assets/bg/stone-grain.webp?v=b9ad8b42) 0 0/512px 512px;opacity:.5}
 .ac-reg-in{position:relative;align-items:start;padding:clamp(24px,3.3vw,68px) 0 clamp(24px,3.1vw,64px)}
 .ac-reg-t p{margin-top:clamp(6px,.75vw,14px)}
 .ac-steps{position:relative;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:0 clamp(10px,1.9vw,40px);margin:clamp(4px,.5vw,10px) 0 0;padding:clamp(16px,1.7vw,34px) 0 0;list-style:none}
@@ -394,7 +394,7 @@ html.ac-sp-on .asst-fab,html.ac-sp-on .qc{opacity:0;pointer-events:none}
 .ac-sp-btn.o{background:transparent;color:#16223e}
 .ac-sp-btn.o:hover{background:#16223e;color:#fff}
 .ac-sp-btn:focus-visible,.ac-sp-nav button:focus-visible,.ac-sp-x:focus-visible{outline:2px solid #16223e;outline-offset:3px}
-@media (prefers-reduced-motion:reduce){.ac-sp-bg,.ac-sp-card,.ac-sp-ring,.ac-sp-img,.ac-tc-ph,.ac-tc-ph img,.ac-tc-void,.ac-tc-frame,.ac-tc-cap b,.ac-tc-cap em,.ac-tc-cap::before,.ac-tc-cap::after{transition-duration:.01ms!important;transition-delay:0s!important}.ac-sp.is-in .ac-sp-card>*:not(.ac-sp-x),.ac-sp.is-in .ac-sp-name .s{animation:none}}
+@media (prefers-reduced-motion:reduce) and (min-width:100000px){.ac-sp-bg,.ac-sp-card,.ac-sp-ring,.ac-sp-img,.ac-tc-ph,.ac-tc-ph img,.ac-tc-void,.ac-tc-frame,.ac-tc-cap b,.ac-tc-cap em,.ac-tc-cap::before,.ac-tc-cap::after{transition-duration:.01ms!important;transition-delay:0s!important}.ac-sp.is-in .ac-sp-card>*:not(.ac-sp-x),.ac-sp.is-in .ac-sp-name .s{animation:none}}
 
 /* ---------- адаптив ---------- */
 @media (max-width:1100px){
@@ -527,7 +527,7 @@ html.ac-sp-on .asst-fab,html.ac-sp-on .qc{opacity:0;pointer-events:none}
   .ac-ev-pic{aspect-ratio:2.1/1;min-height:0}
   .ac-evs.is-open .ac-ev.is-fold{display:grid}
 }
-@media (prefers-reduced-motion:reduce){
+@media (prefers-reduced-motion:reduce) and (min-width:100000px){
   .ac-hall-in{transform:none!important}
   .ac-steps::before,.ac-st::before{transform:none;transition:none}
   .ac-tmore,.ac-tmore .ac-tc,.ac-tc,.ac-ev,.ac-vid,.ac-pub{transition:none}

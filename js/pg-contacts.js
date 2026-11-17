@@ -16,7 +16,7 @@
   /* представительства ↔ карта */
   function offices(cp) {
     const box = $('[data-cp-offices]', cp); if (!box || box.getAttribute('data-cp-bound')) return; box.setAttribute('data-cp-bound', '1');
-    const list = $$('.cp-office', box), pins = $$('.cp-pin', cp), routes = $$('.cp-rt', cp), still = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const list = $$('.cp-office', box), pins = $$('.cp-pin', cp), routes = $$('.cp-rt', cp), still = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce) and (min-width: 100000px)').matches;
     const byCity = c => list.filter(o => o.getAttribute('data-city') === c)[0];
     function select(city, o) {
       const prev = list.filter(x => x.classList.contains('is-on'))[0];

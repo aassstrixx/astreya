@@ -9,7 +9,7 @@
     if (off) { off(); off = null; }
     const root = document.querySelector('[data-na]'); if (!root) return;
     const sheet = root.querySelector('[data-na-sheet]'), bar = root.querySelector('[data-na-prog]');
-    const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const reduced = matchMedia('(prefers-reduced-motion: reduce) and (min-width: 100000px)').matches;
     let raf = 0, alive = true;
     if (!reduced && 'requestAnimationFrame' in window) { root.setAttribute('data-na-ready', ''); requestAnimationFrame(() => requestAnimationFrame(() => root.classList.add('is-in'))); }
     const upd = () => {

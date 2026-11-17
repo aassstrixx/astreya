@@ -27,7 +27,7 @@
     const stage = $('[data-np-stage]', root), sticky = $('[data-np-sticky]', root), cam = $('[data-np-cam]', root), rig = $('[data-np-rig]', root), book = $('[data-np-book]', root);
     const pageEls = $$('.np-pg', $('[data-np-pages]', root)).sort((a, b) => +a.dataset.pg - +b.dataset.pg);
     const data = JSON.parse($('#np-data').textContent);
-    const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const reduced = matchMedia('(prefers-reduced-motion: reduce) and (min-width: 100000px)').matches;
     const S = {mode: 'spread', pw: 500, ph: 676, p: reduced ? 1 : 0, cur: 0, hh: 84, filter: 'all', ov: null, userFlip: false, drag: null, moving: false, introDist: 1, hash: ''};
     let leaves = [], edgeL, edgeR, raf = 0, last = 0, scrollRaf = 0, tween = 0, idleT = 0, alive = true;
     if (reduced) root.setAttribute('data-np-static', '');

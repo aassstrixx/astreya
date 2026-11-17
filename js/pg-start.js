@@ -122,7 +122,7 @@
     const orb = $('[data-st-orb]');
     if (orb && A.pearl) { orb.innerHTML = A.pearl('idle', true, ''); M.orb = orb; }
     if (orb && M.orb) {
-      const bg = $('.st-bg'), still = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      const bg = $('.st-bg'), still = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce) and (min-width: 100000px)').matches;
       let gz = 0, px = 0, py = 0;
       const place = () => { const r = orb.getBoundingClientRect(), b = bg && bg.getBoundingClientRect(); if (bg && b && r.width) { bg.style.setProperty('--ox', Math.round(r.left + r.width / 2 - b.left) + 'px'); bg.style.setProperty('--oy', Math.round(r.top + r.height / 2 - b.top) + 'px'); } };
       const look = () => { gz = 0; const svg = $('svg', orb), r = orb.getBoundingClientRect(); if (!svg || !r.width || (svg.getAttribute('data-m') === 'think' || svg.getAttribute('data-m') === 'sleep')) return; const dx = px - (r.left + r.width / 2), dy = py - (r.top + r.height / 2), k = Math.max(1, Math.hypot(dx, dy) / 260); svg.style.setProperty('--ex', (Math.max(-1, Math.min(1, dx / 260 / k * 1.4)) * 1.9).toFixed(2) + 'px'); svg.style.setProperty('--ey', (Math.max(-1, Math.min(1, dy / 260 / k * 1.4)) * 1.4).toFixed(2) + 'px'); };
