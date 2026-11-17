@@ -48,6 +48,8 @@ function newsPage(ctx, C, P) {
   const page = (i, cls, inner, label) => `<article class="np-pg ${cls}" data-pg="${i}" data-sp="${i === 0 ? 0 : Math.ceil(i / 2)}" aria-label="Страница ${i + 1}">${i === 0 || i === 11 ? '' : folio(i, label)}${inner}${i === 0 || i === 11 ? '' : foot(i, i % 2 ? 'l' : 'r')}</article>`;
   const prodLinks = n => (n.related.products || []).map(id => ctx.productById[id]).filter(Boolean).map(p => `<li><a href="${C.purl(P, p)}" data-track="news_product">${esc(p.name)}<small>${esc(ctx.brandById[p.brand].name)}</small></a></li>`).join('');
   const where = n => { const k = Object.keys(SLOT).find(x => SLOT[x] === n.id); return k ? WHERE[k][1] : ''; };
+  const alsoIn = (excl, label) => { const rest = news.filter(n => !excl.includes(n.id)).slice(0, 3);
+    return rest.length ? `<aside class="np-brief"><b>${esc(label || 'Также в выпуске')}</b><ul>${rest.map(n => `<li>${open(n)}<span>${esc(n.title)}</span><em>${where(n) ? 'стр. ' + where(n) : 'архив'}</em></a></li>`).join('')}</ul></aside>` : ''; };
 
   const nPromo = slot('promo'), nA = slot('newA'), nB = slot('newB'), nX = slot('expert'), nE1 = slot('eduA'), nE2 = slot('eduB'), nE3 = slot('eduC'), nE4 = slot('eduD'), nR = slot('region');
   const sub = S.FORM_TYPES.subscribe;
@@ -126,8 +128,8 @@ function newsPage(ctx, C, P) {
       <div class="np-colo"><p>${esc(site.name)} — дистрибьютор профессиональной косметики. ${esc(site.contacts.hours)}.</p><p><a href="tel:${site.contacts.phoneRaw}" data-track="phone_click">${esc(phone)}</a> · <a href="mailto:${esc(site.contacts.email)}">${esc(site.contacts.email)}</a></p>
       <button class="np-btn" type="button" data-np-go="0">К первой странице ${I.arrow}</button></div></div>`;
 
-  const pages = [page(0, 'np-p-cover', cover, SECTION[0]), page(1, 'np-p-l np-poster-pg', promoL, SECTION[1]), page(2, 'np-p-r', promoR, SECTION[1]), page(3, 'np-p-l', novA, SECTION[2]), page(4, 'np-p-r', novB, SECTION[2]),
-    page(5, 'np-p-l', expL, SECTION[3]), page(6, 'np-p-r', expR, SECTION[3]), page(7, 'np-p-l', eduL, SECTION[4]), page(8, 'np-p-r', eduR, SECTION[4]), page(9, 'np-p-l', regL, SECTION[5]),
+  const pages = [page(0, 'np-p-cover', cover, SECTION[0]), page(1, 'np-p-l np-poster-pg', promoL, SECTION[1]), page(2, 'np-p-r', promoR, SECTION[1]), page(3, 'np-p-l', novA + (nA && nB ? alsoIn([nA.id, nB.id]) : ''), SECTION[2]), page(4, 'np-p-r', novB, SECTION[2]),
+    page(5, 'np-p-l', expL + (nX ? alsoIn([nX.id]) : ''), SECTION[3]), page(6, 'np-p-r', expR, SECTION[3]), page(7, 'np-p-l', eduL, SECTION[4]), page(8, 'np-p-r', eduR, SECTION[4]), page(9, 'np-p-l', regL, SECTION[5]),
     page(10, 'np-p-r', subR, SECTION[5]), page(11, 'np-p-back', back, SECTION[6])];
 
   /* данные для чтения статьи поверх газеты (тексты и действия те же, что на отдельных страницах; безопасно для <script>: «<» экранируется) */
@@ -136,14 +138,7 @@ function newsPage(ctx, C, P) {
       cta: c ? {href: c.href, label: c.label, attrs: c.attrs} : null,
       rel: {products: (n.related.products || []).map(id => ctx.productById[id]).filter(Boolean).map(p => ({name: p.name, href: C.purl(P, p), brand: ctx.brandById[p.brand].name})),
         events: (n.related.events || []).map(id => ctx.eventById[id]).filter(Boolean).slice(0, 3).map(e => ({title: e.title, href: C.eurl(P, e), date: dparts(e.date).full, city: e.city}))}}]; })),
-    spreads: SECTION, hints: [
-      'Обложка: главное в выпуске. Листайте — перетяните край страницы или нажмите «Далее».',
-      nPromo ? 'Хотите прикинуть скидку? Я подскажу, как работает калькулятор.' : '',
-      'Новинки каталога: спросите, как их применять и где смотреть подробности.',
-      'Подбор фотозащиты к протоколу — могу подсказать, с чего начать.',
-      'Расписание семинаров и вебинаров: помогу выбрать подходящую дату.',
-      'Ближайший офис и контакты — подскажу, как связаться.',
-      'Это оборот выпуска: содержание и контакты.'],
+    spreads: SECTION,
     discounts: site.discounts};
 
   const tabs = [['all', 'Все', news.length], ...newsCats.map(c => [c.id, c.name, news.filter(n => n.category === c.id).length])];
@@ -161,12 +156,12 @@ function newsPage(ctx, C, P) {
           </div>
         </div>
         <div class="np-hud np-hud-top">
-          <div class="np-title"><span class="np-eyebrow">Новости</span><h1 id="np-title">Новости, акции и новинки</h1><p>Новинки каталога, программы для партнёров, события учебного центра и жизнь компании — в одном выпуске.</p></div>
+          <div class="np-title"><span class="np-eyebrow reveal">Новости</span><h1 id="np-title" class="reveal" data-nosplit>Новости, акции и новинки</h1><p class="reveal">Новинки каталога, программы для партнёров, события учебного центра и жизнь компании — в одном выпуске.</p></div>
           <div class="np-filters" role="group" aria-label="Категории">${tabs.map(([id, l, n], i) => `<button class="np-f${i ? '' : ' is-on'}" type="button" data-np-cat="${id}" aria-pressed="${i ? 'false' : 'true'}">${esc(l)}<small>${n}</small></button>`).join('')}</div>
           <button class="np-tocbtn" type="button" data-np-tocbtn aria-expanded="false" aria-controls="np-toc"><span>Содержание</span></button>
         </div>
         <p class="np-status" data-np-status role="status" aria-live="polite" hidden></p>
-        <div class="np-intro" data-np-intro><button class="np-open" type="button" data-np-skip>Открыть газету</button><span class="np-scrollhint" aria-hidden="true">Прокрутите вниз — камера опустится к газете</span></div>
+        <div class="np-intro" data-np-intro><button class="np-open reveal" type="button" data-np-skip>Открыть газету</button><span class="np-scrollhint reveal" aria-hidden="true">Прокрутите вниз — камера опустится к газете</span></div>
         <div class="np-hud np-hud-bot" data-np-bot>
           
           <nav class="np-nav" aria-label="Листание газеты"><button class="np-nb" type="button" data-np-step="-1" aria-label="Назад">${I.back}<span>Назад</span></button>
