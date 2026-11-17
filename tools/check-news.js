@@ -54,7 +54,7 @@ const norm = s => String(s || '').replace(/[\s  ]+/g, ' ').trim();
   t(await p.evaluate(ids => ids.every(id => document.querySelector('[data-np-pages] .np-art[data-id="' + id + '"]') || document.querySelector('.np-toc [data-np-open="' + id + '"]')), NEWS.map(n => n.id)), 'газета: каждый материал есть в разметке газеты или в оглавлении');
   t(await p.evaluate(m => { const a = document.querySelector('.np-fig-pct'), c = document.querySelector('.np-poster a[href*="partners.html#calc"]'), s = [...document.querySelectorAll('.np-poster a')].some(x => /partners\.html/.test(x.getAttribute('href')) && /партн/i.test(x.textContent));
     return !!a && new RegExp('до ' + m).test(a.getAttribute('aria-label')) && a.textContent.replace(/\D/g, '') === String(m) && !!c && s; }, MAXPCT), 'акция: «до ' + MAXPCT + '%» из данных, ссылки на partners.html#calc и «Стать партнёром»');
-  t(await p.evaluate(() => document.querySelectorAll('[data-act="asst-chip"]').length >= 4 && !!document.querySelector('[data-act="asst-open"]') && !document.querySelector('.np [id*="chat"], .np iframe')), 'Стелла: подсказки через asst-chip / asst-open, второго чата нет');
+  t(await p.evaluate(() => !document.querySelector('.np [data-act="asst-chip"], .np [data-act="asst-open"], .np-hint, .np-stella, .np-ov-st') && !document.querySelector('.np [id*="chat"], .np iframe')), 'Стелла убрана из газеты (по просьбе владельца): ни подсказки внизу, ни блоков на страницах; общий помощник сайта остаётся отдельно');
   /* вход */
   let s = await st(p);
   t(s && s.mode === 'spread' && s.p === 0 && s.cur === 0, 'вход: сверху камера высоко, газета закрыта (обложка)', s);
@@ -136,13 +136,10 @@ const norm = s => String(s || '').replace(/[\s  ]+/g, ' ').trim();
   await p.evaluate(() => window.Astreya.news.go(6, {instant: true})); await settle(p);
   await p.fill('.np-coupon [name=email]', 'news-test@example.com'); await p.check('.np-coupon [name=agree]'); await p.click('.np-coupon button[type=submit]'); await p.waitForTimeout(900);
   t(leads.some(l => /news-test@example\.com/.test(JSON.stringify(l))) && await p.evaluate(() => !!document.querySelector('.np-coupon .ok')), 'подписка: форма уходит (запрос на /api/lead), на купоне — подтверждение', leads.slice(-1));
-  /* Стелла */
+  /* Стелла убрана из газеты; шапка прозрачная над столом */
   await p.evaluate(() => window.Astreya.news.go(1, {instant: true})); await settle(p);
-  await p.evaluate(() => document.querySelector('.np-poster [data-act="asst-chip"]').click()); await p.waitForTimeout(2500);
-  t(await p.evaluate(() => /Как рассчитать скидку/i.test(document.getElementById('asst-log').textContent)), 'Стелла: подсказка на странице акции отправляет вопрос в чат помощника');
-  await p.evaluate(() => { if (!document.body.classList.contains('asst-open')) document.querySelector('.np-hint [data-act="asst-open"]').click(); }); await p.waitForTimeout(900);
-  t(await p.evaluate(() => document.body.classList.contains('asst-open')), 'Стелла: кнопка «Спросить Стеллу» открывает существующий помощник');
-  await p.evaluate(() => document.querySelector('[data-act="asst-open"]').click()); await p.waitForTimeout(300);
+  t(await p.evaluate(() => !document.querySelector('.np-poster [data-act="asst-chip"]') && !document.querySelector('.np-hint')), 'Стелла: на странице акции нет блока «Спросите Стеллу», внизу нет подсказки');
+  t(await p.evaluate(() => { const h = document.querySelector('.hdr'), cs = getComputedStyle(h); return cs.backgroundColor === 'rgba(0, 0, 0, 0)' || cs.backgroundColor === 'transparent'; }), 'шапка над столом прозрачная (белой полосы нет)');
   t(await noOverflow(p), 'новости 1440: нет горизонтальной прокрутки');
   t(p._errs.length === 0, 'новости 1440: нет ошибок консоли', p._errs); await p.context().close();
 

@@ -232,7 +232,7 @@
     }
     function progress() {
       if (reduced || !S.introDist) return 1;
-      const r = stage.getBoundingClientRect(), t = S.hh - r.top; return clamp(t / S.introDist, 0, 1);
+      const r = stage.getBoundingClientRect(), t = -r.top; return clamp(t / S.introDist, 0, 1);
     }
     function onScroll() {
       if (scrollRaf) return; scrollRaf = requestAnimationFrame(() => {
@@ -246,12 +246,12 @@
     }
     function scrollToOpen(ms) {
       if (A.motion && A.motion.cancelSmooth) A.motion.cancelSmooth();
-      const y0 = window.pageYOffset, y1 = Math.round(stage.getBoundingClientRect().top + y0 - S.hh + S.introDist + 1); if (y1 <= y0 + 2) return;
+      const y0 = window.pageYOffset, y1 = Math.round(stage.getBoundingClientRect().top + y0 + S.introDist + 1); if (y1 <= y0 + 2) return;
       cancelAnimationFrame(tween); let t0 = 0; const d = ms || 1500;
       const f = ts => { if (!alive) return; if (!t0) t0 = ts; const k = clamp((ts - t0) / d, 0, 1); window.scrollTo({top: y0 + (y1 - y0) * easeIO(k), behavior: 'instant'}); if (k < 1) tween = requestAnimationFrame(f); };
       tween = requestAnimationFrame(f);
     }
-    const toStageEnd = () => { const y = Math.round(stage.getBoundingClientRect().top + window.pageYOffset - S.hh + S.introDist + 1); window.scrollTo({top: y, behavior: 'instant'}); };
+    const toStageEnd = () => { const y = Math.round(stage.getBoundingClientRect().top + window.pageYOffset + S.introDist + 1); window.scrollTo({top: y, behavior: 'instant'}); };
 
     /* ---------- рука: перетаскивание листа, кромка следует за указателем ---------- */
     const spineX = () => { const r = book.getBoundingClientRect(); return S.mode === 'spread' ? r.left + r.width / 2 : r.left; };
@@ -432,6 +432,9 @@
     window.addEventListener('pointerup', onUp, sig); window.addEventListener('pointercancel', onUp, sig);
     book.addEventListener('pointerleave', () => { if (!S.drag && leaves.some(L => L.tp)) { leaves.forEach(L => { L.tp = 0; }); kick(); } }, sig);
     window.addEventListener('scroll', onScroll, {signal: ac.signal, passive: true});
+    /* шапка прозрачная, пока на экране стол; когда сцена ушла вверх — обычная (html.np-past) */
+    const hdrMode = () => document.documentElement.classList.toggle('np-past', stage.getBoundingClientRect().bottom < S.hh + 10);
+    window.addEventListener('scroll', hdrMode, {signal: ac.signal, passive: true}); window.addEventListener('resize', hdrMode, {signal: ac.signal}); hdrMode();
     window.addEventListener('resize', () => { if (!root.isConnected) { destroy(); return; } clearTimeout(S.rt); S.rt = setTimeout(relayout, 120); }, sig);
     window.addEventListener('keydown', e => {
       if (!root.isConnected) { destroy(); return; }
@@ -463,7 +466,7 @@
       else { leaves.forEach(L => { if (L.strips) dropStrips(L); }); paintAll(true); }
       S.p = progress(); applyCam(S.p); updateUI();
     }
-    function destroy() { alive = false; ac.abort(); cancelAnimationFrame(raf); cancelAnimationFrame(tween); clearTimeout(idleT); clearTimeout(S.rt); document.body.classList.remove('np-reading'); if (inst && inst.root === root) inst = null; }
+    function destroy() { alive = false; ac.abort(); cancelAnimationFrame(raf); cancelAnimationFrame(tween); clearTimeout(idleT); clearTimeout(S.rt); document.body.classList.remove('np-reading'); document.documentElement.classList.remove('np-past'); if (inst && inst.root === root) inst = null; }
 
     /* ---------- старт ---------- */
     measure(); build(); rebuildDots();

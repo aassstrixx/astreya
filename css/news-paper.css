@@ -7,21 +7,21 @@
 .np{--np-ink:#171b29;--np-ink2:#434858;--np-paper:#f1ead9;--np-paper2:#e9dfc8;--np-brass:#98763a;--np-brass2:#c7a460;--np-navy:#101f37;--np-navy2:#1a2e52;--np-line:rgba(23,27,41,.2);
   --np-hh:84px;--np-intro:150svh;--np-ease:cubic-bezier(.16,1,.3,1);
   --np-serif:'Fraunces','Playfair Display',Georgia,serif;--np-disp:'Playfair Display','Fraunces',Georgia,serif;--np-sans:'Manrope',system-ui,sans-serif;
-  position:relative;color:var(--np-ink)}
+  position:relative;color:var(--np-ink);margin-top:calc(var(--np-hh) * -1)}
 @supports not (height:1svh){.np{--np-intro:150vh}}
 
 /* ---------- сцена: прилипает на время «входа» (камера опускается к газете), прокрутку не блокирует ---------- */
-.np-stage{position:relative;height:calc(100vh - var(--np-hh) + var(--np-intro))}
-@supports (height:1svh){.np-stage{height:calc(100svh - var(--np-hh) + var(--np-intro))}}
-.np-sticky{position:sticky;top:var(--np-hh);height:calc(100vh - var(--np-hh));overflow:hidden;background:#b9ab93;isolation:isolate}
-@supports (height:1svh){.np-sticky{height:calc(100svh - var(--np-hh))}}
-.np[data-np-static] .np-stage{height:calc(100vh - var(--np-hh))}
-.np-world{position:absolute;inset:0;perspective:1700px;perspective-origin:50% 36%;overflow:hidden;background:radial-gradient(120% 90% at 50% 100%,#b3a58b,#8c7d65 70%,#6f6350)}
-.np-cam{position:absolute;inset:0;transform-style:preserve-3d;transform-origin:50% 62%;transform:translate3d(0,var(--ty,0px),var(--tz,0px)) rotateX(var(--rx,0deg))}
+.np-stage{position:relative;height:calc(100vh + var(--np-intro))}
+@supports (height:1svh){.np-stage{height:calc(100svh + var(--np-intro))}}
+.np-sticky{position:sticky;top:0;height:100vh;overflow:hidden;background:#b9ab93;isolation:isolate}
+@supports (height:1svh){.np-sticky{height:100svh}}
+.np[data-np-static] .np-stage{height:100vh}
+.np-world{position:absolute;inset:0;perspective:1700px;perspective-origin:50% calc(var(--np-hh) + (100vh - var(--np-hh)) * .36);overflow:hidden;background:radial-gradient(120% 90% at 50% 100%,#b3a58b,#8c7d65 70%,#6f6350)}
+.np-cam{position:absolute;inset:var(--np-hh) 0 0 0;transform-style:preserve-3d;transform-origin:50% 62%;transform:translate3d(0,var(--ty,0px),var(--tz,0px)) rotateX(var(--rx,0deg))}
 .np-cam.is-moving{will-change:transform}
 .np-cam.is-flat{transform:none}
 /* стол: плита шире экрана (камера наклонена — дальний край уходит в дымку) */
-.np-table{position:absolute;left:50%;top:50%;width:3400px;height:2260px;margin:-1130px 0 0 -1700px;transform:translateZ(-1px);background:#a99a82 url(../assets/news/table.webp?v=7a975056) center/100% 100% no-repeat;
+.np-table{position:absolute;left:50%;top:50%;width:3400px;height:2260px;margin:-1130px 0 0 -1700px;transform:translateZ(-1px);background:#a99a82 url(../assets/news/table.webp?v=76a90881) center/100% 100% no-repeat;
   -webkit-mask-image:linear-gradient(180deg,transparent 0,#000 16%);mask-image:linear-gradient(180deg,transparent 0,#000 16%)}
 .np-table i{position:absolute;inset:0}
 .np-light{background:radial-gradient(60% 50% at 24% 12%,rgba(255,246,224,.22),transparent 70%)}
@@ -35,7 +35,7 @@
   box-shadow:.4em .7em 1.6em -.3em rgba(48,32,12,.5),1.6em 2.8em 4em -1em rgba(48,32,12,.34),0 0 0 1px rgba(60,40,12,.12)}
 .np-leaf{position:absolute;left:50%;top:0;width:50%;height:100%;transform-origin:0 50%;transform-style:preserve-3d;transform:translateZ(var(--z,0px)) rotateY(var(--ang,0deg))}
 .np-leaf.is-off{visibility:hidden}
-.np-face{position:absolute;inset:0;backface-visibility:hidden;-webkit-backface-visibility:hidden;overflow:hidden;background:var(--np-paper) url(../assets/news/paper.webp?v=7a975056) 0 0/420px}
+.np-face{position:absolute;inset:0;backface-visibility:hidden;-webkit-backface-visibility:hidden;overflow:hidden;background:var(--np-paper) url(../assets/news/paper.webp?v=76a90881) 0 0/420px}
 .np-face.np-bk{transform:rotateY(180deg)}
 .np-face>.np-pg{width:100%;height:100%}
 /* стопки листов по краям: тонкие линии кромок */
@@ -55,7 +55,7 @@
 .np-leaf.is-bend>.np-strips{display:block}
 .np-leaf.is-bend>.np-face{visibility:hidden}
 .np-st{position:absolute;top:0;height:100%;transform-origin:0 50%;transform-style:preserve-3d}
-.np-sl{position:absolute;inset:0;overflow:hidden;backface-visibility:hidden;-webkit-backface-visibility:hidden;background:var(--np-paper) url(../assets/news/paper.webp?v=7a975056) 0 0/420px}
+.np-sl{position:absolute;inset:0;overflow:hidden;backface-visibility:hidden;-webkit-backface-visibility:hidden;background:var(--np-paper) url(../assets/news/paper.webp?v=76a90881) 0 0/420px}
 .np-sl.np-sb{transform:rotateY(180deg)}
 .np-sl>.np-cl{position:absolute;top:0;height:100%;width:var(--pw);pointer-events:none}
 .np-sl>.np-cl>.np-pg{width:100%;height:100%}
@@ -229,8 +229,8 @@
 /* ---------- интерфейс поверх сцены ---------- */
 .np-hud{position:absolute;left:0;right:0;z-index:5;display:flex;align-items:flex-start;justify-content:space-between;gap:1em;padding:0 var(--gut,24px);pointer-events:none}
 .np-hud>*{pointer-events:auto}
-.np-hud-top{top:14px}
-.np-title{position:absolute;left:var(--gut,24px);top:6px;max-width:34em;color:#1d1a14;transition:opacity .6s var(--np-ease),transform .8s var(--np-ease);text-shadow:0 1px 14px rgba(255,248,232,.75)}
+.np-hud-top{top:calc(var(--np-hh) + 14px)}
+.np-title{position:absolute;left:var(--gut,24px);top:calc(var(--np-hh) + 6px);max-width:34em;color:#1d1a14;transition:opacity .6s var(--np-ease),transform .8s var(--np-ease);text-shadow:0 1px 14px rgba(255,248,232,.75)}
 .np-eyebrow{display:inline-flex;align-items:center;gap:.8em;font:700 12px/1 var(--np-sans);letter-spacing:.2em;text-transform:uppercase;color:#4a3a1e}
 .np-eyebrow::before{content:"";width:30px;height:1px;background:currentColor}
 .np-title h1{font:600 clamp(32px,4.4vw,64px)/1.04 var(--np-disp);letter-spacing:-.02em;margin:.28em 0 .3em;color:#14192a}
@@ -247,7 +247,7 @@
 .np-tocbtn{position:absolute;right:var(--gut,24px);top:0;display:inline-flex;align-items:center;gap:8px;min-height:34px;padding:0 15px;border-radius:999px;background:rgba(250,245,232,.9);box-shadow:0 6px 16px -10px rgba(40,26,8,.6),0 0 0 1px rgba(80,60,24,.16);font:700 12px/1 var(--np-sans);letter-spacing:.04em;color:#2a2418;opacity:0;pointer-events:none;transition:opacity .6s var(--np-ease) .15s}
 .np-tocbtn::before{content:"";width:14px;height:10px;background:linear-gradient(currentColor 0 1.5px,transparent 1.5px 4px,currentColor 4px 5.5px,transparent 5.5px 8.5px,currentColor 8.5px 10px)}
 .np.is-open .np-tocbtn{opacity:1;pointer-events:auto}
-.np-status{position:absolute;z-index:5;left:50%;top:58px;transform:translateX(-50%);margin:0;padding:6px 14px;border-radius:999px;background:rgba(16,31,55,.9);color:#f6efdc;font:600 12px/1.3 var(--np-sans);letter-spacing:.02em;white-space:nowrap;max-width:92%;overflow:hidden;text-overflow:ellipsis}
+.np-status{position:absolute;z-index:5;left:50%;top:calc(var(--np-hh) + 58px);transform:translateX(-50%);margin:0;padding:6px 14px;border-radius:999px;background:rgba(16,31,55,.9);color:#f6efdc;font:600 12px/1.3 var(--np-sans);letter-spacing:.02em;white-space:nowrap;max-width:92%;overflow:hidden;text-overflow:ellipsis}
 .np-status button{margin-left:10px;color:#e3c98a;text-decoration:underline}
 .np-intro{position:absolute;z-index:6;left:0;right:0;bottom:7vh;display:flex;flex-direction:column;align-items:center;gap:14px;pointer-events:none;transition:opacity .5s var(--np-ease)}
 .np.is-open .np-intro{opacity:0}.np.is-open .np-intro>*{pointer-events:none}
@@ -271,7 +271,7 @@
 .np-dots button::before{content:"";width:7px;height:7px;border-radius:50%;background:rgba(42,36,24,.28);transition:transform .35s var(--np-ease),background .25s}
 .np-dots button.is-on::before{background:var(--np-brass);transform:scale(1.5)}
 .np-dots button:hover::before{background:var(--np-navy)}
-.np-toc{position:absolute;z-index:7;top:56px;right:var(--gut,24px);width:min(380px,calc(100% - 32px));max-height:calc(100% - 140px);overflow:auto;overscroll-behavior:contain;padding:14px 16px 10px;border-radius:14px;background:#f4ecda url(../assets/news/paper.webp?v=7a975056) 0 0/420px;box-shadow:0 30px 60px -24px rgba(30,20,6,.75),0 0 0 1px rgba(80,60,24,.2);transform-origin:100% 0;animation:npTocIn .45s var(--np-ease) both}
+.np-toc{position:absolute;z-index:7;top:calc(var(--np-hh) + 56px);right:var(--gut,24px);width:min(380px,calc(100% - 32px));max-height:calc(100% - 140px);overflow:auto;overscroll-behavior:contain;padding:14px 16px 10px;border-radius:14px;background:#f4ecda url(../assets/news/paper.webp?v=76a90881) 0 0/420px;box-shadow:0 30px 60px -24px rgba(30,20,6,.75),0 0 0 1px rgba(80,60,24,.2);transform-origin:100% 0;animation:npTocIn .45s var(--np-ease) both}
 @keyframes npTocIn{from{opacity:0;transform:translateY(-8px) scale(.96)}}
 .np-toc-h{display:flex;align-items:center;justify-content:space-between;padding-bottom:8px;border-bottom:3px double rgba(23,27,41,.5);font:600 20px/1 var(--np-disp)}
 .np-toc-h button{width:30px;height:30px;display:grid;place-items:center;border-radius:50%}
@@ -285,7 +285,7 @@
 /* ---------- чтение статьи поверх газеты ---------- */
 .np-ov{position:fixed;inset:0;z-index:90;display:flex;align-items:center;justify-content:center;padding:24px;background:rgba(26,18,8,.58);opacity:0;transition:opacity .4s var(--np-ease)}
 .np-ov.is-in{opacity:1}
-.np-ov-sheet{position:relative;width:min(780px,100%);max-height:min(88vh,100%);overflow:auto;overscroll-behavior:contain;padding:38px clamp(22px,5vw,56px) 30px;border-radius:6px;background:var(--np-paper) url(../assets/news/paper.webp?v=7a975056) 0 0/420px;box-shadow:0 50px 90px -30px rgba(10,6,0,.85),0 0 0 1px rgba(80,60,24,.25);transform:translateY(18px) scale(.95);transform-origin:var(--ox,50%) var(--oy,50%);transition:transform .55s var(--np-ease)}
+.np-ov-sheet{position:relative;width:min(780px,100%);max-height:min(88vh,100%);overflow:auto;overscroll-behavior:contain;padding:38px clamp(22px,5vw,56px) 30px;border-radius:6px;background:var(--np-paper) url(../assets/news/paper.webp?v=76a90881) 0 0/420px;box-shadow:0 50px 90px -30px rgba(10,6,0,.85),0 0 0 1px rgba(80,60,24,.25);transform:translateY(18px) scale(.95);transform-origin:var(--ox,50%) var(--oy,50%);transition:transform .55s var(--np-ease)}
 .np-ov.is-in .np-ov-sheet{transform:none}
 .np-ov-x{position:absolute;right:12px;top:12px;width:40px;height:40px;display:grid;place-items:center;border-radius:50%;background:rgba(23,27,41,.07)}
 .np-ov-x:hover{background:rgba(23,27,41,.14)}
@@ -311,7 +311,7 @@
 .np-arch h2{font:600 clamp(30px,4vw,52px)/1.06 var(--np-disp);letter-spacing:-.02em;margin:.35em 0 .35em;color:#14192a}
 .np-arch-l{max-width:46em;font:500 16px/1.6 var(--np-sans);color:var(--muted,#56647d);margin:0 0 clamp(26px,4vw,44px)}
 .np-ai-l{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:clamp(14px,2vw,26px)}
-.np-ai{position:relative;display:flex;flex-direction:column;gap:10px;padding:22px 22px 18px;background:#f4ecda url(../assets/news/paper.webp?v=7a975056) 0 0/420px;border-radius:4px;box-shadow:0 1px 0 rgba(255,255,255,.7) inset,0 26px 40px -30px rgba(40,26,8,.6),0 0 0 1px rgba(80,60,24,.14);transition:transform .5s var(--np-ease),box-shadow .5s var(--np-ease)}
+.np-ai{position:relative;display:flex;flex-direction:column;gap:10px;padding:22px 22px 18px;background:#f4ecda url(../assets/news/paper.webp?v=76a90881) 0 0/420px;border-radius:4px;box-shadow:0 1px 0 rgba(255,255,255,.7) inset,0 26px 40px -30px rgba(40,26,8,.6),0 0 0 1px rgba(80,60,24,.14);transition:transform .5s var(--np-ease),box-shadow .5s var(--np-ease)}
 .np-ai:hover{transform:translateY(-4px);box-shadow:0 1px 0 rgba(255,255,255,.7) inset,0 36px 50px -30px rgba(40,26,8,.7),0 0 0 1px rgba(80,60,24,.2)}
 .np-ai .np-tag{font-size:11px}.np-ai time{font:500 12px/1 var(--np-sans);color:var(--np-ink2)}
 .np-ai h3{font:600 21px/1.18 var(--np-disp);letter-spacing:-.01em;color:var(--np-ink);margin:0}
@@ -348,7 +348,7 @@
 .np[data-mode="single"] .np-filters{justify-content:flex-start;overflow-x:auto;flex-wrap:nowrap;max-width:calc(100% - 100px);margin:0;scrollbar-width:none;padding-bottom:4px}
 .np[data-mode="single"] .np-f{flex:none}
 .np[data-mode="single"] .np-hud-top{flex-direction:row}
-.np[data-mode="single"] .np-toc{top:52px;right:12px;width:calc(100% - 24px)}
+.np[data-mode="single"] .np-toc{top:calc(var(--np-hh) + 52px);right:12px;width:calc(100% - 24px)}
 @media (max-width:860px){
   .np-ai-l{grid-template-columns:1fr}
   .np-title p{display:none}
@@ -364,3 +364,9 @@ html:not(.js) .np-stage,.np[data-np-fallback] .np-stage{display:none}
   .np-scrollhint{animation:none}.np-ai,.np-ai:hover{transition:none;transform:none}.np-toc{animation:none}
   .np-ov,.np-ov-sheet{transition:opacity .2s}.np-ov-sheet{transform:none}
 }
+
+/* ---------- прозрачная шапка над столом (просьба владельца 17.11): белой полосы нет, стол виден до самого верха; когда сцена ушла вверх — обычная шапка ---------- */
+body[data-page="news"] .hdr{background:transparent;border-bottom-color:transparent;box-shadow:none;-webkit-backdrop-filter:none;backdrop-filter:none;transition:transform .6s var(--ease-out,ease),background-color .5s ease,border-color .5s ease}
+html.np-past body[data-page="news"] .hdr{background:var(--milk,#f5f2ec);border-bottom-color:var(--line-soft,rgba(0,0,0,.08))}
+body[data-page="news"].menu-open .hdr,body[data-page="news"].search-open .hdr{background:var(--milk,#f5f2ec)}
+body[data-page="news"] .hdr .logo{--lm:#101f37}
