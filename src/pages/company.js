@@ -147,6 +147,7 @@ module.exports = function company(ctx, C, P) {
   </section>
 
   <section class="ca-s ca-center" id="ca-center" data-scene="6" data-title="Учебный центр" aria-labelledby="ca-h6">
+    <i class="ca-ribbon" aria-hidden="true"></i>
     <div class="ca-in ca-center-in">
       <div class="ca-center-t">
         <span class="ca-eyebrow reveal">Обучение</span><h2 id="ca-h6" class="reveal">Собственный учебный центр</h2>

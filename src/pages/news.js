@@ -43,8 +43,6 @@ function newsPage(ctx, C, P) {
   const act = (n, extra = '') => { const c = ctaOf(ctx, C, P, n); return `<div class="np-act">${c ? `<a class="np-btn" href="${c.href}" ${c.attrs}>${esc(c.label)} ${I.arrow}</a>` : ''}${open(n, 'np-lnk')}Читать полностью ${I.arrow}</a>${extra}</div>`; };
   const img = (name, alt, w, h, cls = '') => `<img class="${cls}" src="${u('assets/news/' + name)}" width="${w}" height="${h}" alt="${esc(alt)}" loading="lazy" decoding="async">`;
   const pk = (name, w, h, cls = '') => `<img class="np-pk ${cls}" src="${u('assets/showroom/pack-' + name + '.webp')}" width="${w}" height="${h}" alt="" loading="lazy" decoding="async" aria-hidden="true">`;
-  const chip = q => `<button class="np-chip" type="button" data-act="asst-chip" data-q="${esc(q)}" data-track="news_stella">${esc(q)}</button>`;
-  const stella = (title, qs) => `<aside class="np-stella"><span class="np-st-av" aria-hidden="true"><i></i></span><div><b>${esc(title)}</b><div class="np-chips">${qs.map(chip).join('')}</div></div></aside>`;
   const folio = (i, label) => `<header class="np-folio"><span>АСТРЕЯ</span><em>${esc(label)}</em><span>стр. ${i + 1}</span></header>`;
   const foot = (i, side) => `<footer class="np-foot ${side}"><span>${esc(issueTxt)}</span><b>${i + 1}</b></footer>`;
   const page = (i, cls, inner, label) => `<article class="np-pg ${cls}" data-pg="${i}" data-sp="${i === 0 ? 0 : Math.ceil(i / 2)}" aria-label="Страница ${i + 1}">${i === 0 || i === 11 ? '' : folio(i, label)}${inner}${i === 0 || i === 11 ? '' : foot(i, i % 2 ? 'l' : 'r')}</article>`;
@@ -75,7 +73,6 @@ function newsPage(ctx, C, P) {
       ${head(nPromo, 2, 'np-h-l')}
       <p class="np-dek">${esc(nPromo.excerpt)}</p>
       <div class="np-act np-act-w"><a class="np-btn np-btn-w" href="${u('partners.html')}#calc" data-track="partner_cta" data-place="news-paper">Рассчитать скидку ${I.arrow}</a>${C.partnerBtn(P, 'news-paper', 'np-btn np-btn-ghost', 'Стать партнёром')}</div>
-      ${stella('Спросите Стеллу', ['Как рассчитать скидку на закупку?', 'С какой суммы начинается скидка?'])}
     </div>` : '';
   const ledger = `<table class="np-ledger"><caption>Ступени скидки по объёму закупки</caption><thead><tr><th scope="col">Закупка</th><th scope="col">Скидка</th></tr></thead><tbody>${site.discounts.map(d => `<tr><th scope="row">от ${esc(S.rub(d.from))}</th><td><span class="np-bar" style="--w:${Math.round(d.pct / maxPct * 100)}%"></span><b>${d.pct}%</b></td></tr>`).join('')}</tbody></table>`;
   const promoR = nPromo ? `<article class="np-art np-promo-r" data-id="${nPromo.id}" data-cat="${nPromo.category}">
@@ -106,7 +103,6 @@ function newsPage(ctx, C, P) {
       <blockquote class="np-quote"><p>${esc(quote)}</p><footer>Из материала «${esc(nX.title)}»</footer></blockquote>
       <div class="np-stage-pk np-stage-sm" aria-hidden="true"><i class="np-plinth"></i>${pk('heliocare-bottle', 231, 820, 'np-pk-a')}${pk('neoretin-bottle', 231, 820, 'np-pk-b')}</div>
       ${prodLinks(nX) ? `<ul class="np-plist">${prodLinks(nX)}</ul>` : ''}
-      ${stella('Подбор со Стеллой', ['Подберите фотозащиту к протоколу', 'Чем отличаются Heliocare и Neoretin?'])}
     </div>` : '';
 
   /* ---- 7–8. Обучение и события ---- */
@@ -172,7 +168,7 @@ function newsPage(ctx, C, P) {
         <p class="np-status" data-np-status role="status" aria-live="polite" hidden></p>
         <div class="np-intro" data-np-intro><button class="np-open" type="button" data-np-skip>Открыть газету</button><span class="np-scrollhint" aria-hidden="true">Прокрутите вниз — камера опустится к газете</span></div>
         <div class="np-hud np-hud-bot" data-np-bot>
-          <aside class="np-hint" data-np-hint aria-live="polite"><span class="np-st-av" aria-hidden="true"><i></i></span><span class="np-hint-t" data-np-hint-t></span><button class="np-chip" type="button" data-act="asst-open" data-track="news_stella">Спросить Стеллу</button></aside>
+          
           <nav class="np-nav" aria-label="Листание газеты"><button class="np-nb" type="button" data-np-step="-1" aria-label="Назад">${I.back}<span>Назад</span></button>
             <div class="np-ind" data-np-ind><span data-np-pgtxt>Обложка</span><ol class="np-dots" data-np-dots></ol></div>
             <button class="np-nb np-nb-n" type="button" data-np-step="1" aria-label="Далее"><span>Далее</span>${I.arrow}</button></nav>

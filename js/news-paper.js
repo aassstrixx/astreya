@@ -388,7 +388,6 @@
         '<a class="np-lnk" href="' + esc(a.url) + '" data-track="news_open_page">Отдельной страницей</a></div>' +
         ((rel.products && rel.products.length) ? '<div class="np-ov-rel"><div><h3>Товары по теме</h3><ul>' + rel.products.map(p => '<li><a href="' + esc(p.href) + '">' + esc(p.name) + '<small>' + esc(p.brand) + '</small></a></li>').join('') + '</ul></div></div>' : '') +
         ((rel.events && rel.events.length) ? '<div class="np-ov-rel"><div><h3>Мероприятия по теме</h3><ul>' + rel.events.map(e => '<li><a href="' + esc(e.href) + '">' + esc(e.title) + '<small>' + esc(e.date) + ' · ' + esc(e.city) + '</small></a></li>').join('') + '</ul></div></div>' : '') +
-        '<aside class="np-ov-st"><span class="np-st-av" aria-hidden="true"><i></i></span><div><b>Спросите Стеллу</b><button class="np-chip" type="button" data-act="asst-chip" data-q="' + esc('Расскажите подробнее: ' + a.title) + '" data-track="news_stella">Расскажите подробнее об этом материале</button></div></aside>' +
         '</div>';
     }
     function openArticle(id, opener) {
