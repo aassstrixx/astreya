@@ -6,7 +6,7 @@
 
 .pp{--pp-ink:#16223e;--pp-navy:#0b1a33;--pp-bg:#f5f0e4;--pp-bg2:#efe5d0;--pp-card:#fcf8ee;--pp-line:rgba(120,84,40,.17);--pp-mut:#5f574a;--pp-gold:#b08e4e;--pp-ease:cubic-bezier(.22,.8,.2,1);
   --pp-g:clamp(18px,5.9vw,120px);--f-h1:clamp(38px,4.5vw,88px);--f-h2:clamp(27px,2.6vw,50px);--f-h3:clamp(18px,1.4vw,26px);--f-b:clamp(15px,1.06vw,20px);--f-s:clamp(13.5px,.92vw,17.5px);--f-xs:clamp(11.5px,.78vw,15px);
-  --pp-trav:url(../assets/showroom/pg-travertine.webp?v=b9ad8b42);
+  --pp-trav:url(../assets/showroom/pg-travertine.webp?v=57d8d24d);
   position:relative;margin-top:calc(var(--hdr,84px) * -1);background:var(--pp-bg);color:var(--pp-ink);overflow:clip}
 .pp-in{width:calc(100% - 2 * var(--pp-g));max-width:1800px;margin-inline:auto}
 .pp-eyebrow{display:inline-flex;align-items:center;gap:14px;font:700 var(--f-xs)/1 var(--sans);letter-spacing:.3em;text-transform:uppercase;color:var(--pp-ink)}
