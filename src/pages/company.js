@@ -82,7 +82,7 @@ module.exports = function company(ctx, C, P) {
     <div class="ca-in ca-hero-in">
       <div class="ca-copy" data-ca-copy>
         <span class="ca-eyebrow reveal">О компании</span>
-        <h1 id="ca-h1">Астрея — пространство профессиональной косметологии</h1>
+        <h1 id="ca-h1" class="reveal" data-nosplit>Астрея — пространство профессиональной косметологии</h1>
         <p class="ca-lead reveal">Мы объединяем ведущие бренды, экспертизу и современные технологии, чтобы создавать красоту, вдохновлять и развивать индустрию.</p>
         <div class="ca-cta reveal"><a class="ca-btn-o" href="#ca-stats" data-act="scroll" data-target="ca-stats" data-track="company_intro" data-place="company-hero"><span>Узнать больше</span>${arrow}</a></div>
       </div>
