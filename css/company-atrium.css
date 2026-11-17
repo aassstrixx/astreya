@@ -42,9 +42,9 @@ body[data-page="company"] #main{background:linear-gradient(180deg,#f4ecdc 0,#f5e
 .ca-hero-art{position:absolute;inset:0;z-index:-1;overflow:hidden}
 .ca-hero-art picture{display:block;position:absolute;inset:0}
 /* кадр по центру: ось знака «А» с шаром (вершина и шар, ≈ 59,65 % ширины рендера — выбор владельца) стоит ровно по середине экрана; картинка шире экрана (131 %), чтобы справа и слева хватало изображения */
-.ca-hero-art picture img{display:block;position:absolute;top:0;left:calc(50% - 78.14%);width:131%;max-width:none;height:100%;object-fit:cover;object-position:50% 50%}
+.ca-hero-art picture img{display:block;position:absolute;top:0;left:calc(50% - 78.14%);width:131%;max-width:none;height:100%;object-fit:cover;object-position:50% 50%;transform-origin:59.65% 50%;scale:calc(1.02 + var(--hp,0) * .14);translate:0 calc(var(--hp,0) * 5%)}
 .ca-hero-veil{position:absolute;inset:0;background:linear-gradient(90deg,rgba(244,238,224,.78) 0,rgba(244,238,224,.5) 13%,rgba(244,238,224,.1) 28%,rgba(244,238,224,0) 38%),linear-gradient(0deg,rgba(244,238,224,.88),rgba(244,238,224,0) 22%)}
-.ca-hero-in{z-index:2}
+.ca-hero-in{z-index:2;translate:0 calc(var(--hp,0) * -40px);opacity:calc(1 - var(--hp,0) * .9)}
 .ca-copy{max-width:min(100%,38em)}
 .ca-copy h1{margin-top:20px;font-size:clamp(30px,3.3vw,60px);line-height:1.06;letter-spacing:-.018em;max-width:14ch}
 .ca-lead{margin-top:16px;max-width:36ch;color:#2c364c;font-size:var(--f-b);line-height:1.55}
@@ -104,7 +104,7 @@ html.js .ca-stat.in+.ca-stat::before,html.js .ca-stat+.ca-stat.in::before{transf
 
 /* ---------- 5. философия и преимущества ---------- */
 .ca-phil{padding:clamp(36px,4.4vw,72px) 0;background:linear-gradient(180deg,rgba(236,222,190,0),rgba(236,222,190,.42) 45%,rgba(236,222,190,0));overflow:hidden;isolation:isolate}
-.ca-ribbon{position:absolute;right:-4%;top:0;width:64%;height:100%;z-index:-1;background:url(../assets/bg/silk-t.webp?v=f6e09be1) 50% 50%/cover no-repeat;opacity:.5;-webkit-mask-image:radial-gradient(ellipse 50% 50% at 50% 50%,#000 28%,rgba(0,0,0,.5) 62%,rgba(0,0,0,0) 100%);mask-image:radial-gradient(ellipse 50% 50% at 50% 50%,#000 28%,rgba(0,0,0,.5) 62%,rgba(0,0,0,0) 100%);pointer-events:none}
+.ca-ribbon{position:absolute;right:-4%;top:0;width:64%;height:100%;z-index:-1;background:url(../assets/bg/silk-t.webp?v=8bc9bcdb) 50% 50%/cover no-repeat;opacity:.5;-webkit-mask-image:radial-gradient(ellipse 50% 50% at 50% 50%,#000 28%,rgba(0,0,0,.5) 62%,rgba(0,0,0,0) 100%);mask-image:radial-gradient(ellipse 50% 50% at 50% 50%,#000 28%,rgba(0,0,0,.5) 62%,rgba(0,0,0,0) 100%);pointer-events:none}
 .ca-phil-in{display:grid;grid-template-columns:minmax(0,.95fr) minmax(0,1.75fr);gap:clamp(18px,3.2vw,60px);align-items:center}
 .ca-phil-t h2{font-size:clamp(26px,2.9vw,50px);line-height:1.12;max-width:11em}
 .ca-adv{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));border-radius:16px;background:rgba(251,247,236,.7);box-shadow:inset 0 0 0 1px var(--line)}
@@ -166,7 +166,7 @@ html.js .ca-map.reveal.in .ca-mw{opacity:1;scale:1}
 /* ---------- 7. заключение ---------- */
 .ca-final{padding:clamp(64px,8vw,130px) 0 clamp(56px,6.4vw,100px);overflow:hidden;isolation:isolate;background:transparent;color:#f4eee0}
 .ca-fin-bg{position:absolute;inset:0;z-index:-1;-webkit-mask-image:linear-gradient(180deg,rgba(0,0,0,0) 0,rgba(0,0,0,.5) 14%,#000 34%,#000 100%);mask-image:linear-gradient(180deg,rgba(0,0,0,0) 0,rgba(0,0,0,.5) 14%,#000 34%,#000 100%)}
-.ca-fin-bg img{position:absolute;left:0;top:-6%;width:100%;height:112%;object-fit:cover;object-position:50% 52%}
+.ca-fin-bg img{position:absolute;left:0;top:-6%;width:100%;height:112%;object-fit:cover;object-position:50% 52%;translate:0 calc(var(--p,0) * -5%)}
 .ca-fin-bg::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(11,26,51,.72),rgba(11,26,51,.86))}
 .ca-fin{display:grid;grid-template-columns:minmax(0,1.25fr) auto;gap:clamp(18px,3.2vw,60px);align-items:center}
 .ca-fin h2{margin:0;max-width:20em;font-size:clamp(24px,2.7vw,46px);line-height:1.18;color:#fff}
