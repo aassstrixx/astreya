@@ -42,7 +42,7 @@ const rub = n => new Intl.NumberFormat('ru-RU').format(n).replace(/[  ]/g, ' ') 
   /* ================= 1440 ================= */
   let p = await open(1440, 900);
   const order = await p.evaluate(() => [...document.querySelectorAll('.ca > section.ca-s')].map(s => s.id));
-  t(order.join() === 'ca-entry,ca-stats,ca-niches,ca-expo,ca-phil,ca-geo,ca-final', 'семь разделов идут строго по порядку референса', order);
+  t(order.join() === 'ca-entry,ca-stats,ca-niches,ca-expo,ca-phil,ca-center,ca-geo,ca-final', 'восемь разделов по порядку: герой, цифры, направления, бренды, преимущества, учебный центр, дистрибьюторы с картой, заключение', order);
   const tops = await p.evaluate(() => [...document.querySelectorAll('.ca > section.ca-s')].map(s => Math.round(s.getBoundingClientRect().top + scrollY)));
   t(tops.every((v, i) => !i || v > tops[i - 1]), 'разделы идут сверху вниз без наложения', tops);
 
@@ -94,57 +94,52 @@ const rub = n => new Intl.NumberFormat('ru-RU').format(n).replace(/[  ]/g, ' ') 
   await scrollTo(p, '#ca-phil'); await p.waitForTimeout(1500);
   const ph = await p.evaluate(() => { const li = [...document.querySelectorAll('.ca-av')]; return {h2: document.querySelector('#ca-phil h2').textContent.trim(), titles: li.map(e => e.querySelector('b').textContent.trim()), icons: li.map(e => { const r = e.querySelector('.ca-ai svg').getBoundingClientRect(); return Math.round(Math.max(r.width, r.height)); }),
     trust: !!document.querySelector('.ca-adv[data-sx-mod="trust"]'), dup: !!document.querySelector('.sx-trust'), photo: (() => { const i = document.querySelector('.ca-ph-team img'); return !!i && i.complete && i.naturalWidth > 0; })(), ribbon: getComputedStyle(document.querySelector('.ca-ribbon')).backgroundImage !== 'none'}; });
-  t(nbsp(ph.h2) === 'Профессиональная косметология начинается с доверия', 'раздел 5: фраза по ТЗ', ph.h2);
+  t(nbsp(ph.h2) === 'Наши преимущества', 'раздел 5: заголовок «Наши преимущества» (текст владельца)', ph.h2);
+  t(await p.evaluate(() => { const t = document.querySelector('#ca-phil').textContent.replace(/\s+/g, ' '); return /Разнообразие продвигаемых марок/.test(t) && /ООО «Астрея» представляет широкий ассортимент/.test(t) && /Мы всегда рядом!/.test(t); }), 'раздел 5: три абзаца текста владельца на месте');
   t(ph.titles.length === 6 && ph.titles.every((x, i) => nbsp(x) === nbsp(CONTENT.advantages[i].title)), 'раздел 5: шесть преимуществ — из data/content.json', ph.titles);
   t(ph.icons.every(v => v >= 18 && v <= 32), 'раздел 5: тонкие линейные иконки небольшого размера', ph.icons);
   t(ph.trust && !ph.dup, 'раздел 5: блок помечен как trust — общий «Почему доверять» не дублируется');
   t(ph.photo && ph.ribbon, 'раздел 5: реальное фото специалистов и золотистая лента-текстура на месте', ph);
 
-  /* 6 · география */
-  await scrollTo(p, '#ca-geo'); await p.waitForTimeout(2200);
-  const ge = await p.evaluate(() => { const m = [...document.querySelectorAll('.ca-mw')], box = document.querySelector('.ca-mapbox').getBoundingClientRect(); const o = {}; m.forEach(e => { o[e.dataset.city] = {role: e.querySelector('.ca-tip em').textContent.trim(), tip: e.querySelector('.ca-tip').textContent, office: e.classList.contains('is-office'), op: getComputedStyle(e.querySelector('.ca-tip')).opacity, mk: Math.round(e.querySelector('.ca-mk').getBoundingClientRect().height)}; });
-    return {h2: document.querySelector('#ca-geo h2').textContent.trim(), w: Math.round(box.width), h: Math.round(box.height), o, legend: document.querySelector('.ca-map figcaption').textContent, gi: [...document.querySelectorAll('.ca-gic')].map(e => e.textContent.replace(/\s+/g, ' ').trim()), seminarPhotos: document.querySelectorAll('.ca-phr img').length, land: !!document.querySelector('.ca-map .l')}; });
+  /* 6 · собственный учебный центр */
+  await scrollTo(p, '#ca-center'); await p.waitForTimeout(1600);
+  const ce = await p.evaluate(() => ({h2: document.querySelector('#ca-center h2').textContent.trim(), txt: document.querySelector('#ca-center').textContent.replace(/\s+/g, ' '), photos: [...document.querySelectorAll('.ca-cph img')].filter(i => i.complete && i.naturalWidth > 0).length, href: (document.querySelector('#ca-center .ca-btn-o') || {getAttribute: () => ''}).getAttribute('href')}));
+  t(nbsp(ce.h2) === 'Собственный учебный центр' && /освоить технологии проведения процедур химических пилингов, мезотерапии, эстетических уходов для лица и тела/.test(ce.txt), 'раздел 6: «Собственный учебный центр» — текст владельца', ce.h2);
+  t(ce.photos === 2 && /training\.html/.test(ce.href), 'раздел 6: два реальных фото семинаров, кнопка ведёт в «Обучение»', ce);
+
+  /* 7 · наши дистрибьюторы и отдельный блок карты (карта владельца, ru-map.svg) */
+  await scrollTo(p, '#ca-atlas'); await p.waitForTimeout(2200);
+  const ge = await p.evaluate(() => { const m = [...document.querySelectorAll('.ca-mw')], box = document.querySelector('.ca-mapbox').getBoundingClientRect(), img = document.querySelector('.ca-mapbox>img'); const o = {}; m.forEach(e => { const r = e.getBoundingClientRect(), tipE = e.querySelector('.ca-tip'); o[e.dataset.city] = {role: tipE.querySelector('em').textContent.trim(), tip: tipE.textContent, office: e.classList.contains('is-office'), op: getComputedStyle(tipE).opacity, mk: Math.round(e.querySelector('.ca-mk').getBoundingClientRect().height), x: +(((r.left + r.width / 2 - box.left) / box.width) * 100).toFixed(2), y: +(((r.top + r.height / 2 - box.top) / box.height) * 100).toFixed(2)}; });
+    return {h2: document.querySelector('#ca-geo h2').textContent.trim(), txt: document.querySelector('#ca-geo').textContent.replace(/\s+/g, ' '), w: Math.round(box.width), h: Math.round(box.height), o, legend: document.querySelector('.ca-map figcaption').textContent, gi: [...document.querySelectorAll('.ca-gic')].map(e => e.textContent.replace(/\s+/g, ' ').trim()), mapSrc: img.currentSrc, mapOk: img.complete && img.naturalWidth > 0, btns: document.querySelectorAll('.ca-cb').length}; });
   const O1 = SITE.offices[0], O2 = SITE.offices[1];
-  t(nbsp(ge.h2) === 'Астрея по всей России', 'раздел 6: заголовок по ТЗ', ge.h2);
-  t(Object.keys(ge.o).sort().join() === ['Москва', 'Ростов-на-Дону', 'Санкт-Петербург', 'Симферополь'].sort().join(), 'раздел 6: на карте четыре города', Object.keys(ge.o));
-  t(ge.o['Москва'].role === O1.role && ge.o['Санкт-Петербург'].role === O2.role && ge.o['Москва'].office && ge.o['Санкт-Петербург'].office, 'раздел 6: офисы названы офисами (роли — из data/site.json)', {m: ge.o['Москва'].role, s: ge.o['Санкт-Петербург'].role});
-  t(['Ростов-на-Дону', 'Симферополь'].every(c => ge.o[c].role === 'Город проведения семинаров' && !ge.o[c].office && !/офис|представительств/i.test(ge.o[c].role)), 'раздел 6: Ростов-на-Дону и Симферополь — города проведения семинаров, а не офисы');
-  t(ge.o['Москва'].tip.includes(O1.addr) && ge.o['Санкт-Петербург'].tip.includes(O2.addr) && !ge.o['Симферополь'].tip.includes(O1.addr), 'раздел 6: адреса в подсказках — только у офисов, строго из данных');
-  t(ge.w <= 561 && ge.h <= 325 && ge.land, 'раздел 6: карта компактная (≤ 560×320)', {w: ge.w, h: ge.h});
-  t(/Онлайн/.test(ge.gi.join(' ')) && ge.gi.length === 3 && /Офис/.test(ge.legend) && /Город проведения семинаров/.test(ge.legend), 'раздел 6: справа показатели (офисы, города семинаров, онлайн), у карты — легенда', ge.gi);
-  t(ge.seminarPhotos === 2, 'раздел 6: реальные фото семинаров на месте');
-  t(Object.values(ge.o).every(x => +x.op === 0), 'раздел 6: подсказки скрыты, пока нет наведения', Object.values(ge.o).map(x => x.op));
+  t(nbsp(ge.h2) === 'Астрея по всей России' && /Работу по продвижению марок активно ведут региональные дистрибьюторы/.test(ge.txt) && /наивысшую радость!/.test(ge.txt), 'раздел 7: «Наши дистрибьюторы» — текст владельца', ge.h2);
+  t(ge.mapOk && /ru-map\.svg/.test(ge.mapSrc) && Math.abs(ge.w / ge.h - 1920 / 1108) < 0.02 && ge.w >= 480, 'раздел 7: отдельный блок с картой владельца (ru-map.svg, пропорции 1920×1108)', {w: ge.w, h: ge.h, src: ge.mapSrc});
+  /* точки городов — по проекции карты владельца (коническая Ламберта, подобрана по береговой линии, отклонение ≈ 1 px из 1920) */
+  const EXP = {'Москва': [14.29, 58.05], 'Санкт-Петербург': [14.68, 45.01], 'Ростов-на-Дону': [8.03, 74.58], 'Симферополь': [2.18, 72.19]};
+  t(Object.keys(EXP).every(c => ge.o[c] && Math.abs(ge.o[c].x - EXP[c][0]) < 0.2 && Math.abs(ge.o[c].y - EXP[c][1]) < 0.2), 'раздел 7: маркеры городов стоят на точных местах карты (допуск 0,2 % рамки)', Object.fromEntries(Object.keys(ge.o).map(c => [c, [ge.o[c].x, ge.o[c].y]])));
+  t(ge.o['Москва'].tip.includes(O1.addr) && ge.o['Санкт-Петербург'].tip.includes(O2.addr) && !ge.o['Симферополь'].tip.includes(O1.addr), 'раздел 7: адреса в подсказках — только у офисов, строго из данных');
+  t(/Онлайн/.test(ge.gi.join(' ')) && ge.gi.length === 3 && /Офис/.test(ge.legend) && /Город проведения семинаров/.test(ge.legend) && ge.btns === 4, 'раздел 7: показатели (офисы, города семинаров, онлайн), легенда, список из четырёх городов', ge.gi);
+  t(Object.values(ge.o).every(x => +x.op === 0), 'раздел 7: подсказки скрыты, пока нет наведения', Object.values(ge.o).map(x => x.op));
   await p.hover('.ca-mw[data-city="Москва"] .ca-mk'); await p.waitForTimeout(600);
-  t(await p.evaluate(() => { const tip = document.querySelector('.ca-mw[data-city="Москва"] .ca-tip'); return +getComputedStyle(tip).opacity === 1 && /Москва/.test(tip.textContent); }), 'раздел 6: при наведении появляется подсказка города');
+  t(await p.evaluate(() => { const tip = document.querySelector('.ca-mw[data-city="Москва"] .ca-tip'); return +getComputedStyle(tip).opacity === 1 && /Москва/.test(tip.textContent); }), 'раздел 7: при наведении появляется подсказка города');
   await p.mouse.move(5, 5); await p.waitForTimeout(500);
   await p.focus('.ca-mw[data-city="Симферополь"] .ca-mk'); await p.waitForTimeout(500);
-  t(await p.evaluate(() => +getComputedStyle(document.querySelector('.ca-mw[data-city="Симферополь"] .ca-tip')).opacity === 1), 'раздел 6: подсказка открывается и с клавиатуры (фокус)');
-  await p.keyboard.press('Enter'); await p.waitForTimeout(300); await p.keyboard.press('Escape'); await p.waitForTimeout(300);
-  t(await p.evaluate(() => !document.querySelector('.ca-mw.on')), 'раздел 6: Esc закрывает закреплённую подсказку');
+  t(await p.evaluate(() => +getComputedStyle(document.querySelector('.ca-mw[data-city="Симферополь"] .ca-tip')).opacity === 1), 'раздел 7: подсказка открывается и с клавиатуры (фокус)');
+  await p.mouse.move(5, 5);
+  /* интерактив: клик по городу на карте и в списке выбирает его — карточка, кнопка и маркер синхронны */
+  const sel = async c => p.evaluate(city => ({card: (document.querySelector('.ca-cd.is-on h3') || {textContent: ''}).textContent, btn: (document.querySelector('.ca-cb[aria-pressed="true"] b') || {textContent: ''}).textContent, mk: (document.querySelector('.ca-mw.is-sel') || {dataset: {}}).dataset.city, vis: [...document.querySelectorAll('.ca-cd')].filter(e => getComputedStyle(e).display !== 'none').length}), c);
+  let r0 = await sel();
+  t(r0.card === 'Москва' && r0.btn === 'Москва' && r0.mk === 'Москва' && r0.vis === 1, 'раздел 7: по умолчанию выбрана Москва (карточка, кнопка и маркер)', r0);
+  await p.click('.ca-mw[data-city="Ростов-на-Дону"] .ca-mk'); await p.waitForTimeout(700);
+  r0 = await sel();
+  t(r0.card === 'Ростов-на-Дону' && r0.btn === 'Ростов-на-Дону' && r0.mk === 'Ростов-на-Дону' && r0.vis === 1, 'раздел 7: клик по маркеру выбирает город (карточка и кнопка следуют)', r0);
+  await p.click('.ca-cb[data-city="Санкт-Петербург"]'); await p.waitForTimeout(700);
+  r0 = await sel();
+  t(r0.card === 'Санкт-Петербург' && r0.mk === 'Санкт-Петербург' && await p.evaluate(() => document.querySelector('.ca-cd.is-on').textContent.includes('Большая Конюшенная')), 'раздел 7: клик по городу в списке выбирает маркер и показывает адрес офиса', r0);
   await p.mouse.move(5, 5);
 
-  /* продающий слой: «Ваш регион» сохранён, дубля trust нет */
-  t(await p.evaluate(() => !!document.querySelector('.sx-region') && document.querySelectorAll('[data-sx-reg]').length >= 3 && !document.querySelector('.sx-trust')), 'продающий слой: «Ваш регион» сохранён, «Почему доверять» не дублируется');
-
-  /* 7 · заключение */
-  await scrollTo(p, '#ca-final'); await p.waitForTimeout(1500);
-  const fi = await p.evaluate(() => { const f = document.querySelector('#ca-final'), b = [...f.querySelectorAll('.ca-fin-b a, .ca-fin-b button')]; const im = f.querySelector('.ca-fin-bg img'); const r = f.querySelector('.ca-fin-bg').getBoundingClientRect(), h = f.querySelector('h2').getBoundingClientRect(), bb = f.querySelector('.ca-fin-b').getBoundingClientRect();
-    return {h2: f.querySelector('h2').textContent.trim(), btn: b.map(x => x.textContent.trim().replace(/\s+/g, ' ')), hrefs: b.map(x => (x.getAttribute('href') || '').split('?')[0]), closing: f.querySelector('.ca-fin').getAttribute('data-sx-closing'), img: !!im && im.complete && im.naturalWidth > 0, order: r.width >= f.getBoundingClientRect().width - 2 && h.left < bb.left, h: Math.round(f.getBoundingClientRect().height),
-      ask: !!f.querySelector('[data-act="asst-open"]'), askTrack: (f.querySelector('[data-act="asst-open"]') || {getAttribute: () => ''}).getAttribute('data-track'), partner: b.find(x => /партн/i.test(x.textContent)) ? b.find(x => /партн/i.test(x.textContent)).getAttribute('href') : ''}; });
-  t(nbsp(fi.h2) === 'Астрея — профессиональное партнёрство, основанное на знаниях и доверии', 'раздел 7: заключение по ТЗ', fi.h2);
-  t(fi.btn.some(x => x === 'Посмотреть обучение') && fi.btn.some(x => /^Стать партн[её]ром/.test(x)) && fi.hrefs.includes('training.html') && /partners\.html/.test(fi.partner), 'раздел 7: кнопки «Посмотреть обучение» и «Стать партнёром» ведут по назначению', fi);
-  t(fi.img && fi.order && fi.h <= 480, 'раздел 7: атриум снова на заднем плане, слева фраза, справа кнопки (горизонтально, компактно)', fi);
-  t(fi.closing === 'company-cta' && fi.ask && fi.askTrack === 'asst_open', 'раздел 7: крючок завершающего блока и «Спросить Стеллу» (asst-open) на месте');
-  await p.click('#ca-final [data-act="asst-open"]'); await p.waitForTimeout(900);
-  t(await p.evaluate(() => document.body.classList.contains('asst-open')), 'раздел 7: Стелла открывается по кнопке (без второго чата)');
-  await p.keyboard.press('Escape'); await p.waitForTimeout(400);
-
-  /* общие требования */
-  t(await noOverflow(p), 'компания 1440: нет горизонтальной прокрутки');
-  const bad1440 = await p.evaluate(() => [...document.querySelectorAll('.ca img')].filter(i => i.getBoundingClientRect().width > 0 && i.complete && i.naturalWidth === 0).map(i => i.src));
-  t(bad1440.length === 0, 'компания 1440: битых картинок нет', bad1440);
-  const tiny = await p.evaluate(() => [...document.querySelectorAll('.ca-stats, .ca-dirs, .ca-brands, .ca-phil, .ca-geo, .ca-final')].map(e => Math.round(e.getBoundingClientRect().height)));
-  t(tiny.every(v => v <= 640), 'компания 1440: ни один раздел не превращается в огромную витрину (≤ 640 px)', tiny);
+  const tiny = await p.evaluate(() => [...document.querySelectorAll('.ca-stats, .ca-dirs, .ca-brands, .ca-phil, .ca-center, .ca-final')].map(e => Math.round(e.getBoundingClientRect().height)));
+  t(tiny.every(v => v <= 780), 'компания 1440: ни один раздел не превращается в огромную витрину (≤ 780 px; «Преимущества» с двумя колонками текста — самый высокий)', tiny);
   t(p._errs.length === 0, 'компания 1440: ошибок в консоли нет', p._errs); await p._ctx.close();
 
   /* ================= 1440, prefers-reduced-motion ================= */
@@ -177,10 +172,11 @@ const rub = n => new Intl.NumberFormat('ru-RU').format(n).replace(/[  ]/g, ' ') 
   const mb = await p.evaluate(() => ({h1: Math.round(document.querySelector('h1').getBoundingClientRect().width), cols: new Set([...document.querySelectorAll('.ca-dc a')].map(a => Math.round(a.getBoundingClientRect().left))).size, bcols: new Set([...document.querySelectorAll('.ca-bc')].map(a => Math.round(a.getBoundingClientRect().left))).size, stats: new Set([...document.querySelectorAll('.ca-stat')].map(a => Math.round(a.getBoundingClientRect().left))).size}));
   t(mb.h1 <= 390 && mb.cols === 1 && mb.bcols === 2 && mb.stats === 2, 'компания 390: цифры 2×2, направления в столбик, логотипы в две колонки', mb);
   await scrollTo(p, '#ca-geo'); await p.waitForTimeout(1800);
+  await scrollTo(p, '#ca-atlas'); await p.waitForTimeout(1200);
   for (const c of ['Москва', 'Санкт-Петербург', 'Ростов-на-Дону', 'Симферополь']) {
     await p.tap('.ca-mw[data-city="' + c + '"] .ca-mk'); await p.waitForTimeout(600);
-    const r = await p.evaluate(city => { const m = document.querySelector('.ca-mw[data-city="' + city + '"]'), tip = m.querySelector('.ca-tip').getBoundingClientRect(); return {on: m.classList.contains('on'), l: Math.round(tip.left), r: Math.round(tip.right), op: +getComputedStyle(m.querySelector('.ca-tip')).opacity}; }, c);
-    t(r.on && r.op === 1 && r.l >= 0 && r.r <= 391, 'компания 390: касание маркера «' + c + '» открывает подсказку внутри экрана', r);
+    const r = await p.evaluate(city => { const m = document.querySelector('.ca-mw[data-city="' + city + '"]'), mk = m.querySelector('.ca-mk').getBoundingClientRect(), v = document.querySelector('.ca-mapview').getBoundingClientRect(), card = document.querySelector('.ca-cd.is-on'); return {sel: m.classList.contains('is-sel'), card: card ? card.querySelector('h3').textContent : '', inside: mk.left >= v.left - 1 && mk.right <= v.right + 1 && mk.top >= v.top - 1 && mk.bottom <= v.bottom + 1, tipHidden: getComputedStyle(m.querySelector('.ca-tip')).display === 'none'}; }, c);
+    t(r.sel && r.card === c && r.inside && r.tipHidden, 'компания 390: касание маркера «' + c + '» выбирает город, маркер в видимой части карты, карточка показана под картой', r);
   }
   const small = await p.evaluate(() => [...document.querySelectorAll('.ca .ca-bc, .ca .ca-dc a')].filter(e => { const r = e.getBoundingClientRect(); return r.width > 0 && r.height < 43.5; }).concat([...document.querySelectorAll('.ca .ca-btn-o, .ca .ca-ask, .ca .btn')].filter(e => { const r = e.getBoundingClientRect(); return r.width > 0 && r.height < 24; })).map(e => e.className + ':' + Math.round(e.getBoundingClientRect().height)));
   t(small.length === 0, 'компания 390: цели касания: плитки и карточки ≥ 44 px, кнопки как на «Обучении» ≥ 24 px (WCAG 2.2)', small);

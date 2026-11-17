@@ -94,7 +94,7 @@ html.js .ca-bc.reveal,html.js .ca-av.reveal{translate:0 0}
 
 /* ---------- 5. философия и преимущества ---------- */
 .ca-phil{padding:clamp(36px,4.4vw,72px) 0;background:linear-gradient(180deg,rgba(236,222,190,0),rgba(236,222,190,.42) 45%,rgba(236,222,190,0));overflow:hidden;isolation:isolate}
-.ca-ribbon{position:absolute;right:-4%;top:0;width:64%;height:100%;z-index:-1;background:url(../assets/bg/silk-t.webp?v=8ac2fbc7) 50% 50%/cover no-repeat;opacity:.5;-webkit-mask-image:radial-gradient(ellipse 50% 50% at 50% 50%,#000 28%,rgba(0,0,0,.5) 62%,rgba(0,0,0,0) 100%);mask-image:radial-gradient(ellipse 50% 50% at 50% 50%,#000 28%,rgba(0,0,0,.5) 62%,rgba(0,0,0,0) 100%);pointer-events:none}
+.ca-ribbon{position:absolute;right:-4%;top:0;width:64%;height:100%;z-index:-1;background:url(../assets/bg/silk-t.webp?v=87a1af45) 50% 50%/cover no-repeat;opacity:.5;-webkit-mask-image:radial-gradient(ellipse 50% 50% at 50% 50%,#000 28%,rgba(0,0,0,.5) 62%,rgba(0,0,0,0) 100%);mask-image:radial-gradient(ellipse 50% 50% at 50% 50%,#000 28%,rgba(0,0,0,.5) 62%,rgba(0,0,0,0) 100%);pointer-events:none}
 .ca-phil-in{display:grid;grid-template-columns:minmax(0,.95fr) minmax(0,1.75fr);gap:clamp(18px,3.2vw,60px);align-items:center}
 .ca-phil-t h2{font-size:clamp(26px,2.9vw,50px);line-height:1.12;max-width:11em}
 .ca-adv{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));border-radius:16px;background:rgba(251,247,236,.7);box-shadow:inset 0 0 0 1px var(--line)}
@@ -107,12 +107,6 @@ html.js .ca-bc.reveal,html.js .ca-av.reveal{translate:0 0}
 
 /* ---------- 6. география ---------- */
 .ca-geo{padding:clamp(34px,4vw,64px) 0;background:radial-gradient(ellipse 70% 50% at 50% 50%,rgba(255,250,236,.55),rgba(255,250,236,0))}
-.ca-geo-in{display:grid;grid-template-columns:minmax(0,.85fr) minmax(0,1.5fr) minmax(0,.75fr);gap:clamp(16px,2.4vw,44px);align-items:center}
-.ca-map{position:relative;margin:0;width:100%;max-width:560px;justify-self:center}
-.ca-mapbox{position:relative;aspect-ratio:560/320}
-.ca-mapbox>svg{position:absolute;inset:0;width:100%;height:100%;display:block;-webkit-mask-image:linear-gradient(90deg,#000 0,#000 74%,rgba(0,0,0,0) 99%);mask-image:linear-gradient(90deg,#000 0,#000 74%,rgba(0,0,0,0) 99%)}
-.ca-map .g{fill:none;stroke:rgba(168,133,63,.34);stroke-width:.6;stroke-dasharray:2 3}
-.ca-map .l{fill:rgba(224,207,167,.92);stroke:var(--gold);stroke-width:1.3;stroke-linejoin:round}
 .ca-map figcaption{display:flex;flex-wrap:wrap;gap:4px 16px;padding:8px 6px 0;font:600 var(--f-xs)/1.2 var(--sans);color:#4a4f5c}
 .ca-map figcaption span{display:inline-flex;align-items:center;gap:6px}
 .ca-map .d-o,.ca-map .d-s{display:inline-block;width:10px;height:10px;border-radius:50%}.ca-map .d-o{background:var(--navy);box-shadow:0 0 0 2px var(--gold2)}.ca-map .d-s{background:var(--gold2);box-shadow:0 0 0 2px rgba(168,133,63,.5)}
@@ -123,7 +117,7 @@ html.js .ca-bc.reveal,html.js .ca-av.reveal{translate:0 0}
 .ca-mw.is-office .ca-mk i{background:var(--navy);box-shadow:0 0 0 2px var(--gold2)}
 .ca-mw:hover .ca-mk i,.ca-mw.on .ca-mk i,.ca-mw:focus-within .ca-mk i{box-shadow:0 0 0 3px rgba(168,133,63,.85)}
 .ca-mn{position:absolute;white-space:nowrap;padding:2px 8px;border-radius:999px;background:rgba(251,247,236,.94);box-shadow:inset 0 0 0 1px var(--line);font:600 clamp(11px,.76vw,13px)/1.4 var(--sans);pointer-events:none}
-.ca-mw.s-r .ca-mn{left:calc(50% + 12px);top:50%;translate:0 -50%}.ca-mw.s-tr .ca-mn{left:calc(50% + 6px);bottom:calc(50% + 8px)}.ca-mw.s-b .ca-mn{left:calc(50% - 12px);top:calc(50% + 12px)}
+.ca-mw.s-r .ca-mn{left:calc(50% + 12px);top:50%;translate:0 -50%}.ca-mw.s-tr .ca-mn{left:calc(50% + 6px);bottom:calc(50% + 12px)}.ca-mw.s-b .ca-mn{left:calc(50% - 12px);top:calc(50% + 12px)}
 .ca-mw:hover .ca-mn,.ca-mw.on .ca-mn{background:var(--navy);color:#fff;box-shadow:none}
 .ca-tip{position:absolute;z-index:8;left:-6px;bottom:calc(100% + 6px);width:clamp(210px,18vw,270px);display:grid;gap:4px;padding:11px 14px;border-radius:12px;background:rgba(251,247,236,.99);box-shadow:inset 0 0 0 1px var(--line),inset 0 3px 0 var(--gold2),0 24px 34px -20px rgba(60,40,18,.6);font-size:var(--f-xs);line-height:1.45;opacity:0;transform:translateY(6px);pointer-events:none;transition:opacity .35s var(--ac-ease),transform .35s var(--ac-ease)}
 .ca-tip::before{content:"";position:absolute;left:0;right:0;top:100%;height:12px}
@@ -132,7 +126,6 @@ html.js .ca-bc.reveal,html.js .ca-av.reveal{translate:0 0}
 .ca-tip time{font-weight:700}
 .ca-mw:hover .ca-tip,.ca-mw:focus-within .ca-tip,.ca-mw.on .ca-tip{opacity:1;transform:none;pointer-events:auto}
 .ca-mw:hover,.ca-mw:focus-within,.ca-mw.on{z-index:9}
-.ca-gi{list-style:none;margin:0;padding:0 0 0 clamp(14px,1.6vw,26px);border-left:1px solid var(--line);display:grid;gap:clamp(10px,1.2vw,18px)}
 .ca-gic{display:grid;grid-template-columns:36px minmax(0,1fr);gap:12px;align-items:start}
 .ca-gii{display:grid;place-items:center;width:34px;height:34px;border-radius:50%;box-shadow:inset 0 0 0 1px rgba(168,133,63,.6);color:var(--navy)}.ca-gii svg{width:17px;height:17px}.ca-gii.is-h{color:var(--gold)}
 .ca-gic b{font:400 clamp(22px,1.9vw,32px)/1.1 var(--serif);color:var(--navy)}.ca-gic div>span{font:600 var(--f-s)/1.3 var(--sans)}
@@ -144,9 +137,6 @@ html.js .ca-bc.reveal,html.js .ca-av.reveal{translate:0 0}
 .ca-ph::after{content:"";position:absolute;inset:0;pointer-events:none;background:linear-gradient(180deg,rgba(243,226,188,.1),rgba(224,196,140,.18))}
 @media (hover:hover){.ca-ph:hover img{transform:scale(1.03)}}
 .ca-ph-team{margin-top:clamp(14px,1.4vw,22px);max-width:430px;aspect-ratio:16/6}
-.ca-geo-r{display:grid;gap:clamp(12px,1.3vw,20px);align-content:center}
-.ca-phr{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;padding-left:clamp(14px,1.6vw,26px)}
-.ca-phr .ca-ph{aspect-ratio:3/2;border-radius:999px 999px 12px 12px}
 
 /* ---------- 7. заключение ---------- */
 .ca-final{padding:clamp(64px,8vw,130px) 0 clamp(56px,6.4vw,100px);overflow:hidden;isolation:isolate;background:transparent;color:#f4eee0}
@@ -170,7 +160,6 @@ html.js .ca-bc.reveal,html.js .ca-av.reveal{translate:0 0}
   .ca-dir-in{grid-template-columns:minmax(0,1fr)}
   .ca-dl{grid-template-columns:repeat(2,minmax(0,1fr))}
   .ca-br-in,.ca-phil-in{grid-template-columns:minmax(0,1fr)}
-  .ca-geo-in{grid-template-columns:minmax(0,1fr) minmax(0,1.2fr)}.ca-geo-r{grid-column:1/-1;grid-template-columns:minmax(0,2fr) minmax(0,1fr);align-items:center}.ca-gi{grid-template-columns:repeat(3,minmax(0,1fr));border-left:0;padding:0}.ca-phr{padding-left:0}
   .ca-fin{grid-template-columns:minmax(0,1fr)}.ca-fin-b{justify-content:flex-start;max-width:none}
 }
 @media (max-width:760px){
@@ -180,18 +169,81 @@ html.js .ca-bc.reveal,html.js .ca-av.reveal{translate:0 0}
   .ca-stl{grid-template-columns:repeat(2,minmax(0,1fr));padding-inline:clamp(14px,4vw,28px)}
   .ca-stat:nth-child(3)::before{display:none}.ca-stat:nth-child(n+3){border-top:1px solid var(--line)}
   .ca-spark,.ca-stats::before{display:none}
-  .ca-geo-in{grid-template-columns:minmax(0,1fr)}.ca-map{justify-self:start}
-  .ca-geo-r{grid-template-columns:minmax(0,1fr)}.ca-gi{grid-template-columns:minmax(0,1fr)}
   .ca-adv{grid-template-columns:repeat(2,minmax(0,1fr))}
   .ca-av:nth-child(n+3){border-top:1px solid var(--line)}.ca-av:nth-child(n){border-left:0}.ca-av:nth-child(2n){border-left:1px solid var(--line)}
 }
 @media (max-width:560px){
-  /* карта на телефоне крупнее окна: показывается её западная часть, где все четыре города (иначе маркеры Ростова и Симферополя сливаются) */
-  .ca-map{overflow-x:clip;overflow-y:visible}.ca-mapbox{width:170%}
-  .ca-mapbox>svg{-webkit-mask-image:linear-gradient(90deg,#000 0,#000 48%,rgba(0,0,0,0) 62%);mask-image:linear-gradient(90deg,#000 0,#000 48%,rgba(0,0,0,0) 62%)}
   .ca-dl{grid-template-columns:minmax(0,1fr)}
   .ca-dc a{display:grid;grid-template-columns:42% minmax(0,1fr);gap:12px;align-items:start}.ca-dpw{aspect-ratio:1/1}.ca-dt{padding:4px 4px 34px 0}
   .ca-bgrid{grid-template-columns:repeat(2,minmax(0,1fr))}.ca-bc:nth-child(3n){border-right:1px solid var(--line)}.ca-bc:nth-child(2n){border-right:0}.ca-bc:nth-last-child(-n+3){border-bottom:1px solid var(--line)}.ca-bc:nth-last-child(-n+1){border-bottom:0}
   .ca-adv{grid-template-columns:minmax(0,1fr)}.ca-av:nth-child(n){border-left:0}.ca-av:nth-child(n+2){border-top:1px solid var(--line)}
   .ca-fin-b .ca-btn{flex:1 1 100%}
+}
+
+
+/* ============ 5 (продолжение). текст «Наши преимущества» в две колонки ============ */
+.ca-txt2{grid-column:1/-1;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:clamp(14px,3vw,56px);margin-top:clamp(4px,1vw,14px);padding-top:clamp(14px,1.6vw,24px);border-top:1px solid var(--line)}
+.ca-txt2 .ca-p{margin:0;max-width:none}
+
+/* ============ 6. собственный учебный центр ============ */
+.ca-center{padding:clamp(34px,4vw,64px) 0;background:radial-gradient(ellipse 70% 55% at 85% 50%,rgba(255,250,236,.5),rgba(255,250,236,0))}
+.ca-center-in{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.05fr);gap:clamp(20px,4vw,72px);align-items:center}
+.ca-center-t h2{margin-top:10px;font-size:clamp(26px,2.9vw,50px);line-height:1.12;max-width:11em}
+.ca-tags{list-style:none;margin:18px 0 0;padding:0;display:flex;flex-wrap:wrap;gap:8px}
+.ca-tags li{padding:6px 14px;border-radius:999px;background:rgba(251,247,236,.72);box-shadow:inset 0 0 0 1px rgba(168,133,63,.55);font:600 var(--f-xs)/1.3 var(--sans);color:var(--navy)}
+.ca-center .ca-cta{margin-top:20px}
+.ca-cph{position:relative;display:grid;grid-template-columns:1.2fr 1fr;gap:12px;align-items:end}
+.ca-cph .ca-ph:first-child{aspect-ratio:4/5.4;border-radius:999px 999px 14px 14px}
+.ca-cph .ca-ph:last-child{aspect-ratio:4/4.6;margin-bottom:clamp(18px,3vw,46px)}
+
+/* ============ 7. наши дистрибьюторы и отдельный блок карты ============ */
+.ca-geo-in{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(0,1fr);gap:clamp(16px,3.4vw,64px);align-items:center}
+.ca-geo-t h2{margin-top:10px;font-size:clamp(26px,2.9vw,50px);line-height:1.12}
+.ca-gi{list-style:none;margin:0;padding:0 0 0 clamp(14px,1.6vw,26px);border-left:1px solid var(--line);display:grid;gap:clamp(10px,1.2vw,18px)}
+.ca-atlas{display:grid;grid-template-columns:minmax(260px,.78fr) minmax(0,2fr);gap:clamp(16px,2.6vw,48px);align-items:center;margin-top:clamp(22px,2.8vw,44px)}
+.ca-cities{list-style:none;margin:0 0 14px;padding:0;display:grid;gap:6px}
+.ca-cb{display:flex;align-items:center;justify-content:space-between;gap:12px;width:100%;min-height:46px;padding:8px 16px;border:0;border-radius:12px;background:rgba(251,247,236,.72);box-shadow:inset 0 0 0 1px var(--line);cursor:pointer;color:var(--ink);font:inherit;text-align:left;transition:background-color .35s var(--ac-ease),color .35s var(--ac-ease),box-shadow .35s var(--ac-ease),transform .35s var(--ac-ease)}
+.ca-cb b{font:400 var(--f-h3)/1.2 var(--serif)}
+.ca-cb small{font:700 var(--f-xs)/1.2 var(--sans);letter-spacing:.12em;text-transform:uppercase;color:var(--gold)}
+@media (hover:hover){.ca-cb:hover{transform:translateX(4px);box-shadow:inset 0 0 0 1px rgba(168,133,63,.75)}}
+.ca-cb[aria-pressed="true"]{background:var(--navy);color:#fff;box-shadow:none}.ca-cb[aria-pressed="true"] small{color:var(--gold2)}
+.ca-cds{position:relative}
+.ca-cd{display:grid;gap:6px;padding:clamp(14px,1.4vw,22px);border-radius:16px;background:rgba(251,247,236,.9);box-shadow:inset 0 0 0 1px var(--line),inset 0 3px 0 var(--gold2),0 22px 34px -26px rgba(60,40,18,.55)}
+html.js .ca-cd{display:none}html.js .ca-cd.is-on{display:grid;animation:ca-cd-in .5s var(--ac-ease) both}
+@keyframes ca-cd-in{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+.ca-cd em{font-style:normal;font:700 var(--f-xs)/1.2 var(--sans);letter-spacing:.12em;text-transform:uppercase;color:var(--gold)}
+.ca-cd h3{margin:0;font:400 clamp(24px,2.1vw,34px)/1.1 var(--serif);color:var(--navy)}
+.ca-cd p{margin:0;font:400 var(--f-s)/1.5 var(--sans);color:#3a4458}.ca-cd .ca-ch{color:#4a4f5c;font-size:var(--f-xs)}
+.ca-cr{display:flex;flex-wrap:wrap;gap:6px 18px;margin-top:6px}
+.ca-cl{color:var(--ink);text-decoration:none;font:600 var(--f-s)/1.4 var(--sans);border-bottom:1px solid rgba(168,133,63,.6);transition:border-color .35s var(--ac-ease)}.ca-cl:hover{border-bottom-color:var(--ink)}.ca-cl time{font-weight:700}
+.ca-map{position:relative;margin:0;width:100%}
+.ca-mapview{position:relative}
+.ca-mapbox{position:relative;aspect-ratio:1920/1108}
+.ca-mapbox>img{position:absolute;inset:0;width:100%;height:100%;display:block;filter:drop-shadow(0 18px 22px rgba(60,40,18,.2))}
+.ca-map figcaption{display:flex;flex-wrap:wrap;gap:4px 16px;padding:10px 6px 0;font:600 var(--f-xs)/1.2 var(--sans);color:#4a4f5c}
+.ca-map figcaption span{display:inline-flex;align-items:center;gap:6px}
+.ca-map .ca-hint{margin-left:auto;font-weight:500;color:#6a6f7c}
+.ca-map .d-o,.ca-map .d-s{display:inline-block;width:10px;height:10px;border-radius:50%}.ca-map .d-o{background:var(--navy);box-shadow:0 0 0 2px var(--gold2)}.ca-map .d-s{background:var(--gold2);box-shadow:0 0 0 2px rgba(168,133,63,.5)}
+.ca-mw.is-sem .ca-mk i{background:#fffaf0;box-shadow:0 0 0 2px var(--navy)}
+.ca-map .d-s{background:#fffaf0!important;box-shadow:0 0 0 2px var(--navy)!important}
+.ca-mw.is-sel .ca-mk i::after{content:"";position:absolute;inset:-8px;border-radius:50%;box-shadow:0 0 0 1.5px rgba(168,133,63,.85)}
+.ca-mw.is-sel .ca-mn{background:var(--navy);color:#fff;box-shadow:none}
+.ca-mw.is-sel{z-index:7}
+.ca-sign{margin:14px 0 0;font:italic 400 clamp(16px,1.4vw,22px)/1.4 var(--serif);color:rgba(255,255,255,.88)}
+@media (max-width:1100px){
+  .ca-center-in,.ca-geo-in{grid-template-columns:minmax(0,1fr)}.ca-gi{grid-template-columns:repeat(3,minmax(0,1fr));padding:0;border-left:0;border-top:1px solid var(--line);padding-top:14px}
+  .ca-atlas{grid-template-columns:minmax(220px,.9fr) minmax(0,1.6fr)}
+}
+@media (max-width:760px){
+  .ca-txt2{grid-template-columns:minmax(0,1fr)}
+  .ca-gi{grid-template-columns:minmax(0,1fr)}
+  .ca-atlas{grid-template-columns:minmax(0,1fr)}.ca-map{order:-1}
+  .ca-tip{display:none}
+  .ca-map .ca-hint{margin-left:0;flex-basis:100%}
+}
+@media (max-width:560px){
+  /* на телефоне видна западная часть карты, где все четыре города: иначе их маркеры сливаются */
+  .ca-mapview{aspect-ratio:1/.98;overflow:hidden;border-radius:16px}
+  .ca-mapbox{width:330%;margin-top:-72.4%}
+  .ca-cph{grid-template-columns:minmax(0,1fr) minmax(0,.8fr)}
 }

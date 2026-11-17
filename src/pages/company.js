@@ -23,6 +23,17 @@ const ICON = [
   '<circle cx="9" cy="8" r="3.2"/><path d="M3 20c0-3.6 2.7-6 6-6s6 2.4 6 6"/><circle cx="17" cy="9" r="2.4"/><path d="M16 14c3 .2 5 2 5 5"/>',
   '<path d="M4 20V10M10 20V5M16 20v-8M22 20H2"/>'];
 const GEO = {'Москва': [37.62, 55.75], 'Санкт-Петербург': [30.32, 59.94], 'Ростов-на-Дону': [39.72, 47.22], 'Симферополь': [34.1, 44.95]};
+/* Карта России владельца (assets/company/ru-map.svg, 1920×1108): коническая равноугольная проекция Ламберта, параметры подобраны по береговой линии карты
+   (совпадение контуров 97 процентов, среднее отклонение берега 0,7–1,3 px). Координаты городов переводятся в проценты рамки карты — маркеры стоят на реальных местах. */
+const MAP = {W: 1920, H: 1108, l0: 90.0438, p1: 46.9718, p2: 62.1925, s: 1463.4714, tx: 953.732, ty: 802.0278};
+function mapAt(lon, lat) {
+  const r = Math.PI / 180, a = MAP.p1 * r, b = MAP.p2 * r;
+  const n = Math.log(Math.cos(a) / Math.cos(b)) / Math.log(Math.tan(Math.PI / 4 + b / 2) / Math.tan(Math.PI / 4 + a / 2));
+  const F = Math.cos(a) * Math.pow(Math.tan(Math.PI / 4 + a / 2), n) / n;
+  const rho = F / Math.pow(Math.tan(Math.PI / 4 + lat * r / 2), n), rho0 = F / Math.pow(Math.tan(Math.PI / 4 + 60 * r / 2), n), lam = (lon - MAP.l0) * r;
+  const x = MAP.s * rho * Math.sin(n * lam) + MAP.tx, y = -MAP.s * (rho0 - rho * Math.cos(n * lam)) + MAP.ty;
+  return {x: +(x / MAP.W * 100).toFixed(2), y: +(y / MAP.H * 100).toFixed(2)};
+}
 
 module.exports = function company(ctx, C, P) {
   const {content, brands, site, sortedEvents} = ctx, cp = content.company, u = f => C.u(P, f);
@@ -58,15 +69,19 @@ module.exports = function company(ctx, C, P) {
   const roleOf = city => city === o1.city ? o1.role : city === o2.city ? o2.role : 'Город проведения семинаров';
   const officeOf = city => city === o1.city ? o1 : city === o2.city ? o2 : null;
   const evIn = city => up.find(e => e.city === city);
-  const map = ruMap(560, 320, 0, {lon: [22, 136], lat: [42.5, 78]});   /* кадр: от западной границы до Байкала и дальше на восток (правый край в CSS растворяется) */
-  const mk = Object.keys(GEO).map((city, i) => {
-    const p = map.at(GEO[city][0], GEO[city][1]), o = officeOf(city), ev = evIn(city), role = roleOf(city), id = 'ca-tip-' + i;
-    const side = i === 0 ? 'r' : i === 1 ? 'tr' : i === 2 ? 'r' : 'b';
+    const mk = Object.keys(GEO).map((city, i) => {
+    const p = mapAt(GEO[city][0], GEO[city][1]), o = officeOf(city), ev = evIn(city), role = roleOf(city), id = 'ca-tip-' + i;
+    const side = i === 0 ? 'r' : i === 1 ? 'r' : i === 2 ? 'tr' : 'b';
     const body = o ? `<span class="ca-tl">${esc(o.addr)}</span>${o.phones[0] ? `<a href="tel:${o.phones[0][0].replace(/[^+\d]/g, '')}" data-track="phone_click">${esc(o.phones[0][0])}</a>` : ''}`
       : `<span class="ca-tl">Семинары учебного центра «Астрея»</span>${ev ? `<a href="${C.eurl(P, ev)}" data-track="event_click" data-place="company-geo"><time datetime="${ev.date}">${dparts(ev.date).d} ${esc(dparts(ev.date).m)}</time> · ${esc(ev.title)}</a>` : `<a href="${u('training.html')}" data-track="training_click" data-place="company-geo">Даты — в расписании</a>`}`;
     return `<div class="ca-mw s-${side}${o ? ' is-office' : ' is-sem'}" data-city="${esc(city)}" style="left:${p.x}%;top:${p.y}%;--i:${i}">
-      <button class="ca-mk" type="button" aria-describedby="${id}" aria-label="${esc(city)} — ${esc(role)}"><i aria-hidden="true"></i><span class="ca-mn">${esc(city)}</span></button>
+      <button class="ca-mk" type="button" aria-describedby="${id}" aria-label="${esc(city)} — ${esc(role)}" data-city="${esc(city)}"><i aria-hidden="true"></i><span class="ca-mn">${esc(city)}</span></button>
       <div class="ca-tip" id="${id}" role="tooltip"><b>${esc(city)}</b><em>${esc(role)}</em>${body}</div></div>`; }).join('');
+  const cardOf = city => { const o = officeOf(city), ev = evIn(city), role = roleOf(city), ph = o && o.phones[0] ? o.phones[0] : null;
+    const evl = ev ? `<a class="ca-cl" href="${C.eurl(P, ev)}" data-track="event_click" data-place="company-map"><time datetime="${ev.date}">${dparts(ev.date).d} ${esc(dparts(ev.date).m)}</time> · ${esc(ev.title)}</a>`
+      : `<a class="ca-cl" href="${u('training.html')}" data-track="training_click" data-place="company-map">Расписание семинаров</a>`;
+    return `<article class="ca-cd" data-city="${esc(city)}" aria-label="${esc(city)}"><em>${esc(role)}</em><h3>${esc(city)}</h3><p>${esc(o ? o.addr : 'Семинары учебного центра «Астрея»')}</p>${o && o.hours ? `<p class="ca-ch">${esc(o.hours)}</p>` : ''}<div class="ca-cr">${ph ? `<a class="ca-cl" href="tel:${ph[0].replace(/[^+\d]/g, '')}" data-track="phone_click" data-place="company-map">${esc(ph[0])}</a>` : ''}${evl}</div></article>`; };
+  const cityBtns = Object.keys(GEO).map((city, i) => `<li><button class="ca-cb" type="button" data-city="${esc(city)}" aria-pressed="${i === 0 ? 'true' : 'false'}"><b>${esc(city)}</b><small>${esc(officeOf(city) ? 'Офис' : 'Семинары')}</small></button></li>`).join('');
   const globe = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c3 3 3 15 0 18M12 3c-3 3-3 15 0 18"/></svg>';
   const geoItems = [
     {ic: I.pin, k: '2', t: 'офиса', d: `${o1.city} — ${o1.role.toLowerCase()}; ${o2.city} — ${o2.role.toLowerCase()}`},
@@ -117,36 +132,56 @@ module.exports = function company(ctx, C, P) {
   <section class="ca-s ca-phil" id="ca-phil" data-scene="5" data-title="Преимущества" aria-labelledby="ca-h5">
     <i class="ca-ribbon" aria-hidden="true"></i>
     <div class="ca-in ca-phil-in">
-      <header class="ca-phil-t reveal"><span class="ca-eyebrow">Преимущества</span><h2 id="ca-h5">Профессиональная косметология начинается с доверия</h2>
-        <p class="ca-p">${esc(cp.who[2])}</p>
+      <header class="ca-phil-t reveal"><span class="ca-eyebrow">Почему Астрея</span><h2 id="ca-h5">Наши преимущества</h2>
+        <p class="ca-p">Разнообразие продвигаемых марок, высокое качество продукции, собственный обучающий и медицинский центры, широкая дистрибьюторская сеть, профессионализм сотрудников и индивидуальный подход к каждому клиенту выгодно позиционируют компанию «Астрея» на российском рынке.</p>
         <figure class="ca-ph ca-ph-team" aria-hidden="true">${img('assets/photos/photo-02-about.webp', 800, 533, '', '', '50% 20%')}</figure></header>
       <ul class="ca-adv reveal" data-sx-mod="trust" aria-label="Преимущества работы с Астрея">${content.advantages.map((a, i) => `<li class="ca-av reveal"><span class="ca-ai" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">${ICON[i % ICON.length]}</svg></span>
         <div><b>${esc(a.title)}</b><span>${esc(a.text)}</span></div></li>`).join('')}</ul>
+      <div class="ca-txt2">
+        <p class="ca-p reveal">ООО «Астрея» представляет широкий ассортимент дерматологических, космецевтических, косметических препаратов, а также средства для парикмахеров-стилистов и визажистов. Компания «Астрея» находится в постоянном и тесном контакте с фабриками-производителями, которые имеют собственные научные лаборатории, оснащены высокотехнологичным оборудованием для исследований, разработок и производства косметической продукции.</p>
+        <p class="ca-p reveal">Периодически тренеры ООО «Астрея» и самые активные наши партнёры посещают учебные центры и производства зарубежных компаний для освоения новых технологий и продуктов. В офисе ООО «Астрея» Вы можете рассчитывать на исключительно доброжелательное и внимательное к Вам отношение, получить полную и достоверную информацию о продвигаемой нашей компанией продукции, которой мы искренне гордимся. Мы всегда рядом!</p>
+      </div>
     </div>
   </section>
 
-  <section class="ca-s ca-geo" id="ca-geo" data-scene="6" data-title="География" aria-labelledby="ca-h7">
+  <section class="ca-s ca-center" id="ca-center" data-scene="6" data-title="Учебный центр" aria-labelledby="ca-h6">
+    <div class="ca-in ca-center-in">
+      <div class="ca-center-t">
+        <span class="ca-eyebrow reveal">Обучение</span><h2 id="ca-h6" class="reveal">Собственный учебный центр</h2>
+        <p class="ca-p reveal">На базе учебного центра ООО «Астрея» регулярно проводит семинары, на которых можно освоить технологии проведения процедур химических пилингов, мезотерапии, эстетических уходов для лица и тела. Наши преподаватели помогут разобраться в большом объёме информации, ответят на вопросы, дадут полезные практические советы.</p>
+        <ul class="ca-tags"><li class="reveal">Химические пилинги</li><li class="reveal">Мезотерапия</li><li class="reveal">Эстетические уходы для лица и тела</li></ul>
+        <div class="ca-cta reveal"><a class="ca-btn-o" href="${u('training.html')}" data-track="training_click" data-place="company-center"><span>Расписание семинаров</span>${arrow}</a></div>
+      </div>
+      <div class="ca-cph" aria-hidden="true"><figure class="ca-ph reveal">${img('assets/news/ph-seminar-a.webp', 960, 540, '', '', '46% 40%')}</figure><figure class="ca-ph reveal">${img('assets/news/ph-seminar-b.webp', 960, 540, '', '', '50% 40%')}</figure></div>
+    </div>
+  </section>
+
+  <section class="ca-s ca-geo" id="ca-geo" data-scene="7" data-title="Дистрибьюторы" aria-labelledby="ca-h7">
     <div class="ca-in ca-geo-in">
       <div class="ca-geo-t reveal">
-        <span class="ca-eyebrow">География</span><h2 id="ca-h7">Астрея по всей России</h2>
-        <p class="ca-p">Мы развиваем профессиональное сообщество в ключевых городах страны и проводим образовательные события онлайн. Офисы — в Москве и Санкт-Петербурге; Ростов-на-Дону и Симферополь — города проведения семинаров.</p>
+        <span class="ca-eyebrow">Наши дистрибьюторы</span><h2 id="ca-h7">Астрея по всей России</h2>
+        <p class="ca-p">Работу по продвижению марок активно ведут региональные дистрибьюторы. Обучающие семинары на регулярной основе проводят специалисты компаний-дистрибьюторов, прошедшие обучение и ежегодную аттестацию в ООО «Астрея». Для более эффективной работы периодически организуются выездные семинары с участием московских специалистов. Для ООО «Астрея» индустрия красоты — не только бизнес, это ещё и искусство, где профессионализм и творчество приносят наивысшую радость!</p>
         <div class="ca-cta"><a class="ca-btn-o" href="${u('contacts.html')}" data-track="contacts_click" data-place="company-geo"><span>Все контакты</span>${arrow}</a></div>
       </div>
-      <figure class="ca-map reveal" aria-label="Схема: офисы и города проведения семинаров на карте России (стилизованная, не картографический источник)">
-        <div class="ca-mapbox"><svg viewBox="0 0 ${map.W} ${map.H}" aria-hidden="true" focusable="false"><path class="g" d="${map.grid}"/><path class="l" d="${map.land}"/></svg>${mk}</div>
-        <figcaption><span><i class="d-o"></i>Офис</span><span><i class="d-s"></i>Город проведения семинаров</span></figcaption>
-      </figure>
-      <div class="ca-geo-r">
-        <ul class="ca-gi">${geoItems.map((g, i) => `<li class="ca-gic reveal"><span class="ca-gii${g.hollow ? ' is-h' : ''}" aria-hidden="true">${g.ic}</span><div><b>${esc(g.k)}</b> <span>${esc(g.t)}</span><small>${esc(g.d)}</small></div></li>`).join('')}</ul>
-        <div class="ca-phr reveal" aria-hidden="true"><figure class="ca-ph">${img('assets/news/ph-seminar-a.webp', 960, 540, '', '', '50% 40%')}</figure><figure class="ca-ph">${img('assets/news/ph-seminar-b.webp', 960, 540, '', '', '50% 40%')}</figure></div>
+      <ul class="ca-gi">${geoItems.map((g, i) => `<li class="ca-gic reveal"><span class="ca-gii${g.hollow ? ' is-h' : ''}" aria-hidden="true">${g.ic}</span><div><b>${esc(g.k)}</b> <span>${esc(g.t)}</span><small>${esc(g.d)}</small></div></li>`).join('')}</ul>
+    </div>
+    <div class="ca-in ca-atlas" id="ca-atlas" aria-label="Карта России: офисы и города проведения семинаров">
+      <div class="ca-atl-l reveal">
+        <ul class="ca-cities">${cityBtns}</ul>
+        <div class="ca-cds" aria-live="polite">${Object.keys(GEO).map(cardOf).join('')}</div>
       </div>
+      <figure class="ca-map reveal" aria-label="Карта России с офисами и городами проведения семинаров">
+        <div class="ca-mapview"><div class="ca-mapbox"><img src="${u('assets/company/ru-map.svg')}" alt="" width="1920" height="1108" loading="lazy" decoding="async">${mk}</div></div>
+        <figcaption><span><i class="d-o"></i>Офис</span><span><i class="d-s"></i>Город проведения семинаров</span><span class="ca-hint">Нажмите на город — покажем адрес и ближайшую встречу</span></figcaption>
+      </figure>
     </div>
   </section>
 
-  <section class="ca-s ca-final" id="ca-final" data-scene="7" data-title="Заключение" aria-labelledby="ca-h9">
+  <section class="ca-s ca-final" id="ca-final" data-scene="8" data-title="Заключение" aria-labelledby="ca-h9">
     <div class="ca-fin-bg" aria-hidden="true"><img src="${u(finImg)}" alt="" width="2400" height="1350" loading="lazy" decoding="async"></div>
     <div class="ca-in ca-fin reveal" data-sx-closing="company-cta">
-      <h2 id="ca-h9">Астрея — профессиональное партнёрство, основанное на знаниях и доверии</h2>
+      <div class="ca-fin-t"><h2 id="ca-h9">Астрея — профессиональное партнёрство, основанное на знаниях и доверии</h2>
+      <p class="ca-sign">Всегда с Вами,<br>коллектив компании «Астрея»</p></div>
       <div class="ca-fin-b"><a class="btn btn-light ac-pill" href="${u('training.html')}" data-track="closing_cta" data-place="company-cta">Посмотреть обучение ${arrow}</a>${C.partnerBtn(P, 'company', 'btn btn-ghost-inv')}${stella ? `<button class="ca-ask" type="button" data-act="asst-open" data-track="asst_open" data-place="company">${I.chat || ''}<span>Спросить Стеллу</span></button>` : ''}</div>
     </div>
   </section>

@@ -27,17 +27,17 @@
     on(window, 'scroll', ask, {passive: true}); on(window, 'resize', ask); off.push(() => { if (tick.raf) cancelAnimationFrame(tick.raf); });
     ask();
 
-    /* ---- география: подсказки маркеров ---- */
-    const mws = $$('.ca-mw', root);
+    /* ---- карта: выбор города (маркер на карте или кнопка в списке) → карточка с адресом и ближайшей встречей ---- */
+    const mws = $$('.ca-mw', root), cbs = $$('.ca-cb', root), cds = $$('.ca-cd', root);
     if (mws.length) {
-      const closeAll = except => mws.forEach(m => { if (m !== except) m.classList.remove('on'); });
-      mws.forEach(m => {
-        const b = $('.ca-mk', m); if (!b) return;
-        on(b, 'click', e => { e.preventDefault(); const was = m.classList.contains('on'); closeAll(); m.classList.toggle('on', !was); });
-        on(b, 'blur', () => { setTimeout(() => { if (!m.contains(document.activeElement)) m.classList.remove('on'); }, 0); });
-      });
-      on(document, 'keydown', e => { if (e.key === 'Escape') { const o = mws.filter(m => m.classList.contains('on'))[0]; closeAll(); if (o) { const b = $('.ca-mk', o); if (b) b.focus(); } } });
-      on(document, 'pointerdown', e => { if (!e.target.closest || !e.target.closest('.ca-mw')) closeAll(); });
+      const select = city => {
+        mws.forEach(m => m.classList.toggle('is-sel', m.getAttribute('data-city') === city));
+        cbs.forEach(b => b.setAttribute('aria-pressed', b.getAttribute('data-city') === city ? 'true' : 'false'));
+        cds.forEach(c => c.classList.toggle('is-on', c.getAttribute('data-city') === city));
+      };
+      mws.forEach(m => { const b = $('.ca-mk', m); if (b) on(b, 'click', e => { e.preventDefault(); select(m.getAttribute('data-city')); }); });
+      cbs.forEach(b => on(b, 'click', () => select(b.getAttribute('data-city'))));
+      select(mws[0].getAttribute('data-city'));
     }
 
     function teardown() { if (!td) return; const f = off.slice(); td = null; f.forEach(x => { try { x(); } catch (e) {} }); document.documentElement.classList.remove('ca-scrolled'); }
