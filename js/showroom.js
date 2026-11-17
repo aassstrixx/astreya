@@ -365,7 +365,7 @@
     S.tip = document.createElement('div'); S.tip.className = 'shw-tip'; S.tip.hidden = true; S.tip.setAttribute('role', 'group'); S.tip.setAttribute('aria-label', 'Краткие сведения о товаре');
     S.tip.addEventListener('pointerenter', e => { if (e.pointerType === 'touch') return; S.tipHover = true; clearTimeout(S.hovT); clearTimeout(S.tipT); });
     S.tip.addEventListener('pointerleave', e => { if (e.pointerType === 'touch') return; S.tipHover = false; unpreview(); });
-    S.stage.appendChild(S.tip);
+    ($('.shw-canvas', rootEl) || S.stage).appendChild(S.tip);                                          // панель — на уровне холста (как карточка), выше «дымки» заголовка (.shw-head::before): в сцене она была под ней, и текст выглядел размытым и серым
     /* курсорного параллакса нет (по просьбе владельца): фон и товары стоят на месте; движется только «камера» при выборе товара */
     S.spot = document.createElement('i'); S.spot.className = 'shw-spot'; S.spot.setAttribute('aria-hidden', 'true'); S.stage.appendChild(S.spot); S.veil = document.createElement('i'); S.veil.className = 'shw-veil'; S.veil.setAttribute('aria-hidden', 'true'); S.stage.appendChild(S.veil);
     S.sent = document.createElement('i'); S.sent.className = 'shw-sent'; S.sent.setAttribute('aria-hidden', 'true'); S.room.appendChild(S.sent);
