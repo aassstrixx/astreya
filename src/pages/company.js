@@ -51,7 +51,7 @@ module.exports = function company(ctx, C, P) {
 
   /* ---- 4 · бренды ---- */
   const tagOf = b => b.group === 'Cantabria Labs' ? 'линия Cantabria Labs' : b.group;
-  const bcell = (b, i) => `<a class="ca-bc" style="--c1:${esc(b.c1)}" href="${C.burl(P, b)}" data-track="brand_click" data-place="company-brands" aria-label="${esc(b.name)}"><span class="ca-bl"><img class="ca-blogo" src="${u(b.logo)}" alt="${esc(b.name)}" loading="lazy" decoding="async"></span><small>${esc(tagOf(b))}</small></a>`;
+  const bcell = (b, i) => `<a class="ca-bc reveal" style="--c1:${esc(b.c1)}" href="${C.burl(P, b)}" data-track="brand_click" data-place="company-brands" aria-label="${esc(b.name)}"><span class="ca-bl"><img class="ca-blogo" src="${u(b.logo)}" alt="${esc(b.name)}" loading="lazy" decoding="async"></span><small>${esc(tagOf(b))}</small></a>`;
 
   /* ---- 6 · география ---- */
   const [o1, o2] = site.offices;
@@ -80,24 +80,24 @@ module.exports = function company(ctx, C, P) {
   <section class="ca-s ca-hero" id="ca-entry" data-scene="1" data-title="О компании" aria-labelledby="ca-h1">
     <div class="ca-hero-art" aria-hidden="true">${heroArt}<i class="ca-hero-veil"></i></div>
     <div class="ca-in ca-hero-in">
-      <div class="ca-copy reveal" data-ca-copy>
-        <span class="ca-eyebrow">О компании</span>
-        <h1 id="ca-h1" data-nosplit>Астрея — пространство профессиональной косметологии</h1>
-        <p class="ca-lead">Мы объединяем ведущие бренды, экспертизу и современные технологии, чтобы создавать красоту, вдохновлять и развивать индустрию.</p>
-        <div class="ca-cta"><a class="ca-btn-o" href="#ca-stats" data-act="scroll" data-target="ca-stats" data-track="company_intro" data-place="company-hero"><span>Узнать больше</span>${arrow}</a></div>
+      <div class="ca-copy" data-ca-copy>
+        <span class="ca-eyebrow reveal">О компании</span>
+        <h1 id="ca-h1" class="reveal" data-nosplit>Астрея — пространство профессиональной косметологии</h1>
+        <p class="ca-lead reveal">Мы объединяем ведущие бренды, экспертизу и современные технологии, чтобы создавать красоту, вдохновлять и развивать индустрию.</p>
+        <div class="ca-cta reveal"><a class="ca-btn-o" href="#ca-stats" data-act="scroll" data-target="ca-stats" data-track="company_intro" data-place="company-hero"><span>Узнать больше</span>${arrow}</a></div>
       </div>
     </div>
   </section>
 
   <section class="ca-s ca-stats" id="ca-stats" data-scene="2" data-title="В цифрах" aria-label="Астрея в цифрах">
     <i class="ca-spark" aria-hidden="true"><svg viewBox="0 0 120 60" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round"><path d="M0 30h46M74 30h46"/><path d="M60 6c1 14 6 20 16 24-10 4-15 10-16 24-1-14-6-20-16-24 10-4 15-10 16-24z" fill="currentColor" fill-opacity=".14"/></svg></i>
-    <ul class="ca-in ca-stl reveal">${stats.map(([n, sf, t], i) => `<li class="ca-stat"><b><span>${n}</span>${sf}</b><span>${esc(t)}</span></li>`).join('')}</ul>
+    <ul class="ca-in ca-stl">${stats.map(([n, sf, t], i) => `<li class="ca-stat reveal"><b><span>${n}</span>${sf}</b><span>${esc(t)}</span></li>`).join('')}</ul>
   </section>
 
   <section class="ca-s ca-dirs" id="ca-niches" data-scene="3" data-title="Направления" aria-labelledby="ca-h2">
     <div class="ca-in ca-dir-in">
       <header class="ca-dirs-h reveal"><span class="ca-eyebrow">Направления деятельности</span><h2 id="ca-h2">Комплексный подход к красоте и развитию</h2></header>
-      <ul class="ca-dl reveal">${dirs.map((d, i) => `<li class="ca-dc"><a href="${d.href}" data-track="${d.tr}" data-place="${d.pl}" aria-label="${esc(d.t)}">
+      <ul class="ca-dl">${dirs.map((d, i) => `<li class="ca-dc reveal"><a href="${d.href}" data-track="${d.tr}" data-place="${d.pl}" aria-label="${esc(d.t)}">
         <span class="ca-dpw">${d.pic}</span><span class="ca-dt"><b>${esc(d.t)}</b><small>${esc(d.p)}</small></span><span class="ca-go" aria-hidden="true">${arrow}</span></a></li>`).join('')}</ul>
     </div>
   </section>
@@ -120,7 +120,7 @@ module.exports = function company(ctx, C, P) {
       <header class="ca-phil-t reveal"><span class="ca-eyebrow">Преимущества</span><h2 id="ca-h5">Профессиональная косметология начинается с доверия</h2>
         <p class="ca-p">${esc(cp.who[2])}</p>
         <figure class="ca-ph ca-ph-team" aria-hidden="true">${img('assets/photos/photo-02-about.webp', 800, 533, '', '', '50% 20%')}</figure></header>
-      <ul class="ca-adv reveal" data-sx-mod="trust" aria-label="Преимущества работы с Астрея">${content.advantages.map((a, i) => `<li class="ca-av"><span class="ca-ai" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">${ICON[i % ICON.length]}</svg></span>
+      <ul class="ca-adv reveal" data-sx-mod="trust" aria-label="Преимущества работы с Астрея">${content.advantages.map((a, i) => `<li class="ca-av reveal"><span class="ca-ai" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">${ICON[i % ICON.length]}</svg></span>
         <div><b>${esc(a.title)}</b><span>${esc(a.text)}</span></div></li>`).join('')}</ul>
     </div>
   </section>
@@ -137,7 +137,7 @@ module.exports = function company(ctx, C, P) {
         <figcaption><span><i class="d-o"></i>Офис</span><span><i class="d-s"></i>Город проведения семинаров</span></figcaption>
       </figure>
       <div class="ca-geo-r">
-        <ul class="ca-gi reveal">${geoItems.map((g, i) => `<li class="ca-gic"><span class="ca-gii${g.hollow ? ' is-h' : ''}" aria-hidden="true">${g.ic}</span><div><b>${esc(g.k)}</b> <span>${esc(g.t)}</span><small>${esc(g.d)}</small></div></li>`).join('')}</ul>
+        <ul class="ca-gi">${geoItems.map((g, i) => `<li class="ca-gic reveal"><span class="ca-gii${g.hollow ? ' is-h' : ''}" aria-hidden="true">${g.ic}</span><div><b>${esc(g.k)}</b> <span>${esc(g.t)}</span><small>${esc(g.d)}</small></div></li>`).join('')}</ul>
         <div class="ca-phr reveal" aria-hidden="true"><figure class="ca-ph">${img('assets/news/ph-seminar-a.webp', 960, 540, '', '', '50% 40%')}</figure><figure class="ca-ph">${img('assets/news/ph-seminar-b.webp', 960, 540, '', '', '50% 40%')}</figure></div>
       </div>
     </div>
