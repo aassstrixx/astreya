@@ -117,6 +117,9 @@ const rub = n => new Intl.NumberFormat('ru-RU').format(n).replace(/[  ]/g, ' ') 
   /* точки городов — по проекции карты владельца (коническая Ламберта, подобрана по береговой линии, отклонение ≈ 1 px из 1920) */
   const EXP = {'Москва': [14.29, 58.05], 'Санкт-Петербург': [14.68, 45.01], 'Ростов-на-Дону': [8.03, 74.58], 'Симферополь': [2.18, 72.19]};
   t(Object.keys(EXP).every(c => ge.o[c] && Math.abs(ge.o[c].x - EXP[c][0]) < 0.2 && Math.abs(ge.o[c].y - EXP[c][1]) < 0.2), 'раздел 7: маркеры городов стоят на точных местах карты (допуск 0,2 % рамки)', Object.fromEntries(Object.keys(ge.o).map(c => [c, [ge.o[c].x, ge.o[c].y]])));
+  const lap = () => p.evaluate(() => { const dots = [...document.querySelectorAll('.ca-mk i')].map(e => e.getBoundingClientRect()), bad = []; [...document.querySelectorAll('.ca-mn')].forEach(l => { const a = l.getBoundingClientRect(); dots.forEach((d, i) => { if (a.left < d.right + 1 && a.right > d.left - 1 && a.top < d.bottom + 1 && a.bottom > d.top - 1) bad.push(l.textContent + '↔точка ' + i); }); }); return bad; });
+  const lp = await lap();
+  t(lp.length === 0, 'раздел 7: подписи городов не перекрывают точки на карте', lp);
   t(ge.o['Москва'].tip.includes(O1.addr) && ge.o['Санкт-Петербург'].tip.includes(O2.addr) && !ge.o['Симферополь'].tip.includes(O1.addr), 'раздел 7: адреса в подсказках — только у офисов, строго из данных');
   t(/Онлайн/.test(ge.gi.join(' ')) && ge.gi.length === 3 && /Офис/.test(ge.legend) && /Город проведения семинаров/.test(ge.legend) && ge.btns === 4, 'раздел 7: показатели (офисы, города семинаров, онлайн), легенда, список из четырёх городов', ge.gi);
   t(Object.values(ge.o).every(x => +x.op === 0), 'раздел 7: подсказки скрыты, пока нет наведения', Object.values(ge.o).map(x => x.op));
@@ -176,6 +179,8 @@ const rub = n => new Intl.NumberFormat('ru-RU').format(n).replace(/[  ]/g, ' ') 
   for (const c of ['Москва', 'Санкт-Петербург', 'Ростов-на-Дону', 'Симферополь']) {
     await p.tap('.ca-mw[data-city="' + c + '"] .ca-mk'); await p.waitForTimeout(600);
     const r = await p.evaluate(city => { const m = document.querySelector('.ca-mw[data-city="' + city + '"]'), mk = m.querySelector('.ca-mk').getBoundingClientRect(), v = document.querySelector('.ca-mapview').getBoundingClientRect(), card = document.querySelector('.ca-cd.is-on'); return {sel: m.classList.contains('is-sel'), card: card ? card.querySelector('h3').textContent : '', inside: mk.left >= v.left - 1 && mk.right <= v.right + 1 && mk.top >= v.top - 1 && mk.bottom <= v.bottom + 1, tipHidden: getComputedStyle(m.querySelector('.ca-tip')).display === 'none'}; }, c);
+    const lpm = await p.evaluate(() => { const dots = [...document.querySelectorAll('.ca-mk i')].map(e => e.getBoundingClientRect()), bad = []; [...document.querySelectorAll('.ca-mn')].forEach(l => { const a = l.getBoundingClientRect(); dots.forEach((d, i) => { if (a.left < d.right + 1 && a.right > d.left - 1 && a.top < d.bottom + 1 && a.bottom > d.top - 1) bad.push(l.textContent + '↔' + i); }); }); return bad; });
+    t(lpm.length === 0, 'компания 390: подписи городов не перекрывают точки', lpm);
     t(r.sel && r.card === c && r.inside && r.tipHidden, 'компания 390: касание маркера «' + c + '» выбирает город, маркер в видимой части карты, карточка показана под картой', r);
   }
   const small = await p.evaluate(() => [...document.querySelectorAll('.ca .ca-bc, .ca .ca-dc a')].filter(e => { const r = e.getBoundingClientRect(); return r.width > 0 && r.height < 43.5; }).concat([...document.querySelectorAll('.ca .ca-btn-o, .ca .ca-ask, .ca .btn')].filter(e => { const r = e.getBoundingClientRect(); return r.width > 0 && r.height < 24; })).map(e => e.className + ':' + Math.round(e.getBoundingClientRect().height)));

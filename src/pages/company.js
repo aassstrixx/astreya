@@ -71,7 +71,7 @@ module.exports = function company(ctx, C, P) {
   const evIn = city => up.find(e => e.city === city);
     const mk = Object.keys(GEO).map((city, i) => {
     const p = mapAt(GEO[city][0], GEO[city][1]), o = officeOf(city), ev = evIn(city), role = roleOf(city), id = 'ca-tip-' + i;
-    const side = i === 0 ? 'r' : i === 1 ? 'r' : i === 2 ? 'tr' : 'b';
+    const side = i === 0 ? 'r' : i === 1 ? 'r' : i === 2 ? 'br' : 'tl';   /* подписи не заходят на точки: Ростов — под точкой справа, Симферополь — над точкой */
     const body = o ? `<span class="ca-tl">${esc(o.addr)}</span>${o.phones[0] ? `<a href="tel:${o.phones[0][0].replace(/[^+\d]/g, '')}" data-track="phone_click">${esc(o.phones[0][0])}</a>` : ''}`
       : `<span class="ca-tl">Семинары учебного центра «Астрея»</span>${ev ? `<a href="${C.eurl(P, ev)}" data-track="event_click" data-place="company-geo"><time datetime="${ev.date}">${dparts(ev.date).d} ${esc(dparts(ev.date).m)}</time> · ${esc(ev.title)}</a>` : `<a href="${u('training.html')}" data-track="training_click" data-place="company-geo">Даты — в расписании</a>`}`;
     return `<div class="ca-mw s-${side}${o ? ' is-office' : ' is-sem'}" data-city="${esc(city)}" style="left:${p.x}%;top:${p.y}%;--i:${i}">

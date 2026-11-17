@@ -627,7 +627,7 @@
         {"sel": "section#ca-expo", "tex": "film", "pos": "r", "o": 9},
         {"sel": "section#ca-phil", "tex": "swatch", "pos": "l", "o": 8},
         {"sel": "section#ca-center", "tex": "pipette", "pos": "bl", "o": 9},
-        {"sel": "section#ca-geo", "tex": "water", "pos": "r", "o": 9}
+        {"sel": "section#ca-geo", "tex": "cream", "pos": "r", "o": 10}
       ], "end": {"tex": "silk", "pos": "c"}},
       "contacts": {"top": {"tex": "silk", "pos": "tr"}, "end": {"tex": "cream", "pos": "br"}},
       "partners": {"top": {"tex": "molecules", "pos": "c"}, "mid": [{"sel": "section.sec#calc", "tex": "film", "pos": "r", "o": 6}, {"sel": "section.sec#training", "tex": "cream", "pos": "tl", "o": 8}], "end": {"tex": "ribbon", "pos": "b"}},

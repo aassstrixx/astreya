@@ -92,7 +92,7 @@ html.js .ca-bc.reveal,html.js .ca-av.reveal{translate:0 0}
 
 /* ---------- 5. философия и преимущества ---------- */
 .ca-phil{padding:clamp(36px,4.4vw,72px) 0;background:linear-gradient(180deg,rgba(236,222,190,0),rgba(236,222,190,.42) 45%,rgba(236,222,190,0));overflow:hidden;isolation:isolate}
-.ca-ribbon{position:absolute;right:-4%;top:0;width:64%;height:100%;z-index:-1;background:url(../assets/bg/silk-t.webp?v=7a975056) 50% 50%/cover no-repeat;opacity:.5;-webkit-mask-image:radial-gradient(ellipse 50% 50% at 50% 50%,#000 28%,rgba(0,0,0,.5) 62%,rgba(0,0,0,0) 100%);mask-image:radial-gradient(ellipse 50% 50% at 50% 50%,#000 28%,rgba(0,0,0,.5) 62%,rgba(0,0,0,0) 100%);pointer-events:none}
+.ca-ribbon{position:absolute;right:-4%;top:0;width:64%;height:100%;z-index:-1;background:url(../assets/bg/silk-t.webp?v=76a90881) 50% 50%/cover no-repeat;opacity:.5;-webkit-mask-image:radial-gradient(ellipse 50% 50% at 50% 50%,#000 28%,rgba(0,0,0,.5) 62%,rgba(0,0,0,0) 100%);mask-image:radial-gradient(ellipse 50% 50% at 50% 50%,#000 28%,rgba(0,0,0,.5) 62%,rgba(0,0,0,0) 100%);pointer-events:none}
 .ca-phil-in{display:grid;grid-template-columns:minmax(0,.95fr) minmax(0,1.75fr);gap:clamp(18px,3.2vw,60px);align-items:center}
 .ca-phil-t h2{font-size:clamp(28px,3.1vw,54px);line-height:1.12;max-width:11em}
 .ca-adv{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));border-radius:16px;background:rgba(251,247,236,.7);box-shadow:inset 0 0 0 1px var(--line)}
@@ -115,6 +115,7 @@ html.js .ca-bc.reveal,html.js .ca-av.reveal{translate:0 0}
 .ca-mw.is-office .ca-mk i{background:var(--navy);box-shadow:0 0 0 2px var(--gold2)}
 .ca-mw:hover .ca-mk i,.ca-mw.on .ca-mk i,.ca-mw:focus-within .ca-mk i{box-shadow:0 0 0 3px rgba(168,133,63,.85)}
 .ca-mn{position:absolute;white-space:nowrap;padding:2px 8px;border-radius:999px;background:rgba(251,247,236,.94);box-shadow:inset 0 0 0 1px var(--line);font:600 clamp(11px,.76vw,13px)/1.4 var(--sans);pointer-events:none}
+.ca-mw.s-tl .ca-mn{left:calc(50% - 10px);bottom:calc(50% + 13px)}.ca-mw.s-br .ca-mn{left:calc(50% - 6px);top:calc(50% + 13px)}
 .ca-mw.s-r .ca-mn{left:calc(50% + 12px);top:50%;translate:0 -50%}.ca-mw.s-tr .ca-mn{left:calc(50% + 6px);bottom:calc(50% + 12px)}.ca-mw.s-b .ca-mn{left:calc(50% - 12px);top:calc(50% + 12px)}
 .ca-mw:hover .ca-mn,.ca-mw.on .ca-mn{background:var(--navy);color:#fff;box-shadow:none}
 .ca-tip{position:absolute;z-index:8;left:-6px;bottom:calc(100% + 6px);width:clamp(210px,18vw,270px);display:grid;gap:4px;padding:11px 14px;border-radius:12px;background:rgba(251,247,236,.99);box-shadow:inset 0 0 0 1px var(--line),inset 0 3px 0 var(--gold2),0 24px 34px -20px rgba(60,40,18,.6);font-size:var(--f-xs);line-height:1.45;opacity:0;transform:translateY(6px);pointer-events:none;transition:opacity .35s var(--ac-ease),transform .35s var(--ac-ease)}
