@@ -165,7 +165,19 @@ const userMsgs = p => p.evaluate(() => [...document.querySelectorAll('.asst-u .a
   ok(WL0 >= 4 && await p.evaluate(() => document.querySelectorAll('.shw-arc,.shw-rim,.shw-sun').length) === 0, 'фон — прежний слоёный 3D-зал (' + WL0 + ' слоёв), без «узоров»: нет колец-ниш вокруг товаров и лучей света поверх сцены');
   await p.mouse.move(1000, 300, {steps: 4}); await wait(500);
   const PXD = await p.evaluate(() => { const tx = k => parseFloat((getComputedStyle(document.querySelector('.shw-ly-' + k)).translate || '0').split(' ')[0]) || 0; return {px: +document.querySelector('.shw-view').style.getPropertyValue('--px'), shell: tx('shell'), dais: tx('dais'), plant: tx('plant'), stage: parseFloat((getComputedStyle(document.querySelector('.shw-stage')).translate || '0').split(' ')[0]) || 0}; });
-  ok(Math.abs(PXD.px) > .05 && Math.abs(PXD.plant) > Math.abs(PXD.dais) * 1.5 && Math.abs(PXD.dais) > Math.abs(PXD.shell) * 2 && Math.abs(PXD.stage - PXD.dais) < .05, 'параллакс по глубине: дальний слой (стена) сдвигается меньше, ближний (ваза с веткой) — больше; подиумы и товары — на одну величину (товар не съезжает с подиума)', PXD);
+  ok(!PXD.px && Math.abs(PXD.plant) < .01 && Math.abs(PXD.dais) < .01 && Math.abs(PXD.shell) < .01 && Math.abs(PXD.stage) < .01, 'курсор не двигает фон: --px не задаётся, слои зала (стена, подиумы, ваза) и сцена стоят на месте (параллакс убран по просьбе владельца)', PXD);
+  /* панель при наведении держится на пути к ней: по телу панели (кнопки — только верхняя строка) и на паузах; на соседний товар по дороге не прыгает */
+  await p.mouse.move(2, 2); await wait(1300);
+  const hid0 = (await st(p)).pageIds[3], sel0 = '.shw-it[data-id="' + hid0 + '"]';
+  const ri = await p.evaluate(s => { const r = document.querySelector(s).getBoundingClientRect(); return {x: r.x + r.width / 2, y: r.y + r.height / 2}; }, sel0);
+  await p.mouse.move(ri.x, ri.y, {steps: 4}); await wait(700);
+  const rt = await p.evaluate(() => { const r = document.querySelector('.shw-tip').getBoundingClientRect(); return {x: r.x + r.width * .5, y: r.y + r.height * .72}; });
+  let lost = false; for (let i = 1; i <= 12; i++) { await p.mouse.move(ri.x + (rt.x - ri.x) * i / 12, ri.y + (rt.y - ri.y) * i / 12); await wait(110); if (!await p.evaluate(() => document.querySelector('.shw-tip').classList.contains('is-on'))) lost = true; }
+  await wait(900);
+  const TH = await p.evaluate(() => ({on: document.querySelector('.shw-tip').classList.contains('is-on'), id: document.querySelector('.shw-tip')._id}));
+  ok(!lost && TH.on && TH.id === hid0, 'панель не пропадает на пути к ней и при остановке на её теле (кнопки — верхняя строка), на соседний товар по дороге не переключается', TH);
+  await p.mouse.move(2, 2, {steps: 5}); await wait(2300);
+  ok(!await p.evaluate(() => document.querySelector('.shw-tip').classList.contains('is-on')), 'курсор ушёл от панели и товара — панель скрывается');
   const hid2 = (await st(p)).pageIds[4], sel2 = '.shw-it[data-id="' + hid2 + '"]';
   const r0 = await p.evaluate(s => { const r = document.querySelector(s).getBoundingClientRect(); return {x: r.x, y: r.y, w: r.width}; }, sel2);
   await p.mouse.move(2, 2); await wait(1200);
@@ -238,13 +250,13 @@ const userMsgs = p => p.evaluate(() => [...document.querySelectorAll('.asst-u .a
   ok(await p.evaluate(() => document.querySelector('#modal').classList.contains('open')), 'полка: «глаз» открывает быстрый просмотр'); await p.keyboard.press('Escape'); await wait(700);
   ok(p.errs.length === 0, 'без ошибок JavaScript', p.errs); await p.ctx.close();
 
-  /* «меньше движения» и «лёгкий» режим: без камеры и параллакса; всё остальное работает */
+  /* «меньше движения» и «лёгкий» режим: без камеры; всё остальное работает */
   p = await open(b, {viewport: {width: 1440, height: 900}, reducedMotion: 'reduce'});
   const hr = (await st(p)).pageIds[3];
   await hv(p, '.shw-it[data-id="' + hr + '"]'); await wait(800); const tipOn = await p.evaluate(() => document.querySelector('.shw-tip').classList.contains('is-on'));
   await p.click('.shw-it[data-id="' + hr + '"]'); await wait(1200);
   const RMD = await p.evaluate(() => ({cz: document.querySelector('.shw-view').style.getPropertyValue('--cz'), k: new DOMMatrix(getComputedStyle(document.querySelector('.shw-stage')).transform).a, open: document.querySelector('.shw-card').classList.contains('is-open'), sel: document.querySelectorAll('.shw-it.is-sel').length}));
-  ok(tipOn && RMD.cz === '' && RMD.k === 1 && RMD.open && RMD.sel === 1, 'при «меньше движения»: панель и карточка работают, но камеры нет — сцена стоит на месте', RMD);
+  ok(tipOn && RMD.cz === '1.300' && RMD.k > 1.29 && RMD.open && RMD.sel === 1, 'настройка ОС «меньше движения» сайтом не учитывается (просьба владельца): панель, карточка и камера работают как обычно', RMD);
   await p.keyboard.press('Escape'); await wait(500);
   await p.evaluate(() => document.documentElement.classList.add('lite')); await wait(200);
   await p.click('.shw-it[data-id="' + hr + '"]'); await wait(900);

@@ -130,8 +130,8 @@
     el.type = 'button'; el.className = 'shw-it' + (g.group === 'niche' ? ' is-bg' : ''); el.setAttribute('data-act', 'shw-pick'); el.setAttribute('data-id', p.id); el.setAttribute('aria-pressed', 'false');
     el.setAttribute('aria-label', (b.name ? b.name + ' — ' : '') + p.name); el.setAttribute('style', bstyle(b));
     el.innerHTML = '<i class="shw-gl"></i><i class="shw-sh"></i><img class="shw-cs" src="' + esc(im.src) + '" alt="" decoding="async" draggable="false" aria-hidden="true"><span class="shw-ph"><img class="shw-img' + (im.mock || p.ia ? '' : ' opq') + '" src="' + esc(im.src) + '" alt="" decoding="async" draggable="false"></span>';
-    el.addEventListener('pointerenter', e => { if (e.pointerType !== 'touch') preview(p.id); });
-    el.addEventListener('pointerleave', e => { if (e.pointerType !== 'touch') unpreview(); });
+    el.addEventListener('pointerenter', e => { if (e.pointerType === 'touch') return; if (S) S.overId = p.id; if (!toPanel(p.id, e)) preview(p.id); });
+    el.addEventListener('pointerleave', e => { if (e.pointerType === 'touch') return; if (S && S.overId === p.id) S.overId = null; clearTimeout(S && S.switchT); unpreview(); });
     el.addEventListener('focus', () => preview(p.id));
     el.addEventListener('blur', () => unpreview());
     return el;
@@ -229,8 +229,36 @@
     if (first) { c.classList.remove('swap'); c.innerHTML = cardHTML(P[id]); c._id = id; favSync(); A.cmpSync && A.cmpSync(); return; }
     c.classList.add('swap'); c._id = id; c._t = setTimeout(() => { c.innerHTML = cardHTML(P[id]); c.classList.remove('swap'); favSync(); A.cmpSync && A.cmpSync(); }, 230);
   }
-  function preview(id) { if (!S || S.sel) return; clearTimeout(S.hovT); clearTimeout(S.cardT); S.hov = id; S.root.classList.add('has-hov'); S.items.forEach((r, k) => r.el.classList.toggle('is-hov', k === id)); if (S.stack) paintCard(id, false); else showTip(id); const rec = S.items.get(id), pd = rec && S.pods.find(q => q.g === rec.g); if (pd) pd.el.classList.add('is-lit'); }
-  function unpreview() { if (!S) return; clearTimeout(S.hovT); S.hovT = setTimeout(() => { if (!S) return; if (S.tipHover) return; S.hov = null; S.root.classList.remove('has-hov'); S.items.forEach(r => r.el.classList.remove('is-hov')); S.pods.forEach(q => q.el.classList.remove('is-lit')); hideTip(); if (S.stack && !S.sel) paintCard(S.defId, false); }, 460); }
+  function preview(id) { if (!S || S.sel) return; clearTimeout(S.hovT); clearTimeout(S.cardT); clearTimeout(S.switchT); S.hov = id; S.root.classList.add('has-hov'); S.items.forEach((r, k) => r.el.classList.toggle('is-hov', k === id)); if (S.stack) paintCard(id, false); else showTip(id); const rec = S.items.get(id), pd = rec && S.pods.find(q => q.g === rec.g); if (pd) pd.el.classList.add('is-lit'); }
+  function unpreview(ms) { if (!S) return; clearTimeout(S.hovT); S.hovT = setTimeout(() => { if (!S) return; if (S.tipHover) return; S.hov = null; S.root.classList.remove('has-hov'); S.items.forEach(r => r.el.classList.remove('is-hov')); S.pods.forEach(q => q.el.classList.remove('is-lit')); hideTip(); if (S.stack && !S.sel) paintCard(S.defId, false); }, ms || 760); }
+  /* ---------- удержание панели: курсор идёт от товара к кнопкам панели ----------
+     Панель «только для чтения» (клики проходят к соседним товарам), интерактивны лишь три кнопки сверху — попасть в них точно трудно, а прежняя пауза в 460 мс убирала панель на полпути.
+     Теперь: пока курсор внутри выпуклой оболочки «товар + панель» (с запасом), панель держится и пауза до скрытия обновляется; перейти на соседний товар по дороге к панели —
+     значит остановиться на нём (смена панели через 380 мс), а не пролететь мимо. */
+  function hull(pts) {
+    pts = pts.slice().sort((a, b) => a[0] - b[0] || a[1] - b[1]); const cr = (o, a, b) => (a[0] - o[0]) * (b[1] - o[1]) - (a[1] - o[1]) * (b[0] - o[0]), lo = [], up = [];
+    pts.forEach(q => { while (lo.length > 1 && cr(lo[lo.length - 2], lo[lo.length - 1], q) <= 0) lo.pop(); lo.push(q); });
+    pts.slice().reverse().forEach(q => { while (up.length > 1 && cr(up[up.length - 2], up[up.length - 1], q) <= 0) up.pop(); up.push(q); });
+    return lo.slice(0, -1).concat(up.slice(0, -1));
+  }
+  function inHull(a, b, pad, x, y) {
+    const c = r => [[r.left - pad, r.top - pad], [r.right + pad, r.top - pad], [r.right + pad, r.bottom + pad], [r.left - pad, r.bottom + pad]], h = hull(c(a).concat(c(b)));
+    for (let i = 0; i < h.length; i++) { const p = h[i], q = h[(i + 1) % h.length]; if ((q[0] - p[0]) * (y - p[1]) - (q[1] - p[1]) * (x - p[0]) < 0) return false; }
+    return true;
+  }
+  function panelHull(x, y) {                                              // курсор в оболочке «наведённый товар — панель»?
+    const tip = S && S.tip; if (!tip || tip.hidden || !tip.classList.contains('is-on') || S.hov == null) return false;
+    const rec = S.items.get(S.hov); if (!rec) return false;
+    return inHull(rec.el.getBoundingClientRect(), tip.getBoundingClientRect(), 16, x, y);
+  }
+  const inTip = (x, y, pad) => { const t = S && S.tip; if (!t || t.hidden || !t.classList.contains('is-on')) return false; const r = t.getBoundingClientRect(); return x >= r.left - pad && x <= r.right + pad && y >= r.top - pad && y <= r.bottom + pad; };
+  function toPanel(id, e) {                                              // true — на другой товар пока не переключаемся (курсор, вероятно, идёт к панели или стоит на ней)
+    if (!S || S.sel || S.stack || S.hov == null || S.hov === id || S.tipHover || !panelHull(e.clientX, e.clientY)) return false;
+    clearTimeout(S.hovT); clearTimeout(S.switchT);
+    if (inTip(e.clientX, e.clientY, 6)) return true;          // курсор на самой панели (клики сквозь неё идут к товару под ней): панель не меняется, пока курсор с неё не ушёл
+    S.switchT = setTimeout(() => { if (!S) return; if (S.overId === id && !S.tipHover && !S.sel && !inTip(S.lx, S.ly, 6)) preview(id); else if (!S.tipHover) unpreview(inTip(S.lx, S.ly, 6) ? 1100 : 300); }, 380);
+    return true;
+  }
 
   /* ---------- панель при наведении: название, бренд, краткое описание, назначение и три действия ---------- */
   function tipHTML(p) {
@@ -364,16 +392,15 @@
     S.card.addEventListener('pointerenter', e => { if (e.pointerType === 'touch') return; S.cardHover = true; clearTimeout(S.cardT); });
     S.card.addEventListener('pointerleave', e => { if (e.pointerType === 'touch') return; S.cardHover = false; clearTimeout(S.cardT); S.cardT = setTimeout(() => { if (S && !S.stack && !S.sel && !S.hov && !S.cardHover) paintCard(null); }, 700); });
     S.tip = document.createElement('div'); S.tip.className = 'shw-tip'; S.tip.hidden = true; S.tip.setAttribute('role', 'group'); S.tip.setAttribute('aria-label', 'Краткие сведения о товаре');
-    S.tip.addEventListener('pointerenter', e => { if (e.pointerType === 'touch') return; S.tipHover = true; clearTimeout(S.hovT); clearTimeout(S.tipT); });
-    S.tip.addEventListener('pointerleave', e => { if (e.pointerType === 'touch') return; S.tipHover = false; unpreview(); });
+    S.tip.addEventListener('pointerenter', e => { if (e.pointerType === 'touch') return; S.tipHover = true; clearTimeout(S.hovT); clearTimeout(S.tipT); clearTimeout(S.switchT); });
+    S.tip.addEventListener('pointerleave', e => { if (e.pointerType === 'touch') return; S.tipHover = false; unpreview(900); });
     S.stage.appendChild(S.tip);
-    /* лёгкий параллакс: фон и товары едва заметно смещаются навстречу друг другу за курсором (только мышь, только полный режим, пока ничего не выбрано) */
-    S.view.addEventListener('pointermove', e => {
-      if (e.pointerType === 'touch' || S.sel || S.stack || mode() !== 'full' || rmReal.matches) return; const r = S.view.getBoundingClientRect();
-      S.px = ((e.clientX - r.left) / r.width - .5) * 2; S.py = ((e.clientY - r.top) / r.height - .5) * 2;
-      if (!S.pxRaf) S.pxRaf = requestAnimationFrame(() => { if (!S) return; S.pxRaf = 0; S.view.style.setProperty('--px', S.px.toFixed(3)); S.view.style.setProperty('--py', S.py.toFixed(3)); });
-    });
-    S.view.addEventListener('pointerleave', () => { if (!S) return; S.view.style.setProperty('--px', '0'); S.view.style.setProperty('--py', '0'); });
+    /* курсорного параллакса нет (по просьбе владельца): фон и товары стоят на месте; движется только «камера» при выборе товара */
+    S.view.addEventListener('pointermove', e => {                                                     // курсор идёт к панели: пока он в оболочке «товар — панель», показ продлевается
+      S.lx = e.clientX; S.ly = e.clientY;
+      if (e.pointerType === 'touch' || !S.hov || S.sel || S.stack || S.tipHover || S.overId === S.hov) return;
+      if (panelHull(e.clientX, e.clientY)) { clearTimeout(S.tipT); unpreview(1100); }
+    }, {passive: true});
     S.spot = document.createElement('i'); S.spot.className = 'shw-spot'; S.spot.setAttribute('aria-hidden', 'true'); S.stage.appendChild(S.spot); S.veil = document.createElement('i'); S.veil.className = 'shw-veil'; S.veil.setAttribute('aria-hidden', 'true'); S.stage.appendChild(S.veil);
     S.sent = document.createElement('i'); S.sent.className = 'shw-sent'; S.sent.setAttribute('aria-hidden', 'true'); S.room.appendChild(S.sent);
     if (window.IntersectionObserver) { S.io = new IntersectionObserver(es => es.forEach(e => html.classList.toggle('shw-top', e.isIntersecting)), {rootMargin: '-84px 0px 0px 0px'}); S.io.observe(S.sent); } else html.classList.add('shw-top');
