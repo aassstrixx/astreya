@@ -29,7 +29,6 @@ module.exports = function company(ctx, C, P) {
   const today = new Date().toISOString().slice(0, 10), up = sortedEvents.filter(e => e.date >= today);
   const stella = C.xon('assistant');
   const arrow = I.arrow;
-  const rb = `<span class="ca-rb" aria-hidden="true">${arrow}</span>`;
   const img = (f, w, h, cls, alt, pos) => `<img${cls ? ` class="${cls}"` : ''} src="${u(f)}" alt="${esc(alt || '')}" width="${w}" height="${h}" loading="lazy" decoding="async"${pos ? ` style="object-position:${pos}"` : ''}>`;
 
   /* ---- 1 · портрет компании ---- */
@@ -85,7 +84,7 @@ module.exports = function company(ctx, C, P) {
         <span class="ca-eyebrow reveal">О компании</span>
         <h1 id="ca-h1">Астрея — пространство профессиональной косметологии</h1>
         <p class="ca-lead reveal">Мы объединяем ведущие бренды, экспертизу и современные технологии, чтобы создавать красоту, вдохновлять и развивать индустрию.</p>
-        <div class="ca-cta reveal"><a class="ca-btn-o" href="#ca-stats" data-act="scroll" data-target="ca-stats" data-track="company_intro" data-place="company-hero"><span>Узнать больше</span>${rb}</a></div>
+        <div class="ca-cta reveal"><a class="ca-btn-o" href="#ca-stats" data-act="scroll" data-target="ca-stats" data-track="company_intro" data-place="company-hero"><span>Узнать больше</span>${arrow}</a></div>
       </div>
     </div>
   </section>
@@ -99,7 +98,7 @@ module.exports = function company(ctx, C, P) {
     <div class="ca-in ca-dir-in">
       <header class="ca-dirs-h reveal"><span class="ca-eyebrow">Направления деятельности</span><h2 id="ca-h2">Комплексный подход к красоте и развитию</h2></header>
       <ul class="ca-dl">${dirs.map((d, i) => `<li class="ca-dc reveal"><a href="${d.href}" data-track="${d.tr}" data-place="${d.pl}" aria-label="${esc(d.t)}">
-        <span class="ca-dpw">${d.pic}</span><span class="ca-dt"><b>${esc(d.t)}</b><small>${esc(d.p)}</small></span><span class="ca-rb ca-rb-d" aria-hidden="true">${arrow}</span></a></li>`).join('')}</ul>
+        <span class="ca-dpw">${d.pic}</span><span class="ca-dt"><b>${esc(d.t)}</b><small>${esc(d.p)}</small></span><span class="ca-go" aria-hidden="true">${arrow}</span></a></li>`).join('')}</ul>
     </div>
   </section>
 
@@ -109,7 +108,7 @@ module.exports = function company(ctx, C, P) {
         <span class="ca-eyebrow">Портфель брендов</span><h2 id="ca-h3">Проверенные бренды — ваш выбор</h2>
         <p class="ca-p">${esc(cp.who[0])}</p>
         <p class="ca-note"><img class="ca-mkl" src="${u('assets/brands/cantabria-labs-h.svg')}" alt="Cantabria Labs" loading="lazy" decoding="async"><span>Cantabria Labs — производитель; Endocare, Neoretin, Heliocare, Biretix, Iraltone и Elancyl — его линии.</span></p>
-        <div class="ca-cta"><a class="ca-btn-o" href="${u('brands.html')}" data-track="brands_click" data-place="company-brands"><span>Перейти к брендам</span>${rb}</a></div>
+        <div class="ca-cta"><a class="ca-btn-o" href="${u('brands.html')}" data-track="brands_click" data-place="company-brands"><span>Перейти к брендам</span>${arrow}</a></div>
       </div>
       <div class="ca-bgrid reveal">${brands.map(bcell).join('')}</div>
     </div>
@@ -131,7 +130,7 @@ module.exports = function company(ctx, C, P) {
       <div class="ca-geo-t reveal">
         <span class="ca-eyebrow">География</span><h2 id="ca-h7">Астрея по всей России</h2>
         <p class="ca-p">Мы развиваем профессиональное сообщество в ключевых городах страны и проводим образовательные события онлайн. Офисы — в Москве и Санкт-Петербурге; Ростов-на-Дону и Симферополь — города проведения семинаров.</p>
-        <div class="ca-cta"><a class="ca-btn-o" href="${u('contacts.html')}" data-track="contacts_click" data-place="company-geo"><span>Все контакты</span>${rb}</a></div>
+        <div class="ca-cta"><a class="ca-btn-o" href="${u('contacts.html')}" data-track="contacts_click" data-place="company-geo"><span>Все контакты</span>${arrow}</a></div>
       </div>
       <figure class="ca-map reveal" aria-label="Схема: офисы и города проведения семинаров на карте России (стилизованная, не картографический источник)">
         <div class="ca-mapbox"><svg viewBox="0 0 ${map.W} ${map.H}" aria-hidden="true" focusable="false"><path class="g" d="${map.grid}"/><path class="l" d="${map.land}"/></svg>${mk}</div>
@@ -148,7 +147,7 @@ module.exports = function company(ctx, C, P) {
     <div class="ca-fin-bg" aria-hidden="true"><img src="${u(finImg)}" alt="" width="2400" height="1350" loading="lazy" decoding="async"></div>
     <div class="ca-in ca-fin reveal" data-sx-closing="company-cta">
       <h2 id="ca-h9">Астрея — профессиональное партнёрство, основанное на знаниях и доверии</h2>
-      <div class="ca-fin-b"><a class="ca-btn ca-btn-fill" href="${u('training.html')}" data-track="closing_cta" data-place="company-cta">Посмотреть обучение ${arrow}</a>${C.partnerBtn(P, 'company', 'ca-btn ca-btn-ghost')}${stella ? `<button class="ca-ask" type="button" data-act="asst-open" data-track="asst_open" data-place="company">${I.chat || ''}<span>Спросить Стеллу</span></button>` : ''}</div>
+      <div class="ca-fin-b"><a class="btn btn-light ac-pill" href="${u('training.html')}" data-track="closing_cta" data-place="company-cta">Посмотреть обучение ${arrow}</a>${C.partnerBtn(P, 'company', 'btn btn-ghost-inv')}${stella ? `<button class="ca-ask" type="button" data-act="asst-open" data-track="asst_open" data-place="company">${I.chat || ''}<span>Спросить Стеллу</span></button>` : ''}</div>
     </div>
   </section>
 </div>`;

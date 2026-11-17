@@ -71,12 +71,12 @@ const rub = n => new Intl.NumberFormat('ru-RU').format(n).replace(/[  ]/g, ' ') 
   await scrollTo(p, '#ca-niches'); await p.waitForTimeout(1500);
   const di = await p.evaluate(() => { const c = [...document.querySelectorAll('.ca-dc a')]; return {h2: document.querySelector('#ca-niches h2').textContent.trim(), titles: c.map(a => a.querySelector('.ca-dt b').textContent.trim()), hrefs: c.map(a => a.getAttribute('href').split('?')[0]), tracks: c.map(a => a.getAttribute('data-track')),
     tops: c.map(a => Math.round(a.getBoundingClientRect().top)), pw: c.map(a => { const r = a.querySelector('.ca-dpw').getBoundingClientRect(); return [Math.round(r.width), Math.round(r.height)]; }), ch: c.map(a => Math.round(a.getBoundingClientRect().height)),
-    imgs: c.map(a => [...a.querySelectorAll('img')].every(i => i.complete && i.naturalWidth > 0)), svg: c.map(a => a.querySelectorAll('svg').length), btn: c.map(a => !!a.querySelector('.ca-rb-d'))}; });
+    imgs: c.map(a => [...a.querySelectorAll('img')].every(i => i.complete && i.naturalWidth > 0)), svg: c.map(a => a.querySelectorAll('svg').length), btn: c.map(a => !!a.querySelector('.ca-go'))}; });
   t(nbsp(di.h2) === 'Комплексный подход к красоте и развитию', 'раздел 3: заголовок по ТЗ', di.h2);
   t(di.titles.join('|') === H.dirs.join('|') && di.hrefs.join('|') === H.dirHref.join('|'), 'раздел 3: четыре направления и ссылки (каталог, обучение, контакты, партнёры)', {t: di.titles, h: di.hrefs});
   t(di.tops.every(v => Math.abs(v - di.tops[0]) <= 2), 'раздел 3: карточки в одной горизонтали', di.tops);
   t(di.pw.every(x => Math.abs(x[0] - di.pw[0][0]) <= 1 && Math.abs(x[1] - di.pw[0][1]) <= 1) && di.pw[0][1] <= 230 && di.ch.every(v => v <= 360), 'раздел 3: изображения одинаковых пропорций, карточки компактные (≤ 360 px)', {pw: di.pw, ch: di.ch});
-  t(di.imgs.every(Boolean) && di.btn.every(Boolean), 'раздел 3: картинки загружены, у каждой карточки круглая кнопка', di);
+  t(di.imgs.every(Boolean) && di.btn.every(Boolean), 'раздел 3: картинки загружены, у каждой карточки стрелка (как на «Обучении»)', di);
   const zoom = await p.evaluate(async () => { const a = document.querySelector('.ca-dc a'), im = a.querySelector('.ca-dp'); return getComputedStyle(im).transitionProperty; });
   t(/scale|all/.test(zoom), 'раздел 3: приближение картинки при наведении предусмотрено', zoom);
 
@@ -180,8 +180,8 @@ const rub = n => new Intl.NumberFormat('ru-RU').format(n).replace(/[  ]/g, ' ') 
     const r = await p.evaluate(city => { const m = document.querySelector('.ca-mw[data-city="' + city + '"]'), tip = m.querySelector('.ca-tip').getBoundingClientRect(); return {on: m.classList.contains('on'), l: Math.round(tip.left), r: Math.round(tip.right), op: +getComputedStyle(m.querySelector('.ca-tip')).opacity}; }, c);
     t(r.on && r.op === 1 && r.l >= 0 && r.r <= 391, 'компания 390: касание маркера «' + c + '» открывает подсказку внутри экрана', r);
   }
-  const small = await p.evaluate(() => [...document.querySelectorAll('.ca .ca-btn, .ca .ca-btn-o, .ca .ca-ask, .ca .ca-bc, .ca .ca-dc a')].filter(e => { const r = e.getBoundingClientRect(); return r.width > 0 && r.height < 43.5; }).map(e => e.className + ':' + Math.round(e.getBoundingClientRect().height)));
-  t(small.length === 0, 'компания 390: цели касания (кнопки, маркеры, ссылки) не ниже 44 px', small);
+  const small = await p.evaluate(() => [...document.querySelectorAll('.ca .ca-bc, .ca .ca-dc a')].filter(e => { const r = e.getBoundingClientRect(); return r.width > 0 && r.height < 43.5; }).concat([...document.querySelectorAll('.ca .ca-btn-o, .ca .ca-ask, .ca .btn')].filter(e => { const r = e.getBoundingClientRect(); return r.width > 0 && r.height < 24; })).map(e => e.className + ':' + Math.round(e.getBoundingClientRect().height)));
+  t(small.length === 0, 'компания 390: цели касания: плитки и карточки ≥ 44 px, кнопки как на «Обучении» ≥ 24 px (WCAG 2.2)', small);
   t(await p.evaluate(() => [...document.querySelectorAll('.ca-mk')].every(e => e.getBoundingClientRect().height >= 32)), 'компания 390: маркеры карты не меньше 32 px (WCAG 2.2: ≥ 24 px, центры соседних не перекрываются)');
   await scrollTo(p, '#ca-final'); t(await noOverflow(p), 'компания 390: после прокрутки всей страницы нет горизонтальной прокрутки');
   t(p._errs.length === 0, 'компания 390: ошибок в консоли нет', p._errs); await p._ctx.close();
