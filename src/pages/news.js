@@ -152,7 +152,6 @@ function newsPage(ctx, C, P) {
             <div class="np-table" aria-hidden="true"><i class="np-tex"></i><i class="np-light"></i></div>
             <div class="np-rig" data-np-rig>
               <div class="np-book" data-np-book></div>
-              <div class="np-cup" aria-hidden="true">${img('coffee.webp', '', 1500, 1500)}</div>
             </div>
           </div>
         </div>
