@@ -46,6 +46,10 @@
       if (mode === 'spread') book.style.fontSize = (S.pw * .0255).toFixed(2) + 'px'; else book.style.fontSize = '';
       S.introDist = reduced ? 0 : Math.max(240, Math.round(window.innerHeight * 1.5));
       root.style.setProperty('--np-intro', S.introDist + 'px');
+      /* листание скроллом: после входа сцена продлевается на (разворотов − 1) шагов прокрутки; один шаг — полэкрана; положение прокрутки ↔ разворот */
+      S.stepPx = Math.max(240, Math.round(window.innerHeight * .5));
+      S.flipDist = mode === 'spread' && !reduced ? (NLEAF - 1) * S.stepPx : 0;
+      root.style.setProperty('--np-flip', S.flipDist + 'px');
       return was !== mode;
     }
 
@@ -201,6 +205,7 @@
     function go(s, o) {
       o = o || {}; s = clamp(Math.round(s), 0, stepsMax()); if (S.ov && !o.keepOv) closeOv(true);
       const from = S.cur; S.cur = s; if (!o.auto) S.userFlip = true;
+      if (!o.fromScroll) syncScroll(s);
       const inst = o.instant || reduced;
       const fwd = s > from, ks = leaves.filter(L => (L.k < s ? 1 : 0) !== L.tf).sort((a, b) => fwd ? a.k - b.k : b.k - a.k);
       const now = performance.now();
@@ -242,16 +247,31 @@
           if (p >= .56 && S.cur === 0) go(1, {auto: true, noHash: true});
           else if (p <= .38 && S.cur === 1 && !S.userFlip) go(0, {auto: true, noHash: true});
         }
+        if (S.mode === 'spread' && S.flipDist > 0 && p >= 1 && !S.drag && !S.ov) {     // листание скроллом: положение прокрутки внутри продлённой сцены = номер разворота
+          const t = -stage.getBoundingClientRect().top - S.introDist;
+          const target = clamp(1 + Math.round(t / S.stepPx), 1, stepsMax());
+          if (target !== S.cur) go(target, {auto: true, fromScroll: true});
+        }
       });
+    }
+    /* положение прокрутки, при котором показывается разворот s (0 — обложка: камера опущена наполовину) */
+    function yFor(s) {
+      const top = stage.getBoundingClientRect().top + window.pageYOffset;
+      if (s <= 0 || S.mode !== 'spread' || !S.flipDist) return Math.round(top + (s <= 0 ? S.introDist * .45 : S.introDist + 1));
+      return Math.round(top + S.introDist + (s - 1) * S.stepPx + 1);
+    }
+    function syncScroll(s) {                                                           // листание кнопкой, точкой, ссылкой, клавишей — прокрутка встаёт на тот же разворот, чтобы скролл не «перелистал» обратно
+      if (S.mode !== 'spread' || reduced || !S.flipDist || S.p < .9) return;
+      const y = yFor(s); if (Math.abs(y - window.pageYOffset) > 2) window.scrollTo({top: y, behavior: 'instant'});
     }
     function scrollToOpen(ms) {
       if (A.motion && A.motion.cancelSmooth) A.motion.cancelSmooth();
-      const y0 = window.pageYOffset, y1 = Math.round(stage.getBoundingClientRect().top + y0 + S.introDist + 1); if (y1 <= y0 + 2) return;
+      const y0 = window.pageYOffset, y1 = yFor(Math.max(1, S.cur)); if (y1 <= y0 + 2) return;
       cancelAnimationFrame(tween); let t0 = 0; const d = ms || 1500;
       const f = ts => { if (!alive) return; if (!t0) t0 = ts; const k = clamp((ts - t0) / d, 0, 1); window.scrollTo({top: y0 + (y1 - y0) * easeIO(k), behavior: 'instant'}); if (k < 1) tween = requestAnimationFrame(f); };
       tween = requestAnimationFrame(f);
     }
-    const toStageEnd = () => { const y = Math.round(stage.getBoundingClientRect().top + window.pageYOffset + S.introDist + 1); window.scrollTo({top: y, behavior: 'instant'}); };
+    const toStageEnd = () => { window.scrollTo({top: yFor(Math.max(1, S.cur)), behavior: 'instant'}); };
 
     /* ---------- рука: перетаскивание листа, кромка следует за указателем ---------- */
     const spineX = () => { const r = book.getBoundingClientRect(); return S.mode === 'spread' ? r.left + r.width / 2 : r.left; };
@@ -303,7 +323,7 @@
       L.drag = false; L.v = (L.f < .5 ? 1 : -1) * 0 + (d.dir > 0 ? vf : -vf) * (flip ? 1 : 1) * (d.dir > 0 ? 1 : 1); L.v = clamp(L.v * (d.dir > 0 ? 1 : 1), -6, 6);
       L.v = d.dir > 0 ? clamp(vf, -6, 6) : clamp(-vf, -6, 6) * -1 * -1;
       const to = d.dir > 0 ? (flip ? S.cur + 1 : S.cur) : (flip ? S.cur - 1 : S.cur);
-      S.cur = clamp(to, 0, stepsMax()); S.userFlip = true;
+      S.cur = clamp(to, 0, stepsMax()); S.userFlip = true; syncScroll(S.cur);
       leaves.forEach(X => { if (X !== L) X.tf = X.k < S.cur ? 1 : 0; }); L.tf = L.k < S.cur ? 1 : 0; if (L.tf === 1) L.v = Math.abs(L.v) * (L.v < 0 ? 0 : 1); else L.v = -Math.abs(L.v) * (L.v > 0 ? 0 : 1);
       writeHash(); kick(); updateUI();
     }
