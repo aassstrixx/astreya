@@ -460,23 +460,47 @@
       return false;
     }
 
+    /* автоподгонка текста: страница сама меряет своё содержимое и, если оно не помещается над колонтитулом (врезка налезает на текст, колонки обрезаны),
+       уменьшает шрифт страницы шагами по 3 % (--fit, не ниже 0,8) — текст всегда как можно крупнее, но ничего не вылезает и не «уезжает» */
+    function fitPages() {
+      if (!alive) return;
+      $$('.np-pg', book).forEach(pg => {
+        const foot = pg.querySelector('.np-foot');
+        if (S.mode !== 'spread' || !foot) { pg.style.removeProperty('--fit'); return; }
+        const absTop = e0 => { let y = 0, e = e0; while (e && e !== pg) { y += e.offsetTop; e = e.offsetParent; } return y; };
+        const over = () => {
+          const lim = foot.offsetTop - 2; let worst = -1e9;
+          pg.querySelectorAll('p,h1,h2,h3,li,figure,img,a.np-btn,a.np-lnk,.np-brief,table,blockquote,form,.np-big,.np-fig-pct').forEach(e => { if (!foot.contains(e)) worst = Math.max(worst, absTop(e) + e.offsetHeight); });
+          if (worst > lim + 1) return true;
+          if ($$('.np-cols', pg).some(c => c.scrollWidth > c.clientWidth + 2)) return true;
+          if ($$('.np-art,.np-col,.np-expert,.np-poster,.np-coupon,.np-back,.np-sm', pg).some(c => c.scrollHeight > c.clientHeight + 1)) return true;       // блок не вмещает своё содержимое — оно налезает на соседний
+          const br = pg.querySelector('.np-brief');
+          return !!br && $$('.np-art,.np-body,.np-act,.np-plist', pg).some(e => !br.contains(e) && !e.contains(br) && absTop(e) + e.offsetHeight > absTop(br) + 1);
+        };
+        let fit = 1; pg.style.setProperty('--fit', '1');
+        for (let i = 0; i < 8 && fit > .8 && over(); i++) { fit = +(fit - .03).toFixed(2); pg.style.setProperty('--fit', String(fit)); }
+      });
+      leaves.forEach(L => { if (L.strips) dropStrips(L); });
+    }
+
     function relayout() {
       if (!alive) return; const changed = measure();
       if (changed) { const sp = S.mode === 'spread' ? (S.cur + 1) >> 1 : S.cur; S.cur = S.mode === 'spread' ? clamp(sp, 0, NLEAF) : (sp === 0 ? 0 : 2 * sp - 1); build(); rebuildDots(); }
       else { leaves.forEach(L => { if (L.strips) dropStrips(L); }); paintAll(true); }
+      fitPages();
       S.p = progress(); applyCam(S.p); updateUI();
     }
     function destroy() { alive = false; ac.abort(); cancelAnimationFrame(raf); cancelAnimationFrame(tween); clearTimeout(idleT); clearTimeout(S.rt); document.body.classList.remove('np-reading'); document.documentElement.classList.remove('np-past'); if (inst && inst.root === root) inst = null; }
 
     /* ---------- старт ---------- */
-    measure(); build(); rebuildDots();
+    measure(); build(); rebuildDots(); fitPages();
     const cat0 = new URLSearchParams(location.search).get('cat');
     const hashed = applyHash(false);
     S.p = progress(); applyCam(S.p);
     if (S.p >= .56 && S.cur === 0 && !hashed) go(1, {auto: true, noHash: true, instant: true});
     if (cat0 && $('[data-np-cat="' + cat0 + '"]', root)) setFilter(cat0, {keep: false, hash: false}); else setFilter('all', {hash: false});
     updateUI();
-    const lazy = () => { if (!alive) return; paintAll(true); };
+    const lazy = () => { if (!alive) return; fitPages(); paintAll(true); };
     if (document.fonts && document.fonts.ready) document.fonts.ready.then(lazy);
     return {root, destroy, go, goSpread, step, setFilter, openArticle, closeOv, state: () => ({mode: S.mode, cur: S.cur, p: S.p, filter: S.filter, ov: S.ov, pw: S.pw, ph: S.ph, moving: S.moving, bend: leaves.filter(L => L.el.classList.contains('is-bend')).length, f: leaves.map(L => +L.f.toFixed(3))}), leaves: () => leaves, relayout};
   }
