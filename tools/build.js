@@ -50,7 +50,7 @@ ctx.assetVersion = (() => {
   const CSS_V = /(\.\.\/assets\/[^)"'?\s]+)\?v=[0-9a-f]{8}/g;
   [...list('css'), ...list('js'), ...list('data')].forEach(f => h.update(/\.css$/.test(f) ? fs.readFileSync(f, 'utf8').replace(CSS_V, '$1') : fs.readFileSync(f)));
   const walk = d => fs.readdirSync(d, {withFileTypes: true}).sort((a, b) => a.name < b.name ? -1 : 1).forEach(e => e.isDirectory() ? walk(path.join(d, e.name)) : h.update(fs.readFileSync(path.join(d, e.name))));
-  ['brands', 'photos', 'teachers', 'jar-arch', 'bg', 'house-hall', 'house', 'academy', 'showroom', 'decor', 'products'].filter(d => fs.existsSync(path.join(__dirname, '..', 'assets', d))).forEach(d => walk(path.join(__dirname, '..', 'assets', d)));
+  ['brands', 'photos', 'teachers', 'jar-arch', 'bg', 'house-hall', 'house', 'academy', 'showroom', 'decor', 'products', 'partners'].filter(d => fs.existsSync(path.join(__dirname, '..', 'assets', d))).forEach(d => walk(path.join(__dirname, '..', 'assets', d)));
   return h.digest('hex').slice(0, 8);
 })();
 /* url(../assets/…) в CSS получают тот же ?v=, что и src="…assets/…" в разметке: иначе картинка, которую страница берёт и в разметке, и в стилях, скачивается дважды

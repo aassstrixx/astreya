@@ -1,5 +1,5 @@
 /* «Партнёрам» (страница v2): поведение поверх разметки src/pages/partners.js. Расчёт скидки здесь НЕ ведётся — его делает A.pages.partners из js/pages.js (мы только подхватываем его вызов и добавляем своё),
-   «ориентир» с кнопкой «Запросить условия» дорисовывает js/sales-pages.js. Здесь: шапка прозрачна над первым экраном; лестница «достраивается», когда доходит до экрана;
+   «ориентир» с кнопкой «Запросить условия» дорисовывает js/sales-pages.js. Здесь: шапка прозрачна над первым экраном; вкладки «Кому подходит» (страница v5);
    у калькулятора — кнопки «−/+», быстрый выбор суммы, подсветка достигнутых порогов и читаемое значение ползунка для скринридеров. Всё идемпотентно: при переходе между страницами без перезагрузки
    функция вызывается заново на новой разметке; глобальных слушателей — один. */
 (function () {
@@ -16,12 +16,27 @@
   }
   const headerNow = () => { const hero = $('.pp-hero'); document.documentElement.classList.toggle('pp-scrolled', !!hero && hero.getBoundingClientRect().bottom < 90); };
 
-  /* лестница: ступени вырастают по очереди, когда блок показался на экране (без IntersectionObserver — сразу видна) */
-  function stairs(pp) {
-    const st = $('.pp-stairs', pp); if (!st || st.getAttribute('data-pp-io') || !('IntersectionObserver' in window)) return;
-    st.setAttribute('data-pp-io', '1'); st.classList.add('is-pre');
-    const io = new IntersectionObserver(es => { if (es.some(e => e.isIntersecting)) { io.disconnect(); requestAnimationFrame(() => st.classList.remove('is-pre')); } }, {threshold: .2});
-    io.observe(st);
+  /* «Кому подходит»: вкладки (клик, стрелки, Home/End); у каждой — своя панель с фото */
+  function tabs(pp) {
+    const box = $('[data-pp-tabs]', pp); if (!box || box.getAttribute('data-pp-bound')) return; box.setAttribute('data-pp-bound', '1');
+    const tabs = $$('[role="tab"]', box), pans = $$('[role="tabpanel"]', box);
+    const pick = (i, focus) => {
+      i = (i + tabs.length) % tabs.length;
+      tabs.forEach((t, k) => { t.setAttribute('aria-selected', String(k === i)); t.tabIndex = k === i ? 0 : -1; });
+      pans.forEach((p, k) => { p.hidden = k !== i; });
+      if (focus) tabs[i].focus();
+      if (A.track) A.track('partner_audience', {tab: tabs[i].id.replace('pp-tab-', '')});
+    };
+    /* фото скрытых вкладок подгружаем заранее (в скрытой панели lazy-картинка не загрузилась бы до первого клика — вкладка открывалась бы с пустым фото) */
+    const warm = () => $$('img[loading="lazy"]', box).forEach(i => { i.loading = 'eager'; });
+    if ('IntersectionObserver' in window) { const io = new IntersectionObserver(es => { if (es.some(e => e.isIntersecting)) { io.disconnect(); warm(); } }, {rootMargin: '900px 0px'}); io.observe(box); } else warm();
+    box.addEventListener('click', e => { const t = e.target.closest && e.target.closest('[role="tab"]'); if (t && box.contains(t)) pick(tabs.indexOf(t)); });
+    box.addEventListener('keydown', e => {
+      const t = e.target.closest && e.target.closest('[role="tab"]'); if (!t) return; const i = tabs.indexOf(t);
+      if (e.key === 'ArrowRight' || e.key === 'ArrowDown') { e.preventDefault(); pick(i + 1, true); }
+      else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') { e.preventDefault(); pick(i - 1, true); }
+      else if (e.key === 'Home') { e.preventDefault(); pick(0, true); } else if (e.key === 'End') { e.preventDefault(); pick(tabs.length - 1, true); }
+    });
   }
 
   /* калькулятор: поверх прежней логики (js/pages.js) */
@@ -49,6 +64,6 @@
   A.pages.partners = function () {
     if (prev) prev.apply(this, arguments);
     const pp = $('[data-pp]'); if (!pp) return;
-    watchHeader(); headerNow(); stairs(pp); calc(pp);
+    watchHeader(); headerNow(); tabs(pp); calc(pp);
   };
 })();

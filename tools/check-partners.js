@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /* Проверка страницы «Партнёрам» (страница v2) в браузере: нужны Playwright и Chromium (без них проверка пропускается).
-   Партнёрам: первый экран (дверь), шесть ниш преимуществ, четыре ступени, калькулятор — сумма, текст скидки и экономия на шагах от нуля до максимума равны расчёту по порогам из data/site.json
+   Партнёрам (страница v5): первый экран с фото, вкладки «Кому подходит», мозаика преимуществ, путь партнёра (без номеров), бренды, вопросы и ответы, калькулятор — сумма, текст скидки и экономия на шагах от нуля до максимума равны расчёту по порогам из data/site.json
    (считается здесь независимо от страницы), подсветка порога, кнопки «−/+», быстрый выбор суммы, клавиатура (стрелки), значение ползунка для скринридера, «ориентир» (js/sales-pages.js) на месте,
    заявка: пустая форма подсвечивает поля, правильная уходит (запрос на /api/lead перехватывается) и показывает «спасибо»; без горизонтальной прокрутки на 1440, 768 и 390.
    Запуск: node tools/check-partners.js (после node tools/build.js). Код возврата ≠ 0 при ошибках. */
@@ -36,16 +36,30 @@ const norm = s => String(s || '').replace(/[\s  ]+/g, ' ').trim();
 
   /* ================= ПАРТНЁРАМ ================= */
   let p = await open('partners.html', 1440, 900);
-  t(await p.evaluate(() => document.body.dataset.page === 'partners' && !!document.querySelector('.pp[data-pp]')), 'партнёрам: страница v2 включена (.pp)');
+  t(await p.evaluate(() => document.body.dataset.page === 'partners' && !!document.querySelector('.pp[data-pp]')), 'партнёрам: страница v5 включена (.pp)');
   t(await p.evaluate(() => document.querySelectorAll('h1').length === 1), 'партнёрам: один заголовок первого уровня');
   t(/Станьте партнёром/.test(await p.textContent('.pp-hero h1')) && !!(await p.$('.pp-hero a[href="#form"][data-act="scroll"]')) && !!(await p.$('.pp-hero a[href^="tel:"]')), 'партнёрам: первый экран — заголовок, «Оставить заявку» и телефон');
-  t(await p.evaluate(() => { const i = document.querySelector('.pp-scene img'); return !!i && i.complete && i.naturalWidth > 1000; }), 'партнёрам: дверь (рендер) загружена');
-  const ben = await p.evaluate(() => ({n: document.querySelectorAll('.pp-niche').length, g3: !!document.querySelector('main .sec:not(.tint):not(#calc):not(#form) .grid.g3'), ids: ['calc', 'form', 'benefits', 'way'].every(i => !!document.getElementById(i)), packs: document.querySelectorAll('.pp-niche img').length}));
-  t(ben.n === PT.benefits.length && ben.g3 && ben.ids && ben.packs >= ben.n, 'партнёрам: ниши преимуществ из данных (' + PT.benefits.length + '), якоря #benefits #way #calc #form, крючок .grid.g3 для Стеллы', ben);
-  t(await p.evaluate(() => [...document.querySelectorAll('.pp-niche h3')].map(h => h.textContent).join('|')) === PT.benefits.map(x => x.title).join('|'), 'партнёрам: названия преимуществ те же, что в data/content.json');
-  t(await p.evaluate(() => document.querySelectorAll('.pp-step').length) === PT.steps.length, 'партнёрам: шаги пути партнёра — как в данных (' + PT.steps.length + ')');
-  await p.evaluate(() => document.querySelector('.pp-stairs').scrollIntoView({block: 'center'})); await p.waitForTimeout(2200);
-  t(await p.evaluate(() => !document.querySelector('.pp-stairs').classList.contains('is-pre') && getComputedStyle(document.querySelector('.pp-tread')).clipPath !== 'inset(100% 0px 0px)'), 'партнёрам: ступени «достроились», когда дошли до экрана');
+  await p.evaluate(async () => { for (let y = 0; y < document.documentElement.scrollHeight; y += 500) { window.scrollTo(0, y); await new Promise(r => setTimeout(r, 120)); } window.scrollTo(0, 0); }); await p.waitForTimeout(2200);
+  t(await p.evaluate(() => { const m = document.querySelector('.pp-scene img'), h = document.querySelector('.pp-hero').getBoundingClientRect().height; return !!m && m.complete && m.naturalWidth >= 1500 && /partners\/hero/.test(m.currentSrc) && !document.querySelector('.pp-collage') && h > 480 && h < 720; }), 'партнёрам: титульный кадр — блендер-рендер (assets/partners/hero*.webp) прежней компактной высоты первого экрана (480–720 px), коллажа с фото нет');
+  t(await p.evaluate(() => { const imgs = [...document.querySelectorAll('.pp img')].filter(i => /assets\/(photos|news)\//.test(i.getAttribute('src'))); return imgs.length >= 8 && imgs.every(i => i.complete && i.naturalWidth > 0); }), 'партнёрам: настоящие фото из банка сайта (команда, консультации, семинары, упаковки) — не меньше 8 кадров, все загрузились');
+  t(await p.evaluate(() => { const txt = ['.pp-facts', '.pp-bento', '.pp-path', '.pp-brands', '.pp-qa', '.pp-tabs'].map(s => (document.querySelector(s) || {}).textContent || '').join(' '); return !/(^|\s)0[1-9](\s|$)/.test(txt) && !document.querySelector('.pp-no, .pp-n'); }), 'партнёрам: нумерации 01 02 03 … нет (быстрые ссылки, преимущества, путь, бренды, вопросы)');
+  const ben = await p.evaluate(() => ({n: document.querySelectorAll('.pp-bt').length, g3: !!document.querySelector('main .sec:not(.tint):not(#calc):not(#form) .grid.g3'), ids: ['calc', 'form', 'benefits', 'way', 'audience', 'brands', 'faq', 'training'].every(i => !!document.getElementById(i))}));
+  t(ben.n === PT.benefits.length && ben.g3 && ben.ids, 'партнёрам: плитки преимуществ из данных (' + PT.benefits.length + '), якоря #benefits #audience #way #brands #calc #training #faq #form, крючок .grid.g3 для Стеллы', ben);
+  t(await p.evaluate(() => [...document.querySelectorAll('.pp-bt h3')].map(h => h.textContent).join('|')) === PT.benefits.map(x => x.title).join('|'), 'партнёрам: названия преимуществ те же, что в data/content.json');
+  t(await p.evaluate(() => /до 15\s?%/.test(document.querySelector('.pp-bt-disc').textContent) && !/\{max\}/.test(document.querySelector('.pp-bento').textContent)), 'партнёрам: «до 15 %» в плитке скидки подставлено из порогов сайта, заготовки {max} в тексте нет');
+  t(await p.evaluate(() => document.querySelectorAll('.pp-st').length) === PT.steps.length && await p.evaluate(() => [...document.querySelectorAll('.pp-st svg')].length) === PT.steps.length, 'партнёрам: шаги пути — как в данных (' + PT.steps.length + '), у каждого иконка вместо номера');
+  t(await p.evaluate(() => document.querySelectorAll('.pp-bc').length >= 9 && [...document.querySelectorAll('.pp-bc')].every(a => /brands\//.test(a.getAttribute('href')) && a.querySelector('img').complete && a.querySelector('img').naturalWidth > 0)), 'партнёрам: 9 брендов — настоящие логотипы со ссылками на страницы брендов');
+  /* вкладки «Кому подходит» */
+  await p.evaluate(() => document.getElementById('audience').scrollIntoView({block: 'start'})); await p.waitForTimeout(700);
+  const tabs = async () => p.evaluate(() => ({sel: [...document.querySelectorAll('.pp-tab')].map(t => t.getAttribute('aria-selected') === 'true' ? 1 : 0).join(''), vis: [...document.querySelectorAll('.pp-pan')].map(x => x.hidden ? 0 : 1).join(''), foc: (document.activeElement || {}).id || ''}));
+  let tb = await tabs(); t(tb.sel === '1000' && tb.vis === '1000' && PT.audience.length === 4, 'вкладки «Кому подходит»: 4 вкладки из данных, открыта первая, видна одна панель', tb);
+  await p.click('.pp-tab:nth-child(3)'); await p.waitForTimeout(500); tb = await tabs(); t(tb.sel === '0010' && tb.vis === '0010', 'вкладки: клик по третьей показывает её панель, остальные скрыты', tb);
+  await p.focus('.pp-tab[aria-selected="true"]'); await p.keyboard.press('ArrowRight'); await p.waitForTimeout(300); tb = await tabs(); t(tb.sel === '0001' && tb.vis === '0001' && tb.foc === 'pp-tab-shop', 'вкладки: стрелка вправо переключает на следующую и переносит фокус', tb);
+  await p.keyboard.press('Home'); await p.waitForTimeout(300); tb = await tabs(); t(tb.sel === '1000' && tb.vis === '1000', 'вкладки: Home — на первую', tb);
+  /* вопросы и ответы */
+  t(await p.evaluate(() => document.querySelectorAll('.pp-q').length) === PT.faq.length && await p.evaluate(() => document.querySelector('.pp-q').open === true), 'вопросы и ответы: ' + PT.faq.length + ' вопросов из данных, первый раскрыт');
+  await p.evaluate(() => document.getElementById('faq').scrollIntoView({block: 'start'})); await p.waitForTimeout(500); await p.click('.pp-q:nth-child(2) summary'); await p.waitForTimeout(400);
+  t(await p.evaluate(() => document.querySelector('.pp-q:nth-child(2)').open === true && /Состав первой закупки/.test(document.querySelector('.pp-q:nth-child(2) p').textContent)), 'вопросы и ответы: клик по вопросу раскрывает ответ');
 
   /* калькулятор: независимый расчёт по порогам из данных */
   const want = v => { const d = DS.filter(x => v >= x.from).pop(); return {tier: d ? 'Ваша скидка — ' + d.pct + '%' : 'До первой скидки — ' + rub(DS[0].from - v), save: d ? rub(Math.round(v * d.pct / 100)) : '—', on: DS.map(x => d && x === d ? 1 : 0).join('')}; };

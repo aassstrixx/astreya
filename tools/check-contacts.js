@@ -81,7 +81,7 @@ const norm = s => String(s || '').replace(/[\s  ]+/g, ' ').trim();
   { const ctx = await b.newContext({viewport: {width: 1440, height: 900}, javaScriptEnabled: false, locale: 'ru-RU'}); await ctx.route(/^https:\/\/fonts\./, r => r.abort()); const q = await ctx.newPage(); await q.goto(base + '/contacts.html'); await q.waitForTimeout(600);
     t(await q.evaluate(() => [...document.querySelectorAll('.cp-ob')].every(x => x.getBoundingClientRect().height > 40) && document.querySelectorAll('a[href^="tel:"]').length >= 3), 'контакты без JS: все представительства раскрыты, телефоны — ссылками');
     await q.goto(base + '/partners.html'); await q.waitForTimeout(600);
-    t(await q.evaluate(() => getComputedStyle(document.querySelector('.pp-tread')).clipPath === 'none' && document.querySelectorAll('.pp-niche').length === 6 && !!document.querySelector('#form form')), 'партнёрам без JS: лестница видна, ниши и форма на месте');
+    t(await q.evaluate(() => document.querySelectorAll('.pp-st').length === 4 && document.querySelectorAll('.pp-bt').length === 6 && [...document.querySelectorAll('.pp-st, .pp-bt')].every(x => getComputedStyle(x).opacity === '1') && !!document.querySelector('#form form')), 'партнёрам без JS: путь, плитки преимуществ и форма на месте и видны');
     await ctx.close(); }
 
   await b.close(); srv.close();

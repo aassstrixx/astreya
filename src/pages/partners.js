@@ -1,32 +1,48 @@
-/* «Партнёрам» — страница v2 («Дверь»): первый экран — стена с аркой и тёмно-синей дверью (тот же дом, что на каталоге), дальше — ниши-полки с упаковками (преимущества), лестница из четырёх ступеней
-   (путь партнёра), калькулятор скидки как каменная плита с подиумами порогов и гравированной табличкой результата, заявка — «бумага на камне».
-   Тексты, пороги скидок и форма — из прежних источников (data/content.json → partners, data/site.json → discounts/contacts, js/shared.js → formHTML('partner')); расчёт скидки не менялся:
+/* «Партнёрам» — страница v5 («Люди и поставки»): первый экран — блендер-рендер галереи с арочными окнами (assets/partners/hero*.webp, цветокор по залу «Обучения» — tools/partners-assets/grade_hero.py) прежней компактной высоты и тёмная стеклянная карточка скидки (как у «Обучения»); ниже —
+   «Кому подходит» (вкладки со своим фото), преимущества мозаикой с настоящими фото, путь партнёра линией с иконками (без номеров), бренды, калькулятор скидки (прежний, каменная плита),
+   обучение партнёров с ближайшими встречами, вопросы и ответы, заявка. Фото — из банка сайта (assets/photos, assets/news), подписи не называют людей на снимках.
+   Тексты, пороги скидок и форма — из data/content.json → partners, data/site.json → discounts/contacts, js/shared.js → formHTML('partner'); расчёт скидки не менялся:
    его ведёт A.pages.partners (js/pages.js), «ориентир» с кнопкой «Запросить условия» дорисовывает js/sales-pages.js. Крючки для скриптов и навигатора Стеллы сохранены:
-   [data-calc], #calc-range, #calc-sum, #calc-tier, #calc-save, .calc-main, .tiers > .tier, #calc, #form, .grid.g3 в секции преимуществ. Оформление — css/pg-partners.css, поведение — js/pg-partners.js. */
+   [data-calc], #calc-range, #calc-sum, #calc-tier, #calc-save, .calc-main, .tiers > .tier, #calc, #form, #benefits, #way, .grid.g3 в секции преимуществ.
+   Оформление — css/pg-partners.css, поведение — js/pg-partners.js. Прежняя версия («Дверь») — docs/_backup-partners-v4/. */
 const S = require('../../js/shared.js');
 const {esc, I, rub} = S;
 
 const RANGE_MAX = 500000, RANGE_STEP = 10000, RANGE_START = 100000;      // как в прежнем калькуляторе (js/pages.js читает те же значения из разметки)
-/* упаковки в нишах: по одной-три на преимущество (спрайты рендера сайта, assets/showroom) — только украшение, alt пустой */
 /* условия сотрудничества — нейтральные формулировки без цифр и сроков: всё, что не подтверждено данными сайта, подтверждает менеджер */
 const COND = [['Подбор продукции', 'Менеджер подбирает продукцию под задачи вашего кабинета, салона или клиники.'], ['Работа с ассортиментом', 'Бренды, линии и позиции — в каталоге; состав первой закупки обсуждается на консультации.'],
-  ['Обучение специалистов', 'Семинары, мастер-классы и вебинары учебного центра «Астрея».'], ['Сопровождение менеджера', 'Менеджер на связи по вопросам заказов, документов и применения продукции.'], ['Условия поставок', 'Уточняются и подтверждаются менеджером при согласовании условий.']];
-const NICHE_PACKS = [['dermatime-bottle'], ['dermatime-box'], ['biretix-jar'], ['dermatime-dropper'], ['bottle', 'biretix-tube', 'box'], ['heliocare-tube']];
+  ['Обучение специалистов', 'Семинары, мастер-классы и вебинары учебного центра «Астрея».'], ['Сопровождение менеджера', 'Менеджер на связи по вопросам заказов, документов и применения продукции.'], ['Условия поставок', 'Уточняются при согласовании первой закупки.']];
+const STEP_ICON = ['doc', 'phone', 'layers', 'book'];
 
 module.exports = function partners(ctx, C, P) {
-  const {content, site, sortedEvents} = ctx, pt = content.partners, c = site.contacts, u = f => C.u(P, f);
+  const {content, site, sortedEvents, brands} = ctx, pt = content.partners, c = site.contacts, u = f => C.u(P, f);
   const today = new Date().toISOString().slice(0, 10), up = sortedEvents.filter(e => e.date >= today), two = (up.length >= 2 ? up : up.concat(sortedEvents.slice(-(2 - up.length)))).slice(0, 2);
   const ds = site.discounts, max = Math.max(...ds.map(d => d.pct)), n = ds.length;
-  const pack = id => `<img src="${u('assets/showroom/pack-' + id + '-s.webp')}" alt="" loading="lazy" decoding="async" draggable="false">`;
-  const no = i => String(i + 1).padStart(2, '0');
   const {dparts} = S;
+  /* настоящие фото: размер в атрибутах — без скачков вёрстки; позиция кадра — object-position */
+  const img = (f, w, h, cls, pos, alt) => `<img${cls ? ` class="${cls}"` : ''} src="${u(f)}" alt="${esc(alt || '')}" width="${w}" height="${h}" loading="lazy" decoding="async" draggable="false"${pos ? ` style="object-position:${pos}"` : ''}>`;
+  const PH = {team: ['assets/photos/photo-02-about.webp', 800, 533], pair: ['assets/photos/photo-02b-about.webp', 768, 768], solo: ['assets/photos/photo-02c-about.webp', 683, 1024], care: ['assets/news/ph-care.webp', 600, 900],
+    semA: ['assets/news/ph-seminar-a.webp', 960, 540], semB: ['assets/news/ph-seminar-b.webp', 960, 540], present: ['assets/news/ph-presenter.webp', 540, 720]};
+  const ph = (k, cls, pos, alt) => img(PH[k][0], PH[k][1], PH[k][2], cls, pos, alt);
+  const bottles = `<span class="pp-bot" aria-hidden="true">${img('assets/photos/dermatime-micellar.webp', 279, 900, '')}${img('assets/photos/iraltone-shampoo.webp', 329, 900, '')}${img('assets/photos/keenwell-mask.webp', 397, 900, '')}</span>`;
   const stella = C.xon('assistant') ? `<button class="pp-ask" type="button" data-act="asst-chip" data-q="Какие условия для партнёров?" data-track="asst_chip" data-place="partners">${I.chat || ''}<span>Спросить Стеллу об условиях</span></button>` : '';
+  const tx = s => esc(String(s).replace('{max}', max));
+  const BEN_K = ['prod', 'learn', 'disc', 'mgr', 'range', 'geo'];                          // вид плитки мозаики по порядку преимуществ
+  const tile = (b, i) => {
+    const k = BEN_K[i % BEN_K.length], icon = `<span class="pp-ic">${I[b.icon] || (b.icon === 'map' ? I.pin : I.check)}</span>`;
+    const pic = k === 'prod' ? bottles : k === 'learn' ? `<span class="pp-bph">${ph('semB', '', '50% 40%')}</span>` : k === 'mgr' ? `<span class="pp-bph pp-bph-s">${ph('pair', '', '50% 28%')}</span>` : '';
+    const big = k === 'disc' ? `<span class="pp-big" aria-hidden="true">до ${max}<i>%</i></span>` : '';
+    const cities = k === 'geo' ? `<ul class="pp-cities" aria-label="Города присутствия и обучения">${['Москва', 'Санкт-Петербург', 'Ростов-на-Дону', 'Симферополь', 'Онлайн'].map(x => `<li>${x}</li>`).join('')}</ul>` : '';
+    return `<article class="pp-bt pp-bt-${k} reveal" style="--rd:${(i % 3) * 90}ms">${pic}${big}<div class="pp-btx">${icon}<h3>${esc(b.title)}</h3><p>${tx(b.text)}</p></div>${cities}</article>`;
+  };
+  const aud = pt.audience || [];
+  const audPhoto = a => a.photo ? ph(Object.keys(PH).find(k => PH[k][0] === a.photo) || 'care', '', a.id === 'cosmetologist' ? '50% 30%' : a.id === 'clinic' ? '50% 40%' : '50% 24%') : `<span class="pp-bot pp-bot-l" aria-hidden="true">${img('assets/photos/dermatime-micellar.webp', 279, 900, '')}${img('assets/photos/iraltone-shampoo.webp', 329, 900, '')}${img('assets/photos/keenwell-mask.webp', 397, 900, '')}</span>`;
+  const bcell = b => `<a class="pp-bc reveal" href="${C.burl(P, b)}" data-track="brand_click" data-place="partners-brands" aria-label="${esc(b.name)}"><img src="${u(b.logo)}" alt="${esc(b.name)}" loading="lazy" decoding="async"></a>`;
 
   return `<div class="pp" data-pp>
   <section class="pp-hero" id="top">
     <div class="pp-scene" aria-hidden="true">
-      <picture><source media="(max-width:760px)" srcset="${u('assets/showroom/pg-door-m.webp')}"><img src="${u('assets/showroom/pg-door.webp')}" alt="" width="2400" height="1600" fetchpriority="high" decoding="async"></picture>
-      <i class="pp-sun"></i>
+      <picture><source media="(max-width:760px)" srcset="${u('assets/partners/hero-m.webp')}"><img src="${u('assets/partners/hero.webp')}" alt="" width="1800" height="1012" fetchpriority="high" decoding="async" draggable="false"></picture>
     </div>
     <div class="pp-in pp-hero-in">
       <div class="pp-copy">
@@ -38,27 +54,40 @@ module.exports = function partners(ctx, C, P) {
           <a class="btn btn-ghost pp-pill" href="tel:${c.phoneRaw}" data-track="phone_click" data-place="partners-hero">${I.phone} ${esc(c.phone)}</a>
         </div>
       </div>
-      <a class="pp-plate" href="#calc" data-act="scroll" data-target="calc" data-track="partner_cta" data-place="partners-hero-discount"><small>Скидки по объёму</small><b>до ${max}<i>%</i></b><span>Рассчитать ${I.arrow}</span></a>
+      <a class="pp-plate" href="#calc" data-act="scroll" data-target="calc" data-track="partner_cta" data-place="partners-hero-discount"><small>Скидки по объёму</small><b>до ${max}<i>%</i></b><em>Чем крупнее закупка — тем выше скидка</em><span>Рассчитать ${I.arrow}</span></a>
     </div>
-    <nav class="pp-rail pp-in" aria-label="Разделы страницы">
-      <a href="#benefits" data-act="scroll" data-target="benefits"><i>01</i>Преимущества</a>
-      <a href="#way" data-act="scroll" data-target="way"><i>02</i>Путь партнёра</a>
-      <a href="#calc" data-act="scroll" data-target="calc"><i>03</i>Калькулятор</a>
-      <a href="#form" data-act="scroll" data-target="form"><i>04</i>Заявка</a>
+    <nav class="pp-facts pp-in" aria-label="Разделы страницы">
+      <a href="#benefits" data-act="scroll" data-target="benefits">${I.shield}<span>Официальный дистрибьютор</span></a>
+      <a href="#audience" data-act="scroll" data-target="audience">${I.users}<span>Для кабинетов, салонов и клиник</span></a>
+      <a href="#calc" data-act="scroll" data-target="calc">${I.percent}<span>Скидки по объёму до ${max} %</span></a>
+      <a href="#training" data-act="scroll" data-target="training">${I.book}<span>Обучение в учебном центре</span></a>
     </nav>
   </section>
 
+  <section class="sec pp-sec pp-aud" id="audience"><div class="pp-in">
+    <header class="pp-head"><div class="pp-hl"><span class="pp-eyebrow">Кому подходит</span><h2>С кем мы работаем</h2></div><p class="pp-side">Выберите формат вашей практики — подскажем, чем мы можем быть полезны.</p></header>
+    <div class="pp-aud-box reveal" data-pp-tabs>
+      <div class="pp-tabs" role="tablist" aria-label="Формат вашей практики">${aud.map((a, i) => `<button class="pp-tab" type="button" role="tab" id="pp-tab-${a.id}" aria-controls="pp-pan-${a.id}" aria-selected="${i === 0}" tabindex="${i === 0 ? 0 : -1}" data-pp-tab="${i}">${esc(a.tab)}</button>`).join('')}</div>
+      ${aud.map((a, i) => `<div class="pp-pan" role="tabpanel" id="pp-pan-${a.id}" aria-labelledby="pp-tab-${a.id}"${i === 0 ? '' : ' hidden'}>
+        <figure class="pp-pan-ph">${audPhoto(a)}</figure>
+        <div class="pp-pan-tx"><h3>${esc(a.title)}</h3><p>${esc(a.text)}</p><ul class="pp-chips">${a.tags.map(t => `<li>${esc(t)}</li>`).join('')}</ul>
+          <a class="btn btn-fill pp-pill" href="#form" data-act="scroll" data-target="form" data-track="partner_cta" data-place="partners-audience-${a.id}">Оставить заявку ${I.arrow}</a></div></div>`).join('')}
+    </div>
+  </div></section>
+
   <section class="sec pp-sec pp-ben" id="benefits"><div class="pp-in">
-    <header class="pp-head"><span class="pp-eyebrow">Преимущества</span><h2>Что вы получаете как партнёр</h2></header>
-    <div class="grid g3 pp-niches">${pt.benefits.map((b, i) => `<article class="pp-niche reveal" style="--rd:${(i % 6) * 90}ms">
-      <div class="pp-arch" aria-hidden="true"><span class="pp-no">${no(i)}</span><div class="pp-packs pp-k${(NICHE_PACKS[i % NICHE_PACKS.length]).length}">${NICHE_PACKS[i % NICHE_PACKS.length].map(pack).join('')}</div><i class="pp-plinth"></i></div>
-      <div class="pp-nt"><span class="pp-ic">${I[b.icon] || (b.icon === 'map' ? I.pin : I.check)}</span><h3>${esc(b.title)}</h3><p>${esc(b.text)}</p></div>
-    </article>`).join('')}</div>
+    <header class="pp-head"><div class="pp-hl"><span class="pp-eyebrow">Преимущества</span><h2>Что вы получаете как партнёр</h2></div><p class="pp-side">От продукции и скидок до обучения команды — всё для работы кабинета, салона или клиники.</p></header>
+    <div class="grid g3 pp-bento">${pt.benefits.map(tile).join('')}</div>
   </div></section>
 
   <section class="sec pp-sec pp-way" id="way"><div class="pp-in">
-    <header class="pp-head"><span class="pp-eyebrow">Как это работает</span><h2>Четыре шага до сотрудничества</h2></header>
-    <ol class="pp-stairs">${pt.steps.map((s, i) => `<li class="pp-step" style="--i:${i};--k:${i + 1}"><div class="pp-sk"><span class="pp-n" aria-hidden="true">${no(i)}</span><h3>${esc(s.t)}</h3><p>${esc(s.p)}</p></div><i class="pp-tread" aria-hidden="true">${i === pt.steps.length - 1 ? '<em class="pp-door"></em>' : ''}</i></li>`).join('')}</ol>
+    <header class="pp-head"><div class="pp-hl"><span class="pp-eyebrow">Как это работает</span><h2>Путь от заявки до первой поставки</h2></div><p class="pp-side">Четыре шага от обращения до первой поставки и приглашения на семинар.</p></header>
+    <ol class="pp-path">${pt.steps.map((s, i) => `<li class="pp-st reveal" style="--rd:${i * 110}ms"><span class="pp-dot" aria-hidden="true">${I[STEP_ICON[i % STEP_ICON.length]] || I.check}</span><h3>${esc(s.t)}</h3><p>${esc(s.p)}</p></li>`).join('')}</ol>
+  </div></section>
+
+  <section class="sec pp-sec pp-brands" id="brands"><div class="pp-in">
+    <header class="pp-head"><div class="pp-hl"><span class="pp-eyebrow">Бренды</span><h2>Бренды, с которыми вы будете работать</h2></div><p class="pp-side">Профессиональные линейки для лица, тела, волос и фотозащиты.</p><a class="btn btn-ghost pp-pill pp-hbtn" href="${u('brands.html')}" data-track="brands_click" data-place="partners-brands">Все бренды ${I.arrow}</a></header>
+    <div class="pp-bwall">${brands.map(bcell).join('')}</div>
   </div></section>
 
   <section class="sec pp-sec pp-calc" id="calc"><div class="pp-in pp-calc-in">
@@ -90,12 +119,15 @@ module.exports = function partners(ctx, C, P) {
     </div>
   </div></section>
 
-  <section class="sec pp-sec pp-edu" id="training"><div class="pp-in pp-edu-in">
-    <div class="pp-edu-copy reveal">
-      <span class="pp-eyebrow">Обучение партнёров</span>
-      <h2>Учебный центр — для вашей команды</h2>
-      <p>Семинары, мастер-классы и вебинары для специалистов: очно в Москве, Санкт-Петербурге, Ростове-на-Дону, Симферополе и онлайн. Партнёры обучают команду работать с препаратами на практике.</p>
-      <div class="pp-cta"><a class="btn btn-fill pp-pill" href="${u('training.html')}" data-track="training_click" data-place="partners-edu">Расписание ${I.arrow}</a></div>
+  <section class="sec pp-sec pp-edu" id="training"><div class="pp-in">
+    <div class="pp-edu-top">
+      <figure class="pp-edu-ph reveal">${ph('semA', '', '50% 36%')}<figcaption>Семинар учебного центра «Астрея»</figcaption></figure>
+      <div class="pp-edu-copy reveal">
+        <span class="pp-eyebrow">Обучение партнёров</span>
+        <h2>Учебный центр — для вашей команды</h2>
+        <p>Семинары, мастер-классы и вебинары для специалистов: очно в Москве, Санкт-Петербурге, Ростове-на-Дону, Симферополе и онлайн. Партнёры обучают команду работать с препаратами на практике.</p>
+        <div class="pp-cta"><a class="btn btn-fill pp-pill" href="${u('training.html')}" data-track="training_click" data-place="partners-edu">Расписание ${I.arrow}</a></div>
+      </div>
     </div>
     <ul class="pp-evs">${two.map(e => { const d = dparts(e.date), b = ctx.brandById[e.brand]; return `<li class="pp-ev reveal" data-date="${e.date}">
       <time datetime="${e.date}"><b>${d.d}</b><span>${esc(d.m)}</span></time>
@@ -104,11 +136,17 @@ module.exports = function partners(ctx, C, P) {
         <button class="btn btn-ghost btn-sm" type="button" data-act="form" data-type="seminar" data-ref="${e.id}">Записаться</button></div></li>`; }).join('')}</ul>
   </div></section>
 
+  <section class="sec pp-sec pp-faq" id="faq"><div class="pp-in pp-faq-in">
+    <header class="pp-head"><span class="pp-eyebrow">Вопросы и ответы</span><h2>Что обычно спрашивают партнёры</h2></header>
+    <div class="pp-qa">${(pt.faq || []).map((f, i) => `<details class="pp-q reveal" style="--rd:${(i % 3) * 70}ms"${i === 0 ? ' open' : ''}><summary><span>${esc(f.q)}</span><i aria-hidden="true"></i></summary><p>${esc(f.a)}</p></details>`).join('')}</div>
+  </div></section>
+
   <section class="sec pp-sec pp-apply" id="form"><div class="pp-in pp-apply-in">
     <div class="pp-ap-copy reveal">
       <span class="pp-eyebrow">Заявка</span>
       <h2>Оставьте заявку на сотрудничество</h2>
       <p>Заполните форму — менеджер свяжется с вами в рабочее время (${esc(c.hours.toLowerCase())}) и обсудит ассортимент, условия и обучение.</p>
+      <figure class="pp-ap-ph">${ph('team', '', '50% 32%', 'Команда специалистов')}</figure>
       <ul class="pp-contact">
         <li>${I.phone}<a href="tel:${c.phoneRaw}" data-track="phone_click">${esc(c.phone)}</a></li>
         <li>${I.mail}<a href="mailto:${c.email}" data-track="email_click">${esc(c.email)}</a></li>
