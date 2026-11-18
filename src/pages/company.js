@@ -9,7 +9,6 @@
 const fs = require('fs');
 const path = require('path');
 const S = require('../../js/shared.js');
-const ruMap = require('../ru-map.js');
 const {esc, I, dparts} = S;
 const ROOT = path.join(__dirname, '..', '..');
 const has = f => { try { return fs.existsSync(path.join(ROOT, f)); } catch (e) { return false; } };
@@ -49,8 +48,8 @@ module.exports = function company(ctx, C, P) {
   const stats = [[brands.length, '', 'Брендов и линий'], [ctx.products.length, '', 'Позиций в каталоге'], [20, '+', 'Лет развития методики семинаров'], [4, '', 'Города проведения семинаров и онлайн']];
 
   /* ---- 3 · направления ---- */
-  const miniMap = ruMap(300, 190, 6);
-  const mapPic = `<span class="ca-dp ca-dp-map" aria-hidden="true"><svg viewBox="0 0 300 190" focusable="false"><path class="g" d="${miniMap.grid}"/><path class="l" d="${miniMap.land}"/>${Object.keys(GEO).map(k => { const p = miniMap.at(GEO[k][0], GEO[k][1]); return `<circle cx="${(p.x * 3).toFixed(1)}" cy="${(p.y * 1.9).toFixed(1)}" r="3.2"/>`; }).join('')}</svg></span>`;
+  /* карточка «Работа с регионами»: та же карта владельца, что и в блоке «Астрея по всей России» (assets/company/ru-map.svg), города — точками в процентах рамки карты */
+  const mapPic = `<span class="ca-dp ca-dp-map" aria-hidden="true"><span class="ca-dm"><img src="${u('assets/company/ru-map.svg')}" alt="" width="1920" height="1108" loading="lazy" decoding="async">${Object.keys(GEO).map(k => { const p = mapAt(GEO[k][0], GEO[k][1]); return `<i style="left:${p.x}%;top:${p.y}%"></i>`; }).join('')}</span></span>`;
   const dirs = [
     {t: 'Дистрибуция косметики', p: 'Оригинальные бренды и надёжные поставки профессиональной косметики', href: u('catalog.html'), tr: 'catalog_click', pl: 'company-dir-1',
       pic: `<span class="ca-dp ca-dp-pk" aria-hidden="true">${img('assets/photos/dermatime-micellar.webp', 279, 900)}${img('assets/photos/iraltone-shampoo.webp', 329, 900)}${img('assets/photos/keenwell-mask.webp', 397, 900)}</span>`},
