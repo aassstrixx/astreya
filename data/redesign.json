@@ -630,7 +630,7 @@
         {"sel": "section#ca-geo", "tex": "cream", "pos": "r", "o": 10}
       ], "end": {"tex": "silk", "pos": "c"}},
       "contacts": {"top": {"tex": "silk", "pos": "tr"}, "end": {"tex": "cream", "pos": "br"}},
-      "partners": {"top": {"tex": "silk", "pos": "tr", "o": 8}, "mid": [{"sel": "section#audience", "tex": "cream", "pos": "tl", "o": 9}, {"sel": "section#benefits", "tex": "swatch", "pos": "r", "o": 8}, {"sel": "section#way", "tex": "silk", "pos": "l", "o": 8}, {"sel": "section#brands", "tex": "film", "pos": "r", "o": 7}, {"sel": "section.sec#calc", "tex": "ribbon", "pos": "r", "o": 7}, {"sel": "section.sec#training", "tex": "cream", "pos": "tl", "o": 8}, {"sel": "section#faq", "tex": "pipette", "pos": "bl", "o": 8}], "end": {"tex": "silk", "pos": "c", "o": 8}},
+      "partners": {"top": {"tex": "silk", "pos": "tr", "o": 10}, "end": {"tex": "silk", "pos": "c", "o": 10}, "patterns": {"audience": [["cream", "tl", 10], ["film", "r", 9, 35]], "benefits": [["swatch", "r", 10], ["silk", "l", 10, 40]], "way": [["silk", "l", 10], ["smear", "r", 9, 25]], "brands": [["film", "r", 10], ["cream", "l", 9]], "calc": [["ribbon", "r", 10], ["water", "l", 9, 40]], "training": [["cream", "tl", 10], ["smear", "r", 10, 35], ["silk", "l", 9, 62]], "form": [["water", "r", 9], ["cream", "tl", 9, 30]]}},
       "search": {"top": {"tex": "cream", "pos": "tr", "o": 7}},
       "privacy": {"top": {"tex": "film", "pos": "tr", "o": 5}},
       "terms": {"top": {"tex": "film", "pos": "tr", "o": 5}},
