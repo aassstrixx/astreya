@@ -1,0 +1,28 @@
+/* ============ Новости: газета на круглом стеклянном столе ============
+   Подключается ПОСЛЕ css/news-paper.css и только дополняет его: все правила под корнем .np и выше по специфичности, сам news-paper.css не правится.
+   Картинка стола — рендер Blender (tools/showroom-assets/news/table_glass.py): вид строго сверху на круглую столешницу из толстого стекла (Ø 90 см) и светлый
+   травертиновый пол вокруг, растянут на плоскость .np-table 3400×2260 px. Центр стола = центр плоскости; радиус стекла 900 px, барабан-основание под стеклом ≈ 240 px.
+   Перспективу и наклон камеры делает CSS (.np-cam), поэтому на картинке нет перспективы. Свет — окно слева сверху: тени падают вправо-вниз, отражение окна лежит на левом краю стекла.
+   Журнал на стекле: контактная тень мягче и светлее, чем на камне (стекло пропускает свет — основная тень ложится на пол сквозь стекло, смещена по лучу окна), кромку бумаги обводит тонкий светлый ореол. */
+
+/* пол и дымка вокруг стола: цвета сняты с рендера (пол ≈ #e9ded0 у света, #d7cbb8 в полутени), дальний край плоскости растворяется в светлой воздушной дымке */
+.np .np-sticky{background:#dfd4c3}
+.np .np-world{background:linear-gradient(180deg,#f2ede3 0,#e7dfd0 30%,#dacfbc 62%,#d3c7b3 100%)}
+.np .np-table{background:#dccfbd url(../assets/news/table-glass.webp) center/100% 100% no-repeat;
+  -webkit-mask-image:linear-gradient(180deg,transparent 0,#000 13%),linear-gradient(90deg,transparent 0,#000 7%,#000 93%,transparent 100%);-webkit-mask-composite:source-in;
+  mask-image:linear-gradient(180deg,transparent 0,#000 13%),linear-gradient(90deg,transparent 0,#000 7%,#000 93%,transparent 100%);mask-composite:intersect}
+/* камера «лежит» (прокрутка дошла до газеты, идёт листание): дымка по краям плоскости не видна — маску снимаем, слой дешевле для композитора на каждом кадре листания */
+.np .np-cam.is-flat .np-table{-webkit-mask-image:none;mask-image:none}
+@media (max-width:860px){.np .np-table{background-image:url(../assets/news/table-glass-m.webp)}}
+@media (prefers-reduced-data:reduce){.np .np-table{background-image:url(../assets/news/table-glass-m.webp)}}
+
+/* лёгкий слой света: тёплое «окно» слева сверху поверх пола и мягкое затемнение к краям плоскости (внимание — к столу, края кадра не видны) */
+.np .np-light{background:radial-gradient(52% 44% at 22% 14%,rgba(255,250,238,.26),transparent 70%),radial-gradient(70% 72% at 50% 52%,transparent 58%,rgba(86,70,46,.20) 100%)}
+
+/* газета на стекле: тень мягче и светлее, чем на камне, не чёрная.
+   1 — касание бумаги к стеклу (тонкая, прохладная); 2 — полутень на самом стекле; 3 — тень, прошедшая сквозь стекло и упавшая на пол (смещена вправо-вниз по лучу окна, как тень барабана на рендере);
+   4 — дальний мягкий след; 5 — тонкая тёмная кромка бумаги */
+.np .np-book::before{box-shadow:0 .04em .14em rgba(38,46,44,.34),.18em .34em .8em -.2em rgba(66,58,44,.24),1.5em 2.5em 3.2em -.9em rgba(76,62,42,.20),3.6em 5.6em 6.4em -2.2em rgba(76,62,42,.12),0 0 0 1px rgba(60,48,28,.14)}
+/* просвечивание: бумага светлее стекла, у её кромки стекло чуть подсвечено (двойная кромка — отражение нижней грани стекла), без свечения-«стикера» */
+.np .np-book::after{content:"";position:absolute;left:var(--sl,0);right:var(--sr,0);top:0;bottom:0;z-index:-1;transform:translateZ(-1px);border-radius:3px;pointer-events:none;
+  box-shadow:0 0 0 1px rgba(255,253,246,.34),0 0 .55em .06em rgba(255,250,236,.30)}

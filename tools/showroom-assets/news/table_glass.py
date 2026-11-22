@@ -1,20 +1,27 @@
 #!/usr/bin/env python3
-"""Стеклянный круглый стол для страницы «Новости» (news.html, css/news-table.css): вид строго сверху на толстую круглую столешницу из прозрачного стекла
-и светлый каменный пол вокруг. Журнал рисует HTML поверх картинки, поэтому здесь его нет; на стекле под ним оставлен спокойный нейтральный участок.
+"""Стеклянный круглый стол для страницы «Новости» (news.html, css/news-table.css): вид сверху на толстую круглую столешницу из прозрачного стекла и светлый каменный пол вокруг.
+Журнал рисует HTML поверх картинки, поэтому здесь его нет; под ним на стекле оставлен спокойный нейтральный участок (отражение окна лежит у левого края стекла, мелкие царапины — слабые).
 
 Сцена (Blender / Cycles, CPU, OIDN), масштаб как в остальных сценах сайта — миниатюра: 1 ед. = 10 см (стекло Ø 90 см = 9 ед.):
-  • стекло: диск Ø 9 ед., толщина 1,6 см, закруглённые (полированные) кромки; настоящее преломление и отражение (Glass BSDF), лёгкое поглощение в толще — холодно-зелёный торец,
-    тонкие микроцарапины и пыль (процедурная карта → шероховатость и слабое рассеяние), для теневых лучей стекло «полупрозрачная плёнка» (приём проекта: иначе свет не проходит к полу);
-  • основание: каменный барабан (травертин) под центром стекла — виден сквозь стекло и прячется под журналом;
-  • пол: плиты травертина 1,2×0,6 м вразбежку (пак CC0 travertine-ivory: цвет и жилы), швы, разный рисунок у каждой плиты, процедурные поры и микрозерно, матовая шлифовка;
-  • свет: мягкое окно слева сверху (как в зале главной), холодный заполняющий свет неба; отражение «светового окна» в стекле — невидимая камере панель над столом (видна только отражениям);
-  • камера: перспектива с длинным объективом на высоте 3 м прямо над центром, кадр = плоскость 3400×2260 px страницы (1 px страницы = 0,5 мм на уровне столешницы).
+  • стекло: диск Ø 9 ед., толщина 2 см, полированная закруглённая кромка (радиус 9 мм); настоящее преломление и отражение (Glass BSDF, IOR 1,52), лёгкое поглощение в толще — зеленоватая кромка;
+    микроцарапины и пылинки (процедурная карта → шероховатость и широкий блестящий лобус: царапина «зажигается» рядом с отражением окна, на тёмном фоне почти не видна);
+    для теневых лучей стекло — прозрачная плёнка с тоном (приём проекта: иначе свет не проходит к полу), поэтому его тень на полу мягкая и слабая; кромка (торец) — стекло с лёгким рассеянием,
+    чтобы свет не застревал в толще (чёрная кайма от полного внутреннего отражения);
+  • основание: низкий каменный барабан (травертин, чуть темнее пола) под центром стекла — виден сквозь стекло, отбрасывает мягкую тень вправо-вниз, прячется под журналом;
+  • пол: плиты травертина 1,2×0,6 м вразбежку (пак CC0 travertine-ivory: цвет и жилы, контраст усилен, жёлтый приглушён), швы, у каждой плиты свой кусок рисунка и тон, процедурные поры
+    трёх размеров (вытянуты вдоль слоёв) и микрозерно, матовая шлифовка;
+  • свет: окно слева сверху (прямоугольный источник, 40° над горизонтом, тёплый) + мягкий свет потолка и неба; два невидимых камере и полу «экрана» над столом видны только отражениям:
+    высокое окно с переплётами (ложится на левый край стекла) и широкая светлая вуаль потолка (отличает стекло от камня вокруг);
+  • камера: перспектива, объектив 63 мм на высоте 3 м прямо над центром; кадр = плоскость страницы 3400×2260 px (1 px страницы = 0,5 мм на уровне столешницы).
 
-Параметры на плоскости страницы 3400×2260 (центр = центр стола): стекло R = 900 px, барабан R ≈ 260 px; граница стекла — окружность радиуса 900 px от (1700, 1130).
+Параметры на плоскости страницы 3400×2260 (центр стола = центр плоскости (1700, 1130)): стекло R = 900 px, барабан R = 240 px; пол — всё остальное (плиты, швы); тень барабана и стекла — вправо-вниз.
 
-Запуск (нужен bpy):  python3 tools/showroom-assets/news/table_glass.py [выход.png]
-Переменные: TG_W (ширина, 2880), TG_SPP (сэмплов, 192), TG_CROP (x0,y0,x1,y1 — доли кадра, пробный участок), TG_EXP (экспозиция), TG_KEY (сила окна), TG_SKY (сила неба), TG_WIN (сила отражаемой панели),
-TG_SCR (заметность царапин), TG_THREADS (4), TG_TMP (куда класть процедурные текстуры). Постобработка и WebP — table_glass_post.py."""
+Запуск (нужен bpy; ≈ 25–30 мин на 4 ядрах):
+  python3 tools/showroom-assets/news/table_glass.py /tmp/table_glass_raw.png          # 2880×1914, 16-битный PNG
+  python3 tools/showroom-assets/news/table_glass_post.py /tmp/table_glass_raw.png     # цвет + assets/news/table-glass.webp и table-glass-m.webp
+Быстрый пробный кадр: TG_W=960 TG_SPP=32 …; участок кадра в полном размере: TG_CROP=x0,y0,x1,y1 (доли кадра).
+Переменные: TG_W (ширина, 2880), TG_SPP (сэмплов, 112), TG_EXP (экспозиция, −0,4), TG_KEY (сила окна), TG_SKY (сила неба), TG_WIN / TG_WX / TG_WW (яркость, положение и ширина отражаемого окна),
+TG_SHEEN (вуаль потолка), TG_SCR (заметность царапин), TG_ABD (поглощение в толще стекла), TG_THREADS (4), TG_TMP (куда класть процедурную карту царапин)."""
 import bpy, bmesh, math, os, sys
 import numpy as np
 import cv2
@@ -25,7 +32,7 @@ TEXD = os.path.join(ROOT, 'tools', 'showroom-assets', 'textures')
 _f = lambda k, d: float(os.environ.get(k, d))
 OUT = os.path.abspath(sys.argv[1]) if len(sys.argv) > 1 else os.path.join(os.environ.get('TG_TMP', '/tmp'), 'table_glass_raw.png')
 TMP = os.environ.get('TG_TMP', '/tmp'); os.makedirs(TMP, exist_ok=True)
-RW = int(_f('TG_W', 2880)); RH = round(RW * 2260 / 3400); SPP = int(_f('TG_SPP', 192))
+RW = int(_f('TG_W', 2880)); RH = round(RW * 2260 / 3400); SPP = int(_f('TG_SPP', 112))
 
 # ---------------------------------------------------------------------------------------------------------------- размеры (1 ед. = 10 см)
 U = 10.0                                  # ед. на метр
@@ -35,8 +42,8 @@ R_GLASS = 900 * PX                        # радиус стекла 4,5 ед. 
 T_GLASS = .20                             # толщина 2 см
 Z_TOP = 4.0                               # верх стекла над полом (40 см)
 Z_BOT = Z_TOP - T_GLASS
-ARRIS = _f('TG_ARRIS', .06)               # радиус закругления кромки 6 мм
-R_DRUM = 260 * PX                         # радиус барабана 1,3 ед.
+ARRIS = _f('TG_ARRIS', .09)               # радиус закругления кромки 9 мм
+R_DRUM = _f('TG_RD', 240) * PX            # радиус барабана 1,2 ед. (≈ 240 px страницы)
 CAM_D = 30.0                              # высота камеры над столешницей (3 м)
 LENS = 36.0 * CAM_D / PLANE_W             # мм: кадр шириной PLANE_W на уровне столешницы
 
@@ -105,21 +112,21 @@ def make_dust_map(path, S=4096):
 
     def stroke(canvas, pts, th, val):
         cv2.polylines(canvas, [np.round(np.array(pts) * 16).astype(np.int32)], False, float(val), th, cv2.LINE_AA, 4)
-    # волосяные царапины: короткие прямые и пологие дуги, чаще в средней зоне (там двигали предметы)
+    # волосяные царапины: короткие, почти прямые, чуть изогнутые; по всему диску равномерно, без «трещин» из центра
     sc = np.zeros((S, S), np.float32)
-    for i in range(520):
-        r = abs(rng.normal(0, .42)) * c; ang = rng.uniform(0, 2 * math.pi); x0, y0 = c + r * math.cos(ang), c + r * math.sin(ang)
-        L = rng.uniform(40, 520) * (3.0 if rng.random() < .06 else 1.0); th0 = rng.uniform(0, 2 * math.pi); curv = rng.normal(0, .0016)
-        pts = []; x, y, t = x0, y0, th0
-        for k in range(14):
-            pts.append((x, y)); x += math.cos(t) * L / 14; y += math.sin(t) * L / 14; t += curv * L / 14 * 8
-        stroke(sc, pts, 1 if rng.random() < .75 else 2, rng.uniform(.25, 1.0))
-    # длинные редкие дуги — следы протирания тканью
+    for i in range(420):
+        r = math.sqrt(rng.uniform(0, 1)) * c * .96; ang = rng.uniform(0, 2 * math.pi); x0, y0 = c + r * math.cos(ang), c + r * math.sin(ang)
+        L = rng.uniform(40, 300) * (3.5 if rng.random() < .06 else 1.0); th0 = rng.uniform(0, 2 * math.pi); turn = rng.normal(0, .22)
+        pts = [(x0 + math.cos(th0 + turn * k / 14) * L * k / 14, y0 + math.sin(th0 + turn * k / 14) * L * k / 14) for k in range(15)]
+        stroke(sc, pts, 1 if rng.random() < .75 else 2, rng.uniform(.18, .75))
+    # длинные редкие дуги — следы протирания тканью (по всему диску, не сходятся в центре)
     sw = np.zeros((S, S), np.float32)
-    for i in range(34):
-        R = rng.uniform(.25, 1.6) * S; ang0 = rng.uniform(0, 2 * math.pi); span = rng.uniform(.15, .55); cx0 = c + R * math.cos(ang0 + math.pi); cy0 = c + R * math.sin(ang0 + math.pi)
-        a0 = ang0 - span / 2; pts = [(cx0 + R * math.cos(a0 + span * k / 40), cy0 + R * math.sin(a0 + span * k / 40)) for k in range(41)]
-        stroke(sw, pts, 3, rng.uniform(.15, .5))
+    for i in range(30):
+        r = math.sqrt(rng.uniform(0, 1)) * c * .9; ang = rng.uniform(0, 2 * math.pi); x, y = c + r * math.cos(ang), c + r * math.sin(ang)
+        t = rng.uniform(0, 2 * math.pi); turn = rng.choice([-1, 1]) * rng.uniform(.0006, .0030); step = rng.uniform(.5, 1.6) * S / 70; pts = []
+        for k in range(60):
+            pts.append((x, y)); x += math.cos(t) * step; y += math.sin(t) * step; t += turn * step
+        stroke(sw, pts, 3, rng.uniform(.12, .38))
     sw = cv2.GaussianBlur(sw, (0, 0), 2.2)
     # пылинки и точки: редкие, мелкие, чуть разной яркости, кучками
     du = np.zeros((S, S), np.float32)
@@ -135,7 +142,7 @@ def make_dust_map(path, S=4096):
 
 
 # ---------------------------------------------------------------------------------------------------------------- материалы
-def stone_mat(name, tile_units=12.0, slab=(12.0, 6.0), joints=True, albedo=(.83, .79, .72), chroma=.42, honed=.40, pits=1.0, seed=1):
+def stone_mat(name, tile_units=12.0, slab=(12.0, 6.0), joints=True, albedo=(.83, .79, .72), chroma=.42, honed=.40, pits=1.0, seed=1, cboost=2.1):
     """травертин: цвет и жилы — из пака CC0 (travertine-ivory), приглушён к нейтрально-тёплому тону (chroma — доля исходной насыщенности), плиты slab вразбежку, у каждой свой кусок рисунка,
     швы, процедурные поры (вытянутые вдоль слоёв) и микрозерно; матовая шлифовка"""
     m = bpy.data.materials.new(name); nt = nodes_of(m)
@@ -143,6 +150,7 @@ def stone_mat(name, tile_units=12.0, slab=(12.0, 6.0), joints=True, albedo=(.83,
     tc = N(nt, 'ShaderNodeTexCoord'); sp = N(nt, 'ShaderNodeSeparateXYZ'); link(nt, tc.outputs['Object'], sp.inputs[0]); X, Y = sp.outputs['X'], sp.outputs['Y']
     SW, SH = slab
     if joints:
+        X = math_(nt, 'ADD', X, _f('TG_JX', 4.3)); Y = math_(nt, 'ADD', Y, _f('TG_JY', 2.1))                                 # сетка швов сдвинута: шов не проходит через центр стола
         row = math_(nt, 'FLOOR', math_(nt, 'DIVIDE', Y, SH)); xs = math_(nt, 'SUBTRACT', X, math_(nt, 'MULTIPLY', row, SW * .43))        # ряды вразбежку: сдвиг 0,43 длины плиты
         col = math_(nt, 'FLOOR', math_(nt, 'DIVIDE', xs, SW)); fx = math_(nt, 'SUBTRACT', xs, math_(nt, 'MULTIPLY', col, SW)); fy = math_(nt, 'SUBTRACT', Y, math_(nt, 'MULTIPLY', row, SH))
         dj = math_(nt, 'MINIMUM', math_(nt, 'MINIMUM', fx, math_(nt, 'SUBTRACT', SW, fx)), math_(nt, 'MINIMUM', fy, math_(nt, 'SUBTRACT', SH, fy)))        # расстояние до ближайшего шва, ед.
@@ -150,7 +158,7 @@ def stone_mat(name, tile_units=12.0, slab=(12.0, 6.0), joints=True, albedo=(.83,
         wn = N(nt, 'ShaderNodeTexWhiteNoise', noise_dimensions='3D'); link(nt, idv.outputs[0], wn.inputs['Vector'])
         sep2 = N(nt, 'ShaderNodeSeparateColor'); link(nt, wn.outputs['Color'], sep2.inputs['Color'])
         off = N(nt, 'ShaderNodeCombineXYZ'); link(nt, sep2.outputs['Red'], off.inputs['X']); link(nt, sep2.outputs['Green'], off.inputs['Y'])
-        tone = math_(nt, 'ADD', .965, math_(nt, 'MULTIPLY', sep2.outputs['Blue'], .07))                        # каждая плита чуть светлее или темнее соседних (±3,5%)
+        tone = math_(nt, 'ADD', .94, math_(nt, 'MULTIPLY', sep2.outputs['Blue'], .12))                         # каждая плита чуть светлее или темнее соседних (±6%)
         vec = N(nt, 'ShaderNodeVectorMath', operation='ADD'); link(nt, tc.outputs['Object'], vec.inputs[0]); sc_ = N(nt, 'ShaderNodeVectorMath', operation='SCALE'); sc_.inputs['Scale'].default_value = tile_units
         link(nt, off.outputs[0], sc_.inputs[0]); link(nt, sc_.outputs[0], vec.inputs[1])
         base_vec = vec.outputs[0]
@@ -162,6 +170,10 @@ def stone_mat(name, tile_units=12.0, slab=(12.0, 6.0), joints=True, albedo=(.83,
     lum = N(nt, 'ShaderNodeRGBToBW'); link(nt, col_t.outputs['Color'], lum.inputs['Color'])
     gray = N(nt, 'ShaderNodeCombineColor'); [link(nt, lum.outputs['Val'], gray.inputs[i]) for i in range(3)]
     dull = mix_(nt, gray.outputs['Color'], col_t.outputs['Color'], chroma)
+    mean_c = (.737, .603, .418, 1.0); lm0 = float(np.array(mean_c[:3]) @ [.2126, .7152, .0722])
+    dmean0 = tuple(lm0 + chroma * (mc - lm0) for mc in mean_c[:3]) + (1.0,)
+    bst = nt.nodes.new('ShaderNodeMix'); bst.data_type = 'RGBA'; bst.clamp_factor = False; bst.clamp_result = True; bst.inputs['A'].default_value = dmean0; bst.inputs['Factor'].default_value = cboost
+    link(nt, dull, bst.inputs['B']); dull = bst.outputs['Result']                                                  # контраст жил и пятен: исходный пак очень ровный (σ ≈ 3 %), на экране он «исчезает»
     mean = np.array([.737, .603, .418]); lm = float(mean @ [.2126, .7152, .0722])               # линейное среднее цвета пака (223,203,172) и его яркость
     dmean = lm + chroma * (mean - lm)                                                        # среднее после приглушения
     k = tuple(float(albedo[i] / dmean[i]) for i in range(3))                                 # множитель, при котором средний цвет плит = albedo
@@ -176,10 +188,13 @@ def stone_mat(name, tile_units=12.0, slab=(12.0, 6.0), joints=True, albedo=(.83,
         hit = math_(nt, 'MULTIPLY', math_(nt, 'SUBTRACT', d, thr - .05), 8.0, clamp=True)
         gate = smooth_(nt, noise_(nt, tc.outputs['Object'], gate_scale, 3), gate_thr - .04, gate_thr + .04)
         return math_(nt, 'MULTIPLY', hit, gate)
-    p1 = pores(2.6, 1 - .075 * pits, .42, .46); p2 = pores(9.0, 1 - .11 * pits, .55, .36)
-    pit = math_(nt, 'MAXIMUM', math_(nt, 'MULTIPLY', p1, .85), math_(nt, 'MULTIPLY', p2, .70))
+    p0 = pores(1.35, 1 - .075 * pits, .30, .60); p1 = pores(2.4, 1 - .105 * pits, .42, .50); p2 = pores(8.0, 1 - .15 * pits, .55, .42)
+    pit = math_(nt, 'MAXIMUM', math_(nt, 'MAXIMUM', math_(nt, 'MULTIPLY', p0, .95), math_(nt, 'MULTIPLY', p1, .85)), math_(nt, 'MULTIPLY', p2, .70))
     fine = noise_(nt, tc.outputs['Object'], 70.0, 6, .62)
-    col = mix_(nt, col, (.50 * albedo[0] / .8, .44 * albedo[1] / .8, .35 * albedo[2] / .8, 1.0), math_(nt, 'MULTIPLY', pit, .75))          # поры темнее камня
+    col = mix_(nt, col, (.40 * albedo[0] / .8, .35 * albedo[1] / .8, .28 * albedo[2] / .8, 1.0), math_(nt, 'MULTIPLY', pit, .85))          # поры темнее камня
+    gr = noise_(nt, tc.outputs['Object'], 320.0, 3, .5)                                                                       # микрозерно в цвете (переживает шумоподавление через альбедо-проход)
+    gc = N(nt, 'ShaderNodeMix', data_type='RGBA', blend_type='MULTIPLY'); gc.inputs['Factor'].default_value = 1.0; link(nt, col, gc.inputs['A'])
+    gk = N(nt, 'ShaderNodeCombineColor'); [link(nt, math_(nt, 'ADD', .95, math_(nt, 'MULTIPLY', gr, .10)), gk.inputs[i]) for i in range(3)]; link(nt, gk.outputs['Color'], gc.inputs['B']); col = gc.outputs['Result']
     if joints:
         jm = math_(nt, 'SUBTRACT', 1.0, smooth_(nt, dj, .012, .05))                                                             # шов шириной ~1 мм (на плоскости ≈ 2 px) с мягким краем
         col = mix_(nt, col, (.55 * albedo[0] / .8, .50 * albedo[1] / .8, .43 * albedo[2] / .8, 1.0), math_(nt, 'MULTIPLY', jm, .85))
@@ -206,20 +221,22 @@ def glass_mat(dust_path):
     mp.inputs['Scale'].default_value = (1 / (2 * R_GLASS / .985 * 1.0),) * 2 + (1,); mp.inputs['Location'].default_value = (.5, .5, 0); link(nt, tc.outputs['Object'], mp.inputs['Vector'])
     dt = img_tex(nt, dust_path, 'Non-Color', mp.outputs['Vector'], 'Linear'); dm = dt.outputs['Color']
     dmask = N(nt, 'ShaderNodeRGBToBW'); link(nt, dm, dmask.inputs['Color']); dv = dmask.outputs['Val']
-    scr = _f('TG_SCR', 1.0)
+    scr = _f('TG_SCR', .6)
     # низкочастотная волнистость поверхности: настоящее флоат-стекло чуть «играет» в отражении — мягкие полосы вместо однотонной пелены
     wave = noise_(nt, tc.outputs['Object'], .42, 2, .5, .5)
     rough = math_(nt, 'ADD', .004, math_(nt, 'MULTIPLY', dv, .10 * scr), clamp=True)
     gl = N(nt, 'ShaderNodeBsdfGlass', distribution='MULTI_GGX'); gl.inputs['IOR'].default_value = 1.52; gl.inputs['Color'].default_value = (.985, 1.0, .99, 1); link(nt, rough, gl.inputs['Roughness'])
     bpn = N(nt, 'ShaderNodeBump'); bpn.inputs['Strength'].default_value = .05; bpn.inputs['Distance'].default_value = .004; link(nt, wave, bpn.inputs['Height']); link(nt, bpn.outputs['Normal'], gl.inputs['Normal'])
-    # рассеяние света на царапинах и пыли (ловят общий свет и блик): слабое молочное
-    df = N(nt, 'ShaderNodeBsdfDiffuse'); df.inputs['Color'].default_value = (.96, .97, .96, 1)
-    sc_mix = N(nt, 'ShaderNodeMixShader'); link(nt, math_(nt, 'MULTIPLY', dv, .12 * scr, clamp=True), sc_mix.inputs['Fac']); link(nt, gl.outputs['BSDF'], sc_mix.inputs[1]); link(nt, df.outputs['BSDF'], sc_mix.inputs[2])
+    # рассеяние света на царапинах и пыли: широкий блестящий лобус — царапина «зажигается», когда рядом в отражении окно (как у настоящего стекла), на тёмном фоне почти не видна
+    gs = N(nt, 'ShaderNodeBsdfGlossy', distribution='MULTI_GGX'); gs.inputs['Roughness'].default_value = _f('TG_SCRR', .42); gs.inputs['Color'].default_value = (.96, .97, .96, 1)
+    df = N(nt, 'ShaderNodeBsdfDiffuse'); df.inputs['Color'].default_value = (.95, .96, .95, 1)
+    dg = N(nt, 'ShaderNodeMixShader'); dg.inputs['Fac'].default_value = .12; link(nt, gs.outputs['BSDF'], dg.inputs[1]); link(nt, df.outputs['BSDF'], dg.inputs[2])
+    sc_mix = N(nt, 'ShaderNodeMixShader'); link(nt, math_(nt, 'MULTIPLY', dv, .55 * scr, clamp=True), sc_mix.inputs['Fac']); link(nt, gl.outputs['BSDF'], sc_mix.inputs[1]); link(nt, dg.outputs['Shader'], sc_mix.inputs[2])
     # теневые лучи: плёнка с тоном стекла
-    tr = N(nt, 'ShaderNodeBsdfTransparent'); tr.inputs['Color'].default_value = (_f('TG_SHR', .86), _f('TG_SHG', .93), _f('TG_SHB', .89), 1)
+    tr = N(nt, 'ShaderNodeBsdfTransparent'); tr.inputs['Color'].default_value = (_f('TG_SHR', .86), _f('TG_SHG', .88), _f('TG_SHB', .86), 1)
     lp = N(nt, 'ShaderNodeLightPath'); fin = N(nt, 'ShaderNodeMixShader'); link(nt, lp.outputs['Is Shadow Ray'], fin.inputs['Fac']); link(nt, sc_mix.outputs['Shader'], fin.inputs[1]); link(nt, tr.outputs['BSDF'], fin.inputs[2])
     link(nt, fin.outputs['Shader'], out.inputs['Surface'])
-    ab = N(nt, 'ShaderNodeVolumeAbsorption'); ab.inputs['Color'].default_value = (_f('TG_ABR', .90), _f('TG_ABG', .985), _f('TG_ABB', .94), 1); ab.inputs['Density'].default_value = _f('TG_ABD', 6.0); link(nt, ab.outputs['Volume'], out.inputs['Volume'])
+    ab = N(nt, 'ShaderNodeVolumeAbsorption'); ab.inputs['Color'].default_value = (_f('TG_ABR', .92), _f('TG_ABG', .975), _f('TG_ABB', .945), 1); ab.inputs['Density'].default_value = _f('TG_ABD', 5.0); link(nt, ab.outputs['Volume'], out.inputs['Volume'])
     return m
 
 
@@ -229,9 +246,20 @@ def glass_edge_mat():
     m = bpy.data.materials.new('tg_glass_edge'); nt = nodes_of(m); out = N(nt, 'ShaderNodeOutputMaterial')
     gl = N(nt, 'ShaderNodeBsdfGlass'); gl.inputs['IOR'].default_value = 1.52; gl.inputs['Roughness'].default_value = .03; gl.inputs['Color'].default_value = (.80, .96, .88, 1)
     tl = N(nt, 'ShaderNodeBsdfTranslucent'); tl.inputs['Color'].default_value = (.62, .85, .74, 1)
-    mx = N(nt, 'ShaderNodeMixShader'); mx.inputs['Fac'].default_value = _f('TG_EDGE', .55); link(nt, gl.outputs['BSDF'], mx.inputs[1]); link(nt, tl.outputs['BSDF'], mx.inputs[2])
+    mx = N(nt, 'ShaderNodeMixShader'); mx.inputs['Fac'].default_value = _f('TG_EDGE', .25); link(nt, gl.outputs['BSDF'], mx.inputs[1]); link(nt, tl.outputs['BSDF'], mx.inputs[2])
     tr = N(nt, 'ShaderNodeBsdfTransparent'); tr.inputs['Color'].default_value = (.80, .90, .85, 1)
     lp = N(nt, 'ShaderNodeLightPath'); fin = N(nt, 'ShaderNodeMixShader'); link(nt, lp.outputs['Is Shadow Ray'], fin.inputs['Fac']); link(nt, mx.outputs['Shader'], fin.inputs[1]); link(nt, tr.outputs['BSDF'], fin.inputs[2]); link(nt, fin.outputs['Shader'], out.inputs['Surface'])
+    return m
+
+
+def sheen_panel_mat(s_sh):
+    """«потолок» над столом, видимый только отражениям: широкий мягкий градиент (светлее у окна — слева сверху), даёт на стекле лёгкую светлую вуаль и отличает его от камня вокруг"""
+    m = bpy.data.materials.new('tg_sheen'); nt = nodes_of(m); out = N(nt, 'ShaderNodeOutputMaterial'); em = N(nt, 'ShaderNodeEmission')
+    tc = N(nt, 'ShaderNodeTexCoord'); sp = N(nt, 'ShaderNodeSeparateXYZ'); link(nt, tc.outputs['UV'], sp.inputs[0]); u, v = sp.outputs['X'], sp.outputs['Y']
+    t = math_(nt, 'ADD', math_(nt, 'MULTIPLY', math_(nt, 'SUBTRACT', 1.0, u), .62), math_(nt, 'MULTIPLY', v, .38))             # 1 — левый верх, 0 — правый низ
+    st = math_(nt, 'MULTIPLY', math_(nt, 'ADD', .22, math_(nt, 'MULTIPLY', smooth_(nt, t, .15, .95), .78)), s_sh)
+    em.inputs['Color'].default_value = (1.0, .985, .955, 1); link(nt, st, em.inputs['Strength']); link(nt, em.outputs['Emission'], out.inputs['Surface'])
+    m.cycles.emission_sampling = 'NONE'
     return m
 
 
@@ -241,16 +269,21 @@ def brass_mat():
 
 
 def window_panel_mat(s_win):
-    """светлое окно, видимое только отражениям: мягкий край, переплёт-крест, тёплый белый, к краям слабее"""
+    """светлое окно, видимое только отражениям: высокая створка с горизонтальными переплётами, мягкая яркость — сильнее у левого края («улица»), к столу слабее"""
     m = bpy.data.materials.new('tg_window'); nt = nodes_of(m); out = N(nt, 'ShaderNodeOutputMaterial'); em = N(nt, 'ShaderNodeEmission')
     tc = N(nt, 'ShaderNodeTexCoord'); sp = N(nt, 'ShaderNodeSeparateXYZ'); link(nt, tc.outputs['UV'], sp.inputs[0]); u, v = sp.outputs['X'], sp.outputs['Y']
     eu = math_(nt, 'MINIMUM', u, math_(nt, 'SUBTRACT', 1.0, u)); ev = math_(nt, 'MINIMUM', v, math_(nt, 'SUBTRACT', 1.0, v))
-    edge = math_(nt, 'MULTIPLY', smooth_(nt, eu, .0, .10), smooth_(nt, ev, .0, .10))
-    bar_u = smooth_(nt, math_(nt, 'ABSOLUTE', math_(nt, 'SUBTRACT', u, .5)), .012, .028); bar_v = smooth_(nt, math_(nt, 'ABSOLUTE', math_(nt, 'SUBTRACT', v, .5)), .012, .028)
-    bars = math_(nt, 'MULTIPLY', bar_u, bar_v)
-    grad = math_(nt, 'ADD', .55, math_(nt, 'MULTIPLY', u, .45))                                  # к «улице» (левому краю) ярче
+    edge = math_(nt, 'MULTIPLY', math_(nt, 'MULTIPLY', smooth_(nt, u, .0, .03), smooth_(nt, math_(nt, 'SUBTRACT', 1.0, u), .0, _f('TG_WSOFT', .45))), smooth_(nt, ev, .0, .020))
+    rows = int(_f('TG_WROWS', 3)); cols = int(_f('TG_WCOLS', 2)); bars = 1.0
+    for k in range(1, cols):
+        bars = math_(nt, 'MULTIPLY', bars, smooth_(nt, math_(nt, 'ABSOLUTE', math_(nt, 'SUBTRACT', u, k / cols)), .007, .014))
+    for k in range(1, rows):
+        bars = math_(nt, 'MULTIPLY', bars, smooth_(nt, math_(nt, 'ABSOLUTE', math_(nt, 'SUBTRACT', v, k / rows)), .008, .016))
+    grad = math_(nt, 'ADD', .78, math_(nt, 'MULTIPLY', math_(nt, 'SUBTRACT', 1.0, u), .22))
     st = math_(nt, 'MULTIPLY', math_(nt, 'MULTIPLY', edge, bars), math_(nt, 'MULTIPLY', grad, s_win))
-    em.inputs['Color'].default_value = (1.0, .97, .92, 1); link(nt, st, em.inputs['Strength']); link(nt, em.outputs['Emission'], out.inputs['Surface']); return m
+    em.inputs['Color'].default_value = (1.0, .97, .92, 1); link(nt, st, em.inputs['Strength']); link(nt, em.outputs['Emission'], out.inputs['Surface'])
+    m.cycles.emission_sampling = 'NONE'                                                       # не источник света для NEE: стол освещает только «окно» key, панель лишь отражается в стекле
+    return m
 
 
 # ---------------------------------------------------------------------------------------------------------------- геометрия
@@ -289,33 +322,45 @@ def glass_profile():
 
 def build(sc):
     # ---- пол
-    floor_m = stone_mat('tg_floor', joints=True, albedo=(_f('TG_FR', .86), _f('TG_FG', .81), _f('TG_FB', .73)), chroma=_f('TG_FCH', .45))
+    floor_m = stone_mat('tg_floor', joints=True, albedo=(_f('TG_FR', .80), _f('TG_FG', .72), _f('TG_FB', .60)), chroma=_f('TG_FCH', .62))
     bpy.ops.mesh.primitive_plane_add(size=1, location=(0, 0, 0)); fl = bpy.context.object; fl.name = 'floor'; fl.scale = (60, 44, 1); bpy.ops.object.transform_apply(location=False, rotation=False, scale=True); fl.data.materials.append(floor_m)
     # ---- стекло
     dust = make_dust_map(os.path.join(TMP, 'tg_dust.png'))
     gm = glass_mat(dust)
     g = lathe('glass', glass_profile(), 360, gm, glass_edge_mat())
     # ---- барабан-основание
-    dm = stone_mat('tg_drum', joints=False, albedo=(.84, .80, .73), chroma=_f('TG_FCH', .45), honed=.5)
+    dm = stone_mat('tg_drum', joints=False, albedo=(_f('TG_DR', .60), _f('TG_DG', .51), _f('TG_DB', .42)), chroma=_f('TG_FCH', .62), honed=.55, cboost=1.4)
     drum_top = Z_BOT - .035
     d = lathe('drum', [(0, 0), (R_DRUM, 0), (R_DRUM, drum_top * .15), (R_DRUM, drum_top - .06), (R_DRUM - .05, drum_top), (0, drum_top)], 160, dm)
+    # латунная инкрустация-кольцо по верху барабана (тонкая линия цвета фирменной латуни, видна сквозь стекло)
+    if os.environ.get('TG_RING', '0') == '1':
+      rr0, rr1 = R_DRUM - .13, R_DRUM - .08; zr = drum_top + .004; me = bpy.data.meshes.new('drum_ring'); bm = bmesh.new()
+      for i in range(160):
+          a0, a1 = 2 * math.pi * i / 160, 2 * math.pi * (i + 1) / 160
+          bm.faces.new([bm.verts.new((r * math.cos(a), r * math.sin(a), zr)) for r, a in ((rr0, a0), (rr1, a0), (rr1, a1), (rr0, a1))]).smooth = False
+      bm.to_mesh(me); bm.free(); rg = bpy.data.objects.new('drum_ring', me); sc.collection.objects.link(rg); rg.data.materials.append(brass_mat())
     # ---- свет
-    key = bpy.data.lights.new('key', 'AREA'); key.shape = 'RECTANGLE'; key.size = _f('TG_KS', 9.0); key.size_y = _f('TG_KS', 9.0) * 1.15
-    key.energy = _f('TG_KEY', 26000.0); key.color = (1.0, .92, .80)
-    ko = bpy.data.objects.new('key', key); sc.collection.objects.link(ko); ko.location = Vector((_f('TG_KX', -17.0), _f('TG_KY', 11.0), _f('TG_KZ', 25.0)))
+    key = bpy.data.lights.new('key', 'AREA'); key.shape = 'RECTANGLE'; key.size = _f('TG_KS', 6.0); key.size_y = _f('TG_KS', 6.0) * 1.35
+    key.energy = _f('TG_KEY', 34000.0); key.color = (1.0, .92, .80)
+    ko = bpy.data.objects.new('key', key); sc.collection.objects.link(ko); ko.location = Vector((_f('TG_KX', -15.0), _f('TG_KY', 10.0), _f('TG_KZ', 21.0)))
     ko.rotation_euler = (Vector((2.0, -1.0, Z_TOP)) - ko.location).to_track_quat('-Z', 'Y').to_euler()
-    ko.visible_camera = False; ko.visible_glossy = False
+    ko.visible_camera = False
     # мягкий контровой свет справа-сверху (отражённый от стен), слабый
     rf = bpy.data.lights.new('rim', 'AREA'); rf.shape = 'RECTANGLE'; rf.size = 16; rf.size_y = 12; rf.energy = _f('TG_RIM', 5500.0); rf.color = (.90, .94, 1.0)
     ro = bpy.data.objects.new('rim', rf); sc.collection.objects.link(ro); ro.location = Vector((19.0, -9.0, 24.0)); ro.rotation_euler = (Vector((0, 0, Z_TOP)) - ro.location).to_track_quat('-Z', 'Y').to_euler(); ro.visible_camera = False; ro.visible_glossy = False
     # ---- мир: холодный мягкий свет потолка и неба
     w = bpy.data.worlds.new('w'); w.use_nodes = True; nt = w.node_tree; bg = nt.nodes['Background']
-    bg.inputs['Color'].default_value = (.90, .94, 1.0, 1); bg.inputs['Strength'].default_value = _f('TG_SKY', .55); sc.world = w
+    bg.inputs['Color'].default_value = (1.0, .975, .94, 1); bg.inputs['Strength'].default_value = _f('TG_SKY', .5); sc.world = w
     # ---- отражаемое окно: панель над столом, камере невидима, освещения не даёт
-    pm = window_panel_mat(_f('TG_WIN', 7.0))
-    bpy.ops.mesh.primitive_plane_add(size=1, location=(_f('TG_WX', -5.2), _f('TG_WY', 5.0), Z_TOP + _f('TG_WZ', 13.0))); wp = bpy.context.object; wp.name = 'window'
-    wp.scale = (_f('TG_WW', 11.0), _f('TG_WH', 9.0), 1); wp.rotation_euler = (math.pi, 0, math.radians(_f('TG_WR', 0.0))); wp.data.materials.append(pm)
+    pm = window_panel_mat(_f('TG_WIN', 125.0))
+    bpy.ops.mesh.primitive_plane_add(size=1, location=(_f('TG_WX', -5.2), _f('TG_WY', .8), Z_TOP + _f('TG_WZ', 13.0))); wp = bpy.context.object; wp.name = 'window'
+    wp.scale = (_f('TG_WW', 4.4), _f('TG_WH', 9.0), 1); wp.rotation_euler = (math.pi, 0, math.radians(_f('TG_WR', 0.0))); wp.data.materials.append(pm)
     wp.visible_camera = False; wp.visible_diffuse = False; wp.visible_shadow = False; wp.visible_transmission = False
+    # ---- «потолок»-вуаль: только для отражений в стекле
+    sm = sheen_panel_mat(_f('TG_SHEEN', 5.5))
+    bpy.ops.mesh.primitive_plane_add(size=1, location=(_f('TG_SX', -2.0), _f('TG_SY', 1.5), Z_TOP + _f('TG_SZ', 16.0))); sp_ = bpy.context.object; sp_.name = 'sheen'
+    sp_.scale = (_f('TG_SW', 26.0), _f('TG_SH', 20.0), 1); sp_.rotation_euler = (math.pi, 0, 0); sp_.data.materials.append(sm)
+    sp_.visible_camera = False; sp_.visible_diffuse = False; sp_.visible_shadow = False; sp_.visible_transmission = False
     # ---- камера: строго сверху
     cd = bpy.data.cameras.new('cam'); cd.sensor_width = 36; cd.sensor_fit = 'HORIZONTAL'; cd.lens = LENS; cd.dof.use_dof = False
     co = bpy.data.objects.new('cam', cd); sc.collection.objects.link(co); co.location = (0, 0, Z_TOP + CAM_D); co.rotation_euler = (0, 0, 0); sc.camera = co
@@ -329,7 +374,7 @@ def settings(sc):
     cy.use_denoising = True; cy.denoiser = 'OPENIMAGEDENOISE'; cy.denoising_input_passes = 'RGB_ALBEDO_NORMAL'; cy.denoising_prefilter = 'ACCURATE'
     cy.max_bounces = 16; cy.transmission_bounces = 14; cy.glossy_bounces = 10; cy.diffuse_bounces = 4; cy.volume_bounces = 0; cy.transparent_max_bounces = 16
     cy.sample_clamp_indirect = 6.0; cy.sample_clamp_direct = 0.0; cy.filter_width = 1.1; cy.caustics_reflective = False; cy.caustics_refractive = False
-    vs = sc.view_settings; vs.view_transform = os.environ.get('TG_VT', 'AgX'); vs.look = os.environ.get('TG_LOOK', 'None'); vs.exposure = _f('TG_EXP', 0.0)
+    vs = sc.view_settings; vs.view_transform = os.environ.get('TG_VT', 'AgX'); vs.look = os.environ.get('TG_LOOK', 'AgX - Medium High Contrast'); vs.exposure = _f('TG_EXP', -.4)
     if os.environ.get('TG_CROP'):
         x0, y0, x1, y1 = [float(v) for v in os.environ['TG_CROP'].split(',')]; r.use_border = True; r.use_crop_to_border = True
         r.border_min_x, r.border_max_x = x0, x1; r.border_min_y, r.border_max_y = 1 - y1, 1 - y0
