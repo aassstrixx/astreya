@@ -133,6 +133,7 @@
   const TIER = (() => {
     try {
       const q = /[?&]tier=(high|mid|low)\b/.exec(location.search); if (q) { TIER_WHY.push('?tier'); return q[1]; }
+      if (matchMedia('(pointer: coarse)').matches && Math.min(screen.width, screen.height) <= 520) { TIER_WHY.push('телефон'); return 'high'; }          // телефон идёт своим профилем (PHONE / портретный кадр), класс устройства его не меняет
       const cores = navigator.hardwareConcurrency || 4, mem = navigator.deviceMemory || 8;
       let gpu = ''; try { const c = document.createElement('canvas'), g = c.getContext('webgl2') || c.getContext('webgl'), e = g && g.getExtension('WEBGL_debug_renderer_info'); gpu = e ? String(g.getParameter(e.UNMASKED_RENDERER_WEBGL) || '') : ''; const l = g && g.getExtension('WEBGL_lose_context'); if (l) l.loseContext(); } catch (e) { /* — */ }
       const soft = /swiftshader|llvmpipe|softpipe|software|microsoft basic/i.test(gpu), weakIntel = /intel/i.test(gpu) && /hd graphics|uhd/i.test(gpu), igpu = /intel|vega|radeon\(tm\) graphics|mali|adreno|powervr/i.test(gpu) && !/rtx|gtx|arc a|radeon (rx|pro)/i.test(gpu);
@@ -153,7 +154,7 @@
       if (document.visibilityState !== 'visible') return run(2000);
       let last = 0, k = 0, mn = 1e9;
       const f = t => { if (last) { mn = Math.min(mn, t - last); k++; } last = t; if (k < 40) requestAnimationFrame(f); else done(); };
-      const done = () => { rounds++; if (mn < 24) seen = true; A.dispMs = Math.round(Math.min(A.dispMs || 1e9, mn) * 10) / 10; A.dispSlow = !seen && rounds >= 3; if (A.bc) A.bc('hz', 'кадр экрана ' + Math.round(mn * 10) / 10 + ' мс'); if (!seen && rounds < 3) run(rounds === 1 ? 7000 : 15000); };
+      const done = () => { rounds++; if (mn < 24) seen = true; A.dispMs = Math.round(Math.min(A.dispMs || 1e9, mn) * 10) / 10; A.dispSlow = false; /* замер частоты экрана только для диагностики: интервал 33 мс на ноутбуке владельца (Intel UHD) оказался следствием нагрузки (видеокарта не тянет 60 к/с), а не экраном 30 Гц — цель регулятора всегда 16,7 мс */ if (A.bc) A.bc('hz', 'кадр экрана ' + Math.round(mn * 10) / 10 + ' мс'); if (!seen && rounds < 3) run(rounds === 1 ? 7000 : 15000); };
       requestAnimationFrame(f);
     }, delay);
     run(3000);
@@ -166,7 +167,10 @@
   const DECODERS = 3, DECODERS_P = 2;         // одновременных разворачиваний картинок в текстуры
   /* уменьшенные копии всех кадров (всегда в видеопамяти; во взмах картинка идёт по ним): ширина цвета, высота цвета, ширина и высота глубины (0 — глубина в натуральном размере: тогда полный кадр берёт её же и держит только цвет), ширина спрайта баночки.
      Они должны быть почти неотличимы от полных кадров (мелкие копии давали «мыло» и ступеньки на кромках): на мощных устройствах (≥ 8 ГБ памяти) цвет 1280×720 и глубина целиком (≈ 350 МБ), иначе 960×540 и глубина 640×360 (≈ 180 МБ); телефон — 450×800 / 540×960 */
-  const DM = navigator.deviceMemory || 4, RICH = DM >= 8;
+  /* «Мощное устройство» (RICH): раньше — любое с deviceMemory ≥ 8. Но браузеры не показывают больше 8, поэтому «8» говорят и слабые ноутбуки с 8 ГБ и встроенной графикой (диагностика владельца: Intel UHD, dm8):
+     для них включался профиль мощного ПК — уменьшенные копии героя 1280×720 с глубиной целиком (≈ 350 МБ) и ВСЕ 49 ключей пролёта в видеопамяти (≈ 500 МБ; в журнале «f49» уже на 15-й секунде) — на первом заходе всё это заливалось
+     в видеопамять во время прокрутки: рваная картинка, пока заливка не закончится. Теперь профиль мощного устройства — только у класса high (см. TIER); у mid/low — окно ключей, копии 960×540 и глубина 640×360, как у обычных 4-гигабайтных ПК. */
+  const DM = navigator.deviceMemory || 4, RICH = DM >= 8 && !WEAK;
   const PHONE = (() => { try { return matchMedia('(pointer: coarse)').matches && Math.min(screen.width, screen.height) <= 520; } catch (e) { return false; } })();          // телефон (в том числе повёрнутый набок): холст не больше портретного бюджета — ориентация экрана не должна удваивать видеопамять
   const LOWSZ = [RICH ? [1280, 720, 0, 0, 640] : [960, 540, 640, 360, 480], RICH ? [540, 960, 0, 0, 480] : [300, 533, 300, 533, 360]];      // телефон: на 8 ГБ — цвет 540×960 и вся глубина (≈ 210 МБ), иначе 450×800 и глубина 300×533 (≈ 125 МБ)
   const LOWDEC = [2, 1];           // одновременных разворачиваний уменьшенных копий (они мелкие, идут в стороне от основной очереди)
@@ -348,7 +352,7 @@
       }).catch(() => { if (g === gen) { (sprite ? lowJDone : lowDone)[k] = 2; lowBusy[bi] = 0; } }).then(() => { decL--; pumpDecode(); });
     }
     /* копии (lows) на телефоне — через ключ (в облегчённом режиме через два): в движении картинка идёт по ним, а между соседними копиями кадры перепроецируются (plan: разрыв до 3 ключей допустим); память копий вдвое меньше */
-    const lowStride = () => (isPortrait() && !RICH) ? (A.lite ? 3 : 2) : 1;
+    const lowStride = () => (isPortrait() && !RICH) ? (A.lite ? 3 : 2) : (WEAK ? 2 : 1);          // слабый ПК/ноутбук: копии через ключ, как на телефоне (вдвое меньше заливки в видеопамять на первом заходе)
     const lowWanted = k => { const st = lowStride(); return st === 1 || k % st === 0 || k === NH - 1; };
     let lowTgtS = 0, lowTgtV = NH;
     const lowTgt = () => { const st = lowStride(); if (st !== lowTgtS) { lowTgtS = st; lowTgtV = 0; for (let k = 0; k < NH; k++) if (lowWanted(k)) lowTgtV++; } return lowTgtV; };
