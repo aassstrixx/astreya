@@ -138,7 +138,7 @@
       let gpu = ''; try { const c = document.createElement('canvas'), g = c.getContext('webgl2') || c.getContext('webgl'), e = g && g.getExtension('WEBGL_debug_renderer_info'); gpu = e ? String(g.getParameter(e.UNMASKED_RENDERER_WEBGL) || '') : ''; const l = g && g.getExtension('WEBGL_lose_context'); if (l) l.loseContext(); } catch (e) { /* — */ }
       const soft = /swiftshader|llvmpipe|softpipe|software|microsoft basic/i.test(gpu), weakIntel = /intel/i.test(gpu) && /hd graphics|uhd/i.test(gpu), igpu = /intel|vega|radeon\(tm\) graphics|mali|adreno|powervr/i.test(gpu) && !/rtx|gtx|arc a|radeon (rx|pro)/i.test(gpu);
       TIER_WHY.push('cores' + cores, 'mem' + mem, gpu.slice(0, 40) || 'gpu?');
-      if (soft || (weakIntel && cores <= 4)) return 'low';
+      if (soft || (weakIntel && (cores <= 4 || !/uhd graphics 7\d\d/i.test(gpu)))) return 'low';          // встроенная Intel HD/UHD — всегда «слабая» для этой сцены, и при 8 потоках (замер ноутбука владельца: UHD, 8 ядер — стабильные 30 к/с и заливка одного кадра до 160 мс); UHD 7xx (поколения 11–13) остаётся mid
       if (igpu || cores <= 4 || mem <= 4) return 'mid';
     } catch (e) { /* — */ }
     return 'high';
@@ -386,7 +386,7 @@
       if (low) f.low = true; upQ.push(f); schedule();
       if (!upTimer) upTimer = setTimeout(function again() { upTimer = 0; flushUploads(8); if (upQ.length) upTimer = setTimeout(again, 250); }, 250);
     }
-    let lastUp = 0;
+    let lastUp = 0, slowUpUntil = 0;
     let upAgg = {n: 0, sum: 0, max: 0, t: 0};
     function flushUploads(budget) {
       if (!upQ.length) return;
@@ -395,7 +395,7 @@
         const i = fast ? upQ.findIndex(f => f.low) : 0;                      // во взмах тяжёлые загрузки ждут (в очереди их мало: новые не запускаются), уменьшенные копии идут
         if (i < 0) break;
         const f = upQ.splice(i, 1)[0]; if (f.low) upN.low++; else upN.full++; lastUp = performance.now(); try { f(); } catch (e) { /* — */ }
-        const dj = performance.now() - lastUp; upAgg.n++; upAgg.sum += dj; if (dj > upAgg.max) upAgg.max = dj;
+        const dj = performance.now() - lastUp; if (dj > 30) slowUpUntil = performance.now() + 5000; upAgg.n++; upAgg.sum += dj; if (dj > upAgg.max) upAgg.max = dj;
       } while (upQ.length && performance.now() - t0 < budget);
       if (upAgg.n && performance.now() - upAgg.t > 1000) { A.bc && A.bc('up', (FLY ? 'fly ' : 'hero ') + 'n' + upAgg.n + ' Σ' + Math.round(upAgg.sum) + ' макс' + Math.round(upAgg.max) + 'мс'); upAgg = {n: 0, sum: 0, max: 0, t: performance.now()}; }          // сводка в журнал (?diag=1): сколько заливок в видеопамять за секунду и сколько основной поток на них потратил
       if (upQ.length < UPQ_MAX()) setTimeout(pumpDecode, 0);                          // очередь разгрузилась — разворачиваем следующие кадры
@@ -651,7 +651,7 @@
         const heroPhase = FLY && !PHALL && ALLRES && pT <= 0;
         const mv = Math.abs(vp) * KS > MOVING || (FLY && (PHALL || heroPhase) && scrolling());
         const gap = fast ? UP_GAP_LOW : heroPhase ? UP_GAP_FW : FLY ? UP_GAP_F : isPortrait() ? UP_GAP_P : WEAK ? UP_GAP_W : UP_GAP_H;
-        if (!mv || performance.now() - lastUp >= gap) flushUploads(mv ? 2.5 : 8);
+        if (!mv || performance.now() - lastUp >= (performance.now() < slowUpUntil ? Math.max(gap, 150) : gap)) flushUploads(mv ? 2.5 : 8);          // одна заливка длилась > 30 мс (видеокарта занята, драйвер ждёт её очередь): 5 с реже — не чаще раза в 150 мс
       }          // телефон: в движении тяжёлая загрузка не чаще раза в UP_GAP_P мс (иначе каждый кадр с хвостом)                // по одной-две тяжёлые текстуры за кадр; в покое — быстрее
       if ((inView || !firstDrawn) && hall && (dirty || Math.abs(cp - paintedP) > 1e-7)) {
         if (paint(t)) { paintedP = cp; dirty = false; } else dirty = true;
