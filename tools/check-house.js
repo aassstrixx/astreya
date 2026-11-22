@@ -588,7 +588,7 @@ const t = (cond, name, info) => { if (cond) ok++; else bad.push(name + (info !==
     for (const pre of ['brands/', 'products/', 'catalog.html?task=', 'training/', 'news/', 'partners.html', 'start.html', 'training.html#teachers']) t(hrefs.some(h => h.replace(/^\.\.?\//, '').startsWith(pre)), 'в журнале есть ссылка «' + pre + '…»');
     t(hrefs.includes('tel:' + SITE.contacts.phoneRaw) && hrefs.includes('mailto:' + SITE.contacts.email), 'контакты на последнем развороте — из data/site.json (телефон и почта ссылками)');
     // 7.2 логотипы брендов: в галерее у каждого бренда его файл логотипа
-    const logos = await q.evaluate(() => [...document.querySelectorAll('#mag .mp-bgal .mp-bl')].map(i => i.getAttribute('src')));
+    const logos = await q.evaluate(() => [...document.querySelectorAll('#mag .mp-bgal .mp-bl')].map(i => i.getAttribute('src') || i.getAttribute('data-src') || ''));
     t(BR.every(b => logos.some(l => l.replace(/^\.\.?\//, '').split('?')[0] === b.logo)) && logos.length === BR.length, 'галерея брендов: у каждого бренда его настоящий логотип (' + logos.length + ' из ' + BR.length + ')', logos);
     t(await q.evaluate(() => document.querySelectorAll('#mag .mp-tlg').length >= 12 && document.querySelectorAll('#mag .mp-logos-all .mp-lg').length >= 9), 'логотипы брендов — на страницах подбора и контактов');
     // 7.3 события и новости — только из данных
