@@ -10,7 +10,7 @@
 
 /* ---------- пол и дымка ---------- */
 /* стол чуть ниже плоскости газеты: у news-paper.css он на -1px, а тень газеты (.np-book::before) на -2px — оказывалась ПОД столом и не была видна */
-.np .np-table{transform:translateZ(-6px);background:#cdbfa9 url(../assets/news/table-glass.webp?v=a6c6bc51) center/100% 100% no-repeat;
+.np .np-table{transform:translateZ(-6px);background:#cdbfa9 url(../assets/news/table-glass.webp?v=caf49647) center/100% 100% no-repeat;
   -webkit-mask-image:linear-gradient(180deg,transparent 0,#000 13%),linear-gradient(90deg,transparent 0,#000 7%,#000 93%,transparent 100%);-webkit-mask-composite:source-in;
   mask-image:linear-gradient(180deg,transparent 0,#000 13%),linear-gradient(90deg,transparent 0,#000 7%,#000 93%,transparent 100%);mask-composite:intersect}
 /* цвета фона сняты с рендера: пол в свету ≈ #d6c8b4, в полутени ≈ #bfae96; дальний край плоскости растворяется в светлой воздушной дымке */
@@ -18,8 +18,8 @@
 .np .np-world{background:linear-gradient(180deg,#efe8dc 0,#e0d6c4 28%,#d1c3ac 60%,#c8b9a1 100%)}
 /* камера «лежит» (прокрутка дошла до газеты, идёт листание): дымка по краям плоскости не видна — маску снимаем, слой дешевле для композитора на каждом кадре листания */
 .np .np-cam.is-flat .np-table{-webkit-mask-image:none;mask-image:none}
-@media (max-width:860px){.np .np-table{background-image:url(../assets/news/table-glass-m.webp?v=a6c6bc51)}}
-@media (prefers-reduced-data:reduce){.np .np-table{background-image:url(../assets/news/table-glass-m.webp?v=a6c6bc51)}}
+@media (max-width:860px){.np .np-table{background-image:url(../assets/news/table-glass-m.webp?v=caf49647)}}
+@media (prefers-reduced-data:reduce){.np .np-table{background-image:url(../assets/news/table-glass-m.webp?v=caf49647)}}
 
 /* лёгкий слой света: тёплое «окно» слева сверху поверх пола и мягкое затемнение к краям плоскости (внимание — к столу, края кадра не видны) */
 .np .np-light{background:radial-gradient(52% 44% at 22% 14%,rgba(255,248,232,.20),transparent 70%),radial-gradient(70% 72% at 50% 52%,transparent 56%,rgba(70,54,34,.22) 100%)}
@@ -32,8 +32,8 @@
    разворот — 2140×1590 px, левый верх (−640; −460) (left −1,28·pw, top −0,6805·ph, width 4,28·pw, height 2,352·ph). Тень смещена вправо-вниз на ≈ (+800; +520) px при --pw = 500. */
 .np .np-shd{position:absolute;left:0;top:0;pointer-events:none;opacity:0;transform:translateZ(-3px);background:0 0/100% 100% no-repeat;transition:opacity .55s ease}
 .np .np-shd.is-on{opacity:1}
-.np .np-shd-c{left:calc(var(--pw) * -.76);top:calc(var(--ph) * -.6805);width:calc(var(--pw) * 3.36);height:calc(var(--ph) * 2.352);background-image:url(../assets/news/news-shadow-closed.webp?v=a6c6bc51)}
-.np .np-shd-o{left:calc(var(--pw) * -1.28);top:calc(var(--ph) * -.6805);width:calc(var(--pw) * 4.28);height:calc(var(--ph) * 2.352);background-image:url(../assets/news/news-shadow-open.webp?v=a6c6bc51)}
+.np .np-shd-c{left:calc(var(--pw) * -.76);top:calc(var(--ph) * -.6805);width:calc(var(--pw) * 3.36);height:calc(var(--ph) * 2.352);background-image:url(../assets/news/news-shadow-closed.webp?v=caf49647)}
+.np .np-shd-o{left:calc(var(--pw) * -1.28);top:calc(var(--ph) * -.6805);width:calc(var(--pw) * 4.28);height:calc(var(--ph) * 2.352);background-image:url(../assets/news/news-shadow-open.webp?v=caf49647)}
 
 /* ---------- газета на стекле ---------- */
 /* ОДИН слой под газетой (.np-book::before; второй псевдо-слой дороже: каждый — отдельная 3D-плоскость, ~5 мс на кадр листания при замедлении CPU ×4):

@@ -232,7 +232,9 @@
     animIO = new IntersectionObserver(es => es.forEach(e => e.target.classList.toggle('anim-off', !e.isIntersecting)), {rootMargin: '160px 0px'});
     $$('.hero, .marquee', root).forEach(el => animIO.observe(el));
   }
-  M.scan = (root, delay) => { root = root || $('#main'); splitAll(root); collectMotion(root); watchAnim(root); delay ? M.scheduleReveal(root, delay) : initReveal(root); };
+  M.scanPrep = root => { root = root || $('#main'); splitAll(root); collectMotion(root); watchAnim(root); };          // тяжёлая часть (разбивка заголовков на буквы, сбор блоков)
+  M.scanGo = (root, delay) => { root = root || $('#main'); delay ? M.scheduleReveal(root, delay) : initReveal(root); };
+  M.scan = (root, delay) => { M.scanPrep(root); M.scanGo(root, delay); };
 
   /* ---------- шторка: переходы между страницами ----------
      Как в прежней версии сайта: страница не перезагружается. Полосы шторки закрываются (820 мс), пока читается титр раздела,
@@ -467,9 +469,11 @@
     curtain.classList.add('instant', 'in');                // шторка мгновенно закрывается тем же цветом
     sp.remove();
     await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
-    curtain.classList.remove('instant', 'in'); curtain.classList.add('out');           // и поднимается полосами
     body.classList.remove('locked');
-    finish(200);                                           // сцена начинается, когда полосы уже поднимаются
+    finishPrep();                                          // тяжёлая часть запуска (класс ready, разбивка букв, initPage — по замеру владельца один кадр 160 мс) — под закрытой шторкой, не видна
+    await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
+    curtain.classList.remove('instant', 'in'); curtain.classList.add('out');           // и поднимается полосами
+    finishGo(200);                                         // сцена начинается, когда полосы уже поднимаются
     await wait(840);                                       // последняя полоса заканчивает через 8×38 + 520 мс
     curtain.classList.remove('out');
   }
@@ -482,16 +486,20 @@
   }
 
   /* ---------- старт ---------- */
-  function finish(delay) {
+  function finishPrep() {
     html.classList.add('ready');
     M.done = true;
     measurePar();
     A.initPage(document);
     dropMax();
-    M.scan($('#main'), delay || 0);
+    M.scanPrep($('#main'));
+  }
+  function finishGo(delay) {
+    M.scanGo($('#main'), delay || 0);
     parKick();
     updateProgress();
   }
+  function finish(delay) { finishPrep(); finishGo(delay); }
   M.boot = function () {
     try { history.scrollRestoration = 'manual'; } catch (e) {}
     /* ссылки шапки, подвала и поиска остаются в документе при подмене содержимого — делаем их абсолютными, чтобы они не «ехали» вместе с адресом */
