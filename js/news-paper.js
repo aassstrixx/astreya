@@ -31,6 +31,22 @@
     const S = {mode: 'spread', pw: 500, ph: 676, p: reduced ? 1 : 0, cur: 0, hh: 84, filter: 'all', ov: null, userFlip: false, drag: null, moving: false, introDist: 1, hash: ''};
     let leaves = [], edgeL, edgeR, raf = 0, last = 0, scrollRaf = 0, tween = 0, idleT = 0, alive = true;
     if (reduced) root.setAttribute('data-np-static', '');
+    /* стол: объёмная подставка (≈ 47 слоёв) и торец стекла (36 плоскостей) — только там, где кадры при движении камеры быстрые; иначе плоская ножка и кольцо у диска (np-lo). Анимации остаются все. Замер: первые 30 кадров движения камеры, медиана дольше 30 мс */
+    (function tableGuard() {
+      let gpu = ''; try { const c = document.createElement('canvas'), g = c.getContext('webgl'), e = g && g.getExtension('WEBGL_debug_renderer_info'); gpu = e ? String(g.getParameter(e.UNMASKED_RENDERER_WEBGL) || '') : ''; const l = g && g.getExtension('WEBGL_lose_context'); if (l) l.loseContext(); } catch (e) { /* — */ }
+      const cores = navigator.hardwareConcurrency || 4, mem = navigator.deviceMemory || 8;
+      if (/swiftshader|llvmpipe|softpipe|software|microsoft basic/i.test(gpu) || (/intel/i.test(gpu) && /hd graphics|uhd/i.test(gpu)) || cores < 6 || mem <= 4) { root.classList.add('np-lo'); return; }          // слабая видеокарта: сразу плоская ножка (на встроенной Intel и в программном рендере объёмная подставка заметно дороже)
+      let a = [], last = 0, tries = 0, on = false;
+      const f = t => {
+        if (!alive || !root.isConnected) return;
+        if (last && cam.classList.contains('is-moving')) a.push(t - last);
+        last = t;
+        if (a.length >= 30) { a.sort((x, y) => x - y); if (a[15] > 30) root.classList.add('np-lo'); return; }
+        if (tries++ < 900) requestAnimationFrame(f);
+      };
+      const go = () => { if (on) return; on = true; window.removeEventListener('scroll', go); requestAnimationFrame(f); };
+      window.addEventListener('scroll', go, {passive: true});
+    })();
 
     /* ---------- геометрия ---------- */
     function measure() {

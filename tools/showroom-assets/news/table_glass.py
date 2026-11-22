@@ -378,16 +378,33 @@ def fluted(name, z0, z1, r0, r1, n, depth, mat, segs=480, rings=28):
     bm.to_mesh(me); bm.free(); ob = bpy.data.objects.new(name, me); bpy.context.scene.collection.objects.link(ob); ob.data.materials.append(mat); return ob
 
 
-def build_column(stone, brass):
-    """ножка журнального стола для режимов floor / column (размеры в ед. по 10 см: 1 px страницы = 0,005 ед.): латунная окантовка подошвы, ступенчатый плинт R 320 px с фасками,
-    конусная каннелированная ножка R 256 → 220 px, латунная чаша-воротник под самым стеклом (R 220 → 300 px, h 60 px) с бусиной на стыке"""
+def turned_brass():
+    """точёная латунь: концентрические кольца резца (волна RINGS → рельеф) и тонкая радиальная шероховатость — горизонтальная грань ловит свет окна полосами, а не одним плоским тоном"""
+    m = bpy.data.materials.new('tg_brass_turned'); nt = nodes_of(m); out = N(nt, 'ShaderNodeOutputMaterial'); b = N(nt, 'ShaderNodeBsdfPrincipled'); link(nt, b.outputs['BSDF'], out.inputs['Surface'])
+    b.inputs['Base Color'].default_value = (.86, .65, .35, 1); b.inputs['Metallic'].default_value = 1.0; b.inputs['Roughness'].default_value = .30
+    tc = N(nt, 'ShaderNodeTexCoord'); wv = N(nt, 'ShaderNodeTexWave', wave_type='RINGS'); wv.inputs['Scale'].default_value = 5.0; wv.inputs['Distortion'].default_value = 1.2; wv.inputs['Detail'].default_value = 1.0; link(nt, tc.outputs['Object'], wv.inputs['Vector'])
+    bp = N(nt, 'ShaderNodeBump'); bp.inputs['Strength'].default_value = .5; bp.inputs['Distance'].default_value = .004; link(nt, wv.outputs['Fac'], bp.inputs['Height']); link(nt, bp.outputs['Normal'], b.inputs['Normal'])
+    return m
+
+
+def build_column(stone, brass, straight=False):
+    """ножка журнального стола для режимов floor / column / strip / collar (размеры в ед. по 10 см: 1 px страницы = 0,005 ед.):
+    straight=False — одна плоскость-колонна и пол: латунная окантовка подошвы, ступенчатый плинт R 320 px с фасками, конусная каннелированная ножка R 256 → 220 px, латунная чаша-воротник под самым стеклом;
+    straight=True — призма из граней (strip, collar): прямой цилиндр R 240 px с 24 каннелюрами (по желобу на грань), плинт R 320 px высотой 30 px, чаша-воротник R 240 → 300 px высотой 60 px"""
     zc = Z_BOT - .30; ob = []
     ob.append(lathe('trim', rounded([(0, 0), (1.62, 0), (1.62, .055), (0, .055)], [.012, .012], 3), 240, brass))
-    ob.append(lathe('plinth1', rounded([(0, .055), (1.58, .055), (1.58, .17), (1.50, .225), (0, .225)], [.01, .02, .035], 4), 240, stone))
-    ob.append(lathe('plinth2', rounded([(0, .225), (1.36, .225), (1.36, .31), (1.30, .345), (0, .345)], [.01, .02, .03], 4), 240, stone))
-    ob.append(fluted('drum', .345, zc, 1.28, R_DRUM, 28, .04, stone))
-    ob.append(lathe('bead', rounded([(0, zc - .03), (1.20, zc - .03), (1.20, zc + .03), (0, zc + .03)], [.014, .014], 3), 240, brass))
-    cup = [(0, zc), (1.16, zc), (1.20, zc + .05), (1.28, zc + .12), (1.42, zc + .21), (1.50, zc + .26), (1.50, Z_BOT - .004), (0, Z_BOT - .004)]
+    if straight:
+        ob.append(lathe('plinth1', rounded([(0, .055), (1.60, .055), (1.60, .115), (1.55, .15), (0, .15)], [.01, .02, .03], 4), 240, stone))
+        ob.append(fluted('drum', .15, zc, 1.2, 1.2, 24, .04, stone))
+        cup = [(0, zc), (1.30, zc), (1.50, zc + .08), (1.50, Z_BOT - .05), (1.46, Z_BOT - .004), (0, Z_BOT - .004)]
+        ob.append(lathe('collar', rounded(cup, [.01, .03, .02, .01], 3), 240, turned_brass()))
+        return ob
+    else:
+        ob.append(lathe('plinth1', rounded([(0, .055), (1.58, .055), (1.58, .17), (1.50, .225), (0, .225)], [.01, .02, .035], 4), 240, stone))
+        ob.append(lathe('plinth2', rounded([(0, .225), (1.36, .225), (1.36, .31), (1.30, .345), (0, .345)], [.01, .02, .03], 4), 240, stone))
+        ob.append(fluted('drum', .345, zc, 1.28, R_DRUM, 28, .04, stone))
+        ob.append(lathe('bead', rounded([(0, zc - .03), (1.20, zc - .03), (1.20, zc + .03), (0, zc + .03)], [.014, .014], 3), 240, brass))
+        cup = [(0, zc), (1.16, zc), (1.20, zc + .05), (1.28, zc + .12), (1.42, zc + .21), (1.50, zc + .26), (1.50, Z_BOT - .004), (0, Z_BOT - .004)]
     ob.append(lathe('collar', rounded(cup, [.01, .03, .05, .05, .03, .01], 3), 240, brass))
     return ob
 
@@ -404,7 +421,7 @@ def build(sc):
         # ---- барабан-основание
         dm = stone_mat('tg_drum', joints=False, albedo=(_f('TG_DR', .60), _f('TG_DG', .51), _f('TG_DB', .42)), chroma=_f('TG_FCH', .62), honed=.5, cboost=1.7, box=bool(MODE))
         if MODE:                                                                   # объёмный стол: полноценная ножка (см. build_column)
-            build_column(dm, brass_mat())
+            build_column(dm, brass_mat(), straight=MODE in ('strip', 'collar'))
         else:
             drum_top = Z_BOT - .075
             d = lathe('drum', rounded([(0, 0), (R_DRUM, 0), (R_DRUM, drum_top), (0, drum_top)], [.03, .045], 4), 200, dm)
@@ -436,7 +453,7 @@ def build(sc):
     so = bpy.data.objects.new('sun', sun); sc.collection.objects.link(so); so.rotation_euler = dh.to_track_quat('-Z', 'Y').to_euler(); so.visible_glossy = False
     # ---- мир: холодный мягкий свет потолка и неба
     w = bpy.data.worlds.new('w'); w.use_nodes = True; nt = w.node_tree; bg = nt.nodes['Background']
-    bg.inputs['Color'].default_value = (1.0, .975, .94, 1); bg.inputs['Strength'].default_value = _f('TG_SKY', .16 if MODE == 'column' else .45); sc.world = w
+    bg.inputs['Color'].default_value = (1.0, .975, .94, 1); bg.inputs['Strength'].default_value = _f('TG_SKY', .16 if MODE in ('column', 'strip', 'collar') else .45); sc.world = w
     if not SIMPLE:
         # ---- отражаемое окно: панель над столом, камере невидима, освещения не даёт
         pm = window_panel_mat(_f('TG_WIN', 125.0))
@@ -457,7 +474,7 @@ def build(sc):
         pm_ = bpy.data.materials.new('tg_paper'); nt = nodes_of(pm_); out = N(nt, 'ShaderNodeOutputMaterial'); pb = N(nt, 'ShaderNodeBsdfPrincipled'); link(nt, pb.outputs['BSDF'], out.inputs['Surface'])
         pb.inputs['Base Color'].default_value = (.86, .80, .66, 1); pb.inputs['Roughness'].default_value = .85; bk.data.materials.append(pm_)
         bk.visible_camera = False; bk.visible_glossy = False                                # в кадре не виден (его рисует HTML), но закрывает свет и подсвечивает стекло и пол отражённым светом
-    if MODE == 'column':                                                           # мягкий свет окна слева-спереди: левая сторона колонны светлее, правая в тени (цилиндрическое затенение)
+    if MODE in ('column', 'strip', 'collar'):                                      # мягкий свет окна слева-спереди: левая сторона колонны светлее, правая в тени (цилиндрическое затенение)
         fl_ = bpy.data.lights.new('colfill', 'AREA'); fl_.shape = 'RECTANGLE'; fl_.size = 8; fl_.size_y = 10; fl_.energy = _f('TG_COLFILL', 9000.0); fl_.color = (1.0, .94, .84)
         fo_ = bpy.data.objects.new('colfill', fl_); sc.collection.objects.link(fo_); fo_.location = Vector((-14.0, -9.0, 5.5)); fo_.rotation_euler = (Vector((0, 0, 2.4)) - fo_.location).to_track_quat('-Z', 'Y').to_euler(); fo_.visible_camera = False
     # ---- камера: строго сверху (перспектива) либо, в режимах объёмного стола, ортогональная
@@ -472,13 +489,22 @@ def build(sc):
         cd.type = 'ORTHO'; cd.ortho_scale = 3.4; co.location = (0, -30.0, Z_BOT / 2); co.rotation_euler = (math.pi / 2, 0, 0)       # ширина кадра 3,4 ед. (680 px), высота по пропорциям 4,78 ед.
         for ob in list(bpy.data.objects):
             if ob.name in ('floor', 'glass', 'leaves', 'window', 'sheen'): ob.visible_camera = False
+    elif MODE == 'strip':                                                          # полоса ножки: 11 ортогональных видов горизонтально с азимутов 105…255° (грани 7…17 призмы из 24 граней, видимые с юга), центр каждого вида — своя грань
+        cd.type = 'ORTHO'; cd.ortho_scale = .50; co.location = (0, -30.0, Z_BOT / 2)                      # вид шириной 100 px страницы (0,5 ед.), высота кадра 956 px (4,78 ед.); из центра каждого вида берётся срез под ширину своей грани
+        for ob in list(bpy.data.objects):
+            if ob.name in ('floor', 'glass', 'leaves', 'window', 'sheen'): ob.visible_camera = False
+    elif MODE == 'collar':                                                         # диски сверху (RGBA): TG_PART=collar — латунный воротник R 300 px (кадр 640 px = 3,2 ед.); plinth — верх плинта R 320 px (кадр 680 px = 3,4 ед.)
+        part = os.environ.get('TG_PART', 'collar'); cd.type = 'ORTHO'; cd.ortho_scale = 3.2 if part == 'collar' else 3.4; co.location = (0, 0, 30.0)
+        keep = ('collar',) if part == 'collar' else ('plinth1', 'trim')
+        for ob in list(bpy.data.objects):
+            if ob.type == 'MESH' and ob.name not in keep: ob.visible_camera = False
 
 
 def settings(sc):
     r = sc.render; r.engine = 'CYCLES'; r.resolution_x = RW; r.resolution_y = RH; r.resolution_percentage = 100
     r.image_settings.file_format = 'PNG'; r.image_settings.color_depth = '16'; r.image_settings.color_mode = 'RGB'
-    r.threads_mode = 'FIXED'; r.threads = int(_f('TG_THREADS', 4)); r.use_persistent_data = False; r.film_transparent = MODE == 'column'
-    if MODE == 'column': r.image_settings.color_mode = 'RGBA'
+    r.threads_mode = 'FIXED'; r.threads = int(_f('TG_THREADS', 4)); r.use_persistent_data = False; r.film_transparent = MODE in ('column', 'collar')
+    if MODE in ('column', 'collar'): r.image_settings.color_mode = 'RGBA'
     cy = sc.cycles; cy.device = 'CPU'; cy.samples = SPP; cy.use_adaptive_sampling = True; cy.adaptive_threshold = .006; cy.adaptive_min_samples = 24
     cy.use_denoising = True; cy.denoiser = 'OPENIMAGEDENOISE'; cy.denoising_input_passes = 'RGB_ALBEDO_NORMAL'; cy.denoising_prefilter = 'ACCURATE'
     cy.max_bounces = 16; cy.transmission_bounces = 14; cy.glossy_bounces = 10; cy.diffuse_bounces = 4; cy.volume_bounces = 0; cy.transparent_max_bounces = 16
@@ -493,7 +519,18 @@ def main():
     bpy.ops.wm.read_factory_settings(use_empty=True); sc = bpy.context.scene
     settings(sc); build(sc)
     sc.render.filepath = OUT
-    import time; t = time.time(); bpy.ops.render.render(write_still=True); print('готово: %s  %.0f с  %dx%d  %d spp' % (OUT, time.time() - t, RW, RH, SPP))
+    import time; t = time.time()
+    if MODE == 'strip':                                                            # OUT — шаблон имени: ...%02d.png; грань i смотрит на азимут 15·i° (по часовой от севера), камера стоит снаружи на этом азимуте
+        co = sc.camera
+        only = [int(v) for v in os.environ['TG_VIEWS'].split(',')] if os.environ.get('TG_VIEWS') else None        # TG_VIEWS=9,10 — дорисовать только эти виды
+        for k, idx in enumerate(range(7, 18)):
+            if only is not None and k not in only: continue
+            ph = math.radians(15 * idx); co.location = (30 * math.sin(ph), 30 * math.cos(ph), Z_BOT / 2)
+            co.rotation_euler = Vector((-math.sin(ph), -math.cos(ph), 0)).to_track_quat('-Z', 'Y').to_euler()
+            sc.render.filepath = OUT.replace('%02d', '%02d' % k); bpy.ops.render.render(write_still=True)
+        print('готово: 11 видов  %.0f с  %dx%d  %d spp' % (time.time() - t, RW, RH, SPP))
+    else:
+        bpy.ops.render.render(write_still=True); print('готово: %s  %.0f с  %dx%d  %d spp' % (OUT, time.time() - t, RW, RH, SPP))
 
 
 if __name__ == '__main__':
