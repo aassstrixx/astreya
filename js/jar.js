@@ -156,6 +156,14 @@
       if (t < 30000) requestAnimationFrame(f); };
     requestAnimationFrame(f);
   })();
+  /* ?diag=1: «что именно» тормозит — долгие кадры (≥ 45 мс) с виновником: файл и функция скрипта, который держал главный поток дольше всего (Chrome/Яндекс: long-animation-frame; иначе longtask без имени). Не больше 3 записей в секунду, строка «loaf» */
+  if (/[?&]diag=1/.test(location.search) && window.PerformanceObserver) (function loafLog() {
+    let n = 0, t0 = 0;
+    const put = e => { const now = performance.now(); if (now - t0 > 1000) { t0 = now; n = 0; } if (e.duration < 45 || n++ >= 3) return; const sc = (e.scripts || []).slice().sort((x, y) => y.duration - x.duration)[0];
+      A.bc && A.bc('loaf', Math.round(e.duration) + 'мс' + (e.blockingDuration ? ' блок ' + Math.round(e.blockingDuration) : '') + (e.renderStart ? ' отрис ' + Math.round(e.startTime + e.duration - e.renderStart) : '') + (sc ? ' | ' + String(sc.sourceURL || '').split('/').pop().split('?')[0] + ':' + (sc.sourceFunctionName || sc.invoker || '?') + ' ' + Math.round(sc.duration) + 'мс' : '')); };
+    try { new PerformanceObserver(l => l.getEntries().forEach(put)).observe({type: 'long-animation-frame', buffered: true}); }
+    catch (e) { try { new PerformanceObserver(l => l.getEntries().forEach(put)).observe({type: 'longtask', buffered: true}); } catch (e2) { /* — */ } }
+  })();
   (function probeDisplay() {
     A.dispSlow = false; let rounds = 0, seen = false;
     const run = delay => setTimeout(() => {
