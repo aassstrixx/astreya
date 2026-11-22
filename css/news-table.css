@@ -8,18 +8,30 @@
    Журнал на стекле: стекло пропускает свет, поэтому настоящая тень журнала ложится на ПОЛ сквозь стекло, смещена по лучу окна (стол высокий) и размыта — это запечённые слои .np-shd
    (assets/news/news-shadow-*.webp); сама газета получает лишь тонкую контактную тень, светлую кромку и блик света окна. */
 
-/* ---------- пол и дымка ---------- */
-/* стол чуть ниже плоскости газеты: у news-paper.css он на -1px, а тень газеты (.np-book::before) на -2px — оказывалась ПОД столом и не была видна */
-.np .np-table{transform:translateZ(-6px);background:#cdbfa9 url(../assets/news/table-glass.webp?v=70447cc5) center/100% 100% no-repeat;
-  -webkit-mask-image:linear-gradient(180deg,transparent 0,#000 13%),linear-gradient(90deg,transparent 0,#000 7%,#000 93%,transparent 100%);-webkit-mask-composite:source-in;
-  mask-image:linear-gradient(180deg,transparent 0,#000 13%),linear-gradient(90deg,transparent 0,#000 7%,#000 93%,transparent 100%);mask-composite:intersect}
-/* цвета фона сняты с рендера: пол в свету ≈ #d6c8b4, в полутени ≈ #bfae96; дальний край плоскости растворяется в светлой воздушной дымке */
+/* ---------- настоящий объёмный стол ----------
+   Сцена .np-cam — CSS-3D (perspective 1700 px на .np-world, 1 px плоскости = 0,5 мм): газета лежит на z = 0, стеклянная столешница чуть ниже, ПОЛ — на --tbl-h ниже (≈ 50 см),
+   между ними стоит колонна-барабан. Когда камера опускается (rx 54° → 0°), пол, колонна и стекло сдвигаются друг относительно друга — настоящий параллакс, а не картинка на полу. */
+.np{--tbl-h:1000px;--gl-r:700px;--gl-t:40px}
+.np .np-table{width:4800px;height:3200px;margin:-1600px 0 0 -2400px;transform:translateZ(calc(var(--tbl-h) * -1));background:#cdbfa9 url(../assets/news/table.webp?v=8db564c3) center/100% 100% no-repeat;-webkit-mask-image:none;mask-image:none}
 .np .np-sticky{background:#cfc1ab}
 .np .np-world{background:linear-gradient(180deg,#efe8dc 0,#e0d6c4 28%,#d1c3ac 60%,#c8b9a1 100%)}
-/* камера «лежит» (прокрутка дошла до газеты, идёт листание): дымка по краям плоскости не видна — маску снимаем, слой дешевле для композитора на каждом кадре листания */
-.np .np-cam.is-flat .np-table{-webkit-mask-image:none;mask-image:none}
-@media (max-width:860px){.np .np-table{background-image:url(../assets/news/table-glass-m.webp?v=70447cc5)}}
-@media (prefers-reduced-data:reduce){.np .np-table{background-image:url(../assets/news/table-glass-m.webp?v=70447cc5)}}
+/* дальний край пола растворяется в воздушной дымке — обычным оверлеем сверху, а не маской на огромной плите */
+.np .np-world::after{content:"";position:absolute;inset:0;z-index:1;pointer-events:none;background:linear-gradient(180deg,#efe8dc 0,rgba(239,232,220,.78) 7%,rgba(239,232,220,0) 32%)}
+
+/* ---------- стол: колонна, столешница, торец стекла ---------- */
+.np .np-t3{position:absolute;left:50%;top:50%;width:0;height:0;transform-style:preserve-3d;pointer-events:none}
+/* колонна — вертикальная плоскость (камера наклоняется только вокруг оси X, поэтому плоскость всегда обращена к зрителю, как цилиндр): низ на полу, верх под стеклом */
+.np .np-col{position:absolute;left:-220px;top:calc((var(--tbl-h) - 44px) * -1);width:440px;height:calc(var(--tbl-h) - 44px);transform-origin:50% 100%;transform:translateZ(calc(var(--tbl-h) * -1)) rotateX(-90deg);
+  background:linear-gradient(180deg,#b79b5c 0,#b79b5c 2.2%,transparent 2.3%),linear-gradient(90deg,#7e6f58 0,#c9bba2 26%,#e6dcc8 44%,#bcac90 74%,#7c6c55 100%);clip-path:polygon(0 0,100% 0,100% 100%,0 100%)}
+.np .np-gl{position:absolute;left:-700px;top:-700px;width:1400px;height:1400px;border-radius:50%;transform:translateZ(-4px);
+  background:linear-gradient(115deg,transparent 26%,rgba(255,255,255,.20) 34%,rgba(255,255,255,.04) 44%,transparent 50%),radial-gradient(circle closest-side,rgba(150,190,175,.10) 98%,transparent 100%);
+  box-shadow:inset 0 0 0 2px rgba(255,255,255,.55),inset 0 0 36px rgba(255,255,255,.14)}
+/* торец стекла толщиной --gl-t: 36 плоскостей-хорд по кругу (видна и передняя, и задняя стенка сквозь стекло); --sh — затемнение стенки по углу (свет слева сверху) */
+.np .np-wl{position:absolute;left:0;top:0;width:0;height:0;transform-style:preserve-3d}
+.np .np-wl b{position:absolute;left:0;top:0;width:0;height:0;transform-style:preserve-3d;transform:rotateZ(calc(var(--i) * 10deg))}
+.np .np-wl b::before{content:"";position:absolute;left:-62px;top:calc(var(--gl-r) * -.9962);width:124px;height:var(--gl-t);transform-origin:50% 0;transform:translateZ(-4px) rotateX(-90deg);
+  background:linear-gradient(rgba(0,0,0,var(--sh)),rgba(0,0,0,var(--sh))),linear-gradient(180deg,rgba(238,248,242,.95) 0,rgba(176,212,196,.62) 9%,rgba(128,176,156,.50) 50%,rgba(168,208,192,.66) 91%,rgba(238,248,242,.95) 100%)}
+html.lite .np .np-wl{display:none}
 
 /* лёгкий слой света: тёплое «окно» слева сверху поверх пола и мягкое затемнение к краям плоскости (внимание — к столу, края кадра не видны) */
 .np .np-light{background:radial-gradient(52% 44% at 22% 14%,rgba(255,248,232,.20),transparent 70%),radial-gradient(70% 72% at 50% 52%,transparent 56%,rgba(70,54,34,.22) 100%)}
@@ -30,10 +42,10 @@
    Класс .is-on включает слой (плавное перекрёстное растворение): -c — пока обложка закрыта и в режиме одной страницы, -o — когда открыт разворот. Центр журнала = центр .np-rig.
    Поле слоя при --pw = 500, --ph = 676: закрытая — 1680×1590 px, левый верх (−380; −460) от центра журнала (в долях: left −0,76·pw, top −0,6805·ph, width 3,36·pw, height 2,352·ph);
    разворот — 2140×1590 px, левый верх (−640; −460) (left −1,28·pw, top −0,6805·ph, width 4,28·pw, height 2,352·ph). Тень смещена вправо-вниз на ≈ (+800; +520) px при --pw = 500. */
-.np .np-shd{position:absolute;left:0;top:0;pointer-events:none;opacity:0;transform:translateZ(-3px);background:0 0/100% 100% no-repeat;transition:opacity .55s ease}
+.np .np-shd{position:absolute;left:0;top:0;pointer-events:none;opacity:0;transform:translateZ(calc(var(--tbl-h) * -1 + 1px));background:0 0/100% 100% no-repeat;transition:opacity .55s ease}
 .np .np-shd.is-on{opacity:1}
-.np .np-shd-c{left:calc(var(--pw) * -.76);top:calc(var(--ph) * -.6805);width:calc(var(--pw) * 3.36);height:calc(var(--ph) * 2.352);background-image:url(../assets/news/news-shadow-closed.webp?v=70447cc5)}
-.np .np-shd-o{left:calc(var(--pw) * -1.28);top:calc(var(--ph) * -.6805);width:calc(var(--pw) * 4.28);height:calc(var(--ph) * 2.352);background-image:url(../assets/news/news-shadow-open.webp?v=70447cc5)}
+.np .np-shd-c{left:calc(var(--pw) * -.76);top:calc(var(--ph) * -.6805);width:calc(var(--pw) * 3.36);height:calc(var(--ph) * 2.352);background-image:url(../assets/news/news-shadow-closed.webp?v=8db564c3)}
+.np .np-shd-o{left:calc(var(--pw) * -1.28);top:calc(var(--ph) * -.6805);width:calc(var(--pw) * 4.28);height:calc(var(--ph) * 2.352);background-image:url(../assets/news/news-shadow-open.webp?v=8db564c3)}
 
 /* ---------- газета на стекле ---------- */
 /* ОДИН слой под газетой (.np-book::before; второй псевдо-слой дороже: каждый — отдельная 3D-плоскость, ~5 мс на кадр листания при замедлении CPU ×4):
