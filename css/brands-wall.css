@@ -216,6 +216,8 @@
   .bw-close{top:10px;right:10px}
 }
 html.lite .bw-pn,html.lite .bw-panel,html.lite .bw-dim,html.lite .bw-hole{transition:none}
+/* лёгкий режим (медленные кадры): «жидкое стекло» фильтров без размытия фона — на стене 10 таких слоёв, плотнее фон вместо блюра */
+html.lite .bw-bar .br-chips .chip,html.lite .bw-search input{-webkit-backdrop-filter:none;backdrop-filter:none;background:linear-gradient(135deg,rgba(255,255,255,.86),rgba(250,244,232,.74))}
 
 /* миниатюра ниши берёт кадр стены из таблицы стилей: адрес в CSS считается от файла стиля, а не от адреса страницы (при переходах между страницами в другой папке inline-адрес давал 404) */
 @media (max-width:1100px){.bw-mini{background-image:url(../assets/brands/wall-s.webp?v=1d410cb4)}}

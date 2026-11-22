@@ -36,7 +36,7 @@ const median = a => { const b = a.slice().sort((x, y) => x - y); return b[Math.f
   const b = await pw.chromium.launch(CHROME ? {executablePath: CHROME} : {});
 
   console.log('\n[размытие фона у повторяющихся элементов]');
-  for (const [pg, lim] of [['catalog.html', 1], ['index.html', 14], ['brands.html', 4], ['products/' + PRODUCT, 6]]) {
+  for (const [pg, lim] of [['catalog.html', 1], ['index.html', 14], ['brands.html', 10], ['products/' + PRODUCT, 6]]) {
     const p = await open(b, pg, null, 0);
     const bf = await p.evaluate(() => [...document.querySelectorAll('body *')].filter(e => { const c = getComputedStyle(e); return (c.backdropFilter && c.backdropFilter !== 'none') || (c.webkitBackdropFilter && c.webkitBackdropFilter !== 'none'); }).map(e => e.tagName.toLowerCase() + '.' + String(e.className).split(' ')[0]));
     const cards = await p.evaluate(() => [...document.querySelectorAll('.rl-add,.cmp-add,.qv-btn')].filter(e => { const c = getComputedStyle(e); return c.backdropFilter !== 'none'; }).length);

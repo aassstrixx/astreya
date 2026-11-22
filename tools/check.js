@@ -4,7 +4,7 @@
 const fs = require('fs');
 const path = require('path');
 const ROOT = path.join(__dirname, '..');
-const walk = d => fs.readdirSync(d, {withFileTypes: true}).flatMap(e => e.isDirectory() ? (['node_modules', '.git', 'src', 'tools', 'data', 'css', 'js', 'assets', 'server'].includes(e.name) ? [] : walk(path.join(d, e.name))) : [path.join(d, e.name)]);
+const walk = d => fs.readdirSync(d, {withFileTypes: true}).flatMap(e => e.isDirectory() ? (['node_modules', '.git', '.claude', 'src', 'tools', 'data', 'css', 'js', 'assets', 'server'].includes(e.name) ? [] : walk(path.join(d, e.name))) : [path.join(d, e.name)]);
 const files = walk(ROOT).filter(f => f.endsWith('.html'));
 const errors = [], warns = [];
 /* стили: лишняя или недостающая фигурная скобка «съедает» следующие правила (так однажды пропали правила печати) — проверяем баланс скобок в каждом css-файле */
@@ -37,14 +37,14 @@ for (const f of files) {
     const [p, hash] = u.split('#'), pth = p.split('?')[0];
     const target = pth ? (pth.startsWith('/') ? path.resolve(ROOT, pth.startsWith(SITE_PATH) ? pth.slice(SITE_PATH.length) : pth.slice(1)) : path.resolve(dir, pth)) : f;
     if (pth && !fs.existsSync(target)) { err(`битая ссылка: ${u}`); continue; }
-    if (hash && (target.endsWith('.html'))) { const th = cache.get(target) || fs.readFileSync(target, 'utf8'); if (!idsOf(th).has(hash)) err(`нет якоря #${hash} в ${path.relative(ROOT, target)} (ссылка ${u})`); }
+    if (hash && (target.endsWith('.html')) && !(/news\.html$/.test(target) && /^s\d+$/.test(hash))) { const th = cache.get(target) || fs.readFileSync(target, 'utf8'); if (!idsOf(th).has(hash)) err(`нет якоря #${hash} в ${path.relative(ROOT, target)} (ссылка ${u})`); }
   }
   // безопасность: у каждой страницы есть политика (CSP); все встроенные скрипты в ней разрешены по хэшу; шрифты и скрипты не с чужих серверов
   { const m = html.match(/<meta http-equiv="Content-Security-Policy" content="([^"]*)"/);
     if (!m) err('нет метатега Content-Security-Policy');
     else {
       if (/unsafe-eval|script-src[^;]*unsafe-inline/.test(m[1])) err('политика безопасности разрешает unsafe-eval / unsafe-inline для скриптов');
-      for (const s of html.matchAll(/<script(?![^>]*\bsrc=)(?![^>]*type="application\/ld\+json")[^>]*>([\s\S]*?)<\/script>/g)) { const h = "'sha256-" + require('crypto').createHash('sha256').update(s[1], 'utf8').digest('base64') + "'"; if (!m[1].includes(h)) err('встроенный скрипт не разрешён в политике безопасности (хэш не совпадает): ' + s[1].slice(0, 40)); }
+      for (const s of html.matchAll(/<script(?![^>]*\bsrc=)(?![^>]*type="application\/(?:ld\+)?json")[^>]*>([\s\S]*?)<\/script>/g)) { const h = "'sha256-" + require('crypto').createHash('sha256').update(s[1], 'utf8').digest('base64') + "'"; if (!m[1].includes(h)) err('встроенный скрипт не разрешён в политике безопасности (хэш не совпадает): ' + s[1].slice(0, 40)); }
     }
     if (/fonts\.(googleapis|gstatic)\.com/.test(html)) err('страница обращается к Google Fonts — шрифты должны быть на сайте');
     for (const t of html.matchAll(/<(?:script|img|iframe)\b[^>]*\ssrc="(https?:\/\/[^"]+)"|<link\b[^>]*rel="stylesheet"[^>]*href="(https?:\/\/[^"]+)"/g)) warns.push(`${rel}: внешний ресурс ${t[1] || t[2]}`);

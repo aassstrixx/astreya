@@ -582,7 +582,7 @@ const t = (cond, name, info) => { if (cond) ok++; else bad.push(name + (info !==
     const missing = hrefs.filter(h => !/^(tel:|mailto:|#)/.test(h)).map(h => h.split('#')[0].split('?')[0]).filter(h => h && !fs.existsSync(path.join(ROOT, h.replace(/^(\.\.\/)+/, '').replace(/^\.\//, ''))));
     t(missing.length === 0 && hrefs.length >= 60, 'все ссылки журнала ведут на существующие страницы сайта (' + hrefs.length + ' ссылок)', missing.slice(0, 6));
     /* память: плитки задач показываются ≈ 150 px шириной — текстуры уменьшенные (-t, ≤ 600 px по ширине), а не 1600×1100 (восемь раскодированных больших текстур ≈ 56 МБ выбивали iPhone на 6–7-й странице) */
-    const tx = await q.evaluate(() => [...document.querySelectorAll('#mag img.mp-tx')].map(i => i.getAttribute('src').split('?')[0]));
+    const tx = await q.evaluate(() => [...document.querySelectorAll('#mag img.mp-tx')].map(i => (i.getAttribute('src') || i.getAttribute('data-src') || '').split('?')[0]));
     const txBig = tx.filter(u => !/-t\.webp$/.test(u) || !fs.existsSync(path.join(ROOT, u.replace(/^(\.\.\/)+/, '')))).slice(0, 4);
     t(tx.length >= 8 && txBig.length === 0, 'плитки задач в журнале берут уменьшенные текстуры (-t.webp), файлы на месте', {n: tx.length, txBig});
     for (const pre of ['brands/', 'products/', 'catalog.html?task=', 'training/', 'news/', 'partners.html', 'start.html', 'training.html#teachers']) t(hrefs.some(h => h.replace(/^\.\.?\//, '').startsWith(pre)), 'в журнале есть ссылка «' + pre + '…»');
