@@ -156,6 +156,7 @@ function newsPage(ctx, C, P) {
           <div class="np-cam" data-np-cam>
             <div class="np-table" aria-hidden="true"><i class="np-tex"></i><i class="np-light"></i></div>
             <div class="np-rig" data-np-rig>
+              <i class="np-shd np-shd-c is-on" data-np-shd="c" aria-hidden="true"></i><i class="np-shd np-shd-o" data-np-shd="o" aria-hidden="true"></i>
               <div class="np-book" data-np-book></div>
             </div>
           </div>

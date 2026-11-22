@@ -24,7 +24,7 @@
 
   function create(root) {
     const ac = new AbortController(), sig = {signal: ac.signal};
-    const stage = $('[data-np-stage]', root), sticky = $('[data-np-sticky]', root), cam = $('[data-np-cam]', root), rig = $('[data-np-rig]', root), book = $('[data-np-book]', root);
+    const stage = $('[data-np-stage]', root), sticky = $('[data-np-sticky]', root), cam = $('[data-np-cam]', root), rig = $('[data-np-rig]', root), book = $('[data-np-book]', root), shdC = $('[data-np-shd="c"]', root), shdO = $('[data-np-shd="o"]', root);
     const pageEls = $$('.np-pg', $('[data-np-pages]', root)).sort((a, b) => +a.dataset.pg - +b.dataset.pg);
     const data = JSON.parse($('#np-data').textContent);
     const reduced = matchMedia('(prefers-reduced-motion: reduce) and (min-width: 100000px)').matches;
@@ -42,7 +42,7 @@
       if (mode === 'single') { ph = Math.max(300, H - 150); pw = Math.min(vw - 28, 540, ph * .86); }
       const was = S.mode; S.mode = mode; S.pw = Math.round(pw); S.ph = Math.round(ph);
       root.dataset.mode = mode;
-      book.style.setProperty('--pw', S.pw + 'px'); book.style.setProperty('--ph', S.ph + 'px');
+      book.style.setProperty('--pw', S.pw + 'px'); book.style.setProperty('--ph', S.ph + 'px'); rig.style.setProperty('--pw', S.pw + 'px'); rig.style.setProperty('--ph', S.ph + 'px');
       if (mode === 'spread') book.style.fontSize = (S.pw * .0255).toFixed(2) + 'px'; else book.style.fontSize = '';
       S.introDist = reduced ? 0 : Math.max(240, Math.round(window.innerHeight * 1.5));
       root.style.setProperty('--np-intro', S.introDist + 'px');
@@ -173,6 +173,8 @@
         edgeL.style.setProperty('--e', Math.min(nl, 5) * 1.25 + 'px'); edgeR.style.setProperty('--e', Math.min(n - nl, 5) * 1.25 + 'px');
         edgeL.style.opacity = f0 > .03 ? 1 : 0; edgeR.style.opacity = fl < .97 ? 1 : 0;
       } else { book.style.setProperty('--bx', '0px'); book.style.setProperty('--sl', '0px'); book.style.setProperty('--sr', '0px'); }
+      // запечённая тень журнала на полу: закрытая — пока обложка закрыта, на последней странице и в режиме одной страницы; разворот — на остальных
+      if (shdC) { const one = S.mode !== 'spread' || f0 < .5 || fl > .5; shdC.classList.toggle('is-on', one); shdO.classList.toggle('is-on', !one); }
     }
 
     /* ---------- физика: пружина по реальному времени кадра ---------- */
@@ -231,7 +233,7 @@
       else {
         cam.classList.remove('is-flat'); cam.classList.add('is-moving');
         cam.style.setProperty('--rx', lerp(54, 0, e).toFixed(2) + 'deg'); cam.style.setProperty('--tz', lerp(-170, 0, e).toFixed(1) + 'px'); cam.style.setProperty('--ty', lerp(70, 0, e).toFixed(1) + 'px');
-        rig.style.setProperty('--rgz', lerp(-4.2, 0, e).toFixed(2) + 'deg'); rig.style.setProperty('--rgx', lerp(S.pw * .2, 0, e).toFixed(1) + 'px'); rig.style.setProperty('--rgy', lerp(-S.ph * .13, 0, e).toFixed(1) + 'px');
+        rig.style.setProperty('--rgz', lerp(-4.2, 0, e).toFixed(2) + 'deg'); rig.style.setProperty('--rgx', lerp(S.mode === 'single' ? 0 : S.pw * .2, 0, e).toFixed(1) + 'px'); rig.style.setProperty('--rgy', lerp(-S.ph * .13, 0, e).toFixed(1) + 'px');
       }
       const open = p >= .5; if (open !== root.classList.contains('is-open')) root.classList.toggle('is-open', open);
     }

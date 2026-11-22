@@ -1,27 +1,32 @@
 #!/usr/bin/env python3
 """Стеклянный круглый стол для страницы «Новости» (news.html, css/news-table.css): вид сверху на толстую круглую столешницу из прозрачного стекла и светлый каменный пол вокруг.
-Журнал рисует HTML поверх картинки, поэтому здесь его нет; под ним на стекле оставлен спокойный нейтральный участок (отражение окна лежит у левого края стекла, мелкие царапины — слабые).
+Журнал рисует HTML поверх картинки, поэтому здесь его нет; под ним на стекле оставлен спокойный участок (отражение окна лежит у левого края стекла, царапины — тонкие и слабые).
 
 Сцена (Blender / Cycles, CPU, OIDN), масштаб как в остальных сценах сайта — миниатюра: 1 ед. = 10 см (стекло Ø 90 см = 9 ед.):
-  • стекло: диск Ø 9 ед., толщина 2 см, полированная закруглённая кромка (радиус 9 мм); настоящее преломление и отражение (Glass BSDF, IOR 1,52), лёгкое поглощение в толще — зеленоватая кромка;
+  • стекло: диск Ø 9 ед., толщина 2 см; верхняя кромка — полированная фаска 11×9 мм, углы скруглены; настоящее преломление и отражение (Glass BSDF, IOR 1,52), поглощение в толще — зеленоватая кромка;
     микроцарапины и пылинки (процедурная карта → шероховатость и широкий блестящий лобус: царапина «зажигается» рядом с отражением окна, на тёмном фоне почти не видна);
-    для теневых лучей стекло — прозрачная плёнка с тоном (приём проекта: иначе свет не проходит к полу), поэтому его тень на полу мягкая и слабая; кромка (торец) — стекло с лёгким рассеянием,
+    для теневых лучей стекло — прозрачная плёнка с тоном (приём проекта: иначе свет не проходит к полу), его тень на полу мягкая и слабая; кромка — стекло с лёгким рассеянием,
     чтобы свет не застревал в толще (чёрная кайма от полного внутреннего отражения);
-  • основание: низкий каменный барабан (травертин, чуть темнее пола) под центром стекла — виден сквозь стекло, отбрасывает мягкую тень вправо-вниз, прячется под журналом;
-  • пол: плиты травертина 1,2×0,6 м вразбежку (пак CC0 travertine-ivory: цвет и жилы, контраст усилен, жёлтый приглушён), швы, у каждой плиты свой кусок рисунка и тон, процедурные поры
-    трёх размеров (вытянуты вдоль слоёв) и микрозерно, матовая шлифовка;
-  • свет: окно слева сверху (прямоугольный источник, 40° над горизонтом, тёплый) + мягкий свет потолка и неба; два невидимых камере и полу «экрана» над столом видны только отражениям:
-    высокое окно с переплётами (ложится на левый край стекла) и широкая светлая вуаль потолка (отличает стекло от камня вокруг);
+  • основание: низкий каменный барабан (травертин, темнее пола) под центром стекла с латунной шайбой по краю — виден сквозь стекло, отбрасывает тень вправо-вниз, прячется под журналом;
+  • пол: плиты травертина 1,2×0,6 м вразбежку (пак CC0 travertine-ivory: цвет и жилы, контраст усилен, жёлтый приглушён), швы с фасками, у каждой плиты свой кусок рисунка и тон,
+    процедурные поры трёх размеров (вытянуты вдоль слоёв) и микрозерно, матовая шлифовка;
+  • свет: окно слева сверху (прямоугольный источник, 40° над горизонтом, тёплый) + узкое «солнце» с тем же направлением (чёткие тени барабана и листвы) + мягкий свет неба; тень листвы — ветка
+    из assets/showroom/layer-plant.webp между окном и полом (ветка камере не видна), падает в правый верхний угол кадра, как тени оливы в зале главной; два невидимых камере и полу «экрана» над столом
+    видны только отражениям: высокое окно с переплётами (ложится на левый край стекла) и широкая светлая вуаль потолка (отличает стекло от камня вокруг);
   • камера: перспектива, объектив 63 мм на высоте 3 м прямо над центром; кадр = плоскость страницы 3400×2260 px (1 px страницы = 0,5 мм на уровне столешницы).
 
-Параметры на плоскости страницы 3400×2260 (центр стола = центр плоскости (1700, 1130)): стекло R = 900 px, барабан R = 240 px; пол — всё остальное (плиты, швы); тень барабана и стекла — вправо-вниз.
+Параметры на плоскости страницы 3400×2260 (центр стола = центр плоскости (1700, 1130)): стекло R = 900 px (фаска — внешние 22 px), барабан R = 240 px (шайба до R ≈ 256 px), пол — всё остальное;
+тень барабана, журнала и листвы падает вправо-вниз (стекло на высоте 40 см: смещение тени на полу ≈ (+800; +520) px).
 
-Запуск (нужен bpy; ≈ 25–30 мин на 4 ядрах):
-  python3 tools/showroom-assets/news/table_glass.py /tmp/table_glass_raw.png          # 2880×1914, 16-битный PNG
+Режимы для слоёв теней журнала (см. table_glass_shadows.py): TG_SIMPLE=1 — без стекла, барабана, листвы и экранов, ровный пол; TG_BOOK=closed|open — журнал (камере невидим) лежит на стекле; TG_CROP — участок кадра.
+
+Запуск (нужен bpy; ≈ 30 мин на 4 ядрах при 128 сэмплах):
+  python3 tools/showroom-assets/news/table_glass.py /tmp/table_glass_raw.png          # 2880×1914, 16-битный PNG (TG_SPP=128 — как в боевом кадре)
   python3 tools/showroom-assets/news/table_glass_post.py /tmp/table_glass_raw.png     # цвет + assets/news/table-glass.webp и table-glass-m.webp
 Быстрый пробный кадр: TG_W=960 TG_SPP=32 …; участок кадра в полном размере: TG_CROP=x0,y0,x1,y1 (доли кадра).
-Переменные: TG_W (ширина, 2880), TG_SPP (сэмплов, 112), TG_EXP (экспозиция, −0,4), TG_KEY (сила окна), TG_SKY (сила неба), TG_WIN / TG_WX / TG_WW (яркость, положение и ширина отражаемого окна),
-TG_SHEEN (вуаль потолка), TG_SCR (заметность царапин), TG_ABD (поглощение в толще стекла), TG_THREADS (4), TG_TMP (куда класть процедурную карту царапин)."""
+Переменные: TG_W (ширина, 2880), TG_SPP (сэмплов, 112), TG_EXP (экспозиция, −0,4), TG_KEY / TG_SUN / TG_SKY (окно, солнце, небо), TG_WIN / TG_WX / TG_WW (яркость, положение и ширина отражаемого окна),
+TG_SHEEN (вуаль потолка), TG_SCR (заметность царапин), TG_ABD (поглощение в толще стекла), TG_CHW / TG_CHH (фаска), TG_LEAF=0 (без тени листвы), TG_RING=0 (без латунной шайбы),
+TG_THREADS (4), TG_TMP (куда класть процедурные карты)."""
 import bpy, bmesh, math, os, sys
 import numpy as np
 import cv2
@@ -32,6 +37,7 @@ TEXD = os.path.join(ROOT, 'tools', 'showroom-assets', 'textures')
 _f = lambda k, d: float(os.environ.get(k, d))
 OUT = os.path.abspath(sys.argv[1]) if len(sys.argv) > 1 else os.path.join(os.environ.get('TG_TMP', '/tmp'), 'table_glass_raw.png')
 TMP = os.environ.get('TG_TMP', '/tmp'); os.makedirs(TMP, exist_ok=True)
+SIMPLE = os.environ.get('TG_SIMPLE') == '1'               # упрощённая сцена для слоёв теней: без стекла, барабана, листвы и экранов отражений, ровный пол — в слое остаётся только тень журнала
 BOOK = os.environ.get('TG_BOOK', '')                       # '' — обычный кадр; 'closed' / 'open' — слой тени журнала (см. table_glass_shadows.py): журнал камере невидим, отбрасывает тень и подсвечивает пол
 RW = int(_f('TG_W', 2880)); RH = round(RW * 2260 / 3400); SPP = int(_f('TG_SPP', 112))
 
@@ -264,6 +270,11 @@ def sheen_panel_mat(s_sh):
     return m
 
 
+def plain_mat():
+    m = bpy.data.materials.new('tg_plain'); nt = nodes_of(m); out = N(nt, 'ShaderNodeOutputMaterial'); b = N(nt, 'ShaderNodeBsdfPrincipled'); link(nt, b.outputs['BSDF'], out.inputs['Surface'])
+    b.inputs['Base Color'].default_value = (.62, .55, .44, 1); b.inputs['Roughness'].default_value = .9; return m
+
+
 def brass_mat():
     m = bpy.data.materials.new('tg_brass'); nt = nodes_of(m); out = N(nt, 'ShaderNodeOutputMaterial'); b = N(nt, 'ShaderNodeBsdfPrincipled')
     b.inputs['Base Color'].default_value = (.86, .65, .35, 1); b.inputs['Metallic'].default_value = 1.0; b.inputs['Roughness'].default_value = .27; link(nt, b.outputs['BSDF'], out.inputs['Surface']); return m
@@ -347,19 +358,20 @@ def leaf_alpha_png(path):
 
 def build(sc):
     # ---- пол
-    floor_m = stone_mat('tg_floor', joints=True, albedo=(_f('TG_FR', .80), _f('TG_FG', .72), _f('TG_FB', .60)), chroma=_f('TG_FCH', .62))
+    floor_m = plain_mat() if SIMPLE else stone_mat('tg_floor', joints=True, albedo=(_f('TG_FR', .80), _f('TG_FG', .72), _f('TG_FB', .60)), chroma=_f('TG_FCH', .62))
     bpy.ops.mesh.primitive_plane_add(size=1, location=(0, 0, 0)); fl = bpy.context.object; fl.name = 'floor'; fl.scale = (60, 44, 1); bpy.ops.object.transform_apply(location=False, rotation=False, scale=True); fl.data.materials.append(floor_m)
-    # ---- стекло
-    dust = make_dust_map(os.path.join(TMP, 'tg_dust.png'))
-    gm = glass_mat(dust)
-    g = lathe('glass', glass_profile(), 360, gm, glass_edge_mat())
-    # ---- барабан-основание
-    dm = stone_mat('tg_drum', joints=False, albedo=(_f('TG_DR', .60), _f('TG_DG', .51), _f('TG_DB', .42)), chroma=_f('TG_FCH', .62), honed=.55, cboost=1.4)
-    drum_top = Z_BOT - .075
-    d = lathe('drum', rounded([(0, 0), (R_DRUM, 0), (R_DRUM, drum_top), (0, drum_top)], [.03, .045], 4), 200, dm)
-    # латунное кольцо-прокладка между барабаном и стеклом: тонкая линия фирменной латуни, видна сквозь стекло по кромке барабана
-    if os.environ.get('TG_RING', '1') == '1':
-        annulus('collar', R_DRUM - .03, R_DRUM + .08, drum_top, drum_top + .03, 200, brass_mat())
+    if not SIMPLE:
+        # ---- стекло
+        dust = make_dust_map(os.path.join(TMP, 'tg_dust.png'))
+        gm = glass_mat(dust)
+        g = lathe('glass', glass_profile(), 360, gm, glass_edge_mat())
+        # ---- барабан-основание
+        dm = stone_mat('tg_drum', joints=False, albedo=(_f('TG_DR', .60), _f('TG_DG', .51), _f('TG_DB', .42)), chroma=_f('TG_FCH', .62), honed=.55, cboost=1.4)
+        drum_top = Z_BOT - .075
+        d = lathe('drum', rounded([(0, 0), (R_DRUM, 0), (R_DRUM, drum_top), (0, drum_top)], [.03, .045], 4), 200, dm)
+        # латунное кольцо-прокладка между барабаном и стеклом: тонкая линия фирменной латуни, видна сквозь стекло по кромке барабана
+        if os.environ.get('TG_RING', '1') == '1':
+            annulus('collar', R_DRUM - .03, R_DRUM + .08, drum_top, drum_top + .03, 200, brass_mat())
     # ---- свет
     key = bpy.data.lights.new('key', 'AREA'); key.shape = 'RECTANGLE'; key.size = _f('TG_KS', 6.0); key.size_y = _f('TG_KS', 6.0) * 1.35
     key.energy = _f('TG_KEY', 20000.0); key.color = (1.0, .92, .80)
@@ -371,7 +383,7 @@ def build(sc):
     ro = bpy.data.objects.new('rim', rf); sc.collection.objects.link(ro); ro.location = Vector((19.0, -9.0, 24.0)); ro.rotation_euler = (Vector((0, 0, Z_TOP)) - ro.location).to_track_quat('-Z', 'Y').to_euler(); ro.visible_camera = False; ro.visible_glossy = False
     # ---- тень листвы: ветка с листьями (тот же рисунок, что в зале и в витрине каталога) между окном и полом отбрасывает мягкую тень в верхний правый угол кадра — как тени оливы в зале главной;
     #      сама ветка камере, отражениям и диффузному свету не видна (только тень); добавлен узкий солнечный свет: даёт тени листьев чёткий рисунок под мягким светом окна
-    if _f('TG_LEAF', 1.0) > 0:
+    if _f('TG_LEAF', 1.0) > 0 and not SIMPLE:
         lp = leaf_alpha_png(os.path.join(TMP, 'tg_leaf.png'))
         lm = bpy.data.materials.new('tg_leaf'); nt = nodes_of(lm); out = N(nt, 'ShaderNodeOutputMaterial'); pb = N(nt, 'ShaderNodeBsdfPrincipled'); link(nt, pb.outputs['BSDF'], out.inputs['Surface'])
         tx = img_tex(nt, lp, 'Non-Color', N(nt, 'ShaderNodeTexCoord').outputs['UV'], 'Linear'); link(nt, tx.outputs['Alpha'], pb.inputs['Alpha'])
@@ -380,21 +392,23 @@ def build(sc):
         bpy.ops.mesh.primitive_plane_add(size=1, location=pos); lf = bpy.context.object; lf.name = 'leaves'; lf.scale = (_f('TG_LW', 9.0), _f('TG_LW', 9.0) * 853 / 1589, 1)
         lf.rotation_euler = (-dh).to_track_quat('Z', 'Y').to_euler(); lf.rotation_euler.rotate_axis('Z', math.radians(_f('TG_LR', 20.0))); lf.data.materials.append(lm)
         lf.visible_camera = bool(os.environ.get('TG_LEAFDBG')); lf.visible_diffuse = False; lf.visible_glossy = False; lf.visible_transmission = False; lf.visible_volume_scatter = False
-        sun = bpy.data.lights.new('sun', 'SUN'); sun.energy = _f('TG_SUN', 7.0); sun.angle = math.radians(_f('TG_SUNA', .7)); sun.color = (1.0, .93, .82)
-        so = bpy.data.objects.new('sun', sun); sc.collection.objects.link(so); so.rotation_euler = dh.to_track_quat('-Z', 'Y').to_euler(); so.visible_glossy = False
+    T0 = Vector((2.0, -1.0, Z_TOP)); Lp = Vector((_f('TG_KX', -15.0), _f('TG_KY', 10.0), _f('TG_KZ', 21.0))); dh = (T0 - Lp).normalized()
+    sun = bpy.data.lights.new('sun', 'SUN'); sun.energy = _f('TG_SUN', 7.0); sun.angle = math.radians(_f('TG_SUNA', .7)); sun.color = (1.0, .93, .82)
+    so = bpy.data.objects.new('sun', sun); sc.collection.objects.link(so); so.rotation_euler = dh.to_track_quat('-Z', 'Y').to_euler(); so.visible_glossy = False
     # ---- мир: холодный мягкий свет потолка и неба
     w = bpy.data.worlds.new('w'); w.use_nodes = True; nt = w.node_tree; bg = nt.nodes['Background']
     bg.inputs['Color'].default_value = (1.0, .975, .94, 1); bg.inputs['Strength'].default_value = _f('TG_SKY', .45); sc.world = w
-    # ---- отражаемое окно: панель над столом, камере невидима, освещения не даёт
-    pm = window_panel_mat(_f('TG_WIN', 125.0))
-    bpy.ops.mesh.primitive_plane_add(size=1, location=(_f('TG_WX', -5.2), _f('TG_WY', .8), Z_TOP + _f('TG_WZ', 13.0))); wp = bpy.context.object; wp.name = 'window'
-    wp.scale = (_f('TG_WW', 4.4), _f('TG_WH', 9.0), 1); wp.rotation_euler = (math.pi, 0, math.radians(_f('TG_WR', 0.0))); wp.data.materials.append(pm)
-    wp.visible_camera = False; wp.visible_diffuse = False; wp.visible_shadow = False; wp.visible_transmission = False
-    # ---- «потолок»-вуаль: только для отражений в стекле
-    sm = sheen_panel_mat(_f('TG_SHEEN', 5.5))
-    bpy.ops.mesh.primitive_plane_add(size=1, location=(_f('TG_SX', -2.0), _f('TG_SY', 1.5), Z_TOP + _f('TG_SZ', 16.0))); sp_ = bpy.context.object; sp_.name = 'sheen'
-    sp_.scale = (_f('TG_SW', 26.0), _f('TG_SH', 20.0), 1); sp_.rotation_euler = (math.pi, 0, 0); sp_.data.materials.append(sm)
-    sp_.visible_camera = False; sp_.visible_diffuse = False; sp_.visible_shadow = False; sp_.visible_transmission = False
+    if not SIMPLE:
+        # ---- отражаемое окно: панель над столом, камере невидима, освещения не даёт
+        pm = window_panel_mat(_f('TG_WIN', 125.0))
+        bpy.ops.mesh.primitive_plane_add(size=1, location=(_f('TG_WX', -5.2), _f('TG_WY', .8), Z_TOP + _f('TG_WZ', 13.0))); wp = bpy.context.object; wp.name = 'window'
+        wp.scale = (_f('TG_WW', 4.4), _f('TG_WH', 9.0), 1); wp.rotation_euler = (math.pi, 0, math.radians(_f('TG_WR', 0.0))); wp.data.materials.append(pm)
+        wp.visible_camera = False; wp.visible_diffuse = False; wp.visible_shadow = False; wp.visible_transmission = False
+        # ---- «потолок»-вуаль: только для отражений в стекле
+        sm = sheen_panel_mat(_f('TG_SHEEN', 5.5))
+        bpy.ops.mesh.primitive_plane_add(size=1, location=(_f('TG_SX', -2.0), _f('TG_SY', 1.5), Z_TOP + _f('TG_SZ', 16.0))); sp_ = bpy.context.object; sp_.name = 'sheen'
+        sp_.scale = (_f('TG_SW', 26.0), _f('TG_SH', 20.0), 1); sp_.rotation_euler = (math.pi, 0, 0); sp_.data.materials.append(sm)
+        sp_.visible_camera = False; sp_.visible_diffuse = False; sp_.visible_shadow = False; sp_.visible_transmission = False
     # ---- журнал (только для слоёв теней): закрытая обложка 500×676 px страницы = 2,5×3,38 ед. (25×33,8 см) либо разворот вдвое шире; лежит на стекле, толщина 3 мм
     if BOOK in ('closed', 'open'):
         pw, ph = 500 * PX, 676 * PX; w = pw if BOOK == 'closed' else 2 * pw; th = .03 if BOOK == 'closed' else .026

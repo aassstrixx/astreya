@@ -866,7 +866,7 @@
     "notfound": {"css": ["pg-404"], "js": ["pg-404"]},
     "partners": {"css": ["pg-partners"], "js": ["pg-partners"]},
     "contacts": {"css": ["pg-contacts"], "js": ["pg-contacts"]},
-    "news": {"css": ["news-paper"], "js": ["news-paper"]},
+    "news": {"css": ["news-paper", "news-table"], "js": ["news-paper"]},
     "company": {"css": ["company-atrium"], "js": ["company-atrium"]},
     "custom": {"css": ["pg-custom"], "js": ["pg-custom"]}
   }
