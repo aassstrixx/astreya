@@ -257,9 +257,13 @@
       if (reduced || !S.introDist) return 1;
       const r = stage.getBoundingClientRect(), t = -r.top; return clamp(t / S.introDist, 0, 1);
     }
+    /* конец сцены: низ экрана с газетой плавно уходит в цвет «Архива выпуска» (раньше — жёсткая линия стола и тёмного песка); --np-end 0…1 по мере того, как нижний край сцены доходит до низа окна */
+    let lastEnd = -1;
+    function endFade() { const r = stage.getBoundingClientRect(), e = clamp(1 - (r.bottom - window.innerHeight) / 300, 0, 1); if (Math.abs(e - lastEnd) > .004) { lastEnd = e; root.style.setProperty('--np-end', e.toFixed(3)); } }
     function onScroll() {
       if (scrollRaf) return; scrollRaf = requestAnimationFrame(() => {
         scrollRaf = 0; if (!alive) return; if (!root.isConnected) { destroy(); return; }
+        endFade();
         const p = progress(); if (Math.abs(p - S.p) < .0005 && p !== 0 && p !== 1) return; S.p = p; applyCam(p);
         if (!S.userFlip || S.cur <= 1) {                                               // обложка откидывается сама, когда камера подошла; назад — когда ушла (если читатель сам не листал)
           if (p >= .56 && S.cur === 0) go(1, {auto: true, noHash: true});

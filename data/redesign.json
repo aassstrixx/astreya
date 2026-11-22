@@ -619,7 +619,7 @@
       "training": {"top": {"tex": "pipette", "pos": "tr"}, "mid": [{"sel": "section.sec", "n": 3, "tex": "molecules", "pos": "r", "o": 7}, {"sel": "section.sec#materials", "tex": "silk", "pos": "l", "o": 6}], "end": {"tex": "cream", "pos": "b"}},
       "event": {"top": {"tex": "film", "pos": "tr"}, "end": {"tex": "ribbon", "pos": "br"}},
       "custom": {"top": {"tex": "cream", "pos": "tr"}, "end": {"tex": "silk", "pos": "br"}},
-      "news": {"top": {"tex": "film", "pos": "tr"}, "end": {"tex": "smear", "pos": "br"}},
+      "news": {"top": {"tex": "film", "pos": "tr"}, "mid": [{"sel": "section.np-arch", "tex": "silk", "pos": "tr", "o": 16}, {"sel": "section.np-arch", "tex": "cream", "pos": "bl", "o": 15}], "end": {"tex": "smear", "pos": "br"}},
       "article": {"top": {"tex": "cream", "pos": "tr"}, "end": {"tex": "film", "pos": "br"}},
       "company": {"top": {"tex": "silk", "pos": "tr", "o": 8}, "mid": [
         {"sel": "section#ca-stats", "tex": "ribbon", "pos": "r", "o": 8},
@@ -629,7 +629,7 @@
         {"sel": "section#ca-center", "tex": "pipette", "pos": "bl", "o": 9},
         {"sel": "section#ca-geo", "tex": "cream", "pos": "r", "o": 10}
       ], "end": {"tex": "silk", "pos": "c"}},
-      "contacts": {"top": {"tex": "silk", "pos": "tr"}, "end": {"tex": "cream", "pos": "br"}},
+      "contacts": {"top": {"tex": "silk", "pos": "tr"}, "mid": [{"sel": "section#cp-ways", "tex": "cream", "pos": "tl", "o": 10}, {"sel": "section#offices", "tex": "silk", "pos": "r", "o": 9}, {"sel": "section#cp-req", "tex": "swatch", "pos": "r", "o": 9}], "end": {"tex": "cream", "pos": "br"}},
       "partners": {"top": {"tex": "silk", "pos": "tr", "o": 10}, "end": {"tex": "silk", "pos": "c", "o": 10}, "patterns": {"audience": [["cream", "tl", 10], ["film", "r", 9, 35]], "benefits": [["swatch", "r", 10], ["silk", "l", 10, 40]], "way": [["silk", "l", 10], ["smear", "r", 9, 25]], "brands": [["film", "r", 10], ["cream", "l", 9]], "calc": [["ribbon", "r", 10], ["water", "l", 9, 40]], "training": [["cream", "tl", 10], ["smear", "r", 10, 35], ["silk", "l", 9, 62]], "form": [["water", "r", 9], ["cream", "tl", 9, 30]]}},
       "search": {"top": {"tex": "cream", "pos": "tr", "o": 7}},
       "privacy": {"top": {"tex": "film", "pos": "tr", "o": 5}},

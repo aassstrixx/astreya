@@ -1,16 +1,26 @@
-/* «Контакты» — страница v2 («Приёмная»): солнечная стена с тенями листьев; крупные «ключи» связи (телефон, почта, мессенджеры с ссылкой, адрес); рельефная карта-схема из камня с метками городов —
-   выбор города на карте и в списке представительств работает вместе; форма «Написать нам» на «бумаге на камне»; реквизиты — гравированной плитой.
-   Все данные — из data/site.json (contacts, offices, requisites) и src/messengers.js; ничего не выдумано: нет данных — прежнее «Уточняется». Крючки скриптов и навигатора Стеллы сохранены:
-   .page-head (в него js/sales-pages.js дописывает статус «на связи»), .contact-cards, #support .lead-form, ссылки tel:/mailto:, data-track. Оформление — css/pg-contacts.css, поведение — js/pg-contacts.js. */
+/* «Контакты» — страница v3 («Приёмная в арке»): первый экран — фото приёмной в арочной раме со стеклянной карточкой адреса; дальше нумерованные разделы 01–04:
+   способы связи строками (телефон, почта, мессенджеры, адрес) рядом с фото команды; настоящая карта России владельца (assets/company/ru-map.svg, та же, что на странице компании)
+   крупным планом запада страны с метками городов и маршрутами из Москвы — выбор города на карте и в списке представительств работает вместе; форма «Написать нам» на тёмной плите
+   с фото учебного центра; реквизиты — гравированной плитой. Все данные — из data/site.json (contacts, offices, requisites) и src/messengers.js; нет данных — прежнее «Уточняется».
+   Крючки скриптов и навигатора Стеллы сохранены: .page-head (в него js/sales-pages.js дописывает статус «на связи»), .contact-cards, #support .lead-form, ссылки tel:/mailto:, data-track,
+   .cp-pin / .cp-rt / .cp-office / .cp-ob-t (js/pg-contacts.js). Оформление — css/pg-contacts.css. */
 const S = require('../../js/shared.js');
 const {esc, I} = S;
 const MSG = require('../messengers.js');
 
-/* карта-схема: города по координатам (широта, долгота) на проекции карты assets/showroom/pg-relief.webp — границы 26–43° в. д., 43–62° с. ш.; береговых линий нет, это схема, а не география */
-const MAP = {lon0: 26, lon1: 43, lat0: 62, lat1: 43};
-const COORDS = {'Москва': [55.7558, 37.6173], 'Санкт-Петербург': [59.9343, 30.3351], 'Симферополь': [44.9521, 34.1024], 'Ростов-на-Дону': [47.2357, 39.7015]};
-const GRAT = {lat: [60, 55, 50, 45], lon: [30, 35, 40]};
-const proj = ([lat, lon]) => ({x: (lon - MAP.lon0) / (MAP.lon1 - MAP.lon0), y: (MAP.lat0 - lat) / (MAP.lat0 - MAP.lat1)});
+/* карта России владельца (assets/company/ru-map.svg, 1920×1108), коническая проекция Ламберта подобрана по береговой линии карты (как в src/pages/company.js). Показываем окно на запад страны:
+   в пикселях карты x 0…640, y 420…900 — все города представительств с запасом под подписи; метки стоят на реальных местах */
+const MAPP = {W: 1920, H: 1108, l0: 90.0438, p1: 46.9718, p2: 62.1925, s: 1463.4714, tx: 953.732, ty: 802.0278};
+const WIN = {x0: 0, y0: 420, w: 640, h: 480};
+const COORDS = {'Москва': [37.6173, 55.7558], 'Санкт-Петербург': [30.3351, 59.9343], 'Симферополь': [34.1024, 44.9521], 'Ростов-на-Дону': [39.7015, 47.2357]};
+function mapPx(lon, lat) {
+  const r = Math.PI / 180, a = MAPP.p1 * r, b = MAPP.p2 * r;
+  const n = Math.log(Math.cos(a) / Math.cos(b)) / Math.log(Math.tan(Math.PI / 4 + b / 2) / Math.tan(Math.PI / 4 + a / 2));
+  const F = Math.cos(a) * Math.pow(Math.tan(Math.PI / 4 + a / 2), n) / n;
+  const rho = F / Math.pow(Math.tan(Math.PI / 4 + lat * r / 2), n), rho0 = F / Math.pow(Math.tan(Math.PI / 4 + 60 * r / 2), n), lam = (lon - MAPP.l0) * r;
+  return {x: MAPP.s * rho * Math.sin(n * lam) + MAPP.tx, y: -MAPP.s * (rho0 - rho * Math.cos(n * lam)) + MAPP.ty};
+}
+const proj = ([lon, lat]) => { const q = mapPx(lon, lat); return {px: q.x - WIN.x0, py: q.y - WIN.y0, x: (q.x - WIN.x0) / WIN.w, y: (q.y - WIN.y0) / WIN.h}; };
 const TR = {а: 'a', б: 'b', в: 'v', г: 'g', д: 'd', е: 'e', ё: 'e', ж: 'zh', з: 'z', и: 'i', й: 'y', к: 'k', л: 'l', м: 'm', н: 'n', о: 'o', п: 'p', р: 'r', с: 's', т: 't', у: 'u', ф: 'f', х: 'h', ц: 'c', ч: 'ch', ш: 'sh', щ: 'sch', ы: 'y', э: 'e', ю: 'yu', я: 'ya'};
 const slug = s => s.toLowerCase().split('').map(ch => TR[ch] !== undefined ? TR[ch] : /[a-z0-9]/.test(ch) ? ch : '-').join('').replace(/-+/g, '-').replace(/^-|-$/g, '');
 
@@ -33,11 +43,13 @@ module.exports = function contacts(ctx, C, P) {
   const stella = C.xon('assistant') ? `<button class="cp-ask" type="button" data-act="asst-chip" data-q="С кем из менеджеров связаться?" data-track="asst_chip" data-place="contacts"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12Z"/></svg><span>Подобрать менеджера со Стеллой</span></button>` : '';
   const pins = offs.map((o, i) => COORDS[o.city] ? {o, i, p: proj(COORDS[o.city])} : null).filter(Boolean);
   const hub = pins.find(x => x.o.city === 'Москва') || pins[0];
-  const curve = (a, b) => { const mx = (a.x + b.x) / 2 * 1000, my = (a.y + b.y) / 2 * 538, dx = (b.x - a.x) * 1000, dy = (b.y - a.y) * 538, k = .16; return `M${(a.x * 1000).toFixed(1)} ${(a.y * 538).toFixed(1)} Q${(mx - dy * k).toFixed(1)} ${(my + dx * k).toFixed(1)} ${(b.x * 1000).toFixed(1)} ${(b.y * 538).toFixed(1)}`; };
+  const curve = (a, b) => { const mx = (a.px + b.px) / 2, my = (a.py + b.py) / 2, dx = b.px - a.px, dy = b.py - a.py, k = .18; return `M${a.px.toFixed(1)} ${a.py.toFixed(1)} Q${(mx - dy * k).toFixed(1)} ${(my + dx * k).toFixed(1)} ${b.px.toFixed(1)} ${b.py.toFixed(1)}`; };
+
+  const team = `<figure class="cp-photo reveal"><img src="${u('assets/photos/photo-02-about.webp')}" alt="Команда «Астрея»" width="800" height="533" loading="lazy" decoding="async"><figcaption><b>На связи</b><span>${esc(c.hours)}</span></figcaption></figure>`;
+  const roman = ['01', '02', '03', '04'];
 
   return `<div class="cp" data-cp>
   <section class="cp-hero">
-    <div class="cp-scene" aria-hidden="true"><img src="${u('assets/showroom/pg-wall.webp')}" alt="" width="1800" height="1018" fetchpriority="high" decoding="async"><i class="cp-sun"></i></div>
     <div class="cp-in cp-hero-in">
       <header class="page-head cp-copy">
         <span class="cp-eyebrow">Контакты</span>
@@ -45,29 +57,25 @@ module.exports = function contacts(ctx, C, P) {
         <p class="cp-lead">Центральный офис в Москве и представительства в регионах. Позвоните, напишите или оставьте заявку — ответим в рабочее время.</p>
         <div class="cp-cta">${C.callbackBtn('btn btn-fill cp-pill', 'contacts-hero')}<a class="btn btn-ghost cp-pill" href="tel:${c.phoneRaw}" data-track="phone_click" data-place="contacts-hero">${I.phone} ${esc(c.phone)}</a></div>
       </header>
+      <figure class="cp-arch" aria-hidden="true">
+        <span class="cp-arch-ln"></span>
+        <div class="cp-arch-fr"><img src="${u('assets/house/room-partners.webp')}" alt="" width="1920" height="1080" fetchpriority="high" decoding="async"></div>
+        <figcaption class="cp-glass"><span>Центральный офис</span><b>${esc(c.address)}</b></figcaption>
+      </figure>
     </div>
   </section>
 
-  <section class="cp-keys-wrap"><div class="cp-in">
-    <h2 class="sr">Способы связи</h2>
-    <div class="contact-cards cp-keys cp-n${keys.length}">${keys.map(k => `<article class="ccard cp-key${k.link ? ' is-link' : ''} reveal"><span class="cp-kic">${k.ic}</span><h3>${k.t}</h3><p class="cv">${k.v}</p><p class="cp-ks">${k.s}</p></article>`).join('')}</div>
+  <section class="cp-sec cp-ways" id="cp-ways"><div class="cp-in">
+    <header class="cp-head"><span class="cp-num">${roman[0]}</span><div><span class="cp-eyebrow">Способы связи</span><h2>Выберите удобный для вас</h2></div></header>
+    <div class="cp-ways-grid">
+      ${team}
+      <div class="contact-cards cp-keys cp-n${keys.length}"><h2 class="sr">Способы связи</h2>${keys.map((k, i) => `<article class="ccard cp-key${k.link ? ' is-link' : ''} reveal"><i class="cp-kn">${no(i)}</i><span class="cp-kic">${k.ic}</span><h3>${k.t}</h3><p class="cv">${k.v}</p><p class="cp-ks">${k.s}</p></article>`).join('')}</div>
+    </div>
   </div></section>
 
   <section class="cp-sec cp-map" id="offices"><div class="cp-in">
-    <header class="cp-head"><span class="cp-eyebrow">Представительства</span><h2>Контакты по городам</h2></header>
+    <header class="cp-head"><span class="cp-num">${roman[1]}</span><div><span class="cp-eyebrow">Представительства</span><h2>Мы на карте России</h2></div></header>
     <div class="cp-atlas">
-      <div class="cp-relief reveal" role="group" aria-label="Расположение офиса: ${esc(c.address)}">
-        <div class="cp-stone">
-          <img src="${u('assets/showroom/pg-relief.webp')}" alt="" width="2400" height="1290" loading="lazy" decoding="async">
-          <svg class="cp-svg" viewBox="0 0 1000 538" preserveAspectRatio="none" aria-hidden="true" focusable="false">
-            ${GRAT.lat.map(l => { const y = proj([l, MAP.lon0]).y * 538; return `<line x1="0" x2="1000" y1="${y.toFixed(1)}" y2="${y.toFixed(1)}"/><text class="r" x="964" y="${(y - 7).toFixed(1)}">${l}° с. ш.</text>`; }).join('')}
-            ${GRAT.lon.map(l => { const x = proj([MAP.lat0, l]).x * 1000; return `<line y1="0" y2="538" x1="${x.toFixed(1)}" x2="${x.toFixed(1)}"/><text x="${(x + 8).toFixed(1)}" y="36">${l}° в. д.</text>`; }).join('')}
-            ${hub ? pins.filter(x => x !== hub).map(x => `<path class="cp-rt" data-city="${esc(x.o.city)}" d="${curve(hub.p, x.p)}"/>`).join('') : ''}
-          </svg>
-          ${pins.map(({o, i, p}) => `<button class="cp-pin${o === (hub && hub.o) ? ' is-hub' : ''}" type="button" data-city="${esc(o.city)}" data-side="${p.x > .62 ? 'l' : 'r'}" style="--x:${p.x.toFixed(4)};--y:${p.y.toFixed(4)}" aria-controls="office-${slug(o.city)}" aria-label="${esc(o.city)} — ${esc(o.role)}"><i aria-hidden="true"></i><span>${esc(o.city)}</span></button>`).join('')}
-          <p class="cp-cap" aria-hidden="true">Схема расположения · не в масштабе</p>
-        </div>
-      </div>
       <div class="cp-offices" data-cp-offices>${offs.map((o, i) => `<article class="cp-office" id="office-${slug(o.city)}" data-city="${esc(o.city)}">
         <h3 class="cp-oh"><button class="cp-ob-t" type="button" aria-expanded="true" aria-controls="ob-${slug(o.city)}"><i>${no(i)}</i><b>${esc(o.city)}</b><span>${esc(o.role)}</span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></button></h3>
         <div class="cp-ob" id="ob-${slug(o.city)}"><div class="cp-obi">
@@ -78,21 +86,34 @@ module.exports = function contacts(ctx, C, P) {
           ${mapLinks(o, o.city === 'Москва')}
         </div></div>
       </article>`).join('')}</div>
+      <div class="cp-relief reveal" role="group" aria-label="Расположение офиса: ${esc(c.address)}. Представительства «Астрея» на карте России">
+        <div class="cp-stone">
+          <img class="cp-mapimg" src="${u('assets/company/ru-map.svg')}" alt="" width="1920" height="1108" loading="lazy" decoding="async">
+          <svg class="cp-svg" viewBox="0 0 ${WIN.w} ${WIN.h}" preserveAspectRatio="none" aria-hidden="true" focusable="false">
+            ${hub ? pins.filter(x => x !== hub).map(x => `<path class="cp-rt" data-city="${esc(x.o.city)}" d="${curve(hub.p, x.p)}"/>`).join('') : ''}
+          </svg>
+          ${pins.map(({o, i, p}) => `<button class="cp-pin${o === (hub && hub.o) ? ' is-hub' : ''}" type="button" data-city="${esc(o.city)}" data-side="r" style="--x:${p.x.toFixed(4)};--y:${p.y.toFixed(4)}" aria-controls="office-${slug(o.city)}" aria-label="${esc(o.city)} — ${esc(o.role)}"><i aria-hidden="true"></i><span>${esc(o.city)}</span></button>`).join('')}
+          <p class="cp-cap" aria-hidden="true">Запад России · карта представительств</p>
+        </div>
+      </div>
     </div>
   </div></section>
 
-  <section class="cp-sec cp-write"><div class="cp-in cp-write-in">
+  <section class="cp-sec cp-write" id="cp-write"><div class="cp-in cp-write-in">
     <div class="cp-wr-copy reveal">
-      <span class="cp-eyebrow">Обратная связь</span>
-      <h2>Написать нам</h2>
+      <header class="cp-head cp-head-l"><span class="cp-num">${roman[2]}</span><div><span class="cp-eyebrow">Обратная связь</span><h2>Написать нам</h2></div></header>
       <p>Вопрос по продукции, обучению или сотрудничеству — ответим по почте или телефону.</p>
       ${stella}
+      <div class="cp-duo" aria-hidden="true">
+        <img src="${u('assets/news/ph-seminar-b.webp')}" alt="" width="960" height="540" loading="lazy" decoding="async">
+        <img src="${u('assets/photos/photo-02b-about.webp')}" alt="" width="768" height="768" loading="lazy" decoding="async">
+      </div>
     </div>
     <div class="cp-paper reveal" id="support">${S.formHTML('contact', {root: P.root, uid: 'ct'})}</div>
   </div></section>
 
-  <section class="cp-sec cp-req"><div class="cp-in">
-    <header class="cp-head"><span class="cp-eyebrow">Реквизиты</span><h2>Информация о компании</h2></header>
+  <section class="cp-sec cp-req" id="cp-req"><div class="cp-in">
+    <header class="cp-head"><span class="cp-num">${roman[3]}</span><div><span class="cp-eyebrow">Реквизиты</span><h2>Информация о компании</h2></div></header>
     <dl class="cp-ledger reveal">
       <div><dt>Наименование</dt><dd>${esc(rq.legalName)}</dd></div>
       <div><dt>ИНН</dt><dd>${rq.inn ? esc(rq.inn) : tbd}</dd></div>
