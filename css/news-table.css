@@ -16,9 +16,9 @@
      колонна  assets/news/column.webp (1020×1434 RGBA на плоскость 680×956, 1 : 1,5; сбоку, барабан R 220 + плинт R 320 + латунный воротник),
      стекло и торец — CSS (диск R 700 с бликом окна и кромкой; торец толщиной 40 px — 36 хорд). */
 .np{--tbl-h:1000px;--gl-r:700px;--gl-t:40px;--flat:#d4c6b4}
-.np .np-table{width:4800px;height:3200px;margin:-1600px 0 0 -2400px;transform:translateZ(calc(var(--tbl-h) * -1));background:var(--flat) url(../assets/news/floor.webp?v=c3656d08) center/100% 100% no-repeat;-webkit-mask-image:none;mask-image:none}
-@media (max-width:860px){.np .np-table{background-image:url(../assets/news/floor-m.webp?v=c3656d08)}}
-@media (prefers-reduced-data:reduce){.np .np-table{background-image:url(../assets/news/floor-m.webp?v=c3656d08)}}
+.np .np-table{width:4800px;height:3200px;margin:-1600px 0 0 -2400px;transform:translateZ(calc(var(--tbl-h) * -1));background:var(--flat) url(../assets/news/floor.webp?v=15da8940) center/100% 100% no-repeat;-webkit-mask-image:none;mask-image:none}
+@media (max-width:860px){.np .np-table{background-image:url(../assets/news/floor-m.webp?v=15da8940)}}
+@media (prefers-reduced-data:reduce){.np .np-table{background-image:url(../assets/news/floor-m.webp?v=15da8940)}}
 /* фон выше дальнего края пола — тот же плоский цвет, в который уходит север пола: ни линии края плиты, ни дымки-полосы */
 .np .np-sticky{background:var(--flat)}
 .np .np-world{background:var(--flat)}
@@ -26,9 +26,26 @@
 
 /* ---------- стол: колонна, столешница, торец стекла ---------- */
 .np .np-t3{position:absolute;left:50%;top:50%;width:0;height:0;transform-style:preserve-3d;pointer-events:none}
-/* колонна — вертикальная плоскость 680×956 (камера наклоняется только вокруг оси X, поэтому плоскость всегда обращена к зрителю, как цилиндр): низ на полу, верх под стеклом */
-.np .np-col{position:absolute;left:-340px;top:calc((var(--tbl-h) - 44px) * -1);width:680px;height:calc(var(--tbl-h) - 44px);transform-origin:50% 100%;transform:translateZ(calc(var(--tbl-h) * -1)) rotateX(-90deg);
-  background:url(../assets/news/column.webp?v=c3656d08) 0 0/100% 100% no-repeat}
+/* подставка — настоящий объём: призма из граней по кругу (24 грани по 15°, с юга видны 11: --i от −5 до 5; --k — номер среза в общей полосе leg-strip.webp).
+   Три яруса на одной оси, все грани стоят вертикально и смотрят наружу (backface-visibility: hidden — задняя половина не рисуется):
+     воротник  R 300 (грань 80 px, apothem 298), высота 60: z −44 … −104     — <u>
+     ствол     R 240 (грань 64 px, apothem 238), высота 866: z −104 … −970   — b::before, каннелюры (24 желоба) запечены в текстуру
+     плинт     R 320 (грань 85 px, apothem 317), высота 30: z −970 … −1000   — b::after (на полу)
+   Текстура — одна полоса 1650×1434 (11 ортогональных видов с азимутов 105…255°, 1 px = 2/3 px страницы, на вид — 100 px): каждая грань берёт из своего вида центральный срез,
+   поэтому свет окна слева сверху правильно ложится по кругу. Верх воротника (.np-pcap, диск R 300 под стеклом, z −44,5) и верх плинта (.np-ppl, диск R 320, z −970) — рендеры сверху.
+   html.lite: призма и диски скрыты, показывается прежняя плоскость .np-leg (column.webp). */
+.np .np-ped{position:absolute;left:0;top:0;width:0;height:0;transform-style:preserve-3d}
+.np .np-ped b{position:absolute;left:0;top:0;width:0;height:0;transform-style:preserve-3d;transform:rotateZ(calc(var(--i) * 15deg))}
+.np .np-ped b::before,.np .np-ped b::after,.np .np-ped u{content:"";display:block;position:absolute;transform-origin:50% 0;backface-visibility:hidden;-webkit-backface-visibility:hidden;background-image:url(../assets/news/leg-strip.webp?v=15da8940);background-repeat:no-repeat;background-size:1100px 956px}
+.np .np-ped u{left:-40px;top:298px;width:80px;height:60px;transform:translateZ(-44px) rotateX(-90deg);background-position:calc(var(--k) * -100px - 10px) 0}
+.np .np-ped b::before{left:-32px;top:238px;width:64px;height:866px;transform:translateZ(-104px) rotateX(-90deg);background-position:calc(var(--k) * -100px - 18px) -60px}
+.np .np-ped b::after{left:-42.5px;top:317px;width:85px;height:30px;transform:translateZ(-970px) rotateX(-90deg);background-position:calc(var(--k) * -100px - 7.5px) -926px}
+.np .np-pcap,.np .np-ppl{position:absolute;background:0 0/100% 100% no-repeat}
+.np .np-pcap{left:-320px;top:-320px;width:640px;height:640px;transform:translateZ(-44.5px);background-image:url(../assets/news/leg-cap.webp?v=15da8940)}
+.np .np-ppl{left:-340px;top:-340px;width:680px;height:680px;transform:translateZ(-970px);background-image:url(../assets/news/leg-plinth.webp?v=15da8940)}
+/* запасная плоскость (только для слабых устройств): вертикальная плоскость 680×956 с одной картинкой, низ на полу, верх под стеклом */
+.np .np-leg{display:none;position:absolute;left:-340px;top:calc((var(--tbl-h) - 44px) * -1);width:680px;height:calc(var(--tbl-h) - 44px);transform-origin:50% 100%;transform:translateZ(calc(var(--tbl-h) * -1)) rotateX(-90deg);
+  background:url(../assets/news/column.webp?v=15da8940) 0 0/100% 100% no-repeat}
 /* стекло: прозрачный диск R 700 — окно отражается мягкой светлой полосой у левого-верхнего края (с переплётом), зеленоватая толща, светлая кромка-фаска по окружности */
 .np .np-gl{position:absolute;left:-700px;top:-700px;width:1400px;height:1400px;border-radius:50%;transform:translateZ(-4px);
   background:linear-gradient(112deg,transparent 14%,rgba(255,255,255,.26) 22%,rgba(255,255,255,.07) 38%,transparent 46%),linear-gradient(90deg,transparent 29%,rgba(120,150,138,.20) 29.4%,transparent 30%),radial-gradient(circle closest-side,rgba(130,176,152,.08) 97%,rgba(210,236,222,.0) 100%);
@@ -40,9 +57,10 @@
   background:linear-gradient(rgba(0,0,0,var(--sh)),rgba(0,0,0,var(--sh))),linear-gradient(180deg,rgba(240,249,244,.80) 0,rgba(176,208,194,.46) 10%,rgba(138,178,160,.34) 50%,rgba(168,204,190,.48) 90%,rgba(240,249,244,.78) 100%)}
 /* камера «лежит» (rx = 0, идёт чтение): вертикальные плоскости колонны и торца видны строго с ребра — их не видно, зато такая вырожденная плоскость ломала сортировку 3D
    (по линии пересечения с плоскостью под газетой поперёк разворота проступала светлая полоса) — прячем; заодно в чтении на два десятка композиторных слоёв меньше */
-.np .np-cam.is-flat .np-col,.np .np-cam.is-flat .np-wl{display:none}
+.np .np-cam.is-flat .np-ped,.np .np-cam.is-flat .np-leg,.np .np-cam.is-flat .np-wl{display:none}
 /* слабое устройство (html.lite): торец скрыт — остаётся тонкая кромка диска (CSS-кольцо у .np-gl) */
-html.lite .np .np-wl{display:none}
+html.lite .np .np-wl,html.lite .np .np-ped{display:none}
+html.lite .np .np-leg{display:block}
 
 /* свет уже запечён в рендер пола — отдельный слой света (.np-light) не нужен */
 .np .np-light{display:none}
@@ -56,8 +74,8 @@ html.lite .np .np-wl{display:none}
    разворот — 2140×1590 px, левый верх (−640; −460) (left −1,28·pw, top −0,6805·ph, width 4,28·pw, height 2,352·ph). Тень смещена вправо-вниз на ≈ (+800; +520) px при --pw = 500. */
 .np .np-shd{position:absolute;left:0;top:0;pointer-events:none;opacity:0;transform:translateZ(calc(var(--tbl-h) * -1 + 1px));background:0 0/100% 100% no-repeat;transition:opacity .55s ease}
 .np .np-shd.is-on{opacity:1}
-.np .np-shd-c{left:calc(var(--pw) * -.368);top:calc(var(--ph) * -.4925);width:calc(var(--pw) * 3.36);height:calc(var(--ph) * 2.352);background-image:url(../assets/news/news-shadow-closed.webp?v=c3656d08)}
-.np .np-shd-o{left:calc(var(--pw) * -.888);top:calc(var(--ph) * -.4925);width:calc(var(--pw) * 4.28);height:calc(var(--ph) * 2.352);background-image:url(../assets/news/news-shadow-open.webp?v=c3656d08)}
+.np .np-shd-c{left:calc(var(--pw) * -.368);top:calc(var(--ph) * -.4925);width:calc(var(--pw) * 3.36);height:calc(var(--ph) * 2.352);background-image:url(../assets/news/news-shadow-closed.webp?v=15da8940)}
+.np .np-shd-o{left:calc(var(--pw) * -.888);top:calc(var(--ph) * -.4925);width:calc(var(--pw) * 4.28);height:calc(var(--ph) * 2.352);background-image:url(../assets/news/news-shadow-open.webp?v=15da8940)}
 
 /* ---------- газета на стекле ---------- */
 /* ОДИН слой под газетой (.np-book::before; второй псевдо-слой дороже: каждый — отдельная 3D-плоскость, ~5 мс на кадр листания при замедлении CPU ×4):
