@@ -301,6 +301,7 @@
       const f = A.jar && A.jar.fly;
       if (!f) { if (warmN++ < 60) setTimeout(warmFly, 300); return; }
       A.flyWarm = true; ensureClean(); f.warm();
+      if (!pm()) A.flyNear = true;                                  // компьютер: уменьшенные копии кадров пролёта (они малы) разворачиваются сразу после прогрева, а не когда пролёт уже начался — иначе при первой быстрой прокрутке герой→журнал полных ключей рядом нет, копий тоже нет, и кадры идут рывками
     }
 
     const lv = {live: null, gone: null, hf: '', hy: ''};

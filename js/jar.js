@@ -376,7 +376,7 @@
     const lowTgt = () => { const st = lowStride(); if (st !== lowTgtS) { lowTgtS = st; lowTgtV = 0; for (let k = 0; k < NH; k++) if (lowWanted(k)) lowTgtV++; } return lowTgtV; };
     function pumpLows() {
       const LD = LOWDEC[isPortrait() ? 1 : 0];
-      if ((ALLRES && !PHALL) || decL >= LD || !hall || !firstDrawn || trimmed || holding()) return;                  // пролёт на мощном устройстве держит в видеопамяти все ключи целиком — уменьшенные копии ему не нужны
+      if ((ALLRES && !PHALL && !FLY) || decL >= LD || !hall || !firstDrawn || trimmed || holding()) return;          // (пролёт на мощном ПК: копии нужны, пока полные 49 ключей ещё заливаются — страховка первой прокрутки)                  // пролёт на мощном устройстве держит в видеопамяти все ключи целиком — уменьшенные копии ему не нужны
       const u = locate(cp), c = u.k + u.t;
       if (PHALL && pT <= 0) return;
       if (FLY && pT <= 0 && !A.flyNear) return;                          // пролёт: копии нужны, когда герой подъехал к концу (A.flyNear) — раньше они лишь занимают видеопамять рядом с героем
@@ -384,7 +384,7 @@
       for (let d = 0; d < (PHALL ? 8 : NH) && decL < LD; d++) {          // PHALL: копии — только страховка на ±8 ключей вокруг положения, пока полные ещё грузятся
         for (const k of [Math.round(c) + dirSign * d, Math.round(c) - dirSign * d]) {
           if (k < 0 || k >= NH || decL >= LD) continue;
-          if (!lowDone[k] && !lowBusy[k] && keyDone(k) && lowWanted(k)) { if (PHALL && resident[k]) lowDone[k] = 3; else decodeLow(k, false); }          // PHALL: полный кадр уже лежит — копия не нужна
+          if (!lowDone[k] && !lowBusy[k] && keyDone(k) && lowWanted(k) && !(ALLRES && !PHALL && resident[k])) { if (PHALL && resident[k]) lowDone[k] = 3; else decodeLow(k, false); }          // PHALL: полный кадр уже лежит — копия не нужна
           else if (jar && !lowJDone[k] && !lowBusy[NH + k] && blobs.j[k]) decodeLow(k, true);
         }
       }
