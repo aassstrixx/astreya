@@ -21,7 +21,7 @@
 .np-cam.is-moving{will-change:transform}
 .np-cam.is-flat{transform:none}
 /* стол: плита шире экрана (камера наклонена — дальний край уходит в дымку) */
-.np-table{position:absolute;left:50%;top:50%;width:3400px;height:2260px;margin:-1130px 0 0 -1700px;transform:translateZ(-1px);background:#a99a82 url(../assets/news/table.webp?v=34438afe) center/100% 100% no-repeat;
+.np-table{position:absolute;left:50%;top:50%;width:3400px;height:2260px;margin:-1130px 0 0 -1700px;transform:translateZ(-1px);background:#a99a82 url(../assets/news/table.webp?v=a6b8cb0f) center/100% 100% no-repeat;
   -webkit-mask-image:linear-gradient(180deg,transparent 0,#000 16%);mask-image:linear-gradient(180deg,transparent 0,#000 16%)}
 .np-table i{position:absolute;inset:0}
 .np-light{background:radial-gradient(60% 50% at 24% 12%,rgba(255,246,224,.22),transparent 70%)}
@@ -35,7 +35,7 @@
   box-shadow:.4em .7em 1.6em -.3em rgba(48,32,12,.5),1.6em 2.8em 4em -1em rgba(48,32,12,.34),0 0 0 1px rgba(60,40,12,.12)}
 .np-leaf{position:absolute;left:50%;top:0;width:50%;height:100%;transform-origin:0 50%;transform-style:preserve-3d;transform:translateZ(var(--z,0px)) rotateY(var(--ang,0deg))}
 .np-leaf.is-off{visibility:hidden}
-.np-face{position:absolute;inset:0;backface-visibility:hidden;-webkit-backface-visibility:hidden;overflow:hidden;background:var(--np-paper) url(../assets/news/paper.webp?v=34438afe) 0 0/512px}
+.np-face{position:absolute;inset:0;backface-visibility:hidden;-webkit-backface-visibility:hidden;overflow:hidden;background:var(--np-paper) url(../assets/news/paper.webp?v=a6b8cb0f) 0 0/512px}
 .np-face.np-bk{transform:rotateY(180deg)}
 .np-face>.np-pg{width:100%;height:100%}
 /* стопки листов по краям: тонкие линии кромок */
@@ -55,7 +55,7 @@
 .np-leaf.is-bend>.np-strips{display:block}
 .np-leaf.is-bend>.np-face{visibility:hidden}
 .np-st{position:absolute;top:0;height:100%;transform-origin:0 50%;transform-style:preserve-3d}
-.np-sl{position:absolute;inset:0;overflow:hidden;backface-visibility:hidden;-webkit-backface-visibility:hidden;background:var(--np-paper) url(../assets/news/paper.webp?v=34438afe) 0 0/512px}
+.np-sl{position:absolute;inset:0;overflow:hidden;backface-visibility:hidden;-webkit-backface-visibility:hidden;background:var(--np-paper) url(../assets/news/paper.webp?v=a6b8cb0f) 0 0/512px}
 .np-sl.np-sb{transform:rotateY(180deg)}
 .np-sl>.np-cl{position:absolute;top:0;height:100%;width:var(--pw);pointer-events:none}
 .np-sl>.np-cl>.np-pg{width:100%;height:100%}
@@ -176,9 +176,19 @@
 .np-coupon .agree{font:500 .7em/1.4 var(--np-sans);color:var(--np-ink2)}
 .np-back{display:flex;flex-direction:column;flex:1;padding:1.6em 0 1.2em}
 .np-back .np-h{text-align:center;margin-bottom:.7em}
-.np-toc-l{display:flex;flex-direction:column;flex:1;border-top:1px solid var(--np-line)}
-.np-toc-l a{display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:.9em;padding:.55em 0;border-bottom:1px solid var(--np-line);font:600 .8em/1.25 var(--np-disp)}
-.np-toc-l em{font:700 .66em/1 var(--np-sans);letter-spacing:.12em;text-transform:uppercase;color:var(--np-brass);font-style:normal}
+/* содержание на обороте: разделы по порядку страниц, внутри — материалы; колонки ровные (точка рубрики · заголовок · страница), как в настоящем журнале */
+.np-toc-l{display:flex;flex-direction:column;flex:1}
+.np-tg{flex:var(--n,3) 1 0;display:flex;flex-direction:column;min-height:0;padding:.5em 0 .2em;border-top:1px solid var(--np-line)}
+.np-tg:last-child{border-bottom:1px solid var(--np-line)}
+.np-tg h3{display:flex;justify-content:space-between;align-items:baseline;margin:0 0 .15em;font:700 .66em/1 var(--np-sans);letter-spacing:.2em;text-transform:uppercase;color:var(--np-brass)}
+.np-tg h3 em{font:inherit;font-style:normal;letter-spacing:.12em}
+.np-tg ul{display:flex;flex-direction:column;flex:1;justify-content:space-evenly;margin:0;padding:0;list-style:none}
+.np-tg li a{display:grid;grid-template-columns:.62em minmax(0,1fr) 3.6em;align-items:baseline;column-gap:.7em;padding:.22em 0;font:600 .8em/1.28 var(--np-disp)}
+.np-tg .np-dot{align-self:center;width:.58em;height:.58em;border-radius:50%;background:var(--c1,var(--np-brass));box-shadow:0 0 0 .12em rgba(255,255,255,.55)}
+.np-tg li a em{justify-self:end;font:700 .72em/1 var(--np-sans);letter-spacing:.08em;color:var(--np-ink2);font-style:normal;white-space:nowrap}
+.np-tg li a:hover span{text-decoration:underline;text-decoration-color:var(--np-brass2);text-underline-offset:.18em}
+.np[data-filter="news"] .np-tg li:not([data-cat="news"]),.np[data-filter="sale"] .np-tg li:not([data-cat="sale"]),.np[data-filter="novelty"] .np-tg li:not([data-cat="novelty"]),
+.np[data-filter="edu"] .np-tg li:not([data-cat="edu"]),.np[data-filter="event"] .np-tg li:not([data-cat="event"]){opacity:.28;transition:opacity .5s var(--np-ease)}
 .np-colo{margin-top:auto;padding-top:.9em;border-top:3px double rgba(23,27,41,.5);font:500 .74em/1.5 var(--np-sans);color:var(--np-ink2);display:flex;flex-direction:column;gap:.35em;align-items:flex-start}
 .np-colo p{margin:0}.np-colo a{font-weight:700;color:var(--np-ink)}
 
@@ -201,9 +211,7 @@
 .np-evs{margin-top:auto}
 .np-promo-r{display:flex;flex-direction:column;flex:1;padding-bottom:2.7em}
 .np-promo-r .np-ledger{margin-top:.9em}
-.np-promo-r .np-ledger tbody tr{height:5.2em}
-.np-toc-l li{flex:1 1 0;max-height:5.2em;display:flex}
-.np-toc-l li a{flex:1}
+.np-promo-r .np-ledger tbody tr{height:4.5em}
 .np[data-mode="single"] .np-col,.np[data-mode="single"] .np-grow,.np[data-mode="single"] .np-novelty,.np[data-mode="single"] .np-promo-r{flex:none;min-height:auto;padding-bottom:0}
 .np[data-mode="single"] .np-grow>.np-fig,.np[data-mode="single"] .np-expert>.np-fig-tall{flex:none;min-height:0}
 .np[data-mode="single"] .np-grow>.np-fig img,.np[data-mode="single"] .np-expert>.np-fig-tall img{position:static;height:auto;aspect-ratio:16/9}
@@ -211,7 +219,7 @@
 .np[data-mode="single"] .np-novelty .np-stage-pk{flex:none;height:15.5em}
 .np[data-mode="single"] .np-novelty .np-stage-pk .np-pk{height:11.4em}
 .np[data-mode="single"] .np-novelty .np-stage-pk .np-pk-c{height:9.6em!important}
-.np[data-mode="single"] .np-toc-l li{flex:none;max-height:none}
+.np[data-mode="single"] .np-tg{flex:none}.np[data-mode="single"] .np-tg ul{justify-content:flex-start}.np[data-mode="single"] .np-tg li a{padding:.4em 0}
 .np[data-mode="single"] .np-lead{flex:none}
 
 /* фильтр по категории: чужие материалы приглушены, подходящие отмечены */
@@ -271,7 +279,7 @@
 .np-dots button::before{content:"";width:7px;height:7px;border-radius:50%;background:rgba(42,36,24,.28);transition:transform .35s var(--np-ease),background .25s}
 .np-dots button.is-on::before{background:var(--np-brass);transform:scale(1.5)}
 .np-dots button:hover::before{background:var(--np-navy)}
-.np-toc{position:absolute;z-index:7;top:calc(var(--np-hh) + 56px);right:var(--gut,24px);width:min(380px,calc(100% - 32px));max-height:calc(100% - 140px);overflow:auto;overscroll-behavior:contain;padding:14px 16px 10px;border-radius:14px;background:#f4ecda url(../assets/news/paper.webp?v=34438afe) 0 0/512px;box-shadow:0 30px 60px -24px rgba(30,20,6,.75),0 0 0 1px rgba(80,60,24,.2);transform-origin:100% 0;animation:npTocIn .45s var(--np-ease) both}
+.np-toc{position:absolute;z-index:7;top:calc(var(--np-hh) + 56px);right:var(--gut,24px);width:min(380px,calc(100% - 32px));max-height:calc(100% - 140px);overflow:auto;overscroll-behavior:contain;padding:14px 16px 10px;border-radius:14px;background:#f4ecda url(../assets/news/paper.webp?v=a6b8cb0f) 0 0/512px;box-shadow:0 30px 60px -24px rgba(30,20,6,.75),0 0 0 1px rgba(80,60,24,.2);transform-origin:100% 0;animation:npTocIn .45s var(--np-ease) both}
 @keyframes npTocIn{from{opacity:0;transform:translateY(-8px) scale(.96)}}
 .np-toc-h{display:flex;align-items:center;justify-content:space-between;padding-bottom:8px;border-bottom:3px double rgba(23,27,41,.5);font:600 20px/1 var(--np-disp)}
 .np-toc-h button{width:30px;height:30px;display:grid;place-items:center;border-radius:50%}
@@ -285,7 +293,7 @@
 /* ---------- чтение статьи поверх газеты ---------- */
 .np-ov{position:fixed;inset:0;z-index:90;display:flex;align-items:center;justify-content:center;padding:24px;background:rgba(26,18,8,.58);opacity:0;transition:opacity .4s var(--np-ease)}
 .np-ov.is-in{opacity:1}
-.np-ov-sheet{position:relative;width:min(780px,100%);max-height:min(88vh,100%);overflow:auto;overscroll-behavior:contain;padding:38px clamp(22px,5vw,56px) 30px;border-radius:6px;background:var(--np-paper) url(../assets/news/paper.webp?v=34438afe) 0 0/512px;box-shadow:0 50px 90px -30px rgba(10,6,0,.85),0 0 0 1px rgba(80,60,24,.25);transform:translateY(18px) scale(.95);transform-origin:var(--ox,50%) var(--oy,50%);transition:transform .55s var(--np-ease)}
+.np-ov-sheet{position:relative;width:min(780px,100%);max-height:min(88vh,100%);overflow:auto;overscroll-behavior:contain;padding:38px clamp(22px,5vw,56px) 30px;border-radius:6px;background:var(--np-paper) url(../assets/news/paper.webp?v=a6b8cb0f) 0 0/512px;box-shadow:0 50px 90px -30px rgba(10,6,0,.85),0 0 0 1px rgba(80,60,24,.25);transform:translateY(18px) scale(.95);transform-origin:var(--ox,50%) var(--oy,50%);transition:transform .55s var(--np-ease)}
 .np-ov.is-in .np-ov-sheet{transform:none}
 .np-ov-x{position:absolute;right:12px;top:12px;width:40px;height:40px;display:grid;place-items:center;border-radius:50%;background:rgba(23,27,41,.07)}
 .np-ov-x:hover{background:rgba(23,27,41,.14)}
@@ -311,7 +319,7 @@
 .np-arch h2{font:600 clamp(30px,4vw,52px)/1.06 var(--np-disp);letter-spacing:-.02em;margin:.35em 0 .35em;color:#14192a}
 .np-arch-l{max-width:46em;font:500 16px/1.6 var(--np-sans);color:var(--muted,#56647d);margin:0 0 clamp(26px,4vw,44px)}
 .np-ai-l{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:clamp(14px,2vw,26px)}
-.np-ai{position:relative;display:flex;flex-direction:column;gap:10px;padding:22px 22px 18px;background:#f4ecda url(../assets/news/paper.webp?v=34438afe) 0 0/512px;border-radius:4px;box-shadow:0 1px 0 rgba(255,255,255,.7) inset,0 26px 40px -30px rgba(40,26,8,.6),0 0 0 1px rgba(80,60,24,.14);transition:transform .5s var(--np-ease),box-shadow .5s var(--np-ease)}
+.np-ai{position:relative;display:flex;flex-direction:column;gap:10px;padding:22px 22px 18px;background:#f4ecda url(../assets/news/paper.webp?v=a6b8cb0f) 0 0/512px;border-radius:4px;box-shadow:0 1px 0 rgba(255,255,255,.7) inset,0 26px 40px -30px rgba(40,26,8,.6),0 0 0 1px rgba(80,60,24,.14);transition:transform .5s var(--np-ease),box-shadow .5s var(--np-ease)}
 .np-ai:hover{transform:translateY(-4px);box-shadow:0 1px 0 rgba(255,255,255,.7) inset,0 36px 50px -30px rgba(40,26,8,.7),0 0 0 1px rgba(80,60,24,.2)}
 .np-ai .np-tag{font-size:11px}.np-ai time{font:500 12px/1 var(--np-sans);color:var(--np-ink2)}
 .np-ai h3{font:600 21px/1.18 var(--np-disp);letter-spacing:-.01em;color:var(--np-ink);margin:0}

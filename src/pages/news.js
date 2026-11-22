@@ -9,6 +9,7 @@ const {esc, I, dparts} = S;
 const SLOT = {promo: 'n1', newA: 'n3', newB: 'n5', expert: 'n4', eduA: 'n7', eduB: 'n2', eduC: 'n6', eduD: 'n8', region: 'n9'};
 const WHERE = {promo: [1, '2–3'], newA: [2, '4'], newB: [2, '5'], expert: [3, '6–7'], eduA: [4, '8'], eduB: [4, '8'], eduC: [4, '9'], eduD: [4, '9'], region: [5, '10']};
 const SECTION = ['Обложка', 'Акции', 'Новинки', 'Экспертное', 'Обучение и события', 'Компания и регионы', 'Оборот'];
+const SECTION_PG = ['2–3', '4–5', '6–7', '8–9', '10–11'];                         // страницы разделов (для содержания), по порядку SECTION[1…5]
 
 /* главное действие по теме статьи (то же, что кнопка на странице статьи) */
 function ctaOf(ctx, C, P, n) {
@@ -123,8 +124,12 @@ function newsPage(ctx, C, P) {
       <div class="np-cut" aria-hidden="true"></div>${S.formHTML('subscribe', {uid: 'np-sub', root: u('')})}</div>`;
 
   /* ---- 11. Оборот: содержание ---- */
-  const toc = news.map(n => { const w = where(n); return `<li data-cat="${n.category}"><a href="${C.nurl(P, n)}" data-np-open="${n.id}" data-track="news_toc">${tag(n)}<span>${esc(n.title)}</span><em>${w ? 'стр. ' + w : 'в архиве'}</em></a></li>`; }).join('');
-  const back = `<div class="np-back"><div class="np-mast-t np-mast-s" aria-hidden="true">АСТРЕЯ</div><h2 class="np-h np-h-m">Содержание выпуска</h2><ol class="np-toc-l">${toc}</ol>
+  /* содержание как в настоящем журнале: по разделам и в порядке страниц (раньше шло по датам, номера страниц прыгали 8, 2–3, 8, 4…), цвет точки — рубрика (как у фильтров) */
+  const secGroups = SECTION.slice(1, 6).map((name, i) => ({name, pg: SECTION_PG[i], items: Object.keys(SLOT).filter(k => WHERE[k][0] === i + 1).map(k => byId[SLOT[k]]).filter(Boolean)})).filter(g => g.items.length);
+  const inSlot = new Set(Object.values(SLOT)), archive = news.filter(n => !inSlot.has(n.id));
+  const tocRow = n => `<li data-cat="${n.category}"><a href="${C.nurl(P, n)}" data-np-open="${n.id}" data-track="news_toc"><i class="np-dot" style="--c1:${cat(n).c1}" title="${esc(cat(n).name)}"></i><span>${esc(n.title)}</span><em>${where(n) || 'архив'}</em></a></li>`;
+  const toc = [...secGroups, ...(archive.length ? [{name: 'В архиве', pg: '', items: archive}] : [])].map(g => `<section class="np-tg" data-cats="${[...new Set(g.items.map(n => n.category))].join(' ')}" style="--n:${g.items.length + 1}"><h3><span>${esc(g.name)}</span><em>${g.pg ? 'стр. ' + g.pg : ''}</em></h3><ul>${g.items.map(tocRow).join('')}</ul></section>`).join('');
+  const back = `<div class="np-back"><div class="np-mast-t np-mast-s" aria-hidden="true">АСТРЕЯ</div><h2 class="np-h np-h-m">Содержание выпуска</h2><div class="np-toc-l">${toc}</div>
       <div class="np-colo"><p>${esc(site.name)} — дистрибьютор профессиональной косметики. ${esc(site.contacts.hours)}.</p><p><a href="tel:${site.contacts.phoneRaw}" data-track="phone_click">${esc(phone)}</a> · <a href="mailto:${esc(site.contacts.email)}">${esc(site.contacts.email)}</a></p>
       <button class="np-btn" type="button" data-np-go="0">К первой странице ${I.arrow}</button></div></div>`;
 
@@ -169,7 +174,7 @@ function newsPage(ctx, C, P) {
             <button class="np-nb np-nb-n" type="button" data-np-step="1" aria-label="Далее"><span>Далее</span>${I.arrow}</button></nav>
         </div>
         <aside class="np-toc" id="np-toc" data-np-toc hidden aria-label="Содержание выпуска"><div class="np-toc-h"><b>Содержание</b><button type="button" data-np-tocbtn aria-label="Закрыть содержание">${I.close}</button></div>
-          <ol>${news.map(n => { const w = where(n); return `<li data-cat="${n.category}"><a href="${C.nurl(P, n)}" data-np-open="${n.id}" data-np-jump="${n.id}">${tag(n)}<span>${esc(n.title)}</span><em>${w ? 'стр. ' + w : 'архив'}</em></a></li>`; }).join('')}</ol></aside>
+          <ol>${[...secGroups.flatMap(g => g.items), ...archive].map(n => { const w = where(n); return `<li data-cat="${n.category}"><a href="${C.nurl(P, n)}" data-np-open="${n.id}" data-np-jump="${n.id}">${tag(n)}<span>${esc(n.title)}</span><em>${w ? 'стр. ' + w : 'архив'}</em></a></li>`; }).join('')}</ol></aside>
         <div class="np-pages" data-np-pages hidden>${pages.join('\n')}</div>
       </div>
     </section>
