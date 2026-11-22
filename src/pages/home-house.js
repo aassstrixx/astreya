@@ -92,7 +92,10 @@ module.exports = function homeHouse(ctx, C, P, deps) {
   };
   const pagesR = [pCover, pToc, ...rooms.map((r, i) => decR(pageR(r, (i + 1) * 2 + 3), i)), decR(SP.contacts.R((rooms.length + 1) * 2 + 3), rooms.length)];
   const pagesL = [pWelcome, ...rooms.map((r, i) => decL(pageL(r, (i + 1) * 2 + 2), i)), decL(SP.contacts.L((rooms.length + 1) * 2 + 2), rooms.length), pBack];
-  const leaves = pagesR.map((f, k) => `<div class="leaf" data-k="${k}" style="--zr:${pagesR.length - k};--zl:${k + 1}"><div class="face front">${f}<i class="fx" aria-hidden="true"><b></b></i></div><div class="face back">${pagesL[k] || ''}<i class="fx" aria-hidden="true"><b></b></i></div></div>`).join('');
+  /* картинки журнала (фото страниц, текстуры плиток) на экране не видны, пока читатель не приблизился: раньше при открытии главной они грузились все сразу (≈ 1,7 МБ, 17 запросов) и конкурировали с кадрами зала.
+     Теперь у <img> вместо src — data-src; js/house.js («картинки журнала по приближению») подставляет адрес, когда до читалки остаётся ~3 экрана; без JS те же картинки лежат в <noscript> */
+  const deferImgs = html => html.replace(/<img\b([^>]*?)\ssrc="([^"]+)"([^>]*)>/g, (m, a, src, b) => `<img${(a + b).replace(/\sloading="lazy"/, '')} data-src="${src}"><noscript>${m}</noscript>`);
+  const leaves = deferImgs(pagesR.map((f, k) => `<div class="leaf" data-k="${k}" style="--zr:${pagesR.length - k};--zl:${k + 1}"><div class="face front">${f}<i class="fx" aria-hidden="true"><b></b></i></div><div class="face back">${pagesL[k] || ''}<i class="fx" aria-hidden="true"><b></b></i></div></div>`).join(''));
   const magazine = `<div class="mag" id="mag" role="region" aria-label="Журнал ASTREYA" data-n="${pagesR.length}">
     <div class="mag-wrap">
       <div class="mag-bar"><p class="mag-st" aria-live="polite"></p></div>

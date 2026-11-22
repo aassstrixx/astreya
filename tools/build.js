@@ -183,6 +183,8 @@ const KB_FILE = path.join(ROOT, 'js', 'kb.js');
 if (C.xon('assistant')) fs.writeFileSync(KB_FILE, `/* Сгенерировано tools/build.js из data/*.json — не редактировать вручную. */\nwindow.ASTREYA_KB = ${JSON.stringify(buildKb(ctx))};\n`); else fs.rmSync(KB_FILE, {force: true});
 fs.writeFileSync(path.join(ROOT, 'js', 'data.js'), `/* Сгенерировано tools/build.js из data/*.json — не редактировать вручную. */\nwindow.ASTREYA_DATA = ${JSON.stringify(Object.assign({build: ctx.assetVersion}, data))};\n`);
 fs.writeFileSync(path.join(ROOT, 'build.json'), JSON.stringify({v: ctx.assetVersion}) + '\n');          // версия выкладки: js/core.js сверяет её с версией загруженной страницы и берёт свежую, если страница в кеше устарела
+/* кэш в браузере (service worker): шаблон src/sw-template.js + версия выкладки → sw.js в корне; регистрирует js/core.js */
+fs.writeFileSync(path.join(ROOT, 'sw.js'), fs.readFileSync(path.join(__dirname, '..', 'src', 'sw-template.js'), 'utf8').replace(/__V__/g, ctx.assetVersion));
 
 /* ---- sitemap.xml и robots.txt ---- */
 const base = L.base;

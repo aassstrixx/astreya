@@ -4,10 +4,10 @@
    Действия (CTA, связанные блоки, соседние материалы) — те же, что и раньше; меняется только оформление. */
 .na{--na-ink:#171b29;--na-ink2:#434858;--na-paper:#f1ead9;--na-brass:#98763a;--na-brass2:#c7a460;--na-navy:#101f37;--na-line:rgba(23,27,41,.2);
   --na-serif:'Fraunces','Playfair Display',Georgia,serif;--na-disp:'Playfair Display','Fraunces',Georgia,serif;--na-sans:'Manrope',system-ui,sans-serif;color:var(--na-ink)}
-.na-stone{position:relative;isolation:isolate;overflow:hidden;padding:clamp(28px,5vw,64px) var(--gut,20px) clamp(54px,7vw,96px);background:#a99a82 url(../assets/news/table-s.webp?v=acc501bd) center/cover no-repeat}
+.na-stone{position:relative;isolation:isolate;overflow:hidden;padding:clamp(28px,5vw,64px) var(--gut,20px) clamp(54px,7vw,96px);background:#a99a82 url(../assets/news/table-s.webp?v=34438afe) center/cover no-repeat}
 .na-stone::after{content:"";position:absolute;left:0;right:0;bottom:0;height:90px;z-index:-1;background:linear-gradient(180deg,transparent,var(--milk,#f5f2ec));pointer-events:none}
 .na-light{position:absolute;inset:0;z-index:-1;pointer-events:none;background:radial-gradient(60% 50% at 22% 8%,rgba(255,246,224,.26),transparent 70%),radial-gradient(90% 60% at 50% 110%,rgba(60,42,16,.28),transparent 70%)}
-.na-sheet{position:relative;max-width:880px;margin:0 auto;padding:clamp(22px,4vw,48px) clamp(20px,5.5vw,72px) clamp(26px,4vw,46px);background:var(--na-paper) url(../assets/news/paper.webp?v=acc501bd) 0 0/420px;border-radius:3px;
+.na-sheet{position:relative;max-width:880px;margin:0 auto;padding:clamp(22px,4vw,48px) clamp(20px,5.5vw,72px) clamp(26px,4vw,46px);background:var(--na-paper) url(../assets/news/paper.webp?v=34438afe) 0 0/420px;border-radius:3px;
   box-shadow:0 1px 0 rgba(255,255,255,.7) inset,0 .5px 0 rgba(60,40,12,.2),.3em .6em 1.2em -.4em rgba(48,32,12,.42),1.2em 2.4em 3.6em -1em rgba(48,32,12,.4),0 0 0 1px rgba(60,40,12,.12)}
 .na-sheet::before{content:"";position:absolute;inset:0;pointer-events:none;border-radius:inherit;background:radial-gradient(120% 90% at 50% 40%,transparent 58%,rgba(110,84,36,.12))}
 .na-sheet>*{position:relative}

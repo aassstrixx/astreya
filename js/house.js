@@ -26,6 +26,13 @@
     let dead = false; off.push(() => { dead = true; });                           // таймеры прошлого запуска init() (warmFly и др.) после повторной инициализации ничего не делают
     const reader = $('#house-reader'), mag = $('#mag');
     if (!reader || !mag) return;
+    /* картинки журнала по приближению: у них data-src (src/pages/home-house.js → deferImgs); адрес подставляем, когда до читалки остаётся ~0,4 экрана (читалка начинается через 2,6–3 экрана от верха; книга раскрывается лишь в её глубине) — раньше всё грузилось при открытии страницы и мешало кадрам зала */
+    (function () {
+      const imgs = $$('img[data-src]', mag); if (!imgs.length) return;
+      let io = null, done = false;
+      const go = () => { if (done) return; done = true; if (io) io.disconnect(); imgs.forEach(i => { const u = i.getAttribute('data-src'); if (u) { i.src = u; i.removeAttribute('data-src'); } }); };
+      if ('IntersectionObserver' in window) { io = new IntersectionObserver(es => { if (es.some(e => e.isIntersecting)) go(); }, {rootMargin: '40% 0px'}); io.observe(reader); off.push(() => { if (io) io.disconnect(); }); } else go();
+    })();
 
     const book = $('.mag-book', mag), leaves = $$('.leaf', mag), N = leaves.length;
     const stEl = $('.mag-st', mag), pvB = $('.mag-pv', mag), nxB = $('.mag-nx', mag), scroller = $('.leaves', mag);

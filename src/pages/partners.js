@@ -4,7 +4,7 @@
    Тексты, пороги скидок и форма — из data/content.json → partners, data/site.json → discounts/contacts, js/shared.js → formHTML('partner'); расчёт скидки не менялся:
    его ведёт A.pages.partners (js/pages.js), «ориентир» с кнопкой «Запросить условия» дорисовывает js/sales-pages.js. Крючки для скриптов и навигатора Стеллы сохранены:
    [data-calc], #calc-range, #calc-sum, #calc-tier, #calc-save, .calc-main, .tiers > .tier, #calc, #form, #benefits, #way, .grid.g3 в секции преимуществ.
-   Оформление — css/pg-partners.css, поведение — js/pg-partners.js. Прежняя версия («Дверь») — docs/_backup-partners-v4/. */
+   Оформление — css/pg-partners.css, поведение — js/pg-partners.js. Прежняя версия («Дверь») — git-истории (резервные копии папок удалены 22.11.2026). */
 const S = require('../../js/shared.js');
 const {esc, I, rub} = S;
 

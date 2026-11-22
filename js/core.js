@@ -24,6 +24,19 @@
       }).catch(() => { /* офлайн — остаёмся на загруженной странице */ });
     } catch (e) { /* без sessionStorage — не проверяем */ }
   })();
+  /* Кэш в браузере (sw.js ← src/sw-template.js): повторный заход и переход между страницами берут кадры зала, картинки, стили и скрипты из кэша, а не из сети.
+     Только https и не localhost, не в автоматизации (navigator.webdriver) и не в автономной сборке; ?sw=1 включает принудительно, ?sw=0 выключает и снимает установленный. Регистрация — после загрузки страницы, чтобы не мешать анимации. */
+  (function () {
+    try {
+      if (!('serviceWorker' in navigator) || window.__ASTREYA_BUNDLE) return;
+      const q = /[?&]sw=([01])/.exec(location.search), force = !!q && q[1] === '1';
+      if (q && q[1] === '0') { navigator.serviceWorker.getRegistrations().then(rs => rs.forEach(r => r.unregister())).catch(() => {}); return; }
+      const local = /^(localhost|127\.|\[::1\]|0\.0\.0\.0)/.test(location.hostname);
+      if (!force && (location.protocol !== 'https:' || local || navigator.webdriver)) return;
+      const go = () => setTimeout(() => navigator.serviceWorker.register(ROOT + 'sw.js').catch(() => {}), 1500);
+      if (document.readyState === 'complete') go(); else window.addEventListener('load', go, {once: true});
+    } catch (e) { /* без service worker — как раньше */ }
+  })();
   /* картинки из JS берутся с тем же ?v=<сборка>, что и в разметке (src="…assets/…?v=…"): иначе один файл скачивается дважды. assetUrlRaw — без версии (для кода, который добавляет свою) */
   const AV = !window.__ASTREYA_BUNDLE && D && D.build ? '?v=' + D.build : '';
   A.assetUrlRaw = p => window.__ASTREYA_BUNDLE ? ((A.assets || {})[p] || '') : ROOT + p;
