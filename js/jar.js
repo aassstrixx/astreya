@@ -148,6 +148,14 @@
   /* ЧАСТОТА ЭКРАНА. Цель регулятора нагрузки — кадр 16,7 мс (60 к/с) и на 60 Гц, и на 144 Гц. Раньше, если «лучший» кадр движка был ≥ 28 мс, цель молча становилась 33 мс (будто экран 30 Гц): слабый ноутбук, тянущий 25–35 к/с,
      считался «в норме», и холст не снижался (в замере с замедлением процессора ×6 регулятор не срабатывал совсем). Теперь экран 30 Гц признаётся (A.dispSlow), только если три замера по 40 кадров requestAnimationFrame
      (через 3, 10 и 25 с после загрузки, вкладка видима) ни разу не показали интервал короче 24 мс; в остальных случаях цель — 16,7 мс. */
+  /* ?diag=1: каждую секунду первых 30 с — число кадров, 95-й процентиль, самый долгий кадр и сколько кадров дольше 33 мс (журнал «fps»): по нему видно, где именно рвётся прокрутка */
+  if (/[?&]diag=1/.test(location.search)) (function frameLog() {
+    let last = 0, a = [], t0 = 0;
+    const f = t => { if (last) a.push(t - last); last = t; if (!t0) t0 = t;
+      if (t - t0 >= 1000) { const s = a.slice().sort((x, y) => x - y), n = s.length; if (n && A.bc) A.bc('fps', n + ' p95 ' + Math.round(s[Math.floor(n * .95)]) + ' макс ' + Math.round(s[n - 1]) + ' >33:' + s.filter(x => x > 33).length); a = []; t0 = t; }
+      if (t < 30000) requestAnimationFrame(f); };
+    requestAnimationFrame(f);
+  })();
   (function probeDisplay() {
     A.dispSlow = false; let rounds = 0, seen = false;
     const run = delay => setTimeout(() => {
@@ -160,6 +168,7 @@
     run(3000);
   })();
   const TIER_PX = {high: 2.1e6, mid: 1.6e6, low: 1.1e6};       // пикселей на холсте героя
+  const UP_GAP_FW = 60;      // мощный ПК: пролёт, пока листают героя — одна заливка ключа не чаще раза в 60 мс (49 ключей ≈ 3 с вместо пачки за 0,7 с)
   const UP_GAP_H = 18;       // мощный ПК: в движении тяжёлая заливка в видеопамять — не чаще раза в 18 мс (раньше — в каждом кадре: на первом заходе, пока ключи ещё заливаются, это давало рваные кадры и на 144 Гц)
   const UP_GAP_W = 50, FAST_ON_W = 16, FAST_OFF_W = 6;      // слабый ПК: загрузка в видеопамять в движении — не чаще раза в 50 мс; «взмах» начинается с 16 ключей/с (на мощном — с 30)
   const LANES = [14, 8];      // запросов одновременно: [компьютер, телефон] (HTTP/2)
@@ -378,6 +387,7 @@
       if (!upTimer) upTimer = setTimeout(function again() { upTimer = 0; flushUploads(8); if (upQ.length) upTimer = setTimeout(again, 250); }, 250);
     }
     let lastUp = 0;
+    let upAgg = {n: 0, sum: 0, max: 0, t: 0};
     function flushUploads(budget) {
       if (!upQ.length) return;
       const t0 = performance.now();
@@ -385,7 +395,9 @@
         const i = fast ? upQ.findIndex(f => f.low) : 0;                      // во взмах тяжёлые загрузки ждут (в очереди их мало: новые не запускаются), уменьшенные копии идут
         if (i < 0) break;
         const f = upQ.splice(i, 1)[0]; if (f.low) upN.low++; else upN.full++; lastUp = performance.now(); try { f(); } catch (e) { /* — */ }
+        const dj = performance.now() - lastUp; upAgg.n++; upAgg.sum += dj; if (dj > upAgg.max) upAgg.max = dj;
       } while (upQ.length && performance.now() - t0 < budget);
+      if (upAgg.n && performance.now() - upAgg.t > 1000) { A.bc && A.bc('up', (FLY ? 'fly ' : 'hero ') + 'n' + upAgg.n + ' Σ' + Math.round(upAgg.sum) + ' макс' + Math.round(upAgg.max) + 'мс'); upAgg = {n: 0, sum: 0, max: 0, t: performance.now()}; }          // сводка в журнал (?diag=1): сколько заливок в видеопамять за секунду и сколько основной поток на них потратил
       if (upQ.length < UPQ_MAX()) setTimeout(pumpDecode, 0);                          // очередь разгрузилась — разворачиваем следующие кадры
     }
 
@@ -633,7 +645,14 @@
           govChanges++; A.bc && A.bc('gov', (FLY ? 'fly ' : 'hero ') + resScale + (govEdge ? ' e7' : '') + ' dt' + Math.round(dtEma)); slowRun = 0; lastGov = now(); learn(); sizeCanvas(); armRestore();
         }          // сетку не режем: на ней держатся кромки (на половинной — пилообразные), а нагрузку даёт в основном число пикселей холста
       }
-      if (upQ.length) { const mv = Math.abs(vp) * KS > MOVING || (FLY && PHALL && scrolling()); if (!mv || performance.now() - lastUp >= (fast ? UP_GAP_LOW : (FLY ? UP_GAP_F : (isPortrait() ? UP_GAP_P : (WEAK ? UP_GAP_W : UP_GAP_H))))) flushUploads(mv ? 2.5 : 8); }          // телефон: в движении тяжёлая загрузка не чаще раза в UP_GAP_P мс (иначе каждый кадр с хвостом)                // по одной-две тяжёлые текстуры за кадр; в покое — быстрее
+      if (upQ.length) {
+        /* пролёт на мощном ПК держит в видеопамяти все 49 ключей (≈ 500 МБ): по журналу владельца они заливались пачкой за 0,7 с (f24 → f49) в момент первой прокрутки героя — рваные кадры в начале. Пока герой ещё листают
+           (пролёт не начался, pT = 0), ключи пролёта заливаются по одному не чаще раза в UP_GAP_FW мс; в паузе прокрутки — как раньше, быстро */
+        const heroPhase = FLY && !PHALL && ALLRES && pT <= 0;
+        const mv = Math.abs(vp) * KS > MOVING || (FLY && (PHALL || heroPhase) && scrolling());
+        const gap = fast ? UP_GAP_LOW : heroPhase ? UP_GAP_FW : FLY ? UP_GAP_F : isPortrait() ? UP_GAP_P : WEAK ? UP_GAP_W : UP_GAP_H;
+        if (!mv || performance.now() - lastUp >= gap) flushUploads(mv ? 2.5 : 8);
+      }          // телефон: в движении тяжёлая загрузка не чаще раза в UP_GAP_P мс (иначе каждый кадр с хвостом)                // по одной-две тяжёлые текстуры за кадр; в покое — быстрее
       if ((inView || !firstDrawn) && hall && (dirty || Math.abs(cp - paintedP) > 1e-7)) {
         if (paint(t)) { paintedP = cp; dirty = false; } else dirty = true;
       }
