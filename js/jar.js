@@ -380,7 +380,7 @@
       const u = locate(cp), c = u.k + u.t;
       if (PHALL && pT <= 0) return;
       if (FLY && pT <= 0 && !A.flyNear) return;                          // пролёт: копии нужны, когда герой подъехал к концу (A.flyNear) — раньше они лишь занимают видеопамять рядом с героем
-      if (upQ.length >= UPQ_MAX() + 2) return;                                    // пролёт на телефоне: пока герой на экране, копии не нужны (полные ключи подгрузятся в паузе)
+      if (upQ.length >= UPQ_MAX() + 8) return;                                    // (копии малы — очередь полных ключей их не задерживает) пролёт на телефоне: пока герой на экране, копии не нужны (полные ключи подгрузятся в паузе)
       for (let d = 0; d < (PHALL ? 8 : NH) && decL < LD; d++) {          // PHALL: копии — только страховка на ±8 ключей вокруг положения, пока полные ещё грузятся
         for (const k of [Math.round(c) + dirSign * d, Math.round(c) - dirSign * d]) {
           if (k < 0 || k >= NH || decL >= LD) continue;
@@ -390,17 +390,25 @@
       }
     }
     let upTimer = 0;
+    const upk = (k, f) => { f.k = k; return f; };                                  // метка «какому ключу принадлежит заливка»: очередь берёт ближайшую к положению, а не по порядку готовности
     function pushUp(f, low) {                                                     // в очередь на загрузку в видеопамять; запасной таймер — на случай, когда кадры анимации не идут (вкладка в фоне)
       if (low) f.low = true; upQ.push(f); schedule();
       if (!upTimer) upTimer = setTimeout(function again() { upTimer = 0; flushUploads(8); if (upQ.length) upTimer = setTimeout(again, 250); }, 250);
     }
     let lastUp = 0, slowUpUntil = 0;
     let upAgg = {n: 0, sum: 0, max: 0, t: 0};
+    /* какую заливку делать первой: ближайшую к положению (уменьшенные копии — с поправкой в 3 ключа: они малы и закрывают разрывы). По порядку готовности при быстрой прокрутке первой могла уйти заливка уже далёкого ключа */
+    function nearUp() {
+      if (upQ.length < 2) return 0;
+      const c = kNear(cp); let bi = 0, bd = 1e9;
+      for (let i = 0; i < upQ.length; i++) { const f = upQ[i], d = f.k === undefined ? 0 : Math.abs(f.k - c) - (f.low ? 3 : 0); if (d < bd) { bd = d; bi = i; } }
+      return bi;
+    }
     function flushUploads(budget) {
       if (!upQ.length) return;
       const t0 = performance.now();
       do {
-        const i = fast ? upQ.findIndex(f => f.low) : 0;                      // во взмах тяжёлые загрузки ждут (в очереди их мало: новые не запускаются), уменьшенные копии идут
+        const i = fast ? upQ.findIndex(f => f.low) : nearUp();                      // во взмах тяжёлые загрузки ждут (в очереди их мало: новые не запускаются), уменьшенные копии идут
         if (i < 0) break;
         const f = upQ.splice(i, 1)[0]; if (f.low) upN.low++; else upN.full++; lastUp = performance.now(); try { f(); } catch (e) { /* — */ }
         const dj = performance.now() - lastUp; if (dj > 30) slowUpUntil = performance.now() + 5000; upAgg.n++; upAgg.sum += dj; if (dj > upAgg.max) upAgg.max = dj;
@@ -431,16 +439,16 @@
           decoding[k] = 1; decN++; const g = gen;
           const shared = lowDone[k] === 1 && !lowSz()[2];                 // глубина уменьшенной копии — натуральная: второй раз её не разворачиваем
           Promise.all([bmpKey(blobs.c[k]), shared ? null : bmp(blobs.z[k], false)]).then(([c, z]) => {
-            if (g === gen && hall && !dead) pushUp(() => {
+            if (g === gen && hall && !dead) pushUp(upk(k, () => {
               if (g === gen) decoding[k] = 0;
               if (g === gen && hall && !dead && !trimmed) { if (shared && hall.hasLow(k)) hall.setKeyShared(k, c, c.width, c.height); else if (z) hall.setKey(k, c, z, c.width, c.height, z.width, z.height); else { closeB(c); return; } resident[k] = 1; dirty = true; if (PHALL && hall.hasLow(k)) { hall.adoptDepth(k); hall.dropLow(k); if (lowDone[k] === 1) lowN--; lowDone[k] = 3; } }          // PHALL: цвет копии больше не нужен (полный кадр лежит), глубину забирает полный кадр
               closeB(c); closeB(z);
-            });
+            }));
             else { if (g === gen) decoding[k] = 0; closeB(c); closeB(z); }
           }).catch(() => { if (g === gen) decoding[k] = 0; }).then(() => { decN--; pumpDecode(); evict(); });
         } else if (!resJ[k] && blobs.j[k] && jar && !decoding[NH + k]) {
           decoding[NH + k] = 1; decN++; const g = gen;
-          bmpJ(blobs.j[k]).then(s => { if (g === gen && jar && !dead) pushUp(() => { if (g === gen) decoding[NH + k] = 0; if (g === gen && jar && !dead && !trimmed) { jar.setSprite(k, s); resJ[k] = 1; dirty = true; } closeB(s); }); else { if (g === gen) decoding[NH + k] = 0; closeB(s); } })
+          bmpJ(blobs.j[k]).then(s => { if (g === gen && jar && !dead) pushUp(upk(k, () => { if (g === gen) decoding[NH + k] = 0; if (g === gen && jar && !dead && !trimmed) { jar.setSprite(k, s); resJ[k] = 1; dirty = true; } closeB(s); })); else { if (g === gen) decoding[NH + k] = 0; closeB(s); } })
             .catch(() => { if (g === gen) decoding[NH + k] = 0; }).then(() => { decN--; pumpDecode(); });
         }
       }
@@ -659,7 +667,8 @@
         const heroPhase = FLY && !PHALL && ALLRES && pT <= 0;
         const mv = Math.abs(vp) * KS > MOVING || (FLY && (PHALL || heroPhase) && scrolling());
         const gap = fast ? UP_GAP_LOW : heroPhase ? UP_GAP_FW : FLY ? UP_GAP_F : isPortrait() ? UP_GAP_P : WEAK ? UP_GAP_W : UP_GAP_H;
-        if (!mv || performance.now() - lastUp >= (performance.now() < slowUpUntil ? Math.max(gap, 150) : gap)) flushUploads(mv ? 2.5 : 8);          // одна заливка длилась > 30 мс (видеокарта занята, драйвер ждёт её очередь): 5 с реже — не чаще раза в 150 мс
+        const starve = mv && !WEAK && !fast && hall && !resident[kNear(cp)];          // мощный ПК: у положения нет полного ключа (быстрая первая прокрутка) — картинка идёт по ближайшему и рвётся; пауза между заливками здесь вредна
+        if (!mv || starve || performance.now() - lastUp >= (performance.now() < slowUpUntil ? Math.max(gap, 150) : gap)) flushUploads(mv ? (starve ? 7 : 2.5) : 8);          // одна заливка длилась > 30 мс (видеокарта занята, драйвер ждёт её очередь): 5 с реже — не чаще раза в 150 мс
       }          // телефон: в движении тяжёлая загрузка не чаще раза в UP_GAP_P мс (иначе каждый кадр с хвостом)                // по одной-две тяжёлые текстуры за кадр; в покое — быстрее
       if ((inView || !firstDrawn) && hall && (dirty || Math.abs(cp - paintedP) > 1e-7)) {
         if (paint(t)) { paintedP = cp; dirty = false; } else dirty = true;
