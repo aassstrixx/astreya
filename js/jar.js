@@ -139,7 +139,7 @@
       const soft = /swiftshader|llvmpipe|softpipe|software|microsoft basic/i.test(gpu), weakIntel = /intel/i.test(gpu) && /hd graphics|uhd/i.test(gpu), igpu = /intel|vega|radeon\(tm\) graphics|mali|adreno|powervr/i.test(gpu) && !/rtx|gtx|arc a|radeon (rx|pro)/i.test(gpu);
       TIER_WHY.push('cores' + cores, 'mem' + mem, gpu.slice(0, 40) || 'gpu?');
       if (soft || (weakIntel && cores <= 4)) return 'low';          // Intel HD/UHD с 8 потоками остаётся mid: класс low на ноутбуке владельца (UHD, 8 ядер) дал заметно худшую картинку прокрутки (холст ≤ 1,1 млн, кромки в 7 шагов с самого начала, окно ±3) — кадры рвались сильнее, чем в mid
-      if (igpu || cores <= 4 || mem <= 4) return 'mid';
+      if (cores <= 4 || mem <= 4 || (igpu && cores < 6)) return 'mid';          // встроенная графика с ≥ 6 потоками и ≥ 8 ГБ — high: замер владельца (ноутбук Intel UHD, 8 потоков): на ?tier=mid картинка мылилась и лагала сильнее, чем на ?tier=high (меньший холст, окно ±4, заливка раз в 50 мс, «взмах» по копиям); регулятор нагрузки подстрахует и в high
     } catch (e) { /* — */ }
     return 'high';
   })();
