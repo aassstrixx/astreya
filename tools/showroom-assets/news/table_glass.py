@@ -32,6 +32,7 @@ TEXD = os.path.join(ROOT, 'tools', 'showroom-assets', 'textures')
 _f = lambda k, d: float(os.environ.get(k, d))
 OUT = os.path.abspath(sys.argv[1]) if len(sys.argv) > 1 else os.path.join(os.environ.get('TG_TMP', '/tmp'), 'table_glass_raw.png')
 TMP = os.environ.get('TG_TMP', '/tmp'); os.makedirs(TMP, exist_ok=True)
+BOOK = os.environ.get('TG_BOOK', '')                       # '' — обычный кадр; 'closed' / 'open' — слой тени журнала (см. table_glass_shadows.py): журнал камере невидим, отбрасывает тень и подсвечивает пол
 RW = int(_f('TG_W', 2880)); RH = round(RW * 2260 / 3400); SPP = int(_f('TG_SPP', 112))
 
 # ---------------------------------------------------------------------------------------------------------------- размеры (1 ед. = 10 см)
@@ -121,12 +122,12 @@ def make_dust_map(path, S=4096):
         stroke(sc, pts, 1 if rng.random() < .75 else 2, rng.uniform(.18, .75))
     # длинные редкие дуги — следы протирания тканью (по всему диску, не сходятся в центре)
     sw = np.zeros((S, S), np.float32)
-    for i in range(30):
+    for i in range(14):
         r = math.sqrt(rng.uniform(0, 1)) * c * .9; ang = rng.uniform(0, 2 * math.pi); x, y = c + r * math.cos(ang), c + r * math.sin(ang)
-        t = rng.uniform(0, 2 * math.pi); turn = rng.choice([-1, 1]) * rng.uniform(.0006, .0030); step = rng.uniform(.5, 1.6) * S / 70; pts = []
+        t = rng.uniform(0, 2 * math.pi); turn = rng.choice([-1, 1]) * rng.uniform(.0002, .0007); step = rng.uniform(.5, 1.6) * S / 70; pts = []
         for k in range(60):
             pts.append((x, y)); x += math.cos(t) * step; y += math.sin(t) * step; t += turn * step
-        stroke(sw, pts, 3, rng.uniform(.12, .38))
+        stroke(sw, pts, 3, rng.uniform(.10, .30))
     sw = cv2.GaussianBlur(sw, (0, 0), 2.2)
     # пылинки и точки: редкие, мелкие, чуть разной яркости, кучками
     du = np.zeros((S, S), np.float32)
@@ -142,7 +143,7 @@ def make_dust_map(path, S=4096):
 
 
 # ---------------------------------------------------------------------------------------------------------------- материалы
-def stone_mat(name, tile_units=12.0, slab=(12.0, 6.0), joints=True, albedo=(.83, .79, .72), chroma=.42, honed=.40, pits=1.0, seed=1, cboost=2.1):
+def stone_mat(name, tile_units=12.0, slab=(12.0, 6.0), joints=True, albedo=(.83, .79, .72), chroma=.42, honed=.34, pits=1.0, seed=1, cboost=2.1):
     """травертин: цвет и жилы — из пака CC0 (travertine-ivory), приглушён к нейтрально-тёплому тону (chroma — доля исходной насыщенности), плиты slab вразбежку, у каждой свой кусок рисунка,
     швы, процедурные поры (вытянутые вдоль слоёв) и микрозерно; матовая шлифовка"""
     m = bpy.data.materials.new(name); nt = nodes_of(m)
@@ -221,7 +222,7 @@ def glass_mat(dust_path):
     mp.inputs['Scale'].default_value = (1 / (2 * R_GLASS / .985 * 1.0),) * 2 + (1,); mp.inputs['Location'].default_value = (.5, .5, 0); link(nt, tc.outputs['Object'], mp.inputs['Vector'])
     dt = img_tex(nt, dust_path, 'Non-Color', mp.outputs['Vector'], 'Linear'); dm = dt.outputs['Color']
     dmask = N(nt, 'ShaderNodeRGBToBW'); link(nt, dm, dmask.inputs['Color']); dv = dmask.outputs['Val']
-    scr = _f('TG_SCR', .6)
+    scr = _f('TG_SCR', .7)
     # низкочастотная волнистость поверхности: настоящее флоат-стекло чуть «играет» в отражении — мягкие полосы вместо однотонной пелены
     wave = noise_(nt, tc.outputs['Object'], .42, 2, .5, .5)
     rough = math_(nt, 'ADD', .004, math_(nt, 'MULTIPLY', dv, .10 * scr), clamp=True)
@@ -233,7 +234,7 @@ def glass_mat(dust_path):
     dg = N(nt, 'ShaderNodeMixShader'); dg.inputs['Fac'].default_value = .12; link(nt, gs.outputs['BSDF'], dg.inputs[1]); link(nt, df.outputs['BSDF'], dg.inputs[2])
     sc_mix = N(nt, 'ShaderNodeMixShader'); link(nt, math_(nt, 'MULTIPLY', dv, .55 * scr, clamp=True), sc_mix.inputs['Fac']); link(nt, gl.outputs['BSDF'], sc_mix.inputs[1]); link(nt, dg.outputs['Shader'], sc_mix.inputs[2])
     # теневые лучи: плёнка с тоном стекла
-    tr = N(nt, 'ShaderNodeBsdfTransparent'); tr.inputs['Color'].default_value = (_f('TG_SHR', .86), _f('TG_SHG', .88), _f('TG_SHB', .86), 1)
+    tr = N(nt, 'ShaderNodeBsdfTransparent'); tr.inputs['Color'].default_value = (_f('TG_SHR', .90), _f('TG_SHG', .92), _f('TG_SHB', .90), 1)
     lp = N(nt, 'ShaderNodeLightPath'); fin = N(nt, 'ShaderNodeMixShader'); link(nt, lp.outputs['Is Shadow Ray'], fin.inputs['Fac']); link(nt, sc_mix.outputs['Shader'], fin.inputs[1]); link(nt, tr.outputs['BSDF'], fin.inputs[2])
     link(nt, fin.outputs['Shader'], out.inputs['Surface'])
     ab = N(nt, 'ShaderNodeVolumeAbsorption'); ab.inputs['Color'].default_value = (_f('TG_ABR', .92), _f('TG_ABG', .975), _f('TG_ABB', .945), 1); ab.inputs['Density'].default_value = _f('TG_ABD', 5.0); link(nt, ab.outputs['Volume'], out.inputs['Volume'])
@@ -288,36 +289,60 @@ def window_panel_mat(s_win):
 
 # ---------------------------------------------------------------------------------------------------------------- геометрия
 def lathe(name, profile, segs, mat, side_mat=None):
-    """тело вращения вокруг оси Z по профилю [(r, z), …] от нижней оси к верхней; крышки — отдельные плоские n-угольники"""
-    me = bpy.data.meshes.new(name); bm = bmesh.new()
-    pts = profile
-    rings = []
-    for r, z in pts[1:-1]:
-        rings.append([bm.verts.new((r * math.cos(2 * math.pi * i / segs), r * math.sin(2 * math.pi * i / segs), z)) for i in range(segs)])
-    for a, b in zip(rings[:-1], rings[1:]):
+    """тело вращения вокруг оси Z по профилю [(r, z), …] от нижней оси к верхней. У каждого отрезка профиля свои кольца вершин: нормали сглаживаются только по окружности,
+    поэтому плоские грани (боковая, фаска) остаются строго плоскими вдоль профиля и не «заплывают» около скруглений; крышки — отдельные плоские n-угольники"""
+    me = bpy.data.meshes.new(name); bm = bmesh.new(); pts = profile
+    ring = lambda r, z: [bm.verts.new((r * math.cos(2 * math.pi * i / segs), r * math.sin(2 * math.pi * i / segs), z)) for i in range(segs)]
+    inner = pts[1:-1]
+    for (r0, z0), (r1, z1) in zip(inner[:-1], inner[1:]):
+        a, b = ring(r0, z0), ring(r1, z1)
         for i in range(segs):
             j = (i + 1) % segs; f = bm.faces.new((a[i], a[j], b[j], b[i])); f.smooth = True; f.material_index = 1 if side_mat else 0
-    # крышки на отдельных вершинах (чтобы их нормали были строго плоскими)
-    for ring, z, up in ((rings[0], pts[0][1], False), (rings[-1], pts[-1][1], True)):
-        r = math.hypot(ring[0].co.x, ring[0].co.y); zc = ring[0].co.z
-        cap = [bm.verts.new((r * math.cos(2 * math.pi * i / segs), r * math.sin(2 * math.pi * i / segs), zc)) for i in range(segs)]
-        f = bm.faces.new(cap if up else cap[::-1]); f.smooth = False
+    for (r, z), up in ((inner[0], False), (inner[-1], True)):
+        cap = ring(r, z); f = bm.faces.new(cap if up else cap[::-1]); f.smooth = False
     bm.to_mesh(me); bm.free()
     ob = bpy.data.objects.new(name, me); bpy.context.scene.collection.objects.link(ob); ob.data.materials.append(mat)
     if side_mat: ob.data.materials.append(side_mat)
     return ob
 
 
+def rounded(points, radii, n=5):
+    """ломаная с круглением углов: на каждом внутреннем углу отрезок заменяется квадратичной кривой Безье (радиус — отступ вдоль сторон)"""
+    out = [points[0]]
+    for k in range(1, len(points) - 1):
+        p0, c, p1 = Vector(points[k - 1]), Vector(points[k]), Vector(points[k + 1]); d = radii[k - 1]
+        u0 = (p0 - c).normalized() * min(d, (p0 - c).length * .45); u1 = (p1 - c).normalized() * min(d, (p1 - c).length * .45); a, b = c + u0, c + u1
+        for t in [i / n for i in range(n + 1)]:
+            q = (1 - t) ** 2 * a + 2 * t * (1 - t) * c + t * t * b; out.append((q.x, q.y))
+    out.append(points[-1]); return out
+
+
+def annulus(name, r0, r1, z0, z1, segs, mat):
+    """плоское кольцо (шайба): верх, низ, внешняя и внутренняя боковые грани"""
+    me = bpy.data.meshes.new(name); bm = bmesh.new()
+    ring = lambda r, z: [bm.verts.new((r * math.cos(2 * math.pi * i / segs), r * math.sin(2 * math.pi * i / segs), z)) for i in range(segs)]
+    def strip(a, b, flip, smooth):
+        for i in range(segs):
+            j = (i + 1) % segs; f = bm.faces.new((a[i], a[j], b[j], b[i]) if not flip else (b[i], b[j], a[j], a[i])); f.smooth = smooth
+    strip(ring(r0, z1), ring(r1, z1), True, False); strip(ring(r0, z0), ring(r1, z0), False, False)          # верх (нормаль вверх), низ
+    strip(ring(r1, z0), ring(r1, z1), False, True); strip(ring(r0, z0), ring(r0, z1), True, True)             # внешняя, внутренняя
+    bm.to_mesh(me); bm.free(); ob = bpy.data.objects.new(name, me); bpy.context.scene.collection.objects.link(ob); ob.data.materials.append(mat); return ob
+
+
+CHW, CHH = _f('TG_CHW', .11), _f('TG_CHH', .09)          # фаска по верхней кромке: 11 мм по горизонтали и 9 мм по вертикали (≈ 40°) — полированная фаска толстого стекла
+
+
 def glass_profile():
-    c = ARRIS; R = R_GLASS; steps = 7
-    prof = [(0, Z_BOT)]
-    for k in range(steps + 1):                                    # нижнее закругление
-        a = math.pi / 2 * k / steps; prof.append((R - c + c * math.sin(a), Z_BOT + c - c * math.cos(a)))
-    for k in range(steps + 1):                                    # верхнее закругление
-        a = math.pi / 2 * k / steps; prof.append((R - c + c * math.cos(a), Z_TOP - c + c * math.sin(a)))
-    prof.append((0, Z_TOP))
-    # убираем дубль точки (R, Z_BOT + c) / (R, Z_TOP − c) — они разные, но на боковой грани нужен только один отрезок между ними
-    return prof
+    """профиль стекла: плоское дно, боковая грань, наклонная полированная фаска сверху, плоский верх; углы скруглены (0,3–0,5 мм) — кромки ловят свет, а не режут бритвой"""
+    R = R_GLASS
+    return rounded([(0, Z_BOT), (R, Z_BOT), (R, Z_TOP - CHH), (R - CHW, Z_TOP), (0, Z_TOP)], [.025, .035, .035], 4)
+
+
+def leaf_alpha_png(path):
+    """маска листвы: верхняя часть assets/showroom/layer-plant.webp (ветка без вазы-шара), только альфа; лёгкое размытие 0,8 px"""
+    from PIL import Image
+    im = Image.open(os.path.join(ROOT, 'assets', 'showroom', 'layer-plant.webp')).convert('RGBA'); a = np.asarray(im)[..., 3].astype(np.float32)[:853] / 255.0
+    a = cv2.GaussianBlur(a, (0, 0), .8); out = np.dstack([np.ones_like(a)] * 3 + [a]); cv2.imwrite(path, (out[..., [2, 1, 0, 3]] * 255).astype(np.uint8)); return path
 
 
 def build(sc):
@@ -330,27 +355,36 @@ def build(sc):
     g = lathe('glass', glass_profile(), 360, gm, glass_edge_mat())
     # ---- барабан-основание
     dm = stone_mat('tg_drum', joints=False, albedo=(_f('TG_DR', .60), _f('TG_DG', .51), _f('TG_DB', .42)), chroma=_f('TG_FCH', .62), honed=.55, cboost=1.4)
-    drum_top = Z_BOT - .035
-    d = lathe('drum', [(0, 0), (R_DRUM, 0), (R_DRUM, drum_top * .15), (R_DRUM, drum_top - .06), (R_DRUM - .05, drum_top), (0, drum_top)], 160, dm)
-    # латунная инкрустация-кольцо по верху барабана (тонкая линия цвета фирменной латуни, видна сквозь стекло)
-    if os.environ.get('TG_RING', '0') == '1':
-      rr0, rr1 = R_DRUM - .13, R_DRUM - .08; zr = drum_top + .004; me = bpy.data.meshes.new('drum_ring'); bm = bmesh.new()
-      for i in range(160):
-          a0, a1 = 2 * math.pi * i / 160, 2 * math.pi * (i + 1) / 160
-          bm.faces.new([bm.verts.new((r * math.cos(a), r * math.sin(a), zr)) for r, a in ((rr0, a0), (rr1, a0), (rr1, a1), (rr0, a1))]).smooth = False
-      bm.to_mesh(me); bm.free(); rg = bpy.data.objects.new('drum_ring', me); sc.collection.objects.link(rg); rg.data.materials.append(brass_mat())
+    drum_top = Z_BOT - .075
+    d = lathe('drum', rounded([(0, 0), (R_DRUM, 0), (R_DRUM, drum_top), (0, drum_top)], [.03, .045], 4), 200, dm)
+    # латунное кольцо-прокладка между барабаном и стеклом: тонкая линия фирменной латуни, видна сквозь стекло по кромке барабана
+    if os.environ.get('TG_RING', '1') == '1':
+        annulus('collar', R_DRUM - .03, R_DRUM + .08, drum_top, drum_top + .03, 200, brass_mat())
     # ---- свет
     key = bpy.data.lights.new('key', 'AREA'); key.shape = 'RECTANGLE'; key.size = _f('TG_KS', 6.0); key.size_y = _f('TG_KS', 6.0) * 1.35
-    key.energy = _f('TG_KEY', 34000.0); key.color = (1.0, .92, .80)
+    key.energy = _f('TG_KEY', 20000.0); key.color = (1.0, .92, .80)
     ko = bpy.data.objects.new('key', key); sc.collection.objects.link(ko); ko.location = Vector((_f('TG_KX', -15.0), _f('TG_KY', 10.0), _f('TG_KZ', 21.0)))
     ko.rotation_euler = (Vector((2.0, -1.0, Z_TOP)) - ko.location).to_track_quat('-Z', 'Y').to_euler()
     ko.visible_camera = False
     # мягкий контровой свет справа-сверху (отражённый от стен), слабый
     rf = bpy.data.lights.new('rim', 'AREA'); rf.shape = 'RECTANGLE'; rf.size = 16; rf.size_y = 12; rf.energy = _f('TG_RIM', 5500.0); rf.color = (.90, .94, 1.0)
     ro = bpy.data.objects.new('rim', rf); sc.collection.objects.link(ro); ro.location = Vector((19.0, -9.0, 24.0)); ro.rotation_euler = (Vector((0, 0, Z_TOP)) - ro.location).to_track_quat('-Z', 'Y').to_euler(); ro.visible_camera = False; ro.visible_glossy = False
+    # ---- тень листвы: ветка с листьями (тот же рисунок, что в зале и в витрине каталога) между окном и полом отбрасывает мягкую тень в верхний правый угол кадра — как тени оливы в зале главной;
+    #      сама ветка камере, отражениям и диффузному свету не видна (только тень); добавлен узкий солнечный свет: даёт тени листьев чёткий рисунок под мягким светом окна
+    if _f('TG_LEAF', 1.0) > 0:
+        lp = leaf_alpha_png(os.path.join(TMP, 'tg_leaf.png'))
+        lm = bpy.data.materials.new('tg_leaf'); nt = nodes_of(lm); out = N(nt, 'ShaderNodeOutputMaterial'); pb = N(nt, 'ShaderNodeBsdfPrincipled'); link(nt, pb.outputs['BSDF'], out.inputs['Surface'])
+        tx = img_tex(nt, lp, 'Non-Color', N(nt, 'ShaderNodeTexCoord').outputs['UV'], 'Linear'); link(nt, tx.outputs['Alpha'], pb.inputs['Alpha'])
+        Sx, Sy = _f('TG_LX', 6.0), _f('TG_LY', 2.6); Lp = Vector((_f('TG_KX', -15.0), _f('TG_KY', 10.0), _f('TG_KZ', 21.0))); T0 = Vector((2.0, -1.0, Z_TOP))
+        dh = (T0 - Lp).normalized(); Sp = Vector((Sx, Sy, 0.0)); pos = Sp - dh * (_f('TG_LH', 11.5) / -dh.z)            # ветка стоит на обратном луче солнца над точкой тени
+        bpy.ops.mesh.primitive_plane_add(size=1, location=pos); lf = bpy.context.object; lf.name = 'leaves'; lf.scale = (_f('TG_LW', 9.0), _f('TG_LW', 9.0) * 853 / 1589, 1)
+        lf.rotation_euler = (-dh).to_track_quat('Z', 'Y').to_euler(); lf.rotation_euler.rotate_axis('Z', math.radians(_f('TG_LR', 20.0))); lf.data.materials.append(lm)
+        lf.visible_camera = bool(os.environ.get('TG_LEAFDBG')); lf.visible_diffuse = False; lf.visible_glossy = False; lf.visible_transmission = False; lf.visible_volume_scatter = False
+        sun = bpy.data.lights.new('sun', 'SUN'); sun.energy = _f('TG_SUN', 7.0); sun.angle = math.radians(_f('TG_SUNA', 1.2)); sun.color = (1.0, .93, .82)
+        so = bpy.data.objects.new('sun', sun); sc.collection.objects.link(so); so.rotation_euler = dh.to_track_quat('-Z', 'Y').to_euler(); so.visible_glossy = False
     # ---- мир: холодный мягкий свет потолка и неба
     w = bpy.data.worlds.new('w'); w.use_nodes = True; nt = w.node_tree; bg = nt.nodes['Background']
-    bg.inputs['Color'].default_value = (1.0, .975, .94, 1); bg.inputs['Strength'].default_value = _f('TG_SKY', .5); sc.world = w
+    bg.inputs['Color'].default_value = (1.0, .975, .94, 1); bg.inputs['Strength'].default_value = _f('TG_SKY', .45); sc.world = w
     # ---- отражаемое окно: панель над столом, камере невидима, освещения не даёт
     pm = window_panel_mat(_f('TG_WIN', 125.0))
     bpy.ops.mesh.primitive_plane_add(size=1, location=(_f('TG_WX', -5.2), _f('TG_WY', .8), Z_TOP + _f('TG_WZ', 13.0))); wp = bpy.context.object; wp.name = 'window'
@@ -361,6 +395,15 @@ def build(sc):
     bpy.ops.mesh.primitive_plane_add(size=1, location=(_f('TG_SX', -2.0), _f('TG_SY', 1.5), Z_TOP + _f('TG_SZ', 16.0))); sp_ = bpy.context.object; sp_.name = 'sheen'
     sp_.scale = (_f('TG_SW', 26.0), _f('TG_SH', 20.0), 1); sp_.rotation_euler = (math.pi, 0, 0); sp_.data.materials.append(sm)
     sp_.visible_camera = False; sp_.visible_diffuse = False; sp_.visible_shadow = False; sp_.visible_transmission = False
+    # ---- журнал (только для слоёв теней): закрытая обложка 500×676 px страницы = 2,5×3,38 ед. (25×33,8 см) либо разворот вдвое шире; лежит на стекле, толщина 3 мм
+    if BOOK in ('closed', 'open'):
+        pw, ph = 500 * PX, 676 * PX; w = pw if BOOK == 'closed' else 2 * pw; th = .03 if BOOK == 'closed' else .026
+        bpy.ops.mesh.primitive_cube_add(size=1, location=(0, 0, Z_TOP + th / 2)); bk = bpy.context.object; bk.name = 'magazine'; bk.scale = (w, ph, th)
+        bpy.ops.object.transform_apply(location=False, rotation=False, scale=True)
+        bv = bk.modifiers.new('bev', 'BEVEL'); bv.width = .012; bv.segments = 2; bv.limit_method = 'ANGLE'
+        pm_ = bpy.data.materials.new('tg_paper'); nt = nodes_of(pm_); out = N(nt, 'ShaderNodeOutputMaterial'); pb = N(nt, 'ShaderNodeBsdfPrincipled'); link(nt, pb.outputs['BSDF'], out.inputs['Surface'])
+        pb.inputs['Base Color'].default_value = (.86, .80, .66, 1); pb.inputs['Roughness'].default_value = .85; bk.data.materials.append(pm_)
+        bk.visible_camera = False; bk.visible_glossy = False                                # в кадре не виден (его рисует HTML), но закрывает свет и подсвечивает стекло и пол отражённым светом
     # ---- камера: строго сверху
     cd = bpy.data.cameras.new('cam'); cd.sensor_width = 36; cd.sensor_fit = 'HORIZONTAL'; cd.lens = LENS; cd.dof.use_dof = False
     co = bpy.data.objects.new('cam', cd); sc.collection.objects.link(co); co.location = (0, 0, Z_TOP + CAM_D); co.rotation_euler = (0, 0, 0); sc.camera = co

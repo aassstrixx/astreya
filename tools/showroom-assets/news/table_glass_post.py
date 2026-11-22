@@ -8,23 +8,26 @@
 Цвет — к гамме сайта (как tools/showroom-assets/auditorium/grade_hall.py): перенос средних a, b в Lab к целевым (hue ≈ 85°, тёплый нейтральный, не жёлтый), яркость L — к целевому
 среднему с мягким контрастом; зелёное стекло и бирюзовая кромка сохраняют относительное отличие от камня (сдвиг одинаковый для всех пикселей), у светлых бликов яркость не поднимается.
 Затем: лёгкая нерезкая маска после масштабирования (поры и блики читаются при увеличении камерой), микрошум против бандинга (в пределах 0,35 уровня) и подбор качества WebP по весу
-(цель — не больше 700 КБ у plan и 280 КБ у телефонного кадра; качество сверху вниз, пока вес не уложится, но не ниже q62; контроль — PSNR и SSIM по яркости)."""
+(цель — не больше 900 КБ у plan и 350 КБ у телефонного кадра; качество сверху вниз, пока вес не уложится, но не ниже q62; контроль — PSNR и SSIM по яркости)."""
 import os, sys
 import numpy as np, cv2
 from PIL import Image, ImageFilter
 
 HERE = os.path.dirname(os.path.abspath(__file__)); ROOT = os.path.normpath(os.path.join(HERE, '..', '..', '..'))
-args = [a for a in sys.argv[1:] if not a.startswith('--')]
-SRC = args[0] if args else '/tmp/table_glass_raw.png'
-OUT = sys.argv[sys.argv.index('--out') + 1] if '--out' in sys.argv else os.path.join(ROOT, 'assets', 'news')
-if '--out' in sys.argv and OUT in args: args.remove(OUT); SRC = args[0]
-QUICK = '--quick' in sys.argv
-PNG = sys.argv[sys.argv.index('--png') + 1] if '--png' in sys.argv else None
-if PNG and PNG in args: args.remove(PNG); SRC = args[0]
+def _cli():
+    a = sys.argv[1:]; opts = {}; pos = []; i = 0
+    while i < len(a):
+        if a[i] in ('--out', '--png'): opts[a[i]] = a[i + 1]; i += 2
+        elif a[i].startswith('--'): opts[a[i]] = True; i += 1
+        else: pos.append(a[i]); i += 1
+    return (pos[0] if pos else '/tmp/table_glass_raw.png'), opts.get('--out', os.path.join(ROOT, 'assets', 'news')), bool(opts.get('--quick')), opts.get('--png')
+
+
+SRC, OUT, QUICK, PNG = _cli() if __name__ == '__main__' else ('', '', False, None)
 _f = lambda k, d: float(os.environ.get(k, d))
 # целевой цвет: общий цвет сайта (зал главной, «Обучение»): hue ≈ 85°, a ≈ 0,8, b ≈ 10–11
-T = dict(L_mean=_f('PG_L', 80.0), L_contrast=_f('PG_LC', 1.0), a_mean=_f('PG_A', 1.0), b_mean=_f('PG_B', 9.0), chroma_max=_f('PG_CMAX', 26.0), gain=_f('PG_GAIN', 1.0), shadow_tint=_f('PG_ST', .75), sa=_f('PG_SA', 3.4), sb=_f('PG_SB', 9.5))
-SIZES = {'table-glass.webp': (2880, 1914, 700), 'table-glass-m.webp': (1500, 997, 280)}
+T = dict(L_mean=_f('PG_L', 74.0), L_contrast=_f('PG_LC', 1.0), a_mean=_f('PG_A', 1.5), b_mean=_f('PG_B', 11.0), chroma_max=_f('PG_CMAX', 26.0), gain=_f('PG_GAIN', 1.0), shadow_tint=_f('PG_ST', .75), sa=_f('PG_SA', 3.2), sb=_f('PG_SB', 11.5))
+SIZES = {'table-glass.webp': (2880, 1914, 900), 'table-glass-m.webp': (1500, 997, 350)}
 
 
 def load(path):
@@ -44,11 +47,15 @@ def smooth(x, e0, e1):
     t = np.clip((x - e0) / (e1 - e0), 0, 1); return t * t * (3 - 2 * t)
 
 
-def grade(rgb):
+def ref_of(rgb):
+    lab = lab_of(rgb); return dict(L=float(lab[..., 0].mean()), a=float(lab[..., 1].mean()), b=float(lab[..., 2].mean()))
+
+
+def grade(rgb, ref=None):
     """Lab: a, b — к целевым средним (одинаковый сдвиг для всех пикселей); тени подтягиваются к тёплому нейтральному тону (без оливкового); яркость — монотонная кривая:
     сдвиг среднего к цели, сходящий на нет к белому (блик окна не клипуется и не «рвётся» на пороге)"""
     lab = lab_of(rgb); L, A, B = lab[..., 0], lab[..., 1], lab[..., 2]
-    ref = dict(L=float(L.mean()), a=float(A.mean()), b=float(B.mean()))
+    ref = ref or dict(L=float(L.mean()), a=float(A.mean()), b=float(B.mean()))                       # ref — средние основного кадра (для кропов теней журнала)
     wg = np.clip(1 + (A + 1.5) / 5.0, 0, 1); wg = cv2.GaussianBlur(wg.astype(np.float32), (0, 0), 1.0)                       # зелёные пиксели (кромка стекла) не уводим в жёлтый
     A2 = A + (T['a_mean'] - ref['a']) * wg; B2 = B + (T['b_mean'] - ref['b']) * wg
     ws = smooth(L, 82, 52) * T['shadow_tint']                                                        # тени: к тёплому тону
@@ -78,7 +85,7 @@ def psnr_ssim(a, b):
 def encode(im, path, limit_kb):
     import io
     best = None
-    qs = [80] if QUICK else list(range(90, 61, -2))
+    qs = [80] if QUICK else list(range(94, 61, -2))
     for q in qs:
         buf = io.BytesIO(); im.save(buf, 'WEBP', quality=q, method=6, sns_strength=int(_f('PG_SNS', 70)), filter_strength=int(_f('PG_FILT', 30)), filter_sharpness=0, segments=4, exact=False)
         kb = len(buf.getvalue()) / 1024; best = (q, buf.getvalue(), kb)
