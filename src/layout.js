@@ -250,7 +250,7 @@ ${P.key === 'home' ? `<script>${LEGACY}</script>\n` : ''}<!-- У Fraunces нет
 ${FONT_PRELOAD.map(f => `<link rel="preload" href="${u(P, 'assets/fonts/' + f)}" as="font" type="font/woff2" crossorigin>`).join('\n')}
 ${pageCss(P).map(n => `<link rel="stylesheet" href="${u(P, `css/${n}.css`)}${ver}">`).join('\n')}
 ${jarPreload(P)}
-${P.key === 'news' ? ['(min-width:861px)', '(max-width:860px)'].map((m, i) => `<link rel="preload" as="image" href="${u(P, 'assets/news/table-glass' + (i ? '-m' : '') + '.webp')}${ver}" type="image/webp" fetchpriority="high" media="${m}">`).join('\n') : ''}
+${P.key === 'news' ? ['(min-width:861px)', '(max-width:860px)'].map((m, i) => `<link rel="preload" as="image" href="${u(P, 'assets/news/floor' + (i ? '-m' : '') + '.webp')}${ver}" type="image/webp" fetchpriority="high" media="${m}">`).join('\n') : ''}
 ${ld.map(o => `<script type="application/ld+json">${JSON.stringify(o)}</script>`).join('\n')}
 </head>
 <body${rd ? ' class="rd"' : ''} data-page="${P.key}" data-nav="${P.nav || ''}" data-root="${P.root}">
