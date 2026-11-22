@@ -160,7 +160,8 @@
     run(3000);
   })();
   const TIER_PX = {high: 2.1e6, mid: 1.6e6, low: 1.1e6};       // пикселей на холсте героя
-  const UP_GAP_W = 50, FAST_ON_W = 16, FAST_OFF_W = 6;       // слабый ПК: загрузка в видеопамять в движении — не чаще раза в 50 мс; «взмах» начинается с 16 ключей/с (на мощном — с 30)
+  const UP_GAP_H = 18;       // мощный ПК: в движении тяжёлая заливка в видеопамять — не чаще раза в 18 мс (раньше — в каждом кадре: на первом заходе, пока ключи ещё заливаются, это давало рваные кадры и на 144 Гц)
+  const UP_GAP_W = 50, FAST_ON_W = 16, FAST_OFF_W = 6;      // слабый ПК: загрузка в видеопамять в движении — не чаще раза в 50 мс; «взмах» начинается с 16 ключей/с (на мощном — с 30)
   const LANES = [14, 8];      // запросов одновременно: [компьютер, телефон] (HTTP/2)
   const RES = [TIER === 'low' ? 3 : TIER === 'mid' ? 4 : 5, A.lite ? 1 : 3];         // сколько ключевых кадров по обе стороны от положения держим в видеопамяти: [компьютер, телефон]
   const K1 = 12;                              // телефон, пролёт: столько первых ключей грузится и во время прокрутки героя, остальные — в паузах (и сразу, как читалка входит в сцену)
@@ -632,7 +633,7 @@
           govChanges++; A.bc && A.bc('gov', (FLY ? 'fly ' : 'hero ') + resScale + (govEdge ? ' e7' : '') + ' dt' + Math.round(dtEma)); slowRun = 0; lastGov = now(); learn(); sizeCanvas(); armRestore();
         }          // сетку не режем: на ней держатся кромки (на половинной — пилообразные), а нагрузку даёт в основном число пикселей холста
       }
-      if (upQ.length) { const mv = Math.abs(vp) * KS > MOVING || (FLY && PHALL && scrolling()); if (!mv || !(isPortrait() || WEAK) || performance.now() - lastUp >= (fast ? UP_GAP_LOW : (FLY ? UP_GAP_F : (isPortrait() ? UP_GAP_P : UP_GAP_W)))) flushUploads(mv ? 2.5 : 8); }          // телефон: в движении тяжёлая загрузка не чаще раза в UP_GAP_P мс (иначе каждый кадр с хвостом)                // по одной-две тяжёлые текстуры за кадр; в покое — быстрее
+      if (upQ.length) { const mv = Math.abs(vp) * KS > MOVING || (FLY && PHALL && scrolling()); if (!mv || performance.now() - lastUp >= (fast ? UP_GAP_LOW : (FLY ? UP_GAP_F : (isPortrait() ? UP_GAP_P : (WEAK ? UP_GAP_W : UP_GAP_H))))) flushUploads(mv ? 2.5 : 8); }          // телефон: в движении тяжёлая загрузка не чаще раза в UP_GAP_P мс (иначе каждый кадр с хвостом)                // по одной-две тяжёлые текстуры за кадр; в покое — быстрее
       if ((inView || !firstDrawn) && hall && (dirty || Math.abs(cp - paintedP) > 1e-7)) {
         if (paint(t)) { paintedP = cp; dirty = false; } else dirty = true;
       }
