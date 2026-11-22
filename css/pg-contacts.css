@@ -6,7 +6,7 @@
 
 .cp{--cp-ink:#16223e;--cp-navy:#0b1a33;--cp-bg:#f5f0e4;--cp-bg2:#efe5d0;--cp-line:rgba(120,84,40,.17);--cp-mut:#5f574a;--cp-gold:#b08e4e;--cp-ease:cubic-bezier(.22,.8,.2,1);
   --cp-g:clamp(18px,5.9vw,120px);--f-h1:clamp(38px,4.5vw,88px);--f-h2:clamp(27px,2.6vw,50px);--f-h3:clamp(18px,1.4vw,26px);--f-b:clamp(15px,1.06vw,20px);--f-s:clamp(13.5px,.92vw,17.5px);--f-xs:clamp(11.5px,.78vw,15px);
-  --cp-trav:url(../assets/showroom/pg-travertine.webp?v=caf49647);
+  --cp-trav:url(../assets/showroom/pg-travertine.webp?v=2a49159a);
   position:relative;margin-top:calc(var(--hdr,84px) * -1);background:var(--cp-bg);color:var(--cp-ink);overflow:clip}
 .cp-in{width:calc(100% - 2 * var(--cp-g));max-width:1800px;margin-inline:auto}
 .cp-eyebrow{display:inline-flex;align-items:center;gap:14px;font:700 var(--f-xs)/1 var(--sans);letter-spacing:.3em;text-transform:uppercase;color:var(--cp-ink)}

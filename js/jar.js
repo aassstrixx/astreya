@@ -138,7 +138,7 @@
       let gpu = ''; try { const c = document.createElement('canvas'), g = c.getContext('webgl2') || c.getContext('webgl'), e = g && g.getExtension('WEBGL_debug_renderer_info'); gpu = e ? String(g.getParameter(e.UNMASKED_RENDERER_WEBGL) || '') : ''; const l = g && g.getExtension('WEBGL_lose_context'); if (l) l.loseContext(); } catch (e) { /* — */ }
       const soft = /swiftshader|llvmpipe|softpipe|software|microsoft basic/i.test(gpu), weakIntel = /intel/i.test(gpu) && /hd graphics|uhd/i.test(gpu), igpu = /intel|vega|radeon\(tm\) graphics|mali|adreno|powervr/i.test(gpu) && !/rtx|gtx|arc a|radeon (rx|pro)/i.test(gpu);
       TIER_WHY.push('cores' + cores, 'mem' + mem, gpu.slice(0, 40) || 'gpu?');
-      if (soft || (weakIntel && (cores <= 4 || !/uhd graphics 7\d\d/i.test(gpu)))) return 'low';          // встроенная Intel HD/UHD — всегда «слабая» для этой сцены, и при 8 потоках (замер ноутбука владельца: UHD, 8 ядер — стабильные 30 к/с и заливка одного кадра до 160 мс); UHD 7xx (поколения 11–13) остаётся mid
+      if (soft || (weakIntel && cores <= 4)) return 'low';          // Intel HD/UHD с 8 потоками остаётся mid: класс low на ноутбуке владельца (UHD, 8 ядер) дал заметно худшую картинку прокрутки (холст ≤ 1,1 млн, кромки в 7 шагов с самого начала, окно ±3) — кадры рвались сильнее, чем в mid
       if (igpu || cores <= 4 || mem <= 4) return 'mid';
     } catch (e) { /* — */ }
     return 'high';
