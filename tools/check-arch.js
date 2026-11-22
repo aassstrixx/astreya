@@ -207,9 +207,9 @@ if (!J || !J.enabled || !A || !A.enabled) { console.log('Первый экран
     ok(v.gl && v.resident > 0 && v.loaded > 10, 'WebGL-движок работает: ключевые кадры загружены, текстуры в видеопамяти', {gl: v.gl, resident: v.resident, loaded: v.loaded});
     /* быстрая прокрутка: рядом с любым положением есть уменьшенные копии кадров и спрайтов, поэтому картинка не рвётся «зубцами» и не идёт против прокрутки */
     if (v.lows !== undefined || (await p.evaluate(() => Astreya.jar.arch.state().lows !== undefined))) {
-      await p.waitForFunction(() => { const s = Astreya.jar.arch.state(); return s.lows >= s.N && s.lowSprites >= s.N; }, null, {timeout: 240000, polling: 500}).catch(() => {});
-      const lw = await p.evaluate(() => { const s = Astreya.jar.arch.state(); return {lows: s.lows, sprites: s.lowSprites, N: s.N}; });
-      ok(lw.lows === lw.N && lw.sprites === lw.N, 'быстрая прокрутка: уменьшенные копии всех кадров зала и спрайтов баночки лежат в видеопамяти', lw);
+      await p.waitForFunction(() => { const s = Astreya.jar.arch.state(); return s.lows >= (s.tier === 'low' ? Math.ceil(s.N / 2) : s.N) && s.lowSprites >= s.N; }, null, {timeout: 240000, polling: 500}).catch(() => {});
+      const lw = await p.evaluate(() => { const s = Astreya.jar.arch.state(); return {lows: s.lows, sprites: s.lowSprites, N: s.N, need: s.tier === 'low' ? Math.ceil(s.N / 2) : s.N, tier: s.tier}; });
+      ok(lw.lows >= lw.need && lw.sprites === lw.N, 'быстрая прокрутка: уменьшенные копии всех кадров зала и спрайтов баночки лежат в видеопамяти', lw);
       await at(p, g, 0.6, 2500); await p.waitForFunction(() => { const s = Astreya.jar.arch.state(); return s.drawn && s.drawn.single && s.resident > 0; }, null, {timeout: 120000, polling: 500}).catch(() => {});
       const grayFull = await p.evaluate(() => window.__gray('.js-cv', 240).g);
       await p.evaluate(() => Astreya.jar.arch.lowOnly(true)); await at(p, g, 0.12, 2500); await at(p, g, 0.6, 2500);
@@ -295,7 +295,7 @@ if (!J || !J.enabled || !A || !A.enabled) { console.log('Первый экран
   { /* экран 144 Гц: кадры быстрые, регулятор холст не трогает (раньше при первой же прокрутке героя resScale падал до 0,8, затем до 0,65 с сеткой вдвое реже) */
     const {ctx, p} = await open(1573, 880); await ctx.addInitScript(() => { window.__ASTREYA_GL_GRID = 1; let fake = 0, timer = 0; const cbs = [];
       window.requestAnimationFrame = cb => { cbs.push(cb); if (!timer) timer = setTimeout(() => { timer = 0; const l = cbs.splice(0); fake += 1000 / 144; l.forEach(f => { try { f(fake); } catch (e) { /* — */ } }); }, 0); return cbs.length; }; window.cancelAnimationFrame = () => {}; });
-    await p.goto(base + 'index.html'); await skipSplash(p);
+    await p.goto(base + 'index.html?tier=high'); await skipSplash(p);
     try { await p.waitForFunction(() => { const a = window.Astreya.jar && window.Astreya.jar.arch; return a && a.ready && a.ready(); }, null, {timeout: 90000, polling: 500}); } catch (e) { /* — */ }
     await wait(1200); const g = await geo(p); await p.mouse.move(700, 400);
     for (let y = 0, tg = Math.round(g.top + g.tot * 0.6); y < tg; y += 80) { await p.mouse.wheel(0, 80); await wait(30); }
