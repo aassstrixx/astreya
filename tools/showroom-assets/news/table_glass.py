@@ -39,18 +39,20 @@ OUT = os.path.abspath(sys.argv[1]) if len(sys.argv) > 1 else os.path.join(os.env
 TMP = os.environ.get('TG_TMP', '/tmp'); os.makedirs(TMP, exist_ok=True)
 SIMPLE = os.environ.get('TG_SIMPLE') == '1'               # упрощённая сцена для слоёв теней: без стекла, барабана, листвы и экранов отражений, ровный пол — в слое остаётся только тень журнала
 BOOK = os.environ.get('TG_BOOK', '')                       # '' — обычный кадр; 'closed' / 'open' — слой тени журнала (см. table_glass_shadows.py): журнал камере невидим, отбрасывает тень и подсвечивает пол
-RW = int(_f('TG_W', 2880)); RH = round(RW * 2260 / 3400); SPP = int(_f('TG_SPP', 112))
+MODE = os.environ.get('TG_MODE', '')                       # '' — прежний кадр сверху; 'floor' — ПОЛ для объёмного стола (ортогонально сверху, стекло и колонна камере невидимы, тени их остаются);
+                                                           # 'column' — колонна-барабан строго сбоку (ортогонально, RGBA); оба — под геометрию CSS-3D сцены: пол на 1000 px ниже бумаги, стекло R = 700 px
+RW = int(_f('TG_W', 2880)); RH = int(_f('TG_H', round(RW * 2260 / 3400))); SPP = int(_f('TG_SPP', 112))
 
 # ---------------------------------------------------------------------------------------------------------------- размеры (1 ед. = 10 см)
 U = 10.0                                  # ед. на метр
 PLANE_W = 17.0                            # ширина кадра на уровне столешницы (3400 px × 0,5 мм)
 PX = PLANE_W / 3400.0                     # ед. на px страницы
-R_GLASS = 900 * PX                        # радиус стекла 4,5 ед. (45 см)
+R_GLASS = (700 if MODE else 900) * PX     # радиус стекла 4,5 ед. (45 см); в режимах floor/column — 700 px = 3,5 ед. (Ø 70 см)
 T_GLASS = .20                             # толщина 2 см
-Z_TOP = 4.0                               # верх стекла над полом (40 см)
+Z_TOP = 4.98 if MODE else 4.0             # верх стекла над полом (40 см; в режимах floor/column — 996 px = 49,8 см: пол на 1000 px ниже бумаги, стекло на 4 px ниже)
 Z_BOT = Z_TOP - T_GLASS
 ARRIS = _f('TG_ARRIS', .09)               # радиус закругления кромки 9 мм
-R_DRUM = _f('TG_RD', 240) * PX            # радиус барабана 1,2 ед. (≈ 240 px страницы)
+R_DRUM = _f('TG_RD', 220 if MODE else 240) * PX   # радиус барабана 1,2 ед. (≈ 240 px страницы); в режимах floor/column — 220 px (Ø 22 см)
 CAM_D = 30.0                              # высота камеры над столешницей (3 м)
 LENS = 36.0 * CAM_D / PLANE_W             # мм: кадр шириной PLANE_W на уровне столешницы
 
@@ -90,8 +92,9 @@ def mix_(nt, a, b, fac, kind='RGBA', blend='MIX'):
     return n.outputs['Result']
 
 
-def img_tex(nt, path, cs, vec, interp='Cubic'):
+def img_tex(nt, path, cs, vec, interp='Cubic', box=False):
     t = nt.nodes.new('ShaderNodeTexImage'); t.image = bpy.data.images.load(path); t.image.colorspace_settings.name = cs
+    if box: t.projection = 'BOX'; t.projection_blend = .25                                                   # вертикальные поверхности (колонна): проекция коробкой, жилы остаются горизонтальными
     t.interpolation = interp; t.extension = 'REPEAT'; nt.links.new(vec, t.inputs['Vector']); return t
 
 
@@ -149,7 +152,7 @@ def make_dust_map(path, S=4096):
 
 
 # ---------------------------------------------------------------------------------------------------------------- материалы
-def stone_mat(name, tile_units=12.0, slab=(12.0, 6.0), joints=True, albedo=(.83, .79, .72), chroma=.42, honed=.34, pits=1.0, seed=1, cboost=2.1):
+def stone_mat(name, tile_units=12.0, slab=(12.0, 6.0), joints=True, albedo=(.83, .79, .72), chroma=.42, honed=.34, pits=1.0, seed=1, cboost=2.1, box=False):
     """травертин: цвет и жилы — из пака CC0 (travertine-ivory), приглушён к нейтрально-тёплому тону (chroma — доля исходной насыщенности), плиты slab вразбежку, у каждой свой кусок рисунка,
     швы, процедурные поры (вытянутые вдоль слоёв) и микрозерно; матовая шлифовка"""
     m = bpy.data.materials.new(name); nt = nodes_of(m)
@@ -172,7 +175,7 @@ def stone_mat(name, tile_units=12.0, slab=(12.0, 6.0), joints=True, albedo=(.83,
     else:
         tone = 1.0; base_vec = tc.outputs['Object']
     mp = N(nt, 'ShaderNodeMapping'); mp.inputs['Scale'].default_value = (1 / tile_units,) * 3; link(nt, base_vec, mp.inputs['Vector'])
-    col_t = img_tex(nt, os.path.join(TEXD, 'travertine-ivory', 'color.jpg'), 'sRGB', mp.outputs['Vector'])
+    col_t = img_tex(nt, os.path.join(TEXD, 'travertine-ivory', 'color.jpg'), 'sRGB', mp.outputs['Vector'], box=box)
     # приглушение жёлтого: смесь исходного цвета с его яркостью, затем целевой средний цвет (albedo / среднее пака)
     lum = N(nt, 'ShaderNodeRGBToBW'); link(nt, col_t.outputs['Color'], lum.inputs['Color'])
     gray = N(nt, 'ShaderNodeCombineColor'); [link(nt, lum.outputs['Val'], gray.inputs[i]) for i in range(3)]
@@ -356,6 +359,39 @@ def leaf_alpha_png(path):
     a = cv2.GaussianBlur(a, (0, 0), .8); out = np.dstack([np.ones_like(a)] * 3 + [a]); cv2.imwrite(path, (out[..., [2, 1, 0, 3]] * 255).astype(np.uint8)); return path
 
 
+def fluted(name, z0, z1, r0, r1, n, depth, mat, segs=480, rings=28):
+    """тело ножки: слегка конусное (радиус r0 внизу, r1 вверху) с n вертикальными каннелюрами (вогнутые желоба между узкими рёбрами); у торцов желоба затухают (гладкие пояса)"""
+    me = bpy.data.meshes.new(name); bm = bmesh.new(); rows = []
+    for k in range(rings + 1):
+        t = k / rings; z = z0 + (z1 - z0) * t; base = r0 + (r1 - r0) * t
+        fade = min(1.0, t / .05, (1 - t) / .06); fade = fade * fade * (3 - 2 * fade) if fade > 0 else 0.0
+        row = []
+        for i in range(segs):
+            th = 2 * math.pi * i / segs; u = (n * th / (2 * math.pi)) % 1.0; w = abs(2 * u - 1); d = depth * fade * (1 - min(w / .86, 1.0) ** 2)
+            row.append(bm.verts.new(((base - d) * math.cos(th), (base - d) * math.sin(th), z)))
+        rows.append(row)
+    for a, b in zip(rows[:-1], rows[1:]):
+        for i in range(segs):
+            j = (i + 1) % segs; f = bm.faces.new((a[i], a[j], b[j], b[i])); f.smooth = True
+    for row, up in ((rows[0], False), (rows[-1], True)):
+        cap = [bm.verts.new(v.co) for v in row]; f = bm.faces.new(cap if up else cap[::-1]); f.smooth = False
+    bm.to_mesh(me); bm.free(); ob = bpy.data.objects.new(name, me); bpy.context.scene.collection.objects.link(ob); ob.data.materials.append(mat); return ob
+
+
+def build_column(stone, brass):
+    """ножка журнального стола для режимов floor / column (размеры в ед. по 10 см: 1 px страницы = 0,005 ед.): латунная окантовка подошвы, ступенчатый плинт R 320 px с фасками,
+    конусная каннелированная ножка R 256 → 220 px, латунная чаша-воротник под самым стеклом (R 220 → 300 px, h 60 px) с бусиной на стыке"""
+    zc = Z_BOT - .30; ob = []
+    ob.append(lathe('trim', rounded([(0, 0), (1.62, 0), (1.62, .055), (0, .055)], [.012, .012], 3), 240, brass))
+    ob.append(lathe('plinth1', rounded([(0, .055), (1.58, .055), (1.58, .17), (1.50, .225), (0, .225)], [.01, .02, .035], 4), 240, stone))
+    ob.append(lathe('plinth2', rounded([(0, .225), (1.36, .225), (1.36, .31), (1.30, .345), (0, .345)], [.01, .02, .03], 4), 240, stone))
+    ob.append(fluted('drum', .345, zc, 1.28, R_DRUM, 28, .04, stone))
+    ob.append(lathe('bead', rounded([(0, zc - .03), (1.20, zc - .03), (1.20, zc + .03), (0, zc + .03)], [.014, .014], 3), 240, brass))
+    cup = [(0, zc), (1.16, zc), (1.20, zc + .05), (1.28, zc + .12), (1.42, zc + .21), (1.50, zc + .26), (1.50, Z_BOT - .004), (0, Z_BOT - .004)]
+    ob.append(lathe('collar', rounded(cup, [.01, .03, .05, .05, .03, .01], 3), 240, brass))
+    return ob
+
+
 def build(sc):
     # ---- пол
     floor_m = plain_mat() if SIMPLE else stone_mat('tg_floor', joints=True, albedo=(_f('TG_FR', .80), _f('TG_FG', .72), _f('TG_FB', .60)), chroma=_f('TG_FCH', .62))
@@ -366,12 +402,15 @@ def build(sc):
         gm = glass_mat(dust)
         g = lathe('glass', glass_profile(), 360, gm, glass_edge_mat())
         # ---- барабан-основание
-        dm = stone_mat('tg_drum', joints=False, albedo=(_f('TG_DR', .60), _f('TG_DG', .51), _f('TG_DB', .42)), chroma=_f('TG_FCH', .62), honed=.55, cboost=1.4)
-        drum_top = Z_BOT - .075
-        d = lathe('drum', rounded([(0, 0), (R_DRUM, 0), (R_DRUM, drum_top), (0, drum_top)], [.03, .045], 4), 200, dm)
-        # латунное кольцо-прокладка между барабаном и стеклом: тонкая линия фирменной латуни, видна сквозь стекло по кромке барабана
-        if os.environ.get('TG_RING', '1') == '1':
-            annulus('collar', R_DRUM - .03, R_DRUM + .08, drum_top, drum_top + .03, 200, brass_mat())
+        dm = stone_mat('tg_drum', joints=False, albedo=(_f('TG_DR', .60), _f('TG_DG', .51), _f('TG_DB', .42)), chroma=_f('TG_FCH', .62), honed=.5, cboost=1.7, box=bool(MODE))
+        if MODE:                                                                   # объёмный стол: полноценная ножка (см. build_column)
+            build_column(dm, brass_mat())
+        else:
+            drum_top = Z_BOT - .075
+            d = lathe('drum', rounded([(0, 0), (R_DRUM, 0), (R_DRUM, drum_top), (0, drum_top)], [.03, .045], 4), 200, dm)
+            # латунное кольцо-прокладка между барабаном и стеклом: тонкая линия фирменной латуни, видна сквозь стекло по кромке барабана
+            if os.environ.get('TG_RING', '1') == '1':
+                annulus('collar', R_DRUM - .03, R_DRUM + .08, drum_top, drum_top + .03, 200, brass_mat())
     # ---- свет
     key = bpy.data.lights.new('key', 'AREA'); key.shape = 'RECTANGLE'; key.size = _f('TG_KS', 6.0); key.size_y = _f('TG_KS', 6.0) * 1.35
     key.energy = _f('TG_KEY', 20000.0); key.color = (1.0, .92, .80)
@@ -397,7 +436,7 @@ def build(sc):
     so = bpy.data.objects.new('sun', sun); sc.collection.objects.link(so); so.rotation_euler = dh.to_track_quat('-Z', 'Y').to_euler(); so.visible_glossy = False
     # ---- мир: холодный мягкий свет потолка и неба
     w = bpy.data.worlds.new('w'); w.use_nodes = True; nt = w.node_tree; bg = nt.nodes['Background']
-    bg.inputs['Color'].default_value = (1.0, .975, .94, 1); bg.inputs['Strength'].default_value = _f('TG_SKY', .45); sc.world = w
+    bg.inputs['Color'].default_value = (1.0, .975, .94, 1); bg.inputs['Strength'].default_value = _f('TG_SKY', .16 if MODE == 'column' else .45); sc.world = w
     if not SIMPLE:
         # ---- отражаемое окно: панель над столом, камере невидима, освещения не даёт
         pm = window_panel_mat(_f('TG_WIN', 125.0))
@@ -418,15 +457,28 @@ def build(sc):
         pm_ = bpy.data.materials.new('tg_paper'); nt = nodes_of(pm_); out = N(nt, 'ShaderNodeOutputMaterial'); pb = N(nt, 'ShaderNodeBsdfPrincipled'); link(nt, pb.outputs['BSDF'], out.inputs['Surface'])
         pb.inputs['Base Color'].default_value = (.86, .80, .66, 1); pb.inputs['Roughness'].default_value = .85; bk.data.materials.append(pm_)
         bk.visible_camera = False; bk.visible_glossy = False                                # в кадре не виден (его рисует HTML), но закрывает свет и подсвечивает стекло и пол отражённым светом
-    # ---- камера: строго сверху
+    if MODE == 'column':                                                           # мягкий свет окна слева-спереди: левая сторона колонны светлее, правая в тени (цилиндрическое затенение)
+        fl_ = bpy.data.lights.new('colfill', 'AREA'); fl_.shape = 'RECTANGLE'; fl_.size = 8; fl_.size_y = 10; fl_.energy = _f('TG_COLFILL', 9000.0); fl_.color = (1.0, .94, .84)
+        fo_ = bpy.data.objects.new('colfill', fl_); sc.collection.objects.link(fo_); fo_.location = Vector((-14.0, -9.0, 5.5)); fo_.rotation_euler = (Vector((0, 0, 2.4)) - fo_.location).to_track_quat('-Z', 'Y').to_euler(); fo_.visible_camera = False
+    # ---- камера: строго сверху (перспектива) либо, в режимах объёмного стола, ортогональная
     cd = bpy.data.cameras.new('cam'); cd.sensor_width = 36; cd.sensor_fit = 'HORIZONTAL'; cd.lens = LENS; cd.dof.use_dof = False
     co = bpy.data.objects.new('cam', cd); sc.collection.objects.link(co); co.location = (0, 0, Z_TOP + CAM_D); co.rotation_euler = (0, 0, 0); sc.camera = co
+    if MODE == 'floor':                                                            # плита пола 4800×3200 px = 24×16 ед., ось стола — в центре; стекло и колонна камере невидимы (их рисуют слои CSS), тени остаются
+        cd.type = 'ORTHO'; cd.ortho_scale = 24.0; co.location = (0, 0, 30.0)
+        for nm in ('glass', 'collar', 'bead'):                                              # барабан и плинт остаются видимыми: сверху это каменный диск-основание на полу (под колонной нет чёрного пятна), воротник и стекло рисует CSS
+            if nm in bpy.data.objects: bpy.data.objects[nm].visible_camera = False
+        if 'collar' in bpy.data.objects: bpy.data.objects['collar'].visible_shadow = False      # воротник не закрывает свет: иначе верх барабана (виден сверху сквозь стекло) чёрный
+    elif MODE == 'column':                                                         # колонна строго сбоку с юга: плоскость 680×956 px = 3,4×4,78 ед.; верх кадра — низ стекла, низ — пол; фон прозрачный
+        cd.type = 'ORTHO'; cd.ortho_scale = 3.4; co.location = (0, -30.0, Z_BOT / 2); co.rotation_euler = (math.pi / 2, 0, 0)       # ширина кадра 3,4 ед. (680 px), высота по пропорциям 4,78 ед.
+        for ob in list(bpy.data.objects):
+            if ob.name in ('floor', 'glass', 'leaves', 'window', 'sheen'): ob.visible_camera = False
 
 
 def settings(sc):
     r = sc.render; r.engine = 'CYCLES'; r.resolution_x = RW; r.resolution_y = RH; r.resolution_percentage = 100
     r.image_settings.file_format = 'PNG'; r.image_settings.color_depth = '16'; r.image_settings.color_mode = 'RGB'
-    r.threads_mode = 'FIXED'; r.threads = int(_f('TG_THREADS', 4)); r.use_persistent_data = False; r.film_transparent = False
+    r.threads_mode = 'FIXED'; r.threads = int(_f('TG_THREADS', 4)); r.use_persistent_data = False; r.film_transparent = MODE == 'column'
+    if MODE == 'column': r.image_settings.color_mode = 'RGBA'
     cy = sc.cycles; cy.device = 'CPU'; cy.samples = SPP; cy.use_adaptive_sampling = True; cy.adaptive_threshold = .006; cy.adaptive_min_samples = 24
     cy.use_denoising = True; cy.denoiser = 'OPENIMAGEDENOISE'; cy.denoising_input_passes = 'RGB_ALBEDO_NORMAL'; cy.denoising_prefilter = 'ACCURATE'
     cy.max_bounces = 16; cy.transmission_bounces = 14; cy.glossy_bounces = 10; cy.diffuse_bounces = 4; cy.volume_bounces = 0; cy.transparent_max_bounces = 16

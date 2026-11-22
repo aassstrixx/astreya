@@ -8,39 +8,63 @@
    Журнал на стекле: стекло пропускает свет, поэтому настоящая тень журнала ложится на ПОЛ сквозь стекло, смещена по лучу окна (стол высокий) и размыта — это запечённые слои .np-shd
    (assets/news/news-shadow-*.webp); сама газета получает лишь тонкую контактную тень, светлую кромку и блик света окна. */
 
-/* ---------- пол и дымка ---------- */
-/* стол чуть ниже плоскости газеты: у news-paper.css он на -1px, а тень газеты (.np-book::before) на -2px — оказывалась ПОД столом и не была видна */
-.np .np-table{transform:translateZ(-6px);background:#cdbfa9 url(../assets/news/table-glass.webp?v=b3621e76) center/100% 100% no-repeat;
-  -webkit-mask-image:linear-gradient(180deg,transparent 0,#000 13%),linear-gradient(90deg,transparent 0,#000 7%,#000 93%,transparent 100%);-webkit-mask-composite:source-in;
-  mask-image:linear-gradient(180deg,transparent 0,#000 13%),linear-gradient(90deg,transparent 0,#000 7%,#000 93%,transparent 100%);mask-composite:intersect}
-/* цвета фона сняты с рендера: пол в свету ≈ #d6c8b4, в полутени ≈ #bfae96; дальний край плоскости растворяется в светлой воздушной дымке */
-.np .np-sticky{background:#cfc1ab}
-.np .np-world{background:linear-gradient(180deg,#efe8dc 0,#e0d6c4 28%,#d1c3ac 60%,#c8b9a1 100%)}
-/* камера «лежит» (прокрутка дошла до газеты, идёт листание): дымка по краям плоскости не видна — маску снимаем, слой дешевле для композитора на каждом кадре листания */
-.np .np-cam.is-flat .np-table{-webkit-mask-image:none;mask-image:none}
-@media (max-width:860px){.np .np-table{background-image:url(../assets/news/table-glass-m.webp?v=b3621e76)}}
-@media (prefers-reduced-data:reduce){.np .np-table{background-image:url(../assets/news/table-glass-m.webp?v=b3621e76)}}
+/* ---------- настоящий объёмный стол ----------
+   Сцена .np-cam — CSS-3D (perspective 1700 px на .np-world, 1 px = 0,5 мм): газета лежит на z = 0, стеклянная столешница чуть ниже (z = −4), ПОЛ — на --tbl-h ниже (≈ 50 см),
+   между ними стоит колонна-барабан. Когда камера опускается (rx 54° → 0°), пол, колонна и стекло сдвигаются друг относительно друга — настоящий параллакс, а не картинка на полу.
+   Слои — рендеры Blender (tools/showroom-assets/news/table_glass.py, режимы TG_MODE=floor и column; цвет — table3d_post.py), все в одном свете: окно слева сверху, тени вправо-вниз:
+     пол  assets/news/floor.webp (3200×2133 на плиту 4800×3200, 1 : 1,5; сверху, плиты травертина 1,2×0,6 м; без стекла и колонны, но с их тенями и тенью листвы; северные ~520 px уходят в плоский цвет --flat),
+     колонна  assets/news/column.webp (1020×1434 RGBA на плоскость 680×956, 1 : 1,5; сбоку, барабан R 220 + плинт R 320 + латунный воротник),
+     стекло и торец — CSS (диск R 700 с бликом окна и кромкой; торец толщиной 40 px — 36 хорд). */
+.np{--tbl-h:1000px;--gl-r:700px;--gl-t:40px;--flat:#d4c6b4}
+.np .np-table{width:4800px;height:3200px;margin:-1600px 0 0 -2400px;transform:translateZ(calc(var(--tbl-h) * -1));background:var(--flat) url(../assets/news/floor.webp?v=4359adc4) center/100% 100% no-repeat;-webkit-mask-image:none;mask-image:none}
+@media (max-width:860px){.np .np-table{background-image:url(../assets/news/floor-m.webp?v=4359adc4)}}
+@media (prefers-reduced-data:reduce){.np .np-table{background-image:url(../assets/news/floor-m.webp?v=4359adc4)}}
+/* фон выше дальнего края пола — тот же плоский цвет, в который уходит север пола: ни линии края плиты, ни дымки-полосы */
+.np .np-sticky{background:var(--flat)}
+.np .np-world{background:var(--flat)}
+.np .np-world::after{display:none}
 
-/* лёгкий слой света: тёплое «окно» слева сверху поверх пола и мягкое затемнение к краям плоскости (внимание — к столу, края кадра не видны) */
-.np .np-light{background:radial-gradient(52% 44% at 22% 14%,rgba(255,248,232,.20),transparent 70%),radial-gradient(70% 72% at 50% 52%,transparent 56%,rgba(70,54,34,.22) 100%)}
+/* ---------- стол: колонна, столешница, торец стекла ---------- */
+.np .np-t3{position:absolute;left:50%;top:50%;width:0;height:0;transform-style:preserve-3d;pointer-events:none}
+/* колонна — вертикальная плоскость 680×956 (камера наклоняется только вокруг оси X, поэтому плоскость всегда обращена к зрителю, как цилиндр): низ на полу, верх под стеклом */
+.np .np-col{position:absolute;left:-340px;top:calc((var(--tbl-h) - 44px) * -1);width:680px;height:calc(var(--tbl-h) - 44px);transform-origin:50% 100%;transform:translateZ(calc(var(--tbl-h) * -1)) rotateX(-90deg);
+  background:url(../assets/news/column.webp?v=4359adc4) 0 0/100% 100% no-repeat}
+/* стекло: прозрачный диск R 700 — окно отражается мягкой светлой полосой у левого-верхнего края (с переплётом), зеленоватая толща, светлая кромка-фаска по окружности */
+.np .np-gl{position:absolute;left:-700px;top:-700px;width:1400px;height:1400px;border-radius:50%;transform:translateZ(-4px);
+  background:linear-gradient(112deg,transparent 14%,rgba(255,255,255,.26) 22%,rgba(255,255,255,.07) 38%,transparent 46%),linear-gradient(90deg,transparent 29%,rgba(120,150,138,.20) 29.4%,transparent 30%),radial-gradient(circle closest-side,rgba(130,176,152,.08) 97%,rgba(210,236,222,.0) 100%);
+  box-shadow:inset 0 0 0 3px rgba(240,250,245,.62),inset 0 0 0 22px rgba(168,208,190,.12),inset 0 0 40px rgba(255,255,255,.12)}
+/* торец стекла толщиной --gl-t: 36 плоскостей-хорд по кругу (видна и передняя, и задняя стенка сквозь стекло); --sh — затемнение стенки по углу (свет слева сверху) */
+.np .np-wl{position:absolute;left:0;top:0;width:0;height:0;transform-style:preserve-3d}
+.np .np-wl b{position:absolute;left:0;top:0;width:0;height:0;transform-style:preserve-3d;transform:rotateZ(calc(var(--i) * 10deg))}
+.np .np-wl b::before{content:"";position:absolute;left:-64px;top:calc(var(--gl-r) * -.9962);width:128px;height:var(--gl-t);transform-origin:50% 0;transform:translateZ(-4px) rotateX(-90deg);
+  background:linear-gradient(rgba(0,0,0,var(--sh)),rgba(0,0,0,var(--sh))),linear-gradient(180deg,rgba(240,249,244,.80) 0,rgba(176,208,194,.46) 10%,rgba(138,178,160,.34) 50%,rgba(168,204,190,.48) 90%,rgba(240,249,244,.78) 100%)}
+/* камера «лежит» (rx = 0, идёт чтение): вертикальные плоскости колонны и торца видны строго с ребра — их не видно, зато такая вырожденная плоскость ломала сортировку 3D
+   (по линии пересечения с плоскостью под газетой поперёк разворота проступала светлая полоса) — прячем; заодно в чтении на два десятка композиторных слоёв меньше */
+.np .np-cam.is-flat .np-col,.np .np-cam.is-flat .np-wl{display:none}
+/* слабое устройство (html.lite): торец скрыт — остаётся тонкая кромка диска (CSS-кольцо у .np-gl) */
+html.lite .np .np-wl{display:none}
+
+/* свет уже запечён в рендер пола — отдельный слой света (.np-light) не нужен */
+.np .np-light{display:none}
 
 /* ---------- запечённые тени журнала на полу сквозь стекло ----------
    Два слоя внутри .np-rig (двигаются и поворачиваются вместе с газетой): <i class="np-shd np-shd-c"></i> — закрытая газета (обложка, 1 страница),
    <i class="np-shd np-shd-o"></i> — разворот (2 страницы). Размеры и смещение — в долях --pw / --ph (ширина и высота страницы): JS должен выставлять их и на .np-rig, как сейчас на .np-book.
+   Слои запечены для стекла на 800 px над полом, а стол стоит на 1000 px (--tbl-h): тень сдвинута вправо-вниз ещё на ≈ (+196; +127) px при --pw 500 — это учтено в left/top (−0,368·pw / −0,4925·ph у закрытой, −0,888·pw / −0,4925·ph у разворота).
    Класс .is-on включает слой (плавное перекрёстное растворение): -c — пока обложка закрыта и в режиме одной страницы, -o — когда открыт разворот. Центр журнала = центр .np-rig.
    Поле слоя при --pw = 500, --ph = 676: закрытая — 1680×1590 px, левый верх (−380; −460) от центра журнала (в долях: left −0,76·pw, top −0,6805·ph, width 3,36·pw, height 2,352·ph);
    разворот — 2140×1590 px, левый верх (−640; −460) (left −1,28·pw, top −0,6805·ph, width 4,28·pw, height 2,352·ph). Тень смещена вправо-вниз на ≈ (+800; +520) px при --pw = 500. */
-.np .np-shd{position:absolute;left:0;top:0;pointer-events:none;opacity:0;transform:translateZ(-3px);background:0 0/100% 100% no-repeat;transition:opacity .55s ease}
+.np .np-shd{position:absolute;left:0;top:0;pointer-events:none;opacity:0;transform:translateZ(calc(var(--tbl-h) * -1 + 1px));background:0 0/100% 100% no-repeat;transition:opacity .55s ease}
 .np .np-shd.is-on{opacity:1}
-.np .np-shd-c{left:calc(var(--pw) * -.76);top:calc(var(--ph) * -.6805);width:calc(var(--pw) * 3.36);height:calc(var(--ph) * 2.352);background-image:url(../assets/news/news-shadow-closed.webp?v=b3621e76)}
-.np .np-shd-o{left:calc(var(--pw) * -1.28);top:calc(var(--ph) * -.6805);width:calc(var(--pw) * 4.28);height:calc(var(--ph) * 2.352);background-image:url(../assets/news/news-shadow-open.webp?v=b3621e76)}
+.np .np-shd-c{left:calc(var(--pw) * -.368);top:calc(var(--ph) * -.4925);width:calc(var(--pw) * 3.36);height:calc(var(--ph) * 2.352);background-image:url(../assets/news/news-shadow-closed.webp?v=4359adc4)}
+.np .np-shd-o{left:calc(var(--pw) * -.888);top:calc(var(--ph) * -.4925);width:calc(var(--pw) * 4.28);height:calc(var(--ph) * 2.352);background-image:url(../assets/news/news-shadow-open.webp?v=4359adc4)}
 
 /* ---------- газета на стекле ---------- */
 /* ОДИН слой под газетой (.np-book::before; второй псевдо-слой дороже: каждый — отдельная 3D-плоскость, ~5 мс на кадр листания при замедлении CPU ×4):
    тонкая кромка света (бумага светлее стекла — двойная кромка от нижней грани стекла, без свечения-«стикера»), контактная тень на самом стекле — тонкая и прохладная
-   (стекло прозрачно: основная тень лежит на полу, это запечённые слои .np-shd), светлый ореол у кромки и снизу — 3 px торца стопки страниц (линии кромок).
+   (стекло прозрачно: основная тень лежит на полу, это запечённые слои .np-shd), светлый ореол у кромки и снизу — 3 px торца стопки страниц (двойная линия кромок). ФОНА у слоя нет: плоскость с фоном при почти плоской камере сортировалась 3D-движком перед страницами тонкой полосой поперёк разворота.
    Крупных размытых теней здесь нет — они раздували слой и стоили кадров. */
-.np .np-book::before{bottom:-3px;background:repeating-linear-gradient(180deg,#f6efde 0 1px,#cbbf9f 1px 2px,#efe6d0 2px 3px);
+.np .np-book::before{bottom:-3px;border-bottom:3px double #cfc3a6;
   box-shadow:0 0 0 1px rgba(255,253,246,.26),0 .05em .1em rgba(36,44,42,.34),.1em .2em .45em -.05em rgba(64,54,40,.22),0 0 .45em .04em rgba(255,250,236,.20)}
 /* бумага ловит свет окна: мягкий диагональный свет слева сверху и лёгкая тень справа снизу; на обложке — ещё и узкий блик (глянцевая печать) */
 .np .np-face::after{content:"";position:absolute;inset:0;z-index:3;pointer-events:none;background:linear-gradient(118deg,rgba(255,251,240,.17) 0,rgba(255,251,240,0) 36%,rgba(44,30,10,0) 64%,rgba(44,30,10,.09) 100%)}
