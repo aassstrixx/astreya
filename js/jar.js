@@ -125,8 +125,43 @@
   const UP_GAP_P = 70, UP_GAP_LOW = 40, UP_GAP_F = 34;          // UP_GAP_F — пролёт: окно ±8 должно обновляться быстрее, чем камера его съедает (≈ 29 ключей/с)        // мс: на телефоне в движении загрузка в видеопамять — не чаще одной за этот промежуток (полный кадр / уменьшенная копия во «взмахе»): раньше копии всех кадров пролёта грузились по одной за каждый кадр анимации ровно во время первого пролёта
   const GOV_PHONE = false;    // регулятор нагрузки на телефоне выключен: с 73f86cc он на деле не работал (см. ниже), и весь телефонный профиль (холст ≈ 1 млн пикселей, окно ключей, копии) проверен именно так; слабые телефоны страхует A.lite, а не падающее разрешение
   const MOVING = 0.04;        // ключевых кадров в секунду: быстрее — идёт движение (включается сглаживание кромок)
+  /* КЛАСС УСТРОЙСТВА (ПК и ноутбуки; телефон идёт своим профилем). Раньше сайт одинаково работал на мощном ПК с экраном 144 Гц и на слабом ноутбуке с 60 Гц: холст до 2,1 млн пикселей, шесть тяжёлых кадров в очереди загрузки, тот же порог «взмаха».
+     high — как прежде; mid — встроенная графика, ≤ 4 ядер или ≤ 4 ГБ памяти: холст ≤ 1,6 млн пикселей, окно ключей ±4, загрузка кадров в видеопамять в движении не чаще раза в UP_GAP_W мс, «взмах» (картинка по уменьшенным копиям) раньше;
+     low — программный рендер или Intel HD/UHD при ≤ 4 ядрах: холст ≤ 1,1 млн, окно ±3, кромки в 7 шагов с самого начала. Дальше регулятор нагрузки подстраивает уже по факту кадров (и для mid/low может опускаться ниже 0,8).
+     ?tier=high|mid|low — принудительно (проверка на своём компьютере); ?diag=1 показывает класс и причину. */
+  const TIER_WHY = [];
+  const TIER = (() => {
+    try {
+      const q = /[?&]tier=(high|mid|low)\b/.exec(location.search); if (q) { TIER_WHY.push('?tier'); return q[1]; }
+      const cores = navigator.hardwareConcurrency || 4, mem = navigator.deviceMemory || 8;
+      let gpu = ''; try { const c = document.createElement('canvas'), g = c.getContext('webgl2') || c.getContext('webgl'), e = g && g.getExtension('WEBGL_debug_renderer_info'); gpu = e ? String(g.getParameter(e.UNMASKED_RENDERER_WEBGL) || '') : ''; const l = g && g.getExtension('WEBGL_lose_context'); if (l) l.loseContext(); } catch (e) { /* — */ }
+      const soft = /swiftshader|llvmpipe|softpipe|software|microsoft basic/i.test(gpu), weakIntel = /intel/i.test(gpu) && /hd graphics|uhd/i.test(gpu), igpu = /intel|vega|radeon\(tm\) graphics|mali|adreno|powervr/i.test(gpu) && !/rtx|gtx|arc a|radeon (rx|pro)/i.test(gpu);
+      TIER_WHY.push('cores' + cores, 'mem' + mem, gpu.slice(0, 40) || 'gpu?');
+      if (soft || (weakIntel && cores <= 4)) return 'low';
+      if (igpu || cores <= 4 || mem <= 4) return 'mid';
+    } catch (e) { /* — */ }
+    return 'high';
+  })();
+  A.tier = TIER; if (A.bc) A.bc('tier', TIER + ' ' + TIER_WHY.join(' '));
+  const WEAK = TIER !== 'high';             // ПК и ноутбуки класса mid/low
+  /* ЧАСТОТА ЭКРАНА. Цель регулятора нагрузки — кадр 16,7 мс (60 к/с) и на 60 Гц, и на 144 Гц. Раньше, если «лучший» кадр движка был ≥ 28 мс, цель молча становилась 33 мс (будто экран 30 Гц): слабый ноутбук, тянущий 25–35 к/с,
+     считался «в норме», и холст не снижался (в замере с замедлением процессора ×6 регулятор не срабатывал совсем). Теперь экран 30 Гц признаётся (A.dispSlow), только если три замера по 40 кадров requestAnimationFrame
+     (через 3, 10 и 25 с после загрузки, вкладка видима) ни разу не показали интервал короче 24 мс; в остальных случаях цель — 16,7 мс. */
+  (function probeDisplay() {
+    A.dispSlow = false; let rounds = 0, seen = false;
+    const run = delay => setTimeout(() => {
+      if (document.visibilityState !== 'visible') return run(2000);
+      let last = 0, k = 0, mn = 1e9;
+      const f = t => { if (last) { mn = Math.min(mn, t - last); k++; } last = t; if (k < 40) requestAnimationFrame(f); else done(); };
+      const done = () => { rounds++; if (mn < 24) seen = true; A.dispMs = Math.round(Math.min(A.dispMs || 1e9, mn) * 10) / 10; A.dispSlow = !seen && rounds >= 3; if (A.bc) A.bc('hz', 'кадр экрана ' + Math.round(mn * 10) / 10 + ' мс'); if (!seen && rounds < 3) run(rounds === 1 ? 7000 : 15000); };
+      requestAnimationFrame(f);
+    }, delay);
+    run(3000);
+  })();
+  const TIER_PX = {high: 2.1e6, mid: 1.6e6, low: 1.1e6};       // пикселей на холсте героя
+  const UP_GAP_W = 50, FAST_ON_W = 16, FAST_OFF_W = 6;       // слабый ПК: загрузка в видеопамять в движении — не чаще раза в 50 мс; «взмах» начинается с 16 ключей/с (на мощном — с 30)
   const LANES = [14, 8];      // запросов одновременно: [компьютер, телефон] (HTTP/2)
-  const RES = [5, A.lite ? 1 : 3];         // сколько ключевых кадров по обе стороны от положения держим в видеопамяти: [компьютер, телефон]
+  const RES = [TIER === 'low' ? 3 : TIER === 'mid' ? 4 : 5, A.lite ? 1 : 3];         // сколько ключевых кадров по обе стороны от положения держим в видеопамяти: [компьютер, телефон]
   const K1 = 12;                              // телефон, пролёт: столько первых ключей грузится и во время прокрутки героя, остальные — в паузах (и сразу, как читалка входит в сцену)
   const DECODERS = 3, DECODERS_P = 2;         // одновременных разворачиваний картинок в текстуры
   /* уменьшенные копии всех кадров (всегда в видеопамяти; во взмах картинка идёт по ним): ширина цвета, высота цвета, ширина и высота глубины (0 — глубина в натуральном размере: тогда полный кадр берёт её же и держит только цвет), ширина спрайта баночки.
@@ -350,7 +385,7 @@
     }
 
     /* развёртывание файлов в текстуры: нужные кадры рядом с положением, дальние выгружаем */
-    const UPQ_MAX = () => isPortrait() ? 2 : 6;          // не больше стольких развёрнутых кадров ждут загрузки в видеопамять: дальше новые не разворачиваем (иначе на быстром телефоне очередь растёт до сотен МБ)
+    const UPQ_MAX = () => isPortrait() ? 2 : WEAK ? 3 : 6;         // не больше стольких развёрнутых кадров ждут загрузки в видеопамять: дальше новые не разворачиваем (иначе на быстром телефоне очередь растёт до сотен МБ)
     const winR = () => { if (!isPortrait()) return RES[0]; return FLY ? (A.lite ? 3 : 8) : RES[1]; };          // сколько полных ключей по обе стороны от положения держим в видеопамяти
     function pumpDecode() {
       if (dead || !hall || trimmed) return;
@@ -421,7 +456,7 @@
     function sizeCanvas() {
       const w = stage.clientWidth || innerWidth, h = stage.clientHeight || innerHeight;
       /* пикселей на холсте — не больше, чем в самом кадре (1920×1080 ≈ 2,1 млн): больше деталей на экране всё равно не появится; при слабом устройстве регулятор нагрузки снижает ещё (resScale) */
-      const dpr = Math.min(window.devicePixelRatio || 1, 2), s = Math.min(dpr, Math.sqrt((isPortrait() || PHONE ? (A.lite ? 7e5 : 1.0e6) : 2.1e6) / Math.max(1, w * h))) * resScale;          // телефон: ≈ 1,2 млн пикселей — слабые видеокарты не тянут больше; сетка реже, кромки решаются поточечно (jar-gl.js)
+      const dpr = Math.min(window.devicePixelRatio || 1, 2), s = Math.min(dpr, Math.sqrt((isPortrait() || PHONE ? (A.lite ? 7e5 : 1.0e6) : (A.lite ? Math.min(TIER_PX[TIER], 1.1e6) : TIER_PX[TIER])) / Math.max(1, w * h))) * resScale;          // телефон: ≈ 1,2 млн пикселей — слабые видеокарты не тянут больше; сетка реже, кромки решаются поточечно (jar-gl.js)
       const nw = trimmed && !FLY ? 2 : Math.round(w * s), nh = trimmed && !FLY ? 2 : Math.round(h * s);          // герой погас — его холст не держим в полном размере
       if (nw > 8) WF = nw;                                                              // ширина «живого» холста (когда герой погас, он 2×2): по ней выбирается размер разворачиваемых кадров
       if (hall && (nw !== W || nh !== H)) { W = nw; H = nh; hall.setSize(W, H); }
@@ -568,7 +603,7 @@
       cp = clamp(cp, 0, 1);
       if (Math.abs(vp) > 1e-3) dirSign = vp > 0 ? 1 : -1;
       { const spd = Math.max(Math.abs(vp), Math.abs(cp - cpTick) / dt) * KS; cpTick = cp;      // скорость: и пружины, и реально пройденное за кадр (при редких кадрах скорость пружины к концу шага уже мала)                                   // «взмах»: пока он идёт, полные кадры не разворачиваем и не грузим (уменьшенных копий хватает)
-        const por = isPortrait(), fOn = por ? (FLY ? FAST_ON_PF : FAST_ON_P) : FAST_ON, fOff = por ? (FLY ? FAST_OFF_PF : FAST_OFF_P) : FAST_OFF;          // пролёт на ПК без быстрого режима (все ключи рядом), на телефоне он есть и в пролёте
+        const por = isPortrait(), fOn = por ? (FLY ? FAST_ON_PF : FAST_ON_P) : (WEAK && !FLY ? FAST_ON_W : FAST_ON), fOff = por ? (FLY ? FAST_OFF_PF : FAST_OFF_P) : (WEAK && !FLY ? FAST_OFF_W : FAST_OFF);         // пролёт на ПК без быстрого режима (все ключи рядом), на телефоне он есть и в пролёте
         if ((!FLY || (por && !PHALL)) && !fast && spd > fOn && lowN >= lowTgt() * 0.9 && (!jar || lowJN >= NH * 0.9)) fast = true;
         else if (fast && spd < fOff) { fast = false; pumpDecode(); } }
       const inView = y + vh > sTop && y < sTop + sH;
@@ -577,21 +612,23 @@
       if (inView && !sph.raf) sphStart();                                    // шар вращается сам, даже если курсор не двигают (цикл запускается, как только герой в кадре и сцена дошла до зала)
       /* регулятор нагрузки: кадры идут дольше бюджета — холст чуть меньше (не чаще раза в 1,5 с) */
       if (inView && Math.abs(vp) * KS > MOVING && dtRaw > 0) {
+        applyLearned();
         const dtc = Math.min(dtRaw, 80); minDt = Math.max(5, Math.min(minDt + 0.004, dtc));
         if (!isPortrait() || GOV_PHONE) dtEma += (dtc - dtEma) * 0.15;          // (эта строка попала в комментарий в 73f86cc — среднее время кадра застыло на 16,7 мс; на экране ≥ 90 Гц порог оказывался ниже, и регулятор срезал холст и сетку при первой же прокрутке героя: «мыло» и зубчики на кромках)
-        const base = isPortrait() ? 16.67 : minDt < 28 ? 16.67 : 33.33;          // цель — 60 кадров/с при любой частоте экрана (раньше на ПК цель равнялась кадру экрана: на 120–144 Гц любой кадр дольше 8–10 мс считался медленным); дисплей на 30 к/с — 33 мс
+        const base = isPortrait() ? 16.67 : A.dispSlow ? 33.33 : 16.67;         // цель — 60 кадров/с при любой частоте экрана (раньше на ПК цель равнялась кадру экрана: на 120–144 Гц любой кадр дольше 8–10 мс считался медленным); дисплей на 30 к/с — 33 мс
         const other = A.jarBusy && A.jarBusy[FLY ? 'hero' : 'fly'];          // соседний движок сейчас грузит кадры (пролёт начинает грузиться на 40 % героя): кадры героя в это время дольше не из-за его холста — их не считаем
         if (other) slowRun = 0; else if (dtEma > base * 1.35 + 0.5) slowRun++; else slowRun = 0;
         /* Ступени регулятора (ПК): 1) дешёвое и незаметное — шаги уточнения кромок 20 → 7; 2) холст 0,9; 3) холст 0,8 — ниже не опускаем (раньше шло до 0,65: на записи заказчика текстуры «мылились», а кромки плит шли
            зубчиками именно из-за сниженного холста в движении). Телефон — как было (0,8 → 0,65; регулятор там выключен, GOV_PHONE). */
-        if (slowRun >= (isPortrait() ? 12 : 24) && now() - lastGov > 1500 && (isPortrait() ? resScale > 0.6 : (!govEdge || resScale > 0.8))) {
+        const floorR = WEAK ? 0.62 : 0.8;          // мощный ПК не опускаем ниже 0,8 (ниже — «мыло» и зубчики на кромках, замечание владельца); слабый ПК/ноутбук с 60 Гц, который и при 0,8 не тянет 60 к/с, — до 0,62: плавность важнее резкости в движении (в покое холст снова полный)
+        if (slowRun >= (isPortrait() ? 12 : 24) && now() - lastGov > 1500 && (isPortrait() ? resScale > 0.6 : (!govEdge || resScale > floorR + 1e-6))) {
           if (isPortrait()) resScale = resScale > 0.8 ? 0.8 : 0.65;
           else if (!govEdge) { govEdge = true; if (hall && hall.setRefine) hall.setRefine(7); }
-          else resScale = resScale > 0.9 ? 0.9 : 0.8;
-          govChanges++; A.bc && A.bc('gov', (FLY ? 'fly ' : 'hero ') + resScale + (govEdge ? ' e7' : '') + ' dt' + Math.round(dtEma)); slowRun = 0; lastGov = now(); sizeCanvas(); armRestore();
+          else resScale = resScale > 0.9 ? 0.9 : resScale > 0.8 ? 0.8 : resScale > 0.72 ? 0.72 : floorR;
+          govChanges++; A.bc && A.bc('gov', (FLY ? 'fly ' : 'hero ') + resScale + (govEdge ? ' e7' : '') + ' dt' + Math.round(dtEma)); slowRun = 0; lastGov = now(); learn(); sizeCanvas(); armRestore();
         }          // сетку не режем: на ней держатся кромки (на половинной — пилообразные), а нагрузку даёт в основном число пикселей холста
       }
-      if (upQ.length) { const mv = Math.abs(vp) * KS > MOVING || (FLY && PHALL && scrolling()); if (!mv || !isPortrait() || performance.now() - lastUp >= (fast ? UP_GAP_LOW : (FLY ? UP_GAP_F : UP_GAP_P))) flushUploads(mv ? 2.5 : 8); }          // телефон: в движении тяжёлая загрузка не чаще раза в UP_GAP_P мс (иначе каждый кадр с хвостом)                // по одной-две тяжёлые текстуры за кадр; в покое — быстрее
+      if (upQ.length) { const mv = Math.abs(vp) * KS > MOVING || (FLY && PHALL && scrolling()); if (!mv || !(isPortrait() || WEAK) || performance.now() - lastUp >= (fast ? UP_GAP_LOW : (FLY ? UP_GAP_F : (isPortrait() ? UP_GAP_P : UP_GAP_W)))) flushUploads(mv ? 2.5 : 8); }          // телефон: в движении тяжёлая загрузка не чаще раза в UP_GAP_P мс (иначе каждый кадр с хвостом)                // по одной-две тяжёлые текстуры за кадр; в покое — быстрее
       if ((inView || !firstDrawn) && hall && (dirty || Math.abs(cp - paintedP) > 1e-7)) {
         if (paint(t)) { paintedP = cp; dirty = false; } else dirty = true;
       }
@@ -604,6 +641,19 @@
     }
     let lastGov = -1e9, restoreT = 0;
     const now = () => performance.now();
+    /* Память регулятора: что он уже выбрал для этого компьютера (холст и шаги кромок), запоминается на сессию (sessionStorage) и 10 минут. Без неё в покое холст возвращается к полному, и в каждой новой прокрутке
+       слабый ноутбук снова начинал с полного размера и ~24 медленных кадров, пока регулятор опять не снижал (рывки в начале каждого жеста). Теперь в начале движения холст сразу такой, как выбрано; в покое — по-прежнему полный.
+       Класс low начинает с 0,9 и кромок в 7 шагов (TIER). */
+    const GOV_KEY = 'astreya-gov', GOV_TTL = TIER === 'low' ? 288e5 : 600000;
+    let learned = null;
+    try { const j = JSON.parse(window.sessionStorage.getItem(GOV_KEY) || 'null'); if (j && Date.now() - j.t < GOV_TTL) learned = j; } catch (e) { /* — */ }
+    if (!learned && TIER === 'low') learned = {r: 0.9, e: 1, t: Date.now()};
+    const learn = () => { if (isPortrait()) return; learned = {r: resScale, e: govEdge ? 1 : 0, t: Date.now()}; try { window.sessionStorage.setItem(GOV_KEY, JSON.stringify(learned)); } catch (e) { /* — */ } };
+    const applyLearned = () => {
+      if (isPortrait() || !learned || Date.now() - learned.t > GOV_TTL || (resScale <= learned.r + 1e-6 && (govEdge || !learned.e))) return;
+      resScale = Math.min(resScale, learned.r); if (learned.e && !govEdge) { govEdge = true; if (hall && hall.setRefine) hall.setRefine(7); }
+      slowRun = 0; lastGov = now(); A.bc && A.bc('gov', (FLY ? 'fly ' : 'hero ') + 'по памяти ' + resScale + (govEdge ? ' e7' : '')); sizeCanvas(); armRestore();
+    };
     /* качество возвращается, когда сцена остановилась: регулятор снижает холст при долгих кадрах (загрузка кадров, чужая вкладка, тяжёлая страница), но в покое кадры не считаются, а картинка должна быть
        резкой — через ≈ 1,4 с без движения холст снова полный. Если в движении опять будет медленно, регулятор снизит снова (не раньше, чем через 1,5 с и 24 медленных кадра) */
     const restoreQ = () => {
@@ -690,7 +740,7 @@
       state() {
         const ring = Array.prototype.slice.call(perfRing, 0, Math.min(perfN, perfRing.length)).sort((a, b) => a - b);
         let res = 0, resj = 0, lo = 0, loj = 0; for (let k = 0; k < NH; k++) { res += resident[k]; resj += resJ[k]; lo += lowDone[k] === 1 ? 1 : 0; loj += lowJDone[k] === 1 ? 1 : 0; }
-        return {p: cp, pTarget: pT, u: uOf(), N: NH, loaded: loadedKeys, set, gl: !!hall, drawn: lastDraw, firstDrawn, resident: res, residentJar: resj, lows: lo, lowSprites: loj, resScale, govChanges, fast, up: {full: upN.full, low: upN.low, queued: upQ.length}, rest: vp === 0 && Math.abs(cp - pT) < 1e-5,
+        return {p: cp, pTarget: pT, u: uOf(), N: NH, loaded: loadedKeys, set, gl: !!hall, drawn: lastDraw, firstDrawn, resident: res, residentJar: resj, lows: lo, lowSprites: loj, resScale, tier: TIER, learned, dispMs: A.dispMs, dispSlow: A.dispSlow, govChanges, fast, up: {full: upN.full, low: upN.low, queued: upQ.length}, rest: vp === 0 && Math.abs(cp - pT) < 1e-5,
           jar: {loaded: blobs.j.filter(Boolean).length, n: NH, shown: jarShown, sprites: resj, label: labelReady},
           sphere: {ready: !!(hall && hall.sphereReady), yaw: sph.yaw, cur: [sph.hx, sph.hy], running: !!sph.raf, still: scrolling()}, jarOk: lastJarOk, fastNow: fast, trimmed,
           size: [W, H, JW, JH], perf: {n: perfN, mean: ring.length ? ring.reduce((s, v) => s + v, 0) / ring.length : 0, p95: ring.length ? ring[Math.floor(ring.length * 0.95)] : 0, max: ring.length ? ring[ring.length - 1] : 0}};

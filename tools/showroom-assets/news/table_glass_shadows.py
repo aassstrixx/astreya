@@ -7,7 +7,7 @@
 Затемнение r < 1 пересчитывается в прозрачность тёмного тёплого цвета C так, чтобы поверх пола получить ровно r:  a = (1 − r) / (1 − Y(C) / Y(пол)).  Подсвет r > 1 (отражённый от бумаги свет)
 пишется отдельным светлым слоем, если он заметен (>1,5 %).
 
-  python3 tools/showroom-assets/news/table_glass_shadows.py            — полный цикл: рендер (≈ 6–8 мин) → assets/news/news-shadow-closed.webp, news-shadow-open.webp (+ -glow) и news-shadow.json
+  python3 tools/showroom-assets/news/table_glass_shadows.py            — полный цикл: рендер (≈ 6–8 мин) → assets/news/news-shadow-closed.webp, news-shadow-open.webp (+ news-glow-*.webp, если подсвет заметен); размеры и смещения печатаются и пишутся в $TG_TMP/news-shadow.json
   python3 tools/showroom-assets/news/table_glass_shadows.py post       — только пересчёт из уже готовых рендеров (TG_TMP)
 Основной сырой кадр стола (для общих средних цвета) берётся из TG_RAW (по умолчанию $TG_TMP/final.png)."""
 import os, sys, json, subprocess
@@ -66,7 +66,7 @@ def main():
         x0, y0 = r['offset_px']; w, h = r['css_px']
         r['in_pw_ph'] = {'left': x0 / PW, 'top': y0 / PH, 'width': w / PW, 'height': h / PH}
         out[kind] = r; print(json.dumps(r, ensure_ascii=False))
-    json.dump(out, open(os.path.join(OUT, 'news-shadow.json'), 'w'), ensure_ascii=False, indent=1)
+    json.dump(out, open(os.path.join(TMP, 'news-shadow.json'), 'w'), ensure_ascii=False, indent=1)
 
 
 if __name__ == '__main__':

@@ -115,11 +115,11 @@ def make_dust_map(path, S=4096):
         cv2.polylines(canvas, [np.round(np.array(pts) * 16).astype(np.int32)], False, float(val), th, cv2.LINE_AA, 4)
     # волосяные царапины: короткие, почти прямые, чуть изогнутые; по всему диску равномерно, без «трещин» из центра
     sc = np.zeros((S, S), np.float32)
-    for i in range(420):
+    for i in range(330):
         r = math.sqrt(rng.uniform(0, 1)) * c * .96; ang = rng.uniform(0, 2 * math.pi); x0, y0 = c + r * math.cos(ang), c + r * math.sin(ang)
         L = rng.uniform(40, 300) * (3.5 if rng.random() < .06 else 1.0); th0 = rng.uniform(0, 2 * math.pi); turn = rng.normal(0, .22)
         pts = [(x0 + math.cos(th0 + turn * k / 14) * L * k / 14, y0 + math.sin(th0 + turn * k / 14) * L * k / 14) for k in range(15)]
-        stroke(sc, pts, 1 if rng.random() < .75 else 2, rng.uniform(.18, .75))
+        stroke(sc, pts, 1, rng.uniform(.14, .55))
     # длинные редкие дуги — следы протирания тканью (по всему диску, не сходятся в центре)
     sw = np.zeros((S, S), np.float32)
     for i in range(14):
@@ -222,7 +222,7 @@ def glass_mat(dust_path):
     mp.inputs['Scale'].default_value = (1 / (2 * R_GLASS / .985 * 1.0),) * 2 + (1,); mp.inputs['Location'].default_value = (.5, .5, 0); link(nt, tc.outputs['Object'], mp.inputs['Vector'])
     dt = img_tex(nt, dust_path, 'Non-Color', mp.outputs['Vector'], 'Linear'); dm = dt.outputs['Color']
     dmask = N(nt, 'ShaderNodeRGBToBW'); link(nt, dm, dmask.inputs['Color']); dv = dmask.outputs['Val']
-    scr = _f('TG_SCR', .7)
+    scr = _f('TG_SCR', .55)
     # низкочастотная волнистость поверхности: настоящее флоат-стекло чуть «играет» в отражении — мягкие полосы вместо однотонной пелены
     wave = noise_(nt, tc.outputs['Object'], .42, 2, .5, .5)
     rough = math_(nt, 'ADD', .004, math_(nt, 'MULTIPLY', dv, .10 * scr), clamp=True)
@@ -266,7 +266,7 @@ def sheen_panel_mat(s_sh):
 
 def brass_mat():
     m = bpy.data.materials.new('tg_brass'); nt = nodes_of(m); out = N(nt, 'ShaderNodeOutputMaterial'); b = N(nt, 'ShaderNodeBsdfPrincipled')
-    b.inputs['Base Color'].default_value = (.78, .60, .33, 1); b.inputs['Metallic'].default_value = 1.0; b.inputs['Roughness'].default_value = .34; link(nt, b.outputs['BSDF'], out.inputs['Surface']); return m
+    b.inputs['Base Color'].default_value = (.86, .65, .35, 1); b.inputs['Metallic'].default_value = 1.0; b.inputs['Roughness'].default_value = .27; link(nt, b.outputs['BSDF'], out.inputs['Surface']); return m
 
 
 def window_panel_mat(s_win):
@@ -376,11 +376,11 @@ def build(sc):
         lm = bpy.data.materials.new('tg_leaf'); nt = nodes_of(lm); out = N(nt, 'ShaderNodeOutputMaterial'); pb = N(nt, 'ShaderNodeBsdfPrincipled'); link(nt, pb.outputs['BSDF'], out.inputs['Surface'])
         tx = img_tex(nt, lp, 'Non-Color', N(nt, 'ShaderNodeTexCoord').outputs['UV'], 'Linear'); link(nt, tx.outputs['Alpha'], pb.inputs['Alpha'])
         Sx, Sy = _f('TG_LX', 6.0), _f('TG_LY', 2.6); Lp = Vector((_f('TG_KX', -15.0), _f('TG_KY', 10.0), _f('TG_KZ', 21.0))); T0 = Vector((2.0, -1.0, Z_TOP))
-        dh = (T0 - Lp).normalized(); Sp = Vector((Sx, Sy, 0.0)); pos = Sp - dh * (_f('TG_LH', 11.5) / -dh.z)            # ветка стоит на обратном луче солнца над точкой тени
+        dh = (T0 - Lp).normalized(); Sp = Vector((Sx, Sy, 0.0)); pos = Sp - dh * (_f('TG_LH', 5.0) / -dh.z)            # ветка стоит на обратном луче солнца над точкой тени
         bpy.ops.mesh.primitive_plane_add(size=1, location=pos); lf = bpy.context.object; lf.name = 'leaves'; lf.scale = (_f('TG_LW', 9.0), _f('TG_LW', 9.0) * 853 / 1589, 1)
         lf.rotation_euler = (-dh).to_track_quat('Z', 'Y').to_euler(); lf.rotation_euler.rotate_axis('Z', math.radians(_f('TG_LR', 20.0))); lf.data.materials.append(lm)
         lf.visible_camera = bool(os.environ.get('TG_LEAFDBG')); lf.visible_diffuse = False; lf.visible_glossy = False; lf.visible_transmission = False; lf.visible_volume_scatter = False
-        sun = bpy.data.lights.new('sun', 'SUN'); sun.energy = _f('TG_SUN', 7.0); sun.angle = math.radians(_f('TG_SUNA', 1.2)); sun.color = (1.0, .93, .82)
+        sun = bpy.data.lights.new('sun', 'SUN'); sun.energy = _f('TG_SUN', 7.0); sun.angle = math.radians(_f('TG_SUNA', .7)); sun.color = (1.0, .93, .82)
         so = bpy.data.objects.new('sun', sun); sc.collection.objects.link(so); so.rotation_euler = dh.to_track_quat('-Z', 'Y').to_euler(); so.visible_glossy = False
     # ---- мир: холодный мягкий свет потолка и неба
     w = bpy.data.worlds.new('w'); w.use_nodes = True; nt = w.node_tree; bg = nt.nodes['Background']
