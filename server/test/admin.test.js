@@ -189,3 +189,15 @@ test('подписи интерфейса для скриптов: попада�
   await save(editor, 'texts', d => { d.items = {}; }); assert.ok(read('js/data.js').includes('"texts":{}'));
 });
 
+
+test('демо-файл админки: собирается одним HTML, без данных компьютера, со всеми разделами и недоступностью серверных действий', () => {
+  const out = path.join(S.data, 'demo.html');
+  require('child_process').execFileSync('node', [path.join(__dirname, '..', '..', 'tools', 'admin-demo.js'), out], {cwd: path.join(__dirname, '..', '..'), timeout: 120000, env: Object.assign({}, process.env, {NO_PROXY: '127.0.0.1,localhost'})});
+  const html = fs.readFileSync(out, 'utf8'); assert.ok(html.length < 12 * 1048576, 'размер файла: ' + (html.length / 1048576).toFixed(1) + ' МБ');
+  for (const view of ['texts', 'products', 'news', 'files', 'publish', 'history', 'preview', 'security', 'launch']) assert.ok(html.includes('AD.views.' + view + ' ='), 'раздел «' + view + '» в файле');
+  assert.ok(html.includes('data:font/woff2;base64,') && html.includes('data:image/webp;base64,'), 'шрифты и картинки встроены');
+  assert.ok(!/<script[^>]+src=|<link[^>]+href="(?:\/|https?:)/.test(html), 'нет внешних файлов: всё внутри');
+  for (const leak of [REPO_ROOT(), '127.0.0.1', 'ghp_', 'Demo-fixture']) assert.ok(!html.includes(leak), 'в файле нет «' + leak + '»');
+  assert.ok(html.includes('В демо недоступно: '), 'серверные действия честно отвечают «в демо недоступно»');
+});
+function REPO_ROOT() { return path.resolve(__dirname, '..', '..'); }
