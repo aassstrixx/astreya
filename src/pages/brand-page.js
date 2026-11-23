@@ -103,6 +103,7 @@ module.exports = function brandPage(ctx, C, P, b) {
 
     <section class="sec dtb-about wrap" aria-label="О бренде">
       <div class="dtb-story reveal">
+        <h2 class="sr">О бренде ${esc(b.name)}</h2>
         <span class="eyebrow in">О бренде</span>
         ${(b.long || []).map(t => `<p>${esc(t)}</p>`).join('')}
         ${b.tasks && b.tasks.length ? `<div class="tasks-line">${b.tasks.map(t => C.tag(ctx.taskById[t].label, 'blue')).join('')}</div>` : ''}

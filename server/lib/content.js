@@ -126,7 +126,7 @@ function problems(name, data) {
       const POS = ['tl', 't', 'tr', 'l', 'c', 'r', 'bl', 'b', 'br', 'full'], tex = bd.textures || {};
       const ck = (it, w, needTex) => { if (!it || typeof it !== 'object' || Array.isArray(it)) { P.push(`${w}: ожидается объект.`); return; }
         if (needTex) { if (!tex[it.tex]) P.push(`${w}: нет текстуры «${it.tex}».`); else if (!fs.existsSync(path.join(C.ROOT, 'assets', 'bg', it.tex + '.webp'))) P.push(`${w}: файла assets/bg/${it.tex}.webp нет.`); }
-        if (it.pos && !POS.includes(it.pos)) P.push(`${w}: неизвестное место «${it.pos}».`); if (it.o !== undefined && it.o !== null && !(+it.o >= 3 && +it.o <= 12)) P.push(`${w}: сила — число от 3 до 12.`); };
+        if (it.pos && !POS.includes(it.pos)) P.push(`${w}: неизвестное место «${it.pos}».`); if (it.o !== undefined && it.o !== null && !(+it.o >= 3 && +it.o <= 20)) P.push(`${w}: сила — число от 3 до 20.`); };
       Object.entries(bd.pages || {}).forEach(([k, plan]) => { if (!plan || typeof plan !== 'object') return; const w = `Фоны, страница «${k}»`;
         (Array.isArray(plan.variants) ? plan.variants : [plan]).forEach((v, i) => { const x = plan.variants ? `${w}, вариант ${i + 1}` : w;
           ['top', 'end'].forEach(sl => { if (v[sl]) ck(v[sl], `${x}, ${sl === 'top' ? 'начало' : 'конец'}`, true); }); if (v.logo) ck(v.logo, `${x}, логотип`, false);

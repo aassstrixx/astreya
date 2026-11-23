@@ -47,7 +47,7 @@ function newsPage(ctx, C, P) {
   const folio = (i, label) => `<header class="np-folio"><span>АСТРЕЯ</span><em>${esc(label)}</em><span>стр. ${i + 1}</span></header>`;
   const foot = (i, side) => `<footer class="np-foot ${side}"><span>${esc(issueTxt)}</span><b>${i + 1}</b></footer>`;
   const page = (i, cls, inner, label) => `<article class="np-pg ${cls}" data-pg="${i}" data-sp="${i === 0 ? 0 : Math.ceil(i / 2)}" aria-label="Страница ${i + 1}">${i === 0 || i === 11 ? '' : folio(i, label)}${inner}${i === 0 || i === 11 ? '' : foot(i, i % 2 ? 'l' : 'r')}</article>`;
-  const prodLinks = n => (n.related.products || []).map(id => ctx.productById[id]).filter(Boolean).map(p => `<li><a href="${C.purl(P, p)}" data-track="news_product">${esc(p.name)}<small>${esc(ctx.brandById[p.brand].name)}</small></a></li>`).join('');
+  const prodLinks = n => ((n.related || {}).products || []).map(id => ctx.productById[id]).filter(Boolean).map(p => `<li><a href="${C.purl(P, p)}" data-track="news_product">${esc(p.name)}<small>${esc(ctx.brandById[p.brand].name)}</small></a></li>`).join('');
   const where = n => { const k = Object.keys(SLOT).find(x => SLOT[x] === n.id); return k ? WHERE[k][1] : ''; };
   const alsoIn = (excl, label) => { const rest = news.filter(n => !excl.includes(n.id)).slice(0, 3);
     return rest.length ? `<aside class="np-brief"><b>${esc(label || 'Также в выпуске')}</b><ul>${rest.map(n => `<li>${open(n)}<span>${esc(n.title)}</span><em>${where(n) ? 'стр. ' + where(n) : 'архив'}</em></a></li>`).join('')}</ul></aside>` : ''; };
@@ -141,8 +141,8 @@ function newsPage(ctx, C, P) {
   const data = {arts: Object.fromEntries(news.map(n => { const c = ctaOf(ctx, C, P, n), k = Object.keys(SLOT).find(x => SLOT[x] === n.id);
     return [n.id, {id: n.id, title: n.title, excerpt: n.excerpt, body: n.body, date: n.date, dateText: dparts(n.date).full, cat: n.category, catName: cat(n).name, url: C.nurl(P, n), sp: k ? WHERE[k][0] : 0, pg: k ? WHERE[k][1] : '',
       cta: c ? {href: c.href, label: c.label, attrs: c.attrs} : null,
-      rel: {products: (n.related.products || []).map(id => ctx.productById[id]).filter(Boolean).map(p => ({name: p.name, href: C.purl(P, p), brand: ctx.brandById[p.brand].name})),
-        events: (n.related.events || []).map(id => ctx.eventById[id]).filter(Boolean).slice(0, 3).map(e => ({title: e.title, href: C.eurl(P, e), date: dparts(e.date).full, city: e.city}))}}]; })),
+      rel: {products: ((n.related || {}).products || []).map(id => ctx.productById[id]).filter(Boolean).map(p => ({name: p.name, href: C.purl(P, p), brand: ctx.brandById[p.brand].name})),
+        events: ((n.related || {}).events || []).map(id => ctx.eventById[id]).filter(Boolean).slice(0, 3).map(e => ({title: e.title, href: C.eurl(P, e), date: dparts(e.date).full, city: e.city}))}}]; })),
     spreads: SECTION,
     discounts: site.discounts};
 
