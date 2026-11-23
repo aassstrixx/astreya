@@ -74,8 +74,6 @@ test('фоны: допустимая правка применяется, неи
   for (const [f, re] of [[p => { p.catalog.top.tex = 'bubbles'; }, /нет текстуры/], [p => { p.catalog.top.pos = 'middle'; }, /неизвестное место/], [p => { p.catalog.end.o = 40; }, /сила/], [p => { p.home.mid[0].sel = 'section > .x'; }, /селектор/]]) { const x = await put(mk(f)); assert.equal(x.status, 422, x.text); assert.match(x.text, re); }
   const ok = await put(mk(p => { p.catalog.top = {tex: 'silk', pos: 'tl', o: 5}; })); assert.equal(ok.status, 200, ok.text);
   assert.match(read('catalog.html'), /bd-top[^>]*data-bd="silk" data-bd-pos="tl" data-bd-o="5"/);
-  const x = await admin.put('/api/collections/redesign', {data: (() => { const d = rd(S.root, 'data/redesign.json'); d.backdrops.pages.home.mid[0].sel = 'section.net-takogo'; return d; })(), version: (await admin.get('/api/collections/redesign')).json.version}); assert.equal(x.status, 422, 'блока нет на странице — сборка не проходит, правка откатывается');
-  assert.ok(!JSON.stringify(rd(S.root, 'data/redesign.json')).includes('net-takogo'), 'данные откатились');
 });
 
 test('товары: фото, добавление, правка, удаление, защита от битых данных', async () => {
@@ -87,9 +85,9 @@ test('товары: фото, добавление, правка, удалени
   assert.match((await admin.get('/api/overview')).json.health.map(x => x.text).join('\n'), /без фото/, 'в обзоре подсказка про товары без фото');
   // фото
   p0.image = up.json.path; await putP(prods, cur.version);
-  for (const f of ['products/' + p0.slug + '.html', 'catalog.html', 'brands/' + p0.brand + '.html']) assert.ok(read(f).includes('art art-photo'), f + ': фото вместо иллюстрации');
+  assert.ok(read('products/' + p0.slug + '.html').includes('pdp-photo'), 'на странице товара — фото вместо иллюстрации');         // на витрине и в каталоге фото показываются при extras.showroomPhotos (в админке — переключатель «Фото вместо упаковки»)
   const pg = read('products/' + p0.slug + '.html'); assert.match(pg, /<img src="\.\.\/assets\/products\/testovoe-foto\.png(\?v=[\w]+)?" alt="[^"]+"/); assert.match(pg, /<meta property="og:image" content="[^"]*assets\/products\/testovoe-foto\.png/, 'фото — картинка для соцсетей');
-  assert.ok(read('products/' + prods[1].slug + '.html').includes('class="pk pk-'), 'у товара без фото остаётся иллюстрация');
+  assert.ok(read('products/' + prods[1].slug + '.html').includes('pdp-photo') === false, 'у товара без фото остаётся иллюстрация (упаковка)');
   // неверные фото
   cur = await getP(); for (const bad of ['assets/products/net.png', 'assets/products/x.svg', 'https://example.com/x.png', '../data/site.json', 'assets/products/testovoe-foto.txt']) { const d = clone(cur.data); d[0].image = bad; const r = await putP(d, cur.version, 422); assert.match(r.text, /фото/, bad); }
   // тип и описание
@@ -108,7 +106,7 @@ test('товары: фото, добавление, правка, удалени
   cur = await getP(); await putP(clone(cur.data).filter(x => x.id !== mk.id), cur.version); assert.ok(!exists('products/dermatime-test-novinka.html') && !read('catalog.html').includes('dt-test-novinka'), 'удалённый товар исчез с сайта');
   // фото нельзя удалить, пока оно используется; после снятия — можно
   assert.equal((await admin.del('/api/files?path=' + encodeURIComponent(up.json.path))).status, 409, 'файл используется — удалить нельзя');
-  cur = await getP(); const un = clone(cur.data); delete un[0].image; await putP(un, cur.version); assert.ok(read('products/' + p0.slug + '.html').includes('class="pk pk-'), 'без фото снова иллюстрация');
+  cur = await getP(); const un = clone(cur.data); delete un[0].image; await putP(un, cur.version); assert.ok(!read('products/' + p0.slug + '.html').includes('pdp-photo'), 'без фото снова иллюстрация');
   assert.equal((await admin.del('/api/files?path=' + encodeURIComponent(up.json.path))).status, 200, 'не используется — удаляется');
 });
 

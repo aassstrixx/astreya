@@ -140,3 +140,13 @@ test('история: «что изменилось» словами — был�
   assert.equal((await editor.get('/api/collections/news/diff?id=nope')).status, 404);
   const rs = await editor.post('/api/collections/news/restore', {id: h[0].id}); assert.equal(rs.status, 200, rs.text);
 });
+
+test('витрина: фото товара показывается вместо упаковки только при включённом переключателе', async () => {
+  const up = await editor.post('/api/files', {dir: 'assets/products', name: 'probnoe.png', data: PNG.toString('base64')}); assert.equal(up.status, 200, up.text);
+  let r = await save(editor, 'products', d => { d[0].image = up.json.path; d[0].featured = true; }); assert.equal(r.status, 200, r.text);
+  const uses = () => read('catalog.html').split(up.json.path).length - 1, off = uses();           // в классическом списке под витриной фото есть всегда; на самой витрине — только при переключателе
+  r = await save(editor, 'redesign', d => { d.extras.showroomPhotos = true; }); assert.equal(r.status, 200, r.text);
+  assert.ok(uses() > off, 'переключатель включён — фото появилось и на витрине'); assert.ok(read('products/' + rd(S.root, 'data/products.json')[0].slug + '.html').includes(up.json.path));
+  r = await save(editor, 'redesign', d => { d.extras.showroomPhotos = false; }); assert.equal(r.status, 200); assert.equal(uses(), off, 'выключили — на витрине снова упаковка');
+  await save(editor, 'products', d => { delete d[0].image; });
+});

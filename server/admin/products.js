@@ -47,7 +47,8 @@
       const inst = {initial: true};
       let prods, brands, cat, version, openM = null;
       await loadPacks();
-      const load = async () => { const [p, b, c] = await Promise.all([AD.get('/api/collections/products'), AD.get('/api/collections/brands'), AD.get('/api/collections/catalog')]); prods = p.data; version = p.version; brands = b.data; cat = c.data; };
+      let rd = null; const showPhotos = () => !!(rd && rd.data.extras && rd.data.extras.showroomPhotos);
+      const load = async () => { const [p, b, c, r] = await Promise.all([AD.get('/api/collections/products'), AD.get('/api/collections/brands'), AD.get('/api/collections/catalog'), AD.get('/api/collections/redesign')]); prods = p.data; version = p.version; brands = b.data; cat = c.data; rd = r; };
       await load();
       const F = {q: '', brand: '', cat: '', st: ''}, sel = new Set(); let pageN = 1;
       const nameOf = (list, id) => ((list || []).find(x => x.id === id) || {}).name || id, brandOf = id => brands.find(b => b.id === id) || {id, name: id, c1: '#2f5bd6', c2: '#9db4f5', ink: '#fff'};
@@ -183,7 +184,7 @@
         function paintPv() {
           const b = brandOf(w.brand), src = w.image ? '/' + w.image : packSrc(w.brand, w.type, w.id || w.slug);
           AD.fill(pv, h('div', {class: 'pvc', style: {'--c1': b.c1 || '#2f5bd6', '--c2': b.c2 || '#9db4f5', '--ink': b.ink || '#fff'}}, w.isNew ? h('span', {class: 'pvc-tag'}, 'Новинка') : null, h('div', {class: 'pvc-stage'}, h('img', {src, alt: '', class: w.image ? 'photo' : 'mock'})), h('div', {class: 'pvc-b'}, h('small', {}, b.name || ''), h('b', {}, w.name || 'Название товара'), h('p', {}, (w.desc || 'Краткое описание появится здесь.').slice(0, 110)), h('span', {class: 'pvc-go'}, 'Подробнее'))),
-            h('div', {class: 'help', style: {marginTop: '8px'}}, w.featured ? 'Товар на интерактивной витрине в блоке «Рекомендуем» (новинки — первыми) и в каталоге.' : 'Товар виден в каталоге и на странице бренда; в «Рекомендуем» на витрине не показывается.'), h('div', {class: 'help'}, w.image ? 'Показывается фото (когда включена опция «фото товаров на витрине»), иначе — упаковка.' : 'На витрине и в каталоге нарисована упаковка выбранного вида.'));
+            h('div', {class: 'help', style: {marginTop: '8px'}}, w.featured ? 'Товар на интерактивной витрине в блоке «Рекомендуем» (новинки — первыми) и в каталоге.' : 'Товар виден в каталоге и на странице бренда; в «Рекомендуем» на витрине не показывается.'), h('div', {class: 'help'}, w.image ? (showPhotos() ? 'Фото показывается на витрине, в каталоге и на странице товара.' : 'Фото видно на странице товара; на витрине и в каталоге пока рисованная упаковка — включите переключатель «Фото вместо упаковки» над списком товаров.') : 'На витрине и в каталоге нарисована упаковка выбранного вида.'));
         }
         const body = h('div', {class: 'pe'}, h('div', {class: 'pe-form ed-obj'},
           h('div', {class: 'grid2'}, fld('Название', nameI, null, ids.name), fld('Бренд', brandS, null, ids.brand)),
@@ -219,7 +220,13 @@
       const mkSel = (key, label, opts) => { const s = h('select', {'aria-label': label, onchange: () => { F[key] = s.value; pageN = 1; paint(); }}, h('option', {value: ''}, label), opts.map(([v, t]) => h('option', {value: v}, t))); return s; };
       const hdr = AD.pageHead('Товары и витрина', 'Каждый товар попадает в каталог, на страницу бренда и — если отмечен «на витрине» — в блок «Рекомендуем» интерактивной витрины. После сохранения сайт пересобирается сам.',
         h('button', {class: 'btn', type: 'button', onclick: exportCsv}, 'Экспорт CSV'), h('button', {class: 'btn', type: 'button', onclick: importCsv}, 'Импорт CSV'), h('button', {class: 'btn', type: 'button', onclick: () => AD.historyDialog('products', async () => { await load(); paint(); })}, 'История'), h('button', {class: 'btn primary', type: 'button', id: 'add-item', onclick: () => AD.go('#/products/__new')}, '＋ Добавить товар'));
-      AD.fill(root, hdr, msg, h('div', {class: 'toolbar'}, search, mkSel('brand', 'Все бренды', brands.map(b => [b.id, b.name])), mkSel('cat', 'Все категории', cat.cats.map(c => [c.id, c.name])), mkSel('st', 'Все товары', [['featured', 'На витрине'], ['nofeat', 'Не на витрине'], ['new', 'Новинки'], ['nophoto', 'Без фото']]), count), bulk,
+      const swBox = h('div', {class: 'card sw-card'});
+      function paintSw() {
+        const c = h('input', {type: 'checkbox', id: 'sw-photos', checked: showPhotos(), onchange: () => run(async () => { const next = clone(rd.data); next.extras = next.extras || {}; next.extras.showroomPhotos = c.checked; const r = await AD.busy(c, () => AD.put('/api/collections/redesign', {data: next, version: rd.version})); await load(); paintSw(); AD.toast(c.checked ? 'На витрине показываются фото товаров' : 'На витрине снова рисованные упаковки', 'ok'); }).then(() => { c.checked = showPhotos(); })});
+        AD.fill(swBox, h('label', {class: 'chk', for: 'sw-photos'}, c, h('b', {}, 'Фото вместо упаковки на витрине')), h('span', {class: 'muted small'}, 'Включено — у товаров с фото на витрине и в каталоге показывается снимок, у остальных — нарисованная упаковка. Выключено — везде упаковка; фото видно только на странице товара.'));
+      }
+      paintSw();
+      AD.fill(root, hdr, msg, swBox, h('div', {class: 'toolbar'}, search, mkSel('brand', 'Все бренды', brands.map(b => [b.id, b.name])), mkSel('cat', 'Все категории', cat.cats.map(c => [c.id, c.name])), mkSel('st', 'Все товары', [['featured', 'На витрине'], ['nofeat', 'Не на витрине'], ['new', 'Новинки'], ['nophoto', 'Без фото']]), count), bulk,
         h('div', {class: 'tbl-wrap'}, h('table', {class: 'tbl cards'}, h('thead', {}, h('tr', {}, h('th', {class: 'pr-chk'}, h('input', {type: 'checkbox', 'aria-label': 'Выбрать все видимые', onclick: e => { visible().forEach(p => { if (e.target.checked) sel.add(p.id); else sel.delete(p.id); }); paint(); }})), ['Фото', 'Название', 'Бренд', 'Категория', 'Метки', ''].map(t => h('th', {}, t)))), tbody), empty), pager);
       paint();
       inst.onRoute = p => {

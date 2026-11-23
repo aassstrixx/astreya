@@ -202,7 +202,7 @@ test('сайт: Метрика, согласие, подтверждение В�
   assert.match(idx, /href="https:\/\/max\.ru\/astreya"/); assert.match(idx, /data-act="cookie-settings"/); assert.match(idx, /consent\.html/);
   { const ct = fs.readFileSync(path.join(S.root, 'contacts.html'), 'utf8');
     assert.ok(!/whatsapp|wa\.me/i.test(ct + idx), 'WhatsApp на сайте нет нигде');
-    assert.match(ct, /Написать в MAX/); assert.match(ct, /<h3>Telegram<\/h3><p class="cv"><span class="tbd">Скоро<\/span>/); assert.match(ct, /<h3>ВКонтакте<\/h3><p class="cv"><span class="tbd">Скоро<\/span>/);
+    assert.match(ct, /Написать в MAX/); assert.doesNotMatch(ct, /<h3>Telegram<\/h3>/, 'мессенджер без ссылки на странице «Контакты» не показывается (страница v3)'); assert.doesNotMatch(ct, /<h3>ВКонтакте<\/h3>/);
     assert.match(idx, /<li class="msg-off"><span>Telegram<\/span> <small>скоро<\/small><\/li>/, 'в подвале канал без ссылки — ячейка «скоро»');
     d.messengers.showEmpty = false; d.messengers.telegram = 'https://t.me/astreya'; d.messengers.vk = ''; const r2 = await admin.put('/api/collections/integrations', {data: d, version: r.json.version}); assert.equal(r2.status, 200, r2.text);
     const ct2 = fs.readFileSync(path.join(S.root, 'contacts.html'), 'utf8'), idx2 = fs.readFileSync(path.join(S.root, 'index.html'), 'utf8');
@@ -348,7 +348,7 @@ test('архив сайта для обычного хостинга: корре
   const py = require('child_process').spawnSync('python3', ['-c', 'import zipfile,sys,json; z=zipfile.ZipFile(sys.argv[1]); bad=z.testzip(); n=z.namelist(); print(json.dumps({"bad": bad, "n": len(n), "names": n}))', file], {encoding: 'utf8'});
   if (py.error) return; const j = JSON.parse(py.stdout); assert.equal(j.bad, null, 'все записи читаются, контрольные суммы верны'); assert.ok(j.n > 100);
   for (const must of ['index.html', 'privacy.html', 'consent.html', 'css/fonts.css', 'js/data.js', 'sitemap.xml', 'robots.txt', '.well-known/security.txt']) assert.ok(j.names.includes(must), must);
-  assert.ok(!j.names.some(n => /^(data|server|tools|src)\//.test(n) || /\.json$/.test(n) && !/webmanifest/.test(n)), 'исходных данных и сервера в архиве нет');
+  assert.ok(!j.names.some(n => /^(data|server|tools|src)\//.test(n) || /\.json$/.test(n) && !/webmanifest/.test(n) && !/^assets\//.test(n)), 'исходных данных и сервера в архиве нет');         // JSON внутри assets/ — служебные индексы картинок, нужные самому сайту
   assert.equal((await client(S.port, '10.9.9.8').raw('GET', '/api/site.zip')).status, 401);
 });
 
