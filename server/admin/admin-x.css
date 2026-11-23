@@ -185,3 +185,8 @@ a.kpi:hover{border-color:rgba(176,142,78,.35)}
 .df-path{font-size:13px;color:#2b3a58} .df-old{color:#8a2217;word-break:break-word;max-width:320px} .df-new{color:#1d6b42;word-break:break-word;max-width:320px}
 .tbl.cards td.pr-th::before,.tbl.cards td.pr-chk::before{content:none!important}
 .sw-card{display:flex;gap:14px;align-items:center;flex-wrap:wrap;padding:12px 18px;margin-bottom:12px}
+
+/* Опубликовать: куда уйдут изменения */
+.pub-target{border:1px solid var(--line-s);border-radius:12px;background:rgba(255,253,248,.7);padding:12px 16px;margin:0 0 14px}
+.pub-t-row{display:flex;gap:10px;align-items:baseline;flex-wrap:wrap}.pub-t-k{font-size:11.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--gold-d);font-weight:800}
+.pub-target p{margin:6px 0 0}.pub-target .alert{margin-top:10px}
