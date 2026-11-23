@@ -27,10 +27,11 @@
       function brandsTab() {
         AD.fill(body, h('div', {class: 'cols'}, brands.map(brandCard)));
       }
-      function openBrand(item, isNew) {
-        if (openM) return openM;
+      function openBrand(item, isNew, restored) {
+        if (openM) return openM; const dk = AD.drafts.key('brand', isNew ? '__new' : item.id);
         const w = clone(item), orig = JSON.stringify(w), err = h('div', {}), pv = h('div', {}), logoBox = h('div', {}), factsBox = h('div', {class: 'ed-list'});
         if (isNew) Object.assign(w, {id: '', name: '', group: 'Испания', country: 'Испания', tag: '', c1: '#1c2f5a', c2: '#9db4f5', ink: '#fff', desc: '', long: [], facts: [], logo: null});
+        if (restored) Object.assign(w, clone(restored));
         const ids = {}; ['name', 'id', 'group', 'tag', 'desc', 'long', 'c1', 'c2', 'country', 'cn'].forEach(k => { ids[k] = nid(); });
         const txt = (k, o) => { const el = h(o && o.area ? 'textarea' : 'input', Object.assign({id: ids[o && o.id || k]}, o && o.area ? {rows: String(o.rows || 3)} : {type: 'text'})); const v = w[k] == null ? '' : w[k]; if (o && o.area) el.textContent = v; else el.value = v; el.addEventListener('input', () => { w[k] = el.value; if (k === 'name' && isNew && !idTouched) { w.id = AD.slugify(el.value); idI.value = w.id; } paint(); }); return el; };
         let idTouched = !isNew; const idI = txt('id'); idI.disabled = !isNew; idI.addEventListener('input', () => { idTouched = true; });
@@ -50,7 +51,7 @@
           fld('Подробный текст (абзацы через пустую строку)', longI, null, ids.long), fld('Факты (Страна, Направления, Обучение…)', factsBox),
           h('div', {class: 'grid3'}, fld('Цвет 1', color('c1', 'Цвет 1'), 'Основной оттенок карточки.', ids.c1), fld('Цвет 2', color('c2', 'Цвет 2'), 'Второй оттенок градиента.', ids.c2), fld('Текст на цвете', ink)), fld('Логотип', logoBox)), h('aside', {class: 'pe-pv'}, h('div', {class: 'lbl'}, 'Так выглядит карточка'), pv));
         const saveBtn = h('button', {class: 'btn primary', type: 'button'}, isNew ? 'Добавить бренд' : 'Сохранить');
-        const m = openM = AD.modal({title: isNew ? 'Новый бренд' : 'Бренд: ' + item.name, cls: 'xl', sticky: true, body: [err, grid], beforeClose: () => JSON.stringify(w) === orig || confirm('Закрыть без сохранения? Изменения будут потеряны.'),
+        const m = openM = AD.modal({title: isNew ? 'Новый бренд' : 'Бренд: ' + item.name, cls: 'xl', sticky: true, body: [err, grid], beforeClose: AD.drafts.guard(dk, () => JSON.stringify(w) !== orig), isDirty: () => JSON.stringify(w) !== orig,
           onClose: () => { openM = null; if (/^#\/brands\//.test(location.hash)) AD.go('#/brands'); },
           footer: [!isNew ? [h('button', {class: 'btn danger', type: 'button', style: {marginRight: 'auto'}, onclick: async () => { if (!await AD.confirm('Удалить бренд «' + item.name + '»? Страница бренда исчезнет с сайта. Если у бренда есть товары, сначала смените им бренд.', {ok: 'Удалить'})) return; await run(async () => { await saveBrands(brands.filter(x => x.id !== item.id), 'Бренд удалён'); m.close(true); }, err); }}, 'Удалить'), h('a', {class: 'btn ghost', href: '/brands/' + item.id + '.html', target: '_blank', rel: 'noopener'}, 'Открыть на сайте')] : null, h('button', {class: 'btn', type: 'button', onclick: () => m.close()}, 'Отмена'), saveBtn]});
         saveBtn.addEventListener('click', () => run(async () => {
@@ -58,9 +59,9 @@
           if (!String(w.desc || '').trim()) throw new Error('Заполните краткое описание бренда.'); if (!w.long || !w.long.length) w.long = [w.desc];
           w.facts = (w.facts || []).filter(f => String(f[0]).trim() || String(f[1]).trim()); if (!w.country) w.country = w.group;
           const next = brands.slice(), pos = isNew ? -1 : next.findIndex(x => x.id === item.id); if (pos >= 0) next[pos] = w; else next.push(w);
-          await saveBrands(next, isNew ? 'Бренд добавлен' : 'Бренд сохранён'); m.close(true);
+          await saveBrands(next, isNew ? 'Бренд добавлен' : 'Бренд сохранён'); AD.drafts.clear(dk); m.close(true);
         }, err, saveBtn));
-        paintLogo(); paintFacts(); paint(); return m;
+        paintLogo(); paintFacts(); paint(); AD.drafts.watch(m.body, dk, () => (JSON.stringify(w) !== orig ? w : null)); if (!restored) { const bn = AD.drafts.banner(dk, d => { m.close(true); openBrand(item, isNew, d); }); if (bn) err.prepend(bn); } return m;
       }
 
       /* ----- справочники каталога ----- */

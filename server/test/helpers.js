@@ -5,6 +5,7 @@ const fs = require('fs'), os = require('os'), path = require('path'), http = req
 const REPO = path.resolve(__dirname, '..', '..');
 process.env.ALLOW_PRIVATE_NETWORK = process.env.ALLOW_PRIVATE_NETWORK || '1';          // тесты поднимают свои заглушки на 127.0.0.1; защита от обращений во внутреннюю сеть проверяется отдельно (security.test.js)
 
+const WRITABLE = new Set(['products', 'brands', 'teachers', 'photos', 'uploads']);          // сюда тесты загружают картинки — эти папки копируются
 /* копия сайта без тяжёлых кадров вступления (нужны только первые кадры, на них ссылаются страницы) */
 function makeSite(dir) {
   fs.mkdirSync(dir, {recursive: true});
@@ -16,6 +17,7 @@ function makeSite(dir) {
       fs.mkdirSync(dst, {recursive: true});
       for (const a of fs.readdirSync(src, {withFileTypes: true})) {
         if (a.name === 'jar') { for (const d of ['d', 'm']) { fs.mkdirSync(path.join(dst, 'jar', d), {recursive: true}); fs.copyFileSync(path.join(src, 'jar', d, '000.webp'), path.join(dst, 'jar', d, '000.webp')); } }
+        else if (a.isDirectory() && !WRITABLE.has(a.name)) fs.symlinkSync(path.join(src, a.name), path.join(dst, a.name), 'dir');     // большие папки сцен тесты не меняют — ссылка вместо копии (копия сайта была ~280 МБ на каждый запуск)
         else fs.cpSync(path.join(src, a.name), path.join(dst, a.name), {recursive: true});
       }
     } else if (e.name === 'tools') fs.cpSync(src, dst, {recursive: true, filter: s => !s.includes('jar-bench')});
@@ -70,7 +72,7 @@ async function boot(env) {
   Object.assign(process.env, {SITE_ROOT: root, DATA_DIR: data, TRUST_PROXY: '1', ADMIN_LOGIN: 'admin', ADMIN_PASSWORD: 'Strong-pass-2026'}, env);
   const app = require('../index'), server = await app.start(0, '127.0.0.1');
   const port = server.address().port;
-  return {root, data, port, server, close: () => new Promise(r => { server.close(r); server.closeAllConnections && server.closeAllConnections(); }),
+  return {root, data, port, server, close: () => new Promise(r => { server.close(() => { try { fs.rmSync(root, {recursive: true, force: true}); fs.rmSync(data, {recursive: true, force: true}); } catch (e) {} r(); }); server.closeAllConnections && server.closeAllConnections(); }),
     admin: async () => { const c = client(port, '10.9.9.9'); const r = await c.login('admin', 'Strong-pass-2026'); if (r.status !== 200) throw new Error('admin login failed: ' + r.text); return c; }};
 }
 const rd = (root, f) => JSON.parse(fs.readFileSync(path.join(root, f), 'utf8'));

@@ -127,7 +127,7 @@ function brandsWall(ctx, C, P) {
   const PW = wall.plate.w, PH = wall.plate.h, pct = x => Math.round(x * 100000) / 1000, usedTasks = new Set(); brands.forEach(b => b.tasks.forEach(t => usedTasks.add(t)));
   const wallTex = (bp.gallery && bp.gallery.wallTextures) || [], pl = W.plate, pnl = W.panel, tk = W.tasks, ask = W.ask;
   const order = Object.keys(wall.niches).map(id => brands.find(b => b.id === id)).filter(Boolean);
-  brands.forEach(b => { if (!order.includes(b)) order.push(b); });
+  /* бренд без ниши на стене (новый бренд из админки) на стене не показывается — его панели и ниши нет в рендере; он есть в списке брендов и на своей странице */
   const small = f => /assets\/showroom\/pack-[^/]+\.webp$/.test(f) ? f.replace(/\.webp$/, '-s.webp') : f;
   const nWord = n => `${n} ${S.plural(n, 'позиция', 'позиции', 'позиций')}`;
   const packInfo = p => { const file = S.packOf(p), key = (/([^/]+)\.webp$/.exec(file) || [])[1], meta = packs[key]; return meta ? {file, meta, small: small(file)} : null; };
@@ -244,7 +244,7 @@ function brandsWall(ctx, C, P) {
           ${taskRes}
           <p class="bw-tasks-more">${C.lnk(C.u(P, 'partners.html') + '#calc', T('brands.cta.s'), 'data-track="partner_cta" data-place="brands-tasks"')}</p>
         </section>
-        <section class="bw-ask" aria-labelledby="bw-ask-h"><span class="bw-ask-pe" data-pe="happy" aria-hidden="true"></span><div><h2 id="bw-ask-h">${esc(ask.title)}</h2><p>${esc(ask.lead)}</p></div>${helpBtn('bw-ask-help', ask.btn)}</section>
+        ${brands.some(b => !order.includes(b)) ? `<section class="bw-tasks bw-more" aria-label="${T('brands.wall2.more')}"><ul class="tasks-line">${brands.filter(b => !order.includes(b)).map(b => `<li><a class="tag blue" href="${C.burl(P, b)}">${esc(b.name)}</a></li>`).join('')}</ul></section>` : ''}<section class="bw-ask" aria-labelledby="bw-ask-h"><span class="bw-ask-pe" data-pe="happy" aria-hidden="true"></span><div><h2 id="bw-ask-h">${esc(ask.title)}</h2><p>${esc(ask.lead)}</p></div>${helpBtn('bw-ask-help', ask.btn)}</section>
       </div>
     </div>
   </div>`;

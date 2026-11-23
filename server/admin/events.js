@@ -57,10 +57,11 @@
         AD.fill(body, h('div', {class: 'toolbar'}, search, st, count), h('div', {class: 'tbl-wrap'}, h('table', {class: 'tbl cards'}, h('thead', {}, h('tr', {}, ['Дата', 'Мероприятие', 'Город · формат', 'Места', ''].map(t => h('th', {}, t)))), tbody)));
         paint();
       }
-      function openEditor(item, isNew) {
-        if (openM) return openM;
+      function openEditor(item, isNew, restored) {
+        if (openM) return openM; const dk = AD.drafts.key('event', isNew ? '__new' : item.id);
         const w = clone(item), orig = JSON.stringify(w), err = h('div', {}), cities = tr.cities.filter(c => c !== 'Онлайн');
         if (isNew && !item.title) Object.assign(w, {id: '', slug: '', date: new Date().toISOString().slice(0, 10), city: cities[0], fmt: 'Очно', time: '10:30–18:00', brand: (brands[0] || {}).id, title: '', teacher: (tr.teachers[0] || {}).id, speaker: '', place: '', description: '', seats: null, demo: false});
+        if (restored) Object.assign(w, clone(restored));
         const ids = {}; ['title', 'slug', 'date', 'time', 'city', 'fmt', 'brand', 'teacher', 'speaker', 'place', 'seats', 'desc'].forEach(k => { ids[k] = nid(); });
         let slugTouched = !isNew;
         const inp = (k, o) => { const el = h(o && o.area ? 'textarea' : 'input', Object.assign({id: ids[k]}, o && o.area ? {rows: '4'} : {type: o && o.type || 'text'})); const v = w[k]; if (o && o.area) el.textContent = v == null ? '' : v; else el.value = v == null ? '' : v; el.addEventListener('input', () => { w[k] = o && o.num ? (el.value === '' ? null : +el.value) : el.value; sync(k); }); return el; };
@@ -77,16 +78,16 @@
           fld('Место проведения (адрес или «онлайн»)', inp('place'), null, ids.place), fld('Описание', inp('description', {area: true}), 'Что будет на мероприятии: темы, формат, для кого.', ids.desc), fld('Адрес страницы (slug)', slugI, null, ids.slug), note,
           h('label', {class: 'chk'}, Object.assign(h('input', {type: 'checkbox', checked: !!w.demo}), {onchange: e => { w.demo = e.target.checked; }}), 'Демонстрационная запись (с пометкой «демо»)'));
         const saveBtn = h('button', {class: 'btn primary', type: 'button'}, isNew ? 'Добавить мероприятие' : 'Сохранить');
-        const m = openM = AD.modal({title: isNew ? 'Новое мероприятие' : 'Мероприятие: ' + item.title, cls: 'wide', sticky: true, body: [err, form], beforeClose: () => JSON.stringify(w) === orig || confirm('Закрыть без сохранения? Изменения будут потеряны.'),
+        const m = openM = AD.modal({title: isNew ? 'Новое мероприятие' : 'Мероприятие: ' + item.title, cls: 'wide', sticky: true, body: [err, form], beforeClose: AD.drafts.guard(dk, () => JSON.stringify(w) !== orig), isDirty: () => JSON.stringify(w) !== orig,
           onClose: () => { openM = null; if (/^#\/events\//.test(location.hash)) AD.go('#/events'); }, footer: [!isNew ? h('a', {class: 'btn ghost', href: '/training/' + item.slug + '.html', target: '_blank', rel: 'noopener', style: {marginRight: 'auto'}}, 'Открыть на сайте') : null, h('button', {class: 'btn', type: 'button', onclick: () => m.close()}, 'Отмена'), saveBtn]});
         saveBtn.addEventListener('click', () => run(async () => {
           if (!String(w.title || '').trim()) throw new Error('Укажите название мероприятия.'); if (!w.date) throw new Error('Укажите дату.');
           if (!w.slug) w.slug = [w.date, AD.slugify((w.city || '') + ' ' + (w.brand || ''))].filter(Boolean).join('-'); if (!w.id) { let n = events.length + 1; while (events.some(x => x.id === 's' + n)) n++; w.id = 's' + n; }
           ['brand', 'teacher'].forEach(k => { if (!w[k]) delete w[k]; }); if (!w.demo) w.demo = false;
           const next = events.slice(), pos = isNew ? -1 : next.findIndex(x => x.id === item.id); if (pos >= 0) next[pos] = w; else next.push(w);
-          await put('events', next, eVer, isNew ? 'Мероприятие добавлено' : 'Мероприятие сохранено'); m.close(true);
+          await put('events', next, eVer, isNew ? 'Мероприятие добавлено' : 'Мероприятие сохранено'); AD.drafts.clear(dk); m.close(true);
         }, err, saveBtn));
-        sync('init'); return m;
+        sync('init'); AD.drafts.watch(m.body, dk, () => (JSON.stringify(w) !== orig ? w : null)); if (!restored) { const bn = AD.drafts.banner(dk, d => { m.close(true); openEditor(item, isNew, d); }); if (bn) err.prepend(bn); } return m;
       }
 
       /* ---------- остальные вкладки ---------- */

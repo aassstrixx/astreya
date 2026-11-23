@@ -59,10 +59,11 @@
         add.addEventListener('change', () => { if (!add.value) return; (w.related = w.related || {})[key] = cur().concat(add.value); paint(); }); paint();
         return fld(label, h('div', {}, box, add), o && o.help);
       }
-      function openEditor(item, isNew) {
-        if (openM) return openM;
+      function openEditor(item, isNew, restored) {
+        if (openM) return openM; const dk = AD.drafts.key('news', isNew ? '__new' : item.id);
         const w = clone(item), orig = JSON.stringify(w), err = h('div', {}), pv = h('div', {}), bodyBox = h('div', {class: 'ed-list'}), coverBox = h('div', {});
         if (isNew && !item.title) Object.assign(w, {id: '', slug: '', category: data.categories[0].id, date: today(), demo: false, title: '', excerpt: '', body: [''], cta: {type: ''}});
+        if (restored) Object.assign(w, clone(restored));
         if (!Array.isArray(w.body) || !w.body.length) w.body = [''];
         let slugTouched = !isNew && !!w.slug; const ids = {}; ['title', 'slug', 'date', 'cat', 'exc', 'alt'].forEach(k => { ids[k] = nid(); });
         const titleI = h('input', {type: 'text', id: ids.title, value: w.title || ''}), titleN = h('span', {class: 'counter'}), slugI = h('input', {type: 'text', id: ids.slug, value: w.slug || ''}), slugN = h('div', {class: 'help'}), excI = h('textarea', {id: ids.exc, rows: '3'}), excN = h('span', {class: 'counter'});
@@ -109,7 +110,7 @@
           ctaBox, pickList('Связанные товары', prods.map(p => [p.id, p.name]), 'products', w), pickList('Связанные бренды', brands.map(b => [b.id, b.name]), 'brands', w), pickList('Связанные мероприятия', events.map(e => [e.id, dfmt(e.date) + ' · ' + e.title]), 'events', w),
           fld('Обложка', coverBox), h('label', {class: 'chk'}, demoC, 'Демонстрационная запись (в подвале появится пометка «демо»; снимите, когда данные реальные)')), h('aside', {class: 'pe-pv'}, h('div', {class: 'lbl'}, 'Так выглядит карточка'), pv));
         const saveBtn = h('button', {class: 'btn primary', type: 'button'}, isNew ? 'Добавить новость' : 'Сохранить');
-        const m = openM = AD.modal({title: isNew ? 'Новая новость' : 'Новость: ' + item.title, cls: 'xl', sticky: true, body: [err, body$], beforeClose: () => JSON.stringify(w) === orig || confirm('Закрыть без сохранения? Изменения будут потеряны.'),
+        const m = openM = AD.modal({title: isNew ? 'Новая новость' : 'Новость: ' + item.title, cls: 'xl', sticky: true, body: [err, body$], beforeClose: AD.drafts.guard(dk, () => JSON.stringify(w) !== orig), isDirty: () => JSON.stringify(w) !== orig,
           onClose: () => { openM = null; AD.dirty = false; if (/^#\/news\//.test(location.hash)) AD.go('#/news'); },
           footer: [!isNew ? h('a', {class: 'btn ghost', href: '/news/' + item.slug + '.html', target: '_blank', rel: 'noopener', style: {marginRight: 'auto'}}, 'Открыть на сайте') : null, h('button', {class: 'btn', type: 'button', onclick: () => m.close()}, 'Отмена'), saveBtn]});
         saveBtn.addEventListener('click', () => run(async () => {
@@ -120,9 +121,9 @@
           if (w.related) { Object.keys(w.related).forEach(k => { if (!w.related[k].length) delete w.related[k]; }); if (!Object.keys(w.related).length) delete w.related; }
           if (!w.demo) delete w.demo; if (!w.image) { delete w.image; delete w.imageAlt; }
           const next = clone(data), pos = isNew ? -1 : next.items.findIndex(x => x.id === item.id); if (pos >= 0) next.items[pos] = w; else next.items.push(w);
-          await commit(next, isNew ? 'Новость добавлена' : 'Новость сохранена'); m.close(true);
+          await commit(next, isNew ? 'Новость добавлена' : 'Новость сохранена'); AD.drafts.clear(dk); m.close(true);
         }, err, saveBtn));
-        paintBody(); paintCta(); paintCover(); upd(); return m;
+        paintBody(); paintCta(); paintCover(); upd(); AD.drafts.watch(m.body, dk, () => (JSON.stringify(w) !== orig ? w : null)); if (!restored) { const bn = AD.drafts.banner(dk, d => { m.close(true); openEditor(item, isNew, d); }); if (bn) err.prepend(bn); } return m;
       }
 
       /* ---------- вкладка «Газета» ---------- */

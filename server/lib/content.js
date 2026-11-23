@@ -220,4 +220,9 @@ function restore(name, id, who) {
   if (!fs.existsSync(file)) throw httpErr(404, 'Копия не найдена.');
   return save(name, JSON.parse(fs.readFileSync(file, 'utf8')), {who});
 }
-module.exports = {COLLECTIONS, summary, read, save, history, restore, problems, version};
+/* что изменилось между сохранённой копией и текущими данными раздела (читаемый список) */
+function diffWithBackup(name, id) {
+  need(name); const file = path.join(BACKUPS, name, String(id).replace(/[^\w.-]/g, '') + '.json'); if (!fs.existsSync(file)) throw httpErr(404, 'Копия не найдена.');
+  const JD = require('./jsondiff'); return JD.diff(JSON.parse(fs.readFileSync(file, 'utf8')), JSON.parse(fs.readFileSync(abs(name), 'utf8')));
+}
+module.exports = {COLLECTIONS, summary, read, save, history, restore, problems, version, diffWithBackup};

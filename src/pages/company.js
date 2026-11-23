@@ -62,7 +62,7 @@ module.exports = function company(ctx, C, P) {
 
   /* ---- 4 · бренды ---- */
   const tagOf = b => b.group === 'Cantabria Labs' ? T('company.brands.s') : b.group;
-  const bcell = (b, i) => `<a class="ca-bc reveal" style="--c1:${esc(b.c1)}" href="${C.burl(P, b)}" data-track="brand_click" data-place="company-brands" aria-label="${esc(b.name)}"><span class="ca-bl"><img class="ca-blogo" src="${u(b.logo)}" alt="${esc(b.name)}" loading="lazy" decoding="async"></span><small>${esc(tagOf(b))}</small></a>`;
+  const bcell = (b, i) => `<a class="ca-bc reveal" style="--c1:${esc(b.c1)}" href="${C.burl(P, b)}" data-track="brand_click" data-place="company-brands" aria-label="${esc(b.name)}"><span class="ca-bl">${b.logo ? `<img class="ca-blogo" src="${u(b.logo)}" alt="${esc(b.name)}" loading="lazy" decoding="async">` : `<b class="ca-bname">${esc(b.name)}</b>`}</span><small>${esc(tagOf(b))}</small></a>`;
 
   /* ---- 6 · география ---- */
   const [o1, o2] = site.offices;

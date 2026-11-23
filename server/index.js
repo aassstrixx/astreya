@@ -191,6 +191,7 @@ async function handleApi(req, res, url) {
   if (p === '/api/texts/registry' && m === 'GET') return H.json(res, 200, TXR.registry());
   if (p === '/api/news/layout' && m === 'GET') return H.json(res, 200, TXR.newsLayout());
   mm = p.match(/^\/api\/collections\/([a-z0-9_]+)\/history$/); if (mm && m === 'GET') return H.json(res, 200, {items: CT.history(mm[1])});
+  mm = p.match(/^\/api\/collections\/([a-z0-9_]+)\/diff$/); if (mm && m === 'GET') return H.json(res, 200, CT.diffWithBackup(mm[1], url.searchParams.get('id')));
   mm = p.match(/^\/api\/collections\/([a-z0-9_]+)\/restore$/);
   if (mm && m === 'POST') { const b = await H.readJSONBody(req, 4096); const r = await CT.restore(mm[1], b.id, ctx.who); log(req, ctx.who, 'restore', mm[1] + ' ← ' + b.id); return H.json(res, 200, r); }
 
@@ -221,6 +222,8 @@ async function handleApi(req, res, url) {
     try { await ZIP.stream(res); } catch (e) { console.error('zip:', e.message); res.destroy(); } res.end(); return;
   }
   if (p === '/api/publish' && m === 'GET') return H.json(res, 200, await P.status());
+  if (p === '/api/publish/diff' && m === 'GET') return H.json(res, 200, await P.diffFile(url.searchParams.get('file')));
+  if (p === '/api/publish/log' && m === 'GET') return H.json(res, 200, await P.log(url.searchParams.get('n')));
   if (p === '/api/publish' && m === 'POST') { const b = await H.readJSONBody(req, 4096); const r = await P.publish(b.message, ctx.who); log(req, ctx.who, 'publish', r.commit || r.message || ''); return H.json(res, 200, r); }
 
   /* дальше — только администратор: настройки, интеграции, безопасность, пользователи, журнал */

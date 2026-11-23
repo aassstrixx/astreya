@@ -41,7 +41,7 @@ module.exports = function partners(ctx, C, P) {
   };
   const aud = pt.audience || [];
   const audPhoto = a => a.photo ? ph(Object.keys(PH).find(k => PH[k][0] === a.photo) || 'care', '', a.id === 'cosmetologist' ? '50% 30%' : a.id === 'clinic' ? '50% 40%' : '50% 24%') : `<span class="pp-bot pp-bot-l" aria-hidden="true">${img('assets/photos/dermatime-micellar.webp', 279, 900, '')}${img('assets/photos/iraltone-shampoo.webp', 329, 900, '')}${img('assets/photos/keenwell-mask.webp', 397, 900, '')}</span>`;
-  const bcell = b => `<a class="pp-bc reveal" href="${C.burl(P, b)}" data-track="brand_click" data-place="partners-brands" aria-label="${esc(b.name)}"><img src="${u(b.logo)}" alt="${esc(b.name)}" loading="lazy" decoding="async"></a>`;
+  const bcell = b => `<a class="pp-bc reveal" href="${C.burl(P, b)}" data-track="brand_click" data-place="partners-brands" aria-label="${esc(b.name)}">${b.logo ? `<img src="${u(b.logo)}" alt="${esc(b.name)}" loading="lazy" decoding="async">` : `<b class="pp-bname">${esc(b.name)}</b>`}</a>`;
 
   return `<div class="pp" data-pp>
   <section class="pp-hero" id="top">

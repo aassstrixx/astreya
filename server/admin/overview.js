@@ -17,12 +17,12 @@
           lc ? kpi(lc.ready ? 'ok' : 'err', '#/launch', lc.ready ? 'Готов' : lc.blockers, lc.ready ? 'готовность к запуску · рекомендаций ' + lc.warnings : AD.plural(lc.blockers, 'обязательный пункт', 'обязательных пункта', 'обязательных пунктов') + ' до запуска') : null,
           kpi(ls.new ? 'warn' : 'ok', '#/leads', ls.new, ls.new ? AD.plural(ls.new, 'новая заявка', 'новые заявки', 'новых заявок') + ' · всего ' + ls.total : 'новых заявок нет · всего ' + ls.total),
           kpi('', '#/leads', ls.week, 'заявок за неделю, сегодня ' + ls.today),
-          kpi('', '#/content/products', c.products || 0, 'товаров в каталоге · брендов ' + (c.brands || 0)),
-          kpi('', '#/content/events', c.events || 0, AD.plural(c.events || 0, 'мероприятие', 'мероприятия', 'мероприятий') + ' · новостей ' + (c.news || 0)),
+          kpi('', '#/products', c.products || 0, 'товаров в каталоге · брендов ' + (c.brands || 0)),
+          kpi('', '#/events', c.events || 0, AD.plural(c.events || 0, 'мероприятие', 'мероприятия', 'мероприятий') + ' · новостей ' + (c.news || 0)),
           kpi('', '#/pages', c.pages || 0, 'своих страниц'),
           kpi(b ? (b.ok ? 'ok' : 'err') : '', '#/publish', b ? (b.ok ? 'OK' : 'Ошибка') : '—', b ? 'сборка сайта · ' + AD.ago(b.at) : 'сайт ещё не собирали из админки'));
         const quick = h('div', {class: 'card tight'}, h('h2', {}, 'Быстрые действия'), h('div', {class: 'quick', style: {marginTop: '10px'}},
-          [['＋ Новость', '#/content/news/__new'], ['＋ Товар', '#/brandprods'], ['＋ Мероприятие', '#/content/events/__new'], ['＋ Страница', '#/pages/__new'], ['Меню сайта', '#/design'], ['Фоны страниц', '#/design/backdrops'], ['Картинки', '#/files'], ['Опубликовать', '#/publish']]
+          [['＋ Новость', '#/news/__new'], ['＋ Товар', '#/products/__new'], ['＋ Мероприятие', '#/events/__new'], ['Тексты страниц', '#/texts'], ['Газета', '#/news'], ['Контакты', '#/contacts'], ['Картинки', '#/files'], ['Опубликовать', '#/publish']]
             .map(([t, href]) => h('a', {class: 'btn' + (t[0] === '＋' ? ' primary' : ''), href}, t))));
         const hl = h('ul', {class: 'hl'}, d.health.map(x => h('li', {}, h('span', {class: 'lvl ' + x.level}), h('span', {}, x.text), x.link ? h('a', {class: 'go', href: x.link}, 'Исправить →') : null)));
         const auditOut = h('div', {});

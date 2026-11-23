@@ -114,7 +114,7 @@ test('товары: фото, добавление, правка, удалени
 
 test('обзор, поиск, список страниц, использование файла: только администратору', async () => {
   const ov = await admin.get('/api/overview'); assert.equal(ov.status, 200); assert.ok(ov.json.leads && ov.json.counts && Array.isArray(ov.json.health) && ov.json.health.length, 'обзор: заявки, счётчики, здоровье'); assert.ok(ov.json.counts.products > 0);
-  const prod = rd(S.root, 'data/products.json')[0], q = (await admin.get('/api/search?q=' + encodeURIComponent(prod.name.slice(0, 6)))).json.items; assert.ok(q.some(i => i.type === 'Товар' && i.link === '#/brandprods/' + encodeURIComponent(prod.brand) + '/' + encodeURIComponent(prod.id)), 'поиск находит товар');
+  const prod = rd(S.root, 'data/products.json')[0], q = (await admin.get('/api/search?q=' + encodeURIComponent(prod.name.slice(0, 6)))).json.items; assert.ok(q.some(i => i.type === 'Товар' && i.link === '#/products/' + encodeURIComponent(prod.id)), 'поиск находит товар');
   assert.deepEqual((await admin.get('/api/search?q=a')).json.items, [], 'короткий запрос — пусто');
   const sp = (await admin.get('/api/site-pages')).json.pages; assert.ok(sp.some(p => p.path === 'index.html') && sp.some(p => /^products\//.test(p.path)));
   const logo = rd(S.root, 'data/brands.json').find(b => b.logo).logo, u = (await admin.get('/api/files/usage?path=' + encodeURIComponent(logo))).json.used; assert.ok(u.some(f => /brands/.test(f)), 'логотип бренда найден в данных');

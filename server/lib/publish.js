@@ -29,4 +29,21 @@ async function publish(message, who) {
     return {ok: true, commit: sha, branch: st.branch, files: st.changed};
   } catch (e) { throw httpErr(502, 'Не удалось опубликовать: ' + e.message); }
 }
-module.exports = {status, publish};
+/* что изменилось в одном файле данных относительно последней публикации (HEAD): читаемый список правок */
+async function diffFile(file) {
+  const fs = require('fs'), path = require('path'), JD = require('./jsondiff');
+  if (!/^data\/[\w\-/]+\.json$/.test(String(file))) return {kind: 'file', note: 'Для этого файла показывается только факт изменения.'};
+  let head = null; try { head = JSON.parse(await git(['show', 'HEAD:' + file])); } catch (e) { head = null; }
+  let now = null; try { now = JSON.parse(fs.readFileSync(path.join(C.ROOT, file), 'utf8')); } catch (e) { return {kind: 'file', note: 'Файл удалён или не читается.'}; }
+  if (head === null) return {kind: 'new', note: 'Новый файл (в последней публикации его не было).'};
+  const r = JD.diff(head, now);
+  if (file === 'data/texts.json') { try { const TX = require(path.join(C.ROOT, 'src', 'texts.js')); r.changes.forEach(c => { const k = String(c.path).replace(/^items › /, ''), d = TX.index[k]; if (d) { const pg = TX.registry.pages.find(x => x.id === d.page), bl = pg && pg.blocks.find(x => x.id === d.block); c.path = [pg ? pg.title : d.page, bl ? bl.title : d.block, d.label].join(' › '); } }); } catch (e) { /* без подписей — остаются ключи */ } }
+  return Object.assign({kind: 'json'}, r);
+}
+/* последние публикации (коммиты) — для истории */
+async function log(n) {
+  if (!C.PUBLISH_GIT) return {enabled: false, items: []};
+  try { const out = await git(['log', '-n', String(Math.min(+n || 15, 50)), '--pretty=format:%h\t%an\t%aI\t%s']); return {enabled: true, items: out ? out.split('\n').map(l => { const [sha, who, at, ...msg] = l.split('\t'); return {sha, who, at, message: msg.join(' ')}; }) : []}; }
+  catch (e) { return {enabled: true, items: [], error: e.message}; }
+}
+module.exports = {status, publish, diffFile, log};

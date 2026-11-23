@@ -2,7 +2,7 @@
    Разделы подключаются отдельными файлами (leads.js, content.js, system.js) и регистрируются в AD.views. */
 (function () {
   'use strict';
-  const AD = window.AD = {views: {}, user: null, csrf: '', config: null, dirty: false, cur: null};
+  const AD = window.AD = {views: {}, user: null, csrf: '', config: null, dirty: false, cur: null, _guards: new Set()};
 
   /* ---------- DOM-помощники (данные сервера вставляются только как текст — без innerHTML) ---------- */
   const SVG_NS = 'http://www.w3.org/2000/svg';
@@ -51,10 +51,10 @@
     const body = h('div', {class: 'body'}, o.body), footer = o.footer ? h('footer', {}, o.footer) : null, prev = document.activeElement;
     const dlg = h('div', {class: 'dlg ' + (o.cls || ''), role: 'dialog', 'aria-modal': 'true', 'aria-label': o.title || ''}, h('header', {}, h('h2', {}, o.title || ''), h('button', {class: 'btn ghost icon', type: 'button', 'aria-label': 'Закрыть', onclick: () => close()}, '✕')), body, footer);
     const ov = h('div', {class: 'overlay' + (o.side ? ' side-r' : '')}, dlg);
-    let closed = false;
+    let closed = false; if (o.isDirty) AD._guards.add(o.isDirty);
     const key = e => { if (e.key === 'Escape' && ov === lastOverlay()) { e.stopPropagation(); close(); } };
     const lastOverlay = () => { const a = $$('.overlay'); return a[a.length - 1]; };
-    function close(force) { if (closed) return; if (!force && o.beforeClose && o.beforeClose() === false) return; closed = true; document.removeEventListener('keydown', key, true); ov.remove(); if (prev && prev.focus) try { prev.focus(); } catch (e) {} if (o.onClose) o.onClose(); }
+    function close(force) { if (closed) return; if (!force && o.beforeClose && o.beforeClose() === false) return; closed = true; if (o.isDirty) AD._guards.delete(o.isDirty); document.removeEventListener('keydown', key, true); ov.remove(); if (prev && prev.focus) try { prev.focus(); } catch (e) {} if (o.onClose) o.onClose(); }
     if (!o.sticky) ov.addEventListener('mousedown', e => { if (e.target === ov) close(); });
     document.addEventListener('keydown', key, true);
     document.body.append(ov);
@@ -163,9 +163,9 @@
   /* ---------- каркас и разделы ---------- */
   /* меню: группы по смыслу; editor — редактор содержимого (без безопасности, пользователей и настроек), manager — только заявки */
   const GROUPS = [{id: 'main', title: 'Главное'}, {id: 'content', title: 'Контент'}, {id: 'media', title: 'Медиа'}, {id: 'publish', title: 'Публикация'}, {id: 'system', title: 'Система'}];
-  const ADM = ['admin'], EDT = ['admin', 'editor'], ALL = ['admin', 'editor', 'manager'];
+  const ADM = ['admin'], EDT = ['admin', 'editor'];
   const NAV = [
-    {g: 'main', id: 'overview', title: 'Обзор', icon: 'dash', roles: EDT}, {g: 'main', id: 'leads', title: 'Заявки', icon: 'inbox', roles: ALL},
+    {g: 'main', id: 'overview', title: 'Обзор', icon: 'dash', roles: EDT}, {g: 'main', id: 'leads', title: 'Заявки', icon: 'inbox', roles: ['admin', 'manager']},
     {g: 'content', id: 'texts', title: 'Тексты страниц', icon: 'text', roles: EDT}, {g: 'content', id: 'news', title: 'Новости и газета', icon: 'news', roles: EDT}, {g: 'content', id: 'products', title: 'Товары и витрина', icon: 'box', roles: EDT}, {g: 'content', id: 'brands', title: 'Бренды', icon: 'tag', roles: EDT},
     {g: 'content', id: 'events', title: 'Мероприятия и обучение', icon: 'cap', roles: EDT}, {g: 'content', id: 'contacts', title: 'Контакты и реквизиты', icon: 'phone', roles: EDT}, {g: 'content', id: 'menu', title: 'Меню', icon: 'menu', roles: EDT},
     {g: 'content', id: 'pages', title: 'Свои страницы', icon: 'pages', roles: EDT}, {g: 'content', id: 'content', title: 'Все данные сайта', icon: 'edit', roles: EDT},
@@ -224,8 +224,8 @@
     lastHash = location.hash; route();
   });
   /* Ctrl+S (⌘S) сохраняет открытый раздел, если он зарегистрировал AD.saveHook */
-  document.addEventListener('keydown', e => { if ((e.ctrlKey || e.metaKey) && !e.shiftKey && !e.altKey && (e.key === 's' || e.key === 'S' || e.key === 'ы' || e.key === 'Ы') && AD.user) { if (typeof AD.saveHook === 'function') { e.preventDefault(); AD.saveHook(); } } });
-  window.addEventListener('beforeunload', e => { if (AD.dirty) { e.preventDefault(); e.returnValue = ''; } });
+  document.addEventListener('keydown', e => { if ((e.ctrlKey || e.metaKey) && !e.shiftKey && !e.altKey && (e.key === 's' || e.key === 'S' || e.key === 'ы' || e.key === 'Ы') && AD.user) { const ovs = $$('.overlay'), top = ovs[ovs.length - 1], pb = top && $('footer .btn.primary', top); if (pb) { e.preventDefault(); if (!pb.disabled) pb.click(); } else if (typeof AD.saveHook === 'function') { e.preventDefault(); AD.saveHook(); } } });
+  window.addEventListener('beforeunload', e => { if (AD.dirty || Array.from(AD._guards).some(g => { try { return g(); } catch (x) { return false; } })) { e.preventDefault(); e.returnValue = ''; } });
 
   AD.start = async function () {
     try { const r = await AD.api('GET', '/api/me'); AD.user = r.user; AD.csrf = r.csrf; AD.needs2fa = !!r.needs2fa; await afterLogin(); }
@@ -233,6 +233,19 @@
   };
   AD.go = hash => { location.hash = hash; };
   AD.previewUrl = p => '/' + p;                       // адрес страницы сайта для рамки предпросмотра (демо-версия подменяет)
+  /* ---------- черновики форм в браузере: правки не теряются при случайном закрытии вкладки; localStorage может быть недоступен — тогда просто без черновиков ---------- */
+  AD.drafts = {
+    key: (kind, id) => 'ad.draft.' + kind + '.' + id,
+    get(k) { try { const v = JSON.parse(localStorage.getItem(k) || 'null'); return v && v.d ? v : null; } catch (e) { return null; } },
+    set(k, d) { try { localStorage.setItem(k, JSON.stringify({at: Date.now(), d})); } catch (e) {} },
+    clear(k) { try { localStorage.removeItem(k); } catch (e) {} },
+    /* автосохранение черновика при вводе: state() возвращает данные, если есть несохранённые правки, иначе null */
+    watch(el, k, state) { let t = null; const save = () => { clearTimeout(t); t = setTimeout(() => { const d = state(); if (d) AD.drafts.set(k, d); else AD.drafts.clear(k); }, 500); }; el.addEventListener('input', save); el.addEventListener('change', save); el.addEventListener('click', e => { if (e.target.closest('button')) save(); }); },
+    /* плашка «найден черновик» с кнопками; restore(данные) открывает форму с черновиком */
+    banner(k, restore) { const v = AD.drafts.get(k); if (!v) return null; return h('div', {class: 'draft-note'}, h('span', {}, 'Найден несохранённый черновик от ' + AD.fmt(new Date(v.at).toISOString()) + '.'), h('button', {class: 'btn sm primary', type: 'button', onclick: () => restore(v.d)}, 'Восстановить'), h('button', {class: 'btn sm', type: 'button', onclick: e => { AD.drafts.clear(k); e.currentTarget.closest('.draft-note').hidden = true; }}, 'Отбросить')); },
+    /* beforeClose для окна: спрашивает, если есть правки, и стирает черновик при согласии потерять */
+    guard(k, dirty) { return () => { if (!dirty()) { AD.drafts.clear(k); return true; } if (confirm('Закрыть без сохранения? Изменения будут потеряны.')) { AD.drafts.clear(k); return true; } return false; }; }
+  };
   /* общий заголовок страницы */
   AD.pageHead = (title, sub, ...actions) => {
     const n = AD.cur && NAV.find(x => x.id === AD.cur.id), gi = n ? GROUPS.findIndex(g => g.id === n.g) : -1;

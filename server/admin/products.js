@@ -146,10 +146,11 @@
       }
 
       /* ----- редактор карточки ----- */
-      function openEditor(item, isNew) {
-        if (openM) return openM;
+      function openEditor(item, isNew, restored) {
+        if (openM) return openM; const dk = AD.drafts.key('product', isNew ? '__new' : item.id);
         const w = clone(item), orig = JSON.stringify(w), err = h('div', {}), photoBox = h('div', {}), packBox = h('div', {class: 'pk-grid', role: 'radiogroup', 'aria-label': 'Тип упаковки'}), pv = h('div', {class: 'pvc-w'}), slugNote = h('div', {class: 'help'});
         if (isNew && !w.brand) Object.assign(w, {brand: F.brand || (brands[0] || {}).id, cat: F.cat || (cat.cats[0] || {}).id, kind: (cat.kinds[0] || {}).id, type: 'bottle', tasks: [], docs: [], featured: false});
+        if (restored) Object.assign(w, clone(restored));
         let slugTouched = !isNew;
         const ids = {}; ['name', 'slug', 'brand', 'cat', 'kind', 'desc', 'volume', 'sku', 'usage', 'ind', 'act', 'det', 'alt'].forEach(k => { ids[k] = nid(); });
         const txt = (k, id, o) => { const el = h(o && o.area ? 'textarea' : 'input', Object.assign({id, value: w[k] == null ? '' : w[k]}, o && o.area ? {rows: String(o.rows || 3)} : {type: 'text'}, o && o.max ? {maxlength: String(o.max)} : {})); if (o && o.area) el.textContent = w[k] == null ? '' : w[k]; el.addEventListener('input', () => { w[k] = el.value; if (!el.value && k !== 'name' && k !== 'desc') w[k] = null; onInput(k); }); return el; };
@@ -198,7 +199,7 @@
           h('aside', {class: 'pe-pv'}, h('div', {class: 'lbl'}, 'Так выглядит карточка'), pv));
         const saveBtn = h('button', {class: 'btn primary', type: 'button'}, isNew ? 'Добавить товар' : 'Сохранить');
         const m = openM = AD.modal({title: isNew ? 'Новый товар' : 'Товар: ' + item.name, cls: 'xl', sticky: true, body: [err, body],
-          beforeClose: () => JSON.stringify(w) === orig || confirm('Закрыть без сохранения? Изменения будут потеряны.'),
+          beforeClose: AD.drafts.guard(dk, () => JSON.stringify(w) !== orig), isDirty: () => JSON.stringify(w) !== orig,
           onClose: () => { openM = null; AD.dirty = false; if (/^#\/products\//.test(location.hash)) AD.go('#/products'); },
           footer: [!isNew ? h('a', {class: 'btn ghost', href: '/products/' + item.slug + '.html', target: '_blank', rel: 'noopener', style: {marginRight: 'auto'}}, 'Открыть на сайте') : null, h('button', {class: 'btn', type: 'button', onclick: () => m.close()}, 'Отмена'), saveBtn]});
         saveBtn.addEventListener('click', () => run(async () => {
@@ -208,9 +209,9 @@
           w.docs = (w.docs || []).filter(d => d.title.trim() || d.url.trim());
           ['volume', 'sku', 'usage', 'indications', 'actives', 'details', 'imageAlt'].forEach(k => { if (w[k] === '' || (Array.isArray(w[k]) && !w[k].length)) w[k] = null; }); if (!w.isNew) delete w.isNew;
           const next = prods.slice(), pos = isNew ? -1 : next.findIndex(x => x.id === item.id); if (pos >= 0) next[pos] = w; else next.push(w);
-          await commit(next, isNew ? 'Товар добавлен' : 'Товар сохранён', saveBtn); m.close(true);
+          await commit(next, isNew ? 'Товар добавлен' : 'Товар сохранён', saveBtn); AD.drafts.clear(dk); m.close(true);
         }, err));
-        paintPhoto(); paintPack(); paintDocs(); onInput('init'); return m;
+        paintPhoto(); paintPack(); paintDocs(); onInput('init'); AD.drafts.watch(m.body, dk, () => (JSON.stringify(w) !== orig ? w : null)); if (!restored) { const bn = AD.drafts.banner(dk, d => { m.close(true); openEditor(item, isNew, d); }); if (bn) err.prepend(bn); } return m;
       }
 
       /* ----- каркас страницы ----- */
