@@ -78,10 +78,34 @@ function problems(name, data) {
   } else if (name === 'events') {
     uniq(data, 'id', 'Мероприятие'); uniq(data, 'slug', 'Мероприятие'); const teachers = new Set(other('training').teachers.map(t => t.id)), brands = ids('brands');
     data.forEach(e => { const w = `Мероприятие «${e.title || e.id}»`; if (!isStr(e.title)) P.push(`${w}: нет названия.`); if (!dateOk(e.date)) P.push(`${w}: дата — формат ГГГГ-ММ-ДД.`); if (e.brand && !brands.has(e.brand)) P.push(`${w}: неизвестный бренд «${e.brand}».`); if (e.teacher && !teachers.has(e.teacher)) P.push(`${w}: неизвестный преподаватель «${e.teacher}».`); if (isStr(e.slug) && !slugOk(e.slug)) P.push(`${w}: slug — латиница, цифры, дефис.`); });
+    const cities = new Set((other('training').cities) || []);                                // формат, город, места и длины
+    data.forEach(e => { const w = `Мероприятие «${e.title || e.id}»`;
+      if (!['Очно', 'Вебинар'].includes(e.fmt)) P.push(`${w}: формат — «Очно» или «Вебинар».`);
+      if (cities.size && !cities.has(e.city)) P.push(`${w}: города «${e.city}» нет в списке городов обучения.`);
+      if (e.seats !== null && e.seats !== undefined && !(Number.isInteger(e.seats) && e.seats >= 0 && e.seats <= 1000)) P.push(`${w}: места — целое число от 0 до 1000 или пусто.`);
+      [['title', 160], ['time', 40], ['place', 200], ['speaker', 120], ['description', 1500]].forEach(([k, n]) => { if (e[k] !== undefined && e[k] !== null && (typeof e[k] !== 'string' || e[k].length > n)) P.push(`${w}: «${k}» — текст до ${n} символов.`); });
+      if (e.slug && !slugOk(e.slug)) P.push(`${w}: адрес (slug) — латиница, цифры, дефисы.`); });
   } else if (name === 'news') {
     if (!Array.isArray(data.items) || !Array.isArray(data.categories)) return ['Нужны списки «categories» и «items».'];
     uniq(data.items, 'slug', 'Новость'); const cats = new Set(data.categories.map(x => x.id));
     data.items.forEach(n => { const w = `Новость «${n.title || n.slug}»`; if (!isStr(n.title)) P.push(`${w}: нет заголовка.`); if (!cats.has(n.category)) P.push(`${w}: неизвестная категория «${n.category}».`); if (!dateOk(n.date)) P.push(`${w}: дата — формат ГГГГ-ММ-ДД.`); if (isStr(n.slug) && !slugOk(n.slug)) P.push(`${w}: slug — латиница, цифры, дефис.`); });
+    uniq(data.items, 'id', 'Новость');
+    { const prodIds = new Set(other('products').flatMap(x => [x.id, x.slug])), brandIds2 = new Set(other('brands').map(x => x.id)), evIds = new Set(other('events').flatMap(x => [x.id, x.slug]));          // на товары и мероприятия можно ссылаться по id или по адресу
+      data.items.forEach(n => { const w = `Новость «${n.title || n.slug}»`;
+        if (!isStr(n.excerpt) || n.excerpt.length > 400) P.push(`${w}: анонс — от 1 до 400 символов.`);
+        if (!Array.isArray(n.body) || !n.body.length || n.body.some(x => !isStr(x) || x.length > 3000)) P.push(`${w}: текст — минимум один непустой абзац (до 3000 символов).`);
+        if (n.title && n.title.length > 160) P.push(`${w}: заголовок — до 160 символов.`);
+        const c = n.cta; if (c && typeof c === 'object' && c.type) { if (!['partner', 'training', 'product', 'catalog', 'brand', 'event', 'contacts'].includes(c.type)) P.push(`${w}: неизвестный вид кнопки «${c.type}».`);
+          else if (c.type === 'product' && !prodIds.has(c.ref)) P.push(`${w}: кнопка ведёт на несуществующий товар «${c.ref}».`); else if (c.type === 'brand' && !brandIds2.has(c.ref)) P.push(`${w}: кнопка ведёт на несуществующий бренд «${c.ref}».`); else if (c.type === 'event' && !evIds.has(c.ref)) P.push(`${w}: кнопка ведёт на несуществующее мероприятие «${c.ref}».`);
+          if (c.query !== undefined && c.query !== null && c.query !== '' && !/^[\w=&%.\-]{1,120}$/.test(String(c.query))) P.push(`${w}: параметры кнопки — вида task=acne.`); }
+        const r = n.related; if (r && typeof r === 'object') { [['products', prodIds, 'товар'], ['brands', brandIds2, 'бренд'], ['events', evIds, 'мероприятие']].forEach(([k, set, t]) => { if (r[k] !== undefined && (!Array.isArray(r[k]) || r[k].some(id => !set.has(id)))) P.push(`${w}: связанные ${t === 'товар' ? 'товары' : t === 'бренд' ? 'бренды' : 'мероприятия'} — выберите из списка существующих.`); }); }
+        if (n.image !== undefined && n.image !== null && n.image !== '') { if (typeof n.image !== 'string' || !/^assets\/[\w\-./]+\.(png|jpe?g|webp|gif)$/i.test(n.image)) P.push(`${w}: картинка — файл PNG, JPG, WebP или GIF из папки assets/.`); else if (!fs.existsSync(path.join(C.ROOT, n.image))) P.push(`${w}: файла картинки «${n.image}» нет в папке сайта.`); }
+        if (n.imageAlt !== undefined && n.imageAlt !== null && (typeof n.imageAlt !== 'string' || n.imageAlt.length > 160)) P.push(`${w}: подпись к картинке — до 160 символов.`);
+        if (n.demo !== undefined && typeof n.demo !== 'boolean') P.push(`${w}: «demo» — только да или нет.`); }); }
+    if (data.layout !== undefined) {                                                      // привязка новостей к слотам газеты
+      const NL = require(path.join(C.ROOT, 'src', 'news-layout.js')), sl = data.layout && data.layout.slots; const ids = new Set(data.items.map(x => x.id));
+      if (!sl || typeof sl !== 'object' || Array.isArray(sl)) P.push('Газета: нужен объект «layout.slots».'); else { const used = {};
+        Object.entries(sl).forEach(([k, v]) => { if (!NL.DEFAULT_SLOT[k]) { P.push(`Газета: неизвестный слот «${k}».`); return; } if (v === '' || v === null) return; if (!ids.has(v)) P.push(`Газета, слот «${(NL.SLOT_INFO[k] || {}).title || k}»: новости «${v}» нет.`); else if (used[v]) P.push(`Газета: новость «${v}» стоит сразу в двух слотах («${(NL.SLOT_INFO[used[v]] || {}).title || used[v]}» и «${(NL.SLOT_INFO[k] || {}).title || k}») — выберите разные.`); else used[v] = k; }); } }
   } else if (name === 'catalog') {
     ['cats', 'tasks', 'kinds'].forEach(k => { if (!Array.isArray(data[k])) P.push(`Нужен список «${k}».`); else uniq(data[k], 'id', k); });
     if (!P.length) { const prods = readJSON(abs('products'), []); prods.forEach(p => { if (!data.cats.some(c => c.id === p.cat)) P.push(`Товар «${p.name}»: категория «${p.cat}» удалена.`); if (!data.kinds.some(k => k.id === p.kind)) P.push(`Товар «${p.name}»: тип «${p.kind}» удалён.`); }); }

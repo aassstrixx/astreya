@@ -163,3 +163,14 @@ a.kpi:hover{border-color:rgba(176,142,78,.35)}
 .col{display:flex;flex-direction:column;gap:8px;min-width:0}
 
 .br-card{display:flex;flex-direction:column;gap:4px} .br-sw{display:grid;place-items:center;height:92px;border-radius:14px;background:linear-gradient(135deg,var(--c1),var(--c2));margin-bottom:8px;overflow:hidden} .br-sw img{max-width:70%;max-height:62px;object-fit:contain} .br-sw b{font:500 38px var(--serif)!important;color:#fff;margin:0!important}
+
+/* ---- новости и газета ---- */
+.np-chip{display:inline-block;padding:2px 11px;border-radius:99px;font-size:12.5px;font-weight:700;background:color-mix(in srgb,var(--c1) 14%,#fff);color:color-mix(in srgb,var(--c1) 70%,#000);border:1px solid color-mix(in srgb,var(--c1) 35%,#fff)}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px} .chip{display:inline-flex;align-items:center;gap:6px;padding:3px 6px 3px 12px;border-radius:99px;background:var(--gold-xl);border:1px solid rgba(176,142,78,.5);font-size:13px;font-weight:600} .chip button{border:0;background:transparent;cursor:pointer;width:22px;height:22px;border-radius:50%;color:var(--muted)} .chip button:hover{background:rgba(11,26,51,.1);color:var(--err)}
+.paper-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:14px}
+.pg-tile{border:1px solid var(--line-s);border-radius:16px;background:rgba(255,254,251,.85);padding:12px 14px;display:flex;flex-direction:column;gap:10px} .pg-fixed{background:rgba(246,239,220,.5);border-style:dashed}
+.pg-n{display:flex;align-items:baseline;gap:10px;font:500 17px var(--serif)} .pg-n i{font:italic 500 22px var(--serif);color:var(--gold-d);min-width:46px}
+.pg-slot{display:flex;flex-direction:column;gap:4px} .pg-slot label{font-size:12.5px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;color:var(--gold-d)}
+.grid1{display:grid;grid-template-columns:1fr;gap:14px}
+.ed-list>.ed-item{padding:14px;border:1px solid var(--line-s);border-radius:16px;background:rgba(255,254,251,.7)}
+.ed-list>.ed-item .ed-list>.ed-item{padding:8px;background:transparent;border-style:dashed}

@@ -6,9 +6,8 @@ const S = require('../../js/shared.js');
 const {T} = require('../texts.js');
 const {esc, I, dparts} = S;
 
-/* какая статья на какой странице газеты (остальные — в архиве и в оглавлении на обороте): слот → id статьи */
-const SLOT = {promo: 'n1', newA: 'n3', newB: 'n5', expert: 'n4', eduA: 'n7', eduB: 'n2', eduC: 'n6', eduD: 'n8', region: 'n9'};
-const WHERE = {promo: [1, '2–3'], newA: [2, '4'], newB: [2, '5'], expert: [3, '6–7'], eduA: [4, '8'], eduB: [4, '8'], eduC: [4, '9'], eduD: [4, '9'], region: [5, '10']};
+/* какая статья на какой странице газеты (остальные — в архиве и в оглавлении на обороте): слот → id статьи; задаётся в data/news.json → layout.slots, по умолчанию — src/news-layout.js */
+const {WHERE, slotsOf} = require('../news-layout.js');
 const SECTION = [T('news.sections.cover'), T('news.sections.promo'), T('news.sections.new'), T('news.sections.expert'), T('news.sections.edu'), T('news.sections.region'), T('news.sections.back')];
 const SECTION_PG = ['2–3', '4–5', '6–7', '8–9', '10–11'];                         // страницы разделов (для содержания), по порядку SECTION[1…5]
 
@@ -26,6 +25,7 @@ function ctaOf(ctx, C, P, n) {
 }
 
 function newsPage(ctx, C, P) {
+  const SLOT = slotsOf(ctx.newsLayout);
   const {news, newsCats, site} = ctx, u = h => C.u(P, h);
   const byId = Object.fromEntries(news.map(n => [n.id, n]));
   const slot = k => byId[SLOT[k]];
@@ -195,6 +195,7 @@ function newsPage(ctx, C, P) {
 }
 
 function articlePage(ctx, C, P, n) {
+  const SLOT = slotsOf(ctx.newsLayout);
   const cat = ctx.newsCatById[n.category], rel = n.related || {}, u = h => C.u(P, h);
   const prods = (rel.products || []).map(id => ctx.productById[id]).filter(Boolean);
   const evs = (rel.events || []).map(id => ctx.eventById[id]).filter(Boolean);
@@ -217,7 +218,7 @@ function articlePage(ctx, C, P, n) {
         <p class="na-dek reveal">${esc(lead)}</p>
       </header>
       <figure class="na-cover reveal" aria-hidden="true">
-        ${photo ? `<img src="${u('assets/news/' + photo)}" alt="" width="960" height="540" decoding="async">` : `<div class="na-type"><span>${n.category === 'sale' ? 'до ' + Math.max(...ctx.site.discounts.map(d => d.pct)) + '%' : esc(cat.name)}</span></div>`}
+        ${n.image ? `<img src="${esc(u(n.image))}" alt="${esc(n.imageAlt || '')}" width="960" height="540" decoding="async">` : photo ? `<img src="${u('assets/news/' + photo)}" alt="" width="960" height="540" decoding="async">` : `<div class="na-type"><span>${n.category === 'sale' ? 'до ' + Math.max(...ctx.site.discounts.map(d => d.pct)) + '%' : esc(cat.name)}</span></div>`}
         ${sprites ? `<div class="np-stage-pk na-pk">${sprites.map((s, i) => `<img class="np-pk np-pk-${'abc'[i]}" src="${u('assets/showroom/pack-' + s + '.webp')}" alt="" loading="lazy" decoding="async">`).join('')}</div>` : ''}
       </figure>
       <div class="na-body reveal">${paras.map((p, i) => `<p${i === 0 ? ' class="na-first"' : ''}>${esc(p)}</p>`).join('')}</div>

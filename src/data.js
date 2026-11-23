@@ -79,6 +79,7 @@ function load() {
 
   /* новости: подставляем пороги скидок в текст */
   const disc = site.discounts.map(d => `${d.pct}% от ${S.rub(d.from)}`).join(', ');
+  ctx.newsLayout = newsRaw.layout || {};                  // привязка новостей к слотам газеты (data/news.json → layout.slots)
   ctx.newsCats = newsRaw.categories; ctx.newsCatById = byId(newsRaw.categories);
   ctx.news = newsRaw.items.slice().sort((a, b) => b.date.localeCompare(a.date));
   ctx.news.forEach(n => { n.body = n.body.map(p => p.replace('{{discounts}}', disc)); });

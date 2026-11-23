@@ -21,4 +21,9 @@ function registry() {
     total: Object.keys(TX.index).length
   };
 }
-module.exports = {registry};
+/* схема газеты (src/news-layout.js): слоты по умолчанию, подписи, страницы */
+function newsLayout() {
+  const NL = require(path.join(C.ROOT, 'src', 'news-layout.js'));
+  return {defaults: NL.DEFAULT_SLOT, where: NL.WHERE, info: NL.SLOT_INFO, pages: NL.PAGES};
+}
+module.exports = {registry, newsLayout};
