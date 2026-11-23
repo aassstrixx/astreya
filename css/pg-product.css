@@ -82,7 +82,7 @@
 .pdp-cs{position:absolute;left:0;top:0;transform-origin:50% 100%;transform:translateX(3%) skewX(-44deg) scaleY(.2);filter:brightness(0) blur(1.6px);opacity:.28}
 .pdp-photo{position:absolute;left:calc(var(--px) * 100%);top:calc(var(--py) * 100% + .5%);height:calc(var(--hp) * 1%);transform:translate(-50%,-100%);z-index:2;border-radius:18px;overflow:hidden;box-shadow:var(--ax-sh-2);background:#fff}
 .pdp-photo img{display:block;height:100%;width:auto;max-width:none}
-@media all{.pdp-pack{animation:pdpRise 1.1s var(--ax-ease) .15s both}}
+@media (prefers-reduced-motion:no-preference){.pdp-pack{animation:pdpRise 1.1s var(--ax-ease) .15s both}}
 @keyframes pdpRise{from{opacity:0;transform:translate(-50%,-96%)}to{opacity:1;transform:translate(-50%,-100%)}}
 
 /* ---------- полка ---------- */
@@ -99,7 +99,7 @@
 .dtb-logo img{display:block;width:100%;height:100%;object-fit:contain;mix-blend-mode:multiply;filter:drop-shadow(1px 2px 1px rgba(66,44,20,.2))}
 .dtb-logo.is-text b{font:500 clamp(22px,3.4vw,56px)/1 var(--serif);letter-spacing:.04em;color:var(--ax-ink);text-shadow:1px 2px 1px rgba(66,44,20,.18);white-space:nowrap}
 .dtb-pk{z-index:3}
-@media all{.dtb-logo{animation:dtbLogo 1.1s var(--ax-ease) .1s both}.dtb-pk{animation-delay:calc(.25s + var(--k,0) * .12s)}}
+@media (prefers-reduced-motion:no-preference){.dtb-logo{animation:dtbLogo 1.1s var(--ax-ease) .1s both}.dtb-pk{animation-delay:calc(.25s + var(--k,0) * .12s)}}
 @keyframes dtbLogo{from{opacity:0}to{opacity:1}}
 
 /* ---------- соседи (предыдущий / следующий) ---------- */
@@ -130,7 +130,7 @@ body[data-page="product"] .hdr,body[data-page="brand"] .hdr,body[data-page="even
 html.pg-top body[data-page="product"] .hdr,html.pg-top body[data-page="brand"] .hdr,html.pg-top body[data-page="event"] .hdr{background:transparent;border-bottom-color:transparent}
 
 /* ---------- появление ---------- */
-@media all{
+@media (prefers-reduced-motion:no-preference){
   .dt-plaque{animation:dtPlaque 1s var(--ax-ease) .3s both}
   .dt-route li{animation:dtStep .7s var(--ax-ease) both;animation-delay:calc(.12s + var(--i,0) * .07s)}
 }

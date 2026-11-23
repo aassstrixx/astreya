@@ -7,7 +7,7 @@
   const A = window.Astreya = window.Astreya || {}; A.pages = A.pages || {};
   if (A.detail) return;
   const $ = (s, r) => (r || document).querySelector(s), html = document.documentElement;
-  const still = () => window.matchMedia && matchMedia('(prefers-reduced-motion: reduce) and (min-width: 100000px)').matches;
+  const still = () => window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
   const D = A.detail = {};
 
   /* шапка прозрачна, пока под ней кадр: класс на <html>; страницы без кадра его снимают */

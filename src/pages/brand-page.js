@@ -32,6 +32,21 @@ module.exports = function brandPage(ctx, C, P, b) {
   const request = (cls, place, label) => `<button class="${cls}" type="button" data-act="form" data-type="question" data-ref="${T('brand.route.sm2')} ${esc(b.name)}${T('common.pages.brandRef')}" data-track="brand_request" data-place="${place}">${label} ${I.arrow}</button>`;
   const partner = (cls, place) => `<a class="${cls}" href="${C.u(P, 'partners.html')}" data-track="partner_cta" data-place="${place}">${T('brand.cta.a')}</a>`;
 
+  /* «Витрина»: стеклянный кабинет бренда (до 9 позиций на 1–3 полках: мелкое выше, высокое ниже) и полки по направлениям. Предмет — спрайт упаковки (тот же рендер, что на стене брендов и в каталоге),
+     размер в сантиметрах (PACK_CM) → единый масштаб на всех полках; подпись появляется при наведении, клик ведёт на страницу товара. */
+  const vbItem = (p, k) => { const src = S.packOf(p), cm = PACK_CM[p.type || 'bottle'] || 21.9;
+    return `<a class="vb-item" href="${C.purl(P, p)}" style="--cm:${cm};--sar:${f1(spriteAr(src))};--k:${k}" data-track="product_click" data-place="brand-vitrine" aria-label="${esc(p.name)}"><img class="vb-pk" src="${esc(C.u(P, src))}" alt="" loading="lazy" decoding="async"><span class="vb-tag">${esc(p.name)}</span></a>`; };
+  const vbShelf = (list, k0) => { const mx = Math.max(...list.map(p => PACK_CM[p.type || 'bottle'] || 21.9)); return `<div class="vb-shelf" style="--sh:${f1(mx + 6.5)}">${list.map((p, j) => vbItem(p, k0 + j)).join('')}<i class="vb-slab" aria-hidden="true"></i></div>`; };
+  const cab = [...prods].sort((a, b2) => (b2.isNew ? 1 : 0) - (a.isNew ? 1 : 0)).slice(0, 9).sort((a, b2) => (PACK_CM[a.type || 'bottle'] || 21.9) - (PACK_CM[b2.type || 'bottle'] || 21.9));
+  const nSh = Math.min(3, Math.max(1, Math.ceil(cab.length / 3))), per = Math.ceil(cab.length / nSh), cabShelves = [];
+  for (let k = 0; k < cab.length; k += per) cabShelves.push(cab.slice(k, k + per));
+  const vbSign = b.logo ? `<img src="${esc(C.u(P, b.logo))}" alt="${esc(b.name)}"${b.logoW ? ` width="${b.logoW}" height="${b.logoH}"` : ''} decoding="async" fetchpriority="high">` : `<b>${esc(b.name)}</b>`;
+  const vitrine = `<div class="vb reveal" role="group" aria-label="${T('brand.shelf.aria')} ${esc(b.name)}">
+        <div class="vb-crown"><span class="vb-sign">${vbSign}</span></div>
+        <div class="vb-case"><div class="vb-glass">${cabShelves.map((l, k) => vbShelf(l, k * per)).join('')}<i class="vb-gloss" aria-hidden="true"></i></div></div>
+        <div class="vb-base" aria-hidden="true"></div>
+      </div>`;
+
   /* упаковки в нише: разные спрайты (по виду), центральная подставка — первая новинка или первая позиция */
   const seen = new Set(), pick = [];
   [...prods.filter(p => p.isNew), ...prods].forEach(p => { const s = S.packOf(p); if (!seen.has(s) && pick.length < SLOTS.length) { seen.add(s); pick.push(p); } });
@@ -61,13 +76,10 @@ module.exports = function brandPage(ctx, C, P, b) {
 
   const arches = groups.length ? `<section class="sec dtb-lines wrap" aria-label="${T('brand.lines.aria')}">
       ${C.secHead(T('brand.lines.aria'), `${T('brand.lines.tx')} ${esc(b.name)}`)}
-      <div class="dtb-arches">${groups.map(([c, list], k) => { const p0 = list.find(p => p.isNew) || list[0], src = S.packOf(p0), ar = f1(spriteAr(src)), hp = f1((PACK_CM[p0.type || 'bottle'] || 21.9) / 25 * 100);
-        return `<a class="dtb-arch reveal" style="--i:${k}" href="${catalogHref}&cat=${c.id}" data-track="catalog_click" data-place="brand-lines">
-          <span class="dtb-in" aria-hidden="true"><span class="dtb-ap" style="--sar:${ar};--hp:${hp}"><img src="${esc(C.u(P, src))}" alt="" loading="lazy" decoding="async"></span></span>
-          <span class="dtb-num"><b>${list.length}</b><small>${S.plural(list.length, 'позиция', 'позиции', 'позиций')}</small></span>
-          <h3>${esc(c.name)}</h3>
-          <p>${esc(list.slice(0, 3).map(p => p.name).join(' · '))}${list.length > 3 ? ' …' : ''}</p>
-          <span class="lnk">${T('brand.facts.s')} ${I.arrow}</span></a>`; }).join('')}</div>
+      <div class="vb-lines">${groups.map(([c, list], k) => `<section class="vb-row reveal" style="--i:${k}">
+          <header class="vb-rh"><h3>${esc(c.name)}</h3><p>${list.length} ${S.plural(list.length, 'позиция', 'позиции', 'позиций')}</p><a class="lnk" href="${catalogHref}&cat=${c.id}" data-track="catalog_click" data-place="brand-lines">${T('brand.facts.s')} ${I.arrow}</a></header>
+          ${vbShelf([...list].sort((a, b2) => (PACK_CM[a.type || 'bottle'] || 21.9) - (PACK_CM[b2.type || 'bottle'] || 21.9)).slice(0, 6), 0)}
+        </section>`).join('')}</div>
     </section>` : '';
 
   const tasks = b.tasks && b.tasks.length ? `<section class="sec rd-b-tasks wrap" style="padding-top:0">
