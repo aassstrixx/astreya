@@ -12,7 +12,7 @@
       const v = attrs[k]; if (v === null || v === undefined || v === false) continue;
       if (k === 'class') el.className = v;
       else if (k === 'dataset') Object.assign(el.dataset, v);
-      else if (k === 'style' && typeof v === 'object') Object.assign(el.style, v);
+      else if (k === 'style' && typeof v === 'object') Object.keys(v).forEach(n => { if (n.startsWith('--')) el.style.setProperty(n, v[n]); else el.style[n] = v[n]; });
       else if (k.slice(0, 2) === 'on' && typeof v === 'function') el.addEventListener(k.slice(2), v);
       else if (k === 'for') el.setAttribute('for', v);
       else if (k === 'value' || k === 'checked' || k === 'disabled' || k === 'selected' || k === 'readOnly' || k === 'hidden') el[k] = v;

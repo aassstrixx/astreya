@@ -50,7 +50,7 @@ module.exports = function product(ctx, C, P, p) {
   /* упаковка на подиуме: спрайт того же рендера, что на стене брендов (по бренду и виду), высота — в долях кадра, тень от солнца слева как у ниш стены */
   const type = p.type || 'bottle', src = S.packOf(p), hp = f1(2.2 * PXU * (PACK_H[type] || 97) / 97 / PH * 100), ar = f1(spriteAr(src));
   const pack = p.image
-    ? `<div class="pdp-photo" style="--hp:${f1(2.2 * PXU / PH * 100 * .92)}"><img src="${esc(C.u(P, p.image))}" alt="${esc(`${b.name} — ${p.name}`)}" decoding="async"></div>`
+    ? `<div class="pdp-photo" style="--hp:${f1(2.2 * PXU / PH * 100 * .92)}"><img src="${esc(C.u(P, p.image))}" alt="${esc(p.imageAlt || `${b.name} — ${p.name}`)}" decoding="async"></div>`
     : `<div class="pdp-pack" style="--hp:${hp};--sar:${ar}" role="img" aria-label="${esc(`${b.name} — ${p.name}: упаковка`)}">
         <img class="pdp-cs" src="${esc(C.u(P, src))}" alt="" aria-hidden="true" decoding="async">
         <img class="pdp-pk" src="${esc(C.u(P, src))}" alt="" decoding="async" fetchpriority="high">

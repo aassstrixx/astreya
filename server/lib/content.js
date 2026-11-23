@@ -63,6 +63,12 @@ function problems(name, data) {
       (p.tasks || []).forEach(t => { if (!tasks.has(t)) P.push(`${w}: неизвестная задача «${t}».`); });
       if (!isStr(p.desc)) P.push(`${w}: нет краткого описания.`); if (!['tube', 'jar', 'dropper', 'bottle', 'pump', 'box', 'device'].includes(p.type)) P.push(`${w}: неизвестный вид упаковки «${p.type}».`);
       if (p.image !== undefined && p.image !== null && p.image !== '') { if (typeof p.image !== 'string' || !/^assets\/[\w\-./]+\.(png|jpe?g|webp|gif)$/i.test(p.image)) P.push(`${w}: фото — файл PNG, JPG, WebP или GIF из папки assets/.`); else if (!fs.existsSync(path.join(C.ROOT, p.image))) P.push(`${w}: файла фото «${p.image}» нет в папке сайта.`); } });
+    data.forEach(p => { const w = `Товар «${p.name || p.id}»`;                                          // типы и длины полей карточки
+      ['featured', 'isNew'].forEach(k => { if (p[k] !== undefined && typeof p[k] !== 'boolean') P.push(`${w}: «${k}» — только да или нет.`); });
+      ['indications', 'actives', 'details'].forEach(k => { if (p[k] !== undefined && p[k] !== null && (!Array.isArray(p[k]) || p[k].some(x => typeof x !== 'string' || !x.trim() || x.length > 1500))) P.push(`${w}: «${k}» — список непустых строк до 1500 символов.`); });
+      [['name', 160], ['desc', 600], ['usage', 1500], ['volume', 60], ['sku', 60], ['imageAlt', 160]].forEach(([k, n]) => { if (p[k] !== undefined && p[k] !== null && (typeof p[k] !== 'string' || p[k].length > n)) P.push(`${w}: «${k}» — текст до ${n} символов.`); });
+      if (p.docs !== undefined && p.docs !== null) { if (!Array.isArray(p.docs)) P.push(`${w}: «docs» — список документов.`); else p.docs.forEach((d, i) => { if (!d || !isStr(d.title) || d.title.length > 160 || !/^(https?:\/\/[^\s]+|assets\/[\w\-./]+)$/i.test(String(d.url || ''))) P.push(`${w}: документ №${i + 1} — нужны название и ссылка (https://… или файл из assets/).`); }); }
+    });
     /* товар можно удалить, только если на него ничто не ссылается (новости, главная, обучение) */
     const gone = (readJSON(abs('products'), []) || []).filter(o => !data.some(p => p.id === o.id));
     gone.forEach(o => { for (const [n, what] of [['news', 'Новости и акции'], ['redesign', 'Главная и оформление'], ['content', 'Тексты страниц'], ['training', 'Обучение'], ['events', 'Мероприятия']]) { let text = ''; try { text = fs.readFileSync(abs(n), 'utf8'); } catch (e) {} if (text.includes('"' + o.id + '"')) { P.push(`Товар «${o.name}» нельзя удалить: на него ссылается раздел «${what}». Сначала уберите ссылку.`); break; } } });
