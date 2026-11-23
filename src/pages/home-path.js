@@ -32,7 +32,7 @@ module.exports = function homePath(ctx, C, P, {events, val, img, bgLogo, showDem
   const statTile = s => {
     const extra = s.key === 'geo' ? `<ul class="hp-cities" aria-label="${T('home.tasks.aria3')}">${ctx.site.offices.map(o => `<li>${esc(o.city)}</li>`).join('')}</ul>`
       : s.key === 'brands' ? `<div class="hp-mlogos" aria-hidden="true">${brands.slice(0, 4).map(b => C.slotLogo(P, b, 1200)).join('')}<em>+${brands.length - 4}</em></div>` : '';
-    return `<div class="hp-stat hp-st-${esc(s.key || 'x')} reveal"><b data-count="${val(s)}"${s.suffix ? ` data-suffix="${esc(s.suffix)}"` : ''}>${val(s)}</b><span>${esc(s.label)}</span>${s.note ? `<i>${esc(s.note)}</i>` : ''}${extra}${s.placeholder && showDemo ? '<em class="rd-ph">демо-данные</em>' : ''}</div>`;
+    return `<div class="hp-stat hp-st-${esc(s.key || 'x')} reveal"><b data-count="${val(s)}"${s.suffix ? ` data-suffix="${esc(s.suffix)}"` : ''}>${val(s)}</b><span>${esc(s.label)}</span>${s.note ? `<i>${esc(s.note)}</i>` : ''}${extra}${s.placeholder && showDemo ? `<em class="rd-ph">${T('common.labels.demo')}</em>` : ''}</div>`;
   };
   const reasons = pf.pick.map(k => content.advantages[k]).filter(Boolean);
   const proofSec = `<section class="rd-sec rd-clinical hp-proof" aria-labelledby="hp-proof-h">${bgLogo}<div class="wrap">

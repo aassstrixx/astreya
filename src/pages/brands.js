@@ -69,7 +69,7 @@ function nicheCardMaker(ctx, C, P) {
     const logo = b.logo ? `<img class="br-logo" src="${esc(C.u(P, b.logo))}" alt="${esc(b.name)}"${b.logoW ? ` width="${b.logoW}" height="${b.logoH}"` : ''}${lw ? ` style="--lw:${lw}"` : ''} loading="lazy" decoding="async">` : `<b class="br-logo br-logo-t">${esc(b.name)}</b>`;
     const names = prods.map(p => p.name).join(', ');
     return `<article class="card br-card bl-card reveal" style="${S.bstyle(b)}" data-id="${b.id}" data-tasks="${b.tasks.join(' ')}" data-q="${esc(hay)}">
-    <div class="br-niche${nm ? '' : ' no-niche'}"${names ? ` role="img" aria-label="Витрина бренда ${esc(b.name)}: ${esc(names)}"` : ''}>
+    <div class="br-niche${nm ? '' : ' no-niche'}"${names ? ` role="img" aria-label="${T('common.aria.niche', {brand: esc(b.name), items: esc(names)})}"` : ''}>
       ${nm ? `<img class="br-bg" src="${esc(C.u(P, nm.file))}" alt="" width="720" height="900" loading="lazy" decoding="async">` : ''}
       ${logo}${pk}
     </div>
@@ -78,7 +78,7 @@ function nicheCardMaker(ctx, C, P) {
       <h3 class="sr">${esc(b.name)}</h3>
       <p class="br-sp">${esc(b.tag)}</p>
       ${C.tasksLine(b.tasks, '', 2)}
-      <div class="bl-foot"><span class="br-n">${n} ${word} в каталоге</span><a class="lnk stretch" href="${C.burl(P, b)}" data-track="brand_card_click" data-brand="${b.id}">${T('brands.card.a')} ${I.arrow}</a></div>
+      <div class="bl-foot"><span class="br-n">${n} ${word} ${T('common.labels.inCat')}</span><a class="lnk stretch" href="${C.burl(P, b)}" data-track="brand_card_click" data-brand="${b.id}">${T('brands.card.a')} ${I.arrow}</a></div>
     </div>
   </article>`;
   };
@@ -156,7 +156,7 @@ function brandsWall(ctx, C, P) {
     const nProd = products.filter(p => p.brand === b.id).length;
     return `<li class="bw-n" style="${S.bstyle(b)};--x:${pct(n.x0)}%;--w:${pct(n.x1 - n.x0)}%;--t:${pct(n.top)}%;--h:${pct(nicheH)}%;--cx:${pct(n.cx)}%;--ly:${pct(lyPx / PH)}%;--lw:${pct(lw / PW)}%;--lh:${pct(lhPx / PH)}%;--cy:${pct((lyPx + lhPx / 2 + .07 * nhPx) / PH)}%;--cb:${pct((lyPx + lhPx + .022 * nhPx) / PH)}%" data-id="${b.id}" data-tasks="${b.tasks.join(' ')}" data-q="${esc(hayOf(b))}">
       ${logoImg(b, 'bw-logo')}${pk}
-      <button class="bw-hit" type="button" data-act="bw-open" data-id="${b.id}" aria-controls="bw-panel" aria-expanded="false" aria-label="${esc(b.name)}: ${esc(nWord(nProd))} в каталоге. ${esc(W.hint)}"><span class="bw-glow" aria-hidden="true"></span><span class="bw-veil" aria-hidden="true"></span></button>
+      <button class="bw-hit" type="button" data-act="bw-open" data-id="${b.id}" aria-controls="bw-panel" aria-expanded="false" aria-label="${T('common.aria.brandHit', {brand: esc(b.name), count: esc(nWord(nProd)), hint: esc(W.hint)})}"><span class="bw-glow" aria-hidden="true"></span><span class="bw-veil" aria-hidden="true"></span></button>
     </li>`;
   }).join('');
 
@@ -223,7 +223,7 @@ function brandsWall(ctx, C, P) {
         </div>
         <div class="bw-scroll" data-bw-scroll>
           <div class="bw-plane" id="br-grid" style="--ar:${PW} / ${PH}">
-            <picture><source media="(max-width: 1100px)" srcset="${esc(C.u(P, pl.small))}"><img class="bw-plate" src="${esc(C.u(P, pl.src))}" alt="Единая каменная витрина брендов ASTREYA: арочные ниши с логотипами и продукцией" width="${PW}" height="${PH}" fetchpriority="high" decoding="async"></picture>
+            <picture><source media="(max-width: 1100px)" srcset="${esc(C.u(P, pl.small))}"><img class="bw-plate" src="${esc(C.u(P, pl.src))}" alt="${T('common.aria.wallAlt')}" width="${PW}" height="${PH}" fetchpriority="high" decoding="async"></picture>
             ${dimLayer}
             <h2 class="sr">${T('brands.list.h2')}</h2>
             <ol class="bw-niches">${niches}</ol>

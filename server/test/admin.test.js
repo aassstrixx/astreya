@@ -158,3 +158,34 @@ test('витрина: фото товара показывается вмест�
   r = await save(editor, 'redesign', d => { d.extras.showroomPhotos = false; }); assert.equal(r.status, 200); assert.equal(uses(), off, 'выключили — на витрине снова упаковка');
   await save(editor, 'products', d => { delete d[0].image; });
 });
+
+test('тексты из данных: content.json и redesign.json в «Тексты страниц» — правка пишется в свой файл, чужие правки не затираются', async () => {
+  const d = (await editor.get('/api/texts/data')).json; assert.ok(d.pages.length >= 10 && d.versions.content && d.versions.redesign);
+  const home = d.pages.find(p => p.id === 'home'), seo = d.pages.find(p => p.id === 'seo'); assert.ok(home.blocks.length > 10 && seo.blocks.length >= 10, 'главная и SEO собраны из данных');
+  const f = home.blocks.flatMap(b => b.fields).find(x => x.id === 'content:home.h1'); assert.ok(f, 'заголовок героя главной найден'); const old = f.value;
+  let r = await editor.post('/api/texts/data', {changes: [{coll: 'content', path: ['home', 'h1'], from: old, value: 'Новый заголовок главной'}]}); assert.equal(r.status, 200, r.text);
+  assert.equal(rd(S.root, 'data/content.json').home.h1, 'Новый заголовок главной'); assert.ok(read('index.html').includes('Новый заголовок главной'), 'сайт пересобран');
+  r = await editor.post('/api/texts/data', {changes: [{coll: 'content', path: ['home', 'h1'], from: old, value: 'Ещё одна правка'}]}); assert.equal(r.status, 409, 'устаревшее «было» — чужая правка не затирается');
+  const bad = async (ch, st) => { const x = await editor.post('/api/texts/data', {changes: [ch]}); assert.equal(x.status, st, JSON.stringify(ch).slice(0, 80) + ' ' + x.text.slice(0, 120)); };
+  await bad({coll: 'content', path: ['home', 'h1'], value: '<script>alert(1)</script>'}, 422); await bad({coll: 'content', path: ['home', 'h1'], value: '   '}, 422); await bad({coll: 'content', path: ['home', 'h1'], value: 'x<img src=x onerror=alert(1)>'}, 422);
+  await bad({coll: 'products', path: [0, 'name'], value: 'x'}, 400); await bad({coll: 'content', path: ['home', 'nope'], value: 'x'}, 400); await bad({coll: 'content', path: ['__proto__', 'x'], value: 'x'}, 400); await bad({coll: 'content', path: ['seo', 'index', 'title'], value: 'я'.repeat(3500)}, 422);
+  const sf = seo.blocks.flatMap(b => b.fields).find(x => x.id === 'content:seo.index.title'); r = await editor.post('/api/texts/data', {changes: [{coll: 'content', path: ['seo', 'index', 'title'], from: sf.value, value: 'Астрея — новый SEO-заголовок'}]}); assert.equal(r.status, 200, r.text); assert.match(read('index.html'), /<title>Астрея — новый SEO-заголовок<\/title>/, 'SEO-заголовок главной');
+  r = await editor.post('/api/texts/data', {changes: [{coll: 'redesign', path: ['finalCta', 'title'], from: rd(S.root, 'data/redesign.json').finalCta.title, value: 'Финальный призыв по-новому'}]}); assert.equal(r.status, 200, r.text); assert.equal(rd(S.root, 'data/redesign.json').finalCta.title, 'Финальный призыв по-новому');
+  const mgr = client(S.port, '10.9.9.6'); assert.equal((await mgr.get('/api/texts/data')).status, 401);
+});
+
+test('SEO-шаблоны карточек: метки подставляются, лишние метки отклоняются', async () => {
+  const b = rd(S.root, 'data/brands.json')[0], bad = await save(editor, 'texts', d => { d.items['seo.brand.title'] = '{title} — бренд | Астрея'; }); assert.equal(bad.status, 422); assert.match(bad.json.error, /неизвестная метка \{title\}/);
+  let r = await save(editor, 'texts', d => { d.items['seo.brand.title'] = 'Бренд {name} для кабинета | Астрея'; d.items['seo.crumbs.catalog'] = 'Все товары'; }); assert.equal(r.status, 200, r.text);
+  assert.ok(read('brands/' + b.id + '.html').includes('<title>Бренд ' + b.name + ' для кабинета | Астрея</title>'), 'заголовок страницы бренда по шаблону'); assert.ok(read('catalog.html').includes('Все товары'), 'хлебные крошки');
+  await save(editor, 'texts', d => { d.items = {}; });
+});
+
+test('подписи интерфейса для скриптов: попадают в js/data.js, опасные символы отклоняются', async () => {
+  const key = Object.values(require(require('path').join(S.root, 'src', 'texts-registry.js')).index).find(i => i.js); assert.ok(key, 'в реестре есть тексты для скриптов');
+  const bad = await save(editor, 'texts', d => { d.items[key.key] = 'a" onmouseover="x'; }); assert.equal(bad.status, 422); assert.match(bad.json.error, /кавычки/);
+  const ok = await save(editor, 'texts', d => { d.items[key.key] = 'Новая подпись «для скрипта»'; }); assert.equal(ok.status, 200, ok.text);
+  const dj = read('js/data.js'); assert.ok(dj.includes('"' + key.key + '":"Новая подпись «для скрипта»"'), 'правка в js/data.js → texts');
+  await save(editor, 'texts', d => { d.items = {}; }); assert.ok(read('js/data.js').includes('"texts":{}'));
+});
+

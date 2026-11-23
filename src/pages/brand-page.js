@@ -1,7 +1,7 @@
 const fs = require('fs');
 const path = require('path');
 const S = require('../../js/shared.js');
-const {T} = require('../texts.js');
+const {T, Traw} = require('../texts.js');
 const {esc, I, bstyle} = S;
 
 /* Страница бренда v2 («Ниша»): кадр assets/detail/stage-brand.webp (tools/showroom-assets/detail/detail_stage.py brand) — арочная ниша каменной стены с тремя подставками;
@@ -29,14 +29,14 @@ module.exports = function brandPage(ctx, C, P, b) {
   const facts = [[T('brand.passport.s'), b.country ? b.country + (b.countryNote ? ` (${b.countryNote})` : '') : T('brand.passport.s2')], ...(b.facts || []).filter(f => f[0] !== T('brand.passport.s'))];
   const cnt = (k, a, b2, c2) => `${k} ${S.plural(k, a, b2, c2)}`;
   const catalogHref = `${C.u(P, 'catalog.html')}?brand=${b.id}`;
-  const request = (cls, place, label) => `<button class="${cls}" type="button" data-act="form" data-type="question" data-ref="${T('brand.route.sm2')} ${esc(b.name)}: запрос условий" data-track="brand_request" data-place="${place}">${label} ${I.arrow}</button>`;
+  const request = (cls, place, label) => `<button class="${cls}" type="button" data-act="form" data-type="question" data-ref="${T('brand.route.sm2')} ${esc(b.name)}${T('common.pages.brandRef')}" data-track="brand_request" data-place="${place}">${label} ${I.arrow}</button>`;
   const partner = (cls, place) => `<a class="${cls}" href="${C.u(P, 'partners.html')}" data-track="partner_cta" data-place="${place}">${T('brand.cta.a')}</a>`;
 
   /* упаковки в нише: разные спрайты (по виду), центральная подставка — первая новинка или первая позиция */
   const seen = new Set(), pick = [];
   [...prods.filter(p => p.isNew), ...prods].forEach(p => { const s = S.packOf(p); if (!seen.has(s) && pick.length < SLOTS.length) { seen.add(s); pick.push(p); } });
   const packs = pick.map((p, k) => { const s = SLOTS[k], src = S.packOf(p), hp = f1((PACK_CM[p.type || 'bottle'] || 21.9) * s.pxcm / PH * 100);
-    return `<div class="pdp-pack dtb-pk" style="left:${f1(s.x * 100)}%;top:${f1(s.y * 100 + .4)}%;--hp:${hp};--sar:${f1(spriteAr(src))};--k:${k}" role="img" aria-label="${esc(`${b.name} — ${p.name}: упаковка`)}">
+    return `<div class="pdp-pack dtb-pk" style="left:${f1(s.x * 100)}%;top:${f1(s.y * 100 + .4)}%;--hp:${hp};--sar:${f1(spriteAr(src))};--k:${k}" role="img" aria-label="${esc(Traw('common.aria.pack', {brand: b.name, product: p.name}))}">
         <img class="pdp-cs" src="${esc(C.u(P, src))}" alt="" aria-hidden="true" decoding="async"><img class="pdp-pk" src="${esc(C.u(P, src))}" alt="" decoding="async"></div>`; }).join('');
   const logo = b.logo
     ? `<span class="dtb-logo" style="--cx:${f1(NICHE.cx * 100)}%"><img src="${esc(C.u(P, b.logo))}" alt="${esc(b.name)}"${b.logoW ? ` width="${b.logoW}" height="${b.logoH}"` : ''} decoding="async" fetchpriority="high"></span>`
@@ -44,7 +44,7 @@ module.exports = function brandPage(ctx, C, P, b) {
   const brandMark = b.logo ? `<img class="dt-rl" src="${esc(C.u(P, b.logo))}" alt="${esc(b.name)}"${b.logoW ? ` width="${b.logoW}" height="${b.logoH}"` : ''} decoding="async">` : `<b>${esc(b.name)}</b>`;
   const route = `<nav class="dt-route" aria-label="${T('brand.route.aria')}">
       <ol>
-        <li style="--i:0" class="is-home"><a href="${C.u(P, 'index.html')}" aria-label="Главная"><svg class="ic" viewBox="0 0 20 20" aria-hidden="true" focusable="false"><path d="M3.5 9.4 10 4l6.5 5.4M5.3 8.2V16h9.4V8.2M8.4 16v-4.2h3.2V16"/></svg></a></li>
+        <li style="--i:0" class="is-home"><a href="${C.u(P, 'index.html')}" aria-label="${T('common.aria.home')}"><svg class="ic" viewBox="0 0 20 20" aria-hidden="true" focusable="false"><path d="M3.5 9.4 10 4l6.5 5.4M5.3 8.2V16h9.4V8.2M8.4 16v-4.2h3.2V16"/></svg></a></li>
         <li style="--i:1"><a href="${C.u(P, 'brands.html')}"><small>${T('brand.route.sm')}</small><b>${T('brand.route.b')}</b></a></li>
         <li style="--i:2" aria-current="page"><small>${T('brand.route.sm2')}</small><b>${esc(b.name)}</b></li>
       </ol>
@@ -56,7 +56,7 @@ module.exports = function brandPage(ctx, C, P, b) {
     ...facts.map(([k, v]) => [k, `<p>${esc(v)}</p>`]),
     [T('brand.facts.s'), `<p>${cnt(prods.length, 'позиция', 'позиции', 'позиций')} в ${cnt(groups.length, 'линейке', 'линейках', 'линейках')}.</p>`],
     [T('brand.facts.s2'), `<p>${esc(b.name)} ${T('brand.facts.p')}</p>`],
-    [T('brand.facts.s3'), '<p>Консультации менеджеров и материалы учебного центра «Астрея».</p>']
+    [T('brand.facts.s3'), `<p>${T('common.pages.brandConsult')}</p>`]
   ].slice(0, 6).map(([k, v], k2) => tile(String(k2 + 1).padStart(2, '0'), k, v)).join('');
 
   const arches = groups.length ? `<section class="sec dtb-lines wrap" aria-label="${T('brand.lines.aria')}">
@@ -124,12 +124,12 @@ module.exports = function brandPage(ctx, C, P, b) {
     ${tasks}
 
     ${events.length ? `<section class="sec wrap" style="padding-top:0">
-      ${C.secHead(T('brand.edu.s'), `Мероприятия по ${esc(b.name)}`, C.lnk(C.u(P, 'training.html'), T('brand.edu.s2')))}
+      ${C.secHead(T('brand.edu.s'), T('common.pages.brandEvents', {brand: esc(b.name)}), C.lnk(C.u(P, 'training.html'), T('brand.edu.s2')))}
       <div class="grid g3 events-grid">${events.slice(0, 3).map(e => C.eventCard(P, e)).join('')}</div>
     </section>` : ''}
 
     ${arts.length ? `<section class="sec wrap" style="padding-top:0">
-      ${C.secHead(T('brand.edu.s3'), `Статьи по ${esc(b.name)}`, C.lnk(C.u(P, 'training.html') + '#materials', T('brand.edu.s4')))}
+      ${C.secHead(T('brand.edu.s3'), T('common.pages.brandArticles', {brand: esc(b.name)}), C.lnk(C.u(P, 'training.html') + '#materials', T('brand.edu.s4')))}
       <div class="grid g3">${arts.slice(0, 3).map(C.articleCard).join('')}</div>
     </section>` : ''}
 
@@ -140,7 +140,7 @@ module.exports = function brandPage(ctx, C, P, b) {
           <h2>${esc(b.name)} ${T('brand.coop.h2')}</h2>
           <p>${T('brand.coop.p')}</p>
           <div class="row"><a class="btn btn-light" href="${C.u(P, 'partners.html')}" data-track="partner_cta" data-place="brand-cta">${T('brand.cta.a')} ${I.arrow}</a>
-            <button class="btn btn-ghost-inv" type="button" data-act="form" data-type="question" data-ref="${T('brand.route.sm2')} ${esc(b.name)}: запрос условий">${T('brand.coop.btn')}</button></div>
+            <button class="btn btn-ghost-inv" type="button" data-act="form" data-type="question" data-ref="${T('brand.route.sm2')} ${esc(b.name)}${T('common.pages.brandRef')}">${T('brand.coop.btn')}</button></div>
         </div>
         ${C.ctaLogo}
       </div>

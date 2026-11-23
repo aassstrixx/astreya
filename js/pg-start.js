@@ -8,6 +8,7 @@
    Ничего не отправляется на сервер; всё снимается при уходе со страницы (переходы без перезагрузки). */
 (function () {
   'use strict';
+  const AT = (k, d) => window.Astreya.T(k, d);          // подписи интерфейса: правка заказчика (js/data.js → texts) или исходный текст
   const A = window.Astreya, D = window.ASTREYA_DATA;
   if (!A) return;
   const $ = (s, r) => (r || document).querySelector(s), $$ = (s, r) => Array.prototype.slice.call((r || document).querySelectorAll(s));
@@ -40,7 +41,7 @@
     const row = $('.plan-sec-actions', res); if (!row || $('[data-st-act]', row)) return;
     const again = $('[data-pl="again"]', row);
     const mk = (act, label) => { const b = document.createElement('button'); b.type = 'button'; b.className = 'btn btn-ghost'; b.setAttribute('data-st-act', act); b.textContent = label; return b; };
-    const a = mk('copytext', 'Скопировать текстом'), p = mk('print', 'Распечатать');
+    const a = mk('copytext', AT('ui.start.k1', AT('ui.start.k1', 'Скопировать текстом'))), p = mk('print', AT('ui.x_start.k1', 'Распечатать'));
     if (again) { row.insertBefore(a, again); row.insertBefore(p, again); } else { row.appendChild(a); row.appendChild(p); }
   }
   function stats(res) {
@@ -48,7 +49,7 @@
     const pl = A.plural || ((n, a, b, c) => { const m = Math.abs(n) % 100, k = m % 10; return m > 10 && m < 20 ? c : k > 1 && k < 5 ? b : k === 1 ? a : c; });
     const n1 = $$('.plan-brand', res).length, n2 = $$('.plan-prods li', res).length, n3 = $$('.plan-evs li', res).length;
     const items = [[n1, pl(n1, 'линейка', 'линейки', 'линеек')], [n2, pl(n2, 'товар', 'товара', 'товаров')], [n3, pl(n3, 'семинар', 'семинара', 'семинаров')]];
-    const ul = document.createElement('ul'); ul.className = 'st-stats'; ul.setAttribute('aria-label', 'Состав плана');
+    const ul = document.createElement('ul'); ul.className = 'st-stats'; ul.setAttribute('aria-label', AT('ui.start.k2', AT('ui.start.k2', 'Состав плана')));
     ul.innerHTML = items.filter(x => x[0] > 0).map(x => '<li><b>' + x[0] + '</b><span>' + x[1] + '</span></li>').join(''); card.appendChild(ul);
   }
   function onClick(e) {
@@ -57,7 +58,7 @@
     if (act === 'print') { track('plan_print'); window.print(); return; }
     if (act === 'copytext') {
       const pl = A.sales && A.sales.plan && A.sales.plan(), tx = pl && pl.text; if (!tx) return;
-      const ok = () => A.toast && A.toast('План скопирован текстом');
+      const ok = () => A.toast && A.toast(AT('ui.start.k3', AT('ui.start.k3', 'План скопирован текстом')));
       if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(tx).then(ok, () => A.toast && A.toast(tx.slice(0, 120) + '…')); else if (A.toast) A.toast(tx.slice(0, 120) + '…');
       track('plan_copy_text');
     }

@@ -76,11 +76,11 @@ function academyPage(ctx, C, P) {
     const pic = p.photo ? `<img src="${C.u(P, hq(p.photo))}" alt="" width="1120" height="1200" loading="lazy" decoding="async">` : `<span class="ac-tc-mono" aria-hidden="true">${esc(p.last.charAt(0) + p.first.charAt(0))}</span>`;
     return `<li class="ac-tc" data-id="${esc(p.id)}" data-n="${i + 1}" style="${st}">
       <span class="ac-tc-ph" aria-hidden="true">${pic}</span><span class="ac-tc-void" aria-hidden="true"></span>
-      <button class="ac-tc-frame" type="button" data-act="acad-t" data-id="${esc(p.id)}" aria-haspopup="dialog" aria-label="${esc(p.last + ' ' + p.first + ' — открыть карточку')}"></button>
+      <button class="ac-tc-frame" type="button" data-act="acad-t" data-id="${esc(p.id)}" aria-haspopup="dialog" aria-label="${esc(TXR('common.aria.acadT', {last: p.last, first: p.first}))}"></button>
       <div class="ac-tc-cap" data-act="acad-t" data-id="${esc(p.id)}" aria-hidden="true"><b>${esc(p.last)}</b><em>${esc(p.first)}</em>${p.tag ? `<small>${esc(p.tag)}</small>` : ''}</div>
       <div class="ac-tc-more" hidden><h3>${esc(p.last)} ${esc(p.first)}</h3><p class="ac-tc-role">${esc(p.role)}</p>${(p.facts || []).length ? `<ul>${p.facts.map(f => `<li>${esc(f)}</li>`).join('')}</ul>` : ''}</div>
     </li>`; };
-  const wallPic = wallOk ? `<picture class="ac-wall-pic"><source media="(max-width: 1700px)" srcset="${esc(C.u(P, 'assets/academy/gallery-s.webp'))}"><img class="ac-wall-img" src="${esc(C.u(P, 'assets/academy/gallery.webp'))}" alt="Витрина преподавателей учебного центра «Астрея»: восемь портретов на рифлёных панелях светлого стеллажа и косметологические полки с флаконами, кремами и ампулами" width="${WL.plate.w}" height="${WL.plate.h}" loading="lazy" decoding="async"></picture>` : '';
+  const wallPic = wallOk ? `<picture class="ac-wall-pic"><source media="(max-width: 1700px)" srcset="${esc(C.u(P, 'assets/academy/gallery-s.webp'))}"><img class="ac-wall-img" src="${esc(C.u(P, 'assets/academy/gallery.webp'))}" alt="${TX('common.pages.acadAlt')}" width="${WL.plate.w}" height="${WL.plate.h}" loading="lazy" decoding="async"></picture>` : '';
   const faculty = T ? `<section class="ac-tch" id="teachers" aria-labelledby="ac-fac-h">${bd('faculty')}<div class="ac-in">
     <header class="rd-head ac-head-row reveal"><div class="ac-head-t"><span class="ac-eyebrow">${esc(F.eyebrow || T.eyebrow)}</span><h2 id="ac-fac-h">${esc(F.title || T.title)}</h2></div><p class="ac-side-p">${esc(F.lead || T.lead)}</p><p class="ac-hint">${esc(F.hint || '')}</p></header></div>
     <div class="ac-wall${wallOk ? '' : ' no-wall'} reveal" data-ac-wall style="${wallOk ? `--ar:${WL.plate.w}/${WL.plate.h}` : ''}"
@@ -138,7 +138,7 @@ function academyPage(ctx, C, P) {
 
   /* 07 · вопросы и статьи: левая половина — вопросы (заголовок в столбце слева), правая — «Полезные статьи» на тёплой панели с рендером журнала; «Читать все статьи» раскрывает остальные */
   const magSrc = exists('assets/academy/mag.webp') ? 'assets/academy/mag.webp' : '';
-  const pub = a => { const b = brandById[a.brand]; return `<li class="ac-pub" style="${bstyle(b)}"><span class="ac-pub-tag">${esc(a.tag)}</span><b>${esc(a.title)}</b><small>${dparts(a.date).full} · ${a.min} мин чтения</small></li>`; };
+  const pub = a => { const b = brandById[a.brand]; return `<li class="ac-pub" style="${bstyle(b)}"><span class="ac-pub-tag">${esc(a.tag)}</span><b>${esc(a.title)}</b><small>${dparts(a.date).full} · ${TX('common.pages.minRead', {min: a.min})}</small></li>`; };
   const nPub = B.shown || 3, pubs = training.articles;
   const library = `<section class="ac-lib" id="library" aria-labelledby="ac-lib-h"><div class="ac-lib-grid">
     <div class="ac-faq-half">${bd('faq')}<div class="ac-faq-in">
@@ -221,6 +221,6 @@ function trainingPage(ctx, C, P) {
 }
 
 const eventPage = (ctx, C, P, e) => require('./event-page.js')(ctx, C, P, e);   // страница мероприятия v2 — src/pages/event-page.js
-const {T: TX} = require('../texts.js');
+const {T: TX, Traw: TXR} = require('../texts.js');
 
 module.exports = {trainingPage, eventPage};

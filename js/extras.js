@@ -13,6 +13,7 @@
    Страницы подменяются без перезагрузки — поэтому работаем делегированием и перерисовываем кнопки в A.initPage. */
 (function () {
   'use strict';
+  const AT = (k, d) => window.Astreya.T(k, d);          // подписи интерфейса: правка заказчика (js/data.js → texts) или исходный текст
   const A = window.Astreya, D = window.ASTREYA_DATA;
   if (!A || !D || !D.extras) return;
   const X = D.extras, I = A.I, esc = A.esc;
@@ -60,16 +61,16 @@
 
   function bar() {
     let el = $('#rl-bar'); if (el) return el;
-    el = document.createElement('div'); el.id = 'rl-bar'; el.className = 'rl-bar'; el.hidden = true; el.setAttribute('role', 'region'); el.setAttribute('aria-label', 'Список запроса');
-    el.innerHTML = '<button class="rl-open" type="button" data-act="rl-open" aria-haspopup="dialog"><span class="rl-count" aria-hidden="true">0</span><span class="rl-txt"></span><span class="rl-go" aria-hidden="true">Открыть ' + I.arrow + '</span></button>';
+    el = document.createElement('div'); el.id = 'rl-bar'; el.className = 'rl-bar'; el.hidden = true; el.setAttribute('role', 'region'); el.setAttribute('aria-label', AT('ui.extras.k1', AT('ui.extras.k1', 'Список запроса')));
+    el.innerHTML = '<button class="rl-open" type="button" data-act="rl-open" aria-haspopup="dialog"><span class="rl-count" aria-hidden="true">0</span><span class="rl-txt"></span><span class="rl-go" aria-hidden="true">' + AT('ui.x_explore.k12', 'Открыть') + ' ' + I.arrow + '</span></button>';
     A.dock().appendChild(el); return el;
   }
   function sync(bump) {
     if (!X.requestList) return;
     $$('[data-rl-id]').forEach(b => {
       const id = b.getAttribute('data-rl-id'), on = has(id);
-      b.setAttribute('aria-pressed', on ? 'true' : 'false'); b.setAttribute('aria-label', label(id, on)); b.title = on ? 'Убрать из списка запроса' : 'Добавить в список запроса';
-      const tl = $('.rl-tl', b); if (tl) tl.textContent = on ? 'В списке запроса' : 'В список запроса';
+      b.setAttribute('aria-pressed', on ? 'true' : 'false'); b.setAttribute('aria-label', label(id, on)); b.title = on ? AT('ui.extras.k2', AT('ui.extras.k2', 'Убрать из списка запроса')) : AT('ui.extras.k3', AT('ui.extras.k3', 'Добавить в список запроса'));
+      const tl = $('.rl-tl', b); if (tl) tl.textContent = on ? AT('ui.extras.k4', AT('ui.extras.k4', 'В списке запроса')) : AT('ui.extras.k5', AT('ui.extras.k5', 'В список запроса'));
     });
     const el = bar(), n = list.length;
     $('.rl-count', el).textContent = n; $('.rl-txt', el).innerHTML = '<span class="sr">Список запроса: </span>' + n + ' ' + noun(n);
@@ -96,13 +97,13 @@
     const n = list.length;
     const items = list.map(id => `<li class="rl-item"><div><b>${esc(P[id].name)}</b><small>${esc(brandOf(id))}</small></div><button class="rl-del" type="button" data-act="rl-del" data-id="${id}" aria-label="Убрать из списка: ${esc(P[id].name)}">${I.close}</button></li>`).join('');
     return `<div class="dlg rl-dlg" role="document">
-      <button class="x" type="button" data-act="close" aria-label="Закрыть">${I.close}</button>
-      <span class="eyebrow in">Заявка</span>
-      <h2 id="m-title">Список запроса</h2>
-      ${n ? `<p class="muted">Отправьте все позиции одним запросом: менеджер пришлёт информацию и условия поставки по каждой.</p>
+      <button class="x" type="button" data-act="close" aria-label="${AT('ui.x_explore.k7', 'Закрыть')}">${I.close}</button>
+      <span class="eyebrow in">${AT('ui.x_extras.k1', 'Заявка')}</span>
+      <h2 id="m-title">${AT('ui.extras.k1', AT('ui.extras.k1', 'Список запроса'))}</h2>
+      ${n ? `<p class="muted">${AT('ui.extras.k6', AT('ui.extras.k6', 'Отправьте все позиции одним запросом: менеджер пришлёт информацию и условия поставки по каждой.'))}</p>
       <ul class="rl-list">${items}</ul>
-      <div class="rl-actions"><button class="btn btn-fill" type="button" data-act="rl-send">Отправить запрос (${n}) ${I.arrow}</button><button class="btn btn-lnk" type="button" data-act="rl-clear">Очистить список</button></div>`
-      : `<p class="muted">Список пуст. Нажмите «+» на карточке товара — и позиция появится здесь.</p><div class="rl-actions"><a class="btn btn-fill" href="${esc((document.body.getAttribute('data-root') || '') + 'catalog.html')}" data-act="close">Перейти в каталог ${I.arrow}</a></div>`}
+      <div class="rl-actions"><button class="btn btn-fill" type="button" data-act="rl-send">Отправить запрос (${n}) ${I.arrow}</button><button class="btn btn-lnk" type="button" data-act="rl-clear">${AT('ui.extras.k7', AT('ui.extras.k7', 'Очистить список'))}</button></div>`
+      : `<p class="muted">${AT('ui.extras.k8', AT('ui.extras.k8', 'Список пуст. Нажмите «+» на карточке товара — и позиция появится здесь.'))}</p><div class="rl-actions"><a class="btn btn-fill" href="${esc((document.body.getAttribute('data-root') || '') + 'catalog.html')}" data-act="close">${AT('ui.extras.k9', AT('ui.extras.k9', 'Перейти в каталог'))} ${I.arrow}</a></div>`}
     </div>`;
   }
   function paintPanel() { const m = $('#modal'); if (!m) return; const keep = document.activeElement && document.activeElement.getAttribute && document.activeElement.getAttribute('data-act'); m.innerHTML = panelHTML(); const f = (keep && $('[data-act="' + keep + '"]', m)) || $('[data-act="rl-send"]', m) || $('.x', m); if (f) f.focus(); }
@@ -138,14 +139,14 @@
     let el = $('#qc'), page = document.body.getAttribute('data-page');
     if (!X.quickContact || page === 'contacts' || page === 'notfound') { if (el) el.hidden = true; return; }
     if (!el) {
-      const c = D.site.contacts || {}, ms = [['MAX', c.max], ['Telegram', c.telegram], ['ВКонтакте', c.vk]].filter(m => m[1]);
+      const c = D.site.contacts || {}, ms = [['MAX', c.max], ['Telegram', c.telegram], [AT('ui.x_extras.k2', 'ВКонтакте'), c.vk]].filter(m => m[1]);
       el = document.createElement('div'); el.id = 'qc'; el.className = 'qc'; el.hidden = false;
       el.innerHTML = `<div class="qc-menu" id="qc-menu" hidden>
-        <a class="qc-item" href="tel:${esc(c.phoneRaw)}" data-track="phone_click" data-place="quick"><span class="qc-ic">${I.phone}</span><span><b>Позвонить</b><small>${esc(c.phone)}</small></span></a>
-        ${ms.map(m => `<a class="qc-item" href="${esc(m[1])}" target="_blank" rel="noopener" data-track="messenger_click" data-place="quick"><span class="qc-ic">${I.chat}</span><span><b>${m[0]}</b><small>Написать сообщение</small></span></a>`).join('')}
-        ${X.callback ? `<button class="qc-item" type="button" data-act="form" data-type="callback" data-track="callback_open" data-place="quick"><span class="qc-ic">${I.clock}</span><span><b>Заказать звонок</b><small>Перезвоним в рабочее время</small></span></button>` : ''}
+        <a class="qc-item" href="tel:${esc(c.phoneRaw)}" data-track="phone_click" data-place="quick"><span class="qc-ic">${I.phone}</span><span><b>${AT('ui.x_extras.k3', 'Позвонить')}</b><small>${esc(c.phone)}</small></span></a>
+        ${ms.map(m => `<a class="qc-item" href="${esc(m[1])}" target="_blank" rel="noopener" data-track="messenger_click" data-place="quick"><span class="qc-ic">${I.chat}</span><span><b>${m[0]}</b><small>${AT('ui.extras.k10', AT('ui.extras.k10', 'Написать сообщение'))}</small></span></a>`).join('')}
+        ${X.callback ? `<button class="qc-item" type="button" data-act="form" data-type="callback" data-track="callback_open" data-place="quick"><span class="qc-ic">${I.clock}</span><span><b>${AT('ui.extras.k11', AT('ui.extras.k11', 'Заказать звонок'))}</b><small>${AT('ui.extras.k12', AT('ui.extras.k12', 'Перезвоним в рабочее время'))}</small></span></button>` : ''}
       </div>
-      <button class="qc-btn" type="button" aria-expanded="false" aria-controls="qc-menu" aria-label="Связаться с нами">${I.phone}</button>`;
+      <button class="qc-btn" type="button" aria-expanded="false" aria-controls="qc-menu" aria-label="${AT('ui.extras.k13', AT('ui.extras.k13', 'Связаться с нами'))}">${I.phone}</button>`;
       document.body.appendChild(el);
     }
     el.hidden = false; qcUpdate();
@@ -195,7 +196,7 @@
     if (page === 'catalog' && $('[data-showroom]')) return;                              // на странице-витрине (extras.showroom) блока «Недавно просмотренные» нет: фокус на экспозиции
     const show = l.filter(id => id !== cur).slice(0, RVSHOW); if (!show.length || (page !== 'product' && page !== 'catalog')) return;
     const sec = document.createElement('section'); sec.className = 'sec rv-sec'; sec.id = 'recent'; sec.setAttribute('aria-labelledby', 'rv-h');
-    sec.innerHTML = '<div class="wrap"><div class="sec-head"><div><span class="eyebrow">Вы смотрели</span><h2 id="rv-h">Недавно просмотренные</h2></div><button class="lnk" type="button" data-act="rv-clear">Очистить ' + I.close + '</button></div>' +
+    sec.innerHTML = '<div class="wrap"><div class="sec-head"><div><span class="eyebrow">' + AT('ui.extras.k14', AT('ui.extras.k14', 'Вы смотрели')) + '</span><h2 id="rv-h">' + AT('ui.extras.k15', AT('ui.extras.k15', 'Недавно просмотренные')) + '</h2></div><button class="lnk" type="button" data-act="rv-clear">' + AT('ui.x_extras.k4', 'Очистить') + ' ' + I.close + '</button></div>' +
       '<div class="rv-grid">' + show.map(id => { const p = P[id]; return '<a class="mini-p" href="' + esc(root() + 'products/' + p.slug + '.html') + '" data-track="recent_click" data-product="' + esc(id) + '">' + rvArt(p) + '<div class="t"><small>' + esc(brandOf(id)) + '</small>' + esc(p.name) + '</div></a>'; }).join('') + '</div></div>';
     const main = $('#main'); if (!main) return;
     const anchor = page === 'catalog' ? $('[data-kits-anchor]', main) || $('#results', main) : $('.cta-band', main) || null;
@@ -203,11 +204,11 @@
   }
 
   /* ---------- события ---------- */
-  A.actions['rv-clear'] = () => { rvSave([]); const s = $('#recent'); if (s) s.remove(); A.toast('Список просмотренных очищен'); };
+  A.actions['rv-clear'] = () => { rvSave([]); const s = $('#recent'); if (s) s.remove(); A.toast(AT('ui.extras.k16', AT('ui.extras.k16', 'Список просмотренных очищен'))); };
   A.actions['rl-add'] = (t, id) => toggle(id || t.getAttribute('data-id'));
   A.actions['rl-open'] = t => openPanel(t);
   A.actions['rl-del'] = (t, id) => { id = id || t.getAttribute('data-id'); const p = P[id]; list = list.filter(x => x !== id); save(list); sync(); if (panelOpen()) paintPanel(); if (p) A.toast('Убрано из списка запроса: ' + p.name); };
-  A.actions['rl-clear'] = () => { list = []; save(list); sync(); if (panelOpen()) paintPanel(); A.toast('Список запроса очищен'); };
+  A.actions['rl-clear'] = () => { list = []; save(list); sync(); if (panelOpen()) paintPanel(); A.toast(AT('ui.extras.k17', AT('ui.extras.k17', 'Список запроса очищен'))); };
   A.actions['rl-send'] = () => send();
   document.addEventListener('click', e => {
     const b = e.target.closest && e.target.closest('.qc-btn');

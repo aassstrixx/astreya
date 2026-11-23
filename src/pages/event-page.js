@@ -41,7 +41,7 @@ module.exports = function eventPage(ctx, C, P, e) {
 
   const route = `<nav class="dt-route" aria-label="${T('event.route.aria')}">
       <ol>
-        <li style="--i:0" class="is-home"><a href="${C.u(P, 'index.html')}" aria-label="Главная"><svg class="ic" viewBox="0 0 20 20" aria-hidden="true" focusable="false"><path d="M3.5 9.4 10 4l6.5 5.4M5.3 8.2V16h9.4V8.2M8.4 16v-4.2h3.2V16"/></svg></a></li>
+        <li style="--i:0" class="is-home"><a href="${C.u(P, 'index.html')}" aria-label="${T('common.aria.home')}"><svg class="ic" viewBox="0 0 20 20" aria-hidden="true" focusable="false"><path d="M3.5 9.4 10 4l6.5 5.4M5.3 8.2V16h9.4V8.2M8.4 16v-4.2h3.2V16"/></svg></a></li>
         <li style="--i:1"><a href="${C.u(P, 'training.html')}"><small>${T('event.route.sm')}</small><b>${T('event.route.b')}</b></a></li>
         <li style="--i:2"><a href="${C.burl(P, b)}"><small>${T('event.labels.s9')}</small><b>${esc(b.name)}</b></a></li>
         <li style="--i:3" aria-current="page"><small>${T('event.route.sm2')}</small><b>${esc(e.title)}</b></li>
@@ -52,8 +52,8 @@ module.exports = function eventPage(ctx, C, P, e) {
   /* программа: только то, что есть в данных (время, место/подключение, описание); состав блоков — «Уточняется» */
   const steps = [
     [t0 || T('event.prog.s'), T('event.prog.s'), online ? T('event.prog.s2') : `${esc(e.city)}${/\d/.test(e.place) && !/^Адрес/i.test(e.place) ? ', ' : '. '}${esc(e.place)}.`],
-    [T('event.prog.s3'), T('event.prog.s4'), `${esc(e.description)}${online ? '' : ' Теоретические блоки чередуются с практическими мастер-классами.'}`],
-    [T('event.prog.s5'), T('event.prog.s6'), '<span class="tbd">Уточняется — программу пришлёт менеджер учебного центра при подтверждении участия.</span>'],
+    [T('event.prog.s3'), T('event.prog.s4'), `${esc(e.description)}${online ? '' : ' ' + T('common.pages.eventTheory')}`],
+    [T('event.prog.s5'), T('event.prog.s6'), `<span class="tbd">${T('common.pages.eventTbd')}</span>`],
     [t1 || T('event.prog.s7'), T('event.prog.s8'), T('event.prog.s9')]
   ];
   const timeline = `<ol class="dtev-line">${steps.map(([k, h, p], i) => `<li class="reveal" style="--i:${i}"><span class="dtev-k">${esc(k)}</span><span class="dtev-dot" aria-hidden="true"></span><div><h3>${h}</h3><p>${p}</p></div></li>`).join('')}</ol>`;
@@ -76,7 +76,7 @@ module.exports = function eventPage(ctx, C, P, e) {
             <h1>${esc(e.title)}</h1>
             <p class="lead">${esc(e.description)}</p>
             ${future ? C.cdSlot() : ''}
-            <div class="notice past" id="past-note" hidden>${I.info}<span>Мероприятие уже прошло. Актуальные даты — в <a href="${C.u(P, 'training.html')}">${T('event.hero.a')}</a>.</span></div>
+            <div class="notice past" id="past-note" hidden>${I.info}<span>${T('common.pages.eventPast', {link: `<a href="${C.u(P, 'training.html')}">${T('event.hero.a')}</a>`})}</span></div>
             <div class="row" id="e-cta">${register('btn btn-fill', 'event-hero')}
               <a class="btn btn-ghost" href="${C.u(P, 'training.html')}">${T('event.hero.a2')}</a></div>
           </div>
@@ -99,7 +99,7 @@ module.exports = function eventPage(ctx, C, P, e) {
 
     <section class="dtev-terms wrap">
       <article class="dt-tile reveal"><span class="dt-no" aria-hidden="true">01</span><h2>${T('event.join.h2')}</h2><p>${T('event.join.p')}</p></article>
-      <article class="dt-tile reveal"><span class="dt-no" aria-hidden="true">02</span><h2>${online ? T('event.labels.s6') : T('event.join.s')}</h2><p>${online ? 'Формат — вебинар: ссылку на подключение присылаем после регистрации.' : `${esc(e.city)}, ${esc(e.place)}. Базовые семинары проходят с 10:30 до 18:00: теоретические блоки чередуются с практическими мастер-классами.`}</p></article>
+      <article class="dt-tile reveal"><span class="dt-no" aria-hidden="true">02</span><h2>${online ? T('event.labels.s6') : T('event.join.s')}</h2><p>${online ? T('common.pages.eventWebinar') : T('common.pages.eventWhere', {city: esc(e.city), place: esc(e.place)})}</p></article>
       ${t ? `<article class="card tcard card-pad reveal e-teacher dtev-teacher"><div class="avatar" aria-hidden="true">${esc(t.mono)}</div><div><span class="eyebrow in">${T('event.labels.s8')}</span><h3>${esc(t.name)}</h3><p>${esc(t.spec)}</p><div class="tasks-line">${t.topics.map(x => C.tag(x)).join('')}</div></div></article>` : ''}
     </section>
 

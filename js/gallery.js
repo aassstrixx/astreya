@@ -12,6 +12,7 @@
    Всё идемпотентно: страницы могут подменяться без перезагрузки (A.initPage). */
 (function () {
   'use strict';
+  const AT = (k, d) => window.Astreya.T(k, d);          // подписи интерфейса: правка заказчика (js/data.js → texts) или исходный текст
   const A = window.Astreya, D = window.ASTREYA_DATA;
   if (!A || !D || !D.extras || !D.extras.gallery) return;
   const X = D.extras;
@@ -132,7 +133,7 @@
   function addRelated(d, id) {
     const list = related(id), at = $('.qv-more', d); if (!list.length || !at || $('.qv-rel', d)) return;
     const w = document.createElement('div'); w.className = 'qv-rel';
-    w.innerHTML = '<span class="qv-rel-t">Тот же бренд и назначение</span><div class="qv-rel-l">' + list.map(q => '<button type="button" class="chip" data-act="qv-open" data-id="' + esc(q.id) + '">' + esc(q.name) + '</button>').join('') + '</div>';
+    w.innerHTML = '<span class="qv-rel-t">' + AT('ui.gallery.k1', AT('ui.gallery.k1', 'Тот же бренд и назначение')) + '</span><div class="qv-rel-l">' + list.map(q => '<button type="button" class="chip" data-act="qv-open" data-id="' + esc(q.id) + '">' + esc(q.name) + '</button>').join('') + '</div>';
     at.parentNode.insertBefore(w, at);
   }
   const order = () => $$('#cat-grid .pcard[data-id]:not([hidden])').map(c => c.getAttribute('data-id'));
@@ -141,7 +142,7 @@
     if (!$('[data-catalog]')) { curId = null; return; }
     const ask = $('[data-act="qv-ask"]', d), id = ask && ask.getAttribute('data-id'); if (!id || !P[id]) return;
     d.classList.add('gal');
-    const st = $('[data-act="qv-stella"]', d); if (st) st.textContent = 'Помочь с подбором';
+    const st = $('[data-act="qv-stella"]', d); if (st) st.textContent = AT('ui.showroom.k7', AT('ui.showroom.k7', 'Помочь с подбором'));
     addRelated(d, id);
     const swap = !!curId && curId !== id && (!src || !src.fresh), prev = curId; curId = id;
     if (src && src.fresh) { d.classList.add('gal-open'); lastOpener = src.opener || document.activeElement; flyIn(d, id); }
@@ -188,7 +189,7 @@
   A.actions['gal-help'] = function () {
     if (!A.stella) return; const s = catalogState(), parts = [];
     if (s.cat) parts.push('категория «' + s.cat + '»'); if (s.brand) parts.push('бренд ' + s.brand); if (s.task) parts.push('назначение: ' + s.task.toLowerCase()); if (s.kind) parts.push('вид: ' + s.kind.toLowerCase()); if (s.q) parts.push('запрос «' + s.q + '»');
-    const text = parts.length ? 'Помоги с подбором в каталоге: ' + parts.join(', ') + '. ' + (s.n === 0 ? 'Ничего не нашлось — что подойдёт рядом?' : 'Найдено ' + s.n + ' из ' + s.total + ' — что выбрать и с чего начать?') : 'Помоги подобрать: опиши, что подойдёт под мою задачу.';
+    const text = parts.length ? 'Помоги с подбором в каталоге: ' + parts.join(', ') + '. ' + (s.n === 0 ? AT('ui.gallery.k2', AT('ui.gallery.k2', 'Ничего не нашлось — что подойдёт рядом?')) : 'Найдено ' + s.n + ' из ' + s.total + ' — что выбрать и с чего начать?') : AT('ui.x_gallery.k1', 'Помоги подобрать: опиши, что подойдёт под мою задачу.');
     track('gallery_help', {cat: s.cat, brand: s.brand, task: s.task}); A.stella.ask(text, {catalog: s});
   };
   function helpInit() {

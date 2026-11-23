@@ -1,7 +1,7 @@
 const fs = require('fs');
 const path = require('path');
 const S = require('../../js/shared.js');
-const {T} = require('../texts.js');
+const {T, Traw} = require('../texts.js');
 const {esc, I, bstyle} = S;
 
 /* Страница товара v2 («Витрина»): макро-кадр экспоната (assets/detail/stage-product.webp, tools/showroom-assets/detail/detail_stage.py) — упаковка стоит на травертиновом подиуме перед
@@ -25,7 +25,7 @@ module.exports = function product(ctx, C, P, p) {
     `${T('product.about.tx')} ${b.name} — ${lc(b.tag)}.`,
     T('product.about.s')
   ];
-  const tbd = '<span class="tbd">Уточняется — запросите у менеджера</span>';
+  const tbd = `<span class="tbd">${T('common.labels.tbd')}</span>`;
   const list = a => `<ul class="ticks">${a.map(x => `<li>${I.check}<span>${esc(x)}</span></li>`).join('')}</ul>`;
   const rows = [[T('product.about.s2'), `<a href="${C.burl(P, b)}">${esc(b.name)}</a>`], [T('product.about.s3'), esc(c.name)], [T('product.about.s4'), k ? esc(k.name) : tbd],
     [T('product.about.s5'), p.volume ? esc(p.volume) : tbd], [T('product.about.s6'), p.sku ? esc(p.sku) : tbd]];
@@ -38,7 +38,7 @@ module.exports = function product(ctx, C, P, p) {
   const brandMark = b.logo ? `<img class="dt-rl" src="${esc(C.u(P, b.logo))}" alt="${esc(b.name)}"${b.logoW ? ` width="${b.logoW}" height="${b.logoH}"` : ''} decoding="async">` : `<b>${esc(b.name)}</b>`;
   const route = `<nav class="dt-route" aria-label="${T('product.route.aria')}">
       <ol>
-        <li style="--i:0" class="is-home"><a href="${C.u(P, 'index.html')}" aria-label="Главная"><svg class="ic" viewBox="0 0 20 20" aria-hidden="true" focusable="false"><path d="M3.5 9.4 10 4l6.5 5.4M5.3 8.2V16h9.4V8.2M8.4 16v-4.2h3.2V16"/></svg></a></li>
+        <li style="--i:0" class="is-home"><a href="${C.u(P, 'index.html')}" aria-label="${T('common.aria.home')}"><svg class="ic" viewBox="0 0 20 20" aria-hidden="true" focusable="false"><path d="M3.5 9.4 10 4l6.5 5.4M5.3 8.2V16h9.4V8.2M8.4 16v-4.2h3.2V16"/></svg></a></li>
         <li style="--i:1"><a href="${C.u(P, 'catalog.html')}"><small>${T('product.route.sm')}</small><b>${T('product.route.b')}</b></a></li>
         <li style="--i:2"><a href="${C.burl(P, b)}"><small>${T('product.about.s2')}</small>${brandMark}</a></li>
         <li style="--i:3"><a href="${listHref}"><small>${T('product.about.s3')}</small><b>${esc(c.name)}</b></a></li>
@@ -51,7 +51,7 @@ module.exports = function product(ctx, C, P, p) {
   const type = p.type || 'bottle', src = S.packOf(p), hp = f1(2.2 * PXU * (PACK_H[type] || 97) / 97 / PH * 100), ar = f1(spriteAr(src));
   const pack = p.image
     ? `<div class="pdp-photo" style="--hp:${f1(2.2 * PXU / PH * 100 * .92)}"><img src="${esc(C.u(P, p.image))}" alt="${esc(p.imageAlt || `${b.name} — ${p.name}`)}" decoding="async"></div>`
-    : `<div class="pdp-pack" style="--hp:${hp};--sar:${ar}" role="img" aria-label="${esc(`${b.name} — ${p.name}: упаковка`)}">
+    : `<div class="pdp-pack" style="--hp:${hp};--sar:${ar}" role="img" aria-label="${esc(Traw('common.aria.pack', {brand: b.name, product: p.name}))}">
         <img class="pdp-cs" src="${esc(C.u(P, src))}" alt="" aria-hidden="true" decoding="async">
         <img class="pdp-pk" src="${esc(C.u(P, src))}" alt="" decoding="async" fetchpriority="high">
       </div>`;
@@ -76,7 +76,7 @@ module.exports = function product(ctx, C, P, p) {
       <div class="dt-over wrap">
         ${route}
         <div class="dt-plaque p-info">
-          <div class="tasks-line reveal">${p.isNew ? '<span class="dt-newchip">Новинка</span>' : ''}${C.tag(b.name, 'blue')}${C.tag(c.name)}${k ? C.tag(k.name) : ''}</div>
+          <div class="tasks-line reveal">${p.isNew ? `<span class="dt-newchip">${T('common.labels.new')}</span>` : ''}${C.tag(b.name, 'blue')}${C.tag(c.name)}${k ? C.tag(k.name) : ''}</div>
           <h1 class="reveal">${esc(p.name)}</h1>
           <p class="lead reveal">${esc(p.desc)}</p>
           <div class="row reveal">${request('btn btn-fill', 'product-hero')}
@@ -115,7 +115,7 @@ module.exports = function product(ctx, C, P, p) {
       <div class="grid g4">${related.map((q, i) => C.productCardX(P, q, i)).join('')}</div>
     </div></section>` : ''}
 
-    ${line.length > 1 ? `<nav class="dt-sib wrap" aria-label="Соседние позиции линейки ${esc(b.name)}">
+    ${line.length > 1 ? `<nav class="dt-sib wrap" aria-label="${T('common.aria.sib', {brand: esc(b.name)})}">
       <a class="reveal" href="${C.purl(P, prev)}" rel="prev" data-track="product_card_click" data-product="${prev.id}"><img src="${esc(C.u(P, S.packOf(prev)))}" alt="" loading="lazy" decoding="async"><span><small>${I.back} ${T('product.sib.sm')}</small><b>${esc(prev.name)}</b></span></a>
       <a class="nx reveal" href="${C.purl(P, next)}" rel="next" data-track="product_card_click" data-product="${next.id}"><span><small>${T('product.sib.sm2')} ${I.arrow}</small><b>${esc(next.name)}</b></span><img src="${esc(C.u(P, S.packOf(next)))}" alt="" loading="lazy" decoding="async"></a>
     </nav>` : ''}

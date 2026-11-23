@@ -14,6 +14,7 @@
    Страницы подменяются без перезагрузки — всё идемпотентно и перерисовывается в A.initPage. Ничего не отправляется на сервер без заявки посетителя. */
 (function () {
   'use strict';
+  const AT = (k, d) => window.Astreya.T(k, d);          // подписи интерфейса: правка заказчика (js/data.js → texts) или исходный текст
   const A = window.Astreya, D = window.ASTREYA_DATA;
   if (!A || !D || !D.sales || !D.extras || !D.extras.sales) return;
   const SX = D.sales, I = A.I, esc = A.esc, X = D.extras;
@@ -80,7 +81,7 @@
     return v;
   };
   const assigned = () => { const all = Object.assign({}, memExp, local.get(KX) || {}); return Object.keys(all).filter(k => (SX.experiments || {})[k] && !(SX.experiments[k].fixed)).map(k => k + ':' + all[k]).join(','); };
-  const ctaLabel = () => (SX.cta || {})[A.exp('ctaCopy') || 'conditions'] || (SX.cta || {}).conditions || 'Запросить условия';
+  const ctaLabel = () => (SX.cta || {})[A.exp('ctaCopy') || 'conditions'] || (SX.cta || {}).conditions || AT('ui.sales.k1', AT('ui.sales.k1', 'Запросить условия'));
 
   /* ---------- метка источника заявки ---------- */
   const setVia = v => sess.set(KV, {v: v, t: Date.now()});
@@ -142,7 +143,7 @@
     return L;
   }
   function planText(pl) {
-    const L = ['Стартовый план с сайта «Астрея»', ''].concat(summaryLines(pl), ['']);
+    const L = [AT('ui.x_sales.k1', 'Стартовый план с сайта «Астрея»'), ''].concat(summaryLines(pl), ['']);
     if (pl.brands.length) L.push('Линейки: ' + pl.brands.map(b => B[b].name).join(', '));
     if (pl.products.length) L.push('Товары: ' + pl.products.map(p => p.name).join('; '));
     if (pl.events.length) L.push('Ближайшие мероприятия: ' + pl.events.map(e => dShort(e.date) + ', ' + e.city + ' — ' + e.title).join('; '));
@@ -203,7 +204,7 @@
   }
   function paintHead() {
     const h = UI && UI.host ? $('.pchat-prog', UI.host) : null; if (!h) return; const fl = flow();
-    h.innerHTML = UI.result ? '<span class="plan-prog-t">План готов</span>' : progress(Math.min(UI.i + 1, fl.length), fl.length);
+    h.innerHTML = UI.result ? '<span class="plan-prog-t">' + AT('ui.sales.k2', AT('ui.sales.k2', 'План готов')) + '</span>' : progress(Math.min(UI.i + 1, fl.length), fl.length);
   }
   function stepOptions(name) {
     if (name === 'tasks') return (D.tasks || []).map(t => ({id: t.id, label: t.label}));
@@ -257,10 +258,10 @@
   function factsFor(pl) {
     const FC = PL.facts || {}, seed = hashStr([pl.st.role, pl.tasks.join(), pl.goal, pl.st.city].join('|')), out = [], S = FC.site || {};
     pl.tasks.slice(0, 3).forEach((t, i) => { const a = (FC.tasks || {})[t]; if (a && a.length) out.push({tag: T[t].label, text: a[(seed + i) % a.length], src: 'g'}); });
-    const rl = (FC.roles || {})[pl.st.role || 'other']; if (rl) out.push({tag: pl.st.role ? optLabel('role', pl.st.role) : 'Для старта', text: rl, src: 'g'});
-    if ((pl.goal === 'train' || pl.goal === 'both') && S.train) out.push({tag: 'Обучение', text: S.train, src: 's'});
-    if (pl.goal === 'train') { if (S.order) out.push({tag: 'Как заказать', text: S.order, src: 's'}); }
-    else if (S.terms && pl.tiers.length) out.push({tag: 'Условия закупки', text: fill(S.terms, {tiers: pl.tiers.map(d => d.pct + '% от ' + rub(d.from)).join(', ')}), src: 's'});
+    const rl = (FC.roles || {})[pl.st.role || 'other']; if (rl) out.push({tag: pl.st.role ? optLabel('role', pl.st.role) : AT('ui.sales.k3', AT('ui.sales.k3', 'Для старта')), text: rl, src: 'g'});
+    if ((pl.goal === 'train' || pl.goal === 'both') && S.train) out.push({tag: AT('ui.x_pages.k4', 'Обучение'), text: S.train, src: 's'});
+    if (pl.goal === 'train') { if (S.order) out.push({tag: AT('ui.sales.k4', AT('ui.sales.k4', 'Как заказать')), text: S.order, src: 's'}); }
+    else if (S.terms && pl.tiers.length) out.push({tag: AT('ui.sales.k5', AT('ui.sales.k5', 'Условия закупки')), text: fill(S.terms, {tiers: pl.tiers.map(d => d.pct + '% от ' + rub(d.from)).join(', ')}), src: 's'});
     return out.slice(0, 6);
   }
   function factsHTML(pl) {
@@ -443,13 +444,13 @@
     const evH = '<section class="plan-sec plan-sec--train"><h3>' + esc(RES.trainTitle) + '</h3>' + (pl.events.length ? '<ul class="plan-evs">' + pl.events.map(e => {
       const b = B[e.b] || {name: ''};
       return '<li><div class="plan-ed"><b>' + esc(dShort(e.date)) + '</b><small>' + esc(e.city) + '</small></div><div class="plan-et">' + link(evUrl(e), 'plan-en', esc(e.title), 'plan-event') + '<small>' + esc(b.name) + ' · ' + esc(e.fm || '') + '</small></div>' +
-        '<button class="btn btn-ghost btn-sm" type="button" data-pl="signup" data-id="' + esc(e.id) + '">Записаться</button></li>';
+        '<button class="btn btn-ghost btn-sm" type="button" data-pl="signup" data-id="' + esc(e.id) + '">' + AT('ui.x_sales.k2', 'Записаться') + '</button></li>';
     }).join('') + '</ul>' : '<p class="muted">' + esc(RES.trainNone) + '</p>') + '</section>';
     const tiersH = '<section class="plan-sec plan-sec--terms"><h3>' + esc(RES.termsTitle) + '</h3><p class="muted">' + esc(RES.termsText) + '</p><div class="plan-tiers">' + pl.tiers.map((d, k) => '<div class="plan-tier' + (pl.tier && pl.tier === d ? ' on' : '') + '"><b>' + d.pct + '%</b><span>от ' + rub(d.from) + '</span></div>').join('') + '</div>' +
       (pl.tier ? '<p class="plan-tn">При закупке от ' + rub(pl.tier.from) + ' — ориентировочно ' + pl.tier.pct + '%. Точные условия подтверждает менеджер.</p>' : st.volume === 'u50' ? '<p class="plan-tn">Скидки по объёму начинаются от ' + rub((pl.tiers[0] || {}).from || 0) + '. Условия первой закупки уточнит менеджер.</p>' : '') + '</section>';
     const order = goal === 'train' ? [evH, brandsH, prodH] : goal === 'range' ? [brandsH, prodH, evH] : [brandsH, evH, prodH];          // условия закупки — в боковой колонке рядом с заявкой (стили — css/pg-start.css)
     return '<div class="plan-res"><div class="plan-card card"><span class="eyebrow in">' + esc(PL.eyebrow || '') + '</span><h2 id="plan-h" tabindex="-1">' + esc(RES.title) + '</h2><ul class="plan-sum">' + chips + '</ul><p class="plan-fine muted">' + esc(RES.fine) + '</p></div>' +
-      '<div class="plan-body"><div class="plan-colA">' + order.join('') + '</div><aside class="plan-colB" aria-label="Условия и заявка">' + tiersH +
+      '<div class="plan-body"><div class="plan-colA">' + order.join('') + '</div><aside class="plan-colB" aria-label="' + AT('ui.sales.k6', AT('ui.sales.k6', 'Условия и заявка')) + '">' + tiersH +
       '<div class="plan-cta card"><button class="btn btn-fill btn-lg plan-main" type="button" data-pl="main" data-sx="plan-main">' + esc(RES.main) + ' ' + I.arrow + '</button><p class="plan-mainfine muted">' + esc(RES.mainFine) + '</p>' +
       '<div class="plan-sec-actions">' + (isRange(st) ? link(catalogPath(st), 'btn btn-ghost', esc(fill(RES.catalog, {task: T[pl.tasks[0]].label})) + ' ' + I.arrow, 'plan-range-card') : '') + (X.requestList && pl.products.length ? '<button class="btn btn-ghost" type="button" data-pl="addall">' + esc(RES.addList) + '</button>' : '') +
       '<button class="btn btn-ghost" type="button" data-pl="copy">' + esc(RES.copyLink) + '</button>' + (A.stella ? '<button class="btn btn-ghost" type="button" data-pl="ask">' + esc(RES.ask) + '</button>' : '') +
@@ -482,9 +483,9 @@
     else if (act === 'again') { track('plan_restart'); resetAll(); begin(esc(CH.againSay)); }
     else if (act === 'main') { const pl = compute(UI.st); track('plan_cta', {tasks: pl.tasks.join(','), goal: pl.goal}); setVia('plan-main'); A.openForm('plan', planRef(pl)); }
     else if (act === 'signup') { track('plan_signup', {event: t.getAttribute('data-id')}); setVia('plan-event'); A.openForm('seminar', t.getAttribute('data-id')); }
-    else if (act === 'addall') { const pl = compute(UI.st), n = A.rlAdd ? A.rlAdd(pl.products.map(p => p.id)) : 0; track('plan_list_add', {added: n}); if (A.toast) A.toast(n ? 'В списке запроса: добавлено ' + n + ' ' + plural(n, 'товар', 'товара', 'товаров') : 'Эти товары уже в списке запроса'); finishView(); }
+    else if (act === 'addall') { const pl = compute(UI.st), n = A.rlAdd ? A.rlAdd(pl.products.map(p => p.id)) : 0; track('plan_list_add', {added: n}); if (A.toast) A.toast(n ? 'В списке запроса: добавлено ' + n + ' ' + plural(n, 'товар', 'товара', 'товаров') : AT('ui.sales.k7', AT('ui.sales.k7', 'Эти товары уже в списке запроса'))); finishView(); }
     else if (act === 'copy') {
-      const url = planShareUrl(UI.st), done = () => A.toast && A.toast('Ссылка на план скопирована');
+      const url = planShareUrl(UI.st), done = () => A.toast && A.toast(AT('ui.sales.k8', AT('ui.sales.k8', 'Ссылка на план скопирована')));
       if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(url).then(done, () => { A.toast && A.toast(url); }); else { A.toast && A.toast(url); }
       track('plan_share');
     }
@@ -527,7 +528,7 @@
   }
   function barEl() {
     if (bar && bar.isConnected) return bar;
-    bar = document.createElement('div'); bar.id = 'sx-bar'; bar.className = 'sx-bar'; bar.hidden = true; bar.setAttribute('role', 'region'); bar.setAttribute('aria-label', 'Следующий шаг');
+    bar = document.createElement('div'); bar.id = 'sx-bar'; bar.className = 'sx-bar'; bar.hidden = true; bar.setAttribute('role', 'region'); bar.setAttribute('aria-label', AT('ui.sales.k9', AT('ui.sales.k9', 'Следующий шаг')));
     bar.addEventListener('click', onBarClick); A.dock().appendChild(bar); return bar;
   }
   function paintBar() {
@@ -536,7 +537,7 @@
     el.className = 'sx-bar sx-bar--' + style;
     const cta = m.kind === 'link' ? link(m.path, 'btn btn-fill btn-sm sx-bar-cta', esc(m.cta) + ' ' + I.arrow, 'bar') : '<button class="btn btn-fill btn-sm sx-bar-cta" type="button" data-sx="bar" data-bar="' + m.kind + '">' + esc(m.cta) + ' ' + I.arrow + '</button>';
     const lk = m.link ? '<button class="sx-bar-link" type="button" data-sx="bar-list" data-bar="list" data-id="' + esc(m.link.id) + '">' + esc(m.link.label) + '</button>' : '';
-    el.innerHTML = '<div class="sx-bar-tx"><p class="sx-bar-t">' + esc(m.text) + '</p>' + (m.fine && BR.fine ? '<small class="sx-bar-f">' + esc(BR.fine) + '</small>' : '') + '</div><div class="sx-bar-a">' + lk + cta + '</div><button class="sx-bar-x" type="button" data-bar="x" aria-label="Закрыть">' + I.close + '</button>';
+    el.innerHTML = '<div class="sx-bar-tx"><p class="sx-bar-t">' + esc(m.text) + '</p>' + (m.fine && BR.fine ? '<small class="sx-bar-f">' + esc(BR.fine) + '</small>' : '') + '</div><div class="sx-bar-a">' + lk + cta + '</div><button class="sx-bar-x" type="button" data-bar="x" aria-label="' + AT('ui.x_explore.k7', 'Закрыть') + '">' + I.close + '</button>';
   }
   function onBarClick(e) {
     const t = e.target.closest('[data-bar]'); if (!t) return;

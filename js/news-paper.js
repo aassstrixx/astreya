@@ -12,6 +12,7 @@
    Без CSS-3D остаётся список-архив (data-np-fallback). Все слушатели window снимаются, когда страницу подменили (переход без перезагрузки). */
 (function () {
   'use strict';
+  const AT = (k, d) => window.Astreya.T(k, d);          // подписи интерфейса: правка заказчика (js/data.js → texts) или исходный текст
   const A = window.Astreya; if (!A) return;
   const $ = (s, r) => (r || document).querySelector(s), $$ = (s, r) => [].slice.call((r || document).querySelectorAll(s));
   const clamp = (v, a, b) => v < a ? a : v > b ? b : v, lerp = (a, b, t) => a + (b - a) * t;
@@ -374,7 +375,7 @@
       if (cat === 'all') st.hidden = true;
       else {
         const name = ($('[data-np-cat="' + cat + '"]', root) || {}).firstChild; const nm = name ? name.textContent : cat;
-        st.innerHTML = esc('«' + nm + '»: ' + arts.length + ' ' + (arts.length === 1 ? 'материал' : arts.length < 5 ? 'материала' : 'материалов')) + (sps.length ? ' · ' + sps.map(sp => '<button type="button" data-np-sp="' + sp + '">стр. ' + (2 * sp) + '–' + (2 * sp + 1) + '</button>').join(' ') : '') + ' <button type="button" data-np-cat="all">Сбросить</button>';
+        st.innerHTML = esc('«' + nm + '»: ' + arts.length + ' ' + (arts.length === 1 ? 'материал' : arts.length < 5 ? 'материала' : 'материалов')) + (sps.length ? ' · ' + sps.map(sp => '<button type="button" data-np-sp="' + sp + '">стр. ' + (2 * sp) + '–' + (2 * sp + 1) + '</button>').join(' ') : '') + ' <button type="button" data-np-cat="all">' + AT('ui.x_news.k1', 'Сбросить') + '</button>';
         st.hidden = false;
       }
       if (!o.keep && cat !== 'all' && sps.length && sps.indexOf(spreadOf(S.cur)) < 0 && !(S.mode === 'single' && sps.indexOf(spreadOf(S.cur)) >= 0)) goSpread(sps.filter(x => x >= spreadOf(S.cur))[0] || sps[0], {noHash: false});
@@ -393,11 +394,11 @@
     const dots = $('[data-np-dots]', root), pgtxt = $('[data-np-pgtxt]', root), hintT = $('[data-np-hint-t]', root);
     function rebuildDots() {
       dots.innerHTML = ''; const n = S.mode === 'spread' ? NLEAF + 1 : NPAGE;
-      for (let i = 0; i < n; i++) { const b = el('button'); b.type = 'button'; b.dataset.npDot = i; b.setAttribute('aria-label', S.mode === 'spread' ? (i === 0 ? 'Обложка' : i === NLEAF ? 'Оборот, страница 12' : 'Страницы ' + (2 * i) + '–' + (2 * i + 1)) : 'Страница ' + (i + 1)); const li = el('li'); li.appendChild(b); dots.appendChild(li); }
+      for (let i = 0; i < n; i++) { const b = el('button'); b.type = 'button'; b.dataset.npDot = i; b.setAttribute('aria-label', S.mode === 'spread' ? (i === 0 ? AT('ui.x_news.k2', 'Обложка') : i === NLEAF ? AT('ui.x_news.k3', 'Оборот, страница 12') : 'Страницы ' + (2 * i) + '–' + (2 * i + 1)) : 'Страница ' + (i + 1)); const li = el('li'); li.appendChild(b); dots.appendChild(li); }
     }
     function pageLabel() {
       if (S.mode === 'single') return 'Страница ' + (S.cur + 1) + ' из ' + NPAGE;
-      if (S.cur === 0) return 'Обложка'; if (S.cur === NLEAF) return 'Оборот · стр. 12';
+      if (S.cur === 0) return AT('ui.x_news.k2', 'Обложка'); if (S.cur === NLEAF) return AT('ui.x_news.k4', 'Оборот · стр. 12');
       return 'Стр. ' + (2 * S.cur) + '–' + (2 * S.cur + 1) + ' из ' + NPAGE;
     }
     let hintFor = -1;
@@ -422,16 +423,16 @@
     function ovHTML(a) {
       const rel = a.rel || {};
       return '<div class="np-ov-sheet" role="dialog" aria-modal="true" aria-labelledby="np-ov-t" tabindex="-1">' +
-        '<button class="np-ov-x" type="button" data-np-close aria-label="Закрыть"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></button>' +
+        '<button class="np-ov-x" type="button" data-np-close aria-label="' + AT('ui.x_explore.k7', 'Закрыть') + '"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></button>' +
         '<div class="np-ov-mast"><span>АСТРЕЯ</span><span>' + esc(a.dateText) + '</span></div>' +
         '<div class="np-meta"><span class="np-tag"><i></i>' + esc(a.catName) + '</span></div>' +
         '<h2 id="np-ov-t">' + esc(a.title) + '</h2><p class="np-ov-dek">' + esc(a.excerpt) + '</p>' +
         '<div class="np-ov-body">' + a.body.map(p => '<p>' + esc(p) + '</p>').join('') + '</div>' +
         '<div class="np-ov-act">' + (a.cta ? '<a class="np-btn" href="' + esc(a.cta.href) + '" ' + a.cta.attrs + '>' + esc(a.cta.label) + ' <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>' : '') +
-        (a.sp ? '<button class="np-lnk" type="button" data-np-back>К газете · стр. ' + esc(a.pg) + '</button>' : '<button class="np-lnk" type="button" data-np-close>К газете</button>') +
-        '<a class="np-lnk" href="' + esc(a.url) + '" data-track="news_open_page">Отдельной страницей</a></div>' +
-        ((rel.products && rel.products.length) ? '<div class="np-ov-rel"><div><h3>Товары по теме</h3><ul>' + rel.products.map(p => '<li><a href="' + esc(p.href) + '">' + esc(p.name) + '<small>' + esc(p.brand) + '</small></a></li>').join('') + '</ul></div></div>' : '') +
-        ((rel.events && rel.events.length) ? '<div class="np-ov-rel"><div><h3>Мероприятия по теме</h3><ul>' + rel.events.map(e => '<li><a href="' + esc(e.href) + '">' + esc(e.title) + '<small>' + esc(e.date) + ' · ' + esc(e.city) + '</small></a></li>').join('') + '</ul></div></div>' : '') +
+        (a.sp ? '<button class="np-lnk" type="button" data-np-back>К газете · стр. ' + esc(a.pg) + '</button>' : '<button class="np-lnk" type="button" data-np-close>' + AT('ui.news.k1', AT('ui.news.k1', 'К газете')) + '</button>') +
+        '<a class="np-lnk" href="' + esc(a.url) + '" data-track="news_open_page">' + AT('ui.news.k2', AT('ui.news.k2', 'Отдельной страницей')) + '</a></div>' +
+        ((rel.products && rel.products.length) ? '<div class="np-ov-rel"><div><h3>' + AT('ui.news.k3', AT('ui.news.k3', 'Товары по теме')) + '</h3><ul>' + rel.products.map(p => '<li><a href="' + esc(p.href) + '">' + esc(p.name) + '<small>' + esc(p.brand) + '</small></a></li>').join('') + '</ul></div></div>' : '') +
+        ((rel.events && rel.events.length) ? '<div class="np-ov-rel"><div><h3>' + AT('ui.news.k4', AT('ui.news.k4', 'Мероприятия по теме')) + '</h3><ul>' + rel.events.map(e => '<li><a href="' + esc(e.href) + '">' + esc(e.title) + '<small>' + esc(e.date) + ' · ' + esc(e.city) + '</small></a></li>').join('') + '</ul></div></div>' : '') +
         '</div>';
     }
     function openArticle(id, opener) {

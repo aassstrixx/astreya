@@ -96,7 +96,7 @@ module.exports = function home(ctx, C, P) {
   </div></section>`;
 
   parts.picker = `<section class="sec"><div class="wrap">
-    ${C.secHead(T('home.tasks.s'), T('home.tasks.s2'), '<p class="lead">Выберите задачу клиента — покажем подходящие бренды и товары.</p>')}
+    ${C.secHead(T('home.tasks.s'), T('home.tasks.s2'), `<p class="lead">${T('common.pages.homeLead')}</p>`)}
     <div class="picker reveal pushin" id="picker">
       <div class="chips" role="group" aria-label="${T('home.tasks.aria')}">${tasks.map((t, i) => C.chip(esc(t.label), 'pick', t.id, i === 0)).join('')}</div>
       <div id="pick-out" aria-live="polite">${tasks.map(pickOut).join('')}</div>

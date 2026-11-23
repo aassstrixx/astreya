@@ -10,6 +10,7 @@ const L = require('./lib/leads');
 const N = require('./lib/notify');
 const CT = require('./lib/content');
 const TXR = require('./lib/textsapi');
+const DT = require('./lib/datatexts');
 const B = require('./lib/build');
 const F = require('./lib/files');
 const P = require('./lib/publish');
@@ -191,6 +192,8 @@ async function handleApi(req, res, url) {
     if (m === 'PUT') { const b = await H.readJSONBody(req, 6e6); const r = await CT.save(mm[1], b.data, {version: b.version, who: ctx.who}); log(req, ctx.who, 'content', mm[1] + (r.unchanged ? ' (без изменений)' : '')); return H.json(res, 200, r); }
   }
   if (p === '/api/texts/registry' && m === 'GET') return H.json(res, 200, TXR.registry());
+  if (p === '/api/texts/data' && m === 'GET') return H.json(res, 200, DT.fields());
+  if (p === '/api/texts/data' && m === 'POST') { const b = await H.readJSONBody(req, 2e6); const r = await DT.apply(b.changes, ctx.who); log(req, ctx.who, 'content', 'тексты из данных: ' + b.changes.length + ' поле(й)'); return H.json(res, 200, r); }
   if (p === '/api/news/layout' && m === 'GET') return H.json(res, 200, TXR.newsLayout());
   mm = p.match(/^\/api\/collections\/([a-z0-9_]+)\/history$/); if (mm && m === 'GET') return H.json(res, 200, {items: CT.history(mm[1])});
   mm = p.match(/^\/api\/collections\/([a-z0-9_]+)\/diff$/); if (mm && m === 'GET') return H.json(res, 200, CT.diffWithBackup(mm[1], url.searchParams.get('id')));

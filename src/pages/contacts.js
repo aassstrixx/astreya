@@ -109,7 +109,7 @@ module.exports = function contacts(ctx, C, P) {
           ${mapLinks(o, o.city === 'Москва')}
         </div></div>
       </article>`).join('')}</div>
-      <div class="cp-relief reveal" role="group" aria-label="Расположение офиса: ${esc(c.address)}. ${T('contacts.map.eyebrow')} «Астрея» на карте России">
+      <div class="cp-relief reveal" role="group" aria-label="${T('common.aria.office', {address: esc(c.address), eyebrow: T('contacts.map.eyebrow')})}">
         <div class="cp-stone">
           <img class="cp-mapimg" src="${u('assets/company/ru-map.svg')}" alt="" width="1920" height="1108" loading="lazy" decoding="async">
           <svg class="cp-svg" viewBox="0 0 ${WIN.w} ${WIN.h}" preserveAspectRatio="none" aria-hidden="true" focusable="false">

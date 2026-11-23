@@ -6,6 +6,7 @@
    Уведомление — небольшая карточка в верхнем углу под шапкой (внизу экрана ничего не показываем). */
 (function () {
   'use strict';
+  const AT = (k, d) => window.Astreya.T(k, d);          // подписи интерфейса: правка заказчика (js/data.js → texts) или исходный текст
   const A = window.Astreya; if (!A) return;
   const D = window.ASTREYA_DATA || {}, IT = D.integrations || {}, CS = IT.consent || {}, M = IT.metrika || null;
   const KEY = 'astreya:consent';
@@ -44,7 +45,7 @@
   function choose(yes) {
     const was = state();
     write({v: CS.version, a: yes ? 1 : 0, t: new Date().toISOString()});
-    close(); A.toast(yes ? 'Спасибо, настройки сохранены' : 'Аналитика отключена');
+    close(); A.toast(yes ? AT('ui.consent.k1', AT('ui.consent.k1', 'Спасибо, настройки сохранены')) : AT('ui.consent.k2', AT('ui.consent.k2', 'Аналитика отключена')));
     if (yes) startMetrika(); else if (was === 'granted' || started) stopMetrika();
     try { document.dispatchEvent(new CustomEvent('astreya:consent', {detail: {state: state()}})); } catch (e) {}
   }
@@ -53,7 +54,7 @@
     const el = document.createElement('div'); el.className = 'cb'; el.setAttribute('role', 'dialog'); el.setAttribute('aria-labelledby', 'cb-t'); el.setAttribute('aria-live', 'polite');
     const t = document.createElement('b'); t.id = 'cb-t'; t.textContent = CS.title;
     const p = document.createElement('p'); p.textContent = CS.text + ' ';
-    const a = document.createElement('a'); a.href = (A.ROOT || '') + 'privacy.html#cookie'; a.textContent = 'Подробнее'; p.append(a);
+    const a = document.createElement('a'); a.href = (A.ROOT || '') + 'privacy.html#cookie'; a.textContent = AT('ui.x_consent.k1', 'Подробнее'); p.append(a);
     const row = document.createElement('div'); row.className = 'cb-row';
     const yes = document.createElement('button'); yes.type = 'button'; yes.className = 'btn btn-fill btn-sm'; yes.textContent = CS.accept; yes.addEventListener('click', () => choose(true));
     const no = document.createElement('button'); no.type = 'button'; no.className = 'btn btn-ghost btn-sm'; no.textContent = CS.decline; no.addEventListener('click', () => choose(false));

@@ -11,6 +11,7 @@
    Двигаются только opacity и transform; prefers-reduced-motion — только прозрачность; «лёгкий режим» (html.lite) — без анимаций. Идемпотентно: страницы могут подменяться без перезагрузки (A.initPage). */
 (function () {
   'use strict';
+  const AT = (k, d) => window.Astreya.T(k, d);          // подписи интерфейса: правка заказчика (js/data.js → texts) или исходный текст
   const A = window.Astreya, D = window.ASTREYA_DATA;
   if (!A || !D || !D.extras || !D.extras.showroom || !D.extras.gallery) return;
   const X = D.extras, I = A.I || {};
@@ -44,7 +45,7 @@
   const favHas = id => favGet().indexOf(id) >= 0;
   function favSync() {
     const l = favGet();
-    $$('[data-fav-id]').forEach(b => { const id = b.getAttribute('data-fav-id'), on = l.indexOf(id) >= 0; b.setAttribute('aria-pressed', String(on)); b.classList.toggle('is-on', on); b.setAttribute('aria-label', (on ? 'Убрать из избранного: ' : 'Добавить в избранное: ') + (P[id] ? P[id].name : '')); b.setAttribute('title', on ? 'Убрать из избранного' : 'Добавить в избранное'); });
+    $$('[data-fav-id]').forEach(b => { const id = b.getAttribute('data-fav-id'), on = l.indexOf(id) >= 0; b.setAttribute('aria-pressed', String(on)); b.classList.toggle('is-on', on); b.setAttribute('aria-label', (on ? 'Убрать из избранного: ' : 'Добавить в избранное: ') + (P[id] ? P[id].name : '')); b.setAttribute('title', on ? AT('ui.showroom.k1', AT('ui.showroom.k1', 'Убрать из избранного')) : AT('ui.showroom.k2', AT('ui.showroom.k2', 'Добавить в избранное'))); });
     $$('[data-shw-favn]').forEach(n => { n.textContent = l.length; });
     $$('[data-shw-favs]').forEach(b => { b.classList.toggle('has', l.length > 0); b.setAttribute('aria-pressed', String(!!(S && S.favOnly))); });
   }
@@ -200,23 +201,23 @@
   /* ---------- карточка товара ---------- */
   function cardHTML(p) {
     const b = B[p.brand] || {}, x = p.x || {}, url = root() + 'products/' + p.slug + '.html';
-    const rows = [['Категория', CAT[p.c]], ['Вид', KIND[p.k]]]; if (x.volume) rows.push(['Объём', x.volume]); if (x.sku) rows.push(['Артикул', x.sku]); if (x.usage) rows.push(['Применение', x.usage]);
-    const badge = p.n ? '<span class="c-bd is-new">Новинка</span>' : p.f ? '<span class="c-bd">Рекомендуем</span>' : '';
+    const rows = [[AT('ui.x_explore.k2', 'Категория'), CAT[p.c]], ['Вид', KIND[p.k]]]; if (x.volume) rows.push([AT('ui.x_explore.k3', 'Объём'), x.volume]); if (x.sku) rows.push([AT('ui.x_explore.k4', 'Артикул'), x.sku]); if (x.usage) rows.push([AT('ui.x_showroom.k1', 'Применение'), x.usage]);
+    const badge = p.n ? '<span class="c-bd is-new">' + AT('ui.x_explore.k6', 'Новинка') + '</span>' : p.f ? '<span class="c-bd">' + AT('ui.x_showroom.k2', 'Рекомендуем') + '</span>' : '';
     const list = (t, a) => a && a.length ? '<div class="c-sec"><h4>' + t + '</h4><ul>' + a.map(v => '<li>' + esc(v) + '</li>').join('') + '</ul></div>' : '';
     const det = x.details && x.details.length ? x.details.map(t => '<p class="c-d2">' + esc(t) + '</p>').join('') : '';
     const known = !!(x.actives && x.actives.length || x.composition || x.indications && x.indications.length || x.details && x.details.length || x.volume || x.sku || x.usage);
     return '<div class="c-in">' + badge + '<span class="c-br">' + esc(b.name || '') + '</span><div class="c-t">' + esc(p.name) + '</div><p class="c-d">' + esc(p.d || '') + '</p>' +
-      '<div class="c-more"><div>' + det + '<div class="c-lb">Назначение</div><div class="c-tasks">' + (p.ts || []).map(t => '<span class="tag blue">' + esc(TASK[t] || t) + '</span>').join('') + '</div>' +
-      list('Активные компоненты', x.actives) + (x.composition ? '<div class="c-sec"><h4>Состав</h4><p>' + esc(x.composition) + '</p></div>' : '') + list('Показания', x.indications) +
+      '<div class="c-more"><div>' + det + '<div class="c-lb">' + AT('ui.x_explore.k13', 'Назначение') + '</div><div class="c-tasks">' + (p.ts || []).map(t => '<span class="tag blue">' + esc(TASK[t] || t) + '</span>').join('') + '</div>' +
+      list(AT('ui.showroom.k3', AT('ui.showroom.k3', 'Активные компоненты')), x.actives) + (x.composition ? '<div class="c-sec"><h4>' + AT('ui.x_showroom.k3', 'Состав') + '</h4><p>' + esc(x.composition) + '</p></div>' : '') + list(AT('ui.x_explore.k5', 'Показания'), x.indications) +
       '<dl class="c-spec">' + rows.filter(r => r[1]).map(r => '<div><dt>' + r[0] + '</dt><dd>' + esc(r[1]) + '</dd></div>').join('') + '</dl>' +
-      (known ? '' : '<p class="c-note">Подробные характеристики уточняются — менеджер пришлёт состав и протокол по запросу.</p>') +
-      (p.im && PHOTOS ? '' : '<p class="c-note">Изображение упаковки условное — это 3D-макет без текста и логотипов.</p>') + '</div></div>' +
+      (known ? '' : '<p class="c-note">' + AT('ui.x_showroom.k4', 'Подробные характеристики уточняются — менеджер пришлёт состав и протокол по запросу.') + '</p>') +
+      (p.im && PHOTOS ? '' : '<p class="c-note">' + AT('ui.showroom.k4', AT('ui.showroom.k4', 'Изображение упаковки условное — это 3D-макет без текста и логотипов.')) + '</p>') + '</div></div>' +
       '<div class="c-act"><a class="btn btn-fill" href="' + esc(url) + '" data-track="product_card_click" data-place="showroom_card" data-product="' + esc(p.id) + '">Подробнее ' + (I.arrow || '') + '</a>' +
-      (FAV_ON ? '<button class="btn btn-ghost c-fav" type="button" data-act="fav-toggle" data-fav-id="' + esc(p.id) + '" aria-pressed="false">' + IC.heart + '<span>В избранное</span></button>' : '') +
-      (X.compare ? '<button class="btn btn-ghost c-cmp" type="button" data-act="cmp-toggle" data-id="' + esc(p.id) + '" data-cmp-id="' + esc(p.id) + '" aria-pressed="false">' + IC.cmp + '<span>Сравнить</span></button>' : '') + '</div>' +
-      '<div class="c-act c-extra"><button class="btn btn-ghost" type="button" data-act="form" data-type="product" data-ref="' + esc(p.id) + '">Запросить</button>' + (X.quickView && S && S.stack ? '<button class="btn btn-ghost" type="button" data-act="qv-open" data-id="' + esc(p.id) + '">Быстрый просмотр</button>' : '') +       // на компьютере быстрый просмотр — «глаз» в панели при наведении; на телефоне наведения нет
-      (NAVI ? '<button class="btn btn-ghost" type="button" data-act="qv-stella" data-id="' + esc(p.id) + '">Помочь с подбором</button>' : '') + '</div></div>' +
-      '<button class="c-x" type="button" data-act="shw-close" aria-label="Закрыть карточку товара">' + IC.close + '<span>Закрыть</span></button>';
+      (FAV_ON ? '<button class="btn btn-ghost c-fav" type="button" data-act="fav-toggle" data-fav-id="' + esc(p.id) + '" aria-pressed="false">' + IC.heart + '<span>' + AT('ui.showroom.k5', AT('ui.showroom.k5', 'В избранное')) + '</span></button>' : '') +
+      (X.compare ? '<button class="btn btn-ghost c-cmp" type="button" data-act="cmp-toggle" data-id="' + esc(p.id) + '" data-cmp-id="' + esc(p.id) + '" aria-pressed="false">' + IC.cmp + '<span>' + AT('ui.x_explore.k8', 'Сравнить') + '</span></button>' : '') + '</div>' +
+      '<div class="c-act c-extra"><button class="btn btn-ghost" type="button" data-act="form" data-type="product" data-ref="' + esc(p.id) + '">' + AT('ui.x_explore.k16', 'Запросить') + '</button>' + (X.quickView && S && S.stack ? '<button class="btn btn-ghost" type="button" data-act="qv-open" data-id="' + esc(p.id) + '">' + AT('ui.showroom.k6', AT('ui.showroom.k6', 'Быстрый просмотр')) + '</button>' : '') +       // на компьютере быстрый просмотр — «глаз» в панели при наведении; на телефоне наведения нет
+      (NAVI ? '<button class="btn btn-ghost" type="button" data-act="qv-stella" data-id="' + esc(p.id) + '">' + AT('ui.showroom.k7', AT('ui.showroom.k7', 'Помочь с подбором')) + '</button>' : '') + '</div></div>' +
+      '<button class="c-x" type="button" data-act="shw-close" aria-label="' + AT('ui.showroom.k8', AT('ui.showroom.k8', 'Закрыть карточку товара')) + '">' + IC.close + '<span>' + AT('ui.x_explore.k7', 'Закрыть') + '</span></button>';
   }
   /* на компьютере плашка товара показывается только при наведении на предмет и при выборе; на планшете и телефоне (наведения нет) в покое стоит плашка товара по умолчанию */
   const idleId = () => S && S.stack ? S.defId : null;
@@ -362,7 +363,7 @@
       panel: $('.shw-aside .shw-panel', rootEl), hero: $('.shw-hero', rootEl), head: $('.shw-head', rootEl), aside: $('.shw-aside', rootEl), grid: $('#cat-grid'), ids: [], pageIds: [], page: 0, per: 10, W: 0, H: 0, s: 1, stack: false, panOn: false, centered: false, variant: 0, items: new Map(), pods: [], anims: new Set(), sel: null, hov: null, defId: null, rendered: false, rz: 0, rect: null};
     S.card.addEventListener('pointerenter', e => { if (e.pointerType === 'touch') return; S.cardHover = true; clearTimeout(S.cardT); });
     S.card.addEventListener('pointerleave', e => { if (e.pointerType === 'touch') return; S.cardHover = false; clearTimeout(S.cardT); S.cardT = setTimeout(() => { if (S && !S.stack && !S.sel && !S.hov && !S.cardHover) paintCard(null); }, 700); });
-    S.tip = document.createElement('div'); S.tip.className = 'shw-tip'; S.tip.hidden = true; S.tip.setAttribute('role', 'group'); S.tip.setAttribute('aria-label', 'Краткие сведения о товаре');
+    S.tip = document.createElement('div'); S.tip.className = 'shw-tip'; S.tip.hidden = true; S.tip.setAttribute('role', 'group'); S.tip.setAttribute('aria-label', AT('ui.showroom.k9', AT('ui.showroom.k9', 'Краткие сведения о товаре')));
     S.tip.addEventListener('pointerenter', e => { if (e.pointerType === 'touch') return; S.tipHover = true; clearTimeout(S.hovT); clearTimeout(S.tipT); });
     S.tip.addEventListener('pointerleave', e => { if (e.pointerType === 'touch') return; S.tipHover = false; unpreview(); });
     ($('.shw-canvas', rootEl) || S.stage).appendChild(S.tip);                                          // панель — на уровне холста (как карточка), выше «дымки» заголовка (.shw-head::before): в сцене она была под ней, и текст выглядел размытым и серым
@@ -422,7 +423,7 @@
   A.actions['fav-toggle'] = (t, id) => favToggle(id || t.getAttribute('data-fav-id') || t.getAttribute('data-id'));
   A.actions['shw-open'] = (t, id) => { const p = P[id || t.getAttribute('data-id')]; if (p) location.href = root() + 'products/' + p.slug + '.html'; };
   /* «Избранное»: в экспозиции остаются только отмеченные товары (остальные фильтры работают как раньше); повторное нажатие возвращает все */
-  A.actions['shw-favs'] = () => { if (!S) return; if (!S.favOnly && !favGet().length) { A.toast && A.toast('Избранное пока пусто — отметьте товары сердечком'); return; } S.favOnly = !S.favOnly; favSync(); sync(true); };
+  A.actions['shw-favs'] = () => { if (!S) return; if (!S.favOnly && !favGet().length) { A.toast && A.toast(AT('ui.showroom.k10', AT('ui.showroom.k10', 'Избранное пока пусто — отметьте товары сердечком'))); return; } S.favOnly = !S.favOnly; favSync(); sync(true); };
   /* плитки под витриной («Подбор по задаче», «Коллекции», «Бренды»): включают нужное значение фильтра и возвращают к главной экспозиции, которая перестраивается под него; повторный клик по выбранной плитке только возвращает к витрине */
   A.actions['shw-to'] = t => {
     const k = t.getAttribute('data-key') || 'cat', v = t.getAttribute('data-id'), sel = selOf(k);
@@ -436,7 +437,7 @@
   };
   const refit = () => setTimeout(() => { if (S) layout(); }, 380);                                  /* после раскрытия/сворачивания групп панель снова подгоняется по высоте окна */
   A.actions['shw-grp'] = t => { const g = t.closest('.shw-grp'), open = g.classList.toggle('is-open'); t.setAttribute('aria-expanded', String(open)); refit(); };
-  A.actions['shw-more'] = t => { const go = t.closest('.shw-go'), on = go.classList.toggle('more'), n = $$('.shw-o.xtra', go).length; t.setAttribute('aria-expanded', String(on)); t.textContent = on ? 'Свернуть' : 'Ещё ' + n; refit(); };
+  A.actions['shw-more'] = t => { const go = t.closest('.shw-go'), on = go.classList.toggle('more'), n = $$('.shw-o.xtra', go).length; t.setAttribute('aria-expanded', String(on)); t.textContent = on ? AT('ui.x_showroom.k5', 'Свернуть') : 'Ещё ' + n; refit(); };
   A.actions['shw-pop-nav'] = t => { const tr = $('.shw-pop-t'); if (tr) tr.scrollBy({left: +t.getAttribute('data-dir') * tr.clientWidth * .92, behavior: mode() === 'full' ? 'smooth' : 'auto'}); };
   /* «Смотреть весь список» (и адрес #shw-all) раскрывает свёрнутый нижний список и приводит к нему */
   const openList = go => { const d = $('[data-shw-list]'); if (!d) return; d.open = true; if (go) d.scrollIntoView({behavior: mode() === 'full' ? 'smooth' : 'auto', block: 'start'}); };

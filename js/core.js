@@ -1,6 +1,7 @@
 /* Astreya — ядро: утилиты, аналитика, меню, поиск, формы (модальное окно и встроенные). Классический скрипт, без зависимостей. */
 (function () {
   'use strict';
+  const AT = (k, d) => window.Astreya.T(k, d);          // подписи интерфейса: правка заказчика (js/data.js → texts) или исходный текст
   const A = window.Astreya = window.Astreya || {};
   const D = window.ASTREYA_DATA || {site: {contacts: {}, discounts: []}, brands: [], products: [], events: [], index: []};
   const $ = (s, r) => (r || document).querySelector(s);
@@ -76,7 +77,7 @@
   addEventListener('resize', () => { if (innerWidth > 900) A.closeMenu(); });
 
   /* ---------- поиск ---------- */
-  const TYPE_LABEL = {product: 'Товар', brand: 'Бренд', news: 'Новость', event: 'Обучение', page: 'Страница'};
+  const TYPE_LABEL = {product: AT('ui.x_core.k1', 'Товар'), brand: AT('ui.x_explore.k1', 'Бренд'), news: AT('ui.x_core.k2', 'Новость'), event: AT('ui.x_pages.k4', 'Обучение'), page: AT('ui.x_core.k3', 'Страница')};
   const TYPE_ORDER = ['product', 'brand', 'event', 'news', 'page'];
   A.search = function (q) {
     const toks = A.tokens(q); if (!toks.length) return [];
@@ -151,8 +152,8 @@
     lastFocus = document.activeElement;
     m.classList.remove('closing');
     m.innerHTML = `<div class="dlg" role="document">
-      <button class="x" type="button" data-act="close" aria-label="Закрыть">${I.close}</button>
-      <span class="eyebrow in">Заявка</span>
+      <button class="x" type="button" data-act="close" aria-label="${AT('ui.x_explore.k7', 'Закрыть')}">${I.close}</button>
+      <span class="eyebrow in">${AT('ui.x_extras.k1', 'Заявка')}</span>
       <h2 id="m-title">${ft.title}</h2>
       <p class="muted">${ft.lead}</p>
       ${ctxText ? `<span class="ctx">${esc(ctxText)}</span>` : ''}
@@ -205,7 +206,7 @@
   function letterOf(pl) {
     const ft = FT[pl.type] || FT.question, subject = ft.subject + (pl.context ? ': ' + pl.context : '');
     const L = [pl.context ? 'Тема: ' + pl.context : null, 'Имя: ' + (pl.name || '—'), pl.city ? 'Город: ' + pl.city : null, pl.org ? 'Организация: ' + pl.org : null, pl.spec ? 'Специализация: ' + pl.spec : null,
-      'Email: ' + (pl.email || '—'), 'Телефон: ' + (pl.phone || '—'), '', 'Сообщение: ' + (pl.msg || '—'), '', 'Согласие на обработку персональных данных: да', 'Отправлено с сайта «Астрея».'].filter(x => x !== null);
+      'Email: ' + (pl.email || '—'), 'Телефон: ' + (pl.phone || '—'), '', 'Сообщение: ' + (pl.msg || '—'), '', AT('ui.x_core.k4', 'Согласие на обработку персональных данных: да'), AT('ui.x_core.k5', 'Отправлено с сайта «Астрея».')].filter(x => x !== null);
     return {subject, body: L.join('\r\n'), href: 'mailto:' + D.site.contacts.email + '?subject=' + encodeURIComponent(subject) + '&body=' + encodeURIComponent(L.join('\r\n'))};
   }
   function setStatus(form, kind, html) {
@@ -215,7 +216,7 @@
   function setBusy(form, busy) {
     const b = $('button[type="submit"]', form); if (!b) return;
     b.disabled = busy; b.classList.toggle('is-loading', busy); b.setAttribute('aria-busy', String(busy));
-    const l = $('.lbl', b); if (l) { if (busy) { l.dataset.t = l.textContent; l.textContent = 'Отправка…'; } else if (l.dataset.t) l.textContent = l.dataset.t; }
+    const l = $('.lbl', b); if (l) { if (busy) { l.dataset.t = l.textContent; l.textContent = AT('ui.x_core.k6', 'Отправка…'); } else if (l.dataset.t) l.textContent = l.dataset.t; }
     $$('input,textarea,select', form).forEach(x => { x.readOnly = busy && x.type !== 'checkbox'; });
   }
   function showDone(form, mode, letter) {
@@ -225,18 +226,18 @@
     if (mode === 'sent' && ft.done) {
       wrapEl.innerHTML = `<div class="tick">${I.check}</div><h3>${esc(ft.done[0])}</h3><p>${esc(ft.done[1])}</p>`;
     } else if (ft.done) {                                                      // короткие формы (подписка) без сервера: письмо уже открыто в почтовой программе — просим только отправить его
-      wrapEl.innerHTML = `<div class="tick">${I.check}</div><h3>Почти готово</h3><p>Отправьте подготовленное письмо на ${esc(c.email)} — и адрес будет добавлен. <a href="${esc(letter.href)}">Открыть письмо ещё раз</a></p>`;
+      wrapEl.innerHTML = `<div class="tick">${I.check}</div><h3>${AT('ui.forms.k1', AT('ui.forms.k1', 'Почти готово'))}</h3><p>Отправьте подготовленное письмо на ${esc(c.email)} — и адрес будет добавлен. <a href="${esc(letter.href)}">${AT('ui.forms.k2', AT('ui.forms.k2', 'Открыть письмо ещё раз'))}</a></p>`;
     } else if (mode === 'sent') {
-      wrapEl.innerHTML = `<div class="tick">${I.check}</div><h3>Заявка отправлена</h3><p>Спасибо! Мы свяжемся с вами в рабочее время (${esc(c.hours)}).</p>
-        <div class="row" style="justify-content:center;margin-top:18px"><button class="btn btn-ghost" type="button" data-act="form-again">Отправить ещё одну</button></div>`;
+      wrapEl.innerHTML = `<div class="tick">${I.check}</div><h3>${AT('ui.forms.k3', AT('ui.forms.k3', 'Заявка отправлена'))}</h3><p>Спасибо! Мы свяжемся с вами в рабочее время (${esc(c.hours)}).</p>
+        <div class="row" style="justify-content:center;margin-top:18px"><button class="btn btn-ghost" type="button" data-act="form-again">${AT('ui.forms.k4', AT('ui.forms.k4', 'Отправить ещё одну'))}</button></div>`;
     } else {
-      wrapEl.innerHTML = `<div class="tick">${I.check}</div><h3>Заявка подготовлена</h3>
+      wrapEl.innerHTML = `<div class="tick">${I.check}</div><h3>${AT('ui.forms.k5', AT('ui.forms.k5', 'Заявка подготовлена'))}</h3>
         <p>Письмо ещё не отправлено. Отправьте его на <b>${esc(c.email)}</b>: откройте почтовую программу кнопкой ниже или скопируйте текст.</p>
         <div class="copy-box" id="mail-text" tabindex="0">${esc(mailDraft)}</div>
         <div class="row" style="justify-content:center;margin-top:18px">
-          <a class="btn btn-fill" href="${esc(letter.href)}">Открыть в почтовой программе</a>
-          <button class="btn btn-ghost" type="button" data-act="copy" data-what="letter">Скопировать письмо</button>
-          <button class="btn btn-lnk" type="button" data-act="copy" data-what="address">Скопировать адрес</button>
+          <a class="btn btn-fill" href="${esc(letter.href)}">${AT('ui.forms.k6', AT('ui.forms.k6', 'Открыть в почтовой программе'))}</a>
+          <button class="btn btn-ghost" type="button" data-act="copy" data-what="letter">${AT('ui.forms.k7', AT('ui.forms.k7', 'Скопировать письмо'))}</button>
+          <button class="btn btn-lnk" type="button" data-act="copy" data-what="address">${AT('ui.forms.k8', AT('ui.forms.k8', 'Скопировать адрес'))}</button>
         </div>
         <p class="muted small" style="margin-top:16px">Или позвоните: <a href="tel:${c.phoneRaw}">${esc(c.phone)}</a></p>`;
     }
@@ -246,11 +247,11 @@
   }
   A.submitForm = async function (form) {
     if (form.dataset.busy) return;
-    if (!validate(form)) { setStatus(form, 'err', `${I.alert}<span>Проверьте поля, отмеченные красным.</span>`); return; }
+    if (!validate(form)) { setStatus(form, 'err', `${I.alert}<span>${AT('ui.forms.k9', AT('ui.forms.k9', 'Проверьте поля, отмеченные красным.'))}</span>`); return; }
     setStatus(form, '', '');
     if (form.elements.company_site && form.elements.company_site.value) { showDone(form, 'sent'); return; }   // ловушка для ботов
     const pl = payloadOf(form), type = pl.type;
-    form.dataset.busy = '1'; setBusy(form, true); setStatus(form, 'busy', `<i class="spin dark" aria-hidden="true"></i><span>Отправляем заявку…</span>`);
+    form.dataset.busy = '1'; setBusy(form, true); setStatus(form, 'busy', `<i class="spin dark" aria-hidden="true"></i><span>${AT('ui.forms.k10', AT('ui.forms.k10', 'Отправляем заявку…'))}</span>`);
     try {
       if (A.config.formEndpoint) {
         if (A.captcha) { const t = await A.captcha.token(); if (t) pl.captcha_token = t; }
@@ -260,12 +261,12 @@
         if (r.status === 422 && j && j.errors) {                    // сервер не принял поля: подсвечиваем их, данные остаются в форме
           setBusy(form, false); delete form.dataset.busy;
           let first = null; Object.keys(j.errors).forEach(k => { const f = $('.fld[data-f="' + k + '"]', form); if (f) { f.classList.add('bad'); const el = $('input,textarea,select', f); if (el) { el.setAttribute('aria-invalid', 'true'); if (!first) first = el; } } });
-          setStatus(form, 'err', `${I.alert}<span>${esc(j.errors.consent || j.errors.contact || 'Проверьте поля, отмеченные красным.')}</span>`); if (first) first.focus();
+          setStatus(form, 'err', `${I.alert}<span>${esc(j.errors.consent || j.errors.contact || AT('ui.forms.k9', AT('ui.forms.k9', 'Проверьте поля, отмеченные красным.')))}</span>`); if (first) first.focus();
           A.track('form_error', {form_type: type, message: 'invalid'}); return;
         }
         if (r.status === 429) {
           setBusy(form, false); delete form.dataset.busy; const c = D.site.contacts;
-          setStatus(form, 'err', `${I.alert}<div><b>Слишком много заявок с вашего адреса.</b> Попробуйте чуть позже или позвоните нам: <a href="tel:${c.phoneRaw}">${esc(c.phone)}</a></div>`);
+          setStatus(form, 'err', `${I.alert}<div><b>${AT('ui.forms.k11', AT('ui.forms.k11', 'Слишком много заявок с вашего адреса.'))}</b> Попробуйте чуть позже или позвоните нам: <a href="tel:${c.phoneRaw}">${esc(c.phone)}</a></div>`);
           A.track('form_error', {form_type: type, message: 'rate_limited'}); return;
         }
         if (!r.ok || (j && j.ok === false)) throw new Error('HTTP ' + r.status);
@@ -283,7 +284,7 @@
       setBusy(form, false); delete form.dataset.busy;
       const letter = letterOf(pl), c = D.site.contacts;
       A.track('form_error', {form_type: type, message: String(err && err.message || err)});
-      setStatus(form, 'err', `${I.alert}<div><b>Не удалось отправить заявку.</b> Проверьте соединение и попробуйте ещё раз — введённые данные сохранены.
+      setStatus(form, 'err', `${I.alert}<div><b>${AT('ui.forms.k12', AT('ui.forms.k12', 'Не удалось отправить заявку.'))}</b> ${AT('ui.x_core.k7', 'Проверьте соединение и попробуйте ещё раз — введённые данные сохранены.')}
         <div class="fs-links">Или свяжитесь с нами: <a href="tel:${c.phoneRaw}">${esc(c.phone)}</a> · <a href="${esc(letter.href)}">написать письмом</a></div></div>`);
     }
   };
@@ -296,7 +297,7 @@
       const s = document.createElement('script'); s.src = 'https://smartcaptcha.yandexcloud.net/captcha.js?render=onload&onload=__astreyaCaptcha'; s.async = true; s.onerror = () => res(null); document.head.appendChild(s);
     }));
     return {
-      preload: form => { load(); if (form && !form.querySelector('.cap-note')) { const p = document.createElement('p'); p.className = 'muted small cap-note'; p.textContent = 'Форма защищена сервисом Yandex SmartCaptcha.'; const a = form.querySelector('.form-actions'); if (a) a.before(p); } },      // значок капчи скрыт (внизу экрана ничего не плавает) — вместо него строка в форме
+      preload: form => { load(); if (form && !form.querySelector('.cap-note')) { const p = document.createElement('p'); p.className = 'muted small cap-note'; p.textContent = AT('ui.forms.k13', AT('ui.forms.k13', 'Форма защищена сервисом Yandex SmartCaptcha.')); const a = form.querySelector('.form-actions'); if (a) a.before(p); } },      // значок капчи скрыт (внизу экрана ничего не плавает) — вместо него строка в форме
       token: async () => {
         sc = sc || await load(); if (!sc) return '';
         if (widget === null) { host = document.createElement('div'); host.setAttribute('aria-hidden', 'true'); document.body.appendChild(host); widget = sc.render(host, {sitekey: cfg.siteKey, invisible: true, hideShield: true, hl: 'ru', callback: t => { if (waiting) { const w = waiting; waiting = null; w(t || ''); } }}); }
@@ -313,7 +314,7 @@
     try { await navigator.clipboard.writeText(text); A.toast(msg); return; } catch (e) {}
     const box = $('#mail-text');                          // запасной вариант: выделить текст для Ctrl+C
     if (box) { const r = document.createRange(); r.selectNodeContents(box); const s = getSelection(); s.removeAllRanges(); s.addRange(r); }
-    A.toast('Текст выделен — нажмите Ctrl+C или ⌘C');
+    A.toast(AT('ui.forms.k14', AT('ui.forms.k14', 'Текст выделен — нажмите Ctrl+C или ⌘C')));
   }
 
   /* ---------- делегирование кликов: действия и аналитика ---------- */
@@ -343,7 +344,7 @@
       case 'search-close': A.closeSearch(); break;
       case 'form': A.openForm(t.getAttribute('data-type'), t.getAttribute('data-ref')); break;
       case 'close': A.closeModal(); break;
-      case 'copy': t.getAttribute('data-what') === 'address' ? copyText(D.site.contacts.email, 'Адрес скопирован') : copyText(mailDraft, 'Письмо скопировано'); break;
+      case 'copy': t.getAttribute('data-what') === 'address' ? copyText(D.site.contacts.email, AT('ui.forms.k15', AT('ui.forms.k15', 'Адрес скопирован'))) : copyText(mailDraft, AT('ui.forms.k16', AT('ui.forms.k16', 'Письмо скопировано'))); break;
       case 'form-again': { const host = t.closest('.ok').parentNode, f = $('form', host); t.closest('.ok').remove(); if (f) { f.hidden = false; f.reset(); f._t0 = 0; setStatus(f, '', ''); $$('.fld textarea', f).forEach(x => { x.style.height = ''; }); } break; }
       case 'faq': { const it = t.closest('.faq-item'), open = it.classList.toggle('open'); t.setAttribute('aria-expanded', String(open)); break; }
       case 'scroll': { const el = document.getElementById(t.getAttribute('data-target')); if (el) { e.preventDefault(); el.scrollIntoView({behavior: 'smooth', block: 'start'}); } break; }

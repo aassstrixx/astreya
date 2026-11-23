@@ -3,6 +3,7 @@
    Все факты — из данных сайта: мероприятия (data/events.json), пороги скидок (data/site.json). Тексты — data/sales.json → pages.home.
    Оформление — «картотека»: две карточки с крупной цифрой (дата / процент), без кругов. */
 const S = require('../../js/shared.js');
+const {T} = require('../texts.js');
 const {esc, I, rub, dparts} = S;
 
 module.exports = function salesHome(ctx, C, P) {
@@ -29,7 +30,7 @@ module.exports = function salesHome(ctx, C, P) {
         <span class="eyebrow">${esc(h.buy.eyebrow)}</span>
         <h3>${esc(h.buy.title)}</h3>
         <p class="sx-door-line">${esc(h.buy.text)}</p>
-        <ol class="sx-ladder" aria-label="Ориентировочные скидки по объёму закупки">${disc.map((x, i) => `<li style="--h:${Math.round(38 + 62 * (i + 1) / disc.length)}%"><b>${x.pct}%</b><span>от ${esc(rub(x.from))}</span></li>`).join('')}</ol>
+        <ol class="sx-ladder" aria-label="${T('common.aria.ladder')}">${disc.map((x, i) => `<li style="--h:${Math.round(38 + 62 * (i + 1) / disc.length)}%"><b>${x.pct}%</b><span>${T('common.labels.from', {sum: esc(rub(x.from))})}</span></li>`).join('')}</ol>
         <div class="row"><a class="btn btn-fill" href="${C.u(P, sx.planner.path)}" data-track="home_fork_plan" data-sx="home-buy" data-sx-cta>${esc(h.buy.cta)} ${I.arrow}</a><a class="btn btn-lnk" href="${C.u(P, 'partners.html')}" data-track="home_fork_partners">${esc(h.buy.more)}</a></div>
         <p class="sx-door-note" data-sx-buy-note>${esc(h.buy.note)}</p>
       </div>

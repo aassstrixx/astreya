@@ -47,7 +47,7 @@ module.exports = function homeRedesign(ctx, C, P, parts, {events, val}) {
   const statItems = [...h.stats, ...rd.stats.extra].filter(s => s.value !== null && s.value !== undefined);
   const stats = `<section class="rd-sec rd-clinical rd-stats rd-bgword" aria-label="${esc(rd.stats.eyebrow)}">${bgLogo}<div class="wrap rd-stats-grid">
     <div class="rd-stats-copy reveal"><span class="eyebrow">${esc(rd.stats.eyebrow)}</span><h2>${esc(rd.stats.title)}</h2></div>
-    <div class="rd-nums">${statItems.map(s => `<div class="rd-num reveal"><b data-count="${val(s)}"${s.suffix ? ` data-suffix="${esc(s.suffix)}"` : ''}>${val(s)}</b><span>${esc(s.label)}</span>${s.note ? `<i class="snote">${esc(s.note)}</i>` : ''}${s.placeholder && showDemo ? '<em class="rd-ph">демо-данные</em>' : ''}</div>`).join('')}</div>
+    <div class="rd-nums">${statItems.map(s => `<div class="rd-num reveal"><b data-count="${val(s)}"${s.suffix ? ` data-suffix="${esc(s.suffix)}"` : ''}>${val(s)}</b><span>${esc(s.label)}</span>${s.note ? `<i class="snote">${esc(s.note)}</i>` : ''}${s.placeholder && showDemo ? `<em class="rd-ph">${T('common.labels.demo')}</em>` : ''}</div>`).join('')}</div>
   </div></section>`;
 
   /* ---------- 2. Почему Астрея (editorial: крупные номера, тонкие линии) ---------- */

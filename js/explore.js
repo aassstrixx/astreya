@@ -9,6 +9,7 @@
    Страницы подменяются без перезагрузки: всё идемпотентно и перерисовывается в A.initPage. */
 (function () {
   'use strict';
+  const AT = (k, d) => window.Astreya.T(k, d);          // подписи интерфейса: правка заказчика (js/data.js → texts) или исходный текст
   const A = window.Astreya, D = window.ASTREYA_DATA;
   if (!A || !D || !D.extras) return;
   const X = D.extras, I = A.I, esc = A.esc;
@@ -43,23 +44,23 @@
   const rlHas = id => store.get('astreya:rl').indexOf(id) >= 0;
   const cmpGet = () => store.get('astreya:cmp').filter(id => P[id]);
   function qvBody(id) {
-    const p = P[id], x = p.x || {}, rows = [['Бренд', esc(brandName(id))], ['Категория', esc(CAT[p.c] || '')], ['Вид', esc(KIND[p.k] || '')]];
-    if (x.volume) rows.push(['Объём', esc(x.volume)]); if (x.sku) rows.push(['Артикул', esc(x.sku)]);
-    if (x.actives) rows.push(['Активные компоненты', esc(x.actives.join(', '))]); if (x.indications) rows.push(['Показания', esc(x.indications.join(', '))]); if (x.usage) rows.push(['Способ применения', esc(x.usage)]);
+    const p = P[id], x = p.x || {}, rows = [[AT('ui.x_explore.k1', 'Бренд'), esc(brandName(id))], [AT('ui.x_explore.k2', 'Категория'), esc(CAT[p.c] || '')], ['Вид', esc(KIND[p.k] || '')]];
+    if (x.volume) rows.push([AT('ui.x_explore.k3', 'Объём'), esc(x.volume)]); if (x.sku) rows.push([AT('ui.x_explore.k4', 'Артикул'), esc(x.sku)]);
+    if (x.actives) rows.push([AT('ui.showroom.k3', AT('ui.showroom.k3', 'Активные компоненты')), esc(x.actives.join(', '))]); if (x.indications) rows.push([AT('ui.x_explore.k5', 'Показания'), esc(x.indications.join(', '))]); if (x.usage) rows.push([AT('ui.compare.k1', AT('ui.compare.k1', 'Способ применения')), esc(x.usage)]);
     const inList = X.requestList && rlHas(id), inCmp = X.compare && cmpGet().indexOf(id) >= 0, many = qvIds.length > 1;
-    return '<div class="qv-art">' + (p.n ? '<span class="newtag">Новинка</span>' : '') + art(p, true) + '</div><div class="qv-info">' +
+    return '<div class="qv-art">' + (p.n ? '<span class="newtag">' + AT('ui.x_explore.k6', 'Новинка') + '</span>' : '') + art(p, true) + '</div><div class="qv-info">' +
       '<span class="eyebrow in">' + esc(brandName(id)) + '</span><h2 id="m-title">' + esc(p.name) + '</h2><p class="qv-d">' + esc(p.d || '') + '</p>' +
       '<div class="tasks-line">' + (p.ts || []).map(t => '<span class="tag blue">' + esc(TASK[t] || t) + '</span>').join('') + '</div>' +
       '<dl class="qv-spec">' + rows.filter(r => r[1]).map(r => '<div><dt>' + r[0] + '</dt><dd>' + r[1] + '</dd></div>').join('') + '</dl>' +
       '<div class="qv-act"><button class="btn btn-fill" type="button" data-act="qv-ask" data-id="' + id + '">Запросить информацию ' + I.arrow + '</button>' +
-      (X.requestList ? '<button class="btn btn-ghost" type="button" data-act="qv-list" data-id="' + id + '" aria-pressed="' + inList + '">' + (inList ? '✓ В списке запроса' : '+ В список запроса') + '</button>' : '') +
+      (X.requestList ? '<button class="btn btn-ghost" type="button" data-act="qv-list" data-id="' + id + '" aria-pressed="' + inList + '">' + (inList ? AT('ui.compare.k2', AT('ui.compare.k2', '✓ В списке запроса')) : AT('ui.compare.k3', AT('ui.compare.k3', '+ В список запроса'))) + '</button>' : '') +
       (X.compare ? '<button class="btn btn-ghost" type="button" data-act="qv-cmp" data-id="' + id + '" aria-pressed="' + inCmp + '">' + ICON.cmp + (inCmp ? ' В сравнении' : ' Сравнить') + '</button>' : '') +
-      (NAVI ? '<button class="btn btn-ghost" type="button" data-act="qv-stella" data-id="' + id + '">Спросить Стеллу</button>' : '') + '</div>' +
+      (NAVI ? '<button class="btn btn-ghost" type="button" data-act="qv-stella" data-id="' + id + '">' + AT('ui.compare.k4', AT('ui.compare.k4', 'Спросить Стеллу')) + '</button>' : '') + '</div>' +
       '<a class="lnk qv-more" href="' + esc(pUrl(p)) + '" data-track="qv_to_page">Страница товара ' + I.arrow + '</a></div>' +
-      (many ? '<div class="qv-nav" role="group" aria-label="Листать товары"><button type="button" data-act="qv-prev" aria-label="Предыдущий товар">' + ICON.prev + '</button><span aria-live="polite">' + (qvAt + 1) + ' из ' + qvIds.length + '</span><button type="button" data-act="qv-next" aria-label="Следующий товар">' + ICON.next + '</button></div>' : '');
+      (many ? '<div class="qv-nav" role="group" aria-label="' + AT('ui.compare.k5', AT('ui.compare.k5', 'Листать товары')) + '"><button type="button" data-act="qv-prev" aria-label="' + AT('ui.compare.k6', AT('ui.compare.k6', 'Предыдущий товар')) + '">' + ICON.prev + '</button><span aria-live="polite">' + (qvAt + 1) + ' из ' + qvIds.length + '</span><button type="button" data-act="qv-next" aria-label="' + AT('ui.compare.k7', AT('ui.compare.k7', 'Следующий товар')) + '">' + ICON.next + '</button></div>' : '');
   }
   function qvPaint(focusSel) {
-    const m = $('#modal'); if (!m) return; m.innerHTML = '<div class="dlg qv-dlg" role="document"><button class="x" type="button" data-act="close" aria-label="Закрыть">' + I.close + '</button>' + qvBody(qvIds[qvAt]) + '</div>';
+    const m = $('#modal'); if (!m) return; m.innerHTML = '<div class="dlg qv-dlg" role="document"><button class="x" type="button" data-act="close" aria-label="' + AT('ui.x_explore.k7', 'Закрыть') + '">' + I.close + '</button>' + qvBody(qvIds[qvAt]) + '</div>';
     const f = (focusSel && $(focusSel, m)) || $('[data-act="qv-ask"]', m); if (f) f.focus();
   }
   function qvOpen(id, opener) {
@@ -73,7 +74,7 @@
   function injectCards(root0) {
     $$('.pcard[data-id]', root0 || document).forEach(card => {
       const id = card.getAttribute('data-id'); if (!P[id]) return;
-      if (X.quickView && !$('.qv-btn', card)) { const b = document.createElement('button'); b.type = 'button'; b.className = 'qv-btn'; b.setAttribute('data-act', 'qv-open'); b.setAttribute('data-id', id); b.innerHTML = ICON.eye + '<span>Быстрый просмотр</span>'; b.setAttribute('aria-label', 'Быстрый просмотр: ' + P[id].name); card.appendChild(b); }       // кнопка — прямой потомок карточки (как «+»): внутри .art она оказалась бы под «растянутой» ссылкой
+      if (X.quickView && !$('.qv-btn', card)) { const b = document.createElement('button'); b.type = 'button'; b.className = 'qv-btn'; b.setAttribute('data-act', 'qv-open'); b.setAttribute('data-id', id); b.innerHTML = ICON.eye + '<span>' + AT('ui.showroom.k6', AT('ui.showroom.k6', 'Быстрый просмотр')) + '</span>'; b.setAttribute('aria-label', 'Быстрый просмотр: ' + P[id].name); card.appendChild(b); }       // кнопка — прямой потомок карточки (как «+»): внутри .art она оказалась бы под «растянутой» ссылкой
       if (X.compare && !$('.cmp-add', card)) { const c = document.createElement('button'); c.type = 'button'; c.className = 'cmp-add'; c.setAttribute('data-act', 'cmp-toggle'); c.setAttribute('data-id', id); c.setAttribute('data-cmp-id', id); c.innerHTML = ICON.cmp; card.appendChild(c); }
     });
     cmpSync();
@@ -83,27 +84,27 @@
   /* с навигатором (extras.navigator) таблицы сравнения нет: выбранные товары собираются на плашке, а рассказывает о них и сравнивает Стелла (js/assistant.js → A.stella.compare) */
   const NAVI = !!(X.navigator && D.guide), GC = (D.guide && D.guide.compare) || {};
   const CMAX = NAVI && GC.max ? GC.max : 3; let cmpOnly = false, cmpRestore = null;
-  function cmpBar() { let el = $('#cmp-bar'); if (el) return el; el = document.createElement('div'); el.id = 'cmp-bar'; el.className = 'cmp-bar'; el.hidden = true; el.setAttribute('role', 'region'); el.setAttribute('aria-label', 'Сравнение товаров');
+  function cmpBar() { let el = $('#cmp-bar'); if (el) return el; el = document.createElement('div'); el.id = 'cmp-bar'; el.className = 'cmp-bar'; el.hidden = true; el.setAttribute('role', 'region'); el.setAttribute('aria-label', AT('ui.compare.k8', AT('ui.compare.k8', 'Сравнение товаров')));
     if (NAVI) {
       el.className = 'cmp-bar cmp-stella'; el.setAttribute('data-style', GC.plateStyle || 'full');          // full · compact · stacked
       el.innerHTML = '<span class="cmp-pe" aria-hidden="true">' + (A.pearl ? A.pearl('happy', true) : '') + '</span><div class="cmp-main"><div class="cmp-info"><b class="cmp-count" aria-hidden="true">0</b><span class="cmp-txt"></span></div><ul class="cmp-names"></ul></div>' +
-        '<button class="cmp-ask" type="button" data-act="cmp-ask" data-track="cmp_ask_stella"><span class="cmp-ask-t"></span> ' + I.arrow + '</button><button class="cmp-clr" type="button" data-act="cmp-clear" aria-label="Очистить сравнение" title="Очистить">' + I.close + '</button>';
+        '<button class="cmp-ask" type="button" data-act="cmp-ask" data-track="cmp_ask_stella"><span class="cmp-ask-t"></span> ' + I.arrow + '</button><button class="cmp-clr" type="button" data-act="cmp-clear" aria-label="' + AT('ui.compare.k9', AT('ui.compare.k9', 'Очистить сравнение')) + '" title="Очистить">' + I.close + '</button>';
       A.dock().appendChild(el); return el;
     }
-    el.innerHTML = '<button class="cmp-open" type="button" data-act="cmp-open" aria-haspopup="dialog"><span class="cmp-count" aria-hidden="true">0</span><span class="cmp-txt"></span><span class="cmp-go" aria-hidden="true"><span class="cmp-go-t">Сравнить</span> ' + I.arrow + '</span></button>'; A.dock().appendChild(el); return el; }
+    el.innerHTML = '<button class="cmp-open" type="button" data-act="cmp-open" aria-haspopup="dialog"><span class="cmp-count" aria-hidden="true">0</span><span class="cmp-txt"></span><span class="cmp-go" aria-hidden="true"><span class="cmp-go-t">' + AT('ui.x_explore.k8', 'Сравнить') + '</span> ' + I.arrow + '</span></button>'; A.dock().appendChild(el); return el; }
   function cmpSync(bump) {
     if (!X.compare) return; const l = cmpGet(), el = cmpBar(), n = l.length;
-    $$('[data-cmp-id]').forEach(b => { const id = b.getAttribute('data-cmp-id'), on = l.indexOf(id) >= 0; b.setAttribute('aria-pressed', String(on)); b.setAttribute('aria-label', (on ? 'Убрать из сравнения: ' : 'Добавить к сравнению: ') + P[id].name); b.title = on ? 'Убрать из сравнения' : 'Сравнить'; });
+    $$('[data-cmp-id]').forEach(b => { const id = b.getAttribute('data-cmp-id'), on = l.indexOf(id) >= 0; b.setAttribute('aria-pressed', String(on)); b.setAttribute('aria-label', (on ? 'Убрать из сравнения: ' : 'Добавить к сравнению: ') + P[id].name); b.title = on ? AT('ui.compare.k10', AT('ui.compare.k10', 'Убрать из сравнения')) : AT('ui.x_explore.k8', 'Сравнить'); });
     $('.cmp-count', el).textContent = n;
     if (NAVI) {
-      $('.cmp-txt', el).innerHTML = n < 2 ? '<span class="sr">Сравнение: </span>1 товар · добавьте ещё, чтобы сравнить' : '<span class="sr">Сравнение: </span>' + n + ' ' + plural(n, 'товар', 'товара', 'товаров') + ' на сравнение';
+      $('.cmp-txt', el).innerHTML = n < 2 ? '<span class="sr">' + AT('ui.x_explore.k9', 'Сравнение:') + ' </span>' + AT('ui.x_explore.k10', '1 товар · добавьте ещё, чтобы сравнить') + '' : '<span class="sr">' + AT('ui.x_explore.k9', 'Сравнение:') + ' </span>' + n + ' ' + plural(n, 'товар', 'товара', 'товаров') + ' на сравнение';
       $('.cmp-names', el).innerHTML = l.map(id => '<li><span>' + esc(P[id].name) + '</span><button type="button" data-act="cmp-del" data-id="' + id + '" aria-label="Убрать из сравнения: ' + esc(P[id].name) + '">' + I.close + '</button></li>').join('');
-      const mob = matchMedia('(max-width:640px)').matches; $('.cmp-ask-t', el).textContent = mob ? (GC.plateShort || 'Спросить Стеллу') : (GC.plate || 'Попросить Стеллу рассказать');
+      const mob = matchMedia('(max-width:640px)').matches; $('.cmp-ask-t', el).textContent = mob ? (GC.plateShort || AT('ui.compare.k4', 'Спросить Стеллу')) : (GC.plate || AT('ui.x_explore.k11', 'Попросить Стеллу рассказать'));
       el.hidden = n === 0 || document.body.classList.contains('x-intro'); A.dockUpdate && A.dockUpdate();
       if (bump && !el.hidden) { el.classList.remove('bump'); void el.offsetWidth; el.classList.add('bump'); }
       return;
     }
-    const go = $('.cmp-go', el), op = $('.cmp-open', el); go.hidden = n < 1; $('.cmp-go-t', el).textContent = n < 2 ? 'Открыть' : 'Сравнить'; op.disabled = n < 1; op.setAttribute('aria-disabled', String(n < 1));       // таблица открывается уже с одним товаром: остальные добавляются прямо в ней
+    const go = $('.cmp-go', el), op = $('.cmp-open', el); go.hidden = n < 1; $('.cmp-go-t', el).textContent = n < 2 ? AT('ui.x_explore.k12', 'Открыть') : AT('ui.x_explore.k8', 'Сравнить'); op.disabled = n < 1; op.setAttribute('aria-disabled', String(n < 1));       // таблица открывается уже с одним товаром: остальные добавляются прямо в ней
     el.hidden = n === 0 || document.body.classList.contains('x-intro'); A.dockUpdate && A.dockUpdate();
     if (bump && !el.hidden) { el.classList.remove('bump'); void el.offsetWidth; el.classList.add('bump'); }
   }
@@ -118,17 +119,17 @@
   function cmpTable(l) {
     const ps = l.map(id => P[id]); const taskCount = {}; ps.forEach(p => (p.ts || []).forEach(t => { taskCount[t] = (taskCount[t] || 0) + 1; }));
     const rows = [
-      ['Бренд', ps.map(p => esc(brandName(p.id)))], ['Категория', ps.map(p => esc(CAT[p.c] || '—'))], ['Вид', ps.map(p => esc(KIND[p.k] || '—'))],
-      ['Назначение', ps.map(p => (p.ts || []).length ? (p.ts || []).map(t => '<span class="tag' + (taskCount[t] > 1 ? ' blue' : '') + '">' + esc(TASK[t] || t) + '</span>').join('') : '—')],
-      ['Новинка', ps.map(p => p.n ? 'Да' : '—')], ['Описание', ps.map(p => esc(p.d || '—'))]
+      [AT('ui.x_explore.k1', 'Бренд'), ps.map(p => esc(brandName(p.id)))], [AT('ui.x_explore.k2', 'Категория'), ps.map(p => esc(CAT[p.c] || '—'))], ['Вид', ps.map(p => esc(KIND[p.k] || '—'))],
+      [AT('ui.x_explore.k13', 'Назначение'), ps.map(p => (p.ts || []).length ? (p.ts || []).map(t => '<span class="tag' + (taskCount[t] > 1 ? ' blue' : '') + '">' + esc(TASK[t] || t) + '</span>').join('') : '—')],
+      [AT('ui.x_explore.k6', 'Новинка'), ps.map(p => p.n ? 'Да' : '—')], [AT('ui.x_explore.k14', 'Описание'), ps.map(p => esc(p.d || '—'))]
     ];
-    [['volume', 'Объём'], ['sku', 'Артикул'], ['actives', 'Активные компоненты'], ['indications', 'Показания'], ['usage', 'Способ применения']].forEach(([k, lb]) => {
-      if (ps.some(p => p.x && p.x[k])) rows.push([lb, ps.map(p => p.x && p.x[k] ? esc([].concat(p.x[k]).join(', ')) : '<span class="tbd">Уточняется</span>')]);
+    [['volume', AT('ui.x_explore.k3', 'Объём')], ['sku', AT('ui.x_explore.k4', 'Артикул')], ['actives', AT('ui.showroom.k3', 'Активные компоненты')], ['indications', AT('ui.x_explore.k5', 'Показания')], ['usage', AT('ui.compare.k1', 'Способ применения')]].forEach(([k, lb]) => {
+      if (ps.some(p => p.x && p.x[k])) rows.push([lb, ps.map(p => p.x && p.x[k] ? esc([].concat(p.x[k]).join(', ')) : '<span class="tbd">' + AT('ui.x_explore.k15', 'Уточняется') + '</span>')]);
     });
     const body = rows.filter(r => !cmpOnly || new Set(r[1]).size > 1).map(r => '<tr><th scope="row">' + r[0] + '</th>' + r[1].map(c => '<td>' + c + '</td>').join('') + '</tr>').join('');
     const head = '<tr><td></td>' + ps.map(p => '<th scope="col"><div class="cmp-card">' + art(p) + '<a href="' + esc(pUrl(p)) + '"><b>' + esc(p.name) + '</b></a><button class="cmp-x" type="button" data-act="cmp-del" data-id="' + p.id + '" aria-label="Убрать из сравнения: ' + esc(p.name) + '">' + I.close + '</button></div></th>').join('') + '</tr>';
-    const foot = '<tr><td></td>' + ps.map(p => '<td><button class="btn btn-fill btn-sm" type="button" data-act="qv-ask" data-id="' + p.id + '">Запросить</button></td>').join('') + '</tr>';
-    return '<div class="cmp-wrap"><table class="cmp-t" style="--n:' + ps.length + '"><thead>' + head + '</thead><tbody>' + (body || '<tr><td colspan="' + (ps.length + 1) + '" class="muted">Различий в этих полях нет.</td></tr>') + '</tbody><tfoot>' + foot + '</tfoot></table></div>';
+    const foot = '<tr><td></td>' + ps.map(p => '<td><button class="btn btn-fill btn-sm" type="button" data-act="qv-ask" data-id="' + p.id + '">' + AT('ui.x_explore.k16', 'Запросить') + '</button></td>').join('') + '</tr>';
+    return '<div class="cmp-wrap"><table class="cmp-t" style="--n:' + ps.length + '"><thead>' + head + '</thead><tbody>' + (body || '<tr><td colspan="' + (ps.length + 1) + '" class="muted">' + AT('ui.compare.k11', AT('ui.compare.k11', 'Различий в этих полях нет.')) + '</td></tr>') + '</tbody><tfoot>' + foot + '</tfoot></table></div>';
   }
   /* выбор ещё одного товара прямо в окне: сначала «похожие по задаче», затем весь каталог по брендам */
   function cmpPicker(l) {
@@ -136,15 +137,15 @@
     const rest = (D.products || []).filter(p => l.indexOf(p.id) < 0), opt = p => '<option value="' + p.id + '">' + esc(p.name) + '</option>';
     const near = rest.filter(p => (p.ts || []).some(t => mine.has(t))), far = rest.filter(p => near.indexOf(p) < 0);
     const groups = (D.brands || []).map(b => { const g = far.filter(p => p.brand === b.id); return g.length ? '<optgroup label="' + esc(b.name) + '">' + g.map(opt).join('') + '</optgroup>' : ''; }).join('');
-    return '<label class="cmp-pick"><span>Добавить товар к сравнению</span><select data-act="cmp-pick" aria-label="Добавить товар к сравнению"><option value="">Выберите товар…</option>' + (near.length ? '<optgroup label="Похожие по задаче">' + near.map(opt).join('') + '</optgroup>' : '') + groups + '</select></label>';
+    return '<label class="cmp-pick"><span>' + AT('ui.compare.k12', AT('ui.compare.k12', 'Добавить товар к сравнению')) + '</span><select data-act="cmp-pick" aria-label="' + AT('ui.compare.k12', 'Добавить товар к сравнению') + '"><option value="">' + AT('ui.compare.k13', AT('ui.compare.k13', 'Выберите товар…')) + '</option>' + (near.length ? '<optgroup label="' + AT('ui.compare.k14', AT('ui.compare.k14', 'Похожие по задаче')) + '">' + near.map(opt).join('') + '</optgroup>' : '') + groups + '</select></label>';
   }
   function cmpHTML() {
     const l = cmpGet();
-    return '<div class="dlg cmp-dlg" role="document"><button class="x" type="button" data-act="close" aria-label="Закрыть">' + I.close + '</button><span class="eyebrow in">Сравнение</span><h2 id="m-title">Сравнение товаров</h2>' +
-      (!l.length ? '<p class="muted">Пока ничего не выбрано — нажмите ⇄ на карточке товара.</p>' :
-        '<p class="muted">' + (l.length < 2 ? 'Это данные одного товара. Добавьте ещё один — таблица покажет сходства и различия.' : 'Показаны данные из каталога; чего в нём нет, уточняет менеджер. Совпадающие задачи выделены.') + '</p>' +
-        (l.length >= 2 ? '<label class="chk cmp-only"><input type="checkbox" data-act="cmp-only"' + (cmpOnly ? ' checked' : '') + '> Только различия</label>' : '') + cmpTable(l) + (l.length < CMAX ? cmpPicker(l) : '')) +
-      '<div class="rl-actions">' + (l.length ? '<button class="btn btn-lnk" type="button" data-act="cmp-clear">Очистить сравнение</button>' : '') + '</div></div>';
+    return '<div class="dlg cmp-dlg" role="document"><button class="x" type="button" data-act="close" aria-label="' + AT('ui.x_explore.k7', 'Закрыть') + '">' + I.close + '</button><span class="eyebrow in">' + AT('ui.x_explore.k17', 'Сравнение') + '</span><h2 id="m-title">' + AT('ui.compare.k8', 'Сравнение товаров') + '</h2>' +
+      (!l.length ? '<p class="muted">' + AT('ui.compare.k15', AT('ui.compare.k15', 'Пока ничего не выбрано — нажмите ⇄ на карточке товара.')) + '</p>' :
+        '<p class="muted">' + (l.length < 2 ? AT('ui.x_explore.k18', 'Это данные одного товара. Добавьте ещё один — таблица покажет сходства и различия.') : AT('ui.compare.k16', AT('ui.compare.k16', 'Показаны данные из каталога; чего в нём нет, уточняет менеджер. Совпадающие задачи выделены.'))) + '</p>' +
+        (l.length >= 2 ? '<label class="chk cmp-only"><input type="checkbox" data-act="cmp-only"' + (cmpOnly ? ' checked' : '') + '> ' + AT('ui.compare.k17', AT('ui.compare.k17', 'Только различия')) + '</label>' : '') + cmpTable(l) + (l.length < CMAX ? cmpPicker(l) : '')) +
+      '<div class="rl-actions">' + (l.length ? '<button class="btn btn-lnk" type="button" data-act="cmp-clear">' + AT('ui.compare.k9', 'Очистить сравнение') + '</button>' : '') + '</div></div>';
   }
   function cmpPaint() { const m = $('#modal'); if (!m) return; const keep = document.activeElement && document.activeElement.getAttribute && document.activeElement.getAttribute('data-act'); m.innerHTML = cmpHTML(); const f = (keep && $('[data-act="' + keep + '"]', m)) || $('.x', m); if (f) f.focus(); }
   function cmpOpen(opener) {
@@ -165,7 +166,7 @@
   function cdFill(box) {
     const ev = (D.events || []).find(e => e.id === box.getAttribute('data-ev')); if (!ev) { box.hidden = true; return; }
     const p = cdParts(ev), b = $('.cd-b', box); box.hidden = false;
-    if (!p) { b.innerHTML = '<span class="cd-live">Идёт сейчас</span>'; return; }
+    if (!p) { b.innerHTML = '<span class="cd-live">' + AT('ui.compare.k18', 'Идёт сейчас') + '</span>'; return; }
     const cell = (n, w) => '<span><b>' + String(n).padStart(2, '0') + '</b>' + w + '</span>';
     b.innerHTML = cell(p.d, plural(p.d, 'день', 'дня', 'дней')) + cell(p.h, 'ч') + cell(p.m, 'мин');
     box.setAttribute('aria-label', 'До начала: ' + p.d + ' ' + plural(p.d, 'день', 'дня', 'дней') + ' ' + p.h + ' ч ' + p.m + ' мин');
@@ -184,9 +185,9 @@
     /* в блоке появляются таймер и кнопка записи — скрывать их от скринридеров (aria-hidden у заглушки) нельзя */
     const put = (box, fallback) => { if (slot) { slot.appendChild(box); slot.classList.add('on'); slot.removeAttribute('aria-hidden'); } else if (fallback) fallback.insertAdjacentElement('afterend', box); };
     if (!ev) { if (slot) slot.hidden = true; return; }
-    if (page === 'training') put(cdBox(ev, 'Ближайшее мероприятие'), $('[data-training] .page-head'));
-    else if (page === 'home') put(cdBox(ev, 'До начала'), $('.hp-acad-copy .hp-next, .rd-train-copy .rd-next'));
-    else if (page === 'event') { const w = $('[data-event]'), me = w && (D.events || []).find(e => e.id === w.getAttribute('data-event')); if (me && cdParts(me)) put(cdBox(me, 'До начала'), $('.e-top > div:last-child .lead')); else if (slot) slot.hidden = true; }
+    if (page === 'training') put(cdBox(ev, AT('ui.compare.k19', AT('ui.compare.k19', 'Ближайшее мероприятие'))), $('[data-training] .page-head'));
+    else if (page === 'home') put(cdBox(ev, AT('ui.compare.k20', AT('ui.compare.k20', 'До начала'))), $('.hp-acad-copy .hp-next, .rd-train-copy .rd-next'));
+    else if (page === 'event') { const w = $('[data-event]'), me = w && (D.events || []).find(e => e.id === w.getAttribute('data-event')); if (me && cdParts(me)) put(cdBox(me, AT('ui.compare.k20', 'До начала')), $('.e-top > div:last-child .lead')); else if (slot) slot.hidden = true; }
     if (slot && !slot.classList.contains('on')) slot.hidden = true;
     cdTimer = setInterval(() => $$('.cd').forEach(cdFill), 30000);
   }
@@ -195,14 +196,14 @@
   A.actions['qv-open'] = (t, id) => qvOpen(id || t.getAttribute('data-id'), t);
   A.actions['qv-prev'] = () => qvStep(-1); A.actions['qv-next'] = () => qvStep(1);
   A.actions['qv-ask'] = (t, id) => { id = id || t.getAttribute('data-id'); const back = qvOpener; A.closeModal(); setTimeout(() => { A.openForm('product', id); }, 330); void back; };
-  A.actions['qv-stella'] = (t, id) => { id = id || t.getAttribute('data-id'); if (!P[id] || !A.stella) return; A.closeModal(); setTimeout(() => A.stella.ask((GC.requestOne || 'Расскажи о выбранном товаре: {names}').replace('{names}', P[id].name), {cmp: [id]}), 380); };          // «Спросить Стеллу» в быстром просмотре
+  A.actions['qv-stella'] = (t, id) => { id = id || t.getAttribute('data-id'); if (!P[id] || !A.stella) return; A.closeModal(); setTimeout(() => A.stella.ask((GC.requestOne || AT('ui.x_explore.k19', 'Расскажи о выбранном товаре: {names}')).replace('{names}', P[id].name), {cmp: [id]}), 380); };          // «Спросить Стеллу» в быстром просмотре
   A.actions['qv-list'] = (t, id) => { id = id || t.getAttribute('data-id'); if (A.actions['rl-add']) A.actions['rl-add'](t, id); qvPaint('[data-act="qv-list"]'); };
   A.actions['qv-cmp'] = (t, id) => cmpToggle(id || t.getAttribute('data-id'));
   A.actions['cmp-toggle'] = (t, id) => cmpToggle(id || t.getAttribute('data-id'));
   A.actions['cmp-open'] = t => { if (NAVI) { if (A.stella) A.stella.compare(cmpGet()); return; } cmpOpen(t); };
   A.actions['cmp-ask'] = () => { if (A.stella) A.stella.compare(cmpGet()); };
   A.actions['cmp-del'] = (t, id) => cmpToggle(id || t.getAttribute('data-id'));
-  A.actions['cmp-clear'] = () => { store.set('astreya:cmp', []); cmpSync(); if (cmpPanelOn()) cmpPaint(); A.toast('Сравнение очищено'); };
+  A.actions['cmp-clear'] = () => { store.set('astreya:cmp', []); cmpSync(); if (cmpPanelOn()) cmpPaint(); A.toast(AT('ui.compare.k21', AT('ui.compare.k21', 'Сравнение очищено'))); };
   document.addEventListener('change', e => { const t = e.target, a = t && t.getAttribute && t.getAttribute('data-act'); if (a === 'cmp-only') { cmpOnly = t.checked; cmpPaint(); } else if (a === 'cmp-pick' && t.value) { cmpToggle(t.value); } });
   document.addEventListener('keydown', e => { if (qvOn() && qvIds.length > 1 && !/INPUT|TEXTAREA|SELECT/.test((document.activeElement || {}).tagName || '')) { if (e.key === 'ArrowLeft') { e.preventDefault(); qvStep(-1); } else if (e.key === 'ArrowRight') { e.preventDefault(); qvStep(1); } } });
   document.addEventListener('astreya:rl', () => { if (qvOn()) qvPaint(document.activeElement && document.activeElement.getAttribute && document.activeElement.getAttribute('data-act') ? '[data-act="' + document.activeElement.getAttribute('data-act') + '"]' : null); });

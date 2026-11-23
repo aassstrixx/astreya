@@ -97,7 +97,7 @@ module.exports = function homeHouse(ctx, C, P, deps) {
      Теперь у <img> вместо src — data-src; js/house.js («картинки журнала по приближению») подставляет адрес, когда до читалки остаётся ~3 экрана; без JS те же картинки лежат в <noscript> */
   const deferImgs = html => html.replace(/<img\b([^>]*?)\ssrc="([^"]+)"([^>]*)>/g, (m, a, src, b) => `<img${(a + b).replace(/\sloading="lazy"/, '')} data-src="${src}"><noscript>${m}</noscript>`);
   const leaves = deferImgs(pagesR.map((f, k) => `<div class="leaf" data-k="${k}" style="--zr:${pagesR.length - k};--zl:${k + 1}"><div class="face front">${f}<i class="fx" aria-hidden="true"><b></b></i></div><div class="face back">${pagesL[k] || ''}<i class="fx" aria-hidden="true"><b></b></i></div></div>`).join(''));
-  const magazine = `<div class="mag" id="mag" role="region" aria-label="Журнал ASTREYA" data-n="${pagesR.length}">
+  const magazine = `<div class="mag" id="mag" role="region" aria-label="${T('common.aria.mag')}" data-n="${pagesR.length}">
     <div class="mag-wrap">
       <div class="mag-bar"><p class="mag-st" aria-live="polite"></p></div>
       <div class="mag-book" tabindex="-1"><div class="mag-spine" aria-hidden="true"></div><div class="leaves">${leaves}<i class="mag-sh r" aria-hidden="true"></i><i class="mag-sh l" aria-hidden="true"></i></div><i class="mag-dim" aria-hidden="true"></i></div>

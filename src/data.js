@@ -45,7 +45,7 @@ function load() {
   const brands = read('brands'), products = read('products'), events = read('events'), newsRaw = read('news');
   const ctx = {site, content, brands, products, events, training};
   ctx.texts = readOpt('texts', {items: {}});               // тексты страниц, правленные в админке (data/texts.json); реестр ключей — src/texts-registry.js
-  TX.set(ctx.texts.items);
+  TX.set(ctx.texts.items); S.setTexts(TX.jsOverrides());          // подписи интерфейса для скриптов (и для форм, которые собирает Node)
   ctx.stella = loadStella();
   ctx.integrations = readOpt('integrations', {});         // подключения (Метрика, согласие, подтверждение сайта, мессенджеры) — data/integrations.json
   ctx.legal = readOpt('legal', {});                       // данные для юридических страниц — data/legal.json

@@ -35,7 +35,7 @@ module.exports = function partners(ctx, C, P) {
   const tile = (b, i) => {
     const k = BEN_K[i % BEN_K.length], icon = `<span class="pp-ic">${I[b.icon] || (b.icon === 'map' ? I.pin : I.check)}</span>`;
     const pic = k === 'prod' ? bottles : k === 'learn' ? `<span class="pp-bph">${ph('semB', '', '50% 40%')}</span>` : k === 'mgr' ? `<span class="pp-bph pp-bph-s">${ph('pair', '', '50% 28%')}</span>` : '';
-    const big = k === 'disc' ? `<span class="pp-big" aria-hidden="true">до ${max}<i>%</i></span>` : '';
+    const big = k === 'disc' ? `<span class="pp-big" aria-hidden="true">${T('common.labels.upto', {n: max})}<i>%</i></span>` : '';
     const cities = k === 'geo' ? `<ul class="pp-cities" aria-label="${T('partners.hero.aria')}">${['Москва', 'Санкт-Петербург', 'Ростов-на-Дону', 'Симферополь', 'Онлайн'].map(x => `<li>${x}</li>`).join('')}</ul>` : '';
     return `<article class="pp-bt pp-bt-${k} reveal" style="--rd:${(i % 3) * 90}ms">${pic}<div class="pp-btx">${big}${icon}<h3>${esc(b.title)}</h3><p>${tx(b.text)}</p></div>${cities}</article>`;
   };
@@ -58,7 +58,7 @@ module.exports = function partners(ctx, C, P) {
           <a class="btn btn-ghost pp-pill" href="tel:${c.phoneRaw}" data-track="phone_click" data-place="partners-hero">${I.phone} ${esc(c.phone)}</a>
         </div>
       </div>
-      <a class="pp-plate" href="#calc" data-act="scroll" data-target="calc" data-track="partner_cta" data-place="partners-hero-discount"><small>${T('partners.hero.sm')}</small><b>до ${max}<i>%</i></b><em>${T('partners.hero.em')}</em><span>${T('partners.hero.t2')} ${I.arrow}</span></a>
+      <a class="pp-plate" href="#calc" data-act="scroll" data-target="calc" data-track="partner_cta" data-place="partners-hero-discount"><small>${T('partners.hero.sm')}</small><b>${T('common.labels.upto', {n: max})}<i>%</i></b><em>${T('partners.hero.em')}</em><span>${T('partners.hero.t2')} ${I.arrow}</span></a>
     </div>
     <nav class="pp-facts pp-in" aria-label="${T('partners.hero.aria2')}">
       <a href="#benefits" data-act="scroll" data-target="benefits">${I.shield}<span>${T('partners.hero.t3')}</span></a>
@@ -107,14 +107,14 @@ module.exports = function partners(ctx, C, P) {
       <div class="calc-main">
         <div class="pp-read">
           <div class="pp-sumbox"><small id="pp-sum-l">${T('partners.terms.sm')}</small><span id="calc-sum" aria-labelledby="pp-sum-l">${rub(RANGE_START)}</span></div>
-          <div class="pp-bumps"><button class="pp-bump" type="button" data-pp-bump="-1" aria-label="Уменьшить сумму на ${rub(RANGE_STEP)}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14"/></svg></button><button class="pp-bump" type="button" data-pp-bump="1" aria-label="Увеличить сумму на ${rub(RANGE_STEP)}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M12 5v14"/></svg></button></div>
+          <div class="pp-bumps"><button class="pp-bump" type="button" data-pp-bump="-1" aria-label="${T('common.aria.bumpDn', {step: rub(RANGE_STEP)})}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14"/></svg></button><button class="pp-bump" type="button" data-pp-bump="1" aria-label="${T('common.aria.bumpUp', {step: rub(RANGE_STEP)})}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M12 5v14"/></svg></button></div>
         </div>
         <div class="pp-track">
           <input type="range" id="calc-range" min="0" max="${RANGE_MAX}" step="${RANGE_STEP}" value="${RANGE_START}" aria-label="${T('partners.terms.sm')}">
           <ol class="pp-ticks" aria-hidden="true">${ds.map(d => `<li style="--x:${(d.from / RANGE_MAX).toFixed(4)}"><i></i><span>${d.pct}%</span></li>`).join('')}</ol>
         </div>
         <div class="pp-pres" role="group" aria-label="${T('partners.terms.aria2')}">${[...ds.map(d => d.from), RANGE_MAX].map(v => `<button class="pp-pre" type="button" data-pp-set="${v}" aria-pressed="false">${rub(v)}</button>`).join('')}</div>
-        <div class="tiers pp-tiers" role="list" aria-label="${T('partners.terms.aria3')}">${ds.map((d, i) => `<div class="tier" role="listitem" data-tier="${i}" style="--h:${Math.round(38 + 62 * (i + 1) / n)}%"><b>${d.pct}%</b><span>от ${rub(d.from)}</span></div>`).join('')}</div>
+        <div class="tiers pp-tiers" role="list" aria-label="${T('partners.terms.aria3')}">${ds.map((d, i) => `<div class="tier" role="listitem" data-tier="${i}" style="--h:${Math.round(38 + 62 * (i + 1) / n)}%"><b>${d.pct}%</b><span>${T('common.labels.from', {sum: rub(d.from)})}</span></div>`).join('')}</div>
         <div class="save pp-plaque"><i class="pp-screw" aria-hidden="true"></i><i class="pp-screw r" aria-hidden="true"></i>
           <div class="pp-pl-l"><small>${T('partners.terms.sm2')}</small><span id="calc-tier"></span></div>
           <div class="pp-pl-r"><small>${T('partners.terms.sm3')}</small><b id="calc-save"></b></div>

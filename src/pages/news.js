@@ -3,7 +3,7 @@
    Страницы газеты собираются здесь статически (12 страниц: обложка, 5 разворотов, оборот); листы, камеру и физику листания строит js/news-paper.js.
    Без JS (и если нет CSS-3D) остаётся «Архив выпуска» — список всех материалов ссылками на отдельные страницы. */
 const S = require('../../js/shared.js');
-const {T} = require('../texts.js');
+const {T, Traw} = require('../texts.js');
 const {esc, I, dparts} = S;
 
 /* какая статья на какой странице газеты (остальные — в архиве и в оглавлении на обороте): слот → id статьи; задаётся в data/news.json → layout.slots, по умолчанию — src/news-layout.js */
@@ -65,20 +65,20 @@ function newsPage(ctx, C, P) {
         ${meta(lead)}${head(lead, 2, 'np-h-xl')}
         <figure class="np-fig">${img('ph-seminar-a.webp', T('news.cover.alt'), 960, 540)}<figcaption>${T('news.cover.cap')}</figcaption></figure>
         <p class="np-dek">${esc(lead.excerpt)}</p>
-        <div class="np-act">${open(lead, 'np-lnk')}Читать · стр. ${where(lead) || '8'} ${I.arrow}</a></div>
+        <div class="np-act">${open(lead, 'np-lnk')}${T('common.pages.newsRead', {n: where(lead) || '8'})} ${I.arrow}</a></div>
       </article>
-      <div class="np-tease">${[[nPromo, 'до ' + maxPct + '%'], [nA, ''], [nE2, '']].filter(x => x[0]).map(([n, big]) => `<article class="np-art np-ts" data-id="${n.id}" data-cat="${n.category}">${tag(n)}${big ? `<b class="np-big">${esc(big)}</b>` : ''}${head(n, 3, 'np-h-s')}<span class="np-pgref">${T('news.pages.pg')} ${where(n)}</span></article>`).join('')}</div>
+      <div class="np-tease">${[[nPromo, Traw('common.labels.upto', {n: maxPct + '%'})], [nA, ''], [nE2, '']].filter(x => x[0]).map(([n, big]) => `<article class="np-art np-ts" data-id="${n.id}" data-cat="${n.category}">${tag(n)}${big ? `<b class="np-big">${esc(big)}</b>` : ''}${head(n, 3, 'np-h-s')}<span class="np-pgref">${T('news.pages.pg')} ${where(n)}</span></article>`).join('')}</div>
     </div>`;
 
   /* ---- 1–2. Акции ---- */
   const promoL = nPromo ? `<div class="np-poster">
       <span class="np-kick np-kick-w">${T('news.promo.badge')}</span>
-      <div class="np-fig-pct" aria-label="Скидка до ${maxPct} процентов"><span>до</span><b>${maxPct}<small>%</small></b></div>
+      <div class="np-fig-pct" aria-label="${T('common.aria.pct', {pct: maxPct})}"><span>до</span><b>${maxPct}<small>%</small></b></div>
       ${head(nPromo, 2, 'np-h-l')}
       <p class="np-dek">${esc(nPromo.excerpt)}</p>
       <div class="np-act np-act-w"><a class="np-btn np-btn-w" href="${u('partners.html')}#calc" data-track="partner_cta" data-place="news-paper">${T('news.promo.calc')} ${I.arrow}</a>${C.partnerBtn(P, 'news-paper', 'np-btn np-btn-ghost', T('news.promo.partner'))}</div>
     </div>` : '';
-  const ledger = `<table class="np-ledger"><caption>${T('news.promo.steps')}</caption><thead><tr><th scope="col">${T('news.promo.buy')}</th><th scope="col">${T('news.promo.disc')}</th></tr></thead><tbody>${site.discounts.map(d => `<tr><th scope="row">от ${esc(S.rub(d.from))}</th><td><span class="np-bar" style="--w:${Math.round(d.pct / maxPct * 100)}%"></span><b>${d.pct}%</b></td></tr>`).join('')}</tbody></table>`;
+  const ledger = `<table class="np-ledger"><caption>${T('news.promo.steps')}</caption><thead><tr><th scope="col">${T('news.promo.buy')}</th><th scope="col">${T('news.promo.disc')}</th></tr></thead><tbody>${site.discounts.map(d => `<tr><th scope="row">${T('common.labels.from', {sum: esc(S.rub(d.from))})}</th><td><span class="np-bar" style="--w:${Math.round(d.pct / maxPct * 100)}%"></span><b>${d.pct}%</b></td></tr>`).join('')}</tbody></table>`;
   const promoR = nPromo ? `<article class="np-art np-promo-r" data-id="${nPromo.id}" data-cat="${nPromo.category}">
       <span class="np-kick">${T('news.pages.tag.promo')}</span>${meta(nPromo)}
       <div class="np-body">${paras(nPromo, 0, 1)}</div>${ledger}<div class="np-body">${paras(nPromo, 1)}</div>${act(nPromo)}
@@ -218,11 +218,11 @@ function articlePage(ctx, C, P, n) {
         <p class="na-dek reveal">${esc(lead)}</p>
       </header>
       <figure class="na-cover reveal" aria-hidden="true">
-        ${n.image ? `<img src="${esc(u(n.image))}" alt="${esc(n.imageAlt || '')}" width="960" height="540" decoding="async">` : photo ? `<img src="${u('assets/news/' + photo)}" alt="" width="960" height="540" decoding="async">` : `<div class="na-type"><span>${n.category === 'sale' ? 'до ' + Math.max(...ctx.site.discounts.map(d => d.pct)) + '%' : esc(cat.name)}</span></div>`}
+        ${n.image ? `<img src="${esc(u(n.image))}" alt="${esc(n.imageAlt || '')}" width="960" height="540" decoding="async">` : photo ? `<img src="${u('assets/news/' + photo)}" alt="" width="960" height="540" decoding="async">` : `<div class="na-type"><span>${n.category === 'sale' ? Traw('common.labels.upto', {n: Math.max(...ctx.site.discounts.map(d => d.pct)) + '%'}) : esc(cat.name)}</span></div>`}
         ${sprites ? `<div class="np-stage-pk na-pk">${sprites.map((s, i) => `<img class="np-pk np-pk-${'abc'[i]}" src="${u('assets/showroom/pack-' + s + '.webp')}" alt="" loading="lazy" decoding="async">`).join('')}</div>` : ''}
       </figure>
       <div class="na-body reveal">${paras.map((p, i) => `<p${i === 0 ? ' class="na-first"' : ''}>${esc(p)}</p>`).join('')}</div>
-      ${cta ? `<div class="na-cta reveal"><a class="btn btn-fill" href="${cta.href}" ${cta.attrs}>${esc(cta.label)} ${I.arrow}</a><a class="btn btn-ghost" href="${u('news.html')}${sp ? '#s' + sp : ''}">${T('news.article.togazette')}${sp ? ', стр. ' + WHERE[kk][1] : ''}</a></div>` : `<div class="na-cta reveal"><a class="btn btn-ghost" href="${u('news.html')}">${T('news.article.all')}</a></div>`}
+      ${cta ? `<div class="na-cta reveal"><a class="btn btn-fill" href="${cta.href}" ${cta.attrs}>${esc(cta.label)} ${I.arrow}</a><a class="btn btn-ghost" href="${u('news.html')}${sp ? '#s' + sp : ''}">${T('news.article.togazette')}${sp ? T('common.pages.newsPg', {n: WHERE[kk][1]}) : ''}</a></div>` : `<div class="na-cta reveal"><a class="btn btn-ghost" href="${u('news.html')}">${T('news.article.all')}</a></div>`}
       <nav class="na-sib" aria-label="${T('news.article.near')}">${prev ? `<a href="${C.nurl(P, prev)}"><small>${I.back} ${T('news.article.prev')}</small><span>${esc(prev.title)}</span></a>` : '<span></span>'}${next ? `<a class="nx" href="${C.nurl(P, next)}"><small>${T('news.article.next')} ${I.arrow}</small><span>${esc(next.title)}</span></a>` : '<span></span>'}</nav>
     </article></section>
 

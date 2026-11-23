@@ -2,6 +2,7 @@
    калькулятор скидок, страница поиска. Страницы уже отрисованы генератором; здесь только интерактив поверх готовой разметки. */
 (function () {
   'use strict';
+  const AT = (k, d) => window.Astreya.T(k, d);          // подписи интерфейса: правка заказчика (js/data.js → texts) или исходный текст
   const A = window.Astreya, {$, $$, D, I, esc} = A;
   const today = () => new Date().toISOString().slice(0, 10);
   const setOn = (box, id, attr) => $$('.chip', box).forEach(c => { const on = c.getAttribute(attr || 'data-id') === id; c.classList.toggle('on', on); c.setAttribute('aria-pressed', String(on)); });
@@ -158,7 +159,7 @@
     top(); window.addEventListener('scroll', () => { if (!raf) raf = requestAnimationFrame(top); }, {passive: true});
     A.actions['br-help'] = () => {
       if (!A.stella) return; const chip = $('#br-tasks .chip.on'), label = chip && chip.dataset.id !== 'all' ? chip.textContent.trim() : '', word = qEl.value.trim(), nm = sel && $('.bw-pn[data-id="' + sel + '"] .sr', panel);
-      const text = label ? 'Помоги выбрать бренд для задачи «' + label + '»: чем бренды отличаются и с чего начать?' : word ? 'Помоги выбрать бренд по запросу «' + word + '»: что подойдёт и чем бренды отличаются?' : nm ? 'Расскажи про бренд ' + nm.textContent.trim() + ': для каких задач он подходит и с чего начать?' : 'Помоги выбрать бренд: расскажи, чем бренды «Астреи» отличаются и под какие задачи кожи подходят.';
+      const text = label ? 'Помоги выбрать бренд для задачи «' + label + '»: чем бренды отличаются и с чего начать?' : word ? 'Помоги выбрать бренд по запросу «' + word + '»: что подойдёт и чем бренды отличаются?' : nm ? 'Расскажи про бренд ' + nm.textContent.trim() + ': для каких задач он подходит и с чего начать?' : AT('ui.x_pages.k1', 'Помоги выбрать бренд: расскажи, чем бренды «Астреи» отличаются и под какие задачи кожи подходят.');
       A.track && A.track('brands_help', {task: label}); A.stella.ask(text, {brands: true});
     };
   }
@@ -186,7 +187,7 @@
       top(); window.addEventListener('scroll', () => { if (!raf) raf = requestAnimationFrame(top); }, {passive: true});
       A.actions['br-help'] = () => {
         if (!A.stella) return; const chip = $('#br-tasks .chip.on'), label = chip && chip.dataset.id !== 'all' ? chip.textContent.trim() : '', word = qEl.value.trim();
-        const text = label ? 'Помоги выбрать бренд для задачи «' + label + '»: чем бренды отличаются и с чего начать?' : word ? 'Помоги выбрать бренд по запросу «' + word + '»: что подойдёт и чем бренды отличаются?' : 'Помоги выбрать бренд: расскажи, чем бренды «Астреи» отличаются и под какие задачи кожи подходят.';
+        const text = label ? 'Помоги выбрать бренд для задачи «' + label + '»: чем бренды отличаются и с чего начать?' : word ? 'Помоги выбрать бренд по запросу «' + word + '»: что подойдёт и чем бренды отличаются?' : AT('ui.x_pages.k1', 'Помоги выбрать бренд: расскажи, чем бренды «Астреи» отличаются и под какие задачи кожи подходят.');
         A.track && A.track('brands_help', {task: label}); A.stella.ask(text, {brands: true});
       };
     }
@@ -249,7 +250,7 @@
       const paintNext = () => {
         if (!nextEl || !host) return; const n = $('.sx-tl-next', host), when = n && $('.sx-tl-in', n), meta = n && $('.sx-tl-m', n);
         if (!when || !meta) { nextEl.hidden = true; return; }
-        const html = '<b>' + A.esc(nextEl.dataset.label || 'Ближайший семинар') + '</b><em>' + A.esc(when.textContent.trim()) + '</em>' + A.esc(meta.textContent.trim());
+        const html = '<b>' + A.esc(nextEl.dataset.label || AT('ui.pages.k1', AT('ui.pages.k1', 'Ближайший семинар'))) + '</b><em>' + A.esc(when.textContent.trim()) + '</em>' + A.esc(meta.textContent.trim());
         if (nextEl.innerHTML !== html) nextEl.innerHTML = html; nextEl.hidden = false;
       };
       if (host) {
@@ -292,9 +293,9 @@
       const build = () => {
         sp = document.createElement('div'); sp.className = 'ac-sp'; sp.hidden = true; sp.setAttribute('role', 'dialog'); sp.setAttribute('aria-modal', 'true'); sp.setAttribute('aria-labelledby', 'ac-sp-h');
         sp.innerHTML = '<div class="ac-sp-bg" data-sp-x></div><div class="ac-sp-stage"><div class="ac-sp-photo"><span class="ac-sp-img"><img alt="" decoding="async"></span></div><div class="ac-sp-card">' +
-          '<button class="ac-sp-x" type="button" data-sp-x aria-label="' + esc(SPD.close || 'Закрыть') + '"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 3l10 10M13 3L3 13"/></svg></button>' +
+          '<button class="ac-sp-x" type="button" data-sp-x aria-label="' + esc(SPD.close || AT('ui.x_explore.k7', 'Закрыть')) + '"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 3l10 10M13 3L3 13"/></svg></button>' +
           '<p class="ac-sp-eyebrow"></p><h2 class="ac-sp-name" id="ac-sp-h"><span class="s"></span><span class="n"></span></h2><p class="ac-sp-role"></p><div class="ac-sp-sec"><h4></h4><ul></ul></div><p class="ac-sp-note"></p>' +
-          '<div class="ac-sp-act"><a class="ac-sp-btn" href="#sem-list" data-sp-go>' + esc(SPD.cta || 'Выбрать семинар') + '</a><button class="ac-sp-btn o" type="button" data-act="form" data-type="question" data-ref="">' + esc(SPD.ask || 'Задать вопрос') + '</button></div>' +
+          '<div class="ac-sp-act"><a class="ac-sp-btn" href="#sem-list" data-sp-go>' + esc(SPD.cta || AT('ui.pages.k2', AT('ui.pages.k2', 'Выбрать семинар'))) + '</a><button class="ac-sp-btn o" type="button" data-act="form" data-type="question" data-ref="">' + esc(SPD.ask || AT('ui.pages.k3', AT('ui.pages.k3', 'Задать вопрос'))) + '</button></div>' +
           '<div class="ac-sp-nav"><button class="prev" type="button" data-sp-d="-1" aria-label="' + esc(SPD.prev || '') + '">' + chev + '</button><button class="next" type="button" data-sp-d="1" aria-label="' + esc(SPD.next || '') + '">' + chev + '</button><span><b></b> ' + esc(SPD.of || 'из') + ' ' + items.length + '</span></div></div></div>';
         document.body.appendChild(sp);
         sp.addEventListener('click', e => {
@@ -379,7 +380,7 @@
       let tier = -1; DS.forEach((d, i) => { if (v >= d.from) tier = i; });
       $$('.tier').forEach((t, i) => t.classList.toggle('on', i === tier));
       const d = tier >= 0 ? DS[tier] : null;
-      $('#calc-tier').textContent = d ? `Ваша скидка — ${d.pct}%` : `До первой скидки — ${A.rub(DS[0].from - v)}`;
+      $('#calc-tier').textContent = d ? `${AT('ui.pages.k4', AT('ui.pages.k4', 'Ваша скидка —'))} ${d.pct}%` : `${AT('ui.pages.k5', AT('ui.pages.k5', 'До первой скидки —'))} ${A.rub(DS[0].from - v)}`;
       tween($('#calc-save'), d ? Math.round(v * d.pct / 100) : 0, n => n ? A.rub(n) : '—');
     }
     r.addEventListener('input', upd); upd();
@@ -393,9 +394,9 @@
     document.title = `Поиск: ${q} — Астрея`;
     const res = A.search(q);
     A.track('search', {query: q, results: res.length});
-    if (!res.length) { out.innerHTML = `<div class="empty"><b>Ничего не найдено</b>По запросу «${esc(q)}» ничего нет. Попробуйте название бренда, продукта или тему («пилинг», «фотозащита»).</div>`; return; }
+    if (!res.length) { out.innerHTML = `<div class="empty"><b>${AT('ui.pages.k6', AT('ui.pages.k6', 'Ничего не найдено'))}</b>По запросу «${esc(q)}» ничего нет. Попробуйте название бренда, продукта или тему («пилинг», «фотозащита»).</div>`; return; }
     const groups = A.TYPE_ORDER.map(t => [t, res.filter(r => r.t === t)]).filter(g => g[1].length);
-    const plur = {product: 'Товары', brand: 'Бренды', event: 'Обучение', news: 'Новости'};
+    const plur = {product: AT('ui.x_pages.k2', 'Товары'), brand: AT('ui.x_pages.k3', 'Бренды'), event: AT('ui.x_pages.k4', 'Обучение'), news: AT('ui.x_pages.k5', 'Новости')};
     function render(type) {
       out.innerHTML = groups.filter(g => type === 'all' || g[0] === type).map(([t, list]) => `<section class="s-group"><h2>${plur[t]} <small>${list.length}</small></h2><div class="s-list">${list.map(A.resHTML).join('')}</div></section>`).join('');
     }

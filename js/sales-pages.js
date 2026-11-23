@@ -17,6 +17,7 @@
    Всё в браузере, ничего не отправляется на сервер без заявки посетителя. Страницы подменяются без перезагрузки: монтирование идемпотентно. */
 (function () {
   'use strict';
+  const AT = (k, d) => window.Astreya.T(k, d);          // подписи интерфейса: правка заказчика (js/data.js → texts)
   const A = window.Astreya, K = A && A.sales && A.sales.kit;
   if (!K) return;
   const {D, SX, I, esc, $, $$, track, fill, plural, rub, local, root, href, link, upcoming, nextEvent, dShort, daysTo, evUrl, bUrl, P, B, T, EV, planPath, planRel, savedPlan, compute, PLUS, whenText, today} = K;
@@ -43,13 +44,13 @@
       if (b) { door.style.setProperty('--c1', b.c1); door.style.setProperty('--c2', b.c2); door.style.setProperty('--ink', b.ink); }
       $('[data-sx-line]', door).innerHTML = '<a href="' + esc(href(evUrl(ev))) + '" data-sx-go="' + esc(evUrl(ev)) + '" data-sx-ev-title data-track="home_fork_event">' + esc(ev.title) + '</a>';
       $('[data-sx-meta]', door).textContent = ev.fm + ' · ' + ev.city;
-      const cta = $('[data-sx-cta]', door); if (cta) { cta.setAttribute('data-type', 'seminar'); cta.setAttribute('data-ref', ev.id); cta.innerHTML = esc(dd.cta || 'Записаться') + ' ' + I.arrow; }
+      const cta = $('[data-sx-cta]', door); if (cta) { cta.setAttribute('data-type', 'seminar'); cta.setAttribute('data-ref', ev.id); cta.innerHTML = esc(dd.cta || AT('ui.x_sales.k2', 'Записаться')) + ' ' + I.arrow; }
     } else if (door && !ev) {
       $('[data-sx-line]', door).textContent = (h.learn || {}).none || ''; $('[data-sx-meta]', door).textContent = ''; $('[data-sx-when]', door).textContent = '';
     }
     const s = savedPlan();
     if (buy && s) {                                                      // сохранённый план: вернуться к начатому проще, чем начинать заново
-      const cta = $('[data-sx-cta]', buy); if (cta) { cta.innerHTML = esc((h.buy || {}).ctaPlan || 'Открыть мой план') + ' ' + I.arrow; cta.setAttribute('href', href(planRel(s.st))); cta.setAttribute('data-sx-go', planRel(s.st)); }
+      const cta = $('[data-sx-cta]', buy); if (cta) { cta.innerHTML = esc((h.buy || {}).ctaPlan || AT('ui.x_salesp.k1', 'Открыть мой план')) + ' ' + I.arrow; cta.setAttribute('href', href(planRel(s.st))); cta.setAttribute('data-sx-go', planRel(s.st)); }
       const note = $('[data-sx-buy-note]', buy); if (note) note.textContent = (h.buy || {}).notePlan || '';
     }
     if (!root_.__sxSeen && 'IntersectionObserver' in window) { root_.__sxSeen = 1; const o = new IntersectionObserver(es => { if (es.some(x => x.isIntersecting)) { track('sales_fork_view', {plan: !!s}); o.disconnect(); } }, {threshold: .3}); o.observe(root_); }
@@ -138,7 +139,7 @@
   }
   function metaKits(sec) {
     const m = $('[data-kit-meta]', sec), n = (function () { try { return (JSON.parse(localStorage.getItem('astreya:rl') || '[]')).length; } catch (e) { return 0; } })(), cfg = PG.catalog || {};
-    if (m) m.innerHTML = n ? esc(cfg.listTitle) + ': <b>' + n + ' ' + nword(n) + '</b> · <button class="lnk-btn" type="button" data-act="rl-open">Открыть список</button>' : '';
+    if (m) m.innerHTML = n ? esc(cfg.listTitle) + ': <b>' + n + ' ' + nword(n) + '</b> · <button class="lnk-btn" type="button" data-act="rl-open">' + AT('ui.x_salesp.k2', 'Открыть список') + '</button>' : '';
   }
   document.addEventListener('click', e => {
     const add = e.target.closest && e.target.closest('[data-kit-add]'), show = e.target.closest && e.target.closest('[data-kit-show]');
@@ -171,7 +172,7 @@
   }
   document.addEventListener('click', e => {
     const a = e.target.closest && e.target.closest('[data-sx-ask]'), cb = e.target.closest && e.target.closest('[data-sx-cb]');
-    if (a && A.stella) A.stella.ask('Помоги подобрать: опиши, что подойдёт под мою задачу.', {sales: true});
+    if (a && A.stella) A.stella.ask(AT('ui.x_gallery.k1', 'Помоги подобрать: опиши, что подойдёт под мою задачу.'), {sales: true});
     if (cb) doForm((D.extras || {}).callback ? 'callback' : 'question', '');
   });
 
@@ -346,7 +347,7 @@
 
   /* ================= НОВОСТИ: у каждой новости — действие по её теме ================= */
   function news(c, main) {
-    const map = {sale: ['partners.html#calc', 'Рассчитать скидку'], novelty: ['catalog.html', 'Смотреть в каталоге'], edu: ['training.html#sched', 'К расписанию'], event: ['training.html#sched', 'К расписанию']};
+    const map = {sale: ['partners.html#calc', AT('ui.x_salesp.k3', 'Рассчитать скидку')], novelty: ['catalog.html', AT('ui.x_salesp.k4', 'Смотреть в каталоге')], edu: ['training.html#sched', AT('ui.x_salesp.k5', 'К расписанию')], event: ['training.html#sched', AT('ui.x_salesp.k5', 'К расписанию')]};
     $$('.newscard[data-cat]', main).forEach(card => {
       if ($('.sx-nact', card)) return; const m = map[card.getAttribute('data-cat')]; if (!m) return; const meta = $('.meta', card); if (!meta) return;
       const a = el('a', 'sx-nact z3', esc(m[1]) + ' ' + I.arrow, {href: href(m[0]), 'data-sx-go': m[0], 'data-sx': 'news-act'}); meta.parentNode.insertBefore(a, meta);

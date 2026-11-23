@@ -7,7 +7,7 @@ const MSG = require('./messengers.js');
 const S = require('../js/shared.js');
 const backdropsFactory = require('./backdrops.js');
 const decorFactory = require('./decor.js');
-const {T} = require('./texts.js');
+const {T, Traw} = require('./texts.js');
 const {esc, I} = S;
 
 const logoDefs = fs.readFileSync(path.join(__dirname, 'partials', 'logo-defs.html'), 'utf8');
@@ -62,12 +62,12 @@ module.exports = function layout(ctx, C) {
   consentCfg.version = crypto.createHash('md5').update(JSON.stringify([consentCfg, !!MT.webvisor, LG.version || ''])).digest('hex').slice(0, 8);
   const publicIntegrations = {metrika: metrikaOn ? {id: String(MT.id), webvisor: !!MT.webvisor, clickmap: MT.clickmap !== false, trackLinks: MT.trackLinks !== false, accurateTrackBounce: MT.accurateTrackBounce !== false} : null, consent: consentCfg, captcha: (IT.captcha || {}).siteKey ? {siteKey: String(IT.captcha.siteKey)} : null, legalVersion: LG.version || ''};
   const verifyMeta = [['yandex-verification', VR.yandex], ['google-site-verification', VR.google], ['wmail-verification', VR.mailru]].filter(([, v]) => v && /^[\w-]{6,128}$/.test(String(v))).map(([n, v]) => `<meta name="${n}" content="${esc(v)}">`).join('\n');
-  const msgItems = () => MSG.cells(c).map(ch => ch.url ? `<li><a href="${esc(ch.url)}" target="_blank" rel="noopener" data-track="messenger_click" data-place="footer">${ch.name}</a></li>` : `<li class="msg-off"><span>${ch.name}</span> <small>скоро</small></li>`).join('');
+  const msgItems = () => MSG.cells(c).map(ch => ch.url ? `<li><a href="${esc(ch.url)}" target="_blank" rel="noopener" data-track="messenger_click" data-place="footer">${ch.name}</a></li>` : `<li class="msg-off"><span>${ch.name}</span> <small>${T('common.labels.soon')}</small></li>`).join('');
   const legalLinks = P => `<a href="${u(P, 'privacy.html')}">${T('layout.misc.a')}</a><a href="${u(P, 'consent.html')}">${T('layout.misc.a2')}</a><a href="${u(P, 'terms.html')}">${T('layout.misc.a3')}</a>${consentOn ? `<button class="ftr-cookie" type="button" data-act="cookie-settings">${esc(consentCfg.settings)}</button>` : ''}`;
 
   const header = P => `<header class="hdr" id="hdr">
   <div class="wrap hdr-in">
-    <a href="${u(P, 'index.html')}" class="logo" style="--i:0" aria-label="Астрея — на главную">
+    <a href="${u(P, 'index.html')}" class="logo" style="--i:0" aria-label="${T('common.aria.logo')}">
       <svg class="lgo" viewBox="46 338 836 436" aria-hidden="true"><use href="#logo-art"/></svg>
     </a>
     <nav class="nav" id="nav" style="--i:1" aria-label="${T('layout.header.aria')}">
@@ -86,7 +86,7 @@ module.exports = function layout(ctx, C) {
       </div>
     </nav>
     <div class="hdr-cta" style="--i:2">
-      <a class="icon-btn hdr-tel" href="tel:${c.phoneRaw}" aria-label="Позвонить: ${esc(c.phone)}" title="${esc(c.phone)}" data-track="phone_click" data-place="header">${I.phone}</a>
+      <a class="icon-btn hdr-tel" href="tel:${c.phoneRaw}" aria-label="${T('common.aria.call', {phone: esc(c.phone)})}" title="${esc(c.phone)}" data-track="phone_click" data-place="header">${I.phone}</a>
       <button class="icon-btn" type="button" data-act="search" aria-label="${T('layout.header.aria2')}" aria-expanded="false" aria-controls="srch">${I.search}</button>
       <a class="btn btn-fill btn-sm hdr-partner" href="${u(P, 'partners.html')}" data-track="partner_cta" data-place="header">${T('layout.header.a')}</a>
       <button class="burger" id="burger" type="button" data-act="menu" aria-label="${T('layout.header.aria3')}" aria-expanded="false" aria-controls="nav"><i></i></button>
@@ -98,7 +98,7 @@ module.exports = function layout(ctx, C) {
   <div class="wrap">
     <div class="ftr-grid">
       <div class="ftr-brand">
-        <a href="${u(P, 'index.html')}" class="logo inv big" aria-label="Астрея — на главную">
+        <a href="${u(P, 'index.html')}" class="logo inv big" aria-label="${T('common.aria.logo')}">
           <svg class="lgo" viewBox="46 338 836 436" aria-hidden="true"><use href="#logo-art"/></svg>
         </a>
         <p class="about">${T('layout.footer.p')}</p>
@@ -154,7 +154,7 @@ module.exports = function layout(ctx, C) {
   <div class="wrap">
     <div class="ftr-rd-top">
       <div class="ftr-brand">
-        <a href="${u(P, 'index.html')}" class="logo inv big" aria-label="Астрея — на главную"><svg class="lgo" viewBox="46 338 836 436" aria-hidden="true"><use href="#logo-art"/></svg></a>
+        <a href="${u(P, 'index.html')}" class="logo inv big" aria-label="${T('common.aria.logo')}"><svg class="lgo" viewBox="46 338 836 436" aria-hidden="true"><use href="#logo-art"/></svg></a>
         <p class="about">${esc(f.tagline)}</p>
       </div>
       <ul class="ftr-rd-contacts">
@@ -238,7 +238,7 @@ ${P.noindex ? '<meta name="robots" content="noindex,follow">\n' : ''}<meta name=
 <meta property="og:image" content="${img}">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
-<meta property="og:image:alt" content="${esc(site.name)} — профессиональная косметика">
+<meta property="og:image:alt" content="${esc(Traw('seo.og.alt', {name: site.name}))}">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="${esc(P.title)}">
 <meta name="twitter:description" content="${esc(P.description)}">

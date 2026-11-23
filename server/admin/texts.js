@@ -9,13 +9,15 @@
   const lsSet = d => { try { if (Object.keys(d).length) localStorage.setItem(LS, JSON.stringify({at: Date.now(), d})); else localStorage.removeItem(LS); } catch (e) {} };
   const norm = s => String(s || '').toLowerCase().replace(/ё/g, 'е');
   const TAGS = /^<\/?(?:br|em|strong|b|i|wbr|sup|sub|small)\s*\/?>$/i;
-  const TYPE_HELP = {line: 'Одна строка.', text: 'Абзац.', rich: 'Можно <br> (перенос), <em> (курсив), <strong> (жирный) и &nbsp; (неразрывный пробел).', link: 'Ссылка: страница сайта (catalog.html), якорь (#cp-req), https://… , tel: или mailto:.'};
+  const ACTIVE = /<\s*\/?\s*(script|iframe|object|embed|style|link|meta|form|svg)\b|javascript:|\bon\w+\s*=|data:text\/html/i;
+  const TYPE_HELP = {data: 'Текст из данных сайта (data/*.json): сохраняется прямо в свой файл.', line: 'Одна строка.', text: 'Абзац.', rich: 'Можно <br> (перенос), <em> (курсив), <strong> (жирный) и &nbsp; (неразрывный пробел).', link: 'Ссылка: страница сайта (catalog.html), якорь (#cp-req), https://… , tel: или mailto:.'};
   /* те же правила, что на сервере (сервер всё равно проверит) */
   function check(it, v) {
     const s = String(v).trim(), len = Array.from(s).length;
     if (!s) return it.optional ? '' : 'Поле не должно быть пустым — верните исходный текст кнопкой справа.';
     if (len > it.max) return len + ' символов — слишком длинно (не больше ' + it.max + ').';
     if (/[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f]/.test(v)) return 'Недопустимые управляющие символы.';
+    if (it.type === 'data') { if (Array.from(s).length > it.max) return len + ' символов — слишком длинно (не больше ' + it.max + ').'; return ACTIVE.test(s) ? 'Скрипты, формы, встроенные кадры и обработчики событий в тексте недопустимы.' : ''; }
     if (it.type === 'link') return /^(?:(?:[\w.-]+\/)*[\w.-]+\.html(?:[?#][\w\-=&%./]*)?|#[\w-]+|https?:\/\/[^\s<>"']+|tel:\+?[\d\s()-]{5,20}|mailto:[^\s<>"']+)$/.test(s) ? '' : 'Нужна ссылка: страница сайта (catalog.html), якорь (#cp-req), адрес https://… , tel: или mailto:.';
     if (it.type === 'rich') { const bad = (s.match(/<\/?[a-z][^>]*>/gi) || []).filter(t => !TAGS.test(t)); return bad.length ? 'Разрешены только теги <br>, <em>, <strong>, <b>, <i> (лишнее: ' + bad[0].slice(0, 24) + ').' : ''; }
     if (/[<>]/.test(s)) return 'Символы < и > здесь не нужны: поле — простой текст.';
@@ -26,10 +28,17 @@
   AD.views.texts = {
     async mount(root, parts) {
       const inst = {initial: true};
-      const [reg, cur0] = await Promise.all([AD.get('/api/texts/registry'), AD.get('/api/collections/texts')]);
+      const [reg0, cur0, dat0] = await Promise.all([AD.get('/api/texts/registry'), AD.get('/api/collections/texts'), AD.get('/api/texts/data')]);
+      let reg = null, dat = dat0, items = {};
+      /* к текстам шаблонов добавляются тексты из data/content.json и data/redesign.json (страница → блок → поле) */
+      function build() {
+        reg = JSON.parse(JSON.stringify(reg0));
+        dat.pages.forEach(dp => { let pg = reg.pages.find(x => x.id === dp.id); if (!pg) { pg = {id: dp.id, title: dp.title || dp.id, url: 'index.html', blocks: []}; reg.pages.push(pg); } dp.blocks.forEach(b => pg.blocks.push({id: b.id, title: b.title, items: b.fields.map(f => ({key: 'd:' + f.id, label: f.label, type: 'data', multi: f.type === 'text', max: 3000, def: f.value, hint: '', optional: false, data: {coll: f.coll, path: f.path}}))})); });
+        items = {}; reg.pages.forEach(p => p.blocks.forEach(b => b.items.forEach(i => { items[i.key] = Object.assign({page: p, block: b}, i); })));
+      }
+      build();
       let cur = cur0, over = Object.assign({}, (cur.data && cur.data.items) || {});
       const stored = lsGet(); let draft = {};                              // правки, ещё не сохранённые на сервер: ключ → текст
-      const items = {}; reg.pages.forEach(p => p.blocks.forEach(b => b.items.forEach(i => { items[i.key] = Object.assign({page: p, block: b}, i); })));
       const valueOf = it => (it.key in draft ? draft[it.key] : (typeof over[it.key] === 'string' ? over[it.key] : it.def));
       const isChanged = it => valueOf(it) !== it.def;
       const pageChanged = p => p.blocks.reduce((n, b) => n + b.items.filter(isChanged).length, 0);
@@ -43,7 +52,7 @@
       function field(it) {
         let ctl; const bad = h('div', {class: 'tx-err', role: 'alert', hidden: true}), count = h('span', {class: 'counter'}), chg = h('span', {class: 'tx-chg', hidden: true}, 'изменено');
         const box = h('div', {class: 'tx-f'});
-        const revert = h('button', {class: 'btn sm ghost', type: 'button', hidden: true, title: 'Вернуть текст, который был на сайте с самого начала', onclick: () => { set(it.def, true); }}, 'Вернуть исходный');
+        const revert = h('button', {class: 'btn sm ghost', type: 'button', hidden: true, title: 'Вернуть текст, который был на сайте с самого начала', onclick: () => { set(it.def, true); }}, (it.data ? 'Вернуть как было' : 'Вернуть исходный'));
         const fit = () => { if (ctl.tagName === 'TEXTAREA') { ctl.style.height = 'auto'; ctl.style.height = Math.min(360, ctl.scrollHeight + 2) + 'px'; } };
         function paint() {
           const v = ctl.value, err = check(it, v), ch = v !== it.def;
@@ -52,9 +61,9 @@
         }
         function set(v, fromBtn) { ctl.value = v; store(); if (fromBtn) fit(); paint(); }
         function store() { const v = ctl.value, saved = typeof over[it.key] === 'string' ? over[it.key] : it.def; if (v === saved) delete draft[it.key]; else draft[it.key] = v; refreshDirty(); updateBar(); }
-        ctl = it.type === 'line' || it.type === 'link' ? h('input', {type: 'text', id: 'tx-' + it.key, value: valueOf(it), maxlength: String(it.max + 40), autocomplete: 'off', spellcheck: 'true'}) : h('textarea', {id: 'tx-' + it.key, rows: '2', spellcheck: 'true'}, valueOf(it));
+        ctl = (it.type === 'line' || it.type === 'link') || (it.type === 'data' && !it.multi) ? h('input', {type: 'text', id: 'tx-' + it.key, value: valueOf(it), maxlength: String(it.max + 40), autocomplete: 'off', spellcheck: 'true'}) : h('textarea', {id: 'tx-' + it.key, rows: '2', spellcheck: 'true'}, valueOf(it));
         ctl.addEventListener('input', () => { store(); fit(); paint(); updateTile(); });
-        AD.fill(box, h('div', {class: 'tx-top'}, h('label', {for: 'tx-' + it.key}, it.label), chg, h('span', {class: 'tx-k'}, it.key)), ctl, bad,
+        AD.fill(box, h('div', {class: 'tx-top'}, h('label', {for: 'tx-' + it.key}, it.label), chg, h('span', {class: 'tx-k'}, it.data ? it.data.coll + ' › ' + it.data.path.join(' › ') : it.key)), ctl, bad,
           h('div', {class: 'tx-meta'}, count, h('span', {class: 'tx-type'}, TYPE_HELP[it.type]), h('span', {class: 'right'}, revert)), it.hint ? h('div', {class: 'help'}, it.hint) : null);
         box.update = () => { const v = valueOf(it); if (ctl.value !== v) ctl.value = v; fit(); paint(); };
         setTimeout(() => { fit(); paint(); }, 0);
@@ -69,12 +78,14 @@
       async function save() {
         msg.replaceChildren();
         const bads = badOnes(); if (bads.length) { msg.replaceChildren(AD.alertBox('err', 'Исправьте поля с ошибками: ' + bads.slice(0, 4).map(k => '«' + items[k].label + '»').join(', ') + (bads.length > 4 ? ' и ещё ' + (bads.length - 4) : '') + '.')); const el = document.getElementById('tx-' + bads[0]); if (el) el.focus(); return; }
-        const next = Object.assign({}, over);
-        Object.keys(draft).forEach(k => { const it = items[k]; if (!it) return; const v = draft[k].trim(); if (v === it.def.trim() || (!v && !it.optional)) delete next[k]; else next[k] = v; });
+        const next = Object.assign({}, over), dch = Object.keys(draft).filter(k => items[k] && items[k].data).map(k => ({coll: items[k].data.coll, path: items[k].data.path, from: items[k].def, value: draft[k].trim()})), hasTexts = Object.keys(draft).some(k => items[k] && !items[k].data);
+        Object.keys(draft).forEach(k => { const it = items[k]; if (!it || it.data) return; const v = draft[k].trim(); if (v === it.def.trim() || (!v && !it.optional)) delete next[k]; else next[k] = v; });
         await AD.busy(saveBtn, async () => {
           try {
-            const r = await AD.put('/api/collections/texts', {data: Object.assign({}, cur.data, {items: next}), version: cur.version});
-            cur = await AD.get('/api/collections/texts'); over = Object.assign({}, cur.data.items || {}); draft = {}; refreshDirty(); render();
+            let r = null;
+            if (dch.length) r = await AD.post('/api/texts/data', {changes: dch});
+            if (hasTexts || !dch.length) r = await AD.put('/api/collections/texts', {data: Object.assign({}, cur.data, {items: next}), version: cur.version});
+            cur = await AD.get('/api/collections/texts'); over = Object.assign({}, cur.data.items || {}); if (dch.length) { dat = await AD.get('/api/texts/data'); build(); } draft = {}; refreshDirty(); render();
             AD.toast(r.build ? 'Сохранено, сайт пересобран (' + (r.build.ms / 1000).toFixed(1) + ' с)' : r.unchanged ? 'Изменений нет' : 'Сохранено', 'ok'); reloadFrame();
           } catch (e) { msg.replaceChildren(e.status === 409 ? AD.alertBox('err', e.message, ' ', h('button', {class: 'btn sm', type: 'button', onclick: async () => { cur = await AD.get('/api/collections/texts'); over = Object.assign({}, cur.data.items || {}); msg.replaceChildren(); render(); }}, 'Загрузить актуальную версию')) : AD.errBox(e)); window.scrollTo({top: 0, behavior: 'smooth'}); }
         });
@@ -107,8 +118,8 @@
           const n = p.blocks.reduce((s, b) => s + b.items.length, 0), c = h('span', {class: 'pill warn2', hidden: true}); tiles[p.id] = {chg: c};
           return h('a', {class: 'tile', href: '#/texts/' + p.id}, h('b', {}, p.title), h('span', {}, n + ' ' + AD.plural(n, 'текст', 'текста', 'текстов') + ' · ' + p.blocks.length + ' ' + AD.plural(p.blocks.length, 'блок', 'блока', 'блоков')), ' ', c);
         }));
-        const MORE = [['Тексты форм и согласий', 'Заголовки, кнопки и подписи форм заявки', '#/content/content'], ['SEO: заголовок и описание страниц', 'Что видно в поиске Яндекса и Google', '#/content/content'], ['Главная: журнал, бренды, подбор', 'Цифры, карточки, призывы, подвал', '#/content/redesign'], ['Компания и партнёры: карточки, шаги, вопросы', 'Преимущества, направления, FAQ', '#/content/content'], ['Путь к закупке («Старт со Стеллой»)', 'Вопросы и подсказки подбора', '#/content/sales'], ['Юридические документы', 'Политика, согласие, соглашение', '#/content/legal'], ['Обучение: преподаватели, шаги, вопросы', 'Раздел «Мероприятия и обучение»', '#/events']];
-        const more = h('div', {}, h('div', {class: 'group-h'}, 'Другие тексты — в данных сайта'), h('p', {class: 'muted small', style: {marginBottom: '10px'}}, 'Эти тексты хранятся вместе с данными и правятся в соответствующих разделах.'), h('div', {class: 'cols'}, MORE.map(([t, d, href]) => h('a', {class: 'tile', href}, h('b', {}, t), h('span', {}, d)))));
+        const MORE = [['Путь к закупке («Старт со Стеллой»)', 'Вопросы, подсказки и итоговые тексты подбора', '#/content/sales'], ['Библиотека реплик Стеллы', 'Живые ответы помощника по темам', '#/content/stella_config'], ['Юридические документы', 'Политика, согласие, соглашение — полные данные документов', '#/content/legal'], ['Обучение: преподаватели, шаги, вопросы', 'Раздел «Мероприятия и обучение»', '#/events']];
+        const more = h('div', {}, h('div', {class: 'group-h'}, 'Другие данные с текстами'), h('p', {class: 'muted small', style: {marginBottom: '10px'}}, 'Эти тексты правятся в своих разделах: их много, и они устроены как сценарии.'), h('div', {class: 'cols'}, MORE.map(([t, d, href]) => h('a', {class: 'tile', href}, h('b', {}, t), h('span', {}, d)))));
         moreBox = more; AD.fill(body, h('div', {class: 'toolbar'}, input), results, grid, more); updateTile(); run();
         return null;
       }

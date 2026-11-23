@@ -7,6 +7,7 @@
    • Без JS страницы журнала идут подряд (обычные блоки), ссылки #room-… ведут на нужную страницу. Всё содержимое — настоящий HTML. */
 (function () {
   'use strict';
+  const AT = (k, d) => window.Astreya.T(k, d);          // подписи интерфейса: правка заказчика (js/data.js → texts)
   const A = window.Astreya = window.Astreya || {};
   const root = document.documentElement;
   const $ = (s, r) => (r || document).querySelector(s);
@@ -121,7 +122,7 @@
       leaves.forEach((l, k) => { inertOf($('.front', l), !(k === s)); inertOf($('.back', l), !(k === s - 1)); l.classList.toggle('is-cur', k === s); l.classList.toggle('is-prev', k === s - 1); });         // справа читается лицевая сторона листа s, слева — оборот листа s−1
       book.setAttribute('data-s', String(s));
       if (!pm()) {
-        if (stEl) stEl.textContent = s === 0 ? 'Обложка' : s >= N - 1 ? 'Контакты' : 'Страницы ' + (2 * s) + '–' + (2 * s + 1);
+        if (stEl) stEl.textContent = s === 0 ? AT('ui.x_news.k2', 'Обложка') : s >= N - 1 ? AT('ui.x_search.k2', 'Контакты') : 'Страницы ' + (2 * s) + '–' + (2 * s + 1);
         if (pvB) pvB.disabled = s <= 1 && !pflat() && !flat(); if (nxB) nxB.disabled = s >= N - 1;
       }
       const r = roomOfState(s); if (r !== current) { current = r; }

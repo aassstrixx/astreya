@@ -24,6 +24,8 @@ function problems(key, v) {
   const len = Array.from(s).length;
   if (len > d.max) P.push(`«${d.label}»: ${len} символов, допустимо не больше ${d.max}.`);
   if (/[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f‪-‮⁦-⁩]/.test(v)) P.push(`«${d.label}»: недопустимые управляющие символы.`);
+  if (d.js && /[<>"'`\\]/.test(s)) P.push(`«${d.label}»: в подписях интерфейса нельзя прямые кавычки ' \" ` + "`" + `, обратную косую черту и < > — используйте «ёлочки» (эти тексты вставляются в разметку скриптами).`);
+  if (d.ph || /\{\w+\}/.test(s)) { const allowed = new Set(d.ph || []), bad = (s.match(/\{\w+\}/g) || []).map(x => x.slice(1, -1)).filter(x => !allowed.has(x)); if (bad.length) P.push(`«${d.label}»: неизвестная метка {${bad[0]}}${allowed.size ? ' (можно: ' + [...allowed].map(x => '{' + x + '}').join(', ') + ')' : ' — в этом поле меток нет'}.`); }
   if (d.type === 'link') { if (!/^(?:(?:[\w.-]+\/)*[\w.-]+\.html(?:[?#][\w\-=&%./]*)?|#[\w-]+|https?:\/\/[^\s<>"']+|tel:\+?[\d\s()-]{5,20}|mailto:[^\s<>"']+)$/.test(s)) P.push(`«${d.label}»: ссылка — страница сайта (например catalog.html), якорь (#cp-req), адрес https://… , tel: или mailto:.`); }
   else if (d.type === 'rich') { const bad = (s.match(/<\/?[a-z][^>]*>/gi) || []).filter(t => !TAGS.test(t)); if (bad.length) P.push(`«${d.label}»: разрешены только теги <br>, <em>, <strong>, <b>, <i> (лишнее: ${bad[0].slice(0, 30)}).`); }
   else if (/[<>]/.test(s)) P.push(`«${d.label}»: символы < и > в этом поле не нужны — здесь простой текст.`);
@@ -43,5 +45,7 @@ function T(key, vars) {
 }
 function Traw(key, vars) { return fillVars(value(key), vars); }
 function set(items) { over = items && typeof items === 'object' ? items : {}; }
+/* правки подписей интерфейса для браузерных скриптов (js/data.js → texts): только допустимые значения ключей с флагом js */
+function jsOverrides() { const o = {}; for (const [k, v] of Object.entries(over)) { const d = index[k]; if (d && d.js && typeof v === 'string' && v.trim() && !problems(k, v).length) o[k] = v.trim(); } return o; }
 const get = () => over;
-module.exports = {T, Traw, set, get, problems, richClean, registry: REG, index, esc};
+module.exports = {T, Traw, set, get, jsOverrides, problems, richClean, registry: REG, index, esc};

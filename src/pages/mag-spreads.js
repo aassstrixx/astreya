@@ -59,7 +59,7 @@ module.exports = function magSpreads(ctx, C, P, deps) {
 
   /* ------------------------------------------------ 6–7. Галерея брендов */
   const nicheOf = b => { const m = /<div class="br-niche[\s\S]*?<\/div>/.exec(nicheCard(b)); return m ? m[0] : ''; };
-  const stat3 = [[brands.length, pc(brands.length, 'бренд', 'бренда', 'брендов').replace(/^\d+ /, '')], [tasks.length, 'направлений подбора'], [(site.offices || []).length, 'города присутствия']];
+  const stat3 = [[brands.length, pc(brands.length, 'бренд', 'бренда', 'брендов').replace(/^\d+ /, '')], [tasks.length, T('common.pages.magTasks')], [(site.offices || []).length, T('common.pages.magOffices')]];
   const real = {a: 'assets/photos/dermatime-micellar.webp', b: 'assets/photos/iraltone-shampoo.webp', c: 'assets/photos/keenwell-mask.webp'};
   const brandsP = {
     L: n => `<div class="pg pg-l pg-tx pg-brl">${run}<p class="mg-kick">${esc(pg.brands.kick)}</p>${hh(pg.brands.hl)}

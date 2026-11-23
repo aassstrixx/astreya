@@ -2,6 +2,7 @@
    счётчики, параллакс, инерционный скролл, курсорные эффекты. Двигаются только transform/opacity. */
 (function () {
   'use strict';
+  const AT = (k, d) => window.Astreya.T(k, d);          // подписи интерфейса: правка заказчика (js/data.js → texts)
   const A = window.Astreya, {$, $$, wait} = A;
   const html = document.documentElement, body = document.body;
   const M = A.motion = {done: false};
@@ -241,7 +242,7 @@
      содержимое <main> подменяется на новое (берётся из настоящей страницы), полосы поднимаются (700 мс), блоки появляются через 470 мс.
      Если подмена невозможна (файл открыт с диска, нет сети) — обычный переход по ссылке под той же шторкой. */
   const curtain = $('#curtain');
-  const LABELS = {'catalog': 'Каталог', 'brands': 'Бренды', 'training': 'Обучение', 'news': 'Новости и акции', 'company': 'Компания', 'contacts': 'Контакты', 'partners': 'Партнёрам', 'search': 'Поиск', 'privacy': 'Документы', 'terms': 'Документы'};
+  const LABELS = {'catalog': AT('ui.x_search.k1', 'Каталог'), 'brands': AT('ui.x_pages.k3', 'Бренды'), 'training': AT('ui.x_pages.k4', 'Обучение'), 'news': AT('ui.x_motion.k1', 'Новости и акции'), 'company': AT('ui.x_motion.k2', 'Компания'), 'contacts': AT('ui.x_search.k2', 'Контакты'), 'partners': AT('ui.x_motion.k3', 'Партнёрам'), 'search': AT('ui.x_motion.k4', 'Поиск'), 'privacy': AT('ui.x_motion.k5', 'Документы'), 'terms': AT('ui.x_motion.k5', 'Документы')};
   const pathInfo = url => {
     const seg = new URL(url, location.href).pathname.split('/').filter(Boolean);
     return {seg, last: (seg[seg.length - 1] || 'index').replace(/\.html$/, ''), dir: seg.length > 1 ? seg[seg.length - 2] : ''};
@@ -249,9 +250,9 @@
   const brandFor = url => { const {last, dir} = pathInfo(url); return dir === 'brands' ? (A.D.brands || []).find(x => x.id === last) || null : null; };
   const labelFor = url => {
     const {seg, last, dir} = pathInfo(url);
-    if (dir === 'brands') { const b = brandFor(url); return b ? b.name : 'Бренды'; }
-    if (dir === 'products') return 'Каталог'; if (dir === 'training') return 'Обучение'; if (dir === 'news') return 'Новости и акции';
-    return last === 'index' || !seg.length ? 'Главная' : (LABELS[last] || 'Астрея');
+    if (dir === 'brands') { const b = brandFor(url); return b ? b.name : AT('ui.x_pages.k3', 'Бренды'); }
+    if (dir === 'products') return AT('ui.x_search.k1', 'Каталог'); if (dir === 'training') return AT('ui.x_pages.k4', 'Обучение'); if (dir === 'news') return AT('ui.x_motion.k1', 'Новости и акции');
+    return last === 'index' || !seg.length ? AT('ui.x_motion.k6', 'Главная') : (LABELS[last] || AT('ui.x_motion.k7', 'Астрея'));
   };
   /* титр шторки: сверху — белый знак «Астрея» (вместо маленькой надписи); по центру — название раздела, а для страницы бренда — его белый логотип */
   const MARK = '<span class="ct-astreya" aria-hidden="true"><svg viewBox="49.8 341.6 829.5 428.9"><use href="#logo-art"/></svg></span>';
@@ -479,7 +480,7 @@
   }
   function runSplash() {
     buildSplashLogo();
-    letters($('#sp-sub'), 'Профессиональная косметика', 1);
+    letters($('#sp-sub'), AT('ui.x_motion.k8', 'Профессиональная косметика'), 1);
     body.classList.add('locked');
     $('#sp-in').addEventListener('click', endSplash);
     setTimeout(endSplash, 2150);

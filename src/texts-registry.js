@@ -14,7 +14,7 @@ function page(id, title, url, file, blocks) {
       o = o || {}; const type = o.type || autoType(def), key = id + '.' + bid + '.' + name;
       if (index[key]) throw new Error('Повтор ключа текста: ' + key);
       const max = o.max || (type === 'link' ? 160 : type === 'text' ? Math.max(360, round(def.length * 2.5)) : Math.max(90, round(def.length * 2.5)));
-      const it = {key, page: id, block: bid, name, label, type, max, def, hint: o.hint || '', optional: !!o.optional, file: o.file || file, files: [o.file || file], manual: !!o.manual, find: o.find, once: !!o.once, part: !!o.part, occ: o.occ};
+      const it = {key, page: id, block: bid, name, label, type, max, def, hint: o.hint || '', optional: !!o.optional, file: o.file || file, files: [o.file || file], manual: !!o.manual, find: o.find, once: !!o.once, part: !!o.part, occ: o.occ, js: !!o.js, ph: o.ph || null};
       b.items.push(it); index[key] = it;
     });
     if (nb) pg.blocks.push(b);
@@ -26,6 +26,6 @@ function page(id, title, url, file, blocks) {
 function use(key, file) { if (!index[key]) throw new Error('use: нет ключа ' + key); if (!index[key].files.includes(file)) index[key].files.push(file); }
 
 /* страницы подключаются по порядку (порядок — как в списке страниц админки); каждый файл — одна страница или группа */
-['home', 'home-x', 'home-house', 'home-mag', 'home-path', 'catalog', 'showroom', 'brands', 'detail-brand', 'detail-product', 'training', 'detail-event', 'company', 'partners', 'news', 'contacts', 'messengers', 'layout', 'components', 'start', 'search', 'legal', 'notfound'].forEach(n => { try { require('./texts/' + n + '.js')(page, use); } catch (e) { if (e.code !== 'MODULE_NOT_FOUND' || !String(e.message).includes('/texts/' + n)) throw e; } });
+['home', 'home-x', 'home-house', 'home-mag', 'home-path', 'catalog', 'showroom', 'brands', 'detail-brand', 'detail-product', 'training', 'detail-event', 'company', 'partners', 'news', 'contacts', 'messengers', 'layout', 'common', 'components', 'start', 'search', 'legal', 'notfound', 'seo', 'ui'].forEach(n => { try { require('./texts/' + n + '.js')(page, use); } catch (e) { if (e.code !== 'MODULE_NOT_FOUND' || !String(e.message).includes('/texts/' + n)) throw e; } });
 /* ================= ВСПОМОГАТЕЛЬНОЕ ================= */
 module.exports = {pages, index, page};

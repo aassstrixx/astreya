@@ -3,6 +3,7 @@
    Ничего не отправляется; наблюдатель и слушатели снимаются при уходе со страницы (переходы без перезагрузки). */
 (function () {
   'use strict';
+  const AT = (k, d) => window.Astreya.T(k, d);          // подписи интерфейса: правка заказчика (js/data.js → texts) или исходный текст
   const A = window.Astreya, D = window.ASTREYA_DATA;
   if (!A || !D) return;
   const $ = (s, r) => (r || document).querySelector(s), $$ = (s, r) => Array.prototype.slice.call((r || document).querySelectorAll(s));
@@ -57,8 +58,8 @@
     const e = $('#s-out .empty'); if (!e || $('.qx-sug', e)) return;
     const box = document.createElement('div'), R = rootPath(); box.className = 'qx-sug';
     const hints = $$('.qx-hints a.chip').map(a => '<a class="chip" href="' + a.getAttribute('href') + '" data-track="search_suggest">' + a.innerHTML + '</a>').join('');
-    const go = [['Каталог', 'catalog.html'], ['Бренды', 'brands.html'], ['Обучение', 'training.html'], ['Контакты', 'contacts.html']].map(g => '<a class="chip" href="' + R + g[1] + '" data-track="search_suggest">' + g[0] + '</a>').join('');
-    box.innerHTML = (hints ? '<p>Попробуйте так</p><div class="qx-sug-row">' + hints + '</div>' : '') + '<p>Или откройте раздел</p><div class="qx-sug-row">' + go + '</div>';
+    const go = [[AT('ui.x_search.k1', 'Каталог'), 'catalog.html'], [AT('ui.x_pages.k3', 'Бренды'), 'brands.html'], [AT('ui.x_pages.k4', 'Обучение'), 'training.html'], [AT('ui.x_search.k2', 'Контакты'), 'contacts.html']].map(g => '<a class="chip" href="' + R + g[1] + '" data-track="search_suggest">' + g[0] + '</a>').join('');
+    box.innerHTML = (hints ? '<p>' + AT('ui.search.k1', AT('ui.search.k1', 'Попробуйте так')) + '</p><div class="qx-sug-row">' + hints + '</div>' : '') + '<p>' + AT('ui.search.k2', AT('ui.search.k2', 'Или откройте раздел')) + '</p><div class="qx-sug-row">' + go + '</div>';
     e.appendChild(box);
   }
 

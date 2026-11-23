@@ -6,6 +6,11 @@
   else { root.Astreya = root.Astreya || {}; Object.assign(root.Astreya, api); }
 })(typeof self !== 'undefined' ? self : this, function () {
   'use strict';
+  /* подписи интерфейса, которые заказчик может править («Тексты страниц»): T('ключ', 'исходный текст'). Правки лежат в ASTREYA_DATA.texts (js/data.js); при сборке страниц в Node их ставит setTexts(). */
+  let TX = null;
+  const setTexts = o => { TX = o && typeof o === 'object' ? o : null; };
+  const T = (key, def) => { let t = TX; if (!t && typeof window !== 'undefined' && window.ASTREYA_DATA) t = window.ASTREYA_DATA.texts; const v = t && t[key]; return typeof v === 'string' ? v : def; };
+
 
   const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'}[c]));
 
@@ -88,13 +93,13 @@
   /* ---------- шаблон формы (модальное окно и встроенные формы на страницах) ---------- */
   const SPECS = ['Косметолог / эстетист', 'Салон красоты', 'Клиника / центр эстетической медицины', 'Магазин / дистрибьютор', 'Другое'];
   const FIELDS = {
-    name:  {label: 'Имя', type: 'text', ac: 'name', err: 'Укажите имя'},
-    phone: {label: 'Телефон', type: 'tel', ac: 'tel', ph: '+7', err: 'Проверьте номер телефона'},
-    email: {label: 'Email', type: 'email', ac: 'email', err: 'Проверьте адрес почты'},
-    city:  {label: 'Город', type: 'text', ac: 'address-level2', err: 'Укажите город'},
-    org:   {label: 'Название организации', type: 'text', ac: 'organization'},
-    spec:  {label: 'Специализация', type: 'select'},
-    msg:   {label: 'Комментарий', type: 'textarea', err: 'Напишите сообщение'}
+    name:  {get label() { return T('ui.fields.name', 'Имя'); }, type: 'text', ac: 'name', get err() { return T('ui.fields.nameErr', 'Укажите имя'); }},
+    phone: {get label() { return T('ui.fields.phone', 'Телефон'); }, type: 'tel', ac: 'tel', ph: '+7', get err() { return T('ui.fields.phoneErr', 'Проверьте номер телефона'); }},
+    email: {label: 'Email', type: 'email', ac: 'email', get err() { return T('ui.fields.emailErr', 'Проверьте адрес почты'); }},
+    city:  {get label() { return T('ui.fields.city', 'Город'); }, type: 'text', ac: 'address-level2', get err() { return T('ui.fields.cityErr', 'Укажите город'); }},
+    org:   {get label() { return T('ui.fields.org', 'Название организации'); }, type: 'text', ac: 'organization'},
+    spec:  {get label() { return T('ui.fields.spec', 'Специализация'); }, type: 'select'},
+    msg:   {get label() { return T('ui.fields.msg', 'Комментарий'); }, type: 'textarea', get err() { return T('ui.fields.msgErr', 'Напишите сообщение'); }}
   };
   /* fields: [id, обязательное?] — порядок = порядок на странице */
   const FORM_TYPES = {
@@ -122,7 +127,7 @@
     const f = FIELDS[id], fid = `${uid}-${id}`, r = req ? ' required aria-required="true"' : '', star = req ? ' <span class="req" aria-hidden="true">*</span>' : '';
     let ctl;
     if (f.type === 'textarea') ctl = `<textarea id="${fid}" name="${id}"${r} placeholder="${esc(ft.ph || '')}" rows="4"></textarea>`;
-    else if (f.type === 'select') ctl = `<div class="sel"><select id="${fid}" name="${id}"><option value="">Выберите…</option>${SPECS.map(s => `<option>${esc(s)}</option>`).join('')}</select>${I.chevron}</div>`;
+    else if (f.type === 'select') ctl = `<div class="sel"><select id="${fid}" name="${id}"><option value="">${T('ui.fields.choose', 'Выберите…')}</option>${SPECS.map(s => `<option>${esc(s)}</option>`).join('')}</select>${I.chevron}</div>`;
     else ctl = `<input id="${fid}" name="${id}" type="${f.type}" autocomplete="${f.ac}"${(ft.phs && ft.phs[id]) || f.ph ? ` placeholder="${(ft.phs && ft.phs[id]) || f.ph}"` : ''}${f.type === 'tel' ? ' inputmode="tel"' : ''}${r}>`;
     return `<div class="fld" data-f="${id}"><label for="${fid}">${f.label}${star}</label>${ctl}${f.err ? `<span class="err" id="${fid}-err">${f.err}</span>` : ''}</div>`;
   }
@@ -148,5 +153,5 @@
     </form>`;
   }
 
-  return {esc, I, MON_S, MON_G, dparts, rub, plural, norm, stem, tokens, bstyle, packOf, packH, stageArt, SPECS, FIELDS, FORM_TYPES, formHTML};
+  return {esc, I, MON_S, MON_G, dparts, rub, plural, norm, stem, tokens, bstyle, packOf, packH, stageArt, SPECS, FIELDS, FORM_TYPES, formHTML, T, setTexts};
 });

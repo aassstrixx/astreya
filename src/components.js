@@ -1,6 +1,6 @@
 /* Компоненты страниц: функции, возвращающие HTML-строки. Все ссылки строятся относительно корня сайта через P.root. */
 const S = require('../js/shared.js');
-const {T} = require('./texts.js');
+const {T, Traw} = require('./texts.js');
 const {esc, I, dparts, bstyle, norm} = S;
 
 module.exports = function components(ctx) {
@@ -22,7 +22,7 @@ module.exports = function components(ctx) {
   const art = (P, p) => {
     const b = brandById[p.brand];
     if (p.image) return `<div class="art art-photo" style="${bstyle(b)}"><img src="${esc(u(P, p.image))}" alt="${esc(p.imageAlt || `${b.name} — ${p.name}`)}" loading="lazy" decoding="async"></div>`;
-    return `<div class="art" role="img" aria-label="${esc(`${b.name} — ${p.name}: иллюстрация упаковки`)}" style="${bstyle(b)}"><div class="pk pk-${p.type}"><i class="sh"></i><i class="hd"></i><i class="cap"></i><i class="body"><b class="lbl"></b></i></div></div>`;
+    return `<div class="art" role="img" aria-label="${esc(Traw('common.aria.packArt', {brand: b.name, product: p.name}))}" style="${bstyle(b)}"><div class="pk pk-${p.type}"><i class="sh"></i><i class="hd"></i><i class="cap"></i><i class="body"><b class="lbl"></b></i></div></div>`;
   };
 
   const tag = (t, cls = '') => `<span class="tag${cls ? ' ' + cls : ''}">${esc(t)}</span>`;
@@ -53,7 +53,7 @@ module.exports = function components(ctx) {
     const b = brandById[p.brand], c = catById[p.cat], k = kindById[p.kind];
     const hay = norm([p.name, p.desc, b.name, c.name, k && k.name, p.tasks.map(t => taskById[t].label).join(' ')].join(' '));
     return `<article class="card hov pcard reveal" style="${bstyle(b)}" data-id="${p.id}" data-brand="${p.brand}" data-cat="${p.cat}" data-kind="${p.kind}" data-tasks="${p.tasks.join(' ')}" data-new="${p.isNew ? 1 : 0}" data-idx="${i}" data-name="${esc(norm(p.name))}" data-q="${esc(hay)}">
-    ${p.isNew ? '<span class="newtag">Новинка</span>' : ''}
+    ${p.isNew ? `<span class="newtag">${T('common.labels.new')}</span>` : ''}
     ${art(P, p)}
     <div class="pb">
       <div class="bl"><i></i>${esc(b.name)} · ${esc(c.name)}</div>
@@ -122,8 +122,8 @@ module.exports = function components(ctx) {
   const darkInk = b => !/^#?f{3,6}$/i.test(b.ink || '#fff');        // тёмный текст на светлой плашке → логотип чёрный, иначе белый
   const logoImg = (P, b, cls, alt) => `<img class="${`blogo ${cls}${cls.includes('bl-img') && darkInk(b) ? ' ink-dark' : ''}`.trim()}" src="${esc(u(P, b.logo))}" alt="${esc(alt)}"${b.logoW ? ` width="${b.logoW}" height="${b.logoH}"` : ''}${cls.includes('bl-img') && logoPx(b, 11000) ? ` style="--lw:${logoPx(b, 11000)}"` : ''} loading="lazy" decoding="async">`;
   const logoMark = (P, b, cls = '') => b.logo
-    ? logoImg(P, b, cls, `Логотип ${b.name}`)
-    : `<span class="blogo mono ${cls}" role="img" aria-label="Логотип ${esc(b.name)}">${esc(b.name.slice(0, 1))}</span>`;
+    ? logoImg(P, b, cls, Traw('common.aria.logoOf', {brand: b.name}))
+    : `<span class="blogo mono ${cls}" role="img" aria-label="${esc(Traw('common.aria.logoOf', {brand: b.name}))}">${esc(b.name.slice(0, 1))}</span>`;
 
   /* страница бренда: крупный логотип вместо текстового заголовка (h1 остаётся, название — в alt) */
   /* бегущая строка: логотип в исходных цветах (у бренда без логотипа — его название текстом) */
