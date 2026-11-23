@@ -110,6 +110,7 @@ ${css}
 </style>
 </head>
 <body>
+${read('src', 'partials', 'logo-defs.html')}
 <div class="demo-bar">ДЕМО-ВЕРСИЯ АДМИНКИ. <span>Данные настоящие, формы работают, но правки живут только в этой вкладке (после обновления страницы вернутся исходные) и сайт не меняют. Пересборка, публикация, заявки и копии данных — только в настоящей админке (<code>node server/index.js</code>).</span></div>
 <div id="app"><p class="boot">Загрузка…</p></div>
 <script>${safe(demo)}</script>

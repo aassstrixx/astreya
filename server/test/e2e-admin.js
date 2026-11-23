@@ -91,7 +91,6 @@ const ok = (c, m, x) => { if (c) { pass++; console.log('  ✓', m); } else { fai
   await p.fill('#alt-i', 'Проверочная картинка'); await p.click('button:has-text("Сохранить подпись")'); await toast(p); ok(rdj('data/media.json').alt[Object.keys(rdj('data/media.json').alt)[0]] === 'Проверочная картинка', 'подпись (alt) сохранена');
   await p.fill('#rn-i', 'osennyaya'); await p.click('button:has-text("Переименовать")'); await toast(p); ok(fs.readdirSync(path.join(S.root, 'assets/uploads')).some(f => /^osennyaya.*\.webp$/.test(f)) || fs.readdirSync(path.join(S.root, 'assets/uploads')).some(f => /^osennyaya/.test(f)), 'файл переименован');
   await p.locator('.lib-grid .file .pick-btn').first().click(); await p.waitForSelector('.dlg .lib-big'); await p.click('.dlg footer .btn.danger'); await p.click('.dlg .btn.danger >> nth=-1'); await toast(p).catch(() => {}); await p.waitForTimeout(400);
-  await p.click('.dtabs button:nth-child(2)'); await p.waitForSelector('.pill.gray'); ok(await p.locator('.alert.info').first().isVisible() && !(await p.locator('.file .btn.danger').count()), 'вкладка «Фоны и сцены»: только просмотр, без удаления');
 
   console.log('Публикация, история, роли');
   await go(p, '#/publish', '.card'); ok(/PUBLISH_GIT/.test(await p.locator('body').innerText()), 'публикация без PUBLISH_GIT объясняет, как включить');

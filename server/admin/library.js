@@ -68,14 +68,10 @@
         }
         AD.fill(body, h('div', {class: 'card'}, h('div', {class: 'up-opts row'}, h('label', {for: 'up-dir', class: 'lbl'}, 'Загружать в'), dirSel, maxSel, h('label', {class: 'chk', for: 'up-webp'}, webp, 'Сжимать в WebP'), h('button', {class: 'btn sm right', type: 'button', onclick: newFolder}, '＋ Новая папка')), drop, fileIn, upState), h('div', {class: 'toolbar'}, search, dsel, ssel, un, count), grid); paintGrid();
       }
-      function scenesTab() {
-        AD.fill(body, h('div', {class: 'alert info'}, 'Фоновые изображения, сцены и рендеры — часть структуры сайта. Здесь они только для просмотра: заменить или удалить их из админки нельзя.'), ov.scenes.map(d => h('div', {class: 'card'}, h('h2', {}, d.title, h('span', {class: 'muted small mono', style: {marginLeft: '10px'}}, d.dir + ' · ' + d.total + ' файлов')), h('div', {class: 'files lib-grid'}, d.files.filter(f => IMG.test(f.name)).slice(0, 80).map(f => h('div', {class: 'file'}, h('button', {class: 'pick-btn', type: 'button', title: f.path, onclick: () => detail(f, true)}, h('div', {class: 'th', style: {backgroundImage: thumb(f.path)}}), h('div', {class: 'nm'}, f.name), h('div', {class: 'muted'}, AD.size(f.size) + (f.w ? ' · ' + f.w + '×' + f.h : '')), h('span', {class: 'pill gray'}, 'только просмотр'))))), d.total > 80 ? h('div', {class: 'muted small'}, 'Показаны первые 80.') : null)));
-      }
       function paint() {
         AD.fill(dirSel, ov.dirs.map(d => h('option', {value: d.dir, selected: d.dir === upDir}, d.title + ' (' + d.dir + ')')));
-        const tabs = h('div', {class: 'dtabs', role: 'tablist'}, [['lib', 'Библиотека'], ['scenes', 'Фоны и сцены (только просмотр)']].map(([id, t]) => h('button', {type: 'button', role: 'tab', 'aria-selected': String(tab === id), onclick: () => { tab = id; paint(); }}, t)));
-        AD.fill(root, AD.pageHead('Картинки', 'Фото товаров и преподавателей, логотипы брендов и прочие загрузки. Картинка сжимается в WebP прямо в браузере, к ней можно добавить подпись; удалить можно только то, что нигде не используется.'), msg, tabs, body);
-        if (tab === 'lib') libTab(); else scenesTab();
+        AD.fill(root, AD.pageHead('Картинки', 'Фото товаров и преподавателей, логотипы брендов и прочие загрузки. Картинка сжимается в WebP прямо в браузере, к ней можно добавить подпись; удалить можно только то, что нигде не используется.'), msg, body);
+        libTab();
       }
       paint();
       return inst;

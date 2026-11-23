@@ -99,7 +99,9 @@
   /* ---------- вход, смена пароля ---------- */
   function clearIntervals() { (AD.timers || []).forEach(clearInterval); AD.timers = []; }
   AD.sessionLost = function () { if (AD.loggedOut) return; AD.loggedOut = true; AD.user = null; AD.csrf = ''; clearIntervals(); AD.dirty = false; showLogin('Сессия истекла. Войдите снова.'); };
-  function loginScreen(kids) { const app = $('#app'); app.replaceChildren(h('div', {class: 'login-wrap'}, h('div', {class: 'login'}, h('div', {class: 'brand'}, h('span', {class: 'brand-mark'}, 'А'), 'Астрея · админка'), ...kids))); }
+  /* логотип сайта (вектор из src/partials/logo-defs.html, он вставлен в index.html как #logo-art); цвет надписи — через --lm */
+  const logoNode = cls => { const sv = document.createElementNS(SVG_NS, 'svg'); sv.setAttribute('viewBox', '46 338 836 436'); sv.setAttribute('class', 'brand-logo' + (cls ? ' ' + cls : '')); sv.setAttribute('aria-hidden', 'true'); const us = document.createElementNS(SVG_NS, 'use'); us.setAttribute('href', '#logo-art'); sv.append(us); return sv; };
+  function loginScreen(kids) { const app = $('#app'); app.replaceChildren(h('div', {class: 'login-wrap'}, h('div', {class: 'login'}, h('div', {class: 'brand brand-login'}, logoNode('dark'), h('small', {}, 'Административная панель')), ...kids))); }
   function showLogin(msg) {
     document.title = 'Вход — Админка Астрея';
     const err = h('div', {hidden: true}), login = h('input', {type: 'text', id: 'f-login', name: 'login', autocomplete: 'username', required: true, autocapitalize: 'none', spellcheck: 'false'}), pw = h('input', {type: 'password', id: 'f-pass', name: 'password', autocomplete: 'current-password', required: true});
@@ -188,8 +190,8 @@
   function mountShell() {
     const items = NAV.filter(n => n.roles.includes(AD.user.role) && AD.views[n.id]);          // разделов, которых нет в этой сборке (демо-файл), в меню нет
     const navLink = n => h('a', {class: 'nav', href: '#/' + n.id, dataset: {id: n.id}}, ico(n.icon), n.title, n.id === 'leads' ? h('span', {class: 'badge', hidden: true}) : null);
-    const groups = GROUPS.map((g, gi) => { const list = items.filter(n => n.g === g.id && !n.hide); return list.length ? [h('div', {class: 'nav-h'}, h('i', {}, String(gi + 1).padStart(2, '0')), g.title), list.map(navLink)] : null; });
-    const side = h('nav', {class: 'side', 'aria-label': 'Разделы'}, h('div', {class: 'brand'}, h('span', {class: 'brand-mark'}, 'А'), h('div', {}, 'Астрея', h('small', {}, 'Управление сайтом'))),
+    const groups = GROUPS.map((g, gi) => { const list = items.filter(n => n.g === g.id && !n.hide); return list.length ? [h('div', {class: 'nav-h'}, g.title), list.map(navLink)] : null; });
+    const side = h('nav', {class: 'side', 'aria-label': 'Разделы'}, h('div', {class: 'brand'}, h('div', {class: 'brand-t'}, logoNode(), h('small', {}, 'Административная панель'))),
       h('button', {class: 'nav pal-btn', type: 'button', id: 'pal-open', onclick: () => { document.body.classList.remove('nav-open'); AD.openPalette(); }}, ico('search'), 'Поиск', h('span', {class: 'kbd', 'aria-hidden': 'true'}, 'Ctrl K')),
       groups,
       h('div', {class: 'sep'}), h('a', {class: 'nav', href: AD.config.siteUrl || '/', target: '_blank', rel: 'noopener'}, ico('globe'), 'Открыть сайт'),
@@ -249,7 +251,7 @@
   /* общий заголовок страницы */
   AD.pageHead = (title, sub, ...actions) => {
     const n = AD.cur && NAV.find(x => x.id === AD.cur.id), gi = n ? GROUPS.findIndex(g => g.id === n.g) : -1;
-    return h('div', {class: 'page-h'}, gi >= 0 ? h('div', {class: 'eyebrow'}, h('i', {}, String(gi + 1).padStart(2, '0')), GROUPS[gi].title) : null, h('h1', {}, title), h('div', {class: 'right row'}, actions), sub ? h('p', {class: 'sub'}, sub) : null);
+    return h('div', {class: 'page-h'}, gi >= 0 ? h('div', {class: 'eyebrow'}, GROUPS[gi].title) : null, h('h1', {}, title), h('div', {class: 'right row'}, actions), sub ? h('p', {class: 'sub'}, sub) : null);
   };
   AD.NAV = NAV; AD.GROUPS = GROUPS;
 })();

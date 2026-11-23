@@ -209,3 +209,13 @@ hr.sp{border:0;border-top:1px solid var(--line-s);margin:18px 0}
 .draft-note{display:flex;gap:10px;align-items:center;flex-wrap:wrap;padding:10px 14px;border-radius:14px;background:var(--gold-xl);border:1px solid rgba(176,142,78,.5);font-size:14px;margin-bottom:14px}
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;animation-delay:0s!important;transition-duration:.01ms!important;scroll-behavior:auto!important}}
 .help{font-size:12.5px;color:var(--muted);line-height:1.4}
+
+/* логотип сайта вместо буквы «А» */
+.brand-logo{display:block;height:50px;width:auto;aspect-ratio:836/436;overflow:visible;--lm:#f5f0e4}
+.brand-logo.dark{--lm:#0b1a33;height:58px}
+.side .brand{padding:6px 8px 18px}
+.side .brand-t{display:grid;gap:8px}
+.side .brand-t small{margin-top:0}
+.login .brand-login{display:grid;gap:8px;justify-items:start}
+.login .brand-login small{font:600 10.5px var(--sans);letter-spacing:.2em;text-transform:uppercase;color:#8a6c33}
+.side .nav-h::before,.page-h .eyebrow::before{content:none}
