@@ -3,19 +3,17 @@
   'use strict';
   const {h} = AD;
   const norm = s => String(s || '').toLowerCase().replace(/ё/g, 'е');
-  const CMDS = [
-    ['Раздел', 'Обзор', '#/overview', 'главная сводка состояние здоровье', ['admin']], ['Раздел', 'Заявки', '#/leads', 'обращения клиенты формы', ['admin', 'manager']], ['Раздел', 'Содержимое сайта', '#/content', 'тексты товары бренды новости мероприятия', ['admin']], ['Раздел', 'Товары по брендам', '#/brandprods', 'каталог фото товаров добавить убрать бренд карточки', ['admin']],
-    ['Раздел', 'Страницы (конструктор)', '#/pages', 'свои страницы блоки акции', ['admin']], ['Раздел', 'Оформление', '#/design', 'цвета меню фон', ['admin']], ['Раздел', 'Предпросмотр', '#/preview', 'посмотреть сайт телефон планшет', ['admin']],
-    ['Раздел', 'Картинки', '#/files', 'файлы загрузка медиа фото', ['admin']], ['Раздел', 'Публикация', '#/publish', 'сборка выложить github сайт', ['admin']], ['Раздел', 'Настройки и заявки', '#/settings', 'уведомления telegram почта', ['admin']], ['Раздел', 'Пользователи', '#/users', 'доступ пароль роли', ['admin']], ['Раздел', 'Журнал', '#/audit', 'история действия', ['admin']],
-    ['Создать', 'Новая новость', '#/content/news/__new', 'добавить новость акция', ['admin']], ['Создать', 'Новый товар', '#/brandprods', 'добавить товар фото каталог', ['admin']], ['Создать', 'Новое мероприятие', '#/content/events/__new', 'добавить семинар вебинар обучение', ['admin']], ['Создать', 'Новая страница', '#/pages/__new', 'создать страницу конструктор', ['admin']],
-    ['Оформление', 'Меню сайта', '#/design/menu', 'пункты шапка навигация', ['admin']], ['Оформление', 'Фоны страниц', '#/design/backdrops', 'текстуры крем фон', ['admin']]
-  ];
+  const KW = {overview: 'главная сводка состояние здоровье', leads: 'обращения клиенты формы', texts: 'тексты заголовки страницы подписи контакты главная компания газета', news: 'новости газета акции выпуск слоты', products: 'товары витрина каталог фото упаковка', brands: 'бренды логотип', events: 'мероприятия семинары обучение преподаватели faq', contacts: 'контакты телефон адрес офисы реквизиты скидки', menu: 'меню шапка навигация', pages: 'свои страницы блоки акции конструктор', content: 'все данные json разделы', files: 'файлы загрузка медиа фото картинки', preview: 'посмотреть сайт телефон планшет', publish: 'сборка выложить github сайт опубликовать', history: 'версии откат diff изменения', backups: 'копии резервные', settings: 'уведомления telegram почта', integrations: 'метрика мессенджеры капча битрикс', users: 'пользователи роли', security: 'пароль 2fa двухфакторный', audit: 'журнал действий', privacy: 'персональные данные 152-фз', launch: 'запуск чек-лист'};
+  const CMDS = AD.NAV.filter(n => !n.hide).map(n => ['Раздел', n.title, '#/' + n.id, KW[n.id] || '', n.roles]).concat([
+    ['Создать', 'Новая новость', '#/news/__new', 'добавить новость акция', ['admin', 'editor']], ['Создать', 'Новый товар', '#/products/__new', 'добавить товар фото каталог', ['admin', 'editor']], ['Создать', 'Новое мероприятие', '#/events/__new', 'добавить семинар вебинар', ['admin', 'editor']], ['Создать', 'Новая страница', '#/pages', 'добавить страницу', ['admin', 'editor']],
+    ['Контакты', 'Офисы и представительства', '#/contacts/offices', 'города адреса телефоны', ['admin', 'editor']], ['Контакты', 'Скидки за объём', '#/contacts/discounts', 'скидка партнёрам пороги', ['admin', 'editor']]
+  ]);
   let open = null;
   AD.openPalette = function () {
     if (open || !AD.user || AD.user.mustChange || !$('#view')) return;
     const prev = document.activeElement, role = AD.user.role;
     const all = CMDS.filter(c => c[4].includes(role)).map(([type, title, link, kw]) => ({type, title, sub: '', link, kw}));
-    const inp = h('input', {type: 'text', id: 'pal-q', role: 'combobox', 'aria-expanded': 'true', 'aria-controls': 'pal-list', 'aria-autocomplete': 'list', placeholder: role === 'admin' ? 'Куда перейти или что найти? Раздел, товар, новость…' : 'Куда перейти?', autocomplete: 'off', spellcheck: 'false'}), list = h('ul', {id: 'pal-list', role: 'listbox'});
+    const inp = h('input', {type: 'text', id: 'pal-q', role: 'combobox', 'aria-expanded': 'true', 'aria-controls': 'pal-list', 'aria-autocomplete': 'list', placeholder: role !== 'manager' ? 'Куда перейти или что найти? Раздел, товар, новость…' : 'Куда перейти?', autocomplete: 'off', spellcheck: 'false'}), list = h('ul', {id: 'pal-list', role: 'listbox'});
     const foot = h('div', {class: 'foot'}, h('span', {}, h('span', {class: 'kbd'}, '↑'), ' ', h('span', {class: 'kbd'}, '↓'), ' выбрать'), h('span', {}, h('span', {class: 'kbd'}, 'Enter'), ' открыть'), h('span', {}, h('span', {class: 'kbd'}, 'Esc'), ' закрыть'));
     const ov = h('div', {class: 'pal-ov', onmousedown: e => { if (e.target === ov) close(); }}, h('div', {class: 'pal', role: 'dialog', 'aria-modal': 'true', 'aria-label': 'Быстрый переход и поиск'}, inp, list, foot));
     let items = [], at = 0, remote = [], timer = null, seq = 0;
@@ -42,7 +40,7 @@
       else if (e.key === 'Tab') { e.preventDefault(); }
     }
     inp.addEventListener('input', () => {
-      filter(); clearTimeout(timer); const q = inp.value.trim(); if (role !== 'admin' || q.length < 2) { remote = []; return; }
+      filter(); clearTimeout(timer); const q = inp.value.trim(); if (role === 'manager' || q.length < 2) { remote = []; return; }
       timer = setTimeout(async () => { const my = ++seq; try { const r = await AD.get('/api/search?q=' + encodeURIComponent(q)); if (my !== seq || !open) return; remote = r.items; filter(); } catch (e) {} }, 180);
     });
     document.addEventListener('keydown', onKey, true); open = ov; document.body.append(ov); filter(); inp.focus();

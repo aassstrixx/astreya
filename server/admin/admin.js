@@ -25,7 +25,7 @@
   const ICONS = {
     inbox: 'M3 13l2-8h14l2 8M3 13v6h18v-6M3 13h5l1 3h6l1-3h5', edit: 'M4 20h4L19 9l-4-4L4 16zM14 6l4 4', image: 'M4 5h16v14H4zM4 16l5-5 4 4 3-3 4 4M9 9.5h.01', upload: 'M12 16V4m0 0l-4 4m4-4l4 4M4 16v4h16v-4', gear: 'M12 15a3 3 0 100-6 3 3 0 000 6zM19 12a7 7 0 00-.1-1.2l2-1.5-2-3.4-2.3.9a7 7 0 00-2-1.2L14.2 3h-4l-.4 2.6a7 7 0 00-2 1.2l-2.3-.9-2 3.4 2 1.5A7 7 0 005 12a7 7 0 00.1 1.2l-2 1.5 2 3.4 2.3-.9a7 7 0 002 1.2l.4 2.6h4l.4-2.6a7 7 0 002-1.2l2.3.9 2-3.4-2-1.5c.1-.4.1-.8.1-1.2z',
     users: 'M9 11a3.5 3.5 0 100-7 3.5 3.5 0 000 7zM2.5 20c.5-3.5 3-5.5 6.5-5.5s6 2 6.5 5.5M16 4.3a3.5 3.5 0 010 6.4M17.5 14.7c2.3.5 3.7 2.4 4 5.3', list: 'M8 6h13M8 12h13M8 18h13M3.5 6h.01M3.5 12h.01M3.5 18h.01', globe: 'M12 21a9 9 0 100-18 9 9 0 000 18zM3 12h18M12 3c2.5 2.5 3.8 5.5 3.8 9S14.5 18.5 12 21c-2.5-2.5-3.8-5.5-3.8-9S9.5 5.5 12 3z',
-    dash: 'M4 4h7v9H4zM13 4h7v5h-7zM13 11h7v9h-7zM4 15h7v5H4z', rocket: 'M12 3c3 2 5 5 5 9l-2 3H9l-2-3c0-4 2-7 5-9zM9 15l-3 4 3-1M15 15l3 4-3-1M12 9.5h.01', shield: 'M12 3l7 3v5c0 5-3 8-7 10-4-2-7-5-7-10V6l7-3zM9 12l2 2 4-4', plug: 'M9 3v5M15 3v5M6 8h12v3a6 6 0 01-12 0V8zM12 17v4', archive: 'M3 4h18v4H3zM5 8v12h14V8M10 12h4', lock: 'M6 11h12v9H6zM8 11V8a4 4 0 018 0v3M12 15v2', pages: 'M7 3h8l4 4v14H7zM15 3v4h4M10 12h6M10 16h6', palette: 'M12 3a9 9 0 100 18c1.2 0 2-.8 2-1.8 0-.5-.2-.9-.5-1.2-.3-.3-.5-.7-.5-1.2 0-1 .8-1.8 1.8-1.8H17a4 4 0 004-4c0-4-4-8-9-8zM7.5 11h.01M10 7.5h.01M14.5 7.5h.01', eye: 'M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12zM12 15a3 3 0 100-6 3 3 0 000 6z', search: 'M11 18a7 7 0 100-14 7 7 0 000 14zM21 21l-5-5', box: 'M21 8l-9-5-9 5v8l9 5 9-5zM3 8l9 5 9-5M12 13v8'
+    dash: 'M4 4h7v9H4zM13 4h7v5h-7zM13 11h7v9h-7zM4 15h7v5H4z', rocket: 'M12 3c3 2 5 5 5 9l-2 3H9l-2-3c0-4 2-7 5-9zM9 15l-3 4 3-1M15 15l3 4-3-1M12 9.5h.01', shield: 'M12 3l7 3v5c0 5-3 8-7 10-4-2-7-5-7-10V6l7-3zM9 12l2 2 4-4', plug: 'M9 3v5M15 3v5M6 8h12v3a6 6 0 01-12 0V8zM12 17v4', archive: 'M3 4h18v4H3zM5 8v12h14V8M10 12h4', lock: 'M6 11h12v9H6zM8 11V8a4 4 0 018 0v3M12 15v2', pages: 'M7 3h8l4 4v14H7zM15 3v4h4M10 12h6M10 16h6', palette: 'M12 3a9 9 0 100 18c1.2 0 2-.8 2-1.8 0-.5-.2-.9-.5-1.2-.3-.3-.5-.7-.5-1.2 0-1 .8-1.8 1.8-1.8H17a4 4 0 004-4c0-4-4-8-9-8zM7.5 11h.01M10 7.5h.01M14.5 7.5h.01', eye: 'M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12zM12 15a3 3 0 100-6 3 3 0 000 6z', search: 'M11 18a7 7 0 100-14 7 7 0 000 14zM21 21l-5-5', text: 'M4 6h16M4 12h10M4 18h14', news: 'M5 4h12v16H7a2 2 0 01-2-2V4zM17 8h3v10a2 2 0 01-2 2M8 8h6M8 12h6M8 16h4', cal: 'M4 6h16v14H4zM4 10h16M8 3v4M16 3v4', phone: 'M6 3h4l2 5-2.5 1.5a11 11 0 005 5L16 12l5 2v4a2 2 0 01-2 2A16 16 0 013 5a2 2 0 013-2z', menu: 'M4 7h16M4 12h16M4 17h16', tag: 'M3 12V4h8l10 10-8 8L3 12zM7.5 7.5h.01', hist: 'M3 12a9 9 0 109-9 9 9 0 00-6.4 2.6L3 8M3 3v5h5M12 7v5l3 2', store: 'M4 9l1-5h14l1 5M4 9v11h16V9M4 9a3 3 0 006 0 3 3 0 006 0 3 3 0 004 0M9 20v-6h6v6', cap: 'M2 9l10-5 10 5-10 5zM6 11v5c3 2 9 2 12 0v-5', box: 'M21 8l-9-5-9 5v8l9 5 9-5zM3 8l9 5 9-5M12 13v8'
   };
   const ico = n => { const s = document.createElementNS(SVG_NS, 'svg'); s.setAttribute('viewBox', '0 0 24 24'); s.setAttribute('fill', 'none'); s.setAttribute('stroke', 'currentColor'); s.setAttribute('stroke-width', '1.8'); s.setAttribute('stroke-linecap', 'round'); s.setAttribute('stroke-linejoin', 'round'); s.setAttribute('aria-hidden', 'true'); const p = document.createElementNS(SVG_NS, 'path'); p.setAttribute('d', ICONS[n] || ''); s.append(p); return s; };
   /* замена содержимого элемента: принимает узлы, строки, вложенные массивы; null/false пропускаются */
@@ -161,11 +161,19 @@
   };
 
   /* ---------- каркас и разделы ---------- */
+  /* меню: группы по смыслу; editor — редактор содержимого (без безопасности, пользователей и настроек), manager — только заявки */
+  const GROUPS = [{id: 'main', title: 'Главное'}, {id: 'content', title: 'Контент'}, {id: 'media', title: 'Медиа'}, {id: 'publish', title: 'Публикация'}, {id: 'system', title: 'Система'}];
+  const ADM = ['admin'], EDT = ['admin', 'editor'], ALL = ['admin', 'editor', 'manager'];
   const NAV = [
-    {id: 'overview', title: 'Обзор', icon: 'dash', roles: ['admin']}, {id: 'launch', title: 'Запуск', icon: 'rocket', roles: ['admin']}, {id: 'leads', title: 'Заявки', icon: 'inbox', roles: ['admin', 'manager']}, {id: 'content', title: 'Содержимое сайта', icon: 'edit', roles: ['admin']}, {id: 'brandprods', title: 'Товары по брендам', icon: 'box', roles: ['admin']}, {id: 'pages', title: 'Страницы', icon: 'pages', roles: ['admin']},
-    {id: 'design', title: 'Оформление', icon: 'palette', roles: ['admin']}, {id: 'preview', title: 'Предпросмотр', icon: 'eye', roles: ['admin']}, {id: 'files', title: 'Картинки', icon: 'image', roles: ['admin']},
-    {id: 'publish', title: 'Публикация', icon: 'upload', roles: ['admin']}, {id: 'integrations', title: 'Интеграции', icon: 'plug', roles: ['admin']}, {id: 'settings', title: 'Настройки и заявки', icon: 'gear', roles: ['admin']}, {id: 'privacy', title: 'Персональные данные', icon: 'lock', roles: ['admin']}, {id: 'backups', title: 'Копии', icon: 'archive', roles: ['admin']},
-    {id: 'security', title: 'Безопасность', icon: 'shield', roles: ['admin', 'manager']}, {id: 'users', title: 'Пользователи', icon: 'users', roles: ['admin']}, {id: 'audit', title: 'Журнал', icon: 'list', roles: ['admin']}
+    {g: 'main', id: 'overview', title: 'Обзор', icon: 'dash', roles: EDT}, {g: 'main', id: 'leads', title: 'Заявки', icon: 'inbox', roles: ALL},
+    {g: 'content', id: 'texts', title: 'Тексты страниц', icon: 'text', roles: EDT}, {g: 'content', id: 'news', title: 'Новости и газета', icon: 'news', roles: EDT}, {g: 'content', id: 'products', title: 'Товары и витрина', icon: 'box', roles: EDT}, {g: 'content', id: 'brands', title: 'Бренды', icon: 'tag', roles: EDT},
+    {g: 'content', id: 'events', title: 'Мероприятия и обучение', icon: 'cap', roles: EDT}, {g: 'content', id: 'contacts', title: 'Контакты и реквизиты', icon: 'phone', roles: EDT}, {g: 'content', id: 'menu', title: 'Меню', icon: 'menu', roles: EDT},
+    {g: 'content', id: 'pages', title: 'Свои страницы', icon: 'pages', roles: EDT}, {g: 'content', id: 'content', title: 'Все данные сайта', icon: 'edit', roles: EDT},
+    {g: 'media', id: 'files', title: 'Картинки', icon: 'image', roles: EDT},
+    {g: 'publish', id: 'preview', title: 'Предпросмотр', icon: 'eye', roles: EDT}, {g: 'publish', id: 'publish', title: 'Опубликовать', icon: 'upload', roles: EDT}, {g: 'publish', id: 'history', title: 'История и откат', icon: 'hist', roles: EDT}, {g: 'publish', id: 'backups', title: 'Копии данных', icon: 'archive', roles: ADM},
+    {g: 'system', id: 'settings', title: 'Настройки', icon: 'gear', roles: ADM}, {g: 'system', id: 'integrations', title: 'Интеграции', icon: 'plug', roles: ADM}, {g: 'system', id: 'users', title: 'Пользователи', icon: 'users', roles: ADM}, {g: 'system', id: 'security', title: 'Безопасность', icon: 'shield', roles: ['admin', 'manager', 'editor']},
+    {g: 'system', id: 'audit', title: 'Журнал', icon: 'list', roles: ADM}, {g: 'system', id: 'privacy', title: 'Персональные данные', icon: 'lock', roles: ADM}, {g: 'system', id: 'launch', title: 'Запуск', icon: 'rocket', roles: ADM},
+    {g: 'hidden', id: 'design', title: 'Оформление (служебный)', icon: 'palette', roles: ADM, hide: true}, {g: 'hidden', id: 'brandprods', title: 'Товары по брендам (прежний вид)', icon: 'box', roles: ADM, hide: true}
   ];
   AD.setBadge = n => { $$('.nav .badge').forEach(b => { b.textContent = n; b.hidden = !n; }); document.title = (n ? '(' + n + ') ' : '') + 'Админка — Астрея'; };
   AD.pollNew = async function () { try { const s = await AD.get('/api/leads/stats'); AD.setBadge(s.new); AD.stats = s; } catch (e) {} };
@@ -179,10 +187,12 @@
   }
   function mountShell() {
     const items = NAV.filter(n => n.roles.includes(AD.user.role) && AD.views[n.id]);          // разделов, которых нет в этой сборке (демо-файл), в меню нет
-    const side = h('nav', {class: 'side', 'aria-label': 'Разделы'}, h('div', {class: 'brand'}, h('span', {class: 'brand-mark'}, 'А'), 'Астрея'),
+    const navLink = n => h('a', {class: 'nav', href: '#/' + n.id, dataset: {id: n.id}}, ico(n.icon), n.title, n.id === 'leads' ? h('span', {class: 'badge', hidden: true}) : null);
+    const groups = GROUPS.map((g, gi) => { const list = items.filter(n => n.g === g.id && !n.hide); return list.length ? [h('div', {class: 'nav-h'}, h('i', {}, String(gi + 1).padStart(2, '0')), g.title), list.map(navLink)] : null; });
+    const side = h('nav', {class: 'side', 'aria-label': 'Разделы'}, h('div', {class: 'brand'}, h('span', {class: 'brand-mark'}, 'А'), h('div', {}, 'Астрея', h('small', {}, 'Управление сайтом'))),
       h('button', {class: 'nav pal-btn', type: 'button', id: 'pal-open', onclick: () => { document.body.classList.remove('nav-open'); AD.openPalette(); }}, ico('search'), 'Поиск', h('span', {class: 'kbd', 'aria-hidden': 'true'}, 'Ctrl K')),
-      items.map(n => h('a', {class: 'nav', href: '#/' + n.id, dataset: {id: n.id}}, ico(n.icon), n.title, n.id === 'leads' ? h('span', {class: 'badge', hidden: true}) : null)),
-      h('a', {class: 'nav', href: AD.config.siteUrl || '/', target: '_blank', rel: 'noopener'}, ico('globe'), 'Открыть сайт'), h('div', {class: 'sep'}),
+      groups,
+      h('div', {class: 'sep'}), h('a', {class: 'nav', href: AD.config.siteUrl || '/', target: '_blank', rel: 'noopener'}, ico('globe'), 'Открыть сайт'),
       h('div', {class: 'who'}, h('div', {}, h('b', {}, AD.user.name && AD.user.name !== ((AD.config.roles || {})[AD.user.role]) ? AD.user.name : AD.user.login), h('br'), (AD.config.roles || {})[AD.user.role] || AD.user.role), h('button', {class: 'btn sm', type: 'button', onclick: () => AD.changePasswordDialog()}, 'Сменить пароль'), h('button', {class: 'btn sm', type: 'button', id: 'logout', onclick: () => AD.logout()}, 'Выйти')));
     const top = h('div', {class: 'topbar'}, h('button', {type: 'button', 'aria-label': 'Меню', onclick: () => document.body.classList.toggle('nav-open')}, '☰'), 'Астрея · админка');
     const main = h('main', {class: 'main', id: 'view', tabindex: '-1'});
@@ -191,7 +201,7 @@
     AD.cur = null; AD.pollNew(); AD.timers = [setInterval(() => { if (!document.hidden) AD.pollNew(); }, 60000)];
     route();
   }
-  const home = () => (AD.user && AD.user.role === 'admin' ? 'overview' : 'leads');
+  const home = () => (AD.user && AD.user.role !== 'manager' ? 'overview' : 'leads');
   function parseHash() { const p = location.hash.replace(/^#\/?/, '').split('/').filter(Boolean).map(x => { try { return decodeURIComponent(x); } catch (e) { return x; } }); return {id: p[0] || home(), parts: p.slice(1)}; }
   let lastHash = location.hash, reverting = false;
   function route() {
@@ -222,5 +232,9 @@
   AD.go = hash => { location.hash = hash; };
   AD.previewUrl = p => '/' + p;                       // адрес страницы сайта для рамки предпросмотра (демо-версия подменяет)
   /* общий заголовок страницы */
-  AD.pageHead = (title, sub, ...actions) => h('div', {class: 'page-h'}, h('h1', {}, title), h('div', {class: 'right row'}, actions), sub ? h('p', {class: 'sub'}, sub) : null);
+  AD.pageHead = (title, sub, ...actions) => {
+    const n = AD.cur && NAV.find(x => x.id === AD.cur.id), gi = n ? GROUPS.findIndex(g => g.id === n.g) : -1;
+    return h('div', {class: 'page-h'}, gi >= 0 ? h('div', {class: 'eyebrow'}, h('i', {}, String(gi + 1).padStart(2, '0')), GROUPS[gi].title) : null, h('h1', {}, title), h('div', {class: 'right row'}, actions), sub ? h('p', {class: 'sub'}, sub) : null);
+  };
+  AD.NAV = NAV; AD.GROUPS = GROUPS;
 })();
