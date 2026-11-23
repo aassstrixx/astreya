@@ -35,7 +35,10 @@
     if (!libCache || force) libCache = (await AD.get('/api/files')).dirs;
     return libCache;
   };
-  media.invalidate = () => { libCache = null; };
+  media.invalidate = () => { libCache = null; altCache = null; };
+  let altCache = null;
+  /* подпись (alt) картинки из «Картинки → Подпись» — чтобы подставить её в поле, когда выбрали файл из библиотеки */
+  media.altOf = async p => { try { if (!altCache) altCache = (await AD.get('/api/collections/media')).data.alt || {}; return altCache[p] || ''; } catch (e) { return ''; } };
   media.src = p => '/' + String(p || '').replace(/^\/+/, '');
 
   /* Окно выбора: вкладка «Загрузить» (перетащить или выбрать файлы) и «Библиотека» (поиск по папкам). onPick(path) вызывается при выборе. */

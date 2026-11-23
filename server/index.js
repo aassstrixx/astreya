@@ -205,6 +205,9 @@ async function handleApi(req, res, url) {
   if (p === '/api/search' && m === 'GET') return H.json(res, 200, {items: INS.search(url.searchParams.get('q'))});
   if (p === '/api/site-audit' && m === 'POST') { const r = await B.audit(); log(req, ctx.who, 'site_audit', `${r.errors} ошибок, ${r.warns} замечаний`); return H.json(res, 200, r); }
   if (p === '/api/files/usage' && m === 'GET') return H.json(res, 200, {used: F.usedIn(String(url.searchParams.get('path') || ''))});
+  if (p === '/api/files/overview' && m === 'GET') { const dirs = F.list(), idx = F.usageIndex(), usage = {}; dirs.forEach(d => d.files.forEach(f => { const u = idx.get(f.path); if (u) usage[f.path] = u; })); const sc = F.scenes(); return H.json(res, 200, {dirs, scenes: sc, usage}); }
+  if (p === '/api/files/folder' && m === 'POST') { const b = await H.readJSONBody(req, 1024); const r = F.mkdir(b.name); log(req, ctx.who, 'folder', r.dir); return H.json(res, 200, r); }
+  if (p === '/api/files/rename' && m === 'POST') { const b = await H.readJSONBody(req, 2048); const r = F.rename(b.path, b.name); log(req, ctx.who, 'file_rename', b.path + ' → ' + r.path); if (r.changed.length) r.build = await B.build('переименована картинка ' + r.path); return H.json(res, 200, r); }
   if (p === '/api/files' && m === 'GET') return H.json(res, 200, {dirs: F.list()});
   if (p === '/api/files' && m === 'POST') { const b = await H.readJSONBody(req, 9 * 1024 * 1024); const buf = Buffer.from(String(b.data || ''), 'base64'); const r = F.upload(b.dir, b.name, buf); log(req, ctx.who, 'upload', r.path); return H.json(res, 200, r); }
   if (p === '/api/files' && m === 'DELETE') { const r = F.remove(url.searchParams.get('path'), url.searchParams.get('force') === '1'); log(req, ctx.who, 'file_delete', r.path); return H.json(res, 200, r); }

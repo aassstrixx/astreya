@@ -24,6 +24,7 @@ const COLLECTIONS = {
   integrations: {title: 'Интеграции: Метрика, согласие, мессенджеры', group: 'Сайт', file: 'data/integrations.json', kind: 'object'},
   legal:    {title: 'Документы (152-ФЗ)',     group: 'Сайт',     file: 'data/legal.json',    kind: 'object'}
 };
+COLLECTIONS.media = {title: 'Подписи к картинкам', group: 'Сайт', file: 'data/media.json', kind: 'object'};
 COLLECTIONS.texts = {title: 'Тексты страниц', group: 'Сайт', file: 'data/texts.json', kind: 'object'};
 COLLECTIONS.sales = {title: 'Путь к закупке («Старт со Стеллой»)', group: 'Сайт', file: 'data/sales.json', kind: 'object'};
 /* библиотека «живых» реплик помощника: каждый файл data/stella/*.json — отдельный раздел (правка не ломает сайт: он собирается и проверяется, а при ошибке сборки откатывается) */
@@ -164,6 +165,9 @@ function problems(name, data) {
           ['top', 'end'].forEach(sl => { if (v[sl]) ck(v[sl], `${x}, ${sl === 'top' ? 'начало' : 'конец'}`, true); }); if (v.logo) ck(v.logo, `${x}, логотип`, false);
           (v.mid || []).forEach((m, j) => { ck(m, `${x}, блок ${j + 1}`, true); if (!m || !/^[a-z][\w-]*(?:\.[\w-]+)*(?:#[\w-]+)?$/i.test(String(m.sel || ''))) P.push(`${x}, блок ${j + 1}: селектор вида section.sec или section.sec#id.`); }); }); });
     }
+  } else if (name === 'media') {
+    if (!data.alt || typeof data.alt !== 'object' || Array.isArray(data.alt)) return ['Нужен объект «alt»: путь картинки → подпись.'];
+    Object.entries(data.alt).forEach(([k, v]) => { if (!/^assets\/[\w\-./]+\.(png|jpe?g|webp|gif|svg)$/i.test(k)) P.push(`Подписи к картинкам: путь «${k.slice(0, 60)}» — файл из папки assets/.`); else if (typeof v !== 'string' || v.length > 160) P.push(`Подпись к «${k}» — текст до 160 символов.`); });
   } else if (name === 'texts') {
     if (!data.items || typeof data.items !== 'object' || Array.isArray(data.items)) return ['Нужен объект «items»: ключ → текст.'];
     Object.entries(data.items).forEach(([k, v]) => TX.problems(k, v).forEach(x => P.push(x)));
