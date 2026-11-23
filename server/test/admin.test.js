@@ -120,12 +120,17 @@ test('подписи к картинкам: хранятся в data/media.json,
   let r = await save(editor, 'media', d => { d.alt['assets/teachers/bondareva.webp'] = 'Наталья Бондарева'; }); assert.equal(r.status, 200, r.text);
   r = await save(editor, 'media', d => { d.alt['../etc/passwd'] = 'x'; }); assert.equal(r.status, 422); r = await save(editor, 'media', d => { d.alt = {'assets/a.png': 'я'.repeat(200)}; }); assert.equal(r.status, 422);
   await save(editor, 'media', d => { d.alt = {}; });
+  const up = await editor.post('/api/files', {dir: 'assets/uploads', name: 'podpis.png', data: PNG.toString('base64')}); assert.equal(up.status, 200);
+  assert.equal((await save(editor, 'media', d => { d.alt[up.json.path] = 'Подпись для удаления'; })).status, 200);
+  assert.deepEqual((await editor.get('/api/files/overview')).json.usage[up.json.path], undefined, 'подпись не считается использованием картинки');
+  assert.equal((await editor.del('/api/files?path=' + encodeURIComponent(up.json.path))).status, 200, 'картинку с подписью можно удалить'); assert.deepEqual(rd(S.root, 'data/media.json').alt, {}, 'подпись удалённой картинки убрана');
 });
 
 /* ---------- роли ---------- */
 test('роли: редактор правит содержимое, но не настройки, пользователей, безопасность, журнал, копии и заявки', async () => {
   for (const u of ['/api/settings', '/api/users', '/api/audit', '/api/backups', '/api/launch', '/api/security', '/api/integrations', '/api/leads', '/api/privacy/registry', '/api/site.zip']) assert.equal((await editor.get(u)).status, 403, u);
   for (const u of ['/api/collections', '/api/files', '/api/overview', '/api/build', '/api/publish', '/api/site-pages', '/api/search?q=elastense']) assert.equal((await editor.get(u)).status, 200, u);
+  assert.equal((await editor.get('/api/collections/integrations')).status, 403, 'подключения — только администратору'); assert.ok(!(await editor.get('/api/collections')).json.collections.some(c => c.name === 'integrations'));
   assert.equal((await editor.post('/api/assistant/test')).status, 403); assert.equal((await editor.put('/api/settings', {})).status, 403);
   const cfg = (await editor.get('/api/config')).json; assert.equal(cfg.roles.editor.startsWith('Редактор'), true);
   const meta = (await admin.get('/api/users')).json.users.find(u => u.login === 'redaktor'); assert.equal(meta.role, 'editor');

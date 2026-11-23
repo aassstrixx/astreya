@@ -85,7 +85,7 @@ function usedIn(p) {
       try { if (fs.readFileSync(path.join(C.ROOT, rel), 'utf8').includes(p)) out.push(rel); } catch (x) {}
     }
   };
-  scan('data', false, /\.json$/); scan('src', true, /\.(js|html|css|json)$/); scan('css', false, /\.css$/); scan('', false, /\.html$/);
+  scan('data', false, /^(?!media\.json$).*\.json$/); scan('src', true, /\.(js|html|css|json)$/); scan('css', false, /\.css$/); scan('', false, /\.html$/);
   return out.filter(x => x !== 'js/data.js').slice(0, 8);
 }
 function remove(p, force) {
@@ -93,14 +93,17 @@ function remove(p, force) {
   const base = dirOf(m[1]), target = path.join(base, path.basename(m[2]));
   if (!fs.existsSync(target)) throw httpErr(404, 'Файл не найден.');
   const used = usedIn(p); if (used.length && !force) throw httpErr(409, 'Файл используется на сайте (' + used.join(', ') + '). Сначала замените картинку в содержимом.', {usedIn: used});
-  fs.unlinkSync(target); return {path: p};
+  fs.unlinkSync(target);
+  try { const f = path.join(C.ROOT, 'data', 'media.json'), j = JSON.parse(fs.readFileSync(f, 'utf8')); if (j.alt && j.alt[p]) { delete j.alt[p]; fs.writeFileSync(f, JSON.stringify(j, null, 2) + '\n'); } } catch (e) { /* подписей нет */ }          // подпись удалённой картинки не храним
+  return {path: p};
 }
 /* где каждая картинка упомянута: данные сайта (с названием записи) и шаблоны/стили; один проход по файлам вместо поиска для каждой картинки */
 const ASSET_RE = /assets\/[\w\-./]+\.(?:png|jpe?g|webp|gif|svg)/g;
 function usageIndex() {
   const CT = require('./content'), map = new Map(), add = (p, label, kind) => { const a = map.get(p) || map.set(p, []).get(p); if (!a.some(x => x.label === label)) a.push({label, kind}); };
   for (const [coll, c] of Object.entries(CT.COLLECTIONS)) {
-    if (coll.startsWith('stella_')) continue; let data; try { data = JSON.parse(fs.readFileSync(path.join(C.ROOT, c.file), 'utf8')); } catch (e) { continue; }
+    if (coll.startsWith('stella_') || coll === 'media') continue; let data;       // подписи (alt) — не использование картинки
+     try { data = JSON.parse(fs.readFileSync(path.join(C.ROOT, c.file), 'utf8')); } catch (e) { continue; }
     const walk = (node, label, key) => {
       if (typeof node === 'string') { let m; ASSET_RE.lastIndex = 0; while ((m = ASSET_RE.exec(node))) add(m[0], c.title + (label ? ' › ' + label : ''), coll); return; }
       if (Array.isArray(node)) { node.forEach(x => walk(x, label, key)); return; }

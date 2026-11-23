@@ -17,6 +17,7 @@
     "admin:cli": "node server/cli.js",
     "test:server": "node --test --test-concurrency=1 server/test/leads.test.js server/test/content.test.js server/test/admin.test.js server/test/publish.test.js server/test/smtp-tls.test.js server/test/builder.test.js server/test/assistant.test.js server/test/assistant-sdk.test.js server/test/assistant-openai.test.js server/test/security.test.js",
     "test:e2e": "node server/test/e2e.js",
+    "test:e2e-admin": "node server/test/e2e-admin.js",
     "test:e2e-builder": "node server/test/e2e-builder.js",
     "test:e2e-launch": "node server/test/e2e-launch.js",
     "fonts": "node tools/fetch-fonts.js",

@@ -182,7 +182,9 @@ async function handleApi(req, res, url) {
 
   /* содержимое сайта, картинки, сборка и публикация — администратор и редактор */
   need(ctx, 'admin', 'editor');
-  if (p === '/api/collections' && m === 'GET') return H.json(res, 200, {collections: CT.summary()});
+  const ADMIN_ONLY = new Set(['integrations']);                               // подключения (Метрика, капча, подтверждение сайта) — только администратору
+  { const cm = p.match(/^\/api\/collections\/([a-z0-9_]+)(?:\/|$)/); if (cm && ADMIN_ONLY.has(cm[1])) need(ctx, 'admin'); }
+  if (p === '/api/collections' && m === 'GET') return H.json(res, 200, {collections: CT.summary().filter(c => ctx.user.role === 'admin' || !ADMIN_ONLY.has(c.name))});
   mm = p.match(/^\/api\/collections\/([a-z0-9_]+)$/);
   if (mm) {
     if (m === 'GET') return H.json(res, 200, CT.read(mm[1]));
