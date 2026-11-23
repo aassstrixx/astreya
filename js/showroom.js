@@ -100,7 +100,7 @@
   const SLOT_CAP = [16, 18, 25, 14, 11, 24, 24, 20, 18, 20];                                     // наибольшая высота упаковки на месте, см (малые места — для малых упаковок)
   const SLOT_RANK = [2, 3, 5, 6, 1, 0, 8, 9, 7, 4];                                            // порядок заполнения: самые заметные места первыми
   const TOP_Y = 326;                                                                     // верх упаковки не выше: под заголовком и чипами категорий
-  const ASIDE_TOP = 100, SPAN = SLOTS.length ? [Math.min.apply(null, SLOTS.map(q => q.x)) - 62, Math.max.apply(null, SLOTS.map(q => q.x)) + 62] : [470, 1250];
+  const ASIDE_TOP = 100, PANEL_H = 696, SPAN = SLOTS.length ? [Math.min.apply(null, SLOTS.map(q => q.x)) - 62, Math.max.apply(null, SLOTS.map(q => q.x)) + 62] : [470, 1250];
   const COMPACT_TOP = TOP_Y - 6, COMPACT_EXT = (SLOTS.length ? Math.max.apply(null, SLOTS.map(q => q.y)) : 640) + 58 - COMPACT_TOP;   // по вертикали холста показываем от верха самой высокой упаковки до оснований подиумов
 
   /* расстановка: товары (по высоте упаковки) по местам на подиумах — высокие на высокие места, малые на малые; если товаров меньше мест, занимаются самые заметные (SLOT_RANK) */
@@ -316,9 +316,14 @@
         const v = o.getAttribute('data-v'), on = cur[k] === v;
         const n = pool.filter(c => k === 'task' ? c.dataset.tasks.split(' ').indexOf(v) !== -1 : c.dataset[k] === v).length;
         o.setAttribute('aria-pressed', String(on)); $('em', o).textContent = n; o.classList.toggle('is-zero', n === 0);
-        o.classList.toggle('keep', on && o.classList.contains('xtra'));
       });
-      if (cur[k] !== 'all' && !grp.classList.contains('is-open')) { grp.classList.add('is-open'); $('.shw-gh', grp).setAttribute('aria-expanded', 'true'); }
+      if (cur[k] !== 'all' && grp._cur !== cur[k]) {
+        const hit = $$('.shw-o.xtra', grp).some(o => o.getAttribute('data-v') === cur[k]);
+        if (hit) setMore(grp, true);
+        if (!grp.classList.contains('is-open')) { grp.classList.add('is-open'); $('.shw-gh', grp).setAttribute('aria-expanded', 'true'); }
+        if (grp._cur !== undefined) keepVisible(grp);
+      }
+      grp._cur = cur[k];
     });
     const all = $('.shw-all', s.root); if (all) { const on = cur.cat === 'all'; all.classList.toggle('on', on); all.setAttribute('aria-pressed', String(on)); }
     const m = /(\d+)\D+(\d+)/.exec(($('#res-count') || {}).textContent || ''), cnt = $('[data-shw-count]', s.aside);
@@ -349,7 +354,7 @@
     if (stack) { rs.setProperty('--oy', oy.toFixed(1)); rs.setProperty('--ox', ox.toFixed(1)); rs.setProperty('--st', st + 'px'); rs.setProperty('--sb', sb + 'px'); }
     else { ['--oy', '--ox', '--st', '--sb'].forEach(n => rs.removeProperty(n)); }
     /* панель фильтров слева: сцена масштабируется по ширине, а окно может быть низким — ужимаем панель по высоте, чтобы при заходе она была видна целиком */
-    let ak = 1; if (!stack && s.panel) { const need = s.panel.scrollHeight; ak = need ? Math.max(.7, Math.min(1, ((innerHeight - 16) / k - ASIDE_TOP) / need)) : 1; }
+    let ak = 1; if (!stack && s.panel) ak = Math.max(.7, Math.min(1, ((innerHeight - 16) / k - ASIDE_TOP) / PANEL_H));          // размер панели не зависит от раскрытых групп: внутри неё прокручивается только список
     rs.setProperty('--ak', ak.toFixed(3));
     s.panOn = false; $$('.shw-pan', s.root).forEach(b => { b.hidden = true; });
     return ch;
@@ -435,9 +440,28 @@
     const k = t.getAttribute('data-key'), v = t.getAttribute('data-v'), sel = selOf(k); if (!sel) return;
     sel.value = sel.value === v ? 'all' : v; sel.dispatchEvent(new Event('change', {bubbles: true}));
   };
-  const refit = () => setTimeout(() => { if (S) layout(); }, 380);                                  /* после раскрытия/сворачивания групп панель снова подгоняется по высоте окна */
-  A.actions['shw-grp'] = t => { const g = t.closest('.shw-grp'), open = g.classList.toggle('is-open'); t.setAttribute('aria-expanded', String(open)); refit(); };
-  A.actions['shw-more'] = t => { const go = t.closest('.shw-go'), on = go.classList.toggle('more'), n = $$('.shw-o.xtra', go).length; t.setAttribute('aria-expanded', String(on)); t.textContent = on ? AT('ui.x_showroom.k5', 'Свернуть') : 'Ещё ' + n; refit(); };
+  /* Раскрытие группы и «Ещё N» не меняют размер панели — растёт только прокручиваемый список; после раскрытия он сам подъезжает так, чтобы раскрытое было видно, а заголовок группы оставался на месте. */
+  const fScroll = () => $('.shw-filters', S && S.aside);
+  const FADE = 18;
+  function scrollState() {                                                                          // мягкие края списка: затухание сверху/снизу только там, где есть что прокручивать
+    const f = fScroll(); if (!f) return; const t = f.scrollTop > 2, b = f.scrollTop + f.clientHeight < f.scrollHeight - 2;
+    f.style.setProperty('--ft', t ? FADE + 'px' : '0px'); f.style.setProperty('--fb', b ? FADE + 'px' : '0px');
+  }
+  function fTrack(ms) { const t0 = performance.now(), step = () => { scrollState(); if (performance.now() - t0 < ms) requestAnimationFrame(step); }; requestAnimationFrame(step); }
+  function keepVisible(grp) {
+    setTimeout(() => {
+      const f = fScroll(); if (!f || !grp.isConnected) return; const k = f.clientHeight ? f.getBoundingClientRect().height / f.clientHeight : 1, fr = f.getBoundingClientRect(), gr = grp.getBoundingClientRect();
+      const over = (gr.bottom - fr.bottom) / k + 8, room = (gr.top - fr.top) / k - 2;                  // сколько не влезает снизу / насколько можно поднять, не потеряв заголовок группы
+      if (over > 0 && room > 0) f.scrollBy({top: Math.min(over, room), behavior: mode() === 'full' ? 'smooth' : 'auto'});
+    }, 340);
+  }
+  function setMore(grp, on) {
+    const btn = $('.shw-more', grp); if (!btn) return; grp.classList.toggle('is-more', on); btn.setAttribute('aria-expanded', String(on));
+    btn.textContent = on ? AT('ui.x_showroom.k5', 'Свернуть') : 'Ещё ' + $$('.shw-o.xtra', grp).length;
+  }
+  A.actions['shw-grp'] = t => { const g = t.closest('.shw-grp'), open = g.classList.toggle('is-open'); t.setAttribute('aria-expanded', String(open)); fTrack(420); if (open) keepVisible(g); };
+  A.actions['shw-more'] = t => { const g = t.closest('.shw-grp'), on = !g.classList.contains('is-more'); setMore(g, on); fTrack(420); if (on) keepVisible(g); };
+  document.addEventListener('scroll', e => { if (S && e.target && e.target.classList && e.target.classList.contains('shw-filters')) scrollState(); }, true);
   A.actions['shw-pop-nav'] = t => { const tr = $('.shw-pop-t'); if (tr) tr.scrollBy({left: +t.getAttribute('data-dir') * tr.clientWidth * .92, behavior: mode() === 'full' ? 'smooth' : 'auto'}); };
   /* «Смотреть весь список» (и адрес #shw-all) раскрывает свёрнутый нижний список и приводит к нему */
   const openList = go => { const d = $('[data-shw-list]'); if (!d) return; d.open = true; if (go) d.scrollIntoView({behavior: mode() === 'full' ? 'smooth' : 'auto', block: 'start'}); };

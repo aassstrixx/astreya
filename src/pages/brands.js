@@ -191,7 +191,7 @@ function brandsWall(ctx, C, P) {
           ${b.tasks.length ? `<div><dt>${esc(pnl.tasks)}</dt><dd>${b.tasks.map(t => `<a href="${C.u(P, 'catalog.html')}?brand=${b.id}&task=${t}" data-track="catalog_click" data-place="brand-wall">${esc(ctx.taskById[t].label)}</a>`).join('')}</dd></div>` : ''}
           ${cats.length ? `<div><dt>${esc(pnl.lines)}</dt><dd>${cats.map(c => `<span>${esc(c)}</span>`).join('')}</dd></div>` : ''}
         </dl>
-        <div class="bw-pn-act"><a class="btn btn-fill" href="${C.u(P, 'catalog.html')}?brand=${b.id}" data-track="catalog_click" data-place="brand-wall" data-brand="${b.id}">${esc(pnl.cta)} ${I.arrow}</a><a class="lnk" href="${C.burl(P, b)}" data-track="brand_card_click" data-brand="${b.id}">${esc(pnl.about)} ${I.arrow}</a></div>
+        <div class="bw-pn-act"><a class="btn btn-fill" href="${C.u(P, 'catalog.html')}?brand=${b.id}" data-track="catalog_click" data-place="brand-wall" data-brand="${b.id}">${esc(pnl.cta)} ${I.arrow}</a>${pnl.aboutShow === false ? '' : `<a class="lnk" href="${C.burl(P, b)}" data-track="brand_card_click" data-brand="${b.id}">${esc(pnl.about)} ${I.arrow}</a>`}</div>
       </div>
       <div class="bw-pn-r"><p class="bw-pn-rt">${esc(pnl.products)}</p>
         <ul class="bw-pn-prods">${pick.map(p => { const pi = packInfo(p); return `<li><a href="${C.purl(P, p)}" data-track="house_magazine_product" data-product="${p.id}"><span class="bw-pr-pic"><img src="${esc(C.u(P, pi.small))}" alt="" loading="lazy" decoding="async"></span><span class="bw-pr-t"><strong>${esc(p.name)}</strong><small>${esc((ctx.catById[p.cat] || {}).name || '')}</small></span><i aria-hidden="true">${I.arrow}</i></a></li>`; }).join('')}</ul>

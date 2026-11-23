@@ -26,11 +26,12 @@ module.exports = function showroom(ctx, C, P) {
   const LIM = 5;
   const group = ([key, label, id, all, opts], i) => {
     const open = i < 2;
+    const o = ([v, t], j) => `<button class="shw-o${j >= LIM ? ' xtra' : ''}" type="button" data-act="shw-opt" data-key="${key}" data-v="${esc(v)}" aria-pressed="false"><i class="shw-ck" aria-hidden="true">${I.check}</i><span class="t">${esc(t)}</span><em>${cnt[key][v] || 0}</em></button>`;
     return `<div class="shw-grp${open ? ' is-open' : ''}" data-key="${key}">
       <button class="shw-gh" type="button" data-act="shw-grp" aria-expanded="${open}" aria-controls="shw-go-${key}"><span>${label}</span>${I.chevron}</button>
       <div class="shw-go" id="shw-go-${key}"><div class="shw-gi" role="group" aria-label="${label}">
-        ${opts.map(([v, t], j) => `<button class="shw-o${j >= LIM ? ' xtra' : ''}" type="button" data-act="shw-opt" data-key="${key}" data-v="${esc(v)}" aria-pressed="false"><i class="shw-ck" aria-hidden="true">${I.check}</i><span class="t">${esc(t)}</span><em>${cnt[key][v] || 0}</em></button>`).join('')}
-        ${opts.length > LIM ? `<button class="shw-more" type="button" data-act="shw-more" aria-expanded="false">${T('catalog.sr-more.btn')} ${opts.length - LIM}</button>` : ''}
+        ${opts.slice(0, LIM).map(o).join('')}
+        ${opts.length > LIM ? `<div class="shw-xw"><div class="shw-xi" id="shw-xi-${key}">${opts.slice(LIM).map((x, j) => o(x, j + LIM)).join('')}</div></div><button class="shw-more" type="button" data-act="shw-more" aria-expanded="false" aria-controls="shw-xi-${key}">${T('catalog.sr-more.btn')} ${opts.length - LIM}</button>` : ''}
       </div></div>
       <div class="fld shw-fld"><label for="${id}">${label}</label><div class="sel"><select id="${id}">${[['all', all], ...opts].map(([v, t]) => `<option value="${esc(v)}">${esc(t)}</option>`).join('')}</select>${I.chevron}</div></div>
     </div>`;
