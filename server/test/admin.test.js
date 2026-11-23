@@ -32,9 +32,12 @@ test('тексты: проверка — неизвестный ключ, сли
   const bad = async (k, v, re) => { const r = await save(admin, 'texts', d => { d.items[k] = v; }); assert.equal(r.status, 422, k + ': ' + r.text); assert.match(r.json.error, re, k); };
   await bad('nope.key', 'x', /Неизвестный текст/); await bad('contacts.hero.h1', 'я'.repeat(500), /символов/); await bad('contacts.hero.h1', 'a <script>alert(1)</script>', /< и >/);
   await bad('contacts.hero.h1', '   ', /пусто/); await bad('contacts.topics.partners.pd', 'до {pct}% <iframe src=x>', /разрешены только теги/);
+  await bad('contacts.topics.docs.h', 'javascript:alert(1)', /ссылка/); await bad('contacts.topics.docs.h', 'a b"><x', /ссылка/);
   assert.deepEqual(rd(S.root, 'data/texts.json').items, {}, 'ничего не сохранилось');
   const ok = await save(admin, 'texts', d => { d.items['contacts.topics.partners.pd'] = 'Скидка до {pct}%<br>за объём'; }); assert.equal(ok.status, 200, ok.text);
   assert.match(read('contacts.html'), /Скидка до <span data-count="\d+">\d+<\/span>%<br>за объём/, 'rich-тексты: <br> разрешён, значение подставилось');
+  const lk = await save(admin, 'texts', d => { d.items['contacts.topics.docs.h'] = 'https://example.com/docs?a=1&b=2'; d.items['contacts.topics.catalog.h'] = 'training.html#sched'; }); assert.equal(lk.status, 200, lk.text);
+  assert.match(read('contacts.html'), /href="https:\/\/example\.com\/docs\?a=1&amp;b=2" data-track="contacts_topic"/, 'внешняя ссылка плитки, & экранирован'); assert.match(read('contacts.html'), /href="training\.html#sched" data-track="contacts_topic"/, 'страница сайта со ссылкой-якорем');
   await save(admin, 'texts', d => { d.items = {}; });
 });
 test('тексты: редактор может, менеджер — нет; сайт без правок собирается тем же', async () => {

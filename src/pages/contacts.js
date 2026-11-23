@@ -7,7 +7,7 @@
 const S = require('../../js/shared.js');
 const {esc, I} = S;
 const MSG = require('../messengers.js');
-const {T} = require('../texts.js');
+const {T, Traw} = require('../texts.js');
 
 /* карта России владельца (assets/company/ru-map.svg, 1920×1108), коническая проекция Ламберта подобрана по береговой линии карты (как в src/pages/company.js). Показываем окно на запад страны:
    в пикселях карты x 0…640, y 420…900 — все города представительств с запасом под подписи; метки стоят на реальных местах */
@@ -48,11 +48,12 @@ module.exports = function contacts(ctx, C, P) {
 
   const team = `<figure class="cp-photo reveal"><img src="${u('assets/photos/photo-02-about.webp')}" alt="${T('contacts.ways.photo.alt')}" width="800" height="533" loading="lazy" decoding="async"><figcaption><b>${T('contacts.ways.photo.b')}</b><span>${esc(c.hours)}</span></figcaption></figure>`;
   const maxPct = (site.discounts || []).reduce((m, d) => Math.max(m, d.pct || 0), 0);
+  const lk = k => { const v = Traw(k); return esc(/^(https?:|tel:|mailto:|#)/.test(v) ? v : u(v)); };          // ссылка плитки: страница сайта, якорь или внешний адрес (правится в «Тексты страниц»)
   const topics = [
-    {ic: I.box, t: T('contacts.topics.catalog.t'), p: T('contacts.topics.catalog.p'), h: u('catalog.html')},
-    {ic: I.book, t: T('contacts.topics.training.t'), p: T('contacts.topics.training.p'), h: u('training.html')},
-    {ic: I.percent, t: T('contacts.topics.partners.t'), p: maxPct ? T('contacts.topics.partners.pd', {pct: `<span data-count="${maxPct}">${maxPct}</span>`}) : T('contacts.topics.partners.p'), h: u('partners.html')},
-    {ic: I.doc, t: T('contacts.topics.docs.t'), p: T('contacts.topics.docs.p'), h: '#cp-req'}
+    {ic: I.box, t: T('contacts.topics.catalog.t'), p: T('contacts.topics.catalog.p'), h: lk('contacts.topics.catalog.h')},
+    {ic: I.book, t: T('contacts.topics.training.t'), p: T('contacts.topics.training.p'), h: lk('contacts.topics.training.h')},
+    {ic: I.percent, t: T('contacts.topics.partners.t'), p: maxPct ? T('contacts.topics.partners.pd', {pct: `<span data-count="${maxPct}">${maxPct}</span>`}) : T('contacts.topics.partners.p'), h: lk('contacts.topics.partners.h')},
+    {ic: I.doc, t: T('contacts.topics.docs.t'), p: T('contacts.topics.docs.p'), h: lk('contacts.topics.docs.h')}
   ];
   const how = `<div class="cp-how reveal">
       <div class="cp-how-in">

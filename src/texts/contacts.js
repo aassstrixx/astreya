@@ -43,4 +43,12 @@ page('contacts', 'Контакты', 'contacts.html', 'src/pages/contacts.js', [
   ]]
 ]);
 
+page('contacts', 'Контакты', 'contacts.html', 'src/pages/contacts.js', [
+  ['topics', '01 · Темы обращений', [
+    ['catalog.h', 'Плитка «Подбор»: куда ведёт', 'catalog.html', {type: 'link', manual: true, hint: 'Страница сайта (catalog.html), якорь (#cp-req) или внешний адрес https://…'}],
+    ['training.h', 'Плитка «Обучение»: куда ведёт', 'training.html', {type: 'link', manual: true}],
+    ['partners.h', 'Плитка «Партнёрство»: куда ведёт', 'partners.html', {type: 'link', manual: true}],
+    ['docs.h', 'Плитка «Документы»: куда ведёт', '#cp-req', {type: 'link', manual: true}]
+  ]]
+]);
 };

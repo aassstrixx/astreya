@@ -11,7 +11,7 @@ const TX = require(path.join(C.ROOT, 'src', 'texts.js'));
 const mu = new Mutex();
 const COLLECTIONS = {
   site:     {title: 'Настройки сайта',        group: 'Сайт',     file: 'data/site.json',     kind: 'object'},
-  content:  {title: 'Тексты страниц и SEO',   group: 'Сайт',     file: 'data/content.json',  kind: 'object'},
+  content:  {title: 'Тексты блоков, формы и SEO',   group: 'Сайт',     file: 'data/content.json',  kind: 'object'},
   redesign: {title: 'Главная и оформление',   group: 'Сайт',     file: 'data/redesign.json', kind: 'object'},
   products: {title: 'Товары',                 group: 'Каталог',  file: 'data/products.json', kind: 'array', label: 'name'},
   brands:   {title: 'Бренды',                 group: 'Каталог',  file: 'data/brands.json',   kind: 'array', label: 'name'},
@@ -25,7 +25,7 @@ const COLLECTIONS = {
   legal:    {title: 'Документы (152-ФЗ)',     group: 'Сайт',     file: 'data/legal.json',    kind: 'object'}
 };
 COLLECTIONS.media = {title: 'Подписи к картинкам', group: 'Сайт', file: 'data/media.json', kind: 'object'};
-COLLECTIONS.texts = {title: 'Тексты страниц', group: 'Сайт', file: 'data/texts.json', kind: 'object'};
+COLLECTIONS.texts = {title: 'Тексты шаблонов страниц (удобнее — раздел «Тексты страниц»)', group: 'Сайт', file: 'data/texts.json', kind: 'object'};
 COLLECTIONS.sales = {title: 'Путь к закупке («Старт со Стеллой»)', group: 'Сайт', file: 'data/sales.json', kind: 'object'};
 /* библиотека «живых» реплик помощника: каждый файл data/stella/*.json — отдельный раздел (правка не ломает сайт: он собирается и проверяется, а при ошибке сборки откатывается) */
 const STELLA_TITLES = {config: 'Настройки и общие реплики', chat: 'Разговор', daily: 'Повседневные темы', english: 'Английский язык', glossary: 'Словарь терминов', guide: 'Экскурсия и подсказки', persona: 'Характер', safety: 'Безопасность ответов', sales: 'Продажи', scope: 'Границы тем', voice: 'Голос и приветствия'};
@@ -72,7 +72,7 @@ function problems(name, data) {
     });
     /* товар можно удалить, только если на него ничто не ссылается (новости, главная, обучение) */
     const gone = (readJSON(abs('products'), []) || []).filter(o => !data.some(p => p.id === o.id));
-    gone.forEach(o => { for (const [n, what] of [['news', 'Новости и акции'], ['redesign', 'Главная и оформление'], ['content', 'Тексты страниц'], ['training', 'Обучение'], ['events', 'Мероприятия']]) { let text = ''; try { text = fs.readFileSync(abs(n), 'utf8'); } catch (e) {} if (text.includes('"' + o.id + '"')) { P.push(`Товар «${o.name}» нельзя удалить: на него ссылается раздел «${what}». Сначала уберите ссылку.`); break; } } });
+    gone.forEach(o => { for (const [n, what] of [['news', 'Новости и акции'], ['redesign', 'Главная и оформление'], ['content', 'Тексты блоков и SEO'], ['training', 'Обучение'], ['events', 'Мероприятия']]) { let text = ''; try { text = fs.readFileSync(abs(n), 'utf8'); } catch (e) {} if (text.includes('"' + o.id + '"')) { P.push(`Товар «${o.name}» нельзя удалить: на него ссылается раздел «${what}». Сначала уберите ссылку.`); break; } } });
   } else if (name === 'brands') {
     uniq(data, 'id', 'Бренд'); data.forEach(b => { if (!isStr(b.name)) P.push(`Бренд «${b.id}»: нет названия.`); if (isStr(b.id) && !slugOk(b.id)) P.push(`Бренд «${b.id}»: id — латиница, цифры, дефис.`); ['c1', 'c2'].forEach(k => { if (b[k] && !/^#[0-9a-f]{3,8}$/i.test(b[k])) P.push(`Бренд «${b.name}»: цвет ${k} — вида #1a2b3c.`); }); });
     if (readJSON(abs('products'), []).some(p => !data.some(b => b.id === p.brand))) P.push('Есть товары, у которых бренд удалён из списка: сначала смените бренд у товаров.');

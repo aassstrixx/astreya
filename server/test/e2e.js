@@ -171,13 +171,13 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
 
   /* ---------- картинки ---------- */
   console.log('\n[11] Загрузка картинки');
-  await admin.click('a.nav[data-id=files]'); await admin.waitForSelector('.drop'); await admin.locator('.card:has-text("Прочие картинки") input[type=file]').setInputFiles({name: 'Тест картинка.png', mimeType: 'image/png', buffer: PNG});
-  await admin.waitForSelector('.file:has-text("test-kartinka.png")', {timeout: 8000}); ok(fs.existsSync(path.join(S.root, 'assets/uploads/test-kartinka.png')), 'файл сохранён с безопасным именем (кириллица → латиница)');
-  ok((await (await fetch(base + '/assets/uploads/test-kartinka.png')).status) === 200, 'файл отдаётся сайтом');
-  await admin.locator('.file:has-text("test-kartinka.png") button:has-text("Удалить")').click(); await admin.click('.dlg button.danger:has-text("Удалить")'); await admin.waitForFunction(() => !document.body.textContent.includes('test-kartinka.png'));
-  ok(!fs.existsSync(path.join(S.root, 'assets/uploads/test-kartinka.png')), 'файл удалён');
-  await admin.locator('.card:has-text("Логотипы брендов") .file:has-text("dermatime.svg") button:has-text("Удалить")').click(); await admin.click('.dlg button.danger:has-text("Удалить")');
-  await admin.waitForSelector('.toast.err:has-text("используется")'); ok(true, 'файл, на который ссылается сайт, удалить нельзя');
+  await admin.click('a.nav[data-id=files]'); await admin.waitForSelector('.drop'); await admin.locator('input[type=file][multiple]').setInputFiles({name: 'Тест картинка.png', mimeType: 'image/png', buffer: PNG});
+  await admin.waitForSelector('.up-state .pill.done', {timeout: 15000}); const upName = fs.readdirSync(path.join(S.root, 'assets/uploads')).find(f => /^test-kartinka-[a-z0-9]{4}\.(png|webp)$/.test(f));
+  ok(!!upName, 'файл сохранён с безопасным именем (кириллица → латиница), браузер сжал его', fs.readdirSync(path.join(S.root, 'assets/uploads')));
+  ok((await (await fetch(base + '/assets/uploads/' + upName)).status) === 200, 'файл отдаётся сайтом');
+  await admin.locator('.lib-grid .file:has-text("' + upName + '") .pick-btn').click(); await admin.waitForSelector('.dlg .lib-big'); await admin.click('.dlg footer .btn.danger'); await admin.click('.dlg .btn.danger >> nth=-1'); await admin.waitForFunction(n => !document.querySelector('.lib-grid') || !document.querySelector('.lib-grid').textContent.includes(n), upName);
+  ok(!fs.existsSync(path.join(S.root, 'assets/uploads/' + upName)), 'файл удалён');
+  { const r = await adminApi.del('/api/files?path=' + encodeURIComponent('assets/brands/dermatime.svg')); ok(r.status === 409 && /используется/.test(r.text), 'файл, на который ссылается сайт, удалить нельзя', r.status); }
 
   /* ---------- пользователи и права ---------- */
   console.log('\n[12] Пользователи и права');

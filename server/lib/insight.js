@@ -22,7 +22,7 @@ function health() {
   const missing = []; brands.forEach(b => { if (b.logo && !fs.existsSync(path.join(C.ROOT, b.logo))) missing.push(b.name); }); products.forEach(p => { if (p.image && !fs.existsSync(path.join(C.ROOT, p.image))) missing.push(p.name + ' (фото)'); }); products.forEach(p => { (p.docs || []).forEach(d => { if (d && d.url && /^assets\//.test(d.url) && !fs.existsSync(path.join(C.ROOT, d.url))) missing.push(p.name + ' (документ)'); }); });
   if (missing.length) add('warn', `Файлы не найдены на диске: ${missing.slice(0, 4).join(', ')}`, '#/files');
   const heavy = products.filter(p => { try { return p.image && fs.statSync(path.join(C.ROOT, p.image)).size > 1.2 * 1048576; } catch (e) { return false; } }); if (heavy.length) add('warn', `Тяжёлые фото товаров (больше 1,2 МБ): ${heavy.slice(0, 3).map(p => '«' + p.name + '»').join(', ')}${heavy.length > 3 ? '…' : ''} — страницы грузятся медленно, загрузите фото заново (оно уменьшится само)`, '#/products');
-  const noPhoto = products.filter(p => !p.image).length; if (products.length && noPhoto) add('info', `${noPhoto} из ${products.length} ${plural(products.length, 'товара', 'товаров', 'товаров')} без фото — на сайте показана иллюстрация упаковки. Фото ставятся в разделе «Товары по брендам»`, '#/products');
+  const noPhoto = products.filter(p => !p.image).length; if (products.length && noPhoto) add('info', `${noPhoto} из ${products.length} ${plural(products.length, 'товара', 'товаров', 'товаров')} без фото — на сайте показана иллюстрация упаковки. Фото ставятся в разделе «Товары и витрина»`, '#/products');
   const old = events.filter(e => e.date < daysAgo(60)); if (old.length) add('info', `${old.length} ${plural(old.length, 'прошедшее мероприятие', 'прошедших мероприятия', 'прошедших мероприятий')} старше двух месяцев — их можно убрать из расписания`, '#/events');
   const upcoming = events.filter(e => e.date >= today()); if (!upcoming.length) add('warn', 'В расписании нет ближайших мероприятий — раздел «Обучение» выглядит пустым', '#/events');
   const staleNews = news.length ? news.slice().sort((a, b) => String(b.date).localeCompare(String(a.date)))[0].date : null; if (staleNews && staleNews < daysAgo(90)) add('info', `Последняя новость от ${staleNews} — прошло больше трёх месяцев`, '#/news');
@@ -31,7 +31,7 @@ function health() {
   const hidden = pages.filter(p => p.published === false).length; if (hidden) add('info', `${hidden} ${plural(hidden, 'страница скрыта', 'страницы скрыты', 'страниц скрыто')} (черновики)`, '#/pages');
   const noDesc = pages.filter(p => p.published !== false && !p.description).length; if (noDesc) add('info', `${noDesc} ${plural(noDesc, 'своя страница', 'своих страницы', 'своих страниц')} без описания для поисковиков`, '#/pages');
   const st = L.stats(); if (st.new) add('warn', `${st.new} ${plural(st.new, 'необработанная заявка', 'необработанные заявки', 'необработанных заявок')}`, '#/leads');
-  const b = B.last(); if (b && !b.ok) add('warn', 'Последняя сборка сайта завершилась ошибкой — смотрите раздел «Публикация»', '#/publish');
+  const b = B.last(); if (b && !b.ok) add('warn', 'Последняя сборка сайта завершилась ошибкой — смотрите раздел «Опубликовать»', '#/publish');
   if (!out.some(x => x.level === 'warn')) out.unshift({level: 'ok', text: 'Серьёзных замечаний к данным сайта нет', link: ''});
   return out;
 }

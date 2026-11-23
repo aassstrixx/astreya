@@ -280,7 +280,7 @@
         err.replaceChildren();
         Object.keys(work).forEach(k => { if (!originalKeys.has(k) && (work[k] === null || work[k] === '' || (Array.isArray(work[k]) && !work[k].length))) delete work[k]; });
         if (work.slug !== undefined && !String(work.slug).trim()) work.slug = L.slugFrom(work);
-        if (work.id !== undefined && !String(work.id).trim()) work.id = L.idFrom(work) || work.slug;
+        if ((work.id === undefined || !String(work.id).trim()) && getItems().some(x => x.id !== undefined)) work.id = L.idFrom(work) || work.slug;          // у записи списка обязательно есть id (пустые поля новой записи убираются выше)
         const items = getItems().slice(), pos = isNew ? -1 : items.findIndex(x => x.id === id);
         if (pos >= 0) items[pos] = work; else items.push(work);
         try { await commit(items, isNew ? 'Добавлено, сайт пересобран' : undefined, saveBtn); m.close(true); }

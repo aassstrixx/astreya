@@ -30,7 +30,7 @@ const ok = (c, m, x) => { if (c) { pass++; console.log('  ✓', m); } else { fai
 
   console.log('\n[1] Обзор');
   await p.waitForSelector('.kpis'); ok(await p.locator('.kpi').count() >= 5, 'карточки показателей на месте'); ok(await p.locator('.hl li').count() > 0, 'список «здоровье сайта» не пуст');
-  ok(await p.locator('.quick a:has-text("Новая страница"), .quick a:has-text("Страница")').count() > 0, 'быстрые действия на месте'); await shot(p, 'overview'); await axe(p, 'обзор'); await noOverflow(p, 'обзор');
+  ok(await p.locator('.quick a:has-text("Новость"), .quick a:has-text("Товар")').count() > 0, 'быстрые действия на месте'); await shot(p, 'overview'); await axe(p, 'обзор'); await noOverflow(p, 'обзор');
   await p.click('button:has-text("Полная проверка сайта")'); await p.waitForSelector('.alert.ok, .alert.warn, .alert.err', {timeout: 120000}); ok(/Ошибок и замечаний нет|замечаний:|Ошибок/.test(await p.locator('.alert').last().textContent()), 'кнопка «Полная проверка сайта» показывает итог');
   ok((await p.locator('.alert.err').count()) === 0, 'проверка не нашла ошибок на чистом сайте');
 
@@ -69,7 +69,7 @@ const ok = (c, m, x) => { if (c) { pass++; console.log('  ✓', m); } else { fai
   await p.click('.side a.nav[data-id=pages]'); await p.waitForSelector('table.tbl'); ok(await p.evaluate(() => AD.dirty) === false, 'согласие уводит к списку без сохранения');
 
   console.log('\n[3] Оформление: меню');
-  await p.click('.side a.nav[data-id=design]'); await p.waitForSelector('#tab-menu[aria-selected=true]'); await p.waitForSelector('.nav-ed .it'); ok(await p.locator('.nav-ed .it').count() === 5, 'пять пунктов меню'); ok((await p.locator('.mini-nav').textContent()).includes('Условия'), 'в мини-макете есть пункт из «Страниц»');
+  await p.evaluate(() => { location.hash = '#/design'; }); await p.waitForSelector('#tab-menu[aria-selected=true]'); await p.waitForSelector('.nav-ed .it'); ok(await p.locator('.nav-ed .it').count() === 5, 'пять пунктов меню'); ok((await p.locator('.mini-nav').textContent()).includes('Условия'), 'в мини-макете есть пункт из «Страниц»');
   await axe(p, 'оформление: меню');
   await p.locator('.nav-ed .it input').first().fill('Продукция'); await p.locator('.nav-ed .it').first().locator('button[aria-label="Ниже"]').click(); await shot(p, 'menu-edit');
   ok(await p.locator('#ds-save').isEnabled(), 'кнопка «Сохранить» активна после правки'); await saved(p, '#ds-save'); const idx = read('index.html'); ok(idx.indexOf('>Продукция</a>') > idx.indexOf('>Бренды</a>') && idx.includes('>Продукция</a>'), 'меню на сайте изменилось: подпись и порядок');
@@ -114,7 +114,7 @@ const ok = (c, m, x) => { if (c) { pass++; console.log('  ✓', m); } else { fai
   console.log('\n[Товары по брендам]');
   const prodsNow = () => rd(S.root, 'data/products.json'), brandsList = rd(S.root, 'data/brands.json');
   const bigPng = async () => Buffer.from((await p.evaluate(() => { const c = document.createElement('canvas'); c.width = 2400; c.height = 1800; const g = c.getContext('2d'), gr = g.createLinearGradient(0, 0, 2400, 1800); gr.addColorStop(0, '#fff'); gr.addColorStop(1, '#9ab'); g.fillStyle = gr; g.fillRect(0, 0, 2400, 1800); for (let i = 0; i < 400; i++) { g.fillStyle = 'hsl(' + (i * 37 % 360) + ',60%,50%)'; g.fillRect((i * 97) % 2300, (i * 53) % 1700, 90, 60); } return c.toDataURL('image/png').split(',')[1]; })), 'base64');
-  await p.click('.side a.nav[data-id=brandprods]'); await p.waitForSelector('.bp-card'); ok(await p.locator('.bp-tab').count() === brandsList.length, 'вкладки по всем брендам (' + brandsList.length + ')');
+  await p.evaluate(() => { location.hash = '#/brandprods'; }); await p.waitForSelector('.bp-card'); ok(await p.locator('.bp-tab').count() === brandsList.length, 'вкладки по всем брендам (' + brandsList.length + ')');
   const first = brandsList[0].id, firstProds = () => prodsNow().filter(x => x.brand === first); ok(await p.locator('.bp-card').count() === firstProds().length, 'у первого бренда видны все его товары');
   ok(await p.locator('.bp-tab[aria-pressed=true] .n').textContent() === String(firstProds().length), 'на вкладке — число товаров'); await shot(p, 'brandprods'); await axe(p, 'товары по брендам');
   /* фото: выбор в окне с загрузкой — большой снимок уменьшается сам */

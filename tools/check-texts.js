@@ -12,6 +12,8 @@ const walk = d => fs.readdirSync(d, {withFileTypes: true}).forEach(e => {
   if (!/\.js$/.test(e.name) || /^texts(-registry)?\.js$/.test(e.name)) return;
   const s = fs.readFileSync(p, 'utf8'); let m; const re = /\b(?:T|TX|Traw)\(\s*(['"])([A-Za-z0-9_.-]+)\1/g;
   while ((m = re.exec(s))) { (used.get(m[2]) || used.set(m[2], []).get(m[2])).push(path.relative(ROOT, p)); }
+  const lit = /(['"])([a-z0-9]+(?:\.[A-Za-z0-9_-]+){2,})\1/g;                       // ключ, переданный помощнику шаблона строкой (например lk('contacts.topics.docs.h'))
+  while ((m = lit.exec(s))) if (TX.index[m[2]]) (used.get(m[2]) || used.set(m[2], []).get(m[2])).push(path.relative(ROOT, p));
 });
 walk(path.join(ROOT, 'src'));
 for (const [k, files] of used) if (!TX.index[k]) errors.push(`В шаблоне ${files[0]} используется неизвестный ключ «${k}».`);
