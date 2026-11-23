@@ -212,7 +212,7 @@
     const root = $('#view'); if (!root) return;
     if (AD.cur && AD.cur.id === id && AD.cur.inst && AD.cur.inst.onRoute) { AD.cur.inst.onRoute(parts); return; }
     if (AD.cur && AD.cur.inst && AD.cur.inst.destroy) AD.cur.inst.destroy();
-    AD.dirty = false; root.replaceChildren(); window.scrollTo(0, 0);
+    AD.dirty = false; AD.saveHook = null; root.replaceChildren(); window.scrollTo(0, 0);
     const v = AD.views[id]; AD.cur = {id, inst: null}; const cur = AD.cur;
     if (!v) { root.replaceChildren(AD.alertBox('info', 'Этот раздел недоступен в данной версии админки.')); return; }
     Promise.resolve(v.mount(root, parts)).then(inst => { cur.inst = inst || null; if (cur === AD.cur && inst && inst.onRoute && parts.length && !inst.initial) inst.onRoute(parts); })
@@ -223,6 +223,8 @@
     if (AD.dirty && AD.cur && AD.cur.id !== parseHash().id && !confirm('Есть несохранённые изменения. Уйти без сохранения?')) { reverting = true; location.hash = lastHash; return; }
     lastHash = location.hash; route();
   });
+  /* Ctrl+S (⌘S) сохраняет открытый раздел, если он зарегистрировал AD.saveHook */
+  document.addEventListener('keydown', e => { if ((e.ctrlKey || e.metaKey) && !e.shiftKey && !e.altKey && (e.key === 's' || e.key === 'S' || e.key === 'ы' || e.key === 'Ы') && AD.user) { if (typeof AD.saveHook === 'function') { e.preventDefault(); AD.saveHook(); } } });
   window.addEventListener('beforeunload', e => { if (AD.dirty) { e.preventDefault(); e.returnValue = ''; } });
 
   AD.start = async function () {
