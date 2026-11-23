@@ -92,12 +92,12 @@ function academyPage(ctx, C, P) {
   const cityChips = ['all', ...training.cities].map((c, i) => C.chip(c === 'all' ? esc(K.allCities) : esc(c), 'city', c, i === 0)).join('');
   const fmtChips = [['all', K.anyFormat], ['offline', K.offline], ['online', K.online]].map(([id, l], i) => C.chip(esc(l), 'fmt', id, i === 0)).join('');
   const evPhotos = ['about', 'expertise', 'about2', 'about3'].map(k => ph[k]).filter(Boolean);
-  const evCard = (e, i) => { const d = dparts(e.date), b = brandById[e.brand], f = evPhotos[i % evPhotos.length], fk = e.fmt === 'Очно' ? 'offline' : 'online';
+  const evCard = (e, i) => { const d = dparts(e.date), b = brandById[e.brand], f = evPhotos[i % evPhotos.length], fk = e.fmt === TX('training.filters.s3') ? 'offline' : 'online';
     return `<article class="sem-item ac-ev reveal" style="${bstyle(b)}" data-id="${e.id}" data-go="training/${e.slug}.html" data-date="${e.date}" data-city="${esc(e.city)}" data-fmt="${fk}" data-brand="${e.brand}" title="${esc(d.full + ', ' + e.time + ' · ' + e.place)}">
       <div class="ac-ev-pic">${f ? `<img src="${C.u(P, f.src)}" alt="" width="${f.w}" height="${f.h}" loading="lazy" decoding="async">` : ''}</div>
       <div class="ac-ev-b"><div class="ac-ev-top"><b class="ac-ev-d"><time datetime="${e.date}">${e.date.slice(8, 10)}.${e.date.slice(5, 7)}</time></b><span class="ac-ev-f">${esc(e.fmt)}${fk === 'offline' ? ' · ' + esc(e.city) : ''}</span></div>
         <h3><a href="${C.eurl(P, e)}">${esc(e.title)}</a></h3>
-        <dl class="ac-who"><div><dt>${esc(K.speaker)}:</dt><dd>${esc(e.speaker)}</dd></div><div><dt>${esc(K.brand)}:</dt><dd>${esc(b.name)}</dd></div><div><dt>${esc(K.time || 'Время')}:</dt><dd>${esc(e.time)}</dd></div></dl>
+        <dl class="ac-who"><div><dt>${esc(K.speaker)}:</dt><dd>${esc(e.speaker)}</dd></div><div><dt>${esc(K.brand)}:</dt><dd>${esc(b.name)}</dd></div><div><dt>${esc(K.time || TX('training.cards.s'))}:</dt><dd>${esc(e.time)}</dd></div></dl>
         <div class="go"><button class="btn btn-fill btn-sm" type="button" data-act="form" data-type="seminar" data-ref="${e.id}">${esc(K.enroll)}</button><a class="lnk" href="${C.eurl(P, e)}">${esc(K.details)}</a></div>
       </div></article>`; };
   const calendar = `<section class="ac-cal" id="sched" aria-labelledby="ac-cal-h">${bd('calendar')}<div class="ac-in ac-split">
@@ -132,7 +132,7 @@ function academyPage(ctx, C, P) {
   const pool = (readJson('assets/academy/videos.json') || []).filter(v => v && v.thumb && v.url), li = Math.min(pool.length - 1, Math.max(0, M.leadVideo | 0));          // главный выпуск — горизонтальный кадр (media.leadVideo), вертикальные ролики идут дополнительными
   const vids = pool.length ? [pool[li], ...pool.filter((v, i) => i !== li)].slice(0, 3) : training.videos.slice(0, 3).map(v => ({title: v.title, dur: v.dur, brand: v.brand}));
   const media = `<section class="ac-media" id="media" aria-labelledby="ac-media-h">${bd('media')}<div class="ac-in">
-    <header class="ac-head-row reveal"><div class="ac-head-t"><span class="ac-eyebrow">${esc(M.eyebrow || 'Медиатека')}</span><h2 id="ac-media-h">${esc(M.title).replace(/-/g, '\u2011')}</h2></div><p class="ac-side-p">${esc(M.lead)}</p><a class="ac-btn-o ac-more-b" href="${ext.youtube}" target="_blank" rel="noopener"><span>${esc(M.channel)}</span> ${arrow}</a></header>
+    <header class="ac-head-row reveal"><div class="ac-head-t"><span class="ac-eyebrow">${esc(M.eyebrow || TX('training.media.s'))}</span><h2 id="ac-media-h">${esc(M.title).replace(/-/g, '\u2011')}</h2></div><p class="ac-side-p">${esc(M.lead)}</p><a class="ac-btn-o ac-more-b" href="${ext.youtube}" target="_blank" rel="noopener"><span>${esc(M.channel)}</span> ${arrow}</a></header>
     <div class="ac-media-grid">${vids.map(vid).join('')}</div>
   </div></section>`;
 
@@ -148,7 +148,7 @@ function academyPage(ctx, C, P) {
     <div class="ac-pub-half" id="materials">
       ${magSrc ? `<figure class="ac-mag" aria-hidden="true"><img src="${C.u(P, magSrc)}" alt="" width="1600" height="1000" loading="lazy" decoding="async"></figure>` : ''}
       <div class="ac-pub-copy reveal"><h2>${esc(B.pubTitle)}</h2>${B.pubLead ? `<p class="ac-side-p">${esc(B.pubLead)}</p>` : ''}
-        ${pubs.length > nPub ? `<button class="ac-btn-o" type="button" data-act="acad-more" data-target="ac-pmore" aria-expanded="false" aria-controls="ac-pmore" data-more="${esc(B.pubMore || 'Читать все статьи')}" data-less="${esc(B.pubLess || 'Свернуть')}"><span>${esc(B.pubMore || 'Читать все статьи')}</span> ${arrow}</button>` : ''}</div>
+        ${pubs.length > nPub ? `<button class="ac-btn-o" type="button" data-act="acad-more" data-target="ac-pmore" aria-expanded="false" aria-controls="ac-pmore" data-more="${esc(B.pubMore || TX('training.media.s2'))}" data-less="${esc(B.pubLess || TX('training.media.s3'))}"><span>${esc(B.pubMore || TX('training.media.s2'))}</span> ${arrow}</button>` : ''}</div>
       <ul class="grid ac-pubs reveal">${pubs.slice(0, nPub).map(pub).join('')}</ul>
       ${pubs.length > nPub ? `<div class="ac-tmore ac-pmore" id="ac-pmore" aria-hidden="true" inert><div class="ac-tmore-in"><ul class="ac-pubs">${pubs.slice(nPub).map(pub).join('')}</ul></div></div>` : ''}
     </div>
@@ -170,16 +170,16 @@ function trainingPage(ctx, C, P) {
   if (ctx.redesign && ctx.redesign.trainingPage && ctx.redesign.trainingPage.academy) return academyPage(ctx, C, P);
   const {training, site, sortedEvents} = ctx;
   const ext = site.contacts.ext;
-  const cityChips = ['all', ...training.cities].map((c, i) => C.chip(c === 'all' ? 'Все города' : esc(c), 'city', c, i === 0)).join('');
-  const fmtChips = [['all', 'Любой формат'], ['offline', 'Очно'], ['online', 'Онлайн']].map(([id, l], i) => C.chip(l, 'fmt', id, i === 0)).join('');
+  const cityChips = ['all', ...training.cities].map((c, i) => C.chip(c === 'all' ? TX('training.filters.s') : esc(c), 'city', c, i === 0)).join('');
+  const fmtChips = [['all', TX('training.filters.s2')], ['offline', TX('training.filters.s3')], ['online', TX('training.filters.s4')]].map(([id, l], i) => C.chip(l, 'fmt', id, i === 0)).join('');
   return `<div class="wrap" data-training>
-    ${C.pageHead('Обучение', 'Учебный центр «Астрея»', 'Бесплатные семинары и мастер-классы: теория чередуется с практикой. Базовые семинары проходят с 10:30 до 18:00.')}
+    ${C.pageHead(TX('training.hero.s'), TX('training.hero.s2'), TX('training.hero.s3'))}
     ${C.cdSlot()}
-    <div class="row reveal"><a class="btn btn-fill" href="#sched" data-act="scroll" data-target="sched">Смотреть расписание ${I.arrow}</a><a class="btn btn-ghost" href="tel:${site.contacts.phoneRaw}" data-track="phone_click">${esc(site.contacts.phone)}</a></div>
+    <div class="row reveal"><a class="btn btn-fill" href="#sched" data-act="scroll" data-target="sched">${TX('training.hero.a')} ${I.arrow}</a><a class="btn btn-ghost" href="tel:${site.contacts.phoneRaw}" data-track="phone_click">${esc(site.contacts.phone)}</a></div>
   </div>
 
   <section class="sec"><div class="wrap">
-    ${C.secHead('Как записаться', 'Четыре шага до семинара')}
+    ${C.secHead(TX('training.steps.s'), TX('training.steps.s2'))}
     <div class="steps">${training.steps.map((s, i) => `<div class="step reveal"><i>${i + 1}</i><h3>${esc(s.t)}</h3><p>${esc(s.p)}</p></div>`).join('')}</div>
   </div></section>
 
@@ -187,33 +187,33 @@ function trainingPage(ctx, C, P) {
 
   <section class="sec" id="sched" style="padding-top:0"><div class="wrap">
     <hr class="dash" style="margin-bottom:clamp(50px,7vw,90px)">
-    ${C.secHead('Расписание', 'Ближайшие мероприятия')}
+    ${C.secHead(TX('training.sched.s'), TX('training.sched.s2'))}
     <div id="sched-filters">
-    <div class="tb-row" style="margin-bottom:12px"><span class="tb-lab">Город</span><div class="chips reveal" id="city-chips">${cityChips}</div></div>
-    <div class="tb-row" style="margin-bottom:28px"><span class="tb-lab">Формат</span><div class="chips reveal" id="fmt-chips">${fmtChips}</div></div>
+    <div class="tb-row" style="margin-bottom:12px"><span class="tb-lab">${TX('training.sched.t')}</span><div class="chips reveal" id="city-chips">${cityChips}</div></div>
+    <div class="tb-row" style="margin-bottom:28px"><span class="tb-lab">${TX('training.sched.t2')}</span><div class="chips reveal" id="fmt-chips">${fmtChips}</div></div>
     </div>
     <div class="sem-list" id="sem-list">${sortedEvents.map(e => C.eventRow(P, e)).join('')}</div>
-    <div class="empty" id="sem-empty" hidden><b>Мероприятий не найдено</b>Оставьте заявку — сообщим, когда откроется запись.</div>
-    ${C.noteBox(`Расписание ориентировочное: актуальные даты и адреса подтверждает менеджер учебного центра.`)}
+    <div class="empty" id="sem-empty" hidden><b>${TX('training.empty.b')}</b>${TX('training.empty.b2')}</div>
+    ${C.noteBox(`${TX('training.empty.b3')}`)}
   </div></section>
 
   ${ctx.redesign && ctx.redesign.teachers ? '' : `<section class="sec tint"><div class="wrap">
-    ${C.secHead('Преподаватели', 'Практики, которые учат практике')}
+    ${C.secHead(TX('training.teachers.s'), TX('training.teachers.s2'))}
     <div class="grid g4">${training.teachers.map(t => `<article class="card hov tcard card-pad reveal"><div class="avatar" aria-hidden="true">${esc(t.mono)}</div><h3>${esc(t.name)}</h3><p>${esc(t.spec)}</p><div class="tasks-line">${t.topics.map(x => C.tag(x)).join('')}</div></article>`).join('')}</div>
   </div></section>`}
 
   <section class="sec"><div class="wrap">
-    ${C.secHead('Видео', 'Видео-подборка мастер-классов', `<a class="lnk" href="${ext.youtube}" target="_blank" rel="noopener">Канал на YouTube ${I.arrow}</a>`)}
-    <div class="grid g4">${training.videos.map(v => { const b = ctx.brandById[v.brand]; return `<a class="card hov video reveal" href="${ext.youtube}" target="_blank" rel="noopener" style="${bstyle(b)}"><div class="th"><span class="play">${I.play}</span><span class="dur">${esc(v.dur)}</span></div><div class="vb"><h3>${esc(v.title)}</h3><small>YouTube · Астрея Косметология</small></div></a>`; }).join('')}</div>
+    ${C.secHead(TX('training.video.s'), TX('training.video.s2'), `<a class="lnk" href="${ext.youtube}" target="_blank" rel="noopener">${TX('training.video.a')} ${I.arrow}</a>`)}
+    <div class="grid g4">${training.videos.map(v => { const b = ctx.brandById[v.brand]; return `<a class="card hov video reveal" href="${ext.youtube}" target="_blank" rel="noopener" style="${bstyle(b)}"><div class="th"><span class="play">${I.play}</span><span class="dur">${esc(v.dur)}</span></div><div class="vb"><h3>${esc(v.title)}</h3><small>${TX('training.video.sm')}</small></div></a>`; }).join('')}</div>
   </div></section>
 
   <section class="sec" style="padding-top:0"><div class="wrap">
-    ${C.secHead('Вопросы и ответы', 'Частые вопросы')}
+    ${C.secHead(TX('training.faq.s'), TX('training.faq.s2'))}
     <div class="faq reveal">${training.faq.map(f => `<div class="faq-item"><button class="faq-q" type="button" data-act="faq" aria-expanded="false"><span>${esc(f.q)}</span><i class="pm"></i></button><div class="faq-a"><div><p>${esc(f.a)}</p></div></div></div>`).join('')}</div>
   </div></section>
 
   <section class="sec"${ctx.redesign ? ' id="materials"' : ''} style="padding-top:0"><div class="wrap">
-    ${C.secHead('Статьи', 'Материалы для специалистов')}
+    ${C.secHead(TX('training.articles.s'), TX('training.articles.s2'))}
     <div class="grid g3">${training.articles.slice(0, 3).map(C.articleCard).join('')}</div>
   </div></section>
 
@@ -221,5 +221,6 @@ function trainingPage(ctx, C, P) {
 }
 
 const eventPage = (ctx, C, P, e) => require('./event-page.js')(ctx, C, P, e);   // страница мероприятия v2 — src/pages/event-page.js
+const {T: TX} = require('../texts.js');
 
 module.exports = {trainingPage, eventPage};

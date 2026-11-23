@@ -1,5 +1,6 @@
 /* Компоненты страниц: функции, возвращающие HTML-строки. Все ссылки строятся относительно корня сайта через P.root. */
 const S = require('../js/shared.js');
+const {T} = require('./texts.js');
 const {esc, I, dparts, bstyle, norm} = S;
 
 module.exports = function components(ctx) {
@@ -15,7 +16,7 @@ module.exports = function components(ctx) {
   const xon = k => !!(site.redesign && ctx.redesign && ctx.redesign.extras && ctx.redesign.extras.enabled && ctx.redesign.extras[k]);
   /* место под обратный отсчёт: js/explore.js заполняет его, а пока страница грузится, высота уже занята — без скачка вёрстки (CLS) */
   const cdSlot = () => xon('countdown') ? '<div class="cd-slot" aria-hidden="true"></div>' : '';
-  const callbackBtn = (cls, place) => xon('callback') ? `<button class="${cls}" type="button" data-act="form" data-type="callback" data-track="callback_open" data-place="${place}">Заказать звонок</button>` : '';
+  const callbackBtn = (cls, place) => xon('callback') ? `<button class="${cls}" type="button" data-act="form" data-type="callback" data-track="callback_open" data-place="${place}">${T('layout.cards.btn')}</button>` : '';
 
   /* Картинка товара: фото (поле image в products.json — путь вида assets/products/….webp; ставится в админке «Товары по брендам») или, пока фото нет, CSS-иллюстрация упаковки */
   const art = (P, p) => {
@@ -31,7 +32,7 @@ module.exports = function components(ctx) {
   const chip = (label, act, id, on, extra = '') =>
     `<button type="button" class="chip${on ? ' on' : ''}" data-act="${act}" data-id="${id}" aria-pressed="${on ? 'true' : 'false'}">${label}${extra}</button>`;
 
-  const crumbs = (P, items) => `<nav class="crumbs" aria-label="Хлебные крошки">${items.map((it, i) =>
+  const crumbs = (P, items) => `<nav class="crumbs" aria-label="${T('layout.crumbs.aria')}">${items.map((it, i) =>
     i === items.length - 1 ? `<span aria-current="page">${esc(it[0])}</span>` : `<a href="${u(P, it[1])}">${esc(it[0])}</a><span aria-hidden="true">/</span>`).join('')}</nav>`;
 
   /* art — необязательная иллюстрация справа от заголовка (готовый рендер сайта): {src, w, h, pos?}; декоративная, поэтому alt пустой.
@@ -44,7 +45,7 @@ module.exports = function components(ctx) {
 
   const lnk = (href, text, attrs = '') => `<a class="lnk" href="${href}"${attrs ? ' ' + attrs : ''}>${text} ${I.arrow}</a>`;
 
-  const partnerBtn = (P, place, cls = 'btn btn-fill', label = 'Стать партнёром') =>
+  const partnerBtn = (P, place, cls = 'btn btn-fill', label = T('layout.header.a')) =>
     `<a class="${cls}" href="${u(P, 'partners.html')}" data-track="partner_cta" data-place="${place}">${label} ${I.arrow}</a>`;
 
   /* ---------------- товар ---------------- */
@@ -59,8 +60,8 @@ module.exports = function components(ctx) {
       <h3><a class="stretch" href="${purl(P, p)}" data-track="product_card_click" data-product="${p.id}">${esc(p.name)}</a></h3>
       <p>${esc(p.desc)}</p>
       <div class="pf">
-        <span class="lnk">Подробнее ${I.arrow}</span>
-        <button class="btn btn-ghost btn-sm z3" type="button" data-act="form" data-type="product" data-ref="${p.id}">Запросить</button>
+        <span class="lnk">${T('layout.cards.t')} ${I.arrow}</span>
+        <button class="btn btn-ghost btn-sm z3" type="button" data-act="form" data-type="product" data-ref="${p.id}">${T('layout.cards.btn2')}</button>
       </div>
     </div>
   </article>`;
@@ -87,7 +88,7 @@ module.exports = function components(ctx) {
       <div>${I.user}<span>${esc(e.speaker)}</span></div>
       <div>${I.pin}<span>${esc(e.place)}</span></div>
     </div>
-    <div class="sem-foot"><span class="tag">${esc(b.name)}</span><button class="btn btn-fill btn-sm z3" type="button" data-act="form" data-type="seminar" data-ref="${e.id}">Записаться</button></div>
+    <div class="sem-foot"><span class="tag">${esc(b.name)}</span><button class="btn btn-fill btn-sm z3" type="button" data-act="form" data-type="seminar" data-ref="${e.id}">${T('layout.cards.btn3')}</button></div>
   </article>`;
   };
 
@@ -98,8 +99,8 @@ module.exports = function components(ctx) {
       <div><span class="tag blue">${esc(e.fmt)} · ${esc(e.city)}</span><h3 style="margin-top:10px"><a href="${eurl(P, e)}">${esc(e.title)}</a></h3>
         <div class="sem-meta"><div>${I.clock}<span>${esc(e.time)}</span></div><div>${I.pin}<span>${esc(e.place)}</span></div></div>
         <p class="sem-desc">${esc(e.description)}</p></div>
-      <div class="who"><b>Преподаватель</b>${esc(e.speaker)}<br><span class="tag" style="margin-top:8px">${esc(b.name)}</span></div>
-      <div class="go"><button class="btn btn-fill btn-sm" type="button" data-act="form" data-type="seminar" data-ref="${e.id}">Записаться</button><a class="lnk" href="${eurl(P, e)}">Подробнее</a></div>
+      <div class="who"><b>${T('layout.cards.b')}</b>${esc(e.speaker)}<br><span class="tag" style="margin-top:8px">${esc(b.name)}</span></div>
+      <div class="go"><button class="btn btn-fill btn-sm" type="button" data-act="form" data-type="seminar" data-ref="${e.id}">${T('layout.cards.btn3')}</button><a class="lnk" href="${eurl(P, e)}">${T('layout.cards.t')}</a></div>
     </article>`;
   };
 
@@ -110,7 +111,7 @@ module.exports = function components(ctx) {
     return `<article class="card hov art-card newscard reveal" style="${newsStyle(c)}" data-cat="${n.category}">
     <div class="cov"><span>${esc(c.name)}</span></div>
     <div class="ab"><h3><a class="stretch" href="${nurl(P, n)}">${esc(n.title)}</a></h3><p>${esc(n.excerpt)}</p>
-      <div class="meta">${timeTag(n.date)}<span class="lnk">Подробнее ${I.arrow}</span></div></div>
+      <div class="meta">${timeTag(n.date)}<span class="lnk">${T('layout.cards.t')} ${I.arrow}</span></div></div>
   </article>`;
   };
 
@@ -151,14 +152,14 @@ module.exports = function components(ctx) {
       <div class="bc-front">
         <p class="sp">${esc(b.tag)}</p>
         ${tasksLine(b.tasks, '', 3)}
-        <span class="hint">Подробнее</span>
+        <span class="hint">${T('layout.cards.t')}</span>
       </div>
       <div class="bc-back">
         <p>${esc(b.desc)}</p>
         <div class="row">
-          <a class="btn btn-fill btn-sm" href="${burl(P, b)}">О бренде</a>
-          <a class="btn btn-ghost btn-sm" href="${u(P, 'catalog.html')}?brand=${b.id}">Ассортимент</a>
-          <button class="btn btn-lnk" type="button" data-act="brand-back">Назад</button>
+          <a class="btn btn-fill btn-sm" href="${burl(P, b)}">${T('layout.cards.a')}</a>
+          <a class="btn btn-ghost btn-sm" href="${u(P, 'catalog.html')}?brand=${b.id}">${T('layout.cards.a2')}</a>
+          <button class="btn btn-lnk" type="button" data-act="brand-back">${T('layout.cards.btn4')}</button>
         </div>
       </div>
     </div>
@@ -170,7 +171,7 @@ module.exports = function components(ctx) {
     return `<article class="card hov bl-card reveal" style="${bstyle(b)}" data-id="${b.id}" data-tasks="${b.tasks.join(' ')}" data-q="${esc(hay)}">
     <div class="band${b.logo ? ' has-logo' : ''}">${b.logo ? logoImg(P, b, 'bl-img', b.name) : `${logoMark(P, b, 'on-band')}<b>${esc(b.name)}</b>`}${astreyaMark}</div>
     <div class="bb"><div class="tasks-line">${tag(b.group)}${b.country && b.country !== b.group ? tag(b.country) : ''}</div><h3 class="sr">${esc(b.name)}</h3><p>${esc(b.tag)}</p>${tasksLine(b.tasks, '', 3)}
-      <div class="bl-foot"><span class="muted small">${n} ${S.plural(n, 'позиция', 'позиции', 'позиций')} в каталоге</span><a class="lnk stretch" href="${burl(P, b)}" data-track="brand_card_click" data-brand="${b.id}">О бренде ${I.arrow}</a></div></div>
+      <div class="bl-foot"><span class="muted small">${n} ${S.plural(n, 'позиция', 'позиции', 'позиций')} ${T('layout.cards.t2')}</span><a class="lnk stretch" href="${burl(P, b)}" data-track="brand_card_click" data-brand="${b.id}">${T('layout.cards.a')} ${I.arrow}</a></div></div>
   </article>`;
   };
 
@@ -207,9 +208,9 @@ module.exports = function components(ctx) {
   </div></section>` : `<section class="sec"><div class="wrap">
     <div class="cta-band reveal pushin">
       <div class="cb-copy">
-        <span class="eyebrow">Партнёрам</span>
-        <h2>Станьте партнёром Астрея</h2>
-        <p>Оригинальная продукция, обучение вашей команды и поддержка менеджеров. Оставьте заявку — мы свяжемся и обсудим условия сотрудничества.</p>
+        <span class="eyebrow">${T('layout.footer.h23')}</span>
+        <h2>${T('layout.partner.h2')}</h2>
+        <p>${T('layout.partner.p')}</p>
         <div class="row">${partnerBtn(P, place, 'btn btn-light')}<a class="btn btn-ghost-inv" href="tel:${phoneHref}" data-track="phone_click">${I.phone} ${esc(site.contacts.phone)}</a></div>
       </div>
       ${ctaLogo}

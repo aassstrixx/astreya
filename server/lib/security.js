@@ -37,7 +37,7 @@ const ipAllowed = ip => {
 };
 /* обязателен ли 2FA: переменная REQUIRE_2FA (0 / 1) главнее настройки из админки — так владелец не потеряет доступ, если нет приложения-аутентификатора */
 const policy2fa = () => C.env.REQUIRE_2FA === '1' ? true : C.env.REQUIRE_2FA === '0' ? false : !!C.loadSettings().security.require2fa;
-const requires2fa = user => !!(policy2fa() && user && user.role === 'admin');
+const requires2fa = user => !!(policy2fa() && user && (user.role === 'admin' || user.role === 'editor'));
 const mustSetup2fa = user => requires2fa(user) && !user.totp;
 
 /* что изменилось в настройках — только названия полей, без значений (секреты в журнал не попадают) */

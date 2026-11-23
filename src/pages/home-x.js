@@ -2,6 +2,7 @@
    Прежние секции берутся готовыми из home.js (parts), новые собираются здесь из data/redesign.json и общих данных. Ничего не выдумывается:
    цифры, бренды, мероприятия, новости — из data/*.json; заглушки помечены placeholder в data/redesign.json. */
 const S = require('../../js/shared.js');
+const {T} = require('../texts.js');
 const {esc, I} = S;
 
 module.exports = function homeRedesign(ctx, C, P, parts, {events, val}) {
@@ -34,7 +35,7 @@ module.exports = function homeRedesign(ctx, C, P, parts, {events, val}) {
       <h2>${esc(ab.title)}</h2>
       ${ab.text.map(t => `<p class="reveal">${esc(t)}</p>`).join('')}
       <ul class="ticks reveal">${ab.points.map(t => `<li>${I.check}<span>${esc(t)}</span></li>`).join('')}</ul>
-      <div class="row reveal" style="margin-top:30px"><a class="btn btn-ghost" href="${C.u(P, 'company.html')}">О компании ${I.arrow}</a></div>
+      <div class="row reveal" style="margin-top:30px"><a class="btn btn-ghost" href="${C.u(P, 'company.html')}">${T('home.hero.a3')} ${I.arrow}</a></div>
     </div>
   </div></section>`;
 
@@ -64,7 +65,7 @@ module.exports = function homeRedesign(ctx, C, P, parts, {events, val}) {
         <h3>${esc(t.label)}</h3>
         ${i === 0 ? `<p>${esc(t.note)}</p>` : ''}
         <div class="rd-task-logos" aria-hidden="true">${bs.slice(0, 4).map(b => C.slotLogo(P, b, 1500)).join('')}</div>
-        <div class="rd-task-foot"><span>${bs.length} ${S.plural(bs.length, 'бренд', 'бренда', 'брендов')} · ${n} ${S.plural(n, 'позиция', 'позиции', 'позиций')}</span><span class="rd-go">Подобрать ${I.arrow}</span></div>
+        <div class="rd-task-foot"><span>${bs.length} ${S.plural(bs.length, 'бренд', 'бренда', 'брендов')} · ${n} ${S.plural(n, 'позиция', 'позиции', 'позиций')}</span><span class="rd-go">${T('home.tasks.t')} ${I.arrow}</span></div>
       </a>`;
     }).join('')}</div>
   </div></section>`;
@@ -77,14 +78,14 @@ module.exports = function homeRedesign(ctx, C, P, parts, {events, val}) {
       </div>
       <p class="rd-pick-empty" id="pick-empty" hidden>${esc(rd.picker.emptyText)}</p>
       `;
-  const picker = parts.picker.replace('<div id="pick-out"', audience + '<div id="pick-out"').replace('С чем вы работаете сегодня?', 'Какая задача вас интересует?').replace('class="sec"', 'class="rd-sec rd-clinical rd-picker"');
+  const picker = parts.picker.replace('<div id="pick-out"', audience + '<div id="pick-out"').replace('С чем вы работаете сегодня?', T('home.tasks.s3')).replace('class="sec"', 'class="rd-sec rd-clinical rd-picker"');
 
   /* ---------- 5. Продукты ---------- */
-  const featured = parts.featured.replace('Рекомендуемые продукты', 'Профессиональные решения').replace('class="sec tint"', 'class="rd-sec rd-featured"');
+  const featured = parts.featured.replace('Рекомендуемые продукты', T('home.tasks.s4')).replace('class="sec tint"', 'class="rd-sec rd-featured"');
 
   /* ---------- 6. Editorial-блок (графит): крупная мысль + реальная продукция брендов либо фото специалиста ---------- */
   const ed = rd.editorial;
-  const trio = `<div class="rd-ed-trio" role="group" aria-label="Продукция брендов">${ed.products.map((p, i) => { const b = ctx.brandById[p.brand]; return `<figure class="rd-ed-p rd-ed-p${i + 1}"><img src="${C.u(P, p.src)}" alt="" width="${p.w}" height="${p.h}" loading="lazy" decoding="async"><figcaption>${esc(b.name)}</figcaption></figure>`; }).join('')}</div>`;
+  const trio = `<div class="rd-ed-trio" role="group" aria-label="${T('home.tasks.aria2')}">${ed.products.map((p, i) => { const b = ctx.brandById[p.brand]; return `<figure class="rd-ed-p rd-ed-p${i + 1}"><img src="${C.u(P, p.src)}" alt="" width="${p.w}" height="${p.h}" loading="lazy" decoding="async"><figcaption>${esc(b.name)}</figcaption></figure>`; }).join('')}</div>`;
   const editorial = `<section class="rd-sec rd-editorial rd-bgword">${bgLogo}<div class="wrap rd-ed-grid">
     <figure class="rd-ed-photo reveal">${img(ed.photo, '', ' loading="lazy"')}</figure>
     <div class="rd-ed-copy">
@@ -98,11 +99,11 @@ module.exports = function homeRedesign(ctx, C, P, parts, {events, val}) {
   /* ---------- 7. Обучение специалистов (асимметрия: визуал слева, текст и ближайшее мероприятие справа) ---------- */
   const tr = rd.training, next = events[0];
   const nextBlock = next
-    ? (() => { const d = S.dparts(next.date), b = ctx.brandById[next.brand]; return `<a class="rd-next reveal" href="${C.eurl(P, next)}"><span class="rd-date"><b>${d.d}</b><i>${d.m}</i></span><span class="rd-next-t"><small>Ближайшее мероприятие</small><b>${esc(next.title)}</b><em>${esc(next.fmt)} · ${esc(next.city)} · ${esc(b.name)}</em></span>${I.arrow}</a>`; })()
+    ? (() => { const d = S.dparts(next.date), b = ctx.brandById[next.brand]; return `<a class="rd-next reveal" href="${C.eurl(P, next)}"><span class="rd-date"><b>${d.d}</b><i>${d.m}</i></span><span class="rd-next-t"><small>${T('home.training.sm')}</small><b>${esc(next.title)}</b><em>${esc(next.fmt)} · ${esc(next.city)} · ${esc(b.name)}</em></span>${I.arrow}</a>`; })()
     : `<p class="muted rd-next-none">${esc(tr.emptyNote)}</p>`;
   const trainVisual = tr.photo
     ? `<figure class="rd-train-photo reveal"><img src="${C.u(P, tr.photo)}" alt="" loading="lazy" decoding="async"></figure>`
-    : `<div class="rd-train-art reveal" aria-hidden="true"><svg class="lgo" viewBox="46 338 836 436"><use href="#logo-art"/></svg><ul><li>Семинары</li><li>Вебинары</li><li>Практика</li></ul></div>`;
+    : `<div class="rd-train-art reveal" aria-hidden="true"><svg class="lgo" viewBox="46 338 836 436"><use href="#logo-art"/></svg><ul><li>${T('home.training.li')}</li><li>${T('home.training.li2')}</li><li>${T('home.training.li3')}</li></ul></div>`;
   const training = `<section class="rd-sec rd-training" id="training-block"><div class="wrap">
     <div class="rd-train-grid">
       ${trainVisual}
@@ -113,7 +114,7 @@ module.exports = function homeRedesign(ctx, C, P, parts, {events, val}) {
         <p class="muted reveal">${esc(tr.text)}</p>
         ${nextBlock}
         ${next ? C.cdSlot() : ''}
-        <div class="row reveal" style="margin-top:26px"><a class="btn btn-fill" href="${C.u(P, 'training.html')}">Все мероприятия ${I.arrow}</a>${next ? `<a class="btn btn-ghost" href="${C.eurl(P, next)}">Подробнее</a>` : ''}</div>
+        <div class="row reveal" style="margin-top:26px"><a class="btn btn-fill" href="${C.u(P, 'training.html')}">${T('home.training.a')} ${I.arrow}</a>${next ? `<a class="btn btn-ghost" href="${C.eurl(P, next)}">${T('home.training.a2')}</a>` : ''}</div>
       </div>
     </div>
     ${events.length > 1 ? `<div class="grid g3 events-grid rd-events" id="home-events">${events.slice(1, 4).map(e => C.eventCard(P, e)).join('')}</div>` : ''}
@@ -128,7 +129,7 @@ module.exports = function homeRedesign(ctx, C, P, parts, {events, val}) {
   </div></section>`;
 
   /* ---------- 9. Новости ---------- */
-  const news = parts.news.replace('Новости и акции', 'События Астрея').replace('Что нового', 'Новости и события Астрея').replace('class="sec tint"', 'class="rd-sec rd-news"');
+  const news = parts.news.replace('Новости и акции', T('home.news.s4')).replace('Что нового', T('home.news.s5')).replace('class="sec tint"', 'class="rd-sec rd-news"');
 
   /* ---------- 10. Большой блок «Наши бренды» (логотипы в исходных цветах, много воздуха) ---------- */
   const w = rd.wall;
@@ -155,7 +156,7 @@ module.exports = function homeRedesign(ctx, C, P, parts, {events, val}) {
   const buildArch = () => {
     const j = rd.jar, ha = houseOn && rd.house.arch && rd.house.arch.enabled ? rd.house.arch : null, a = ha || (j && j.enabled && j.arch); if (!a || !a.enabled) return '';          // дом: свой набор кадров зала (house.arch), пока его нет — кадры прежней заставки
     const nOff = ctx.stats.offices, nBr = ctx.stats.brands, cities = ctx.site.offices.map(o => o.city);
-    const auto = {offices: `${nOff} ${S.plural(nOff, 'город', 'города', 'городов')} присутствия`, brands: `${nBr} ${S.plural(nBr, 'бренд', 'бренда', 'брендов')} в портфеле`};
+    const auto = {offices: `${nOff} ${S.plural(nOff, 'город', 'города', 'городов')} ${T('home.cta.tx')}`, brands: `${nBr} ${S.plural(nBr, 'бренд', 'бренда', 'брендов')} ${T('home.cta.tx2')}`};
     const pn = a.panel || j.arch.panel, items = pn.items.map(it => ({icon: it.icon, title: it.auto ? auto[it.auto] : it.title, text: it.auto === 'offices' ? cities.join(', ') : it.text}));
     /* логотипы на орбитах вокруг шара — те же, что у прежнего героя (data/content.json → home.orbits) */
     const orb = o => { const b = o.brand ? ctx.brandById[o.brand] : null, src = b ? b.logo : o.src, w = b ? b.logoW : o.w, hh = b ? b.logoH : o.h;
@@ -181,8 +182,8 @@ module.exports = function homeRedesign(ctx, C, P, parts, {events, val}) {
           <h1 class="ar-h">${h.h1}</h1>
           <p class="lead ar-lead">${esc(h.lead)}</p>
           ${houseOn ? '' : `          <div class="row ar-cta">
-            <a class="btn btn-fill" href="${C.u(P, 'catalog.html')}" data-track="catalog_click" data-place="hero">Перейти в каталог ${I.arrow}</a>
-            <a class="btn btn-ghost" href="${C.u(P, 'partners.html')}" data-track="partner_cta" data-place="hero">Стать партнёром</a>
+            <a class="btn btn-fill" href="${C.u(P, 'catalog.html')}" data-track="catalog_click" data-place="hero">${T('home.hero.a')} ${I.arrow}</a>
+            <a class="btn btn-ghost" href="${C.u(P, 'partners.html')}" data-track="partner_cta" data-place="hero">${T('home.hero.a2')}</a>
           </div>`}
           <ul class="ar-facts">${h.facts.map(f => `<li>${esc(f)}</li>`).join('')}<li>${esc(auto.offices)}</li></ul>
           ${houseOn ? HOUSE.hall.rooms : ''}
@@ -190,7 +191,7 @@ module.exports = function homeRedesign(ctx, C, P, parts, {events, val}) {
         ${houseOn ? HOUSE.hall.cue : `<div class="ar-panel" role="group" aria-label="${esc(pn.title)}">
           <p class="ar-pt">${esc(pn.title)}</p>
           <ul>${items.map(it => `<li><span class="ar-ic" aria-hidden="true">${I[it.icon] || I.check}</span><span class="ar-tx"><b>${esc(it.title)}</b><em>${esc(it.text)}</em></span></li>`).join('')}</ul>
-          <a class="btn btn-ghost btn-sm ar-more" href="${C.u(P, 'company.html')}">Подробнее ${I.arrow}</a>
+          <a class="btn btn-ghost btn-sm ar-more" href="${C.u(P, 'company.html')}">${T('home.training.a2')} ${I.arrow}</a>
         </div>`}
       </div>
     </div>
@@ -205,10 +206,10 @@ module.exports = function homeRedesign(ctx, C, P, parts, {events, val}) {
     const mk = require('./brands.js').nicheCardMaker(ctx, C, P), bp = ctx.redesign.brandsPage || {}, dev = new Set(bp.deviceIds || []);
     const list = brands.filter(b => !dev.has(b.id)).concat(brands.filter(b => dev.has(b.id)));
     return `<section class="rd-sec rd-brands hb" id="brands-gallery"><div class="wrap">
-    <header class="rd-head rd-head-row reveal"><div><span class="eyebrow">Бренды</span><h2>${brands.length} ${S.plural(brands.length, 'бренд', 'бренда', 'брендов')} — один подход</h2></div>
-      <div class="hb-ctl"><button class="hb-arr" type="button" data-act="hb-prev" aria-label="Назад" disabled>${I.arrow}</button><button class="hb-arr" type="button" data-act="hb-next" aria-label="Вперёд">${I.arrow}</button>${C.lnk(C.u(P, 'brands.html'), 'Все бренды')}</div></header>
+    <header class="rd-head rd-head-row reveal"><div><span class="eyebrow">${T('home.brands.s')}</span><h2>${brands.length} ${S.plural(brands.length, 'бренд', 'бренда', 'брендов')} — один подход</h2></div>
+      <div class="hb-ctl"><button class="hb-arr" type="button" data-act="hb-prev" aria-label="${T('home.brands.aria')}" disabled>${I.arrow}</button><button class="hb-arr" type="button" data-act="hb-next" aria-label="${T('home.brands.aria2')}">${I.arrow}</button>${C.lnk(C.u(P, 'brands.html'), T('home.brands.s2'))}</div></header>
     </div>
-    <div class="hb-strip" id="hb-strip" role="region" aria-label="Бренды портфеля: листайте по горизонтали" tabindex="0">${list.map(mk).join('')}</div>
+    <div class="hb-strip" id="hb-strip" role="region" aria-label="${T('home.brands.aria3')}" tabindex="0">${list.map(mk).join('')}</div>
   </section>`;
   })();
   const fork = ctx.sales && ctx.sales.homeFork ? require('./sales-home.js')(ctx, C, P) : '';          // продающий слой: развилка «Учиться / Закупать» сразу под строкой брендов (героя и вступление не трогаем)

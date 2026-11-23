@@ -9,6 +9,7 @@
 const fs = require('fs');
 const path = require('path');
 const S = require('../../js/shared.js');
+const {T} = require('../texts.js');
 const {esc, I, dparts} = S;
 const ROOT = path.join(__dirname, '..', '..');
 const has = f => { try { return fs.existsSync(path.join(ROOT, f)); } catch (e) { return false; } };
@@ -45,147 +46,147 @@ module.exports = function company(ctx, C, P) {
   const heroArt = `<picture><source media="(max-width:760px)" srcset="${u('assets/company/atrium-v3-m.webp')}"><img src="${u('assets/company/atrium-v3-s.webp')}" srcset="${u('assets/company/atrium-v3-s.webp')} 1200w, ${u('assets/company/atrium-v3.webp')} 2400w" sizes="100vw" alt="" width="2400" height="1350" fetchpriority="high" decoding="async"></picture>`;
 
   /* ---- 2 · в цифрах ---- */
-  const stats = [[brands.length, '', 'Брендов и линий'], [ctx.products.length, '', 'Позиций в каталоге'], [20, '+', 'Лет развития методики семинаров'], [4, '', 'Города проведения семинаров и онлайн']];
+  const stats = [[brands.length, '', T('company.facts.s')], [ctx.products.length, '', T('company.facts.s2')], [20, '+', T('company.facts.s3')], [4, '', T('company.facts.s4')]];
 
   /* ---- 3 · направления ---- */
   /* карточка «Работа с регионами»: та же карта владельца, что и в блоке «Астрея по всей России» (assets/company/ru-map.svg), города — точками в процентах рамки карты */
   const mapPic = `<span class="ca-dp ca-dp-map" aria-hidden="true"><span class="ca-dm"><img src="${u('assets/company/ru-map.svg')}" alt="" width="1920" height="1108" loading="lazy" decoding="async">${Object.keys(GEO).map(k => { const p = mapAt(GEO[k][0], GEO[k][1]); return `<i style="left:${p.x}%;top:${p.y}%"></i>`; }).join('')}</span></span>`;
   const dirs = [
-    {t: 'Дистрибуция косметики', p: 'Оригинальные бренды и надёжные поставки профессиональной косметики', href: u('catalog.html'), tr: 'catalog_click', pl: 'company-dir-1',
+    {t: T('company.dirs.s'), p: T('company.dirs.s2'), href: u('catalog.html'), tr: 'catalog_click', pl: 'company-dir-1',
       pic: `<span class="ca-dp ca-dp-pk" aria-hidden="true">${img('assets/photos/dermatime-micellar.webp', 279, 900)}${img('assets/photos/iraltone-shampoo.webp', 329, 900)}${img('assets/photos/keenwell-mask.webp', 397, 900)}</span>`},
-    {t: 'Учебный центр', p: 'Обучение специалистов, семинары и профессиональное развитие', href: u('training.html'), tr: 'training_click', pl: 'company-dir-2',
+    {t: T('company.dirs.s3'), p: T('company.dirs.s4'), href: u('training.html'), tr: 'training_click', pl: 'company-dir-2',
       pic: `<span class="ca-dp ca-dp-ph" aria-hidden="true">${img('assets/news/ph-seminar-a.webp', 960, 540, '', '', '50% 36%')}</span>`},
-    {t: 'Работа с регионами', p: 'Развитие профессионального сообщества и регионального присутствия', href: u('contacts.html'), tr: 'contacts_click', pl: 'company-dir-3', pic: mapPic},
-    {t: 'Поддержка партнёров', p: 'Надёжное партнёрство, консультации и индивидуальный подход', href: u('partners.html'), tr: 'partner_cta', pl: 'company-dir-4',
+    {t: T('company.dirs.s5'), p: T('company.dirs.s6'), href: u('contacts.html'), tr: 'contacts_click', pl: 'company-dir-3', pic: mapPic},
+    {t: T('company.dirs.s7'), p: T('company.dirs.s8'), href: u('partners.html'), tr: 'partner_cta', pl: 'company-dir-4',
       pic: `<span class="ca-dp ca-dp-ph" aria-hidden="true">${img('assets/photos/photo-02b-about.webp', 768, 768, '', '', '50% 30%')}</span>`}];
 
   /* ---- 4 · бренды ---- */
-  const tagOf = b => b.group === 'Cantabria Labs' ? 'линия Cantabria Labs' : b.group;
+  const tagOf = b => b.group === 'Cantabria Labs' ? T('company.brands.s') : b.group;
   const bcell = (b, i) => `<a class="ca-bc reveal" style="--c1:${esc(b.c1)}" href="${C.burl(P, b)}" data-track="brand_click" data-place="company-brands" aria-label="${esc(b.name)}"><span class="ca-bl"><img class="ca-blogo" src="${u(b.logo)}" alt="${esc(b.name)}" loading="lazy" decoding="async"></span><small>${esc(tagOf(b))}</small></a>`;
 
   /* ---- 6 · география ---- */
   const [o1, o2] = site.offices;
-  const roleOf = city => city === o1.city ? o1.role : city === o2.city ? o2.role : 'Город проведения семинаров';
+  const roleOf = city => city === o1.city ? o1.role : city === o2.city ? o2.role : T('company.geo.s');
   const officeOf = city => city === o1.city ? o1 : city === o2.city ? o2 : null;
   const evIn = city => up.find(e => e.city === city);
     const mk = Object.keys(GEO).map((city, i) => {
     const p = mapAt(GEO[city][0], GEO[city][1]), o = officeOf(city), ev = evIn(city), role = roleOf(city), id = 'ca-tip-' + i;
     const side = i === 0 ? 'r' : i === 1 ? 'r' : i === 2 ? 'br' : 'tl';   /* подписи не заходят на точки: Ростов — под точкой справа, Симферополь — над точкой */
     const body = o ? `<span class="ca-tl">${esc(o.addr)}</span>${o.phones[0] ? `<a href="tel:${o.phones[0][0].replace(/[^+\d]/g, '')}" data-track="phone_click">${esc(o.phones[0][0])}</a>` : ''}`
-      : `<span class="ca-tl">Семинары учебного центра «Астрея»</span>${ev ? `<a href="${C.eurl(P, ev)}" data-track="event_click" data-place="company-geo"><time datetime="${ev.date}">${dparts(ev.date).d} ${esc(dparts(ev.date).m)}</time> · ${esc(ev.title)}</a>` : `<a href="${u('training.html')}" data-track="training_click" data-place="company-geo">Даты — в расписании</a>`}`;
+      : `<span class="ca-tl">${T('company.geo.t')}</span>${ev ? `<a href="${C.eurl(P, ev)}" data-track="event_click" data-place="company-geo"><time datetime="${ev.date}">${dparts(ev.date).d} ${esc(dparts(ev.date).m)}</time> · ${esc(ev.title)}</a>` : `<a href="${u('training.html')}" data-track="training_click" data-place="company-geo">${T('company.geo.a')}</a>`}`;
     return `<div class="ca-mw s-${side}${o ? ' is-office' : ' is-sem'}" data-city="${esc(city)}" style="left:${p.x}%;top:${p.y}%;--i:${i}">
       <button class="ca-mk" type="button" aria-describedby="${id}" aria-label="${esc(city)} — ${esc(role)}" data-city="${esc(city)}"><i aria-hidden="true"></i><span class="ca-mn">${esc(city)}</span></button>
       <div class="ca-tip" id="${id}" role="tooltip"><b>${esc(city)}</b><em>${esc(role)}</em>${body}</div></div>`; }).join('');
   const cardOf = city => { const o = officeOf(city), ev = evIn(city), role = roleOf(city), ph = o && o.phones[0] ? o.phones[0] : null;
     const evl = ev ? `<a class="ca-cl" href="${C.eurl(P, ev)}" data-track="event_click" data-place="company-map"><time datetime="${ev.date}">${dparts(ev.date).d} ${esc(dparts(ev.date).m)}</time> · ${esc(ev.title)}</a>`
-      : `<a class="ca-cl" href="${u('training.html')}" data-track="training_click" data-place="company-map">Расписание семинаров</a>`;
-    return `<article class="ca-cd" data-city="${esc(city)}" aria-label="${esc(city)}"><em>${esc(role)}</em><h3>${esc(city)}</h3><p>${esc(o ? o.addr : 'Семинары учебного центра «Астрея»')}</p>${o && o.hours ? `<p class="ca-ch">${esc(o.hours)}</p>` : ''}<div class="ca-cr">${ph ? `<a class="ca-cl" href="tel:${ph[0].replace(/[^+\d]/g, '')}" data-track="phone_click" data-place="company-map">${esc(ph[0])}</a>` : ''}${evl}</div></article>`; };
-  const cityBtns = Object.keys(GEO).map((city, i) => `<li><button class="ca-cb" type="button" data-city="${esc(city)}" aria-pressed="${i === 0 ? 'true' : 'false'}"><b>${esc(city)}</b><small>${esc(officeOf(city) ? 'Офис' : 'Семинары')}</small></button></li>`).join('');
+      : `<a class="ca-cl" href="${u('training.html')}" data-track="training_click" data-place="company-map">${T('company.geo.a2')}</a>`;
+    return `<article class="ca-cd" data-city="${esc(city)}" aria-label="${esc(city)}"><em>${esc(role)}</em><h3>${esc(city)}</h3><p>${esc(o ? o.addr : T('company.geo.t'))}</p>${o && o.hours ? `<p class="ca-ch">${esc(o.hours)}</p>` : ''}<div class="ca-cr">${ph ? `<a class="ca-cl" href="tel:${ph[0].replace(/[^+\d]/g, '')}" data-track="phone_click" data-place="company-map">${esc(ph[0])}</a>` : ''}${evl}</div></article>`; };
+  const cityBtns = Object.keys(GEO).map((city, i) => `<li><button class="ca-cb" type="button" data-city="${esc(city)}" aria-pressed="${i === 0 ? 'true' : 'false'}"><b>${esc(city)}</b><small>${esc(officeOf(city) ? T('company.geo.s2') : T('company.geo.s3'))}</small></button></li>`).join('');
   const globe = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c3 3 3 15 0 18M12 3c-3 3-3 15 0 18"/></svg>';
   const geoItems = [
-    {ic: I.pin, k: '2', t: 'офиса', d: `${o1.city} — ${o1.role.toLowerCase()}; ${o2.city} — ${o2.role.toLowerCase()}`},
-    {ic: I.pin, k: '2', t: 'города семинаров', d: 'Ростов-на-Дону и Симферополь', hollow: true},
-    {ic: globe, k: 'Онлайн', t: 'по всей России', d: 'Вебинары и онлайн-мероприятия учебного центра'}];
+    {ic: I.pin, k: '2', t: T('company.geo.s4'), d: `${o1.city} — ${o1.role.toLowerCase()}; ${o2.city} — ${o2.role.toLowerCase()}`},
+    {ic: I.pin, k: '2', t: T('company.geo.s5'), d: T('company.geo.s6'), hollow: true},
+    {ic: globe, k: T('company.geo.s7'), t: T('company.geo.s8'), d: T('company.geo.s9')}];
 
   /* ---- 7 · заключение ---- */
   const finImg = has('assets/company/atrium-v3.webp') ? 'assets/company/atrium-v3.webp' : 'assets/company/atrium.webp';
 
   return `<div class="ca" data-ca>
-  <section class="ca-s ca-hero" id="ca-entry" data-scene="1" data-title="О компании" aria-labelledby="ca-h1">
+  <section class="ca-s ca-hero" id="ca-entry" data-scene="1" data-title="${T('company.sidenav.nav')}" aria-labelledby="ca-h1">
     <div class="ca-hero-art" aria-hidden="true">${heroArt}<i class="ca-hero-veil"></i></div>
     <div class="ca-in ca-hero-in">
       <div class="ca-copy" data-ca-copy>
-        <span class="ca-eyebrow reveal">О компании</span>
-        <h1 id="ca-h1" class="reveal" data-nosplit>Астрея — пространство профессиональной косметологии</h1>
-        <p class="ca-lead reveal">Мы объединяем ведущие бренды, экспертизу и современные технологии, чтобы создавать красоту, вдохновлять и развивать индустрию.</p>
-        <div class="ca-cta reveal"><a class="ca-btn-o" href="#ca-stats" data-act="scroll" data-target="ca-stats" data-track="company_intro" data-place="company-hero"><span>Узнать больше</span>${arrow}</a></div>
+        <span class="ca-eyebrow reveal">${T('company.sidenav.nav')}</span>
+        <h1 id="ca-h1" class="reveal" data-nosplit>${T('company.hero.h1')}</h1>
+        <p class="ca-lead reveal">${T('company.hero.lead')}</p>
+        <div class="ca-cta reveal"><a class="ca-btn-o" href="#ca-stats" data-act="scroll" data-target="ca-stats" data-track="company_intro" data-place="company-hero"><span>${T('company.hero.t')}</span>${arrow}</a></div>
       </div>
     </div>
   </section>
 
-  <section class="ca-s ca-stats" id="ca-stats" data-scene="2" data-title="В цифрах" aria-label="Астрея в цифрах">
+  <section class="ca-s ca-stats" id="ca-stats" data-scene="2" data-title="${T('company.sidenav.nav2')}" aria-label="${T('company.hero.aria')}">
     
     <ul class="ca-in ca-stl">${stats.map(([n, sf, t], i) => `<li class="ca-stat reveal"><b><span>${n}</span>${sf}</b><span>${esc(t)}</span></li>`).join('')}</ul>
   </section>
 
-  <section class="ca-s ca-dirs" id="ca-niches" data-scene="3" data-title="Направления" aria-labelledby="ca-h2">
+  <section class="ca-s ca-dirs" id="ca-niches" data-scene="3" data-title="${T('company.sidenav.nav3')}" aria-labelledby="ca-h2">
     <div class="ca-in ca-dir-in">
-      <header class="ca-dirs-h reveal"><span class="ca-eyebrow">Направления деятельности</span><h2 id="ca-h2">Комплексный подход к красоте и развитию</h2></header>
+      <header class="ca-dirs-h reveal"><span class="ca-eyebrow">${T('company.dirs.eyebrow')}</span><h2 id="ca-h2">${T('company.dirs.h2')}</h2></header>
       <ul class="ca-dl">${dirs.map((d, i) => `<li class="ca-dc reveal"><a href="${d.href}" data-track="${d.tr}" data-place="${d.pl}" aria-label="${esc(d.t)}">
         <span class="ca-dpw">${d.pic}</span><span class="ca-dt"><b>${esc(d.t)}</b><small>${esc(d.p)}</small></span><span class="ca-go" aria-hidden="true">${arrow}</span></a></li>`).join('')}</ul>
     </div>
   </section>
 
-  <section class="ca-s ca-brands" id="ca-expo" data-scene="4" data-title="Бренды" aria-labelledby="ca-h3">
+  <section class="ca-s ca-brands" id="ca-expo" data-scene="4" data-title="${T('company.sidenav.nav4')}" aria-labelledby="ca-h3">
     <div class="ca-in ca-br-in">
       <div class="ca-br-t reveal">
-        <span class="ca-eyebrow">Портфель брендов</span><h2 id="ca-h3">Проверенные бренды — ваш выбор</h2>
+        <span class="ca-eyebrow">${T('company.brands.eyebrow')}</span><h2 id="ca-h3">${T('company.brands.h2')}</h2>
         <p class="ca-p">${esc(cp.who[0])}</p>
-        <p class="ca-note"><img class="ca-mkl" src="${u('assets/brands/cantabria-labs-h.svg')}" alt="Cantabria Labs" loading="lazy" decoding="async"><span>Cantabria Labs — производитель; Endocare, Neoretin, Heliocare, Biretix, Iraltone и Elancyl — его линии.</span></p>
-        <div class="ca-cta"><a class="ca-btn-o" href="${u('brands.html')}" data-track="brands_click" data-place="company-brands"><span>Перейти к брендам</span>${arrow}</a></div>
+        <p class="ca-note"><img class="ca-mkl" src="${u('assets/brands/cantabria-labs-h.svg')}" alt="Cantabria Labs" loading="lazy" decoding="async"><span>${T('company.brands.t')}</span></p>
+        <div class="ca-cta"><a class="ca-btn-o" href="${u('brands.html')}" data-track="brands_click" data-place="company-brands"><span>${T('company.brands.t2')}</span>${arrow}</a></div>
       </div>
       <div class="ca-bgrid reveal">${brands.map(bcell).join('')}</div>
     </div>
   </section>
 
-  <section class="ca-s ca-phil" id="ca-phil" data-scene="5" data-title="Преимущества" aria-labelledby="ca-h5">
+  <section class="ca-s ca-phil" id="ca-phil" data-scene="5" data-title="${T('company.sidenav.nav5')}" aria-labelledby="ca-h5">
     <i class="ca-ribbon" aria-hidden="true"></i>
     <div class="ca-in ca-phil-in">
-      <header class="ca-phil-t reveal"><span class="ca-eyebrow">Почему Астрея</span><h2 id="ca-h5">Наши преимущества</h2>
-        <p class="ca-p">Разнообразие марок, высокое качество продукции, собственные обучающий и медицинский центры, широкая дистрибьюторская сеть и индивидуальный подход к каждому клиенту выгодно позиционируют «Астрею» на российском рынке.</p>
+      <header class="ca-phil-t reveal"><span class="ca-eyebrow">${T('company.adv.eyebrow')}</span><h2 id="ca-h5">${T('company.adv.h2')}</h2>
+        <p class="ca-p">${T('company.adv.p')}</p>
         <figure class="ca-ph ca-ph-team" aria-hidden="true">${img('assets/photos/photo-02-about.webp', 800, 533, '', '', '50% 20%')}</figure></header>
-      <ul class="ca-adv reveal" data-sx-mod="trust" aria-label="Преимущества работы с Астрея">${content.advantages.map((a, i) => `<li class="ca-av reveal"><span class="ca-ai" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">${ICON[i % ICON.length]}</svg></span>
+      <ul class="ca-adv reveal" data-sx-mod="trust" aria-label="${T('company.adv.aria')}">${content.advantages.map((a, i) => `<li class="ca-av reveal"><span class="ca-ai" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">${ICON[i % ICON.length]}</svg></span>
         <div><b>${esc(a.title)}</b><span>${esc(a.text)}</span></div></li>`).join('')}</ul>
       <ul class="ca-pts">
-        <li class="reveal"><b>Широкий ассортимент</b><span>Дерматологические, космецевтические и косметические препараты, средства для парикмахеров-стилистов и визажистов.</span></li>
-        <li class="reveal"><b>Связь с производителями</b><span>Фабрики с собственными научными лабораториями и высокотехнологичным оборудованием.</span></li>
-        <li class="reveal"><b>Обучение у производителей</b><span>Тренеры и активные партнёры посещают учебные центры и производства зарубежных компаний.</span></li>
-        <li class="reveal"><b>Мы всегда рядом</b><span>В офисе вас ждут доброжелательное отношение и достоверная информация о продукции.</span></li>
+        <li class="reveal"><b>${T('company.adv.b')}</b><span>${T('company.adv.t')}</span></li>
+        <li class="reveal"><b>${T('company.adv.b2')}</b><span>${T('company.adv.t2')}</span></li>
+        <li class="reveal"><b>${T('company.adv.b3')}</b><span>${T('company.adv.t3')}</span></li>
+        <li class="reveal"><b>${T('company.adv.b4')}</b><span>${T('company.adv.t4')}</span></li>
       </ul>
     </div>
   </section>
 
-  <section class="ca-s ca-center" id="ca-center" data-scene="6" data-title="Учебный центр" aria-labelledby="ca-h6">
+  <section class="ca-s ca-center" id="ca-center" data-scene="6" data-title="${T('company.dirs.s3')}" aria-labelledby="ca-h6">
     <i class="ca-ribbon" aria-hidden="true"></i>
     <div class="ca-in ca-center-in">
       <div class="ca-center-t">
-        <span class="ca-eyebrow reveal">Обучение</span><h2 id="ca-h6" class="reveal">Собственный учебный центр</h2>
-        <p class="ca-p reveal">Регулярные семинары на базе учебного центра «Астреи»: преподаватели помогут разобраться в большом объёме информации, ответят на вопросы и дадут практические советы.</p>
-        <ul class="ca-tags"><li class="reveal">Химические пилинги</li><li class="reveal">Мезотерапия</li><li class="reveal">Эстетические уходы для лица и тела</li></ul>
-        <div class="ca-cta reveal"><a class="ca-btn-o" href="${u('training.html')}" data-track="training_click" data-place="company-center"><span>Расписание семинаров</span>${arrow}</a></div>
+        <span class="ca-eyebrow reveal">${T('company.academy.eyebrow')}</span><h2 id="ca-h6" class="reveal">${T('company.academy.h2')}</h2>
+        <p class="ca-p reveal">${T('company.academy.p')}</p>
+        <ul class="ca-tags"><li class="reveal">${T('company.academy.li')}</li><li class="reveal">${T('company.academy.li2')}</li><li class="reveal">${T('company.academy.li3')}</li></ul>
+        <div class="ca-cta reveal"><a class="ca-btn-o" href="${u('training.html')}" data-track="training_click" data-place="company-center"><span>${T('company.geo.a2')}</span>${arrow}</a></div>
       </div>
       <div class="ca-cph" aria-hidden="true"><figure class="ca-ph reveal">${img('assets/news/ph-seminar-a.webp', 960, 540, '', '', '46% 40%')}</figure><figure class="ca-ph reveal">${img('assets/news/ph-seminar-b.webp', 960, 540, '', '', '50% 40%')}</figure></div>
     </div>
   </section>
 
-  <section class="ca-s ca-geo" id="ca-geo" data-scene="7" data-title="Дистрибьюторы" aria-labelledby="ca-h7">
+  <section class="ca-s ca-geo" id="ca-geo" data-scene="7" data-title="${T('company.sidenav.nav6')}" aria-labelledby="ca-h7">
     <div class="ca-in ca-geo-in">
       <div class="ca-geo-t reveal">
-        <span class="ca-eyebrow">Наши дистрибьюторы</span><h2 id="ca-h7">Астрея по всей России</h2>
-        <p class="ca-p">Продвижением марок занимаются региональные дистрибьюторы. Их специалисты проходят обучение и ежегодную аттестацию в «Астрее», а для эффективной работы мы проводим выездные семинары с участием московских специалистов.</p>
-        <p class="ca-quote">Для нас индустрия красоты — не только бизнес, но и искусство.</p>
-        <div class="ca-cta"><a class="ca-btn-o" href="${u('contacts.html')}" data-track="contacts_click" data-place="company-geo"><span>Все контакты</span>${arrow}</a></div>
+        <span class="ca-eyebrow">${T('company.distr.eyebrow')}</span><h2 id="ca-h7">${T('company.distr.h2')}</h2>
+        <p class="ca-p">${T('company.distr.p')}</p>
+        <p class="ca-quote">${T('company.distr.p2')}</p>
+        <div class="ca-cta"><a class="ca-btn-o" href="${u('contacts.html')}" data-track="contacts_click" data-place="company-geo"><span>${T('company.distr.t')}</span>${arrow}</a></div>
       </div>
       <ul class="ca-gi">${geoItems.map((g, i) => `<li class="ca-gic reveal"><span class="ca-gii${g.hollow ? ' is-h' : ''}" aria-hidden="true">${g.ic}</span><div><b>${esc(g.k)}</b> <span>${esc(g.t)}</span><small>${esc(g.d)}</small></div></li>`).join('')}</ul>
     </div>
-    <div class="ca-in ca-atlas" id="ca-atlas" aria-label="Карта России: офисы и города проведения семинаров">
+    <div class="ca-in ca-atlas" id="ca-atlas" aria-label="${T('company.distr.aria')}">
       <div class="ca-atl-l reveal">
         <ul class="ca-cities">${cityBtns}</ul>
         <div class="ca-cds" aria-live="polite">${Object.keys(GEO).map(cardOf).join('')}</div>
       </div>
-      <figure class="ca-map reveal" aria-label="Карта России с офисами и городами проведения семинаров">
+      <figure class="ca-map reveal" aria-label="${T('company.distr.aria2')}">
         <div class="ca-mapview"><div class="ca-mapbox"><img src="${u('assets/company/ru-map.svg')}" alt="" width="1920" height="1108" loading="lazy" decoding="async">${mk}</div></div>
-        <figcaption><span><i class="d-o"></i>Офис</span><span><i class="d-s"></i>Город проведения семинаров</span><span class="ca-hint">Нажмите на город — покажем адрес и ближайшую встречу</span></figcaption>
+        <figcaption><span><i class="d-o"></i>${T('company.geo.s2')}</span><span><i class="d-s"></i>${T('company.geo.s')}</span><span class="ca-hint">${T('company.distr.t2')}</span></figcaption>
       </figure>
     </div>
   </section>
 
-  <section class="ca-s ca-final" id="ca-final" data-scene="8" data-title="Заключение" aria-labelledby="ca-h9">
+  <section class="ca-s ca-final" id="ca-final" data-scene="8" data-title="${T('company.sidenav.nav7')}" aria-labelledby="ca-h9">
     <div class="ca-fin-bg" aria-hidden="true"><img src="${u(finImg)}" alt="" width="2400" height="1350" loading="lazy" decoding="async"></div>
     <div class="ca-in ca-fin reveal" data-sx-closing="company-cta">
-      <div class="ca-fin-t"><h2 id="ca-h9">Астрея — профессиональное партнёрство, основанное на знаниях и доверии</h2>
-      <p class="ca-sign">Всегда с Вами,<br>коллектив компании «Астрея»</p></div>
-      <div class="ca-fin-b"><a class="btn btn-light ac-pill" href="${u('training.html')}" data-track="closing_cta" data-place="company-cta">Посмотреть обучение ${arrow}</a>${C.partnerBtn(P, 'company', 'btn btn-ghost-inv')}${stella ? `<button class="ca-ask" type="button" data-act="asst-open" data-track="asst_open" data-place="company">${I.chat || ''}<span>Спросить Стеллу</span></button>` : ''}</div>
+      <div class="ca-fin-t"><h2 id="ca-h9">${T('company.closing.h2')}</h2>
+      <p class="ca-sign">${T('company.closing.p')}<br>${T('company.closing.tx')}</p></div>
+      <div class="ca-fin-b"><a class="btn btn-light ac-pill" href="${u('training.html')}" data-track="closing_cta" data-place="company-cta">${T('company.closing.a')} ${arrow}</a>${C.partnerBtn(P, 'company', 'btn btn-ghost-inv')}${stella ? `<button class="ca-ask" type="button" data-act="asst-open" data-track="asst_open" data-place="company">${I.chat || ''}<span>${T('company.closing.t')}</span></button>` : ''}</div>
     </div>
   </section>
 </div>`;

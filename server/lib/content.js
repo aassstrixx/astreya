@@ -6,6 +6,7 @@ const {readJSON, writeFileAtomic, Mutex, nowISO} = require('./util');
 const {httpErr} = require('./auth');
 const B = require('./build');
 const blocks = require(path.join(C.ROOT, 'src', 'blocks-schema.js'));
+const TX = require(path.join(C.ROOT, 'src', 'texts.js'));
 
 const mu = new Mutex();
 const COLLECTIONS = {
@@ -23,6 +24,7 @@ const COLLECTIONS = {
   integrations: {title: 'Интеграции: Метрика, согласие, мессенджеры', group: 'Сайт', file: 'data/integrations.json', kind: 'object'},
   legal:    {title: 'Документы (152-ФЗ)',     group: 'Сайт',     file: 'data/legal.json',    kind: 'object'}
 };
+COLLECTIONS.texts = {title: 'Тексты страниц', group: 'Сайт', file: 'data/texts.json', kind: 'object'};
 COLLECTIONS.sales = {title: 'Путь к закупке («Старт со Стеллой»)', group: 'Сайт', file: 'data/sales.json', kind: 'object'};
 /* библиотека «живых» реплик помощника: каждый файл data/stella/*.json — отдельный раздел (правка не ломает сайт: он собирается и проверяется, а при ошибке сборки откатывается) */
 const STELLA_TITLES = {config: 'Настройки и общие реплики', chat: 'Разговор', daily: 'Повседневные темы', english: 'Английский язык', glossary: 'Словарь терминов', guide: 'Экскурсия и подсказки', persona: 'Характер', safety: 'Безопасность ответов', sales: 'Продажи', scope: 'Границы тем', voice: 'Голос и приветствия'};
@@ -132,6 +134,9 @@ function problems(name, data) {
           ['top', 'end'].forEach(sl => { if (v[sl]) ck(v[sl], `${x}, ${sl === 'top' ? 'начало' : 'конец'}`, true); }); if (v.logo) ck(v.logo, `${x}, логотип`, false);
           (v.mid || []).forEach((m, j) => { ck(m, `${x}, блок ${j + 1}`, true); if (!m || !/^[a-z][\w-]*(?:\.[\w-]+)*(?:#[\w-]+)?$/i.test(String(m.sel || ''))) P.push(`${x}, блок ${j + 1}: селектор вида section.sec или section.sec#id.`); }); }); });
     }
+  } else if (name === 'texts') {
+    if (!data.items || typeof data.items !== 'object' || Array.isArray(data.items)) return ['Нужен объект «items»: ключ → текст.'];
+    Object.entries(data.items).forEach(([k, v]) => TX.problems(k, v).forEach(x => P.push(x)));
   } else if (name === 'training') {
     ['teachers', 'steps', 'faq'].forEach(k => { if (!Array.isArray(data[k])) P.push(`Нужен список «${k}».`); }); if (Array.isArray(data.teachers)) uniq(data.teachers, 'id', 'Преподаватель');
     if (!P.length) readJSON(abs('events'), []).forEach(e => { if (e.teacher && !data.teachers.some(t => t.id === e.teacher)) P.push(`Мероприятие «${e.title}»: преподаватель «${e.teacher}» удалён.`); });

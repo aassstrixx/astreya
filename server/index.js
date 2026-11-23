@@ -9,6 +9,7 @@ const H = require('./lib/http');
 const L = require('./lib/leads');
 const N = require('./lib/notify');
 const CT = require('./lib/content');
+const TXR = require('./lib/textsapi');
 const B = require('./lib/build');
 const F = require('./lib/files');
 const P = require('./lib/publish');
@@ -179,20 +180,22 @@ async function handleApi(req, res, url) {
     if (m === 'DELETE') { need(ctx, 'admin'); await L.remove(mm[1], ctx.who); log(req, ctx.who, 'lead_delete', mm[1]); return H.json(res, 200, {ok: true}); }
   }
 
-  /* дальше — только администратор */
-  need(ctx, 'admin');
+  /* содержимое сайта, картинки, сборка и публикация — администратор и редактор */
+  need(ctx, 'admin', 'editor');
   if (p === '/api/collections' && m === 'GET') return H.json(res, 200, {collections: CT.summary()});
   mm = p.match(/^\/api\/collections\/([a-z0-9_]+)$/);
   if (mm) {
     if (m === 'GET') return H.json(res, 200, CT.read(mm[1]));
     if (m === 'PUT') { const b = await H.readJSONBody(req, 6e6); const r = await CT.save(mm[1], b.data, {version: b.version, who: ctx.who}); log(req, ctx.who, 'content', mm[1] + (r.unchanged ? ' (без изменений)' : '')); return H.json(res, 200, r); }
   }
+  if (p === '/api/texts/registry' && m === 'GET') return H.json(res, 200, TXR.registry());
   mm = p.match(/^\/api\/collections\/([a-z0-9_]+)\/history$/); if (mm && m === 'GET') return H.json(res, 200, {items: CT.history(mm[1])});
   mm = p.match(/^\/api\/collections\/([a-z0-9_]+)\/restore$/);
   if (mm && m === 'POST') { const b = await H.readJSONBody(req, 4096); const r = await CT.restore(mm[1], b.id, ctx.who); log(req, ctx.who, 'restore', mm[1] + ' ← ' + b.id); return H.json(res, 200, r); }
 
   if (p === '/api/assistant/info' && m === 'GET') return H.json(res, 200, ASSIST.info());
   if (p === '/api/assistant/test' && m === 'POST') {
+    need(ctx, 'admin');
     const now = Date.now(); if (now - (handleApi.lastAiTest || 0) < 4000) throw httpErr(429, 'Подождите несколько секунд между проверками.'); handleApi.lastAiTest = now;
     const r = await ASSIST.selfTest(); log(req, ctx.who, 'assistant_test', r.ok ? 'проверка ИИ: успешно' : 'проверка ИИ: ' + (r.code || 'ошибка')); return H.json(res, 200, r);
   }
@@ -208,12 +211,16 @@ async function handleApi(req, res, url) {
   if (p === '/api/build' && m === 'GET') return H.json(res, 200, B.last() || {});
   if (p === '/api/build' && m === 'POST') { const r = await B.build('пересборка из админки'); log(req, ctx.who, 'build', r.ok ? 'успешно' : 'ошибка'); return H.json(res, r.ok ? 200 : 422, r); }
   if (p === '/api/site.zip' && m === 'GET') {
+    need(ctx, 'admin');
     log(req, ctx.who, 'site_zip', 'скачан архив сайта');
     res.writeHead(200, Object.assign({}, H.SEC, {'Content-Type': 'application/zip', 'Content-Disposition': 'attachment; filename="astreya-site-' + new Date().toISOString().slice(0, 10) + '.zip"', 'Cache-Control': 'no-store'}));
     try { await ZIP.stream(res); } catch (e) { console.error('zip:', e.message); res.destroy(); } res.end(); return;
   }
   if (p === '/api/publish' && m === 'GET') return H.json(res, 200, await P.status());
   if (p === '/api/publish' && m === 'POST') { const b = await H.readJSONBody(req, 4096); const r = await P.publish(b.message, ctx.who); log(req, ctx.who, 'publish', r.commit || r.message || ''); return H.json(res, 200, r); }
+
+  /* дальше — только администратор: настройки, интеграции, безопасность, пользователи, журнал */
+  need(ctx, 'admin');
 
   /* настройки (уведомления, антиспам, ИИ, секреты интеграций); политика безопасности, чек-лист и копии меняются отдельными запросами */
   if (p === '/api/settings' && m === 'GET') return H.json(res, 200, maskSettings(C.loadSettings()));

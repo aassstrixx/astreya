@@ -1,6 +1,7 @@
 const fs = require('fs');
 const path = require('path');
 const S = require('../../js/shared.js');
+const {T} = require('../texts.js');
 const {esc, I, bstyle} = S;
 
 /* Страница товара v2 («Витрина»): макро-кадр экспоната (assets/detail/stage-product.webp, tools/showroom-assets/detail/detail_stage.py) — упаковка стоит на травертиновом подиуме перед
@@ -21,29 +22,29 @@ module.exports = function product(ctx, C, P, p) {
   const lc = s => s.charAt(0).toLowerCase() + s.slice(1);
   const details = p.details && p.details.length ? p.details : [
     p.desc,
-    `Позиция входит в портфель бренда ${b.name} — ${lc(b.tag)}.`,
-    'Информацию о составе, способе применения и условиях поставки предоставляют менеджеры «Астрея» — воспользуйтесь кнопкой «Запросить информацию».'
+    `${T('product.about.tx')} ${b.name} — ${lc(b.tag)}.`,
+    T('product.about.s')
   ];
   const tbd = '<span class="tbd">Уточняется — запросите у менеджера</span>';
   const list = a => `<ul class="ticks">${a.map(x => `<li>${I.check}<span>${esc(x)}</span></li>`).join('')}</ul>`;
-  const rows = [['Бренд', `<a href="${C.burl(P, b)}">${esc(b.name)}</a>`], ['Категория', esc(c.name)], ['Тип продукта', k ? esc(k.name) : tbd],
-    ['Объём', p.volume ? esc(p.volume) : tbd], ['Артикул', p.sku ? esc(p.sku) : tbd]];
+  const rows = [[T('product.about.s2'), `<a href="${C.burl(P, b)}">${esc(b.name)}</a>`], [T('product.about.s3'), esc(c.name)], [T('product.about.s4'), k ? esc(k.name) : tbd],
+    [T('product.about.s5'), p.volume ? esc(p.volume) : tbd], [T('product.about.s6'), p.sku ? esc(p.sku) : tbd]];
   const related = ctx.related(p);
-  const request = (cls, place, label = 'Запросить информацию') => `<button class="${cls}" type="button" data-act="form" data-type="product" data-ref="${p.id}" data-track="product_request" data-place="${place}">${label} ${I.arrow}</button>`;
+  const request = (cls, place, label = T('product.cta.s')) => `<button class="${cls}" type="button" data-act="form" data-type="product" data-ref="${p.id}" data-track="product_request" data-place="${place}">${label} ${I.arrow}</button>`;
 
   /* путь: Каталог → бренд → категория (с теми же фильтрами, что в каталоге) → позиция; «назад к списку» ведёт в каталог с фильтрами бренда и категории */
   const listHref = `${C.u(P, 'catalog.html')}?brand=${b.id}&cat=${c.id}`;
   const line = ctx.products.filter(q => q.brand === p.brand), at = line.indexOf(p), prev = line[(at - 1 + line.length) % line.length], next = line[(at + 1) % line.length];
   const brandMark = b.logo ? `<img class="dt-rl" src="${esc(C.u(P, b.logo))}" alt="${esc(b.name)}"${b.logoW ? ` width="${b.logoW}" height="${b.logoH}"` : ''} decoding="async">` : `<b>${esc(b.name)}</b>`;
-  const route = `<nav class="dt-route" aria-label="Хлебные крошки">
+  const route = `<nav class="dt-route" aria-label="${T('product.route.aria')}">
       <ol>
         <li style="--i:0" class="is-home"><a href="${C.u(P, 'index.html')}" aria-label="Главная"><svg class="ic" viewBox="0 0 20 20" aria-hidden="true" focusable="false"><path d="M3.5 9.4 10 4l6.5 5.4M5.3 8.2V16h9.4V8.2M8.4 16v-4.2h3.2V16"/></svg></a></li>
-        <li style="--i:1"><a href="${C.u(P, 'catalog.html')}"><small>Раздел</small><b>Каталог</b></a></li>
-        <li style="--i:2"><a href="${C.burl(P, b)}"><small>Бренд</small>${brandMark}</a></li>
-        <li style="--i:3"><a href="${listHref}"><small>Категория</small><b>${esc(c.name)}</b></a></li>
-        <li style="--i:4" aria-current="page"><small>Позиция</small><b>${esc(p.name)}</b></li>
+        <li style="--i:1"><a href="${C.u(P, 'catalog.html')}"><small>${T('product.route.sm')}</small><b>${T('product.route.b')}</b></a></li>
+        <li style="--i:2"><a href="${C.burl(P, b)}"><small>${T('product.about.s2')}</small>${brandMark}</a></li>
+        <li style="--i:3"><a href="${listHref}"><small>${T('product.about.s3')}</small><b>${esc(c.name)}</b></a></li>
+        <li style="--i:4" aria-current="page"><small>${T('product.route.sm2')}</small><b>${esc(p.name)}</b></li>
       </ol>
-      <a class="dt-back" href="${listHref}" data-dt-back>${I.back}<span>К списку</span></a>
+      <a class="dt-back" href="${listHref}" data-dt-back>${I.back}<span>${T('product.route.t')}</span></a>
     </nav>`;
 
   /* упаковка на подиуме: спрайт того же рендера, что на стене брендов (по бренду и виду), высота — в долях кадра, тень от солнца слева как у ниш стены */
@@ -58,7 +59,7 @@ module.exports = function product(ctx, C, P, p) {
   const tile = (n, title, html, cls = '') => `<article class="dt-tile reveal${cls ? ' ' + cls : ''}"><span class="dt-no" aria-hidden="true">${n}</span><h2>${title}</h2>${html}</article>`;
   const have = (a) => a && a.length;
   const tasksHtml = `<div class="tasks-line">${p.tasks.map(t => `<a class="tag blue" href="${C.u(P, 'catalog.html')}?task=${t}">${esc(ctx.taskById[t].label)}</a>`).join('')}</div>
-    <p class="muted">Подбор ориентировочный: решение о применении принимает специалист по результатам консультации клиента.</p>`;
+    <p class="muted">${T('product.route.p')}</p>`;
   const docsHtml = have(p.docs)
     ? `<ul class="docs">${p.docs.map(d => `<li><a href="${esc(d.url)}" target="_blank" rel="noopener">${I.doc}<span>${esc(d.title)}</span>${I.external}</a></li>`).join('')}</ul>`
     : `<p>${tbd}</p>`;
@@ -79,28 +80,28 @@ module.exports = function product(ctx, C, P, p) {
           <h1 class="reveal">${esc(p.name)}</h1>
           <p class="lead reveal">${esc(p.desc)}</p>
           <div class="row reveal">${request('btn btn-fill', 'product-hero')}
-            <a class="btn btn-ghost" href="${C.u(P, 'partners.html')}" data-track="partner_cta" data-place="product-hero">Стать партнёром</a></div>
+            <a class="btn btn-ghost" href="${C.u(P, 'partners.html')}" data-track="partner_cta" data-place="product-hero">${T('product.stage.a')}</a></div>
         </div>
       </div>
     </section>
 
-    <section class="pdp-spec wrap" aria-label="Паспорт: коротко">
+    <section class="pdp-spec wrap" aria-label="${T('product.stage.aria')}">
       <dl class="specs reveal">${rows.map(([t, v]) => `<div><dt>${t}</dt><dd>${v}</dd></div>`).join('')}</dl>
     </section>
 
     <section class="pdp-passport wrap p-detail">
       <div class="pdp-mosaic">
-        ${tile('01', 'Описание', details.map(t => `<p>${esc(t)}</p>`).join(''), 'is-wide')}
-        ${tile('02', 'Назначение', tasksHtml)}
-        ${tile('03', 'Показания', have(p.indications) ? list(p.indications) : `<p>${tbd}</p>`)}
-        ${tile('04', 'Активные компоненты', have(p.actives) ? list(p.actives) : `<p>${tbd}</p>`)}
-        ${tile('05', 'Способ применения', p.usage ? `<p>${esc(p.usage)}</p>` : `<p>${tbd}</p>`)}
-        ${tile('06', 'Документы', docsHtml)}
+        ${tile('01', T('product.sections.s'), details.map(t => `<p>${esc(t)}</p>`).join(''), 'is-wide')}
+        ${tile('02', T('product.sections.s2'), tasksHtml)}
+        ${tile('03', T('product.sections.s3'), have(p.indications) ? list(p.indications) : `<p>${tbd}</p>`)}
+        ${tile('04', T('product.sections.s4'), have(p.actives) ? list(p.actives) : `<p>${tbd}</p>`)}
+        ${tile('05', T('product.sections.s5'), p.usage ? `<p>${esc(p.usage)}</p>` : `<p>${tbd}</p>`)}
+        ${tile('06', T('product.sections.s6'), docsHtml)}
         <aside class="p-side pdp-side reveal is-wide">
           <div class="card card-pad p-req">
-            <span class="eyebrow in">Запрос</span>
-            <h3>Нужна информация по продукту?</h3>
-            <p class="muted">Пришлём описание, наличие и условия поставки.</p>
+            <span class="eyebrow in">${T('product.side.eyebrow')}</span>
+            <h3>${T('product.side.h3')}</h3>
+            <p class="muted">${T('product.side.p')}</p>
             ${request('btn btn-fill', 'product-side')}
             <a class="lnk" href="tel:${ctx.site.contacts.phoneRaw}" data-track="phone_click">${I.phone} ${esc(ctx.site.contacts.phone)}</a>
             ${C.callbackBtn('lnk', 'product-side')}
@@ -110,17 +111,17 @@ module.exports = function product(ctx, C, P, p) {
     </section>
 
     ${related.length ? `<section class="pdp-shelf"><div class="wrap">
-      ${C.secHead('Сопутствующие товары', 'С этим продуктом смотрят', C.lnk(`${C.u(P, 'catalog.html')}?brand=${b.id}`, `Все ${esc(b.name)}`))}
+      ${C.secHead(T('product.shelf.s'), T('product.shelf.s2'), C.lnk(`${C.u(P, 'catalog.html')}?brand=${b.id}`, `${T('product.shelf.tx')} ${esc(b.name)}`))}
       <div class="grid g4">${related.map((q, i) => C.productCardX(P, q, i)).join('')}</div>
     </div></section>` : ''}
 
     ${line.length > 1 ? `<nav class="dt-sib wrap" aria-label="Соседние позиции линейки ${esc(b.name)}">
-      <a class="reveal" href="${C.purl(P, prev)}" rel="prev" data-track="product_card_click" data-product="${prev.id}"><img src="${esc(C.u(P, S.packOf(prev)))}" alt="" loading="lazy" decoding="async"><span><small>${I.back} Предыдущая позиция</small><b>${esc(prev.name)}</b></span></a>
-      <a class="nx reveal" href="${C.purl(P, next)}" rel="next" data-track="product_card_click" data-product="${next.id}"><span><small>Следующая позиция ${I.arrow}</small><b>${esc(next.name)}</b></span><img src="${esc(C.u(P, S.packOf(next)))}" alt="" loading="lazy" decoding="async"></a>
+      <a class="reveal" href="${C.purl(P, prev)}" rel="prev" data-track="product_card_click" data-product="${prev.id}"><img src="${esc(C.u(P, S.packOf(prev)))}" alt="" loading="lazy" decoding="async"><span><small>${I.back} ${T('product.sib.sm')}</small><b>${esc(prev.name)}</b></span></a>
+      <a class="nx reveal" href="${C.purl(P, next)}" rel="next" data-track="product_card_click" data-product="${next.id}"><span><small>${T('product.sib.sm2')} ${I.arrow}</small><b>${esc(next.name)}</b></span><img src="${esc(C.u(P, S.packOf(next)))}" alt="" loading="lazy" decoding="async"></a>
     </nav>` : ''}
 
     <div class="dt-bar" data-dt-bar hidden aria-hidden="true">
-      <div class="wrap"><span class="dt-bar-t"><small>${esc(b.name)}</small><b>${esc(p.name)}</b></span>${request('btn btn-fill btn-sm', 'product-sticky', 'Запросить')}</div>
+      <div class="wrap"><span class="dt-bar-t"><small>${esc(b.name)}</small><b>${esc(p.name)}</b></span>${request('btn btn-fill btn-sm', 'product-sticky', T('product.cta.s2'))}</div>
     </div>
   </div>
 

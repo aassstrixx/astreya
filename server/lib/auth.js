@@ -7,7 +7,7 @@ const TOTP = require('./totp');
 const {readJSON, writeJSON, randomId, safeEqual, sha256, nowISO, Mutex} = require('./util');
 
 const USERS_FILE = path.join(C.DATA, 'users.json'), SESS_FILE = path.join(C.DATA, 'sessions.json'), SECRET_FILE = path.join(C.DATA, 'secret.key'), LOCK_FILE = path.join(C.DATA, 'throttle.json');
-const ROLES = {admin: 'Администратор', manager: 'Менеджер (только заявки)'};
+const ROLES = {admin: 'Администратор', editor: 'Редактор (содержимое сайта и заявки)', manager: 'Менеджер (только заявки)'};
 const limits = () => { const s = (C.loadSettings().security || {}); return {abs: Math.max(1, +s.sessionHours || 12) * 3600e3, idle: Math.max(0.25, +s.idleHours || 4) * 3600e3}; };
 const mu = new Mutex();
 

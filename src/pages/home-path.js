@@ -3,6 +3,7 @@
    «что взять под мою задачу» (подбор) → «как они учат» (учебный центр) → «как начать» (четыре шага) → «позвоните/оставьте заявку» (призыв).
    Цифры, бренды, задачи, товары, события, преподаватели и шаги — из data/*.json, здесь они только собираются в разметку; ничего не выдумано. */
 const S = require('../../js/shared.js');
+const {T} = require('../texts.js');
 const {esc, I} = S;
 
 module.exports = function homePath(ctx, C, P, {events, val, img, bgLogo, showDemo}) {
@@ -29,7 +30,7 @@ module.exports = function homePath(ctx, C, P, {events, val, img, bgLogo, showDem
   const slogan = (ctx.site.tagline.match(/[^.]+\./g) || [ctx.site.tagline]).map(w => w.trim());
   const statItems = [...h.stats, ...rd.stats.extra].filter(s => s.value !== null && s.value !== undefined);
   const statTile = s => {
-    const extra = s.key === 'geo' ? `<ul class="hp-cities" aria-label="Города присутствия">${ctx.site.offices.map(o => `<li>${esc(o.city)}</li>`).join('')}</ul>`
+    const extra = s.key === 'geo' ? `<ul class="hp-cities" aria-label="${T('home.tasks.aria3')}">${ctx.site.offices.map(o => `<li>${esc(o.city)}</li>`).join('')}</ul>`
       : s.key === 'brands' ? `<div class="hp-mlogos" aria-hidden="true">${brands.slice(0, 4).map(b => C.slotLogo(P, b, 1200)).join('')}<em>+${brands.length - 4}</em></div>` : '';
     return `<div class="hp-stat hp-st-${esc(s.key || 'x')} reveal"><b data-count="${val(s)}"${s.suffix ? ` data-suffix="${esc(s.suffix)}"` : ''}>${val(s)}</b><span>${esc(s.label)}</span>${s.note ? `<i>${esc(s.note)}</i>` : ''}${extra}${s.placeholder && showDemo ? '<em class="rd-ph">демо-данные</em>' : ''}</div>`;
   };
@@ -56,17 +57,17 @@ module.exports = function homePath(ctx, C, P, {events, val, img, bgLogo, showDem
   const panel = (t, i) => {
     const prods = ctx.products.filter(p => p.tasks.includes(t.id)).slice(0, 4);
     return `<article class="hp-panel${i === 0 ? ' on' : ''}" data-hp-panel="${t.id}" aria-label="${esc(t.label)}">
-      <header><span class="eyebrow">Задача</span><h3>${esc(t.label)}</h3><p>${esc(t.note)}</p></header>
+      <header><span class="eyebrow">${T('home.tasks.eyebrow')}</span><h3>${esc(t.label)}</h3><p>${esc(t.note)}</p></header>
       <div class="hp-brands">${t.brands.map(id => ctx.brandById[id]).filter(Boolean).map(b => `<a class="hp-brand" href="${C.burl(P, b)}">${C.slotLogo(P, b, 2400)}<span>${esc(b.name)}</span></a>`).join('')}</div>
       <div class="hp-prods">${prods.map(p => { const b = ctx.brandById[p.brand]; return `<a class="hp-prod" href="${C.purl(P, p)}">${C.art(P, p)}<span><small>${esc(b.name)}</small>${esc(p.name)}</span></a>`; }).join('')}</div>
       <div class="row hp-panel-cta"><a class="btn btn-fill" href="${C.u(P, 'catalog.html')}?task=${t.id}" data-track="catalog_click" data-place="home-finder-panel">${esc(F.open)} ${I.arrow}</a><a class="btn btn-ghost" href="${C.u(P, 'start.html')}" data-track="stella_start" data-place="home-finder">${esc(F.ask)}</a></div>
-      <p class="hp-fine">Подбор ориентировочный: протокол определяет специалист по результатам консультации.</p>
+      <p class="hp-fine">${T('home.tasks.p')}</p>
     </article>`;
   };
   const finderSec = `<section class="rd-sec rd-clinical hp-find" id="solutions" aria-labelledby="hp-find-h"><div class="wrap">
     <header class="hp-head"><div><span class="eyebrow">${esc(F.eyebrow)}</span><h2 id="hp-find-h" class="reveal">${esc(F.title)}</h2></div><p class="lead reveal">${esc(sol.lead)}</p></header>
     <div class="hp-find-grid" data-hp-find>
-      <ul class="hp-tasks reveal" aria-label="Задачи">${tasks.map(taskLine).join('')}</ul>
+      <ul class="hp-tasks reveal" aria-label="${T('home.tasks.aria4')}">${tasks.map(taskLine).join('')}</ul>
       <div class="hp-panels reveal" aria-live="polite">${tasks.map(panel).join('')}</div>
     </div>
     <div class="row hp-more reveal"><a class="lnk" href="${C.u(P, 'catalog.html')}">${esc(F.all)} ${I.arrow}</a></div>
@@ -75,7 +76,7 @@ module.exports = function homePath(ctx, C, P, {events, val, img, bgLogo, showDem
   /* ---------- 5. Учебный центр: тёмная глава — фото эксперта, ближайшая встреча, преподаватели, расписание ---------- */
   const ed = rd.editorial, tr = rd.training, A = hp.academy, next = events[0];
   const nextBlock = next
-    ? (() => { const d = S.dparts(next.date), b = ctx.brandById[next.brand]; return `<a class="hp-next reveal" href="${C.eurl(P, next)}"><span class="hp-date"><b>${d.d}</b><i>${d.m}</i></span><span class="hp-next-t"><small>Ближайшее мероприятие</small><b>${esc(next.title)}</b><em>${esc(next.fmt)} · ${esc(next.city)} · ${esc(b.name)}</em></span>${I.arrow}</a>`; })()
+    ? (() => { const d = S.dparts(next.date), b = ctx.brandById[next.brand]; return `<a class="hp-next reveal" href="${C.eurl(P, next)}"><span class="hp-date"><b>${d.d}</b><i>${d.m}</i></span><span class="hp-next-t"><small>${T('home.training.sm')}</small><b>${esc(next.title)}</b><em>${esc(next.fmt)} · ${esc(next.city)} · ${esc(b.name)}</em></span>${I.arrow}</a>`; })()
     : `<p class="hp-next-none">${esc(tr.emptyNote)}</p>`;
   const faces = rd.teachers.items.slice(0, 5);
   const evCard = e => { const d = S.dparts(e.date), b = ctx.brandById[e.brand]; return `<a class="hp-ev reveal" href="${C.eurl(P, e)}"><span class="hp-date"><b>${d.d}</b><i>${d.m}</i></span><span class="hp-ev-t"><b>${esc(e.title)}</b><em>${esc(e.fmt)} · ${esc(e.city)} · ${esc(b.name)}</em></span><span class="hp-ev-go" aria-hidden="true">${I.arrow}</span></a>`; };

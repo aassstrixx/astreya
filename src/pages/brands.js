@@ -16,14 +16,14 @@ function brandsPage(ctx, C, P) {
   if (bp && bp.gallery) return brandsGallery(ctx, C, P);
   const {brands, tasks} = ctx;
   return `<div class="wrap" data-brands>
-    ${C.pageHead('Бренды', 'Бренды профессиональной косметики', 'Портфель «Астрея»: испанская профессиональная косметика, линии Cantabria Labs и аппаратное решение EVA.')}
+    ${C.pageHead(T('brands.head.s'), T('brands.head.s2'), T('brands.head.s3'))}
     <div class="toolbar reveal">
-      <div class="tb-top"><label class="search"><span class="sr">Поиск по брендам</span>${I.search}<input id="br-q" type="search" placeholder="Название бренда или направление" autocomplete="off"></label></div>
-      <div class="tb-row"><span class="tb-lab">Задача</span><div class="chips" id="br-tasks">${C.chip('Любая', 'br-task', 'all', true)}${tasks.map(t => C.chip(esc(t.label), 'br-task', t.id, false)).join('')}</div></div>
+      <div class="tb-top"><label class="search"><span class="sr">${T('brands.filters.t')}</span>${I.search}<input id="br-q" type="search" placeholder="${T('brands.filters.a')}" autocomplete="off"></label></div>
+      <div class="tb-row"><span class="tb-lab">${T('brands.filters.t2')}</span><div class="chips" id="br-tasks">${C.chip(T('brands.filters.s'), 'br-task', 'all', true)}${tasks.map(t => C.chip(esc(t.label), 'br-task', t.id, false)).join('')}</div></div>
     </div>
-    <h2 class="sr">Список брендов</h2>
+    <h2 class="sr">${T('brands.list.h2')}</h2>
     <div class="grid g3" id="br-grid">${brandCards(ctx, C, P)}</div>
-    <div class="empty" id="br-empty" hidden><b>Бренды не найдены</b>Измените запрос или выберите другую задачу.</div>
+    <div class="empty" id="br-empty" hidden><b>${T('brands.list.b')}</b>${T('brands.list.b2')}</div>
     <div style="height:clamp(60px,8vw,110px)"></div>
   </div>`;
 }
@@ -78,7 +78,7 @@ function nicheCardMaker(ctx, C, P) {
       <h3 class="sr">${esc(b.name)}</h3>
       <p class="br-sp">${esc(b.tag)}</p>
       ${C.tasksLine(b.tasks, '', 2)}
-      <div class="bl-foot"><span class="br-n">${n} ${word} в каталоге</span><a class="lnk stretch" href="${C.burl(P, b)}" data-track="brand_card_click" data-brand="${b.id}">О бренде ${I.arrow}</a></div>
+      <div class="bl-foot"><span class="br-n">${n} ${word} в каталоге</span><a class="lnk stretch" href="${C.burl(P, b)}" data-track="brand_card_click" data-brand="${b.id}">${T('brands.card.a')} ${I.arrow}</a></div>
     </div>
   </article>`;
   };
@@ -102,20 +102,20 @@ function brandsGallery(ctx, C, P) {
         <p class="br-lead reveal">${esc(g.lead)}</p>
       </div>
     </section>
-    <section class="br-wall" aria-label="Каталог брендов">
+    <section class="br-wall" aria-label="${T('brands.wall.aria')}">
       <div class="br-wall-bg" aria-hidden="true" style="--n:${Math.max(1, wallTex.length - 1)}">${wallTex.map((t, i) => `<i data-bd="${t[0]}" data-bd-pos="${t[1]}" data-bd-o="${t[2]}" style="--i:${i}"></i>`).join('')}</div>
       <div class="br-in">
         <div class="br-bar toolbar reveal">
-          <label class="search br-search"><span class="sr">Поиск по брендам</span>${I.search}<input id="br-q" type="search" placeholder="${esc(g.search)}" autocomplete="off"></label>
-          <div class="chips br-chips" id="br-tasks" role="group" aria-label="Фильтр по задаче">${C.chip(esc(g.all), 'br-task', 'all', true)}${tasks.filter(t => usedTasks.has(t.id)).map(t => C.chip(esc(t.label), 'br-task', t.id, false)).join('')}</div>
+          <label class="search br-search"><span class="sr">${T('brands.filters.t')}</span>${I.search}<input id="br-q" type="search" placeholder="${esc(g.search)}" autocomplete="off"></label>
+          <div class="chips br-chips" id="br-tasks" role="group" aria-label="${T('brands.wall.aria2')}">${C.chip(esc(g.all), 'br-task', 'all', true)}${tasks.filter(t => usedTasks.has(t.id)).map(t => C.chip(esc(t.label), 'br-task', t.id, false)).join('')}</div>
           ${ctx.redesign.extras && ctx.redesign.extras.assistant ? `<button class="br-help" type="button" data-act="br-help">${star}<span><b>${esc(g.help)}</b><small>${esc(g.helpSub)}</small></span></button>` : ''}
         </div>
-        <h2 class="sr">Список брендов</h2>
+        <h2 class="sr">${T('brands.list.h2')}</h2>
         <div class="br-grid" id="br-grid">
           <h2 class="br-group sr">${esc(bp.groups.cosmetic)}</h2>${cos.map(card).join('')}
           ${dv.length ? `<h2 class="br-group br-group-dev reveal">${esc(bp.groups.device)}</h2><p class="br-dev-note muted">${esc(bp.deviceNote)}</p>${dv.map(card).join('')}` : ''}
         </div>
-        <div class="empty" id="br-empty" hidden><b>Бренды не найдены</b>Измените запрос или выберите другую задачу.</div>
+        <div class="empty" id="br-empty" hidden><b>${T('brands.list.b')}</b>${T('brands.list.b2')}</div>
       </div>
     </section>
   </div>`;
@@ -161,7 +161,7 @@ function brandsWall(ctx, C, P) {
   }).join('');
 
   /* нижняя полоса «Портфель брендов»: знак «Астреи» (вектор из шапки) и логотипы брендов вместо названий — переключатель, дублирующий ниши */
-  const strip = `<nav class="bw-strip" aria-label="${esc(W.stripTitle)}"><p class="bw-strip-t"><svg class="bw-strip-mark" viewBox="46 338 836 436" role="img" aria-label="Астрея"><use href="#logo-art"/></svg><span>${esc(W.stripTitle)}</span></p>
+  const strip = `<nav class="bw-strip" aria-label="${esc(W.stripTitle)}"><p class="bw-strip-t"><svg class="bw-strip-mark" viewBox="46 338 836 436" role="img" aria-label="${T('brands.strip.aria')}"><use href="#logo-art"/></svg><span>${esc(W.stripTitle)}</span></p>
     <ul>${order.map(b => `<li data-id="${b.id}"><button type="button" data-act="bw-open" data-id="${b.id}" aria-label="${esc(b.name)}">${logoImg(b, 'bw-strip-logo' + ((b.logoW && b.logoH && b.logoW / b.logoH < 1.8) ? ' is-sq' : ''))}<small>${esc(b.tag)}</small></button></li>`).join('')}</ul></nav>`;
 
   /* панели брендов: все лежат в одной ячейке сетки (высота — по самой большой, поэтому у всех брендов плашка одного размера); показывается одна, остальные прозрачны и недоступны (inert).
@@ -218,19 +218,19 @@ function brandsWall(ctx, C, P) {
           <p class="br-lead reveal">${esc(W.lead)}</p>
         </div>
         <div class="bw-bar reveal">
-          <div class="chips br-chips" id="br-tasks" role="group" aria-label="Фильтр по задаче">${C.chip(esc(W.all), 'br-task', 'all', true)}${usedList.map(t => C.chip(esc(t.label), 'br-task', t.id, false).replace('<button ', `<button data-n="${order.filter(b => b.tasks.includes(t.id)).length}" `)).join('')}</div>
-          <label class="search br-search bw-search"><span class="sr">Поиск по брендам</span>${I.search}<input id="br-q" type="search" placeholder="${esc(W.search)}" autocomplete="off"></label>
+          <div class="chips br-chips" id="br-tasks" role="group" aria-label="${T('brands.wall.aria2')}">${C.chip(esc(W.all), 'br-task', 'all', true)}${usedList.map(t => C.chip(esc(t.label), 'br-task', t.id, false).replace('<button ', `<button data-n="${order.filter(b => b.tasks.includes(t.id)).length}" `)).join('')}</div>
+          <label class="search br-search bw-search"><span class="sr">${T('brands.filters.t')}</span>${I.search}<input id="br-q" type="search" placeholder="${esc(W.search)}" autocomplete="off"></label>
         </div>
         <div class="bw-scroll" data-bw-scroll>
           <div class="bw-plane" id="br-grid" style="--ar:${PW} / ${PH}">
             <picture><source media="(max-width: 1100px)" srcset="${esc(C.u(P, pl.small))}"><img class="bw-plate" src="${esc(C.u(P, pl.src))}" alt="Единая каменная витрина брендов ASTREYA: арочные ниши с логотипами и продукцией" width="${PW}" height="${PH}" fetchpriority="high" decoding="async"></picture>
             ${dimLayer}
-            <h2 class="sr">Список брендов</h2>
+            <h2 class="sr">${T('brands.list.h2')}</h2>
             <ol class="bw-niches">${niches}</ol>
           </div>
         </div>
       </div>
-      <div class="empty bw-empty" id="br-empty" hidden><b>Бренды не найдены</b>Измените запрос или выберите другую задачу.</div>
+      <div class="empty bw-empty" id="br-empty" hidden><b>${T('brands.list.b')}</b>${T('brands.list.b2')}</div>
       <section class="bw-panel" id="bw-panel" aria-live="polite" aria-hidden="true"><div class="bw-panel-clip"><div class="bw-stack">${panels}</div></div></section>
       ${strip}
     </section>
@@ -242,7 +242,7 @@ function brandsWall(ctx, C, P) {
           <div class="chips bw-task-chips" id="bw-task-chips" role="group" aria-label="${esc(tk.title)}">${usedList.map(t => C.chip(esc(t.label), 'bw-task', t.id, false)).join('')}</div>
           <p class="bw-tr-empty muted">${esc(tk.empty)}</p>
           ${taskRes}
-          <p class="bw-tasks-more">${C.lnk(C.u(P, 'partners.html') + '#calc', 'Условия закупки и калькулятор скидки', 'data-track="partner_cta" data-place="brands-tasks"')}</p>
+          <p class="bw-tasks-more">${C.lnk(C.u(P, 'partners.html') + '#calc', T('brands.cta.s'), 'data-track="partner_cta" data-place="brands-tasks"')}</p>
         </section>
         <section class="bw-ask" aria-labelledby="bw-ask-h"><span class="bw-ask-pe" data-pe="happy" aria-hidden="true"></span><div><h2 id="bw-ask-h">${esc(ask.title)}</h2><p>${esc(ask.lead)}</p></div>${helpBtn('bw-ask-help', ask.btn)}</section>
       </div>
@@ -251,5 +251,6 @@ function brandsWall(ctx, C, P) {
 }
 
 const brandPage = (ctx, C, P, b) => require('./brand-page.js')(ctx, C, P, b);   // страница бренда v2 — src/pages/brand-page.js
+const {T} = require('../texts.js');
 
 module.exports = {brandsPage, brandPage, nicheCardMaker};

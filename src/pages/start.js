@@ -2,15 +2,16 @@
    Оформление — «консьерж-салон»: рендер зала (круглая стойка, арочные ниши с упаковками, солнце через переплёт окна; tools/showroom-assets/utility/salon.py), поверх — «лист бумаги» с диалогом Стеллы; план — «папка-досье» под ним.
    Стили — css/pg-start.css, поведение сцены (шапка, световой шар, клавиши, печать плана) — js/pg-start.js. #plan-app получает display:contents: диалог и план становятся ячейками сетки страницы. */
 const S = require('../../js/shared.js');
+const {T} = require('../texts.js');
 const {esc, I} = S;
 
 module.exports = function start(ctx, C, P) {
   const sx = ctx.sales, pl = sx.planner, c = ctx.site.contacts, u = h => C.u(P, h);
   const img = (f, w, h, cls, extra) => `<img class="${cls}" src="${esc(u(f))}" width="${w}" height="${h}" alt="" decoding="async"${extra || ''}>`;
   const pledge = [
-    ['Несколько коротких вопросов', 'кнопками или своими словами'],
-    ['Ничего не отправляется', 'пока вы сами не решите'],
-    ['План остаётся на вкладке', 'его можно скопировать или распечатать']
+    [T('start.intro.s'), T('start.intro.s2')],
+    [T('start.intro.s3'), T('start.intro.s4')],
+    [T('start.intro.s5'), T('start.intro.s6')]
   ];
   return `<div class="st-page" data-start-page>
     <section class="st-scene" aria-labelledby="st-h">
@@ -29,9 +30,9 @@ module.exports = function start(ctx, C, P) {
         <div class="st-orb" data-st-orb aria-hidden="true"></div>
         <div class="plan" id="plan-app" data-plan-app>
           <noscript><div class="plan-ns st-ns">
-            <h2>Подбор работает с включённым JavaScript</h2>
-            <p>Без него можно сразу перейти к нужному разделу или связаться с менеджером.</p>
-            <div class="row"><a class="btn btn-fill" href="${u('catalog.html')}">Каталог ${I.arrow}</a><a class="btn btn-ghost" href="${u('training.html')}">Обучение</a><a class="btn btn-ghost" href="${u('partners.html')}">Стать партнёром</a><a class="btn btn-ghost" href="tel:${c.phoneRaw}">${I.phone} ${esc(c.phone)}</a></div>
+            <h2>${T('start.nojs.h2')}</h2>
+            <p>${T('start.nojs.p')}</p>
+            <div class="row"><a class="btn btn-fill" href="${u('catalog.html')}">${T('start.nojs.a')} ${I.arrow}</a><a class="btn btn-ghost" href="${u('training.html')}">${T('start.nojs.a2')}</a><a class="btn btn-ghost" href="${u('partners.html')}">${T('start.nojs.a3')}</a><a class="btn btn-ghost" href="tel:${c.phoneRaw}">${I.phone} ${esc(c.phone)}</a></div>
           </div></noscript>
         </div>
       </div>

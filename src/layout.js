@@ -7,6 +7,7 @@ const MSG = require('./messengers.js');
 const S = require('../js/shared.js');
 const backdropsFactory = require('./backdrops.js');
 const decorFactory = require('./decor.js');
+const {T} = require('./texts.js');
 const {esc, I} = S;
 
 const logoDefs = fs.readFileSync(path.join(__dirname, 'partials', 'logo-defs.html'), 'utf8');
@@ -52,31 +53,31 @@ module.exports = function layout(ctx, C) {
 
 
   /* подписка на новости (extras.subscribe): компактная форма в подвале — та же система заявок (тип subscribe), поле только одно: e-mail */
-  const subBlock = P => C.xon('subscribe') ? `<div class="ftr-sub"><div class="ftr-sub-t"><h2 class="ftr-h">Новости и приглашения</h2><p>${esc(S.FORM_TYPES.subscribe.lead)}</p></div>${S.formHTML('subscribe', {uid: 'sub-ftr', root: u(P, '')})}</div>` : '';
+  const subBlock = P => C.xon('subscribe') ? `<div class="ftr-sub"><div class="ftr-sub-t"><h2 class="ftr-h">${T('layout.misc.h2')}</h2><p>${esc(S.FORM_TYPES.subscribe.lead)}</p></div>${S.formHTML('subscribe', {uid: 'sub-ftr', root: u(P, '')})}</div>` : '';
 
   /* подключения: что нужно браузеру (js/data.js → integrations) и что выводится в <head> и подвале; секретов здесь нет */
   const IT = ctx.integrations || {}, MT = IT.metrika || {}, CS = IT.consent || {}, VR = IT.verification || {}, LG = ctx.legal || {};
   const metrikaOn = /^\d{4,12}$/.test(String(MT.id || '')), consentMode = ['off', 'notice', 'optin'].includes(CS.mode) ? CS.mode : 'optin', consentOn = metrikaOn && consentMode !== 'off';
-  const consentCfg = {active: consentOn, mode: consentMode, title: CS.title || 'Cookie и аналитика', text: CS.text || '', accept: CS.accept || 'Принять', decline: CS.decline || 'Только необходимые', settings: CS.settings || 'Настройки cookie'};
+  const consentCfg = {active: consentOn, mode: consentMode, title: CS.title || T('layout.misc.s'), text: CS.text || '', accept: CS.accept || T('layout.misc.s2'), decline: CS.decline || T('layout.misc.s3'), settings: CS.settings || T('layout.misc.s4')};
   consentCfg.version = crypto.createHash('md5').update(JSON.stringify([consentCfg, !!MT.webvisor, LG.version || ''])).digest('hex').slice(0, 8);
   const publicIntegrations = {metrika: metrikaOn ? {id: String(MT.id), webvisor: !!MT.webvisor, clickmap: MT.clickmap !== false, trackLinks: MT.trackLinks !== false, accurateTrackBounce: MT.accurateTrackBounce !== false} : null, consent: consentCfg, captcha: (IT.captcha || {}).siteKey ? {siteKey: String(IT.captcha.siteKey)} : null, legalVersion: LG.version || ''};
   const verifyMeta = [['yandex-verification', VR.yandex], ['google-site-verification', VR.google], ['wmail-verification', VR.mailru]].filter(([, v]) => v && /^[\w-]{6,128}$/.test(String(v))).map(([n, v]) => `<meta name="${n}" content="${esc(v)}">`).join('\n');
   const msgItems = () => MSG.cells(c).map(ch => ch.url ? `<li><a href="${esc(ch.url)}" target="_blank" rel="noopener" data-track="messenger_click" data-place="footer">${ch.name}</a></li>` : `<li class="msg-off"><span>${ch.name}</span> <small>скоро</small></li>`).join('');
-  const legalLinks = P => `<a href="${u(P, 'privacy.html')}">Политика конфиденциальности</a><a href="${u(P, 'consent.html')}">Согласие на обработку данных</a><a href="${u(P, 'terms.html')}">Пользовательское соглашение</a>${consentOn ? `<button class="ftr-cookie" type="button" data-act="cookie-settings">${esc(consentCfg.settings)}</button>` : ''}`;
+  const legalLinks = P => `<a href="${u(P, 'privacy.html')}">${T('layout.misc.a')}</a><a href="${u(P, 'consent.html')}">${T('layout.misc.a2')}</a><a href="${u(P, 'terms.html')}">${T('layout.misc.a3')}</a>${consentOn ? `<button class="ftr-cookie" type="button" data-act="cookie-settings">${esc(consentCfg.settings)}</button>` : ''}`;
 
   const header = P => `<header class="hdr" id="hdr">
   <div class="wrap hdr-in">
     <a href="${u(P, 'index.html')}" class="logo" style="--i:0" aria-label="Астрея — на главную">
       <svg class="lgo" viewBox="46 338 836 436" aria-hidden="true"><use href="#logo-art"/></svg>
     </a>
-    <nav class="nav" id="nav" style="--i:1" aria-label="Основная навигация">
+    <nav class="nav" id="nav" style="--i:1" aria-label="${T('layout.header.aria')}">
       ${nav.map(([t, href, key]) => `<a class="nl${P.nav === key ? ' on' : ''}" href="${u(P, href)}" data-nav="${key}"${P.nav === key ? ' aria-current="page"' : ''}>${t}</a>`).join('\n      ')}
       <div class="nav-extra">
         <form class="nav-search" role="search" action="${u(P, 'search.html')}" method="get">
-          <label class="search"><span class="sr">Поиск по сайту</span>${I.search}<input type="search" name="q" placeholder="Поиск по сайту" autocomplete="off" enterkeyhint="search"></label>
-          <button class="sr" type="submit" tabindex="-1">Найти</button>
+          <label class="search"><span class="sr">${T('layout.header.t')}</span>${I.search}<input type="search" name="q" placeholder="${T('layout.header.t')}" autocomplete="off" enterkeyhint="search"></label>
+          <button class="sr" type="submit" tabindex="-1">${T('layout.header.btn')}</button>
         </form>
-        <a class="btn btn-fill" href="${u(P, 'partners.html')}" data-track="partner_cta" data-place="menu">Стать партнёром ${I.arrow}</a>
+        <a class="btn btn-fill" href="${u(P, 'partners.html')}" data-track="partner_cta" data-place="menu">${T('layout.header.a')} ${I.arrow}</a>
         <div class="nav-contacts">
           <a href="tel:${c.phoneRaw}" data-track="phone_click">${I.phone} ${esc(c.phone)}</a>
           <a href="mailto:${c.email}" data-track="email_click">${I.mail} ${esc(c.email)}</a>
@@ -86,9 +87,9 @@ module.exports = function layout(ctx, C) {
     </nav>
     <div class="hdr-cta" style="--i:2">
       <a class="icon-btn hdr-tel" href="tel:${c.phoneRaw}" aria-label="Позвонить: ${esc(c.phone)}" title="${esc(c.phone)}" data-track="phone_click" data-place="header">${I.phone}</a>
-      <button class="icon-btn" type="button" data-act="search" aria-label="Открыть поиск" aria-expanded="false" aria-controls="srch">${I.search}</button>
-      <a class="btn btn-fill btn-sm hdr-partner" href="${u(P, 'partners.html')}" data-track="partner_cta" data-place="header">Стать партнёром</a>
-      <button class="burger" id="burger" type="button" data-act="menu" aria-label="Меню" aria-expanded="false" aria-controls="nav"><i></i></button>
+      <button class="icon-btn" type="button" data-act="search" aria-label="${T('layout.header.aria2')}" aria-expanded="false" aria-controls="srch">${I.search}</button>
+      <a class="btn btn-fill btn-sm hdr-partner" href="${u(P, 'partners.html')}" data-track="partner_cta" data-place="header">${T('layout.header.a')}</a>
+      <button class="burger" id="burger" type="button" data-act="menu" aria-label="${T('layout.header.aria3')}" aria-expanded="false" aria-controls="nav"><i></i></button>
     </div>
   </div>
 </header>`;
@@ -100,34 +101,34 @@ module.exports = function layout(ctx, C) {
         <a href="${u(P, 'index.html')}" class="logo inv big" aria-label="Астрея — на главную">
           <svg class="lgo" viewBox="46 338 836 436" aria-hidden="true"><use href="#logo-art"/></svg>
         </a>
-        <p class="about">«Астрея» — дистрибьютор профессиональной косметики. Оригинальная продукция, обучение и поддержка специалистов.</p>
+        <p class="about">${T('layout.footer.p')}</p>
       </div>
       <div>
-        <h2 class="ftr-h">Компания</h2>
+        <h2 class="ftr-h">${T('layout.footer.h2')}</h2>
         <ul>
-          <li><a href="${u(P, 'company.html')}">О компании</a></li>
-          <li><a href="${u(P, 'contacts.html')}">Контакты</a></li>
-          <li><a href="${u(P, 'news.html')}">Новости</a></li>
-          <li><a href="${u(P, 'training.html')}">Обучение</a></li>
+          <li><a href="${u(P, 'company.html')}">${T('layout.footer.a')}</a></li>
+          <li><a href="${u(P, 'contacts.html')}">${T('layout.footer.a2')}</a></li>
+          <li><a href="${u(P, 'news.html')}">${T('layout.footer.a3')}</a></li>
+          <li><a href="${u(P, 'training.html')}">${T('layout.footer.a4')}</a></li>
         </ul>
       </div>
       <div>
-        <h2 class="ftr-h">Каталог</h2>
+        <h2 class="ftr-h">${T('layout.footer.h22')}</h2>
         <ul>
-          <li><a href="${u(P, 'catalog.html')}" data-track="catalog_click">Все продукты</a></li>
-          <li><a href="${u(P, 'catalog.html')}#categories">Категории</a></li>
-          <li><a href="${u(P, 'brands.html')}">Бренды</a></li>
+          <li><a href="${u(P, 'catalog.html')}" data-track="catalog_click">${T('layout.footer.a5')}</a></li>
+          <li><a href="${u(P, 'catalog.html')}#categories">${T('layout.footer.a6')}</a></li>
+          <li><a href="${u(P, 'brands.html')}">${T('layout.footer.a7')}</a></li>
         </ul>
       </div>
       <div>
-        <h2 class="ftr-h">Партнёрам</h2>
+        <h2 class="ftr-h">${T('layout.footer.h23')}</h2>
         <ul>
-          <li><a href="${u(P, 'partners.html')}" data-track="partner_cta" data-place="footer">Стать партнёром</a></li>
-          <li><a href="${u(P, 'contacts.html')}#support">Поддержка</a></li>
+          <li><a href="${u(P, 'partners.html')}" data-track="partner_cta" data-place="footer">${T('layout.header.a')}</a></li>
+          <li><a href="${u(P, 'contacts.html')}#support">${T('layout.footer.a8')}</a></li>
         </ul>
       </div>
       <div>
-        <h2 class="ftr-h">Контакты</h2>
+        <h2 class="ftr-h">${T('layout.footer.a2')}</h2>
         <ul>
           <li><a href="tel:${c.phoneRaw}" data-track="phone_click">${esc(c.phone)}</a></li>
           <li><a href="mailto:${c.email}" data-track="email_click">${esc(c.email)}</a></li>
@@ -175,21 +176,21 @@ module.exports = function layout(ctx, C) {
   </div>
 </footer>`; };
 
-  const searchPanel = P => `<div id="srch" class="srch" role="dialog" aria-modal="true" aria-label="Поиск по сайту" hidden>
+  const searchPanel = P => `<div id="srch" class="srch" role="dialog" aria-modal="true" aria-label="${T('layout.header.t')}" hidden>
   <div class="srch-box wrap">
     <form class="srch-form" role="search" action="${u(P, 'search.html')}" method="get">
-      <label class="search"><span class="sr">Поиск по товарам, брендам, новостям и обучению</span>${I.search}<input id="srch-q" type="search" name="q" placeholder="Товары, бренды, новости, обучение…" autocomplete="off" enterkeyhint="search"></label>
-      <button class="sr" type="submit" tabindex="-1">Найти</button>
-      <button class="x" type="button" data-act="search-close" aria-label="Закрыть поиск">${I.close}</button>
+      <label class="search"><span class="sr">${T('layout.footer.t')}</span>${I.search}<input id="srch-q" type="search" name="q" placeholder="${T('layout.footer.a9')}" autocomplete="off" enterkeyhint="search"></label>
+      <button class="sr" type="submit" tabindex="-1">${T('layout.header.btn')}</button>
+      <button class="x" type="button" data-act="search-close" aria-label="${T('layout.footer.aria')}">${I.close}</button>
     </form>
-    <div class="srch-hints" id="srch-hints"><span>Популярное:</span>${ctx.content.searchHints.map(h => `<a class="chip" href="${u(P, 'search.html')}?q=${encodeURIComponent(h)}">${esc(h)}</a>`).join('')}</div>
+    <div class="srch-hints" id="srch-hints"><span>${T('layout.footer.t2')}</span>${ctx.content.searchHints.map(h => `<a class="chip" href="${u(P, 'search.html')}?q=${encodeURIComponent(h)}">${esc(h)}</a>`).join('')}</div>
     <div class="srch-out" id="srch-out" aria-live="polite"></div>
   </div>
 </div>`;
 
   const splash = `<div id="splash" aria-hidden="true">
   <div class="sp-in" id="sp-in">
-    <div class="sp-logo" id="sp-logo" role="img" aria-label="Астрея"></div>
+    <div class="sp-logo" id="sp-logo" role="img" aria-label="${T('layout.footer.aria2')}"></div>
     <div class="sp-sub" id="sp-sub"></div>
     <i class="sp-line"></i>
     <p class="sp-tag">${esc(site.tagline)}</p>
@@ -254,7 +255,7 @@ ${P.key === 'news' ? ['(min-width:861px)', '(max-width:860px)'].map((m, i) => `<
 ${ld.map(o => `<script type="application/ld+json">${JSON.stringify(o)}</script>`).join('\n')}
 </head>
 <body${rd ? ' class="rd"' : ''} data-page="${P.key}" data-nav="${P.nav || ''}" data-root="${P.root}">
-<a class="skip" href="#main">К основному содержимому</a>
+<a class="skip" href="#main">${T('layout.misc.a4')}</a>
 ${logoDefs}
 <div id="progress" aria-hidden="true"></div>
 ${P.key === 'home' ? splash : ''}

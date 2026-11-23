@@ -1,6 +1,7 @@
 const fs = require('fs');
 const path = require('path');
 const S = require('../../js/shared.js');
+const {T} = require('../texts.js');
 const {esc, I, bstyle, dparts} = S;
 
 /* Страница мероприятия v2 («Билет»): кадр брендовой ниши (assets/detail/stage-brand.webp) — слева в нише логотип и упаковки бренда семинара, справа на каменной стене лежит
@@ -24,9 +25,9 @@ module.exports = function eventPage(ctx, C, P, e) {
   const online = e.fmt !== 'Очно';
   const future = e.date >= new Date().toISOString().slice(0, 10);
   const [t0, t1] = String(e.time || '').split(/\s*[–-]\s*/);
-  const register = (cls, place, label = 'Записаться') => `<button class="${cls}" type="button" data-act="form" data-type="seminar" data-ref="${e.id}" data-track="event_register" data-place="${place}">${label} ${I.arrow}</button>`;
-  const facts = [['Дата', C.timeTag(e.date)], ['Время', esc(e.time)], ['Город', esc(e.city)], ['Формат', esc(e.fmt)], [online ? 'Подключение' : 'Адрес', esc(e.place)],
-    ['Преподаватель', esc(e.speaker)], ['Бренд', `<a href="${C.burl(P, b)}">${esc(b.name)}</a>`], ['Места', e.seats ? esc(String(e.seats)) : 'Количество мест уточняйте при регистрации']];
+  const register = (cls, place, label = T('event.labels.s')) => `<button class="${cls}" type="button" data-act="form" data-type="seminar" data-ref="${e.id}" data-track="event_register" data-place="${place}">${label} ${I.arrow}</button>`;
+  const facts = [[T('event.labels.s2'), C.timeTag(e.date)], [T('event.labels.s3'), esc(e.time)], [T('event.labels.s4'), esc(e.city)], [T('event.labels.s5'), esc(e.fmt)], [online ? T('event.labels.s6') : T('event.labels.s7'), esc(e.place)],
+    [T('event.labels.s8'), esc(e.speaker)], [T('event.labels.s9'), `<a href="${C.burl(P, b)}">${esc(b.name)}</a>`], [T('event.labels.s10'), e.seats ? esc(String(e.seats)) : T('event.labels.s11')]];
 
   /* ниша бренда: логотип и две упаковки бренда на подставках */
   const prods = ctx.products.filter(p => p.brand === b.id), seen = new Set(), pick = [];
@@ -38,22 +39,22 @@ module.exports = function eventPage(ctx, C, P, e) {
     ? `<span class="dtb-logo" style="--cx:${f1(NICHE.cx * 100)}%"><img src="${esc(C.u(P, b.logo))}" alt="${esc(b.name)}"${b.logoW ? ` width="${b.logoW}" height="${b.logoH}"` : ''} decoding="async"></span>`
     : `<span class="dtb-logo is-text" style="--cx:${f1(NICHE.cx * 100)}%"><b>${esc(b.name)}</b></span>`;
 
-  const route = `<nav class="dt-route" aria-label="Хлебные крошки">
+  const route = `<nav class="dt-route" aria-label="${T('event.route.aria')}">
       <ol>
         <li style="--i:0" class="is-home"><a href="${C.u(P, 'index.html')}" aria-label="Главная"><svg class="ic" viewBox="0 0 20 20" aria-hidden="true" focusable="false"><path d="M3.5 9.4 10 4l6.5 5.4M5.3 8.2V16h9.4V8.2M8.4 16v-4.2h3.2V16"/></svg></a></li>
-        <li style="--i:1"><a href="${C.u(P, 'training.html')}"><small>Раздел</small><b>Обучение</b></a></li>
-        <li style="--i:2"><a href="${C.burl(P, b)}"><small>Бренд</small><b>${esc(b.name)}</b></a></li>
-        <li style="--i:3" aria-current="page"><small>Мероприятие</small><b>${esc(e.title)}</b></li>
+        <li style="--i:1"><a href="${C.u(P, 'training.html')}"><small>${T('event.route.sm')}</small><b>${T('event.route.b')}</b></a></li>
+        <li style="--i:2"><a href="${C.burl(P, b)}"><small>${T('event.labels.s9')}</small><b>${esc(b.name)}</b></a></li>
+        <li style="--i:3" aria-current="page"><small>${T('event.route.sm2')}</small><b>${esc(e.title)}</b></li>
       </ol>
-      <a class="dt-back" href="${C.u(P, 'training.html')}">${I.back}<span>Всё расписание</span></a>
+      <a class="dt-back" href="${C.u(P, 'training.html')}">${I.back}<span>${T('event.route.t')}</span></a>
     </nav>`;
 
   /* программа: только то, что есть в данных (время, место/подключение, описание); состав блоков — «Уточняется» */
   const steps = [
-    [t0 || 'Начало', 'Начало', online ? 'Подключение по ссылке, которую присылаем после регистрации.' : `${esc(e.city)}${/\d/.test(e.place) && !/^Адрес/i.test(e.place) ? ', ' : '. '}${esc(e.place)}.`],
-    ['Тема', 'Теория и практика', `${esc(e.description)}${online ? '' : ' Теоретические блоки чередуются с практическими мастер-классами.'}`],
-    ['Блоки', 'Программа по блокам', '<span class="tbd">Уточняется — программу пришлёт менеджер учебного центра при подтверждении участия.</span>'],
-    [t1 || 'Конец', 'Завершение', 'Окончание по расписанию мероприятия.']
+    [t0 || T('event.prog.s'), T('event.prog.s'), online ? T('event.prog.s2') : `${esc(e.city)}${/\d/.test(e.place) && !/^Адрес/i.test(e.place) ? ', ' : '. '}${esc(e.place)}.`],
+    [T('event.prog.s3'), T('event.prog.s4'), `${esc(e.description)}${online ? '' : ' Теоретические блоки чередуются с практическими мастер-классами.'}`],
+    [T('event.prog.s5'), T('event.prog.s6'), '<span class="tbd">Уточняется — программу пришлёт менеджер учебного центра при подтверждении участия.</span>'],
+    [t1 || T('event.prog.s7'), T('event.prog.s8'), T('event.prog.s9')]
   ];
   const timeline = `<ol class="dtev-line">${steps.map(([k, h, p], i) => `<li class="reveal" style="--i:${i}"><span class="dtev-k">${esc(k)}</span><span class="dtev-dot" aria-hidden="true"></span><div><h3>${h}</h3><p>${p}</p></div></li>`).join('')}</ol>`;
 
@@ -69,49 +70,49 @@ module.exports = function eventPage(ctx, C, P, e) {
       <div class="dt-over wrap">
         ${route}
         <div class="dt-ticket e-top">
-          <div class="dt-stub"><span class="dt-stub-k">${online ? 'Вебинар' : 'Семинар'}</span><time datetime="${e.date}"><b>${d.d}</b><span>${d.m}</span><em>${d.y}</em></time><span class="dt-stub-t">${esc(e.time)}</span></div>
+          <div class="dt-stub"><span class="dt-stub-k">${online ? T('event.fmt.s') : T('event.fmt.s2')}</span><time datetime="${e.date}"><b>${d.d}</b><span>${d.m}</span><em>${d.y}</em></time><span class="dt-stub-t">${esc(e.time)}</span></div>
           <div class="dt-tk-body">
             <span class="tag blue">${esc(e.fmt)} · ${esc(e.city)}</span>
             <h1>${esc(e.title)}</h1>
             <p class="lead">${esc(e.description)}</p>
             ${future ? C.cdSlot() : ''}
-            <div class="notice past" id="past-note" hidden>${I.info}<span>Мероприятие уже прошло. Актуальные даты — в <a href="${C.u(P, 'training.html')}">расписании</a>.</span></div>
+            <div class="notice past" id="past-note" hidden>${I.info}<span>Мероприятие уже прошло. Актуальные даты — в <a href="${C.u(P, 'training.html')}">${T('event.hero.a')}</a>.</span></div>
             <div class="row" id="e-cta">${register('btn btn-fill', 'event-hero')}
-              <a class="btn btn-ghost" href="${C.u(P, 'training.html')}">Все мероприятия</a></div>
+              <a class="btn btn-ghost" href="${C.u(P, 'training.html')}">${T('event.hero.a2')}</a></div>
           </div>
         </div>
       </div>
     </section>
 
-    <section class="sec dtev-main wrap" aria-label="Программа и условия">
+    <section class="sec dtev-main wrap" aria-label="${T('event.main.aria')}">
       <div class="dtev-prog">
-        <span class="eyebrow in">Программа</span>
-        <h2>Как пройдёт ${online ? 'вебинар' : 'день'}</h2>
+        <span class="eyebrow in">${T('event.main.eyebrow')}</span>
+        <h2>${T('event.main.h2')} ${online ? T('event.main.s') : T('event.main.s2')}</h2>
         ${timeline}
         <div class="dtev-after" data-dt-ticket-slot></div>
       </div>
-      <aside class="dtev-pass reveal" aria-label="Паспорт мероприятия">
-        <span class="dtev-pass-k">${online ? 'Вебинар' : 'Семинар'} · ${esc(b.name)}</span>
+      <aside class="dtev-pass reveal" aria-label="${T('event.pass.aria')}">
+        <span class="dtev-pass-k">${online ? T('event.fmt.s') : T('event.fmt.s2')} · ${esc(b.name)}</span>
         <dl class="facts-dl">${facts.map(([k, v]) => `<div><dt>${k}</dt><dd>${v}</dd></div>`).join('')}</dl>
       </aside>
     </section>
 
     <section class="dtev-terms wrap">
-      <article class="dt-tile reveal"><span class="dt-no" aria-hidden="true">01</span><h2>Участие</h2><p>Базовые семинары и мастер-классы учебного центра «Астрея» бесплатные. Условия отдельных программ уточняйте у менеджера при регистрации.</p></article>
-      <article class="dt-tile reveal"><span class="dt-no" aria-hidden="true">02</span><h2>${online ? 'Подключение' : 'Место'}</h2><p>${online ? 'Формат — вебинар: ссылку на подключение присылаем после регистрации.' : `${esc(e.city)}, ${esc(e.place)}. Базовые семинары проходят с 10:30 до 18:00: теоретические блоки чередуются с практическими мастер-классами.`}</p></article>
-      ${t ? `<article class="card tcard card-pad reveal e-teacher dtev-teacher"><div class="avatar" aria-hidden="true">${esc(t.mono)}</div><div><span class="eyebrow in">Преподаватель</span><h3>${esc(t.name)}</h3><p>${esc(t.spec)}</p><div class="tasks-line">${t.topics.map(x => C.tag(x)).join('')}</div></div></article>` : ''}
+      <article class="dt-tile reveal"><span class="dt-no" aria-hidden="true">01</span><h2>${T('event.join.h2')}</h2><p>${T('event.join.p')}</p></article>
+      <article class="dt-tile reveal"><span class="dt-no" aria-hidden="true">02</span><h2>${online ? T('event.labels.s6') : T('event.join.s')}</h2><p>${online ? 'Формат — вебинар: ссылку на подключение присылаем после регистрации.' : `${esc(e.city)}, ${esc(e.place)}. Базовые семинары проходят с 10:30 до 18:00: теоретические блоки чередуются с практическими мастер-классами.`}</p></article>
+      ${t ? `<article class="card tcard card-pad reveal e-teacher dtev-teacher"><div class="avatar" aria-hidden="true">${esc(t.mono)}</div><div><span class="eyebrow in">${T('event.labels.s8')}</span><h3>${esc(t.name)}</h3><p>${esc(t.spec)}</p><div class="tasks-line">${t.topics.map(x => C.tag(x)).join('')}</div></div></article>` : ''}
     </section>
 
     <section class="sec dtev-reg wrap" id="register" style="padding-top:0">
       <div class="reg-card card card-pad reveal">
-        <div><span class="eyebrow in">Регистрация</span><h2>Записаться на мероприятие</h2><p class="muted">Оставьте контакты — менеджер учебного центра подтвердит участие и вышлет детали.</p>
+        <div><span class="eyebrow in">${T('event.reg.eyebrow')}</span><h2>${T('event.reg.h2')}</h2><p class="muted">${T('event.reg.p')}</p>
           <p class="muted small">${esc(e.title)} — ${d.full}, ${esc(e.city)}</p></div>
         <div>${S.formHTML('seminar', {root: P.root, uid: 'ev', ref: e.id})}</div>
       </div>
     </section>
 
     <section class="sec dtev-others wrap" style="padding-top:0">
-      ${C.secHead('Обучение', 'Другие мероприятия', C.lnk(C.u(P, 'training.html'), 'Всё расписание'))}
+      ${C.secHead(T('event.route.b'), T('event.more.s'), C.lnk(C.u(P, 'training.html'), T('event.route.t')))}
       <div class="grid g3 events-grid">${others.map(x => C.eventCard(P, x)).join('')}</div>
     </section>
 

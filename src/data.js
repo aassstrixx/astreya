@@ -2,6 +2,7 @@
 const fs = require('fs');
 const path = require('path');
 const S = require('../js/shared.js');
+const TX = require('./texts.js');
 
 const dir = path.join(__dirname, '..', 'data');
 const read = n => JSON.parse(fs.readFileSync(path.join(dir, n + '.json'), 'utf8'));
@@ -43,6 +44,8 @@ function load() {
   const site = read('site'), content = read('content'), catalog = read('catalog'), training = read('training');
   const brands = read('brands'), products = read('products'), events = read('events'), newsRaw = read('news');
   const ctx = {site, content, brands, products, events, training};
+  ctx.texts = readOpt('texts', {items: {}});               // тексты страниц, правленные в админке (data/texts.json); реестр ключей — src/texts-registry.js
+  TX.set(ctx.texts.items);
   ctx.stella = loadStella();
   ctx.integrations = readOpt('integrations', {});         // подключения (Метрика, согласие, подтверждение сайта, мессенджеры) — data/integrations.json
   ctx.legal = readOpt('legal', {});                       // данные для юридических страниц — data/legal.json

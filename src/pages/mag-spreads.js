@@ -4,6 +4,7 @@
    Каждая кнопка — настоящая ссылка на страницу сайта (бренд, карточка товара, подбор по задаче, семинар, новость, партнёрская заявка) либо кнопка Стеллы (data-act="asst-open"). Текст остаётся HTML (не в картинках). */
 const fs = require('fs'), path = require('path');
 const S = require('../../js/shared.js');
+const {T} = require('../texts.js');
 const {esc, I} = S;
 
 /* пиктограммы: тонкая линия, один стиль на весь журнал (оригинальные, не из набора сайта) */
@@ -131,7 +132,7 @@ module.exports = function magSpreads(ctx, C, P, deps) {
   const stella = {
     L: n => `<div class="pg pg-l pg-tx pg-stl">${run}<p class="mg-kick">${esc(st.kick)}</p>${hh(st.hl)}
       <p class="mp-sub2">${esc(st.sub)}</p>
-      <div class="mp-chat" role="group" aria-label="Диалог со Стеллой: настоящие ответы помощника сайта"><div class="mp-chat-top">${pearlSlot()}<b>Стелла</b><span>помощник ASTREYA</span></div>
+      <div class="mp-chat" role="group" aria-label="${T('home.mag.aria')}"><div class="mp-chat-top">${pearlSlot()}<b>${T('home.mag.b')}</b><span>${T('home.mag.t')}</span></div>
         <div class="mp-chat-log" role="log" aria-live="polite" aria-label="${esc(lv.label)}" tabindex="-1">${dlg}</div>
         <div class="mp-chat-live" hidden><div class="mp-chat-chips" role="group" aria-label="${esc(lv.label)}">${lv.chips.map(c => `<button type="button" class="mp-chip" data-q="${esc(c.q)}">${esc(c.l)}</button>`).join('')}</div>
           <form class="mp-chat-in" autocomplete="off"><input type="text" name="q" maxlength="200" placeholder="${esc(lv.placeholder)}" aria-label="${esc(lv.label)}"><button type="submit" aria-label="${esc(lv.send)}">${I.arrow}</button></form>
@@ -144,7 +145,7 @@ module.exports = function magSpreads(ctx, C, P, deps) {
   };
 
   /* ------------------------------------------------ 14–15. Учебный центр */
-  const tr = rd.training, nextEv = events.slice(0, 3), fmts = ['Семинары', 'Вебинары', 'Практические занятия'];
+  const tr = rd.training, nextEv = events.slice(0, 3), fmts = [T('home.training.li'), T('home.training.li2'), T('home.mag.s7')];
   const academy = {
     L: n => `<div class="pg pg-l pg-ph pg-acl"><div class="mg-ph mp-fade mp-fade-t">${pimg('about3')}</div>
       <p class="mg-run mp-runw" aria-hidden="true"><span>${esc(pg.academy.kick)}</span><span>ASTREYA</span></p>

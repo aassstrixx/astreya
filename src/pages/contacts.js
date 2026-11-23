@@ -7,6 +7,7 @@
 const S = require('../../js/shared.js');
 const {esc, I} = S;
 const MSG = require('../messengers.js');
+const {T} = require('../texts.js');
 
 /* карта России владельца (assets/company/ru-map.svg, 1920×1108), коническая проекция Ламберта подобрана по береговой линии карты (как в src/pages/company.js). Показываем окно на запад страны:
    в пикселях карты x 0…640, y 420…900 — все города представительств с запасом под подписи; метки стоят на реальных местах */
@@ -27,40 +28,40 @@ const slug = s => s.toLowerCase().split('').map(ch => TR[ch] !== undefined ? TR[
 module.exports = function contacts(ctx, C, P) {
   const {site} = ctx, c = site.contacts, rq = site.requisites, u = f => C.u(P, f), offs = site.offices;
   const q = encodeURIComponent(c.address);
-  const tbd = '<span class="tbd">Уточняется</span>';
+  const tbd = '<span class="tbd">' + T('contacts.req.tbd') + '</span>';
   const no = i => String(i + 1).padStart(2, '0');
   const keys = [
-    {ic: I.phone, t: 'Телефон', v: `<a href="tel:${c.phoneRaw}" data-track="phone_click">${esc(c.phone)}</a>`, s: esc(c.hours), link: 1},
-    {ic: I.mail, t: 'Email', v: `<a href="mailto:${c.email}" data-track="email_click">${esc(c.email)}</a>`, s: 'Ответим в рабочее время', link: 1},
+    {ic: I.phone, t: T('contacts.ways.phone'), v: `<a href="tel:${c.phoneRaw}" data-track="phone_click">${esc(c.phone)}</a>`, s: esc(c.hours), link: 1},
+    {ic: I.mail, t: T('contacts.ways.email'), v: `<a href="mailto:${c.email}" data-track="email_click">${esc(c.email)}</a>`, s: T('contacts.ways.email.s'), link: 1},
     /* мессенджеры без ссылки не показываем («Скоро» выглядит недоделкой): ключ появится сам, когда ссылка будет задана в настройках */
     ...MSG.cells(c).filter(ch => ch.url).map(ch => ({ic: I.msg, t: ch.name, v: `<a href="${esc(ch.url)}" target="_blank" rel="noopener" data-track="messenger_click" data-place="contacts">${ch.cta}</a>`, s: ch.sub, link: 1})),
-    {ic: I.pin, t: 'Центральный офис', v: esc(c.address), s: esc(c.addressNote)}
+    {ic: I.pin, t: T('contacts.ways.office'), v: esc(c.address), s: esc(c.addressNote)}
   ];
   const mapLinks = (o, main) => {
     const addr = main ? c.address : (o.city + ', ' + o.addr.replace(/\s*\([^)]*\)\s*$/, '')), qq = main ? q : encodeURIComponent(addr);
     return /уточн/i.test(o.addr) ? '' : `<div class="cp-route"><a class="btn btn-fill btn-sm cp-pill" href="https://yandex.ru/maps/?text=${qq}" target="_blank" rel="noopener">Яндекс Карты ${I.external}</a><a class="btn btn-ghost btn-sm cp-pill" href="https://2gis.ru/search/${qq}" target="_blank" rel="noopener">2ГИС ${I.external}</a></div>`;
   };
-  const stella = C.xon('assistant') ? `<button class="cp-ask" type="button" data-act="asst-chip" data-q="С кем из менеджеров связаться?" data-track="asst_chip" data-place="contacts"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12Z"/></svg><span>Подобрать менеджера со Стеллой</span></button>` : '';
+  const stella = C.xon('assistant') ? `<button class="cp-ask" type="button" data-act="asst-chip" data-q="${T('contacts.write.stella.q')}" data-track="asst_chip" data-place="contacts"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12Z"/></svg><span>${T('contacts.write.stella')}</span></button>` : '';
   const pins = offs.map((o, i) => COORDS[o.city] ? {o, i, p: proj(COORDS[o.city])} : null).filter(Boolean);
   const hub = pins.find(x => x.o.city === 'Москва') || pins[0];
   const curve = (a, b) => { const mx = (a.px + b.px) / 2, my = (a.py + b.py) / 2, dx = b.px - a.px, dy = b.py - a.py, k = .18; return `M${a.px.toFixed(1)} ${a.py.toFixed(1)} Q${(mx - dy * k).toFixed(1)} ${(my + dx * k).toFixed(1)} ${b.px.toFixed(1)} ${b.py.toFixed(1)}`; };
 
-  const team = `<figure class="cp-photo reveal"><img src="${u('assets/photos/photo-02-about.webp')}" alt="Команда «Астрея»" width="800" height="533" loading="lazy" decoding="async"><figcaption><b>На связи</b><span>${esc(c.hours)}</span></figcaption></figure>`;
+  const team = `<figure class="cp-photo reveal"><img src="${u('assets/photos/photo-02-about.webp')}" alt="${T('contacts.ways.photo.alt')}" width="800" height="533" loading="lazy" decoding="async"><figcaption><b>${T('contacts.ways.photo.b')}</b><span>${esc(c.hours)}</span></figcaption></figure>`;
   const maxPct = (site.discounts || []).reduce((m, d) => Math.max(m, d.pct || 0), 0);
   const topics = [
-    {ic: I.box, t: 'Подбор продукции', p: 'Каталог брендов и линий для кабинета и домашнего ухода', h: u('catalog.html')},
-    {ic: I.book, t: 'Обучение и семинары', p: 'Расписание семинаров учебного центра, онлайн и в городах', h: u('training.html')},
-    {ic: I.percent, t: 'Партнёрство и закупки', p: maxPct ? `Условия сотрудничества и скидка за объём до <span data-count="${maxPct}">${maxPct}</span>%` : 'Условия сотрудничества и скидка за объём', h: u('partners.html')},
-    {ic: I.doc, t: 'Документы и реквизиты', p: 'ИНН, ОГРН, юридический и фактический адрес', h: '#cp-req'}
+    {ic: I.box, t: T('contacts.topics.catalog.t'), p: T('contacts.topics.catalog.p'), h: u('catalog.html')},
+    {ic: I.book, t: T('contacts.topics.training.t'), p: T('contacts.topics.training.p'), h: u('training.html')},
+    {ic: I.percent, t: T('contacts.topics.partners.t'), p: maxPct ? T('contacts.topics.partners.pd', {pct: `<span data-count="${maxPct}">${maxPct}</span>`}) : T('contacts.topics.partners.p'), h: u('partners.html')},
+    {ic: I.doc, t: T('contacts.topics.docs.t'), p: T('contacts.topics.docs.p'), h: '#cp-req'}
   ];
   const how = `<div class="cp-how reveal">
       <div class="cp-how-in">
-        <span class="cp-eyebrow">Как добраться</span>
-        <h2>Центральный офис в Москве</h2>
+        <span class="cp-eyebrow">${T('contacts.how.eyebrow')}</span>
+        <h2>${T('contacts.how.h2')}</h2>
         <ul class="cp-hl">
           <li>${I.pin}<span><b>${esc(c.address)}</b><small>${esc(c.addressNote)}</small></span></li>
-          <li>${I.clock}<span><b>${esc(c.hours)}</b><small>Время работы центрального офиса</small></span></li>
-          <li>${I.phone}<span><b><a href="tel:${c.phoneRaw}" data-track="phone_click" data-place="contacts-how">${esc(c.phone)}</a></b><small>Звоните в рабочее время</small></span></li>
+          <li>${I.clock}<span><b>${esc(c.hours)}</b><small>${T('contacts.how.hours')}</small></span></li>
+          <li>${I.phone}<span><b><a href="tel:${c.phoneRaw}" data-track="phone_click" data-place="contacts-how">${esc(c.phone)}</a></b><small>${T('contacts.how.phone')}</small></span></li>
         </ul>
         ${mapLinks({addr: c.address}, true)}
       </div>
@@ -73,29 +74,29 @@ module.exports = function contacts(ctx, C, P) {
     <div class="cp-scene" aria-hidden="true"><img src="${u('assets/utility/arches.webp')}" alt="" width="1920" height="1080" fetchpriority="high" decoding="async" data-par="-.05"><i class="cp-veil"></i></div>
     <div class="cp-in cp-hero-in">
       <header class="page-head cp-copy">
-        <span class="cp-eyebrow">Контакты</span>
-        <h1>Свяжитесь с Астрея</h1>
-        <p class="cp-lead">Центральный офис в Москве и представительства в регионах. Позвоните, напишите или оставьте заявку — ответим в рабочее время.</p>
+        <span class="cp-eyebrow">${T('contacts.hero.eyebrow')}</span>
+        <h1>${T('contacts.hero.h1')}</h1>
+        <p class="cp-lead">${T('contacts.hero.lead')}</p>
         <div class="cp-cta">${C.callbackBtn('btn btn-fill cp-pill', 'contacts-hero')}<a class="btn btn-ghost cp-pill" href="tel:${c.phoneRaw}" data-track="phone_click" data-place="contacts-hero">${I.phone} ${esc(c.phone)}</a></div>
       </header>
     </div>
   </section>
 
   <section class="cp-sec cp-topics" id="cp-topics"><div class="cp-in">
-    <header class="cp-head reveal"><span class="cp-num">${no2(0)}</span><div><span class="cp-eyebrow">С чем к нам обращаются</span><h2>Выберите тему</h2></div></header>
+    <header class="cp-head reveal"><span class="cp-num">${no2(0)}</span><div><span class="cp-eyebrow">${T('contacts.topics.eyebrow')}</span><h2>${T('contacts.topics.h2')}</h2></div></header>
     <div class="cp-tiles">${topics.map(t => `<a class="cp-tile reveal" href="${t.h}" data-track="contacts_topic"><span class="cp-tic">${t.ic}</span><b>${t.t}</b><p>${t.p}</p><i class="cp-tgo">${I.arrow}</i></a>`).join('')}</div>
   </div></section>
 
   <section class="cp-sec cp-ways" id="cp-ways"><div class="cp-in">
-    <header class="cp-head reveal"><span class="cp-num">${no2(1)}</span><div><span class="cp-eyebrow">Способы связи</span><h2>Как с нами связаться</h2></div></header>
+    <header class="cp-head reveal"><span class="cp-num">${no2(1)}</span><div><span class="cp-eyebrow">${T('contacts.ways.eyebrow')}</span><h2>${T('contacts.ways.h2')}</h2></div></header>
     <div class="cp-ways-grid">
       ${team}
-      <div class="contact-cards cp-keys cp-n${keys.length}"><h2 class="sr">Способы связи</h2>${keys.map((k, i) => `<article class="ccard cp-key${k.link ? ' is-link' : ''} reveal"><i class="cp-kn">${no(i)}</i><span class="cp-kic">${k.ic}</span><h3>${k.t}</h3><p class="cv">${k.v}</p><p class="cp-ks">${k.s}</p></article>`).join('')}</div>
+      <div class="contact-cards cp-keys cp-n${keys.length}"><h2 class="sr">${T('contacts.ways.eyebrow')}</h2>${keys.map((k, i) => `<article class="ccard cp-key${k.link ? ' is-link' : ''} reveal"><i class="cp-kn">${no(i)}</i><span class="cp-kic">${k.ic}</span><h3>${k.t}</h3><p class="cv">${k.v}</p><p class="cp-ks">${k.s}</p></article>`).join('')}</div>
     </div>
   </div></section>
 
   <section class="cp-sec cp-map" id="offices"><div class="cp-in">
-    <header class="cp-head reveal"><span class="cp-num">${no2(2)}</span><div><span class="cp-eyebrow">Представительства</span><h2>Мы на карте России</h2></div></header>
+    <header class="cp-head reveal"><span class="cp-num">${no2(2)}</span><div><span class="cp-eyebrow">${T('contacts.map.eyebrow')}</span><h2>${T('contacts.map.h2')}</h2></div></header>
     <div class="cp-atlas">
       <div class="cp-offices" data-cp-offices>${offs.map((o, i) => `<article class="cp-office reveal" id="office-${slug(o.city)}" data-city="${esc(o.city)}">
         <h3 class="cp-oh"><button class="cp-ob-t" type="button" aria-expanded="true" aria-controls="ob-${slug(o.city)}"><i>${no(i)}</i><b>${esc(o.city)}</b><span>${esc(o.role)}</span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></button></h3>
@@ -107,14 +108,14 @@ module.exports = function contacts(ctx, C, P) {
           ${mapLinks(o, o.city === 'Москва')}
         </div></div>
       </article>`).join('')}</div>
-      <div class="cp-relief reveal" role="group" aria-label="Расположение офиса: ${esc(c.address)}. Представительства «Астрея» на карте России">
+      <div class="cp-relief reveal" role="group" aria-label="Расположение офиса: ${esc(c.address)}. ${T('contacts.map.eyebrow')} «Астрея» на карте России">
         <div class="cp-stone">
           <img class="cp-mapimg" src="${u('assets/company/ru-map.svg')}" alt="" width="1920" height="1108" loading="lazy" decoding="async">
           <svg class="cp-svg" viewBox="0 0 ${WIN.w} ${WIN.h}" preserveAspectRatio="none" aria-hidden="true" focusable="false">
             ${hub ? pins.filter(x => x !== hub).map(x => `<path class="cp-rt" data-city="${esc(x.o.city)}" d="${curve(hub.p, x.p)}"/>`).join('') : ''}
           </svg>
           ${pins.map(({o, i, p}, n) => `<button class="cp-pin${o === (hub && hub.o) ? ' is-hub' : ''}" type="button" data-city="${esc(o.city)}" data-side="r" style="--x:${p.x.toFixed(4)};--y:${p.y.toFixed(4)};--n:${n}" aria-controls="office-${slug(o.city)}" aria-label="${esc(o.city)} — ${esc(o.role)}"><i aria-hidden="true"></i><span>${esc(o.city)}</span></button>`).join('')}
-          <p class="cp-cap" aria-hidden="true">Запад России · карта представительств</p>
+          <p class="cp-cap" aria-hidden="true">${T('contacts.map.cap')}</p>
         </div>
       </div>
     </div>
@@ -124,10 +125,10 @@ module.exports = function contacts(ctx, C, P) {
 
   <section class="cp-sec cp-write" id="cp-write"><div class="cp-in cp-write-in">
     <div class="cp-wr-copy reveal">
-      <header class="cp-head cp-head-l"><span class="cp-num">${no2(3)}</span><div><span class="cp-eyebrow">Обратная связь</span><h2>Написать нам</h2></div></header>
-      <p>Вопрос по продукции, обучению или сотрудничеству — ответим по почте или телефону.</p>
-      <p class="cp-fast">Чтобы ответить быстрее, укажите:</p>
-      <ul class="cp-chips"><li>что вас интересует</li><li>ваш город</li><li>примерный объём закупки</li></ul>
+      <header class="cp-head cp-head-l"><span class="cp-num">${no2(3)}</span><div><span class="cp-eyebrow">${T('contacts.write.eyebrow')}</span><h2>${T('contacts.write.h2')}</h2></div></header>
+      <p>${T('contacts.write.lead')}</p>
+      <p class="cp-fast">${T('contacts.write.fast')}</p>
+      <ul class="cp-chips"><li>${T('contacts.write.chip1')}</li><li>${T('contacts.write.chip2')}</li><li>${T('contacts.write.chip3')}</li></ul>
       ${stella}
       <div class="cp-duo reveal" aria-hidden="true">
         <img src="${u('assets/news/ph-seminar-b.webp')}" alt="" width="960" height="540" loading="lazy" decoding="async">
@@ -138,14 +139,14 @@ module.exports = function contacts(ctx, C, P) {
   </div></section>
 
   <section class="cp-sec cp-req" id="cp-req"><div class="cp-in">
-    <header class="cp-head reveal"><span class="cp-num">${no2(4)}</span><div><span class="cp-eyebrow">Реквизиты</span><h2>Информация о компании</h2></div></header>
+    <header class="cp-head reveal"><span class="cp-num">${no2(4)}</span><div><span class="cp-eyebrow">${T('contacts.req.eyebrow')}</span><h2>${T('contacts.req.h2')}</h2></div></header>
     <dl class="cp-ledger reveal">
-      <div><dt>Наименование</dt><dd>${esc(rq.legalName)}</dd></div>
-      <div><dt>ИНН</dt><dd>${rq.inn ? esc(rq.inn) : tbd}</dd></div>
-      <div><dt>КПП</dt><dd>${rq.kpp ? esc(rq.kpp) : tbd}</dd></div>
-      <div><dt>ОГРН</dt><dd>${rq.ogrn ? esc(rq.ogrn) : tbd}</dd></div>
-      <div><dt>Юридический адрес</dt><dd>${rq.legalAddress ? esc(rq.legalAddress) : tbd}</dd></div>
-      <div><dt>Фактический адрес</dt><dd>${esc(c.address)}</dd></div>
+      <div><dt>${T('contacts.req.name')}</dt><dd>${esc(rq.legalName)}</dd></div>
+      <div><dt>${T('contacts.req.inn')}</dt><dd>${rq.inn ? esc(rq.inn) : tbd}</dd></div>
+      <div><dt>${T('contacts.req.kpp')}</dt><dd>${rq.kpp ? esc(rq.kpp) : tbd}</dd></div>
+      <div><dt>${T('contacts.req.ogrn')}</dt><dd>${rq.ogrn ? esc(rq.ogrn) : tbd}</dd></div>
+      <div><dt>${T('contacts.req.legal')}</dt><dd>${rq.legalAddress ? esc(rq.legalAddress) : tbd}</dd></div>
+      <div><dt>${T('contacts.req.fact')}</dt><dd>${esc(c.address)}</dd></div>
     </dl>
     <p class="cp-note">${esc(rq.note)}</p>
   </div></section>

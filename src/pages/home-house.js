@@ -6,6 +6,7 @@ const S = require('../../js/shared.js');
 const {esc, I} = S;
 const magSpreads = require('./mag-spreads.js');
 const {nicheCardMaker} = require('./brands.js');
+const {T} = require('../texts.js');
 
 module.exports = function homeHouse(ctx, C, P, deps) {
   const rd = ctx.redesign, H = rd.house, content = ctx.content, h = content.home, site = ctx.site, brands = ctx.brands, tasks = ctx.tasks;
@@ -48,7 +49,7 @@ module.exports = function homeHouse(ctx, C, P, deps) {
       return {head: tr.title, text: tr.sub + '.', extra: next ? `<p class="mg-next"><b>${d.d} ${d.m}</b><span>${esc(next.title)}<em>${esc(next.fmt)} · ${esc(next.city)}</em></span></p>` : `<p class="mg-next"><span>${esc(tr.emptyNote)}</span></p>`};
     },
     partners: () => ({head: R.title, text: R.lead, extra: lines((rd.audience.items || []).map(a => a.title))}),
-    editorial: () => ({head: 'Новости и события Астрея', text: '', extra: `<ul class="mg-news">${ctx.news.slice(0, 3).map(n => `<li><time datetime="${n.date}">${esc(S.dparts(n.date).full)}</time><span>${esc(n.title)}</span></li>`).join('')}</ul>`})
+    editorial: () => ({head: T('home.news.s5'), text: '', extra: `<ul class="mg-news">${ctx.news.slice(0, 3).map(n => `<li><time datetime="${n.date}">${esc(S.dparts(n.date).full)}</time><span>${esc(n.title)}</span></li>`).join('')}</ul>`})
   };
   const leftPhoto = {
     about: () => pimg('about'), brands: () => `<img src="${C.u(P, 'assets/brands/hero.webp')}" alt="" loading="lazy" decoding="async">`, finder: () => pimg('hero'),
@@ -69,7 +70,7 @@ module.exports = function homeHouse(ctx, C, P, deps) {
   const pContactsL = n => `<div class="pg pg-l pg-ph pg-cont-l"><div class="mg-ph"><ul class="mg-cities">${offices.map(o => `<li><b>${esc(o.city)}</b><span>${esc(o.role)}</span></li>`).join('')}</ul></div><p class="mg-kick">${esc(mc.contactsTitle)}</p>${foot(n, 'l')}</div>`;
   const pContactsR = n => `<div class="pg pg-r pg-tx pg-cont-r">${run}<p class="mg-kick">${esc(mc.contactsTitle)}</p><h3 class="mg-h">${esc(site.legalName)}</h3>
     <ul class="mg-contacts"><li><a href="tel:${site.contacts.phoneRaw}" data-track="phone_click">${esc(site.contacts.phone)}</a></li><li><a href="mailto:${site.contacts.email}" data-track="email_click">${esc(site.contacts.email)}</a></li><li>${esc(site.contacts.address)}</li><li>${esc(site.contacts.hours)}</li></ul>
-    <div class="mg-act"><a class="btn btn-fill btn-sm" href="${C.u(P, 'partners.html')}" data-track="partner_cta" data-place="magazine">Стать партнёром ${I.arrow}</a><a class="mg-deep" href="${C.u(P, 'catalog.html')}" data-track="catalog_click" data-place="magazine">Каталог ${I.arrow}</a></div>${foot(n, 'r')}</div>`;
+    <div class="mg-act"><a class="btn btn-fill btn-sm" href="${C.u(P, 'partners.html')}" data-track="partner_cta" data-place="magazine">${T('home.hero.a2')} ${I.arrow}</a><a class="mg-deep" href="${C.u(P, 'catalog.html')}" data-track="catalog_click" data-place="magazine">${T('home.catalog.s')} ${I.arrow}</a></div>${foot(n, 'r')}</div>`;
   const pBack = `<div class="pg pg-l pg-back"><p class="mg-colophon">${esc(site.legalName)} · ${esc(site.tagline)}</p>${logoSvg}</div>`;
   /* развороты 4–21: заголовки и подписи — data/redesign.json → house.mag.pages, тексты и данные — из data/*.json (src/pages/mag-spreads.js); у каждой комнаты свои левая и правая страницы */
   const SP = magSpreads(ctx, C, P, {rd, H, content, site, brands, tasks, products: ctx.products, events, pimg, foot, run, href, pc, ab, nicheCard: nicheCardMaker(ctx, C, P), mc, logoSvg});
@@ -86,8 +87,8 @@ module.exports = function homeHouse(ctx, C, P, deps) {
   };
   const decR = (html, k) => {
     const t = toSec[k], nx = toSec[k + 1], nxBtn = nx
-      ? `<button class="pg-nx" type="button" data-mag-page="${k + 3}" data-track="house_magazine_next" data-room="${nx.id}">${esc(CH.next || 'Дальше')} · ${esc(nx.short)} ${arrowI}</button>`
-      : `<button class="pg-nx pg-nx-toc" type="button" data-mag-page="1" data-track="house_magazine_next" data-room="toc">${esc(CH.toc || 'К оглавлению')} ${arrowI}</button>`;
+      ? `<button class="pg-nx" type="button" data-mag-page="${k + 3}" data-track="house_magazine_next" data-room="${nx.id}">${esc(CH.next || T('home.mag.s'))} · ${esc(nx.short)} ${arrowI}</button>`
+      : `<button class="pg-nx pg-nx-toc" type="button" data-mag-page="1" data-track="house_magazine_next" data-room="toc">${esc(CH.toc || T('home.mag.s2'))} ${arrowI}</button>`;
     return html.replace(/^<div class="pg /, `<div data-sec="${esc(t.href)}" class="pg `).replace(/(<footer class="pg-f r"><span>ASTREYA<\/span>)/, '$1' + nxBtn);
   };
   const pagesR = [pCover, pToc, ...rooms.map((r, i) => decR(pageR(r, (i + 1) * 2 + 3), i)), decR(SP.contacts.R((rooms.length + 1) * 2 + 3), rooms.length)];
@@ -100,7 +101,7 @@ module.exports = function homeHouse(ctx, C, P, deps) {
     <div class="mag-wrap">
       <div class="mag-bar"><p class="mag-st" aria-live="polite"></p></div>
       <div class="mag-book" tabindex="-1"><div class="mag-spine" aria-hidden="true"></div><div class="leaves">${leaves}<i class="mag-sh r" aria-hidden="true"></i><i class="mag-sh l" aria-hidden="true"></i></div><i class="mag-dim" aria-hidden="true"></i></div>
-      <div class="mag-ctl"><button class="mag-pv" type="button" data-mag-step="-1">${I.arrow}<span>${esc(mc.prevLabel)}</span></button><button class="mag-hm" type="button" data-mag-home aria-label="${esc(mc.homeLabel || 'На главную')}">${I.arrow}<span>${esc(mc.homeLabel || 'На главную')}</span></button><button class="mag-nx" type="button" data-mag-step="1"><span>${esc(mc.nextLabel)}</span>${I.arrow}</button></div>
+      <div class="mag-ctl"><button class="mag-pv" type="button" data-mag-step="-1">${I.arrow}<span>${esc(mc.prevLabel)}</span></button><button class="mag-hm" type="button" data-mag-home aria-label="${esc(mc.homeLabel || T('home.mag.s3'))}">${I.arrow}<span>${esc(mc.homeLabel || T('home.mag.s3'))}</span></button><button class="mag-nx" type="button" data-mag-step="1"><span>${esc(mc.nextLabel)}</span>${I.arrow}</button></div>
     </div>
   </div>`;
 
@@ -113,18 +114,18 @@ module.exports = function homeHouse(ctx, C, P, deps) {
   const fm = fy && fy.mobile && fy.mobile.enabled ? fy.mobile : null;          // пролёт для телефона: портретные ключи, глубина, дорожка (tools/jar-render/phone_fly_render.sh, apply_fly_m.py)
   const flyAttrs = fy ? ` data-fly data-fly-f="${fy.F}" data-fly-rect="${esc(JSON.stringify(fy.rect))}"${fy.book ? ` data-fly-book="${esc(JSON.stringify(fy.book))}"` : ''}${fy.bake ? ' data-fly-bake' : ''} data-n="${fy.n}" data-ext="${fy.ext}" data-v="${esc(ctx.assetVersion || '')}" data-d="${fy.dir}" data-zd="${fy.depth}" data-zx="${(ar.depth || {}).ext || 'webp'}" data-cam="${fy.cam}" data-lbl="${ar.label}" ${st ? `data-sa="${st.a}" data-sn="${st.n}" ` : ''}data-ink="${ar.ink}" data-p="${fy.p.join(',')}" data-jd="${fy.jar}" data-jx="${(ar.jar || {}).ext || 'webp'}" data-jr="${esc(JSON.stringify(fy.rects))}"${fm ? ` data-m="${fm.dir}" data-zm="${fm.depth}" data-camm="${fm.cam}" data-jm="${fm.jar}" data-jrm="${esc(JSON.stringify(fm.rects))}" data-pm="${fm.p.join(',')}" data-fly-rect-m="${esc(JSON.stringify(fm.rect))}"${fm.clean ? ` data-fly-clean="${esc(fm.clean)}"` : ''}${fm.book ? ` data-fly-book-m="${esc(JSON.stringify(fm.book))}"` : ''}` : ''}` : '';
   const flyMark = fy ? `<div class="hr-fly" aria-hidden="true"><canvas class="js-cv"></canvas><div class="ar-world"><canvas class="ar-jar-cv"></canvas></div></div>` : '';
-  const reader = `<section class="house-reader${fy ? ' jar-story' : ''}" id="house-reader" aria-label="${esc(mc.readerLabel || 'Журнал ASTREYA: листайте прокруткой')}"${flyAttrs || ` data-n="${pagesR.length}"`} style="--hrh:${(H.reader || {}).heightVh || 560}vh;--hrhm:${(H.reader || {}).heightVhMobile || 190}vh;--tx:${tb.d[0]};--ty:${tb.d[1]};--txm:${tb.m[0]};--tym:${tb.m[1]}">
+  const reader = `<section class="house-reader${fy ? ' jar-story' : ''}" id="house-reader" aria-label="${esc(mc.readerLabel || T('home.mag.s4'))}"${flyAttrs || ` data-n="${pagesR.length}"`} style="--hrh:${(H.reader || {}).heightVh || 560}vh;--hrhm:${(H.reader || {}).heightVhMobile || 190}vh;--tx:${tb.d[0]};--ty:${tb.d[1]};--txm:${tb.m[0]};--tym:${tb.m[1]}">
     <div class="hr-stage">
       <picture class="hr-bg" aria-hidden="true"><source media="(max-aspect-ratio: 11/10)" srcset="${C.u(P, pst.mobile || 'assets/house-hall/poster-m.webp')}"><img src="${C.u(P, pst.desktop || 'assets/house-hall/poster-d.webp')}" alt="" width="1920" height="1080" decoding="async" loading="lazy"></picture>
       ${flyMark}
       <div class="hr-veil" aria-hidden="true"></div>
-      <a class="hr-skip" href="#house-end" data-track="house_reader_skip">${esc((H.reader || {}).skip || 'К контактам')} ${I.arrow}</a>
+      <a class="hr-skip" href="#house-end" data-track="house_reader_skip">${esc((H.reader || {}).skip || T('home.mag.s5'))} ${I.arrow}</a>
       ${magazine}
     </div>
   </section>`;
 
   /* вместо панели «Почему выбирают Астрею?» внизу зала — подсказка: она же кнопка, по клику сцена сама плавно летит к журналу */
-  const cueTxt = (H.reader || {}).cue || 'Листайте ниже — откроется журнал';
+  const cueTxt = (H.reader || {}).cue || T('home.mag.s6');
   const hallCue = `<p class="hs-cue"><span>${esc(cueTxt)}</span><i aria-hidden="true"></i></p>`;          // подсказка — текст, не кнопка: журнал открывается только прокруткой
 
   return {
