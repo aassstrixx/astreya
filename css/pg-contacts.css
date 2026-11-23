@@ -6,7 +6,7 @@
 
 .cp{--cp-ink:#16223e;--cp-navy:#0b1a33;--cp-bg:#f5f0e4;--cp-bg2:#efe5d0;--cp-line:rgba(120,84,40,.17);--cp-mut:#5f574a;--cp-gold:#b08e4e;--cp-ease:cubic-bezier(.22,.8,.2,1);
   --cp-g:clamp(18px,5.9vw,120px);--f-h1:clamp(38px,4.5vw,88px);--f-h2:clamp(27px,2.6vw,50px);--f-h3:clamp(18px,1.4vw,26px);--f-b:clamp(15px,1.06vw,20px);--f-s:clamp(13.5px,.92vw,17.5px);--f-xs:clamp(11.5px,.78vw,15px);
-  --cp-trav:url(../assets/showroom/pg-travertine.webp?v=7b3b65a2);
+  --cp-trav:url(../assets/showroom/pg-travertine.webp?v=7eb04136);
   position:relative;margin-top:calc(var(--hdr,84px) * -1);background:var(--cp-bg);color:var(--cp-ink);overflow:clip}
 .cp-in{width:calc(100% - 2 * var(--cp-g));max-width:1800px;margin-inline:auto}
 .cp-eyebrow{display:inline-flex;align-items:center;gap:14px;font:700 var(--f-xs)/1 var(--sans);letter-spacing:.3em;text-transform:uppercase;color:var(--cp-ink)}
@@ -27,7 +27,7 @@ body[data-page="contacts"] .nav a.nl:hover,body[data-page="contacts"] .nav a.nl.
 body[data-page="contacts"] .nav a.nl.on{border-bottom-color:#101f37}
 
 /* ---------- масштаб страницы: без гигантизма ---------- */
-.cp{--cp-g:clamp(18px,5vw,96px);--f-h1:clamp(30px,3.2vw,56px);--f-h2:clamp(22px,1.9vw,34px);--f-h3:clamp(16px,1.15vw,21px);--f-b:clamp(14px,.98vw,17px);--f-s:clamp(13px,.84vw,15px);--f-xs:clamp(10.5px,.68vw,12px)}
+.cp{--cp-rv:opacity .85s var(--ease) var(--rd,0ms),translate .85s var(--ease) var(--rd,0ms);--cp-g:clamp(18px,5vw,96px);--f-h1:clamp(30px,3.2vw,56px);--f-h2:clamp(22px,1.9vw,34px);--f-h3:clamp(16px,1.15vw,21px);--f-b:clamp(14px,.98vw,17px);--f-s:clamp(13px,.84vw,15px);--f-xs:clamp(10.5px,.68vw,12px)}
 .cp-in{max-width:1480px}
 
 /* ---------- 0 · первый экран: целая сцена на фоне ---------- */
@@ -56,7 +56,7 @@ body[data-page="contacts"] .nav a.nl.on{border-bottom-color:#101f37}
 /* ---------- 01 · темы обращений ---------- */
 .cp-tiles{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:clamp(10px,1.1vw,18px)}
 .cp-tile{position:relative;display:grid;grid-template-columns:auto 1fr;gap:6px clamp(10px,1vw,16px);align-items:center;padding:clamp(14px,1.3vw,22px);border-radius:clamp(14px,1.2vw,20px);border:1px solid rgba(120,84,40,.2);text-decoration:none;color:inherit;
-  background:linear-gradient(135deg,rgba(255,255,255,.7),rgba(255,255,255,0) 55%,rgba(120,84,40,.06)),linear-gradient(rgba(240,230,208,.5),rgba(240,230,208,.5)),var(--cp-trav) 0 0/300px,#efe5cf;box-shadow:inset 0 1px 0 #fff,0 2px 3px rgba(86,60,30,.1),0 22px 30px -24px rgba(86,60,30,.55);transition:transform .5s var(--cp-ease),box-shadow .5s var(--cp-ease)}
+  background:linear-gradient(135deg,rgba(255,255,255,.7),rgba(255,255,255,0) 55%,rgba(120,84,40,.06)),linear-gradient(rgba(240,230,208,.5),rgba(240,230,208,.5)),var(--cp-trav) 0 0/300px,#efe5cf;box-shadow:inset 0 1px 0 #fff,0 2px 3px rgba(86,60,30,.1),0 22px 30px -24px rgba(86,60,30,.55);transition:var(--cp-rv),transform .5s var(--cp-ease),box-shadow .5s var(--cp-ease)}
 .cp-tic{grid-row:1/3;display:grid;place-items:center;width:clamp(38px,2.8vw,48px);height:clamp(38px,2.8vw,48px);border-radius:12px;color:#8a6c33;background:rgba(255,252,244,.8);border:1px solid rgba(176,142,78,.5)}
 .cp-tic svg{width:50%;height:50%;fill:none;stroke:currentColor;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
 .cp-tile b{font:400 var(--f-h3)/1.2 var(--serif);color:var(--cp-navy)}
@@ -75,7 +75,7 @@ body[data-page="contacts"] .nav a.nl.on{border-bottom-color:#101f37}
 .cp-photo figcaption span{font:500 var(--f-s)/1.3 var(--sans);color:var(--cp-mut)}
 .cp .cp-keys{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:clamp(8px,.9vw,14px);border:0}
 .cp-key{position:relative;display:grid;grid-template-columns:auto minmax(0,1fr);grid-template-areas:"i t" "i v" "i s";column-gap:clamp(10px,1vw,16px);row-gap:2px;align-items:center;padding:clamp(12px,1.1vw,18px) clamp(14px,1.3vw,22px);border-radius:clamp(12px,1.1vw,18px);border:1px solid rgba(120,84,40,.18);
-  background:linear-gradient(135deg,rgba(255,255,255,.66),rgba(255,255,255,0) 55%),rgba(250,245,232,.7);box-shadow:inset 0 1px 0 #fff,0 14px 22px -20px rgba(86,60,30,.5);transition:transform .5s var(--cp-ease),box-shadow .5s var(--cp-ease)}
+  background:linear-gradient(135deg,rgba(255,255,255,.66),rgba(255,255,255,0) 55%),rgba(250,245,232,.7);box-shadow:inset 0 1px 0 #fff,0 14px 22px -20px rgba(86,60,30,.5);transition:var(--cp-rv),transform .5s var(--cp-ease),box-shadow .5s var(--cp-ease)}
 .cp-kn{display:none}
 .cp-kic{grid-area:i;display:grid;place-items:center;width:clamp(34px,2.5vw,44px);height:clamp(34px,2.5vw,44px);border-radius:50%;border:1px solid rgba(176,142,78,.6);color:#8a6c33;background:rgba(255,252,244,.72)}
 .cp-kic svg{width:46%;height:46%;fill:none;stroke:currentColor;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
@@ -118,7 +118,7 @@ body[data-page="contacts"] .nav a.nl.on{border-bottom-color:#101f37}
 
 .cp-offices{display:grid;gap:clamp(8px,.8vw,12px)}
 .cp-office{border-radius:clamp(12px,1.1vw,18px);border:1px solid rgba(120,84,40,.2);background:linear-gradient(135deg,rgba(255,255,255,.7),rgba(255,255,255,0) 54%,rgba(120,84,40,.05)),#f6efde;
-  box-shadow:inset 0 1px 0 #fff,0 2px 3px rgba(86,60,30,.1),0 20px 28px -24px rgba(86,60,30,.55);transition:box-shadow .6s var(--cp-ease),border-color .4s}
+  box-shadow:inset 0 1px 0 #fff,0 2px 3px rgba(86,60,30,.1),0 20px 28px -24px rgba(86,60,30,.55);transition:var(--cp-rv),transform .5s var(--cp-ease),box-shadow .6s var(--cp-ease),border-color .4s}
 .cp-office.is-on{border-color:rgba(11,26,51,.42);box-shadow:inset 0 1px 0 #fff,0 2px 3px rgba(86,60,30,.12),0 28px 36px -24px rgba(11,26,51,.45)}
 .cp-oh{margin:0}
 .cp-ob-t{display:grid;grid-template-columns:auto minmax(0,1fr) auto;grid-template-areas:"n c v" "n r v";column-gap:clamp(10px,1vw,16px);row-gap:2px;align-items:center;width:100%;min-height:52px;padding:clamp(10px,1vw,16px) clamp(14px,1.3vw,22px);border:0;background:none;text-align:left;cursor:pointer;font:inherit;color:inherit}
@@ -156,7 +156,7 @@ body[data-page="contacts"] .nav a.nl.on{border-bottom-color:#101f37}
 
 /* ---------- 05 · форма на тёмной плите с мягкими краями ---------- */
 .cp-write{padding:clamp(54px,6vw,110px) 0!important;background:linear-gradient(180deg,rgba(245,240,228,0) 0,#16294f 90px,#0e2147 55%,#13264c calc(100% - 90px),rgba(245,240,228,0) 100%);color:#f3ecdc;overflow:hidden}
-.cp-write::before{content:"";position:absolute;inset:0;background:url(../assets/bg/silk.webp?v=7b3b65a2) 100% 0/60% auto no-repeat;opacity:.1;mix-blend-mode:screen;pointer-events:none}
+.cp-write::before{content:"";position:absolute;inset:0;background:url(../assets/bg/silk.webp?v=7eb04136) 100% 0/60% auto no-repeat;opacity:.1;mix-blend-mode:screen;pointer-events:none}
 .cp-write-in{position:relative;display:grid;grid-template-columns:minmax(0,.8fr) minmax(0,1.3fr);gap:clamp(20px,4vw,76px);align-items:start}
 .cp-write .cp-eyebrow,.cp-write h2{color:#f6efdd}
 .cp-write .cp-num{border-color:rgba(218,186,120,.8);color:#e7cf98;background:rgba(255,255,255,.06)}
@@ -226,6 +226,34 @@ body[data-page="contacts"] .nav a.nl.on{border-bottom-color:#101f37}
   .cp *,.cp *::before,.cp *::after{transition-duration:.01ms!important}
 }
 html.lite .cp-photo figcaption{backdrop-filter:none;-webkit-backdrop-filter:none;background:rgba(255,252,246,.94)}
+
+/* ---------- движение (тот же язык, что на остальных страницах: проявление .reveal, слова заголовков из-под маски, линия у надписи, счётчики, параллакс) ---------- */
+.js .cp-eyebrow::before{transform:scaleX(0);transform-origin:0 50%;transition:transform 1.1s var(--ease-out,var(--ease))}
+.js .cp-eyebrow.in::before{transform:none}
+.cp-scene img{height:116%;top:-8%;will-change:transform}
+@keyframes cpDrift{from{scale:1.06}to{scale:1}}
+.cp-scene img{animation:cpDrift 2.6s var(--ease-out,ease) both}
+.cp-photo img,.cp-how-ph img,.cp-duo img{transition:transform 1.1s var(--ease-out,var(--ease))}
+.cp-photo,.cp-how-ph{overflow:hidden}
+.cp-tic,.cp-kic{transition:transform .5s var(--cp-ease),background-color .4s}
+@media (hover:hover) and (pointer:fine){
+  .cp-photo:hover img,.cp-how-ph:hover img{transform:scale(1.045)}
+  .cp-duo img:hover{transform:scale(1.03)}
+  .cp-tile:hover .cp-tic,.cp-key.is-link:hover .cp-kic{transform:translateY(-2px) scale(1.06)}
+  .cp-office:not(.is-on):hover{transform:translateX(3px)}
+  .cp-ledger>div{transition:padding-left .45s var(--cp-ease)}
+  .cp-ledger>div:hover{padding-left:8px}
+}
+/* карта: метки «вырастают» по очереди, подписи и маршруты проявляются, когда карта показана */
+.js .cp-relief:not(.in) .cp-pin i{transform:scale(0)}
+.js .cp-relief.in .cp-pin i{transition:transform .8s cubic-bezier(.3,.7,.3,1) calc(.35s + var(--n,0) * .14s)}
+.js .cp-relief.in .cp-pin.is-on i{transform:scale(1.25)}
+.js .cp-relief:not(.in) .cp-pin span{opacity:0;transform:translate(-8px,-50%)}
+.js .cp-relief.in .cp-pin span{transition:opacity .6s ease calc(.6s + var(--n,0) * .14s),transform .6s var(--ease) calc(.6s + var(--n,0) * .14s),background-color .35s,color .35s,border-color .35s}
+.js .cp-relief:not(.in) .cp-svg{opacity:0}
+.js .cp-relief.in .cp-svg{transition:opacity 1.2s ease .5s}
+html.lite .cp-scene img{animation:none}
+html.lite .cp-relief .cp-pin i,html.lite .cp-relief .cp-pin span{transition:none!important}
 
 /* фоновые текстуры (общая система backdrops): обёртка прозрачна, цвет страницы лежит на #main, текстурные полосы лежат над ним и под содержимым */
 .cp{background:transparent}

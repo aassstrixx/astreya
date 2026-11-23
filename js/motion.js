@@ -189,7 +189,7 @@
     walk(el);
     el.classList.remove('reveal'); el.classList.add('split');
   }
-  const splitAll = root => $$('h1:not(.b-title):not([data-nosplit]), .sec-head h2, .promo h2, .feat h2, .cta-band h2', root).forEach(el => { if (!el.classList.contains('split')) splitWords(el); });
+  const splitAll = root => $$('h1:not(.b-title):not([data-nosplit]), .sec-head h2, .promo h2, .feat h2, .cta-band h2, .cp-head h2', root).forEach(el => { if (!el.classList.contains('split')) splitWords(el); });
 
   /* ---------- появление блоков и счётчики ---------- */
   let io = null, revealTok = 0;
@@ -207,7 +207,7 @@
     if (io) io.disconnect();
     /* титул бренда «проявляется» шторкой (clip-path) — IntersectionObserver такой элемент не видит, поэтому открываем его сами */
     $$('.b-title.reveal:not(.in)', root).forEach(el => requestAnimationFrame(() => { el.style.setProperty('--rd', '120ms'); el.classList.add('in'); }));
-    const targets = $$('.reveal:not(.in):not(.b-title), .split:not(.in), .eyebrow:not(.in), hr.dash:not(.in), [data-count]:not([data-run])', root);
+    const targets = $$('.reveal:not(.in):not(.b-title), .split:not(.in), .eyebrow:not(.in), .cp-eyebrow:not(.in), hr.dash:not(.in), [data-count]:not([data-run])', root);
     const show = (el, i) => {
       if (el.hasAttribute('data-count')) { runCounter(el); return; }
       if (el.classList.contains('reveal')) el.style.setProperty('--rd', Math.min(i, 8) * 90 + 'ms');

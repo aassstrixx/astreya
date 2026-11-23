@@ -50,10 +50,10 @@ module.exports = function contacts(ctx, C, P) {
   const topics = [
     {ic: I.box, t: 'Подбор продукции', p: 'Каталог брендов и линий для кабинета и домашнего ухода', h: u('catalog.html')},
     {ic: I.book, t: 'Обучение и семинары', p: 'Расписание семинаров учебного центра, онлайн и в городах', h: u('training.html')},
-    {ic: I.percent, t: 'Партнёрство и закупки', p: maxPct ? `Условия сотрудничества и скидка за объём до ${maxPct}%` : 'Условия сотрудничества и скидка за объём', h: u('partners.html')},
+    {ic: I.percent, t: 'Партнёрство и закупки', p: maxPct ? `Условия сотрудничества и скидка за объём до <span data-count="${maxPct}">${maxPct}</span>%` : 'Условия сотрудничества и скидка за объём', h: u('partners.html')},
     {ic: I.doc, t: 'Документы и реквизиты', p: 'ИНН, ОГРН, юридический и фактический адрес', h: '#cp-req'}
   ];
-  const how = `<div class="cp-how">
+  const how = `<div class="cp-how reveal">
       <div class="cp-how-in">
         <span class="cp-eyebrow">Как добраться</span>
         <h2>Центральный офис в Москве</h2>
@@ -70,7 +70,7 @@ module.exports = function contacts(ctx, C, P) {
 
   return `<div class="cp" data-cp>
   <section class="cp-hero">
-    <div class="cp-scene" aria-hidden="true"><img src="${u('assets/utility/arches.webp')}" alt="" width="1920" height="1080" fetchpriority="high" decoding="async"><i class="cp-veil"></i></div>
+    <div class="cp-scene" aria-hidden="true"><img src="${u('assets/utility/arches.webp')}" alt="" width="1920" height="1080" fetchpriority="high" decoding="async" data-par="-.05"><i class="cp-veil"></i></div>
     <div class="cp-in cp-hero-in">
       <header class="page-head cp-copy">
         <span class="cp-eyebrow">Контакты</span>
@@ -82,12 +82,12 @@ module.exports = function contacts(ctx, C, P) {
   </section>
 
   <section class="cp-sec cp-topics" id="cp-topics"><div class="cp-in">
-    <header class="cp-head"><span class="cp-num">${no2(0)}</span><div><span class="cp-eyebrow">С чем к нам обращаются</span><h2>Выберите тему</h2></div></header>
+    <header class="cp-head reveal"><span class="cp-num">${no2(0)}</span><div><span class="cp-eyebrow">С чем к нам обращаются</span><h2>Выберите тему</h2></div></header>
     <div class="cp-tiles">${topics.map(t => `<a class="cp-tile reveal" href="${t.h}" data-track="contacts_topic"><span class="cp-tic">${t.ic}</span><b>${t.t}</b><p>${t.p}</p><i class="cp-tgo">${I.arrow}</i></a>`).join('')}</div>
   </div></section>
 
   <section class="cp-sec cp-ways" id="cp-ways"><div class="cp-in">
-    <header class="cp-head"><span class="cp-num">${no2(1)}</span><div><span class="cp-eyebrow">Способы связи</span><h2>Как с нами связаться</h2></div></header>
+    <header class="cp-head reveal"><span class="cp-num">${no2(1)}</span><div><span class="cp-eyebrow">Способы связи</span><h2>Как с нами связаться</h2></div></header>
     <div class="cp-ways-grid">
       ${team}
       <div class="contact-cards cp-keys cp-n${keys.length}"><h2 class="sr">Способы связи</h2>${keys.map((k, i) => `<article class="ccard cp-key${k.link ? ' is-link' : ''} reveal"><i class="cp-kn">${no(i)}</i><span class="cp-kic">${k.ic}</span><h3>${k.t}</h3><p class="cv">${k.v}</p><p class="cp-ks">${k.s}</p></article>`).join('')}</div>
@@ -95,9 +95,9 @@ module.exports = function contacts(ctx, C, P) {
   </div></section>
 
   <section class="cp-sec cp-map" id="offices"><div class="cp-in">
-    <header class="cp-head"><span class="cp-num">${no2(2)}</span><div><span class="cp-eyebrow">Представительства</span><h2>Мы на карте России</h2></div></header>
+    <header class="cp-head reveal"><span class="cp-num">${no2(2)}</span><div><span class="cp-eyebrow">Представительства</span><h2>Мы на карте России</h2></div></header>
     <div class="cp-atlas">
-      <div class="cp-offices" data-cp-offices>${offs.map((o, i) => `<article class="cp-office" id="office-${slug(o.city)}" data-city="${esc(o.city)}">
+      <div class="cp-offices" data-cp-offices>${offs.map((o, i) => `<article class="cp-office reveal" id="office-${slug(o.city)}" data-city="${esc(o.city)}">
         <h3 class="cp-oh"><button class="cp-ob-t" type="button" aria-expanded="true" aria-controls="ob-${slug(o.city)}"><i>${no(i)}</i><b>${esc(o.city)}</b><span>${esc(o.role)}</span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></button></h3>
         <div class="cp-ob" id="ob-${slug(o.city)}"><div class="cp-obi">
           <div class="cp-li">${I.pin}<span>${esc(o.addr)}</span></div>
@@ -113,7 +113,7 @@ module.exports = function contacts(ctx, C, P) {
           <svg class="cp-svg" viewBox="0 0 ${WIN.w} ${WIN.h}" preserveAspectRatio="none" aria-hidden="true" focusable="false">
             ${hub ? pins.filter(x => x !== hub).map(x => `<path class="cp-rt" data-city="${esc(x.o.city)}" d="${curve(hub.p, x.p)}"/>`).join('') : ''}
           </svg>
-          ${pins.map(({o, i, p}) => `<button class="cp-pin${o === (hub && hub.o) ? ' is-hub' : ''}" type="button" data-city="${esc(o.city)}" data-side="r" style="--x:${p.x.toFixed(4)};--y:${p.y.toFixed(4)}" aria-controls="office-${slug(o.city)}" aria-label="${esc(o.city)} — ${esc(o.role)}"><i aria-hidden="true"></i><span>${esc(o.city)}</span></button>`).join('')}
+          ${pins.map(({o, i, p}, n) => `<button class="cp-pin${o === (hub && hub.o) ? ' is-hub' : ''}" type="button" data-city="${esc(o.city)}" data-side="r" style="--x:${p.x.toFixed(4)};--y:${p.y.toFixed(4)};--n:${n}" aria-controls="office-${slug(o.city)}" aria-label="${esc(o.city)} — ${esc(o.role)}"><i aria-hidden="true"></i><span>${esc(o.city)}</span></button>`).join('')}
           <p class="cp-cap" aria-hidden="true">Запад России · карта представительств</p>
         </div>
       </div>
@@ -129,7 +129,7 @@ module.exports = function contacts(ctx, C, P) {
       <p class="cp-fast">Чтобы ответить быстрее, укажите:</p>
       <ul class="cp-chips"><li>что вас интересует</li><li>ваш город</li><li>примерный объём закупки</li></ul>
       ${stella}
-      <div class="cp-duo" aria-hidden="true">
+      <div class="cp-duo reveal" aria-hidden="true">
         <img src="${u('assets/news/ph-seminar-b.webp')}" alt="" width="960" height="540" loading="lazy" decoding="async">
         <img src="${u('assets/photos/photo-02b-about.webp')}" alt="" width="768" height="768" loading="lazy" decoding="async">
       </div>
@@ -138,7 +138,7 @@ module.exports = function contacts(ctx, C, P) {
   </div></section>
 
   <section class="cp-sec cp-req" id="cp-req"><div class="cp-in">
-    <header class="cp-head"><span class="cp-num">${no2(4)}</span><div><span class="cp-eyebrow">Реквизиты</span><h2>Информация о компании</h2></div></header>
+    <header class="cp-head reveal"><span class="cp-num">${no2(4)}</span><div><span class="cp-eyebrow">Реквизиты</span><h2>Информация о компании</h2></div></header>
     <dl class="cp-ledger reveal">
       <div><dt>Наименование</dt><dd>${esc(rq.legalName)}</dd></div>
       <div><dt>ИНН</dt><dd>${rq.inn ? esc(rq.inn) : tbd}</dd></div>
