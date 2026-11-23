@@ -32,7 +32,7 @@ async function status() {
   if (!C.PUBLISH_GIT) return {enabled: false, hint: 'Публикация через git выключена. Включите PUBLISH_GIT=1 на сервере (нужны git и доступ на запись в репозиторий).'};
   try {
     const [branch, remote, porcelain] = await Promise.all([git(['rev-parse', '--abbrev-ref', 'HEAD']), git(['remote', 'get-url', 'origin']).catch(() => ''), git(['status', '--porcelain', '--', ...PATHS])]);
-    const files = porcelain ? porcelain.split('\n').map(l => ({state: l.slice(0, 2).trim(), file: l.slice(3)})) : [];
+    const files = porcelain ? porcelain.split('\n').map(l => { const m = l.match(/^\s*(\S{1,2})\s+(.+)$/); return m ? {state: m[1], file: m[2].replace(/^"(.*)"$/, '$1')} : null; }).filter(Boolean) : [];          // git() обрезает пробелы: у первой строки « M файл» пропадает ведущий пробел
     const pend = readPending(), pagesBranch = String(C.env.PAGES_BRANCH || '').trim() || null;
     return {enabled: true, branch, remote: remote.replace(/\/\/[^@/]+@/, '//***@'), repo: repoOf(remote), changed: files.length, files: files.slice(0, 200),
       pending: pend ? {commit: pend.commit, at: pend.at} : null,                                                  // коммит уже сделан, но на GitHub не отправился
