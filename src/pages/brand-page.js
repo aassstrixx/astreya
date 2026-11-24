@@ -40,7 +40,7 @@ module.exports = function brandPage(ctx, C, P, b) {
      размер в сантиметрах (PACK_CM) → единый масштаб на всех полках; подпись появляется при наведении, клик ведёт на страницу товара. */
   const vbItem = (p, k) => { const src = S.packOf(p), cm = PACK_CM[p.type || 'bottle'] || 21.9;
     return `<a class="vb-item" href="${C.purl(P, p)}" style="--cm:${cm};--sar:${f1(spriteAr(src))};--k:${k}" data-track="product_click" data-place="brand-vitrine" aria-label="${esc(p.name)}"><img class="vb-pk" src="${esc(C.u(P, src))}" alt="" loading="lazy" decoding="async"><span class="vb-tag">${esc(p.name)}</span></a>`; };
-  const vbShelf = (list, k0) => { const mx = Math.max(...list.map(p => PACK_CM[p.type || 'bottle'] || 21.9)); return `<div class="vb-shelf" style="--sh:${f1(mx + 6.5)}">${list.map((p, j) => vbItem(p, k0 + j)).join('')}<i class="vb-slab" aria-hidden="true"></i></div>`; };
+  const vbShelf = (list, k0) => { const mx = Math.max(...list.map(p => PACK_CM[p.type || 'bottle'] || 21.9)); return `<div class="vb-shelf" style="--sh:${f1(mx + 14.5)}">${list.map((p, j) => vbItem(p, k0 + j)).join('')}<i class="vb-slab" aria-hidden="true"></i></div>`; };
   const cab = [...prods].sort((a, b2) => (b2.isNew ? 1 : 0) - (a.isNew ? 1 : 0)).slice(0, 9).sort((a, b2) => (PACK_CM[a.type || 'bottle'] || 21.9) - (PACK_CM[b2.type || 'bottle'] || 21.9));
   const nSh = Math.min(3, Math.max(1, Math.ceil(cab.length / 3))), per = Math.ceil(cab.length / nSh), cabShelves = [];
   for (let k = 0; k < cab.length; k += per) cabShelves.push(cab.slice(k, k + per));
