@@ -8,12 +8,12 @@
 
 /* ---------- сцена ---------- */
 .dt-stage{position:relative;isolation:isolate;margin-top:calc(var(--hdr) * -1);container-type:inline-size;--ws:1;--ax:var(--px);--ay:var(--py);background:#ece3d2}
-.dt-view{position:relative;width:100%;max-width:1680px;margin:0 auto;aspect-ratio:2880/1520;overflow:hidden}
+.dt-view{position:relative;width:100%;max-width:2880px;margin:0 auto;aspect-ratio:2880/1520;overflow:hidden}
 .dt-world{position:absolute;left:calc(var(--ax) * 100%);top:calc(var(--ay) * 100%);width:calc(var(--ws) * 100%);aspect-ratio:2880/1520;transform:translate(calc(-100% * var(--px)),calc(-100% * var(--py)))}
 .dt-world picture{display:contents}
 .dt-plate{position:absolute;inset:0;width:100%;height:100%;display:block;object-fit:cover;user-select:none;-webkit-user-drag:none}
 .dt-view::after{content:"";position:absolute;left:0;right:0;bottom:0;height:7%;z-index:3;pointer-events:none;background:linear-gradient(180deg,rgba(236,227,210,0),rgba(236,227,210,.7) 60%,#ece3d2)}
-@media (min-width:1700px){.dt-view{-webkit-mask-image:linear-gradient(90deg,transparent,#000 7%,#000 93%,transparent);mask-image:linear-gradient(90deg,transparent,#000 7%,#000 93%,transparent)}}
+@media (min-width:2900px){.dt-view{-webkit-mask-image:linear-gradient(90deg,transparent,#000 4%,#000 96%,transparent);mask-image:linear-gradient(90deg,transparent,#000 4%,#000 96%,transparent)}}
 .dt-glint{position:absolute;left:0;top:0;width:46%;aspect-ratio:1;z-index:1;pointer-events:none;border-radius:50%;background:radial-gradient(closest-side,rgba(255,238,205,.34),rgba(255,238,205,0));opacity:0;transition:opacity .6s var(--ax-ease);will-change:transform}
 .dt-stage.is-lit .dt-glint{opacity:1}
 
