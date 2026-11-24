@@ -6,7 +6,7 @@
 
 .cp{--cp-ink:#16223e;--cp-navy:#0b1a33;--cp-bg:#f5f0e4;--cp-bg2:#efe5d0;--cp-line:rgba(120,84,40,.17);--cp-mut:#5f574a;--cp-gold:#b08e4e;--cp-ease:cubic-bezier(.22,.8,.2,1);
   --cp-g:clamp(18px,5.9vw,120px);--f-h1:clamp(38px,4.5vw,88px);--f-h2:clamp(27px,2.6vw,50px);--f-h3:clamp(18px,1.4vw,26px);--f-b:clamp(15px,1.06vw,20px);--f-s:clamp(13.5px,.92vw,17.5px);--f-xs:clamp(11.5px,.78vw,15px);
-  --cp-trav:url(../assets/showroom/pg-travertine.webp?v=23f38766);
+  --cp-trav:url(../assets/showroom/pg-travertine.webp?v=49d38229);
   position:relative;margin-top:calc(var(--hdr,84px) * -1);background:var(--cp-bg);color:var(--cp-ink);overflow:clip}
 .cp-in{width:calc(100% - 2 * var(--cp-g));max-width:1800px;margin-inline:auto}
 .cp-eyebrow{display:inline-flex;align-items:center;gap:14px;font:700 var(--f-xs)/1 var(--sans);letter-spacing:.3em;text-transform:uppercase;color:var(--cp-ink)}
@@ -63,7 +63,7 @@ body[data-page="contacts"] .nav a.nl.on{border-bottom-color:#101f37}
 .cp-tile p{grid-column:2;margin:0;font:400 var(--f-s)/1.45 var(--sans);color:var(--cp-mut)}
 .cp-tgo{position:absolute;right:clamp(12px,1.1vw,18px);top:clamp(12px,1.1vw,18px);width:1.1em;height:1.1em;color:#8a6c33;opacity:.6;transition:transform .5s var(--cp-ease),opacity .4s}
 .cp-tgo svg{width:100%;height:100%;fill:none;stroke:currentColor;stroke-width:1.8}
-.cp-tile:focus-visible{outline:3px solid rgba(47,91,214,.6);outline-offset:3px}
+.cp-tile:focus-visible{outline:3px solid rgba(26,46,82,.6);outline-offset:3px}
 @media (hover:hover) and (pointer:fine){.cp-tile:hover{transform:translate3d(0,-4px,0);box-shadow:inset 0 1px 0 #fff,0 2px 3px rgba(86,60,30,.12),0 30px 36px -24px rgba(86,60,30,.6)}.cp-tile:hover .cp-tgo{transform:translate(3px,-3px);opacity:1}}
 
 /* ---------- 02 · способы связи ---------- */
@@ -84,7 +84,7 @@ body[data-page="contacts"] .nav a.nl.on{border-bottom-color:#101f37}
 .cp-key .cv a{color:inherit;text-decoration:none;background:linear-gradient(currentColor,currentColor) 0 100%/0 1px no-repeat;transition:background-size .5s var(--cp-ease)}
 .cp-key.is-link .cv a::after{content:"";position:absolute;inset:0;border-radius:inherit}
 .cp-ks{grid-area:s;margin:.3em 0 0;font:500 var(--f-s)/1.35 var(--sans);color:var(--cp-mut)}
-.cp-key .cv a:focus-visible::after{outline:3px solid rgba(47,91,214,.6);outline-offset:-3px}
+.cp-key .cv a:focus-visible::after{outline:3px solid rgba(26,46,82,.6);outline-offset:-3px}
 @media (hover:hover) and (pointer:fine){.cp-key.is-link:hover{transform:translate3d(0,-3px,0);box-shadow:inset 0 1px 0 #fff,0 22px 28px -20px rgba(86,60,30,.6)}.cp-key.is-link:hover .cv a{background-size:100% 1px}}
 
 /* ---------- 03 · карта России и представительства ---------- */
@@ -113,7 +113,7 @@ body[data-page="contacts"] .nav a.nl.on{border-bottom-color:#101f37}
 .cp-pin.is-on span{background:var(--cp-navy);color:#fff;border-color:var(--cp-navy)}
 @media (hover:hover){.cp-pin:hover span{background:var(--cp-navy);color:#fff;border-color:var(--cp-navy)}}
 .cp-pin.is-hot span{background:var(--cp-navy);color:#fff;border-color:var(--cp-navy)}
-.cp-pin:focus-visible{outline:3px solid rgba(47,91,214,.6);outline-offset:-6px;border-radius:12px}
+.cp-pin:focus-visible{outline:3px solid rgba(26,46,82,.6);outline-offset:-6px;border-radius:12px}
 .cp-cap{position:absolute;z-index:6;right:clamp(14px,1.5vw,24px);bottom:clamp(14px,1.5vw,24px);margin:0;padding:.6em 1em;border-radius:99px;background:rgba(250,245,232,.9);border:1px solid rgba(120,84,40,.25);font:700 clamp(9.5px,.66vw,11.5px)/1 var(--sans);letter-spacing:.18em;text-transform:uppercase;color:#5b4a2c}
 
 .cp-offices{display:grid;gap:clamp(8px,.8vw,12px)}
@@ -127,7 +127,7 @@ body[data-page="contacts"] .nav a.nl.on{border-bottom-color:#101f37}
 .cp-ob-t span{grid-area:r;font:700 var(--f-xs)/1.2 var(--sans);letter-spacing:.14em;text-transform:uppercase;color:#6a5a3c}
 .cp-ob-t svg{grid-area:v;width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;transition:transform .5s var(--cp-ease)}
 .cp-office.is-on .cp-ob-t svg{transform:rotate(180deg)}
-.cp-ob-t:focus-visible{outline:3px solid rgba(47,91,214,.6);outline-offset:-3px}
+.cp-ob-t:focus-visible{outline:3px solid rgba(26,46,82,.6);outline-offset:-3px}
 .cp-ob{display:grid;grid-template-rows:1fr;transition:grid-template-rows .6s var(--cp-ease)}
 .cp-obi{min-height:0;overflow:hidden;padding-inline:clamp(14px,1.3vw,22px)}
 .cp-obi::after{content:"";display:block;height:clamp(12px,1.1vw,18px)}
@@ -156,7 +156,7 @@ body[data-page="contacts"] .nav a.nl.on{border-bottom-color:#101f37}
 
 /* ---------- 05 · форма на тёмной плите с мягкими краями ---------- */
 .cp-write{padding:clamp(54px,6vw,110px) 0!important;background:linear-gradient(180deg,rgba(245,240,228,0) 0,#16294f 90px,#0e2147 55%,#13264c calc(100% - 90px),rgba(245,240,228,0) 100%);color:#f3ecdc;overflow:hidden}
-.cp-write::before{content:"";position:absolute;inset:0;background:url(../assets/bg/silk.webp?v=23f38766) 100% 0/60% auto no-repeat;opacity:.1;mix-blend-mode:screen;pointer-events:none}
+.cp-write::before{content:"";position:absolute;inset:0;background:url(../assets/bg/silk.webp?v=49d38229) 100% 0/60% auto no-repeat;opacity:.1;mix-blend-mode:screen;pointer-events:none}
 .cp-write-in{position:relative;display:grid;grid-template-columns:minmax(0,.8fr) minmax(0,1.3fr);gap:clamp(20px,4vw,76px);align-items:start}
 .cp-write .cp-eyebrow,.cp-write h2{color:#f6efdd}
 .cp-write .cp-num{border-color:rgba(218,186,120,.8);color:#e7cf98;background:rgba(255,255,255,.06)}

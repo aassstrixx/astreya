@@ -10,7 +10,7 @@
 .hero-facts span{display:inline-flex;align-items:center;gap:9px}
 .hero-facts span::before{content:"";width:6px;height:6px;border-radius:50%;background:var(--blue)}
 .pearl-wrap{position:relative;width:100%;max-width:540px;aspect-ratio:1;margin-inline:auto}
-.halo{position:absolute;inset:-6%;border-radius:50%;background:radial-gradient(closest-side,rgba(47,91,214,.13),rgba(185,194,208,.14) 55%,transparent 76%)}
+.halo{position:absolute;inset:-6%;border-radius:50%;background:radial-gradient(closest-side,rgba(26,46,82,.13),rgba(185,194,208,.14) 55%,transparent 76%)}
 .ring{position:absolute;border-radius:50%;border:1px dashed rgba(102,117,143,.55)}
 .ring.r3{inset:0;border-color:rgba(102,117,143,.32);animation:spin 90s linear infinite}
 .ring.r1{inset:6.5%;animation:spin 90s linear infinite}
@@ -21,8 +21,8 @@
 .orb img{display:block;width:calc(var(--lw,80)*var(--k,1)*1px);height:auto;filter:drop-shadow(0 0 5px rgba(255,255,255,.95)) drop-shadow(0 0 12px rgba(255,255,255,.7)) drop-shadow(0 8px 10px rgba(11,26,51,.10))}
 .pearl{position:absolute;inset:17%;border-radius:50%;animation:floaty 8s ease-in-out infinite;
   background:radial-gradient(circle at 33% 27%,#fff 0,#fdfbf7 12%,#eeeae2 34%,#cdd3de 62%,#8f9db4 100%);
-  box-shadow:inset -22px -28px 50px rgba(102,117,143,.42),inset 14px 16px 34px rgba(255,255,255,.85),0 46px 70px -34px rgba(47,91,214,.5),0 0 80px 8px rgba(185,194,208,.45)}
-.pearl::before{content:"";position:absolute;inset:0;border-radius:50%;mix-blend-mode:soft-light;background:conic-gradient(from 200deg at 55% 55%,rgba(47,91,214,0),rgba(47,91,214,.34),rgba(226,160,184,.34),rgba(150,214,198,.3),rgba(47,91,214,0) 82%)}
+  box-shadow:inset -22px -28px 50px rgba(102,117,143,.42),inset 14px 16px 34px rgba(255,255,255,.85),0 46px 70px -34px rgba(26,46,82,.5),0 0 80px 8px rgba(185,194,208,.45)}
+.pearl::before{content:"";position:absolute;inset:0;border-radius:50%;mix-blend-mode:soft-light;background:conic-gradient(from 200deg at 55% 55%,rgba(26,46,82,0),rgba(26,46,82,.34),rgba(226,160,184,.34),rgba(150,214,198,.3),rgba(26,46,82,0) 82%)}
 .pearl::after{content:"";position:absolute;left:17%;top:11%;width:30%;height:19%;border-radius:50%;background:radial-gradient(closest-side,rgba(255,255,255,.95),rgba(255,255,255,0));transform:rotate(-28deg)}
 .hero-card{position:absolute;left:0;bottom:2%;max-width:290px;background:var(--milk-2);border:1px solid var(--line-soft);border-radius:12px;padding:16px 18px;box-shadow:var(--sh)}
 .hero-card b{display:block;font:600 11px/1.35 var(--sans);letter-spacing:.12em;text-transform:uppercase}

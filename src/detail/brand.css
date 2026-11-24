@@ -162,17 +162,52 @@ html.lite .dtb-stage .dt-plaque{-webkit-backdrop-filter:none;backdrop-filter:non
    • За кадром страница не плоская: тёплая травертиновая фактура проявляется из фона, а по длине страницы лежат мягкие «пятна» цвета бренда (--c1/--c2) — разные слева и справа.
    • Карточки — тёплое матовое стекло с цветным отсветом бренда внизу вместо плоских белых плиток.
    Всё статично (градиенты и один прозрачный слой текстуры), без смешивания слоёв и анимации — прокрутка не тяжелеет. */
-.dtb-stage .dt-view::after{height:18%;background:linear-gradient(180deg,rgba(244,239,229,0) 0,rgba(244,239,229,.5) 52%,rgba(244,239,229,.9) 82%,#f4efe5 100%)}
+.dtb-stage .dt-view::after{height:18%;background:linear-gradient(180deg,rgba(240,232,211,0) 0,rgba(240,232,211,.5) 52%,rgba(240,232,211,.9) 82%,#f0e8d3 100%)}
 .dtb-stage .dt-view::before{content:"";position:absolute;left:0;right:0;top:0;height:clamp(86px,9cqw,150px);z-index:3;pointer-events:none;background:linear-gradient(180deg,rgba(240,232,216,.66),rgba(240,232,216,.28) 55%,rgba(240,232,216,0))}
 .dtb{isolation:isolate;background:
-  radial-gradient(52% 520px at 0 1040px,rgba(255,229,184,.5),transparent 72%),
+  radial-gradient(52% 520px at 0 1040px,rgba(255,226,166,.38),transparent 72%),
   radial-gradient(62% 640px at 100% 1560px,color-mix(in srgb,var(--c2) 27%,transparent),transparent 72%),
   radial-gradient(58% 600px at 0 2760px,color-mix(in srgb,var(--c1) 15%,transparent),transparent 72%),
+  radial-gradient(54% 560px at 100% 3300px,rgba(206,221,238,.3),transparent 72%),
   radial-gradient(62% 640px at 100% 3960px,color-mix(in srgb,var(--c2) 24%,transparent),transparent 72%),
-  radial-gradient(50% 540px at 0 4480px,rgba(255,226,178,.46),transparent 72%),
+  radial-gradient(50% 540px at 0 4480px,rgba(255,224,160,.34),transparent 72%),
   radial-gradient(58% 600px at 0 5160px,color-mix(in srgb,var(--c1) 13%,transparent),transparent 72%),
   radial-gradient(62% 640px at 100% 6360px,color-mix(in srgb,var(--c2) 22%,transparent),transparent 72%),
-  linear-gradient(180deg,#ece3d2 0,#f2ecdf 520px,#f5f1e8 1100px,var(--milk,#f5f2ec) 1700px)}
-.dtb .dt-tile,.dtb .sx-station{background:linear-gradient(180deg,rgba(255,253,248,.94),rgba(247,241,230,.88));border-color:rgba(176,142,78,.22);box-shadow:inset 0 1px 0 #fff,inset 0 -46px 64px -52px color-mix(in srgb,var(--c2) 26%,transparent),0 1px 2px rgba(86,60,30,.08),0 22px 38px -28px rgba(86,60,30,.34)}
-@media (max-width:1000px){.dtb-stage .dt-view::after{background:linear-gradient(180deg,rgba(242,236,224,0) 0,rgba(242,236,224,.55) 55%,#f2ece0 100%)}}
+  linear-gradient(180deg,#ece2cc 0,#efe6d1 520px,#f1e9d6 1100px,#f0e8d5 2400px,#eee5d1 100%)}
+.dtb .dt-tile,.dtb .sx-station,.dtb article.card{background:linear-gradient(180deg,rgba(255,251,241,.95),rgba(249,240,219,.9));border-color:rgba(176,142,78,.28);box-shadow:inset 0 1px 0 #fff,inset 0 -46px 64px -52px color-mix(in srgb,var(--c2) 26%,transparent),0 1px 2px rgba(86,60,30,.08),0 22px 38px -28px rgba(86,60,30,.34)}
+/* --- структура страницы: плотный ритм, тёплые цветовые полосы секций, компактные плашки --- */
+.dtb{overflow-x:clip}
+.dtb>.sec{position:relative;padding-top:clamp(30px,3.6vw,52px)!important;padding-bottom:clamp(30px,3.6vw,52px)}
+.dtb .sx-route-sec{padding-top:clamp(18px,2.2vw,32px);padding-bottom:clamp(20px,2.6vw,38px)}
+.dtb .sec-head{margin-bottom:clamp(16px,2vw,26px)}
+.dtb .sec-head h2{margin-top:12px;font-size:clamp(28px,2.7vw,38px)}
+.dtb-passport{gap:clamp(10px,1.1vw,16px)}
+.dtb-passport .dt-tile{min-height:112px;gap:8px;padding:clamp(16px,1.5vw,22px)}
+.dtb-lines{padding-bottom:clamp(30px,3.6vw,52px)}
+.dtb .vb-lines{gap:clamp(12px,1.5vw,20px)}
+/* плашка «Спросите Стеллу»: тёплая, по ширине колонки контента (раньше была холодно-белой и шире колонки) */
+.dtb aside.g-entry{max-width:min(calc(1240px - 2 * var(--gut,72px)),calc(100% - 2 * var(--gut,24px)));margin-inline:auto;background:linear-gradient(135deg,rgba(255,251,242,.96),rgba(250,241,221,.92));border-color:rgba(176,142,78,.28)}
+/* полосы секций: тёплое золото и лёгкий цвет бренда, края растушёваны — страница читается как ряд связанных «залов» */
+.dtb>.sec::after{content:"";position:absolute;z-index:-1;left:50%;width:100vw;margin-left:-50vw;top:-34px;bottom:-34px;pointer-events:none;background:linear-gradient(180deg,transparent 0,var(--sb,transparent) 26%,var(--sb,transparent) 74%,transparent 100%)}
+.dtb>.sec:nth-of-type(odd){--sb:rgba(236,216,166,.2)}
+.dtb>.sec:nth-of-type(even){--sb:color-mix(in srgb,var(--c2) 14%,rgba(240,230,205,.12))}
+/* наведение на плашки: подъём, тёплое золотое свечение рамки, блик по плашке «Пути», цифра и стрелка оживают (только translate/opacity; на касаниях и в lite — без наведения) */
+.dtb .sx-station,.dtb .dt-tile{transition:translate .55s var(--ease-out,cubic-bezier(.22,.8,.2,1)),box-shadow .55s var(--ease-out,cubic-bezier(.22,.8,.2,1)),border-color .4s ease}
+.dtb .sx-station::before{content:"";position:absolute;z-index:0;inset:0;border-radius:inherit;pointer-events:none;opacity:0;background:linear-gradient(105deg,transparent 36%,rgba(255,243,205,.85) 50%,transparent 64%) no-repeat -140% 0/280% 100%}
+.dtb .sx-st-top,.dtb .sx-st-body{position:relative;z-index:1}
+.dtb .sx-num{display:inline-block;transition:color .4s ease,translate .5s var(--ease-out,cubic-bezier(.22,.8,.2,1))}
+.dtb .sx-station .btn svg{transition:translate .45s var(--ease-out,cubic-bezier(.22,.8,.2,1))}
+.dtb .dt-tile h2::after,.dtb .dt-tile h3::after{transition:width .5s var(--ease-out,cubic-bezier(.22,.8,.2,1))}
+@media (hover:hover) and (pointer:fine){
+  .dtb .sx-station:hover,.dtb .dt-tile:hover{translate:0 -8px;border-color:rgba(176,142,78,.62);box-shadow:inset 0 1px 0 #fff,inset 0 -46px 64px -52px color-mix(in srgb,var(--c2) 34%,transparent),0 3px 6px rgba(86,60,30,.1),0 34px 46px -26px rgba(86,60,30,.5),0 0 0 4px rgba(226,194,122,.2)}
+  .dtb .sx-station:hover{border-top-color:var(--c1,#b08e4e)}
+  .dtb .sx-station:hover::before{opacity:1;background-position:140% 0;transition:background-position 1s var(--ease-out,cubic-bezier(.22,.8,.2,1)),opacity .2s ease}
+  .dtb .sx-station:hover .sx-num{color:var(--c1,#b08e4e);translate:5px 0}
+  .dtb .sx-station:hover .btn svg{translate:5px 0}
+  .dtb .dt-tile:hover h2::after,.dtb .dt-tile:hover h3::after{width:76px}
+}
+html.lite .dtb>.sec::after,html.lite .dtb .sx-station::before{display:none}
+html.lite .dtb .sx-station,html.lite .dtb .dt-tile,html.lite .dtb .sx-num,html.lite .dtb .sx-station .btn svg{transition:none}
+@media (max-width:700px){.dtb>.sec::after{top:-20px;bottom:-20px}}
+@media (max-width:1000px){.dtb-stage .dt-view::after{background:linear-gradient(180deg,rgba(239,230,209,0) 0,rgba(239,230,209,.55) 55%,#efe6d1 100%)}}
 html.lite .dtb::before{display:none}
