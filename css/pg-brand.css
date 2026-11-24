@@ -247,7 +247,7 @@ html.pg-top body[data-page="product"] .hdr,html.pg-top body[data-page="brand"] .
 .dtb .vb-lines{display:grid;gap:clamp(16px,2.2vw,30px)}
 .vb-row{--u:clamp(4.6px,.62vw,9.4px);display:grid;grid-template-columns:minmax(180px,.36fr) minmax(0,1fr);gap:clamp(14px,3vw,52px);align-items:end;padding:clamp(18px,2vw,30px) clamp(18px,2.4vw,40px) 0;border-radius:clamp(18px,1.8vw,28px);border:1px solid rgba(120,84,40,.2);
   background:linear-gradient(135deg,rgba(255,255,255,.72),rgba(255,255,255,0) 52%),linear-gradient(color-mix(in srgb,var(--c2) 15%,#f5eddc),color-mix(in srgb,var(--c2) 26%,#ebdec3));box-shadow:inset 0 1px 0 #fff,0 2px 3px rgba(86,60,30,.1),0 34px 44px -34px rgba(86,60,30,.6);overflow:hidden}
-.vb-row::before{content:"";position:absolute;inset:0;background:url(../assets/showroom/pg-travertine.webp?v=ad933d02) 0 0/300px;opacity:.26;mix-blend-mode:multiply;pointer-events:none}
+.vb-row::before{content:"";position:absolute;inset:0;background:url(../assets/showroom/pg-travertine.webp?v=df87a723) 0 0/300px;opacity:.26;mix-blend-mode:multiply;pointer-events:none}
 .vb-row{position:relative}
 .vb-row>*{position:relative}
 .vb-rh{align-self:center;padding-bottom:clamp(14px,1.6vw,26px)}

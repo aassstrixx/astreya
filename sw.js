@@ -7,7 +7,7 @@
    • всё остальное (чужие домены, запись, диапазоны, build.json, аналитика) браузер делает сам.
    Новая выкладка → новый sw.js (версия внутри меняется) → при активации старый кэш удаляется целиком. */
 'use strict';
-const V = 'ad933d02', CACHE = 'astreya-' + V, SLOW = 3500;
+const V = 'df87a723', CACHE = 'astreya-' + V, SLOW = 3500;
 
 self.addEventListener('install', () => { self.skipWaiting(); });
 self.addEventListener('activate', e => e.waitUntil((async () => {
