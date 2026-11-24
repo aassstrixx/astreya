@@ -247,7 +247,7 @@ html.pg-top body[data-page="product"] .hdr,html.pg-top body[data-page="brand"] .
 .dtb .vb-lines{display:grid;gap:clamp(16px,2.2vw,30px)}
 .vb-row{--u:clamp(4.6px,.62vw,9.4px);display:grid;grid-template-columns:minmax(180px,.36fr) minmax(0,1fr);gap:clamp(14px,3vw,52px);align-items:end;padding:clamp(18px,2vw,30px) clamp(18px,2.4vw,40px) 0;border-radius:clamp(18px,1.8vw,28px);border:1px solid rgba(120,84,40,.2);
   background:linear-gradient(135deg,rgba(255,255,255,.72),rgba(255,255,255,0) 52%),linear-gradient(color-mix(in srgb,var(--c2) 15%,#f5eddc),color-mix(in srgb,var(--c2) 26%,#ebdec3));box-shadow:inset 0 1px 0 #fff,0 2px 3px rgba(86,60,30,.1),0 34px 44px -34px rgba(86,60,30,.6);overflow:hidden}
-.vb-row::before{content:"";position:absolute;inset:0;background:url(../assets/showroom/pg-travertine.webp?v=65f0d22c) 0 0/300px;opacity:.26;mix-blend-mode:multiply;pointer-events:none}
+.vb-row::before{content:"";position:absolute;inset:0;background:url(../assets/showroom/pg-travertine.webp?v=3d973765) 0 0/300px;opacity:.26;mix-blend-mode:multiply;pointer-events:none}
 .vb-row{position:relative}
 .vb-row>*{position:relative}
 .vb-rh{align-self:center;padding-bottom:clamp(14px,1.6vw,26px)}
@@ -270,7 +270,7 @@ html.pg-top body[data-page="product"] .hdr,html.pg-top body[data-page="brand"] .
 html.lite .vb-item{transition:none}
 /* подсветка витрины цветом бренда: слой-маска stage-brand-glow.webp (белый с альфой: матовое стекло «полумесяц», ореол, линия под полкой) заливается ещё более светлым пастельным --c2 бренда (42% + белый) через multiply — полумесяц остаётся светлым, а не серым;
    светящееся стекло окрашивается, камень и упаковки остаются нейтральными; под логотипом и упаковками (z-index 1 < 2), при уменьшении движения ничего не двигается */
-.dtb-glow{position:absolute;inset:0;z-index:1;pointer-events:none;background:color-mix(in srgb,var(--c2,#e2c27a) 42%,#fff);mix-blend-mode:multiply;opacity:.72;-webkit-mask:url(../assets/detail/stage-brand-glow.webp?v=65f0d22c) 0 0/100% 100% no-repeat;mask:url(../assets/detail/stage-brand-glow.webp?v=65f0d22c) 0 0/100% 100% no-repeat}
+.dtb-glow{position:absolute;inset:0;z-index:1;pointer-events:none;background:color-mix(in srgb,var(--c2,#e2c27a) 42%,#fff);mix-blend-mode:multiply;opacity:.72;-webkit-mask:url(../assets/detail/stage-brand-glow.webp?v=3d973765) 0 0/100% 100% no-repeat;mask:url(../assets/detail/stage-brand-glow.webp?v=3d973765) 0 0/100% 100% no-repeat}
 html.lite .dtb-glow{display:none}
 
 /* ---------- табличка бренда v3: матовая стеклянная пластина с латунной рамкой ----------
@@ -312,13 +312,14 @@ html.lite .dtb-stage .dt-plaque{-webkit-backdrop-filter:none;backdrop-filter:non
 .dtb-stage .dt-view::after{height:18%;background:linear-gradient(180deg,rgba(244,239,229,0) 0,rgba(244,239,229,.5) 52%,rgba(244,239,229,.9) 82%,#f4efe5 100%)}
 .dtb-stage .dt-view::before{content:"";position:absolute;left:0;right:0;top:0;height:clamp(86px,9cqw,150px);z-index:3;pointer-events:none;background:linear-gradient(180deg,rgba(240,232,216,.66),rgba(240,232,216,.28) 55%,rgba(240,232,216,0))}
 .dtb{isolation:isolate;background:
-  radial-gradient(62% 640px at 100% 1560px,color-mix(in srgb,var(--c2) 17%,transparent),transparent 72%),
-  radial-gradient(58% 600px at 0 2760px,color-mix(in srgb,var(--c1) 8%,transparent),transparent 72%),
-  radial-gradient(62% 640px at 100% 3960px,color-mix(in srgb,var(--c2) 14%,transparent),transparent 72%),
-  radial-gradient(58% 600px at 0 5160px,color-mix(in srgb,var(--c1) 7%,transparent),transparent 72%),
-  radial-gradient(62% 640px at 100% 6360px,color-mix(in srgb,var(--c2) 13%,transparent),transparent 72%),
+  radial-gradient(52% 520px at 0 1040px,rgba(255,229,184,.5),transparent 72%),
+  radial-gradient(62% 640px at 100% 1560px,color-mix(in srgb,var(--c2) 27%,transparent),transparent 72%),
+  radial-gradient(58% 600px at 0 2760px,color-mix(in srgb,var(--c1) 15%,transparent),transparent 72%),
+  radial-gradient(62% 640px at 100% 3960px,color-mix(in srgb,var(--c2) 24%,transparent),transparent 72%),
+  radial-gradient(50% 540px at 0 4480px,rgba(255,226,178,.46),transparent 72%),
+  radial-gradient(58% 600px at 0 5160px,color-mix(in srgb,var(--c1) 13%,transparent),transparent 72%),
+  radial-gradient(62% 640px at 100% 6360px,color-mix(in srgb,var(--c2) 22%,transparent),transparent 72%),
   linear-gradient(180deg,#ece3d2 0,#f2ecdf 520px,#f5f1e8 1100px,var(--milk,#f5f2ec) 1700px)}
-.dtb::before{content:"";position:absolute;inset:0;z-index:-1;pointer-events:none;background:url(../assets/showroom/pg-travertine.webp?v=65f0d22c) 0 0/460px;opacity:.1;-webkit-mask-image:linear-gradient(180deg,transparent 0,transparent 700px,#000 1500px);mask-image:linear-gradient(180deg,transparent 0,transparent 700px,#000 1500px)}
 .dtb .dt-tile,.dtb .sx-station{background:linear-gradient(180deg,rgba(255,253,248,.94),rgba(247,241,230,.88));border-color:rgba(176,142,78,.22);box-shadow:inset 0 1px 0 #fff,inset 0 -46px 64px -52px color-mix(in srgb,var(--c2) 26%,transparent),0 1px 2px rgba(86,60,30,.08),0 22px 38px -28px rgba(86,60,30,.34)}
 @media (max-width:1000px){.dtb-stage .dt-view::after{background:linear-gradient(180deg,rgba(242,236,224,0) 0,rgba(242,236,224,.55) 55%,#f2ece0 100%)}}
 html.lite .dtb::before{display:none}

@@ -606,11 +606,118 @@
       ]},
       "catalog": {"top": {"tex": "cream", "pos": "tr"}, "mid": [{"sel": "section.shw-tasks", "tex": "cream", "pos": "c", "o": 10}, {"sel": "section.shw-dirs", "tex": "cream", "pos": "l", "o": 9}, {"sel": "section.shw-brands", "tex": "film", "pos": "l", "o": 8}], "end": {"tex": "smear", "pos": "br"}},
       "brands": {},
-      "brand": {"variants": [
-        {"top": {"tex": "smear", "pos": "tr"}, "mid": [{"sel": "section.sec", "n": 2, "tex": "silk", "pos": "l", "o": 6}], "end": {"tex": "cream", "pos": "b"}},
-        {"top": {"tex": "silk", "pos": "tr"}, "mid": [{"sel": "section.sec", "n": 2, "tex": "film", "pos": "l", "o": 6}], "end": {"tex": "smear", "pos": "br"}},
-        {"top": {"tex": "cream", "pos": "tr"}, "mid": [{"sel": "section.sec", "n": 2, "tex": "smear", "pos": "l", "o": 6}], "end": {"tex": "film", "pos": "br"}}
-      ]},
+      "brand": {
+        "variants": [
+          {
+            "mid": [
+              {
+                "sel": "section.sec",
+                "n": 0,
+                "tex": "silk",
+                "pos": "r",
+                "o": 9
+              },
+              {
+                "sel": "section.sec",
+                "n": 1,
+                "tex": "cream",
+                "pos": "l",
+                "o": 10
+              },
+              {
+                "sel": "section.sec",
+                "n": 2,
+                "tex": "film",
+                "pos": "r",
+                "o": 8
+              },
+              {
+                "sel": "section.sec",
+                "n": 3,
+                "tex": "smear",
+                "pos": "l",
+                "o": 9
+              }
+            ],
+            "end": {
+              "tex": "smear",
+              "pos": "br"
+            }
+          },
+          {
+            "mid": [
+              {
+                "sel": "section.sec",
+                "n": 0,
+                "tex": "cream",
+                "pos": "l",
+                "o": 10
+              },
+              {
+                "sel": "section.sec",
+                "n": 1,
+                "tex": "film",
+                "pos": "r",
+                "o": 8
+              },
+              {
+                "sel": "section.sec",
+                "n": 2,
+                "tex": "smear",
+                "pos": "l",
+                "o": 9
+              },
+              {
+                "sel": "section.sec",
+                "n": 3,
+                "tex": "silk",
+                "pos": "r",
+                "o": 9
+              }
+            ],
+            "end": {
+              "tex": "cream",
+              "pos": "b"
+            }
+          },
+          {
+            "mid": [
+              {
+                "sel": "section.sec",
+                "n": 0,
+                "tex": "film",
+                "pos": "r",
+                "o": 8
+              },
+              {
+                "sel": "section.sec",
+                "n": 1,
+                "tex": "silk",
+                "pos": "l",
+                "o": 9
+              },
+              {
+                "sel": "section.sec",
+                "n": 2,
+                "tex": "cream",
+                "pos": "r",
+                "o": 10
+              },
+              {
+                "sel": "section.sec",
+                "n": 3,
+                "tex": "cream",
+                "pos": "l",
+                "o": 9
+              }
+            ],
+            "end": {
+              "tex": "film",
+              "pos": "br"
+            }
+          }
+        ]
+      },
       "product": {"variants": [
         {"top": {"tex": "silk", "pos": "tr"}, "end": {"tex": "cream", "pos": "br"}},
         {"top": {"tex": "smear", "pos": "tr"}, "end": {"tex": "silk", "pos": "br"}},
