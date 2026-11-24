@@ -82,3 +82,32 @@
 .js .vb-row.in .vb-item{opacity:1;translate:0 0;transition:opacity .9s var(--ease) calc(.2s + var(--k,0) * .09s),translate .9s var(--ease) calc(.2s + var(--k,0) * .09s),transform .7s var(--ease-out,cubic-bezier(.22,.8,.2,1))}
 @media (max-width:1000px){.vb-row{grid-template-columns:minmax(0,1fr)}.vb-rh{padding-bottom:0}}
 html.lite .vb-item{transition:none}
+/* подсветка витрины цветом бренда: слой-маска stage-brand-glow.webp (белый с альфой: матовое стекло «полумесяц», ореол, линия под полкой) заливается ещё более светлым пастельным --c2 бренда (42% + белый) через multiply — полумесяц остаётся светлым, а не серым;
+   светящееся стекло окрашивается, камень и упаковки остаются нейтральными; под логотипом и упаковками (z-index 1 < 2), при уменьшении движения ничего не двигается */
+.dtb-glow{position:absolute;inset:0;z-index:1;pointer-events:none;background:color-mix(in srgb,var(--c2,#e2c27a) 42%,#fff);mix-blend-mode:multiply;opacity:.72;-webkit-mask:url(../assets/detail/stage-brand-glow.webp) 0 0/100% 100% no-repeat;mask:url(../assets/detail/stage-brand-glow.webp) 0 0/100% 100% no-repeat}
+html.lite .dtb-glow{display:none}
+
+/* ---------- табличка бренда v3: матовая стеклянная пластина с латунной рамкой ----------
+   Только внешний вид (раскладка и хуки .dt-plaque / .eyebrow / h1 / .lead / .dtb-stats / .row — как в shared.css): молочное матовое стекло (размытие камня за ним), тонкая латунная окантовка
+   с внутренней светлой линией, глубокая мягкая тень вправо-вниз (солнце слева) и еле заметное свечение цветом бренда; название крупнее, под ним линия-акцент --c1…--c2,
+   метрики — аккуратный ряд с тонкими разделителями. Без размытия (html.lite) пластина просто плотнее. */
+.dtb-stage .dt-plaque{border:1px solid rgba(176,142,78,.62);border-radius:18px;
+  background:linear-gradient(158deg,rgba(255,253,248,.93),rgba(247,241,229,.88) 55%,rgba(243,235,219,.9));
+  -webkit-backdrop-filter:blur(16px) saturate(1.12);backdrop-filter:blur(16px) saturate(1.12);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.95),inset 0 0 0 5px rgba(255,255,255,.34),inset 0 0 0 6px rgba(176,142,78,.18),0 2px 4px rgba(60,42,16,.12),14px 22px 30px -14px rgba(60,42,16,.34),34px 56px 74px -30px rgba(40,28,10,.5),0 0 70px -14px color-mix(in srgb,var(--c1,#c7a460) 26%,transparent)}
+html.lite .dtb-stage .dt-plaque{-webkit-backdrop-filter:none;backdrop-filter:none;background:linear-gradient(158deg,#fffdf8,#f6efe0)}
+.dtb-stage .dt-plaque::before,.dtb-stage .dt-plaque::after{top:14px;width:6px;height:6px}
+.dtb-stage .dt-plaque .eyebrow{color:color-mix(in srgb,var(--c1,#33405f) 62%,#26304d);letter-spacing:.2em}
+.dtb-stage .dt-plaque .eyebrow::before{border-top:1px solid color-mix(in srgb,var(--c1,#b08e4e) 70%,transparent);width:26px}
+.dtb-stage .dt-plaque h1{font-size:clamp(34px,3.7cqw,62px);line-height:1.02;letter-spacing:-.018em}
+.dtb-stage .dt-plaque h1::after{content:"";display:block;width:64px;height:2px;margin:clamp(14px,1.3cqw,20px) 0 0;border-radius:2px;background:linear-gradient(90deg,var(--c1,#b08e4e),color-mix(in srgb,var(--c2,#e2c27a) 55%,transparent) 70%,transparent)}
+.dtb-stage .dt-plaque .lead{margin-top:clamp(12px,1.2cqw,18px)}
+.dtb-stage .dtb-stats{margin-top:clamp(18px,1.7cqw,26px);border-block:0;border-top:1px solid rgba(176,142,78,.34);padding-top:clamp(10px,1cqw,14px)}
+.dtb-stage .dtb-stats li{padding:4px clamp(10px,1.1cqw,18px) 4px;border-left:1px solid rgba(176,142,78,.3);align-items:flex-start}
+.dtb-stage .dtb-stats li:first-child{border-left:0;padding-left:0}
+.dtb-stage .dtb-stats b{font-size:clamp(28px,2.7cqw,44px);letter-spacing:-.01em;font-variant-numeric:lining-nums tabular-nums}
+.dtb-stage .dtb-stats small{letter-spacing:.16em;color:color-mix(in srgb,var(--c1,#4a5570) 38%,#4a5570)}
+.dtb-stage .dt-plaque>.row{margin-top:clamp(18px,1.8cqw,28px)}
+@media (max-width:900px){.dtb-stage .dt-plaque h1{font-size:clamp(32px,8.6vw,46px)}.dtb-stage .dt-plaque{box-shadow:inset 0 1px 0 rgba(255,255,255,.95),inset 0 0 0 4px rgba(255,255,255,.3),0 2px 4px rgba(60,42,16,.12),10px 18px 26px -14px rgba(60,42,16,.34),0 0 50px -14px color-mix(in srgb,var(--c1,#c7a460) 22%,transparent)}}
+/* телефон: окно с логотипом не должно прятаться под шапкой и «хлебными крошками» — кадр опущен ниже (якорь ниши ближе к низу) */
+@media (max-width:900px){.dtb-stage{--ay:.945}.dtb-stage .dt-view{height:clamp(470px,131vw,640px)}}

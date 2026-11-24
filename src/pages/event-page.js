@@ -14,6 +14,8 @@ const readJson = f => { try { return JSON.parse(fs.readFileSync(path.join(ROOT, 
 const PH = 1520, STAGE = (readJson('assets/detail/stage.json') || {}).brand || {};
 const SLOTS = STAGE.slots && STAGE.slots.length ? STAGE.slots : [{x: .253, y: .823, pxcm: 22.5}, {x: .1, y: .86, pxcm: 22.5}, {x: .398, y: .875, pxcm: 22.5}];
 const NICHE = STAGE.niche || {cx: .25};
+const MOON = STAGE.moon || {};
+const LOGO_BOX = MOON.cy ? `;--cy:${Math.round(MOON.cy * 100000) / 1000}%;--lw:${Math.round(MOON.w * 60000) / 1000}%;--lh:${Math.round(MOON.h * 50000) / 1000}%` : '';       // логотип по центру светящегося окна арки (как на странице бренда)
 const PACKS = readJson('assets/showroom/packs.json') || {};
 const PACK_CM = {tube: 14.4, bottle: 21.9, pump: 22.9, dropper: 15.6, jar: 6.0, box: 13.0, device: 15.6};
 const f1 = n => Math.round(n * 1000) / 1000;
@@ -36,8 +38,8 @@ module.exports = function eventPage(ctx, C, P, e) {
     return `<div class="pdp-pack dtb-pk" style="left:${f1(s.x * 100)}%;top:${f1(s.y * 100 + .4)}%;--hp:${hp};--sar:${f1(spriteAr(src))};--k:${k}" aria-hidden="true">
         <img class="pdp-cs" src="${esc(C.u(P, src))}" alt="" decoding="async"><img class="pdp-pk" src="${esc(C.u(P, src))}" alt="" decoding="async"></div>`; }).join('');
   const logo = b.logo
-    ? `<span class="dtb-logo" style="--cx:${f1(NICHE.cx * 100)}%"><img src="${esc(C.u(P, b.logo))}" alt="${esc(b.name)}"${b.logoW ? ` width="${b.logoW}" height="${b.logoH}"` : ''} decoding="async"></span>`
-    : `<span class="dtb-logo is-text" style="--cx:${f1(NICHE.cx * 100)}%"><b>${esc(b.name)}</b></span>`;
+    ? `<span class="dtb-logo" style="--cx:${f1((MOON.cx || NICHE.cx) * 100)}%${LOGO_BOX}"><img src="${esc(C.u(P, b.logo))}" alt="${esc(b.name)}"${b.logoW ? ` width="${b.logoW}" height="${b.logoH}"` : ''} decoding="async"></span>`
+    : `<span class="dtb-logo is-text" style="--cx:${f1((MOON.cx || NICHE.cx) * 100)}%${LOGO_BOX}"><b>${esc(b.name)}</b></span>`;
 
   const route = `<nav class="dt-route" aria-label="${T('event.route.aria')}">
       <ol>

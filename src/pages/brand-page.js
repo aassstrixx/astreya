@@ -4,8 +4,9 @@ const S = require('../../js/shared.js');
 const {T, Traw} = require('../texts.js');
 const {esc, I, bstyle} = S;
 
-/* Страница бренда v2 («Ниша»): кадр assets/detail/stage-brand.webp (tools/showroom-assets/detail/detail_stage.py brand) — арочная ниша каменной стены с тремя подставками;
-   логотип бренда стоит в нише, на подставках — упаковки бренда (спрайты pack-*, тот же рендер, что на стене брендов), справа на стене — «табличка» бренда.
+/* Страница бренда v2 («Витрина»): кадр assets/detail/stage-brand.webp (tools/showroom-assets/detail/detail_stage.py brand) — арочная ниша-витрина: подсвеченное матовое стекло «полумесяц» за логотипом,
+   стеклянная полка с латунной кромкой над упаковками, три травертиновых подставки и консоль со стеклом для 4-й…6-й упаковок; слой assets/detail/stage-brand-glow.webp красит подсветку цветом бренда (.dtb-glow).
+   Логотип бренда стоит в нише, на подставках — упаковки бренда (спрайты pack-*, тот же рендер, что на стене брендов), справа на стене — «табличка» бренда.
    Ниже: «паспорт бренда» плитками (страна, направления, факты из data/brands.json + число позиций), линейки — арки с числом позиций, ассортимент — полкой,
    задачи, обучение и материалы, соседние бренды, «Стать партнёром». Всё из данных; пустое не выдумывается.
    Крючки для js сохранены: [data-brand-page], .b-hero (js/sales-pages.js вставляет за ним «Путь с брендом»), h2 «Товары …» (кнопка «К товарам»), .b-title, data-track/data-act.
@@ -15,9 +16,12 @@ const readJson = f => { try { return JSON.parse(fs.readFileSync(path.join(ROOT, 
 const PH = 1520, STAGE = (readJson('assets/detail/stage.json') || {}).brand || {};
 const SLOTS = STAGE.slots && STAGE.slots.length ? STAGE.slots : [{x: .253, y: .823, pxcm: 22.5}, {x: .1, y: .86, pxcm: 22.5}, {x: .398, y: .875, pxcm: 22.5}];
 const NICHE = STAGE.niche || {cx: .25, top: .113, bottom: .91};
+const MOON = STAGE.moon || {};                                                            // светящееся стеклянное «окно» арки (stage.json → moon: центр и габариты в долях кадра) — логотип стоит в его геометрическом центре
+
 const PACKS = readJson('assets/showroom/packs.json') || {};
 const PACK_CM = {tube: 14.4, bottle: 21.9, pump: 22.9, dropper: 15.6, jar: 6.0, box: 13.0, device: 15.6};   // как на стене брендов (src/pages/brands.js)
 const f1 = n => Math.round(n * 1000) / 1000;
+const LOGO_BOX = MOON.cy ? `;--cy:${f1(MOON.cy * 100)}%;--lw:${f1(MOON.w * 100 * .60)}%;--lh:${f1(MOON.h * 100 * .50)}%` : '';       // логотип вписан в окно: ширина ≤ 60% его ширины, высота ≤ 50% высоты (object-fit: contain — любые пропорции), центр — центр окна
 const spriteAr = src => { const e = PACKS[path.basename(src).replace(/\.webp$/, '')]; return e && e.w && e.h ? e.w / e.h : .3; };
 
 module.exports = function brandPage(ctx, C, P, b) {
@@ -54,8 +58,8 @@ module.exports = function brandPage(ctx, C, P, b) {
     return `<div class="pdp-pack dtb-pk" style="left:${f1(s.x * 100)}%;top:${f1(s.y * 100 + .4)}%;--hp:${hp};--sar:${f1(spriteAr(src))};--k:${k}" role="img" aria-label="${esc(Traw('common.aria.pack', {brand: b.name, product: p.name}))}">
         <img class="pdp-cs" src="${esc(C.u(P, src))}" alt="" aria-hidden="true" decoding="async"><img class="pdp-pk" src="${esc(C.u(P, src))}" alt="" decoding="async"></div>`; }).join('');
   const logo = b.logo
-    ? `<span class="dtb-logo" style="--cx:${f1(NICHE.cx * 100)}%"><img src="${esc(C.u(P, b.logo))}" alt="${esc(b.name)}"${b.logoW ? ` width="${b.logoW}" height="${b.logoH}"` : ''} decoding="async" fetchpriority="high"></span>`
-    : `<span class="dtb-logo is-text" style="--cx:${f1(NICHE.cx * 100)}%"><b aria-hidden="true">${esc(b.name)}</b></span>`;
+    ? `<span class="dtb-logo" style="--cx:${f1((MOON.cx || NICHE.cx) * 100)}%${LOGO_BOX}"><img src="${esc(C.u(P, b.logo))}" alt="${esc(b.name)}"${b.logoW ? ` width="${b.logoW}" height="${b.logoH}"` : ''} decoding="async" fetchpriority="high"></span>`
+    : `<span class="dtb-logo is-text" style="--cx:${f1((MOON.cx || NICHE.cx) * 100)}%${LOGO_BOX}"><b aria-hidden="true">${esc(b.name)}</b></span>`;
   const brandMark = b.logo ? `<img class="dt-rl" src="${esc(C.u(P, b.logo))}" alt="${esc(b.name)}"${b.logoW ? ` width="${b.logoW}" height="${b.logoH}"` : ''} decoding="async">` : `<b>${esc(b.name)}</b>`;
   const route = `<nav class="dt-route" aria-label="${T('brand.route.aria')}">
       <ol>
@@ -96,7 +100,7 @@ module.exports = function brandPage(ctx, C, P, b) {
         <div class="dt-world">
           <i class="dt-glint" aria-hidden="true"></i>
           <picture><source media="(max-width:900px)" srcset="${C.u(P, 'assets/detail/stage-brand-s.webp')}"><img class="dt-plate" src="${C.u(P, 'assets/detail/stage-brand.webp')}" alt="" width="2880" height="1520" decoding="async" fetchpriority="high"></picture>
-          ${logo}${packs}
+          <i class="dtb-glow" aria-hidden="true"></i>${logo}${packs}
         </div>
       </div>
       <div class="dt-over wrap">
