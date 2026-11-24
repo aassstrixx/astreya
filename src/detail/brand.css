@@ -6,7 +6,6 @@
 .dtb-stats b{font:500 clamp(24px,2.4cqw,38px)/1 var(--serif);color:var(--ax-ink)}
 .dtb-stats small{font:700 10px/1.2 var(--sans);letter-spacing:.14em;text-transform:uppercase;color:var(--ax-muted)}
 .dtb-stage .dt-plaque>.row{margin-top:clamp(16px,1.6cqw,24px)}
-
 /* «Путь с брендом» (js/sales-pages.js) встаёт сразу за кадром — в ширину страницы */
 .dtb>.sx-mod{max-width:var(--maxw);margin-inline:auto;padding-inline:var(--gut);box-sizing:border-box}
 
@@ -174,15 +173,13 @@ html.lite .dtb-stage .dt-plaque{-webkit-backdrop-filter:none;backdrop-filter:non
   radial-gradient(58% 600px at 0 5160px,color-mix(in srgb,var(--c1) 13%,transparent),transparent 72%),
   radial-gradient(62% 640px at 100% 6360px,color-mix(in srgb,var(--c2) 22%,transparent),transparent 72%),
   linear-gradient(180deg,#ece2cc 0,#efe6d1 520px,#f1e9d6 1100px,#f0e8d5 2400px,#eee5d1 100%)}
-.dtb .dt-tile,.dtb .sx-station,.dtb article.card{background:linear-gradient(180deg,rgba(255,251,241,.95),rgba(249,240,219,.9));border-color:rgba(176,142,78,.28);box-shadow:inset 0 1px 0 #fff,inset 0 -46px 64px -52px color-mix(in srgb,var(--c2) 26%,transparent),0 1px 2px rgba(86,60,30,.08),0 22px 38px -28px rgba(86,60,30,.34)}
+.dtb article.card{background:linear-gradient(180deg,rgba(255,251,241,.95),rgba(249,240,219,.9));border-color:rgba(176,142,78,.28);box-shadow:inset 0 1px 0 #fff,inset 0 -46px 64px -52px color-mix(in srgb,var(--c2) 26%,transparent),0 1px 2px rgba(86,60,30,.08),0 22px 38px -28px rgba(86,60,30,.34)}
 /* --- структура страницы: плотный ритм, тёплые цветовые полосы секций, компактные плашки --- */
 .dtb{overflow-x:clip}
 .dtb>.sec{position:relative;padding-top:clamp(30px,3.6vw,52px)!important;padding-bottom:clamp(30px,3.6vw,52px)}
 .dtb .sx-route-sec{padding-top:clamp(18px,2.2vw,32px);padding-bottom:clamp(20px,2.6vw,38px)}
 .dtb .sec-head{margin-bottom:clamp(16px,2vw,26px)}
 .dtb .sec-head h2{margin-top:12px;font-size:clamp(28px,2.7vw,38px)}
-.dtb-passport{gap:clamp(10px,1.1vw,16px)}
-.dtb-passport .dt-tile{min-height:112px;gap:8px;padding:clamp(16px,1.5vw,22px)}
 .dtb-lines{padding-bottom:clamp(30px,3.6vw,52px)}
 .dtb .vb-lines{gap:clamp(12px,1.5vw,20px)}
 /* плашка «Спросите Стеллу»: тёплая, по ширине колонки контента (раньше была холодно-белой и шире колонки) */
@@ -192,22 +189,62 @@ html.lite .dtb-stage .dt-plaque{-webkit-backdrop-filter:none;backdrop-filter:non
 .dtb>.sec:nth-of-type(odd){--sb:rgba(236,216,166,.2)}
 .dtb>.sec:nth-of-type(even){--sb:color-mix(in srgb,var(--c2) 14%,rgba(240,230,205,.12))}
 /* наведение на плашки: подъём, тёплое золотое свечение рамки, блик по плашке «Пути», цифра и стрелка оживают (только translate/opacity; на касаниях и в lite — без наведения) */
-.dtb .sx-station,.dtb .dt-tile{transition:translate .55s var(--ease-out,cubic-bezier(.22,.8,.2,1)),box-shadow .55s var(--ease-out,cubic-bezier(.22,.8,.2,1)),border-color .4s ease}
-.dtb .sx-station::before{content:"";position:absolute;z-index:0;inset:0;border-radius:inherit;pointer-events:none;opacity:0;background:linear-gradient(105deg,transparent 36%,rgba(255,243,205,.85) 50%,transparent 64%) no-repeat -140% 0/280% 100%}
-.dtb .sx-st-top,.dtb .sx-st-body{position:relative;z-index:1}
 .dtb .sx-num{display:inline-block;transition:color .4s ease,translate .5s var(--ease-out,cubic-bezier(.22,.8,.2,1))}
 .dtb .sx-station .btn svg{transition:translate .45s var(--ease-out,cubic-bezier(.22,.8,.2,1))}
 .dtb .dt-tile h2::after,.dtb .dt-tile h3::after{transition:width .5s var(--ease-out,cubic-bezier(.22,.8,.2,1))}
-@media (hover:hover) and (pointer:fine){
-  .dtb .sx-station:hover,.dtb .dt-tile:hover{translate:0 -8px;border-color:rgba(176,142,78,.62);box-shadow:inset 0 1px 0 #fff,inset 0 -46px 64px -52px color-mix(in srgb,var(--c2) 34%,transparent),0 3px 6px rgba(86,60,30,.1),0 34px 46px -26px rgba(86,60,30,.5),0 0 0 4px rgba(226,194,122,.2)}
-  .dtb .sx-station:hover{border-top-color:var(--c1,#b08e4e)}
-  .dtb .sx-station:hover::before{opacity:1;background-position:140% 0;transition:background-position 1s var(--ease-out,cubic-bezier(.22,.8,.2,1)),opacity .2s ease}
-  .dtb .sx-station:hover .sx-num{color:var(--c1,#b08e4e);translate:5px 0}
-  .dtb .sx-station:hover .btn svg{translate:5px 0}
-  .dtb .dt-tile:hover h2::after,.dtb .dt-tile:hover h3::after{width:76px}
-}
-html.lite .dtb>.sec::after,html.lite .dtb .sx-station::before{display:none}
-html.lite .dtb .sx-station,html.lite .dtb .dt-tile,html.lite .dtb .sx-num,html.lite .dtb .sx-station .btn svg{transition:none}
+html.lite .dtb>.sec::after{display:none}
 @media (max-width:700px){.dtb>.sec::after{top:-20px;bottom:-20px}}
 @media (max-width:1000px){.dtb-stage .dt-view::after{background:linear-gradient(180deg,rgba(239,230,209,0) 0,rgba(239,230,209,.55) 55%,#efe6d1 100%)}}
 html.lite .dtb::before{display:none}
+
+/* ============ Бренд: структура «как на главной» ============
+   Информация собрана в единые рамки с тонкими золотыми разделителями (как «Портфель брендов» и «Почему Астрея» на главной): «Путь с брендом», паспорт бренда, задачи.
+   Разделители — тень «-1px -1px» у каждой ячейки (по внешним краям её срезает рамка), поэтому линии ровно ложатся при любом числе ячеек и переносе строк.
+   Ниже паспорта — полоса реальных фото (команда, работа с продукцией, упаковка бренда); в финальном призыве — фото команды. Блика и подъёма плашек при наведении больше нет: ячейка мягко подсвечивается. */
+.dtb{--hl:rgba(150,118,60,.3)}
+.dtb-passport,.dtb .sx-route,.dtb .rd-b-tasklist{display:grid;gap:0;margin:0;padding:0;list-style:none;border:1px solid var(--hl);border-radius:22px;overflow:hidden;background:linear-gradient(180deg,rgba(255,251,241,.82),rgba(249,240,219,.74));box-shadow:inset 0 1px 0 #fff,0 1px 2px rgba(86,60,30,.07),0 26px 40px -30px rgba(86,60,30,.4)}
+.dtb-passport{grid-template-columns:repeat(2,minmax(0,1fr))}
+.dtb .sx-route{grid-template-columns:repeat(3,minmax(0,1fr))}
+.dtb .rd-b-tasklist{grid-template-columns:repeat(auto-fit,minmax(230px,1fr))}
+.dtb-passport .dt-tile,.dtb .sx-station,.dtb .sx-station.first,.dtb .rd-b-task{position:relative;border:0;border-radius:0;background:transparent;box-shadow:-1px -1px 0 0 var(--hl);translate:none;animation:none;transition:background-color .4s ease}
+.dtb .sx-station:not(:last-child)::after{display:none}
+.dtb-passport .dt-tile{min-height:0;gap:8px;padding:clamp(18px,1.8vw,26px)}
+.dtb-passport .dt-no{display:none}
+.dt-th{display:flex;align-items:center;gap:14px}
+.dt-th h3{padding-right:0}
+.dt-ic{flex:none;display:grid;place-items:center;width:40px;height:40px;border-radius:12px;border:1px solid var(--hl);background:rgba(255,255,255,.62);color:var(--c1,#1a2e52);transition:background-color .35s ease,color .35s ease,border-color .35s ease}
+.dt-ic svg{width:20px;height:20px}
+.dtb .sx-st-top{padding:clamp(16px,1.6vw,22px) clamp(18px,1.8vw,26px) 0}
+.dtb .sx-st-body{padding:10px clamp(18px,1.8vw,26px) clamp(18px,1.8vw,24px)}
+.dtb .rd-b-task{padding:clamp(18px,2vw,26px);border-top:0}
+.dtb .rd-b-task .rd-no{font-size:clamp(30px,3vw,42px)}
+.dtb .sx-num{transition:color .4s ease}
+.dtb .sx-station .btn svg,.dtb .rd-b-count{transition:translate .45s var(--ease-out,cubic-bezier(.22,.8,.2,1))}
+@media (hover:hover) and (pointer:fine){
+  .dtb-passport .dt-tile:hover,.dtb .sx-station:hover,.dtb .rd-b-task:hover{background:rgba(255,244,216,.62)}
+  .dtb-passport .dt-tile:hover .dt-ic{background:var(--c1,#1a2e52);color:var(--ink,#fff);border-color:var(--c1,#1a2e52)}
+  .dtb .sx-station:hover .sx-num{color:var(--c1,#1a2e52)}
+  .dtb .sx-station:hover .btn svg{translate:5px 0}
+}
+/* реальные фото под паспортом: три репортажные карточки */
+.dtb-photos{display:grid;grid-template-columns:1.15fr 1fr .85fr;gap:clamp(10px,1.2vw,16px)}
+.dtb>.dtb-about{padding-bottom:clamp(14px,1.8vw,24px)}
+.dtb>.dtb-gallery{padding-top:clamp(8px,1vw,14px)!important;padding-bottom:clamp(8px,1vw,14px)}
+.dtb-ph{position:relative;margin:0;height:clamp(200px,22vw,320px);border-radius:20px;overflow:hidden;border:1px solid var(--hl);background:#e9dfc8;box-shadow:inset 0 1px 0 rgba(255,255,255,.6),0 24px 36px -28px rgba(86,60,30,.5)}
+.dtb-ph img{display:block;width:100%;height:100%;object-fit:cover}
+.dtb-ph::after{content:"";position:absolute;inset:0;pointer-events:none;background:linear-gradient(180deg,rgba(255,236,190,.0) 55%,rgba(120,86,30,.16)),linear-gradient(135deg,rgba(255,236,196,.14),rgba(255,236,196,0) 45%)}
+/* финальный призыв: фото команды справа вместо логотипа */
+.cta-brand{grid-template-columns:minmax(0,1fr)}
+.cta-brand .cb-copy{position:relative;z-index:1;max-width:min(54%,560px)}
+.cta-brand .cb-ph{position:absolute;inset:0 0 0 auto;z-index:0;width:48%;margin:0;-webkit-mask-image:linear-gradient(90deg,transparent 0,#000 42%);mask-image:linear-gradient(90deg,transparent 0,#000 42%)}
+.cta-brand .cb-ph img{display:block;width:100%;height:100%;object-fit:cover;object-position:50% 32%;opacity:.92}
+.cta-brand .cb-ph::after{content:"";position:absolute;inset:0;background:linear-gradient(90deg,color-mix(in srgb,var(--c1) 30%,var(--navy)) 0,rgba(11,26,51,0) 55%)}
+@media (max-width:900px){
+  .dtb .sx-route{grid-template-columns:minmax(0,1fr)}
+  .dtb-photos{grid-template-columns:1fr 1fr}
+  .dtb-ph{height:clamp(170px,44vw,260px)}
+  .dtb-ph:nth-child(3){grid-column:1/-1}
+  .cta-brand .cb-copy{max-width:none}
+  .cta-brand .cb-ph{position:relative;inset:auto;width:auto;height:clamp(180px,48vw,260px);margin:clamp(18px,4vw,28px) calc(clamp(32px,6vw,84px) * -1) calc(clamp(32px,6vw,84px) * -1);-webkit-mask-image:linear-gradient(180deg,transparent 0,#000 38%);mask-image:linear-gradient(180deg,transparent 0,#000 38%)}
+}
+@media (max-width:640px){.dtb-passport{grid-template-columns:minmax(0,1fr)}}

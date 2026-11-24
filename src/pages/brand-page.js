@@ -70,13 +70,14 @@ module.exports = function brandPage(ctx, C, P, b) {
       <a class="dt-back" href="${C.u(P, 'brands.html')}">${I.back}<span>${T('brand.route.t')}</span></a>
     </nav>`;
 
-  const tile = (no, title, html, cls = '') => `<article class="dt-tile reveal${cls ? ' ' + cls : ''}"><span class="dt-no" aria-hidden="true">${no}</span><h3>${esc(title)}</h3>${html}</article>`;
+  const tile = (no, title, html, cls = '', ic = '') => `<article class="dt-tile reveal${cls ? ' ' + cls : ''}"><span class="dt-no" aria-hidden="true">${no}</span><div class="dt-th">${ic ? `<span class="dt-ic" aria-hidden="true">${ic}</span>` : ''}<h3>${esc(title)}</h3></div>${html}</article>`;
+  const PIC = ['globe', 'layers', 'book', 'box', 'shield', 'chat'];
   const passport = [
     ...facts.map(([k, v]) => [k, `<p>${esc(v)}</p>`]),
     [T('brand.facts.s'), `<p>${cnt(prods.length, 'позиция', 'позиции', 'позиций')} в ${cnt(groups.length, 'линейке', 'линейках', 'линейках')}.</p>`],
     [T('brand.facts.s2'), `<p>${esc(b.name)} ${T('brand.facts.p')}</p>`],
     [T('brand.facts.s3'), `<p>${T('common.pages.brandConsult')}</p>`]
-  ].slice(0, 6).map(([k, v], k2) => tile(String(k2 + 1).padStart(2, '0'), k, v)).join('');
+  ].slice(0, 6).map(([k, v], k2) => tile(String(k2 + 1).padStart(2, '0'), k, v, '', I[PIC[k2]])).join('');
 
   const arches = groups.length ? `<section class="sec dtb-lines wrap" aria-label="${T('brand.lines.aria')}">
       ${C.secHead(T('brand.lines.aria'), `${T('brand.lines.tx')} ${esc(b.name)}`)}
@@ -91,6 +92,11 @@ module.exports = function brandPage(ctx, C, P, b) {
       <div class="rd-b-tasklist">${b.tasks.map((id, k) => { const t = ctx.taskById[id], c2 = prods.filter(p => p.tasks.includes(id)).length;
         return `<a class="rd-b-task reveal" href="${catalogHref}&task=${id}" data-track="catalog_click" data-place="brand-tasks"><span class="rd-no" aria-hidden="true">${String(k + 1).padStart(2, '0')}</span><h3>${esc(t.label)}</h3><span class="rd-b-count">${c2} ${S.plural(c2, 'позиция', 'позиции', 'позиций')}</span></a>`; }).join('')}</div>
     </section>` : '';
+  const PHO = {'photo-05-expertise': [683, 1024, '50% 28%'], 'photo-02c-about': [683, 1024, '50% 24%'], 'photo-02b-about': [768, 768, '50% 30%'], 'photo-01-hero': [626, 626, '50% 30%'], 'photo-02-about': [800, 533, '50% 35%']};
+  const SHOTS = ['photo-05-expertise', 'photo-02b-about', 'photo-02c-about', 'photo-01-hero'];          // три снимка подряд по кругу (у соседних брендов наборы разные)
+  const phImg = f => `<img src="${esc(C.u(P, 'assets/photos/' + f + '.webp'))}" alt="" width="${PHO[f][0]}" height="${PHO[f][1]}" style="object-position:${PHO[f][2]}" loading="lazy" decoding="async">`;
+  const shots = [0, 1, 2].map(k => SHOTS[(Math.max(0, i) + k) % SHOTS.length]);
+  const photos = `<div class="dtb-photos reveal" aria-hidden="true">${shots.map(f => `<figure class="dtb-ph">${phImg(f)}</figure>`).join('')}</div>`;
   const arts = (ctx.training.articles || []).filter(a => a.brand === b.id);
   const sib = (x, cls, label) => `<a class="${cls} reveal" href="${C.burl(P, x)}" style="${bstyle(x)}"><span><small>${label}</small>${x.logo ? `<img class="is-logo" src="${esc(C.u(P, x.logo))}" alt="${esc(x.name)}" loading="lazy" decoding="async">` : `<b>${esc(x.name)}</b>`}</span></a>`;
 
@@ -128,6 +134,8 @@ module.exports = function brandPage(ctx, C, P, b) {
       <div class="dtb-passport" aria-label="${T('brand.about.aria2')}">${passport}</div>
     </section>
 
+    <section class="sec dtb-gallery wrap" aria-hidden="true">${photos}</section>
+
     ${arches}
 
     <section class="sec dtb-shelf" aria-label="${T('brand.shelf.aria')}">
@@ -158,7 +166,7 @@ module.exports = function brandPage(ctx, C, P, b) {
           <div class="row"><a class="btn btn-light" href="${C.u(P, 'partners.html')}" data-track="partner_cta" data-place="brand-cta">${T('brand.cta.a')} ${I.arrow}</a>
             <button class="btn btn-ghost-inv" type="button" data-act="form" data-type="question" data-ref="${T('brand.route.sm2')} ${esc(b.name)}${T('common.pages.brandRef')}">${T('brand.coop.btn')}</button></div>
         </div>
-        ${C.ctaLogo}
+        <figure class="cb-ph" aria-hidden="true"><img src="${esc(C.u(P, 'assets/photos/photo-02-about.webp'))}" alt="" width="800" height="533" loading="lazy" decoding="async"></figure>
       </div>
     </section>
 
