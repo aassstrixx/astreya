@@ -11,7 +11,7 @@
 
 /* о бренде: текст слева, паспорт плитками справа */
 .dtb-about{display:grid;grid-template-columns:minmax(0,.9fr) minmax(0,1.2fr);gap:clamp(26px,3.4vw,60px);align-items:start;padding-top:clamp(36px,4.8vw,80px);padding-bottom:clamp(36px,4.8vw,72px)}
-.dtb-story{position:sticky;top:calc(var(--hdr) + 24px)}
+.dtb-story{position:static}          /* раньше текст прилипал к верху экрана и «ехал» при прокрутке — по просьбе заказчика не двигается */
 .dtb-story p{margin:0 0 1em;font:400 clamp(16px,1.3vw,18.5px)/1.72 var(--serif);color:#2c3550}
 .dtb-story p:first-of-type{font-size:clamp(21px,1.9vw,27px);line-height:1.42;letter-spacing:-.005em;color:var(--ax-ink)}
 .dtb-story .tasks-line{margin-top:22px}
@@ -273,13 +273,6 @@ html.lite .dtb::before{display:none}
 .dtb .vb-lines{gap:clamp(8px,1vw,14px)}
 .dtb-lines{padding-bottom:clamp(20px,2.2vw,32px)!important}
 @media (min-width:1101px){.dtb-shelf .grid.g3{grid-template-columns:repeat(4,minmax(0,1fr));gap:clamp(12px,1.2vw,18px)}}
-/* задачи: ячейки в одну строку вместо высоких плиток */
-.dtb .rd-b-tasklist{grid-template-columns:repeat(auto-fit,minmax(200px,1fr))}
-.dtb .rd-b-task{flex-direction:row;align-items:center;flex-wrap:nowrap;gap:12px;padding:12px 18px}
-.dtb .rd-b-task .rd-no{flex:none;font-size:24px}
-.dtb .rd-b-task h3{flex:1;min-width:0;margin:0;font-size:16.5px;line-height:1.2}
-.dtb .rd-b-count{flex:none;font-size:11px;white-space:nowrap}
-.dtb .rd-b-tasks{padding-top:clamp(10px,1.2vw,16px)!important}
 .cta-brand{padding:clamp(22px,2.8vw,38px) clamp(24px,3.4vw,50px)}
 .cta-brand h2{font-size:clamp(26px,2.6vw,36px)}
 .dtb .dt-sib{padding-top:clamp(8px,1vw,14px);padding-bottom:clamp(18px,2vw,28px)}
@@ -297,3 +290,6 @@ html.lite .dtb::before{display:none}
 .dtb-shelf .pcard p{-webkit-line-clamp:2;font-size:13px;line-height:1.5}
 .dtb-shelf .pcard .pf{padding-top:8px}
 .dtb .card-pad{padding:clamp(16px,1.6vw,22px)}
+/* хлебные крошки на странице бренда убраны с экрана (по просьбе заказчика); список остаётся для программ чтения с экрана, кнопка «Все бренды» — справа */
+.dtb-stage .dt-route{justify-content:flex-end}
+.dtb-stage .dt-route ol{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);clip-path:inset(50%);white-space:nowrap}

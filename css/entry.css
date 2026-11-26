@@ -1,0 +1,13 @@
+/* Плашка-приглашение «Спросите Стеллу…» (js/entry.js) — единый вид на всех страницах: тёплое кремовое стекло, тонкая золотая рамка, акцент тёмно-синий; кнопка «Спросить Стеллу» по центру плашки по высоте. */
+.g-entry{position:relative;max-width:var(--maxw);margin:clamp(18px,2.4vw,30px) auto;padding:16px 22px;display:grid;grid-template-columns:auto minmax(0,1fr) auto;grid-template-areas:"pe t b" "pe ch b";gap:8px 16px;align-items:center;border-radius:20px;border:1px solid rgba(150,118,60,.28);
+  background:linear-gradient(135deg,rgba(255,252,245,.96),rgba(250,243,227,.92));box-shadow:inset 0 1px 0 #fff,0 1px 2px rgba(86,60,30,.07),0 22px 36px -28px rgba(86,60,30,.4);opacity:0;transform:translateY(14px);transition:opacity .6s var(--ease),transform .7s var(--ease)}
+.g-entry.on{opacity:1;transform:none}
+.g-e-pe{grid-area:pe;width:52px;height:52px}.g-e-pe .pe{width:100%;height:100%}
+.g-e-t{grid-area:t;min-width:0}.g-e-t b{display:block;font:600 clamp(17px,1.6vw,20px)/1.25 var(--serif);color:var(--navy)}
+.g-e-t p{margin:4px 0 0;color:var(--muted);font-size:14.5px;line-height:1.5}
+.g-e-ch{grid-area:ch;display:flex;flex-wrap:wrap;gap:8px}
+.g-e-ch .chip{border:1px solid rgba(150,118,60,.3);background:rgba(255,250,238,.8)}
+.g-e-b{grid-area:b;align-self:center;justify-self:end;white-space:nowrap}
+.wrap>.g-entry,main>.g-entry,section>.g-entry{margin-left:auto;margin-right:auto;width:calc(100% - 2 * var(--gut))}
+@media (max-width:760px){.g-entry{grid-template-columns:auto minmax(0,1fr);grid-template-areas:"pe t" "ch ch" "b b"}.g-e-b{width:100%;justify-content:center}}
+html.lite .g-entry{transition:none;box-shadow:none}

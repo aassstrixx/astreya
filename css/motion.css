@@ -50,6 +50,8 @@
 #curtain.out .cs i{transform:scaleY(0);transform-origin:top}
 #curtain.instant .cs i{transition:none}
 #curtain.in{pointer-events:all}
+/* пока шторка закрыта, старая страница не рисуется: через 0,2 с после начала закрытия (полосы уже сомкнулись) её содержимое скрыто — иначе упаковки из панели бренда «просвечивали» поверх шторки на экране перехода; при открытии шторки страница показывается сразу */
+#curtain.in ~ #main{visibility:hidden;transition:visibility 0s linear .2s}
 #curtain::after{content:"";position:absolute;inset:0;background:var(--grain-lt);opacity:.09;pointer-events:none}
 .ct{position:absolute;inset:0;display:grid;place-content:center;justify-items:center;gap:16px;padding:0 24px;text-align:center;color:var(--milk);opacity:0;transition:opacity .25s ease;z-index:1}
 #curtain.in .ct{opacity:1;transition-delay:.3s}

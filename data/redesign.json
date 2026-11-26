@@ -821,7 +821,7 @@
     "countdown": true,
     "subscribe": true,
     "assistant": true,
-    "navigator": true,
+    "navigator": false,
     "sales": true,
     "agentReady": true
   },
