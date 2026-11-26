@@ -637,6 +637,27 @@
                 "tex": "smear",
                 "pos": "l",
                 "o": 9
+              },
+              {
+                "sel": "section.sec",
+                "n": -1,
+                "tex": "smear",
+                "pos": "c",
+                "o": 8
+              },
+              {
+                "sel": "section.sec",
+                "n": -2,
+                "tex": "film",
+                "pos": "l",
+                "o": 9
+              },
+              {
+                "sel": "section.sec",
+                "n": -3,
+                "tex": "silk",
+                "pos": "r",
+                "o": 9
               }
             ],
             "end": {
@@ -671,6 +692,27 @@
                 "sel": "section.sec",
                 "n": 3,
                 "tex": "silk",
+                "pos": "r",
+                "o": 9
+              },
+              {
+                "sel": "section.sec",
+                "n": -1,
+                "tex": "silk",
+                "pos": "c",
+                "o": 8
+              },
+              {
+                "sel": "section.sec",
+                "n": -2,
+                "tex": "cream",
+                "pos": "l",
+                "o": 9
+              },
+              {
+                "sel": "section.sec",
+                "n": -3,
+                "tex": "film",
                 "pos": "r",
                 "o": 9
               }
@@ -708,6 +750,27 @@
                 "n": 3,
                 "tex": "cream",
                 "pos": "l",
+                "o": 9
+              },
+              {
+                "sel": "section.sec",
+                "n": -1,
+                "tex": "cream",
+                "pos": "c",
+                "o": 9
+              },
+              {
+                "sel": "section.sec",
+                "n": -2,
+                "tex": "smear",
+                "pos": "l",
+                "o": 9
+              },
+              {
+                "sel": "section.sec",
+                "n": -3,
+                "tex": "silk",
+                "pos": "r",
                 "o": 9
               }
             ],

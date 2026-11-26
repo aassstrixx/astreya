@@ -220,8 +220,9 @@ module.exports = function components(ctx) {
   /* статья учебного центра: карточка без внешней ссылки */
   const articleCard = a => {
     const b = brandById[a.brand];
-    return `<div class="card art-card reveal" style="${bstyle(b)}">
-    <div class="cov"><span>${esc(a.tag)}</span></div>
+    const ph = [...String(a.title || a.tag)].reduce((n, c) => n + c.charCodeAt(0), 0) % 4;          // какой из четырёх снимков (css/components.css) станет обложкой
+    return `<div class="card art-card reveal" style="${bstyle(b)}" data-ph="${ph}">
+    <div class="cov"><i class="cov-ic" aria-hidden="true">${I.doc}</i><span>${esc(a.tag)}</span></div>
     <div class="ab"><h3>${esc(a.title)}</h3><div class="meta"><span>${dparts(a.date).full}</span><span>${a.min} мин чтения</span></div></div>
   </div>`;
   };

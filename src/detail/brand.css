@@ -161,19 +161,19 @@ html.lite .dtb-stage .dt-plaque{-webkit-backdrop-filter:none;backdrop-filter:non
    • За кадром страница не плоская: тёплая травертиновая фактура проявляется из фона, а по длине страницы лежат мягкие «пятна» цвета бренда (--c1/--c2) — разные слева и справа.
    • Карточки — тёплое матовое стекло с цветным отсветом бренда внизу вместо плоских белых плиток.
    Всё статично (градиенты и один прозрачный слой текстуры), без смешивания слоёв и анимации — прокрутка не тяжелеет. */
-.dtb-stage .dt-view::after{height:18%;background:linear-gradient(180deg,rgba(240,232,211,0) 0,rgba(240,232,211,.5) 52%,rgba(240,232,211,.9) 82%,#f0e8d3 100%)}
+.dtb-stage .dt-view::after{height:18%;background:linear-gradient(180deg,rgba(241,234,217,0) 0,rgba(241,234,217,.5) 52%,rgba(241,234,217,.9) 82%,#f1ead9 100%)}
 .dtb-stage .dt-view::before{content:"";position:absolute;left:0;right:0;top:0;height:clamp(86px,9cqw,150px);z-index:3;pointer-events:none;background:linear-gradient(180deg,rgba(240,232,216,.66),rgba(240,232,216,.28) 55%,rgba(240,232,216,0))}
 .dtb{isolation:isolate;background:
-  radial-gradient(52% 520px at 0 1040px,rgba(255,226,166,.38),transparent 72%),
+  radial-gradient(52% 520px at 0 1040px,rgba(255,226,166,.27),transparent 72%),
   radial-gradient(62% 640px at 100% 1560px,color-mix(in srgb,var(--c2) 27%,transparent),transparent 72%),
   radial-gradient(58% 600px at 0 2760px,color-mix(in srgb,var(--c1) 15%,transparent),transparent 72%),
   radial-gradient(54% 560px at 100% 3300px,rgba(206,221,238,.3),transparent 72%),
   radial-gradient(62% 640px at 100% 3960px,color-mix(in srgb,var(--c2) 24%,transparent),transparent 72%),
-  radial-gradient(50% 540px at 0 4480px,rgba(255,224,160,.34),transparent 72%),
+  radial-gradient(50% 540px at 0 4480px,rgba(255,224,160,.24),transparent 72%),
   radial-gradient(58% 600px at 0 5160px,color-mix(in srgb,var(--c1) 13%,transparent),transparent 72%),
   radial-gradient(62% 640px at 100% 6360px,color-mix(in srgb,var(--c2) 22%,transparent),transparent 72%),
-  linear-gradient(180deg,#ece2cc 0,#efe6d1 520px,#f1e9d6 1100px,#f0e8d5 2400px,#eee5d1 100%)}
-.dtb article.card{background:linear-gradient(180deg,rgba(255,251,241,.95),rgba(249,240,219,.9));border-color:rgba(176,142,78,.28);box-shadow:inset 0 1px 0 #fff,inset 0 -46px 64px -52px color-mix(in srgb,var(--c2) 26%,transparent),0 1px 2px rgba(86,60,30,.08),0 22px 38px -28px rgba(86,60,30,.34)}
+  linear-gradient(180deg,#ece3d0 0,#efe7d5 520px,#f1ead9 1100px,#f0e9d8 2400px,#eee6d5 100%)}
+.dtb article.card{background:linear-gradient(180deg,rgba(255,252,244,.95),rgba(250,243,226,.9));border-color:rgba(176,142,78,.28);box-shadow:inset 0 1px 0 #fff,inset 0 -46px 64px -52px color-mix(in srgb,var(--c2) 26%,transparent),0 1px 2px rgba(86,60,30,.08),0 22px 38px -28px rgba(86,60,30,.34)}
 /* --- структура страницы: плотный ритм, тёплые цветовые полосы секций, компактные плашки --- */
 .dtb{overflow-x:clip}
 .dtb>.sec{position:relative;padding-top:clamp(30px,3.6vw,52px)!important;padding-bottom:clamp(30px,3.6vw,52px)}
@@ -183,7 +183,7 @@ html.lite .dtb-stage .dt-plaque{-webkit-backdrop-filter:none;backdrop-filter:non
 .dtb-lines{padding-bottom:clamp(30px,3.6vw,52px)}
 .dtb .vb-lines{gap:clamp(12px,1.5vw,20px)}
 /* плашка «Спросите Стеллу»: тёплая, по ширине колонки контента (раньше была холодно-белой и шире колонки) */
-.dtb aside.g-entry{max-width:min(calc(1240px - 2 * var(--gut,72px)),calc(100% - 2 * var(--gut,24px)));margin-inline:auto;background:linear-gradient(135deg,rgba(255,251,242,.96),rgba(250,241,221,.92));border-color:rgba(176,142,78,.28)}
+.dtb aside.g-entry{max-width:min(calc(1240px - 2 * var(--gut,72px)),calc(100% - 2 * var(--gut,24px)));margin-inline:auto;background:linear-gradient(135deg,rgba(255,252,245,.96),rgba(250,243,227,.92));border-color:rgba(176,142,78,.28)}
 /* полосы секций: тёплое золото и лёгкий цвет бренда, края растушёваны — страница читается как ряд связанных «залов» */
 .dtb>.sec::after{content:"";position:absolute;z-index:-1;left:50%;width:100vw;margin-left:-50vw;top:-34px;bottom:-34px;pointer-events:none;background:linear-gradient(180deg,transparent 0,var(--sb,transparent) 26%,var(--sb,transparent) 74%,transparent 100%)}
 .dtb>.sec:nth-of-type(odd){--sb:rgba(236,216,166,.2)}
@@ -194,7 +194,7 @@ html.lite .dtb-stage .dt-plaque{-webkit-backdrop-filter:none;backdrop-filter:non
 .dtb .dt-tile h2::after,.dtb .dt-tile h3::after{transition:width .5s var(--ease-out,cubic-bezier(.22,.8,.2,1))}
 html.lite .dtb>.sec::after{display:none}
 @media (max-width:700px){.dtb>.sec::after{top:-20px;bottom:-20px}}
-@media (max-width:1000px){.dtb-stage .dt-view::after{background:linear-gradient(180deg,rgba(239,230,209,0) 0,rgba(239,230,209,.55) 55%,#efe6d1 100%)}}
+@media (max-width:1000px){.dtb-stage .dt-view::after{background:linear-gradient(180deg,rgba(239,231,213,0) 0,rgba(239,231,213,.55) 55%,#efe7d5 100%)}}
 html.lite .dtb::before{display:none}
 
 /* ============ Бренд: структура «как на главной» ============
@@ -202,7 +202,7 @@ html.lite .dtb::before{display:none}
    Разделители — тень «-1px -1px» у каждой ячейки (по внешним краям её срезает рамка), поэтому линии ровно ложатся при любом числе ячеек и переносе строк.
    Ниже паспорта — полоса реальных фото (команда, работа с продукцией, упаковка бренда); в финальном призыве — фото команды. Блика и подъёма плашек при наведении больше нет: ячейка мягко подсвечивается. */
 .dtb{--hl:rgba(150,118,60,.3)}
-.dtb-passport,.dtb .sx-route,.dtb .rd-b-tasklist{display:grid;gap:0;margin:0;padding:0;list-style:none;border:1px solid var(--hl);border-radius:22px;overflow:hidden;background:linear-gradient(180deg,rgba(255,251,241,.82),rgba(249,240,219,.74));box-shadow:inset 0 1px 0 #fff,0 1px 2px rgba(86,60,30,.07),0 26px 40px -30px rgba(86,60,30,.4)}
+.dtb-passport,.dtb .sx-route,.dtb .rd-b-tasklist{display:grid;gap:0;margin:0;padding:0;list-style:none;border:1px solid var(--hl);border-radius:22px;overflow:hidden;background:linear-gradient(180deg,rgba(255,252,244,.82),rgba(250,243,226,.74));box-shadow:inset 0 1px 0 #fff,0 1px 2px rgba(86,60,30,.07),0 26px 40px -30px rgba(86,60,30,.4)}
 .dtb-passport{grid-template-columns:repeat(2,minmax(0,1fr))}
 .dtb .sx-route{grid-template-columns:repeat(3,minmax(0,1fr))}
 .dtb .rd-b-tasklist{grid-template-columns:repeat(auto-fit,minmax(230px,1fr))}
@@ -221,7 +221,7 @@ html.lite .dtb::before{display:none}
 .dtb .sx-num{transition:color .4s ease}
 .dtb .sx-station .btn svg,.dtb .rd-b-count{transition:translate .45s var(--ease-out,cubic-bezier(.22,.8,.2,1))}
 @media (hover:hover) and (pointer:fine){
-  .dtb-passport .dt-tile:hover,.dtb .sx-station:hover,.dtb .rd-b-task:hover{background:rgba(255,244,216,.62)}
+  .dtb-passport .dt-tile:hover,.dtb .sx-station:hover,.dtb .rd-b-task:hover{background:rgba(255,247,226,.62)}
   .dtb-passport .dt-tile:hover .dt-ic{background:var(--c1,#1a2e52);color:var(--ink,#fff);border-color:var(--c1,#1a2e52)}
   .dtb .sx-station:hover .sx-num{color:var(--c1,#1a2e52)}
   .dtb .sx-station:hover .btn svg{translate:5px 0}
@@ -248,3 +248,52 @@ html.lite .dtb::before{display:none}
   .cta-brand .cb-ph{position:relative;inset:auto;width:auto;height:clamp(180px,48vw,260px);margin:clamp(18px,4vw,28px) calc(clamp(32px,6vw,84px) * -1) calc(clamp(32px,6vw,84px) * -1);-webkit-mask-image:linear-gradient(180deg,transparent 0,#000 38%);mask-image:linear-gradient(180deg,transparent 0,#000 38%)}
 }
 @media (max-width:640px){.dtb-passport{grid-template-columns:minmax(0,1fr)}}
+
+/* ============ Бренд: то же содержимое и тот же порядок блоков, но плотнее ============
+   Структуру страницы не меняем (без вкладок и переносов): сокращены отступы между секциями, заголовки, плашки «Пути», паспорт, фото, витрины направлений, карточки товаров (4 в ряд), задачи, призыв.
+   Под фоновыми текстурами из банка (assets/bg) — мягкая золотистая подмесь в том же слое на всю ширину экрана. */
+.dtb>.sec{padding-top:clamp(20px,2.2vw,32px)!important;padding-bottom:clamp(20px,2.2vw,32px)}
+.dtb .sec-head{margin-bottom:clamp(12px,1.4vw,18px)}
+.dtb .sec-head h2{margin-top:10px;font-size:clamp(25px,2.3vw,33px)}
+.dtb .sx-route-sec{padding-top:clamp(14px,1.6vw,22px);padding-bottom:clamp(14px,1.8vw,26px)}
+.dtb .sx-head h2{font-size:clamp(25px,2.3vw,33px)}
+.dtb .sx-st-top{padding:clamp(12px,1.2vw,16px) clamp(16px,1.5vw,22px) 0}
+.dtb .sx-st-body{padding:6px clamp(16px,1.5vw,22px) clamp(14px,1.4vw,18px);gap:6px}
+.dtb .sx-num{font-size:clamp(34px,3vw,46px)}
+.dtb .sx-st-body h3{font-size:clamp(17px,1.5vw,20px)}
+.dtb-about{gap:clamp(18px,2.4vw,36px);padding-bottom:clamp(8px,1vw,14px)!important}
+.dtb-story p{margin-bottom:.7em}
+.dtb-story p:first-of-type{font-size:clamp(18px,1.55vw,22px);line-height:1.4}
+.dtb-story .tasks-line{margin-top:14px}
+.dtb-passport .dt-tile{padding:clamp(14px,1.4vw,20px);gap:6px}
+.dtb-passport .dt-th h3{font-size:clamp(17px,1.5vw,20px)}
+.dtb .dtb-gallery{padding-top:clamp(6px,.8vw,10px)!important;padding-bottom:clamp(6px,.8vw,10px)!important}
+.dtb-ph{height:clamp(140px,15vw,210px)}
+.vb-row{--u:clamp(4px,.5vw,7.6px)}
+.dtb .vb-lines{gap:clamp(8px,1vw,14px)}
+.dtb-lines{padding-bottom:clamp(20px,2.2vw,32px)!important}
+@media (min-width:1101px){.dtb-shelf .grid.g3{grid-template-columns:repeat(4,minmax(0,1fr));gap:clamp(12px,1.2vw,18px)}}
+/* задачи: ячейки в одну строку вместо высоких плиток */
+.dtb .rd-b-tasklist{grid-template-columns:repeat(auto-fit,minmax(200px,1fr))}
+.dtb .rd-b-task{flex-direction:row;align-items:center;flex-wrap:nowrap;gap:12px;padding:12px 18px}
+.dtb .rd-b-task .rd-no{flex:none;font-size:24px}
+.dtb .rd-b-task h3{flex:1;min-width:0;margin:0;font-size:16.5px;line-height:1.2}
+.dtb .rd-b-count{flex:none;font-size:11px;white-space:nowrap}
+.dtb .rd-b-tasks{padding-top:clamp(10px,1.2vw,16px)!important}
+.cta-brand{padding:clamp(22px,2.8vw,38px) clamp(24px,3.4vw,50px)}
+.cta-brand h2{font-size:clamp(26px,2.6vw,36px)}
+.dtb .dt-sib{padding-top:clamp(8px,1vw,14px);padding-bottom:clamp(18px,2vw,28px)}
+/* тёплая подмесь под текстурами из банка: в том же слое, что и картинка текстуры (на всю ширину экрана, без краёв секции) */
+.dtb [data-bd]:not(.bd-fill)::before{background-image:var(--bd-img,none),radial-gradient(56% 68% at 86% 40%,rgba(255,221,148,.26),transparent 74%),radial-gradient(48% 58% at 8% 88%,rgba(238,214,160,.18),transparent 74%);background-size:cover,100% 100%,100% 100%;background-position:var(--bd-bp,50% 50%),0 0,0 0}
+.dtb [data-bd][data-bd-pos="l"]:not(.bd-fill)::before{background-image:var(--bd-img,none),radial-gradient(56% 68% at 14% 40%,rgba(255,221,148,.26),transparent 74%),radial-gradient(48% 58% at 92% 88%,rgba(238,214,160,.18),transparent 74%)}
+.dtb [data-bd][data-bd-pos="c"]:not(.bd-fill)::before{background-image:var(--bd-img,none),radial-gradient(60% 70% at 50% 42%,rgba(255,223,152,.24),transparent 76%)}
+/* у секции ассортимента был собственный фон-полоса шириной в колонку (его края были видны) */
+.dtb .dtb-shelf{background:none}
+/* ещё плотнее: витрины направлений, карточки товаров, мероприятия и материалы */
+.vb-row{--u:clamp(3.4px,.4vw,6.4px)}
+.dtb .vb-row{padding-top:clamp(12px,1.4vw,20px)}
+.dtb-shelf .pcard .pb{padding:14px 16px 14px;gap:6px}
+.dtb-shelf .pcard h3{font-size:17.5px}
+.dtb-shelf .pcard p{-webkit-line-clamp:2;font-size:13px;line-height:1.5}
+.dtb-shelf .pcard .pf{padding-top:8px}
+.dtb .card-pad{padding:clamp(16px,1.6vw,22px)}
