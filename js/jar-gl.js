@@ -319,17 +319,44 @@ void main() {
   o = vec4(lB < lMin || lB > lMax ? a : b, 1.0);
 }`;
 
-  function sh(gl, type, src) {
-    const s = gl.createShader(type); gl.shaderSource(s, src); gl.compileShader(s);
-    if (!gl.getShaderParameter(s, gl.COMPILE_STATUS)) throw new Error('shader: ' + gl.getShaderInfoLog(s));
-    return s;
+  /* ШЕЙДЕРЫ: компиляция и сборка запускаются сразу для всех программ, а результат проверяется позже (progsWait → progFinish).
+     Раньше каждая программа проверялась сразу после сборки (getShaderParameter/getProgramParameter ждут драйвер): на Windows/ANGLE 16 программ двух движков
+     (зал + баночка, герой + пролёт) держали главный поток ≈ 250 мс при старте и ещё ≈ 50 мс при подъёме пролёта (журнал ?diag=1 владельца: loaf 677 мс «jar.js», Response.json.then 46 мс).
+     Расширение KHR_parallel_shader_compile (его надо запросить ДО сборки) переводит сборку в параллельные потоки браузера; пока она идёт, страница живёт и прокручивается.
+     Пока программа не принята (o.done), рисование не вызывается — draw возвращает «нечего показывать», как и до прихода кадров. Без расширения (Safari, старые браузеры) всё идёт как раньше, синхронно. */
+  const IDXC = {w: 0, h: 0, a: null};          // кэш индексов сетки зала (см. buildGrid)
+  function progBegin(gl, vs, fs) {
+    try { gl.getExtension('KHR_parallel_shader_compile'); } catch (e) { /* — */ }
+    const v = gl.createShader(gl.VERTEX_SHADER), f = gl.createShader(gl.FRAGMENT_SHADER), p = gl.createProgram();
+    gl.shaderSource(v, vs); gl.compileShader(v); gl.shaderSource(f, fs); gl.compileShader(f);
+    gl.attachShader(p, v); gl.attachShader(p, f); gl.linkProgram(p);
+    return {p, u: {}, v, f, done: false};
   }
-  function prog(gl, vs, fs) {
-    const p = gl.createProgram(); gl.attachShader(p, sh(gl, gl.VERTEX_SHADER, vs)); gl.attachShader(p, sh(gl, gl.FRAGMENT_SHADER, fs)); gl.linkProgram(p);
-    if (!gl.getProgramParameter(p, gl.LINK_STATUS)) throw new Error('link: ' + gl.getProgramInfoLog(p));
-    const u = {}; const n = gl.getProgramParameter(p, gl.ACTIVE_UNIFORMS);
-    for (let i = 0; i < n; i++) { const info = gl.getActiveUniform(p, i); u[info.name] = gl.getUniformLocation(p, info.name); }
-    return {p, u};
+  function progFinish(gl, o) {
+    if (o.done) return o;
+    if (!gl.getProgramParameter(o.p, gl.LINK_STATUS)) {
+      if (!gl.getShaderParameter(o.v, gl.COMPILE_STATUS)) throw new Error('shader: ' + gl.getShaderInfoLog(o.v));
+      if (!gl.getShaderParameter(o.f, gl.COMPILE_STATUS)) throw new Error('shader: ' + gl.getShaderInfoLog(o.f));
+      throw new Error('link: ' + gl.getProgramInfoLog(o.p));
+    }
+    const n = gl.getProgramParameter(o.p, gl.ACTIVE_UNIFORMS);
+    for (let i = 0; i < n; i++) { const info = gl.getActiveUniform(o.p, i); o.u[info.name] = gl.getUniformLocation(o.p, info.name); }
+    o.done = true; return o;
+  }
+  /* ждём, пока браузер соберёт все программы (опрос COMPLETION_STATUS_KHR без блокировки); без расширения или при потере контекста — сразу */
+  function progsWait(gl, list) {
+    let ext = null; try { ext = gl.getExtension('KHR_parallel_shader_compile'); } catch (e) { ext = null; }
+    if (!ext) return Promise.resolve();
+    return new Promise(res => {
+      const t0 = Date.now();
+      const tick = () => {
+        let ok = true;
+        try { if (gl.isContextLost()) return res(); ok = list.every(o => gl.getProgramParameter(o.p, ext.COMPLETION_STATUS_KHR)); } catch (e) { return res(); }
+        if (ok || Date.now() - t0 > 20000) return res();
+        setTimeout(tick, 6);
+      };
+      tick();
+    });
   }
   const norm = v => { const l = Math.hypot(v[0], v[1], v[2]) || 1; return [v[0] / l, v[1] / l, v[2] / l]; };
   const cross = (a, b) => [a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0]];
@@ -384,8 +411,17 @@ void main() {
     } catch (e) { gl = null; }
     if (!gl) return null;
     let P0, P1, P2, P3, P4 = null;
-    try { P1 = prog(gl, VS, FS); P2 = prog(gl, VS_Q, FS_Q); P3 = prog(gl, VS_Q, FS_AA); P0 = prog(gl, VS_Q, FS_BK); } catch (e) { console.warn('jar-gl:', e.message); return null; }
-    if (cfg.sphere) { try { P4 = prog(gl, VS_Q, FS_S); } catch (e) { console.warn('jar-gl (sphere):', e.message); P4 = null; } }      // шар — необязательная часть: нет шейдера — кадры без него
+    try { P1 = progBegin(gl, VS, FS); P2 = progBegin(gl, VS_Q, FS_Q); P3 = progBegin(gl, VS_Q, FS_AA); P0 = progBegin(gl, VS_Q, FS_BK); } catch (e) { console.warn('jar-gl:', e.message); return null; }
+    if (cfg.sphere) { try { P4 = progBegin(gl, VS_Q, FS_S); } catch (e) { console.warn('jar-gl (sphere):', e.message); P4 = null; } }      // шар — необязательная часть: нет шейдера — кадры без него
+    const progOk = () => P1.done && P2.done && P3.done && P0.done;
+    /* промис: true — все программы приняты (можно рисовать), false — шейдеры не собрались (тот же исход, что раньше давал null из createHall); шар принимается отдельно */
+    function progs() {
+      return progsWait(gl, P4 ? [P1, P2, P3, P0, P4] : [P1, P2, P3, P0]).then(() => {
+        try { [P1, P2, P3, P0].forEach(o => progFinish(gl, o)); } catch (e) { console.warn('jar-gl:', e.message); return false; }
+        if (P4) { try { progFinish(gl, P4); } catch (e) { console.warn('jar-gl (sphere):', e.message); P4 = null; } }
+        return true;
+      });
+    }
     const track = camTrack(cfg.track), Phi = cfg.phi, N = Phi.length, portrait = !!cfg.portrait;
     const asp = portrait ? [cfg.frameAspect || 9 / 16, 1] : [1, 1 / (cfg.frameAspect || 16 / 9)];
     const fAspect = cfg.frameAspect || (portrait ? 9 / 16 : 16 / 9);
@@ -406,10 +442,15 @@ void main() {
     function buildGrid(w, h) {
       if (w === gw && h === gh) return;
       gw = w; gh = h;
-      const idx = new Uint32Array(gw * gh * 6); let n = 0;
-      for (let j = 0; j < gh; j++) for (let i = 0; i < gw; i++) {
-        const a = j * (gw + 1) + i, b = a + 1, c = a + gw + 1, d = c + 1;
-        idx[n++] = a; idx[n++] = c; idx[n++] = b; idx[n++] = b; idx[n++] = c; idx[n++] = d;
+      /* индексы сетки (960×540 ячеек ≈ 12 МБ) строятся один раз на страницу: движок героя и движок пролёта берут один и тот же массив (раньше второй строил его заново при подъёме пролёта ≈ 30–55 мс) */
+      let idx = IDXC.a && IDXC.w === gw && IDXC.h === gh ? IDXC.a : null, n = gw * gh * 6;
+      if (!idx) {
+        idx = new Uint32Array(n); n = 0;
+        for (let j = 0; j < gh; j++) for (let i = 0; i < gw; i++) {
+          const a = j * (gw + 1) + i, b = a + 1, c = a + gw + 1, d = c + 1;
+          idx[n++] = a; idx[n++] = c; idx[n++] = b; idx[n++] = b; idx[n++] = c; idx[n++] = d;
+        }
+        IDXC.w = gw; IDXC.h = gh; IDXC.a = idx;
       }
       nIdx = n;
       gl.bindVertexArray(vao);
@@ -544,7 +585,7 @@ void main() {
     }
     /* только шар (зал не перерисовывается): положение шара/свет изменились, а камера стоит — дёшево (один проход) */
     function drawSphere() {
-      if (dead || !W || !lastP || !lastP.sphereOn || !P4 || !sph.ready) return false;
+      if (dead || !W || !progOk() || !lastP || !lastP.sphereOn || !P4 || !P4.done || !sph.ready) return false;
       gl.bindVertexArray(vao);
       paintSphere(comp2.f, lastP.f1);
       presentAA(comp2.color);
@@ -588,7 +629,7 @@ void main() {
     /* рисует вид для положения p; rest ∈ [0,1] — «покой»: 1 — только ближайший кадр (пиксель в пиксель), 0 — плавное слияние двух.
        Возвращает {ka, kb, t} или null, если нужных кадров ещё нет */
     function draw(p, rest, aa, opt) {
-      if (dead || !W) return null;
+      if (dead || !W || !progOk()) return null;
       const sh = {jk: (opt && opt.jk) || 1, lift: (opt && opt.lift) || 0};
       p = clamp(p, 0, 1);
       let lo = 0, hi = N - 1;
@@ -637,7 +678,7 @@ void main() {
       if (ibo) gl.deleteBuffer(ibo); [P0, P1, P2, P3, P4].forEach(q => q && gl.deleteProgram(q.p));
       if (!keepContext) { try { const ext = gl.getExtension('WEBGL_lose_context'); if (ext) ext.loseContext(); } catch (e) { /* — */ } }
     }
-    return {gl, setSize, setRefine(n) { refOv = n; }, setKey, setKeyShared, dropKey, hasKey, adoptDepth(k) { const e = keys[k]; if (e) e.shared = false; }, setLow, dropLow, hasLow, plan, draw, drawSphere, setSphereTex, setSphere, destroy, setGridScale, get sphereReady() { return !!(P4 && sph.ready); }, get hasSphere() { return !!P4; }, camAt: p => track.at(p, {}), keys, get size() { return [W, H]; }};
+    return {gl, progs, setSize, setRefine(n) { refOv = n; }, setKey, setKeyShared, dropKey, hasKey, adoptDepth(k) { const e = keys[k]; if (e) e.shared = false; }, setLow, dropLow, hasLow, plan, draw, drawSphere, setSphereTex, setSphere, destroy, setGridScale, get sphereReady() { return !!(P4 && sph.ready); }, get hasSphere() { return !!P4; }, camAt: p => track.at(p, {}), keys, get size() { return [W, H]; }};
   }
 
 
@@ -730,7 +771,8 @@ void main() {
     try { gl = cv.getContext('webgl2', {alpha: true, premultipliedAlpha: true, antialias: false, depth: false, stencil: false, powerPreference: 'high-performance', preserveDrawingBuffer: !!cfg.preserve}); } catch (e) { gl = null; }
     if (!gl) return null;
     let PJ, PG, PH;
-    try { PJ = prog(gl, VS_J, FS_J); PG = prog(gl, VS_J, FS_G); PH = prog(gl, VS_J, FS_H); } catch (e) { console.warn('jar-gl (jar):', e.message); return null; }
+    try { PJ = progBegin(gl, VS_J, FS_J); PG = progBegin(gl, VS_J, FS_G); PH = progBegin(gl, VS_J, FS_H); } catch (e) { console.warn('jar-gl (jar):', e.message); return null; }
+    const progs = () => progsWait(gl, [PJ, PG, PH]).then(() => { try { [PJ, PG, PH].forEach(o => progFinish(gl, o)); return true; } catch (e) { console.warn('jar-gl (jar):', e.message); return false; } });
     const track = cfg.track.at ? cfg.track : camTrack(cfg.track), Phi = cfg.phi, N = Phi.length, portrait = !!cfg.portrait;
     const fAspect = cfg.frameAspect || (portrait ? 9 / 16 : 16 / 9);
     const asp = portrait ? [fAspect, 1] : [1, 1 / fAspect];
@@ -812,7 +854,7 @@ void main() {
     }
     /* рисует баночку для положения p; pair = {ka, kb, t} из hall.draw (те же кадры и доля), чтобы баночка и зал смешивались одинаково */
     function draw(p, pair, opt) {
-      if (dead || !W) return false;
+      if (dead || !W || !PJ.done || !PG.done || !PH.done) return false;
       opt = opt || {};
       gl.bindFramebuffer(gl.FRAMEBUFFER, null); gl.viewport(0, 0, W, H);
       gl.clearColor(0, 0, 0, 0); gl.clear(gl.COLOR_BUFFER_BIT);
@@ -869,7 +911,7 @@ void main() {
       return true;
     }
     function destroy(keepContext) { dead = true; for (let k = 0; k < N; k++) { dropSprite(k); dropSpriteLow(k); } if (label) gl.deleteTexture(label); gl.deleteProgram(PJ.p); gl.deleteProgram(PG.p); gl.deleteProgram(PH.p); if (!keepContext) { try { const e = gl.getExtension('WEBGL_lose_context'); if (e) e.loseContext(); } catch (er) { /* — */ } } }
-    return {gl, setSize, setSprite, dropSprite, hasSprite, setSpriteLow, dropSpriteLow, hasSpriteLow, setLabel, draw, destroy, place, proj};
+    return {gl, progs, setSize, setSprite, dropSprite, hasSprite, setSpriteLow, dropSpriteLow, hasSpriteLow, setLabel, draw, destroy, place, proj};
   }
 
   A.ArchGL = {createHall, createJar, camTrack};

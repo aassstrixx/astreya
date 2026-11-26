@@ -129,13 +129,26 @@
      high — как прежде; mid — встроенная графика, ≤ 4 ядер или ≤ 4 ГБ памяти: холст ≤ 1,6 млн пикселей, окно ключей ±4, загрузка кадров в видеопамять в движении не чаще раза в UP_GAP_W мс, «взмах» (картинка по уменьшенным копиям) раньше;
      low — программный рендер или Intel HD/UHD при ≤ 4 ядрах: холст ≤ 1,1 млн, окно ±3, кромки в 7 шагов с самого начала. Дальше регулятор нагрузки подстраивает уже по факту кадров (и для mid/low может опускаться ниже 0,8).
      ?tier=high|mid|low — принудительно (проверка на своём компьютере); ?diag=1 показывает класс и причину. */
+  /* ОДИН пробный контекст WebGL2 на всю страницу: видеокарта (для класса устройства) и наличие WebGL2. Раньше при старте создавались два одноразовых контекста (оценка класса и проверка glOk) —
+     каждое создание контекста на Windows/ANGLE стоит десятки миллисекунд главного потока (журнал ?diag=1 владельца: loaf 677 мс на старте, из них 258 мс «блок» в jar.js) */
+  let probeRes = null;
+  function glProbe() {
+    if (probeRes) return probeRes;
+    probeRes = {ok: false, gpu: ''};
+    try {
+      const c = document.createElement('canvas'); let g = c.getContext('webgl2'); probeRes.ok = !!g; if (!g) g = c.getContext('webgl');
+      const e = g && g.getExtension('WEBGL_debug_renderer_info'); probeRes.gpu = e ? String(g.getParameter(e.UNMASKED_RENDERER_WEBGL) || '') : '';
+      const l = g && g.getExtension('WEBGL_lose_context'); if (l) l.loseContext();
+    } catch (e) { /* — */ }
+    return probeRes;
+  }
   const TIER_WHY = [];
   const TIER = (() => {
     try {
       const q = /[?&]tier=(high|mid|low)\b/.exec(location.search); if (q) { TIER_WHY.push('?tier'); return q[1]; }
       if (matchMedia('(pointer: coarse)').matches && Math.min(screen.width, screen.height) <= 520) { TIER_WHY.push('телефон'); return 'high'; }          // телефон идёт своим профилем (PHONE / портретный кадр), класс устройства его не меняет
       const cores = navigator.hardwareConcurrency || 4, mem = navigator.deviceMemory || 8;
-      let gpu = ''; try { const c = document.createElement('canvas'), g = c.getContext('webgl2') || c.getContext('webgl'), e = g && g.getExtension('WEBGL_debug_renderer_info'); gpu = e ? String(g.getParameter(e.UNMASKED_RENDERER_WEBGL) || '') : ''; const l = g && g.getExtension('WEBGL_lose_context'); if (l) l.loseContext(); } catch (e) { /* — */ }
+      const gpu = glProbe().gpu;
       const soft = /swiftshader|llvmpipe|softpipe|software|microsoft basic/i.test(gpu), weakIntel = /intel/i.test(gpu) && /hd graphics|uhd/i.test(gpu), igpu = /intel|vega|radeon\(tm\) graphics|mali|adreno|powervr/i.test(gpu) && !/rtx|gtx|arc a|radeon (rx|pro)/i.test(gpu);
       TIER_WHY.push('cores' + cores, 'mem' + mem, gpu.slice(0, 40) || 'gpu?');
       if (soft || (weakIntel && cores <= 4)) return 'low';          // Intel HD/UHD с 8 потоками остаётся mid: класс low на ноутбуке владельца (UHD, 8 ядер) дал заметно худшую картинку прокрутки (холст ≤ 1,1 млн, кромки в 7 шагов с самого начала, окно ±3) — кадры рвались сильнее, чем в mid
@@ -160,7 +173,7 @@
   if (/[?&]diag=1/.test(location.search) && window.PerformanceObserver) (function loafLog() {
     let n = 0, t0 = 0;
     const put = e => { const now = performance.now(); if (now - t0 > 1000) { t0 = now; n = 0; } if (e.duration < 45 || n++ >= 3) return; const sc = (e.scripts || []).slice().sort((x, y) => y.duration - x.duration)[0];
-      A.bc && A.bc('loaf', Math.round(e.duration) + 'мс' + (e.blockingDuration ? ' блок ' + Math.round(e.blockingDuration) : '') + (e.renderStart ? ' отрис ' + Math.round(e.startTime + e.duration - e.renderStart) : '') + (sc ? ' | ' + String(sc.sourceURL || '').split('/').pop().split('?')[0] + ':' + (sc.sourceFunctionName || sc.invoker || '?') + ' ' + Math.round(sc.duration) + 'мс' : '')); };
+      A.bc && A.bc('loaf', Math.round(e.duration) + 'мс' + (e.blockingDuration ? ' блок ' + Math.round(e.blockingDuration) : '') + (e.renderStart ? ' отрис ' + Math.round(e.startTime + e.duration - e.renderStart) : '') + (sc ? ' | ' + String(sc.sourceURL || '').split('/').pop().split('?')[0] + ':' + (sc.sourceFunctionName || sc.invoker || '?') + ' ' + Math.round(sc.duration) + 'мс' + (sc.forcedStyleAndLayoutDuration > 4 ? ' раскладка ' + Math.round(sc.forcedStyleAndLayoutDuration) : '') + (e.scripts && e.scripts.length > 1 ? ' +' + (e.scripts.length - 1) : '') : '')); };
     try { new PerformanceObserver(l => l.getEntries().forEach(put)).observe({type: 'long-animation-frame', buffered: true}); }
     catch (e) { try { new PerformanceObserver(l => l.getEntries().forEach(put)).observe({type: 'longtask', buffered: true}); } catch (e2) { /* — */ } }
   })();
@@ -194,9 +207,7 @@
   const LOWDEC = [2, 1];           // одновременных разворачиваний уменьшенных копий (они мелкие, идут в стороне от основной очереди)
   let ctrl = null, ctrls = [];       // ctrls — все сцены страницы (на главной одна: #arch-story), ctrl — она же
 
-  function glOk() {                  // WebGL2 есть? (проверка на отдельном холсте — холсты сцены остаются нетронутыми)
-    try { const c = document.createElement('canvas'), g = c.getContext('webgl2'); if (!g) return false; const e = g.getExtension('WEBGL_lose_context'); if (e) e.loseContext(); return true; } catch (e) { return false; }
-  }
+  function glOk() { return glProbe().ok; }       // WebGL2 есть? (проверка на отдельном холсте — холсты сцены остаются нетронутыми)
 
   function create(root) {
     const FLY = root.hasAttribute('data-fly');
@@ -471,12 +482,18 @@
       if (dead || key !== dirOf()) return;
       track = tr; if (FLY) flyCam = A.ArchGL.camTrack(tr);
       const fa = key === 'm' ? 9 / 16 : 16 / 9;
-      hall = A.ArchGL.createHall(cv, {track: tr, sphere: tr.sphere3d && ds.sa && ds.sn ? {c: tr.sphere3d.slice(0, 3), r: tr.sphere3d[3]} : null, phi: Phi, portrait: key === 'm', frameAspect: fa, grid: (key === 'm' ? [300, 533] : [960, 540]).map(v => Math.max(60, Math.round(v * (window.__ASTREYA_GL_GRID || 1)))), stretch: 0.4, smoothBlend: FLY, preserve: PRESERVE,
+      const h0 = A.ArchGL.createHall(cv, {track: tr, sphere: tr.sphere3d && ds.sa && ds.sn ? {c: tr.sphere3d.slice(0, 3), r: tr.sphere3d[3]} : null, phi: Phi, portrait: key === 'm', frameAspect: fa, grid: (key === 'm' ? [300, 533] : [960, 540]).map(v => Math.max(60, Math.round(v * (window.__ASTREYA_GL_GRID || 1)))), stretch: 0.4, smoothBlend: FLY, preserve: PRESERVE,
         shadowFrom: LSH ? +(LSH.from && typeof LSH.from === 'object' ? LSH.from[key === 'm' ? 'mobile' : 'desktop'] : LSH.from) || 0 : 0, shadowAmount: LSH && LSH.amount !== undefined ? +LSH.amount : 1, contact: LSH && LSH.contact !== undefined ? +LSH.contact : 0.42,
         veil: LSH && +LSH.veil || 0, veilCut: LSH && +LSH.veilCut || 0});
       const rects = JR[key === 'm' ? 1 : 0];
-      jar = rects.length === NH ? A.ArchGL.createJar(jcv, {track: tr, phi: Phi, rects, portrait: key === 'm', frameAspect: fa, ink: +ds.ink || 0.43, preserve: PRESERVE}) : null;
-      if (!hall) { root.classList.add('jar-off'); if (FLY) root.setAttribute('data-fly-why', 'createHall вернул null (WebGL2 / шейдеры)'); dead = true; return; }
+      const j0 = rects.length === NH ? A.ArchGL.createJar(jcv, {track: tr, phi: Phi, rects, portrait: key === 'm', frameAspect: fa, ink: +ds.ink || 0.43, preserve: PRESERVE}) : null;
+      if (!h0) { root.classList.add('jar-off'); if (FLY) root.setAttribute('data-fly-why', 'createHall вернул null (WebGL2 / шейдеры)'); dead = true; return; }
+      /* шейдеры зала и баночки собираются параллельно в потоках браузера (jar-gl.js → progBegin): страница не стоит на них ≈ 250 мс при старте и ≈ 50 мс при подъёме пролёта.
+         hall/jar объявляются движку только после приёмки программ — до этого к ним никто не обращается */
+      const [okH, okJ] = await Promise.all([h0.progs(), j0 ? j0.progs() : true]);
+      if (dead || key !== dirOf()) { try { h0.destroy(); j0 && j0.destroy(); } catch (e) { /* — */ } return; }
+      if (!okH) { root.classList.add('jar-off'); if (FLY) root.setAttribute('data-fly-why', 'createHall вернул null (WebGL2 / шейдеры)'); dead = true; try { h0.destroy(); j0 && j0.destroy(); } catch (e) { /* — */ } return; }
+      hall = h0; jar = okJ ? j0 : null;
       hall.setSize(W, H); JW = JH = 0; sizeJar();
       loadSphere();
       if (jar && ds.lbl && !FLYBAKE) bmp(await (await fetch(urlOf(ds.lbl))).blob(), false).then(b => { if (jar) { jar.setLabel(b); labelReady = true; dirty = true; schedule(); } }).catch(() => {});
