@@ -75,7 +75,7 @@ body.locked .qc,body.menu-open .qc{display:none!important}
 }
 
 /* ============ «Вы недавно смотрели» ============ */
-.rv-sec{padding-block:clamp(28px,4vw,56px)}
+.rv-sec{padding-block:clamp(28px,4vw,56px);background:linear-gradient(180deg,rgba(240,229,205,0),rgba(240,229,205,.5) 32%,rgba(240,229,205,.5) 68%,rgba(240,229,205,0))}
 .rv-sec .sec-head{align-items:flex-end}
 .rv-sec .sec-head .lnk .ic{width:13px;height:13px}
 .rv-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px}

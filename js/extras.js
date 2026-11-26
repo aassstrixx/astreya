@@ -185,6 +185,7 @@
   function rvArt(p) {
     const b = B[p.brand] || {}, st = A.bstyle ? A.bstyle(b) : '';
     if (p.im) return '<div class="art art-photo" style="' + esc(st) + '"><img src="' + esc(root() + p.im) + '" alt="' + esc(b.name + ' — ' + p.name) + '" loading="lazy" decoding="async"></div>';
+    if (A.stageArt && A.packOf) return A.stageArt(p, root() + A.packOf(p), {aria: b.name + ' — ' + p.name + ': упаковка', style: st});          // настоящий рендер упаковки на подиуме — как в карточках каталога (раньше — холодный CSS-макет)
     return '<div class="art" role="img" aria-label="' + esc(b.name + ' — ' + p.name + ': иллюстрация упаковки') + '" style="' + esc(st) + '"><div class="pk pk-' + esc(p.t || 'bottle') + '"><i class="sh"></i><i class="hd"></i><i class="cap"></i><i class="body"><b class="lbl"></b></i></div></div>';
   }
   function recent() {
