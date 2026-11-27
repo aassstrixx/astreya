@@ -12,7 +12,7 @@
 
 /* ===================== библиотека ===================== */
 .lib-hero{position:relative;padding:calc(var(--hdr) + clamp(10px,2vw,30px)) 0 clamp(22px,3vw,40px);overflow:hidden}
-.lib-hero::after{content:"";position:absolute;inset:0;z-index:-1;pointer-events:none;background:url(../assets/bg/silk-t.webp?v=cfed7e6c) 50% 35%/cover no-repeat;opacity:.26;-webkit-mask-image:linear-gradient(180deg,#000 0,#000 55%,transparent 100%);mask-image:linear-gradient(180deg,#000 0,#000 55%,transparent 100%)}
+.lib-hero::after{content:"";position:absolute;inset:0;z-index:-1;pointer-events:none;background:url(../assets/bg/silk-t.webp?v=c7285bf7) 50% 35%/cover no-repeat;opacity:.26;-webkit-mask-image:linear-gradient(180deg,#000 0,#000 55%,transparent 100%);mask-image:linear-gradient(180deg,#000 0,#000 55%,transparent 100%)}
 .lib-hero .eyebrow{display:flex;margin-top:clamp(14px,1.6vw,22px);color:var(--a-br)}
 .lib-hero .eyebrow::before{border-top-color:var(--a-br)}
 .lib-hero h1{margin:clamp(12px,1.4vw,20px) 0 0;max-width:15em;font:400 clamp(36px,5.2vw,78px)/1.04 var(--serif);letter-spacing:-.022em;color:var(--a-ink);text-wrap:balance}
