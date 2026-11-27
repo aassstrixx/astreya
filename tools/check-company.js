@@ -36,7 +36,7 @@ const rub = n => new Intl.NumberFormat('ru-RU').format(n).replace(/[  ]/g, ' ') 
   const scrollTo = async (p, sel) => { await p.evaluate(s => { const e = document.querySelector(s); window.scrollTo({top: e.getBoundingClientRect().top + scrollY - 20, behavior: 'instant'}); }, sel); await p.waitForTimeout(900); };
 
   const H = {h1: 'Астрея — пространство профессиональной косметологии', lead: 'Мы объединяем ведущие бренды, экспертизу и современные технологии, чтобы создавать красоту, вдохновлять и развивать индустрию.',
-    dirs: ['Дистрибуция косметики', 'Учебный центр', 'Работа с регионами', 'Поддержка партнёров'], dirHref: ['catalog.html', 'training.html', 'contacts.html', 'partners.html'],
+    dirs: ['Дистрибьютор косметики', 'Учебный центр', 'Работа с регионами', 'Поддержка партнёров'], dirHref: ['catalog.html', 'training.html', 'contacts.html', 'partners.html'],
     stats: ['Брендов и линий', 'Позиций в каталоге', 'Лет развития методики семинаров', 'Города проведения семинаров и онлайн']};
 
   /* ================= 1440 ================= */
