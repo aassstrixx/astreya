@@ -234,7 +234,7 @@ button.qc-item{width:100%;text-align:left}
 .asst-fab.nudge .asst-fab-ring{background:rgb(26,46,82);animation:asstRing 1.7s ease-out 2}
 /* искры слетаются к жемчужинке и вспыхивают в момент «пробуждения» */
 .asst-fab-fx{position:absolute;left:8px;top:8px;width:38px;height:38px;pointer-events:none}
-.asst-fab-fx i{position:absolute;left:50%;top:50%;width:9px;height:9px;margin:-4.5px 0 0 -4.5px;background:#f6d58b;clip-path:polygon(50% 0,63% 37%,100% 50%,63% 63%,50% 100%,37% 63%,0 50%,37% 37%);opacity:0}
+.asst-fab-fx i{position:absolute;left:50%;top:50%;width:9px;height:9px;margin:-4.5px 0 0 -4.5px;background:#eef3ff;clip-path:polygon(50% 0,63% 37%,100% 50%,63% 63%,50% 100%,37% 63%,0 50%,37% 37%);opacity:0}
 .asst-fab-fx::after{content:"";position:absolute;inset:-8px;border-radius:50%;opacity:0;background:radial-gradient(closest-side,rgba(255,255,255,.95),rgba(246,213,139,.45) 50%,transparent 72%)}
 .asst-fab-fx.go i{animation:asstGather 1.7s cubic-bezier(.4,0,.2,1) both;animation-delay:calc(var(--k)*80ms + 500ms)}
 .asst-fab-fx.go::after{animation:asstFlash 1.3s ease-out 1.9s both}
@@ -301,7 +301,7 @@ button.qc-item{width:100%;text-align:left}
 .asst-m.still,.asst-m.still *{animation:none!important}
 .asst-b{align-self:flex-start;max-width:96%}
 .asst-mav{position:relative;flex:none;width:32px;height:32px;margin-top:0;filter:drop-shadow(0 3px 5px rgba(11,26,51,.16))}
-.asst-typing .asst-mav::before,.asst-typing .asst-mav::after{content:"";position:absolute;left:62%;top:2px;width:7px;height:7px;opacity:0;background:#f6d58b;clip-path:polygon(50% 0,63% 37%,100% 50%,63% 63%,50% 100%,37% 63%,0 50%,37% 37%);animation:asstThought 2.4s ease-in-out infinite}
+.asst-typing .asst-mav::before,.asst-typing .asst-mav::after{content:"";position:absolute;left:62%;top:2px;width:7px;height:7px;opacity:0;background:#1a2e52;clip-path:polygon(50% 0,63% 37%,100% 50%,63% 63%,50% 100%,37% 63%,0 50%,37% 37%);animation:asstThought 2.4s ease-in-out infinite}
 .asst-typing .asst-mav::after{left:14%;top:6px;width:5px;height:5px;animation-delay:1.2s}
 .asst-u.fly{animation:none}
 .asst-u.fly .asst-bub{transition:transform .8s cubic-bezier(.22,1,.36,1),opacity .45s ease;will-change:transform}
