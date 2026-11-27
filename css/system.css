@@ -21,14 +21,14 @@
   /* движение: плавно и ненавязчиво */
   --ax-ease:cubic-bezier(.16,1,.3,1); --ax-t:.5s;
   /* стена и пол сцены (тот же рендер, что и у главной экспозиции) */
-  --ax-wall:url(../assets/showroom/layer-shell.webp?v=3de13cd9);
+  --ax-wall:url(../assets/showroom/layer-shell.webp?v=b1a37580);
 }
 [data-showroom]{--shw-glass:var(--ax-glass);--shw-glass2:var(--ax-glass-2);--shw-rim:var(--ax-rim);--shw-line:var(--ax-line);--shw-ease:var(--ax-ease)}
 
 /* ---------- подиум-миниатюра: травертиновый цилиндр (спрайты того же рендера, что и подиумы сцены); размеры — в долях высоты кадра ---------- */
 .ax-pod{--pr:.3;position:absolute;left:50%;bottom:9%;height:20%;aspect-ratio:1/var(--pr);transform:translateX(-50%);pointer-events:none;z-index:1}
-.ax-pod::before{content:"";position:absolute;left:0;right:0;top:calc(5.13% / var(--pr));bottom:0;border-radius:0 0 50% 50%/0 0 calc(5.13% / var(--pr) / (1 - .0513 / var(--pr))) calc(5.13% / var(--pr) / (1 - .0513 / var(--pr)));background:linear-gradient(180deg,rgba(255,255,255,0) 62%,rgba(86,58,30,.22)),url(../assets/showroom/pod-body.webp?v=3de13cd9) 0 0/100% 100%;box-shadow:0 9px 12px -7px rgba(78,54,26,.55)}
-.ax-pod::after{content:"";position:absolute;left:0;right:0;top:0;height:calc(10.26% / var(--pr));background:url(../assets/showroom/pod-cap.webp?v=3de13cd9) 0 0/100% 100%}
+.ax-pod::before{content:"";position:absolute;left:0;right:0;top:calc(5.13% / var(--pr));bottom:0;border-radius:0 0 50% 50%/0 0 calc(5.13% / var(--pr) / (1 - .0513 / var(--pr))) calc(5.13% / var(--pr) / (1 - .0513 / var(--pr)));background:linear-gradient(180deg,rgba(255,255,255,0) 62%,rgba(86,58,30,.22)),url(../assets/showroom/pod-body.webp?v=b1a37580) 0 0/100% 100%;box-shadow:0 9px 12px -7px rgba(78,54,26,.55)}
+.ax-pod::after{content:"";position:absolute;left:0;right:0;top:0;height:calc(10.26% / var(--pr));background:url(../assets/showroom/pod-cap.webp?v=b1a37580) 0 0/100% 100%}
 
 /* ---------- витрина-миниатюра: стена сцены, каменный пол с чёткой линией, упаковка с контактной тенью ---------- */
 .ax-stage{position:relative;display:block;overflow:hidden;padding:0;height:auto;aspect-ratio:1.18/1;isolation:isolate;
@@ -71,24 +71,50 @@
   [data-catalog] #cat-grid .pcard.ax.is-hov .ax-sh,[data-catalog] #cat-grid .pcard.ax:has(:focus-visible) .ax-sh{transform:translateX(-50%) scale(.9);opacity:.85}
 }
 
-/* ---------- «Выберите направление ухода»: плитки-экспозиции по категориям ---------- */
+/* ---------- «Выберите направление ухода»: плитки-экспозиции по категориям ----------
+   Каждая плитка — маленькая витрина той же сцены: тёплая стена с мягким светом сверху, ниша (арка, прямоугольник, круглое окно или низкая арка — по кругу, чтобы ряд не был однообразным)
+   с латунной окантовкой и тихим свечением цвета главного бренда категории, подиумы и упаковки (масштаб как в экспозиции каталога), глянцевая кромка пола; в углу — цветные метки брендов;
+   внизу тонкая золотая линия и подпись с кружком-стрелкой. Наведение — только transform и opacity (подъём карточки и упаковки, золотая рамка проявляется, стрелка сдвигается);
+   на касаниях и в «лёгком режиме» наведения нет. Появление — как у остальных плиток каталога (axTile). */
 .shw-dirs{margin:clamp(40px,5vw,72px) 0 0}
 .shw-dirs-lead{max-width:560px;margin:0;color:var(--ax-muted);font-size:15px;line-height:1.55}
 .shw-dir-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:var(--ax-sp-3)}
-.shw-dir{position:relative;display:flex;flex-direction:column;padding:0;text-align:left;cursor:pointer;border-radius:var(--ax-r-l);overflow:hidden;background:linear-gradient(180deg,var(--ax-ivory),#f3ead9);border:1px solid var(--ax-line);box-shadow:var(--ax-sh-1);transition:box-shadow var(--ax-t) var(--ax-ease),transform var(--ax-t) var(--ax-ease)}
-.shw-dir-st{aspect-ratio:1.25/1}
+.shw-dir{position:relative;display:flex;flex-direction:column;padding:0;text-align:left;cursor:pointer;border-radius:var(--ax-r-l);overflow:hidden;background:linear-gradient(180deg,#fbf6ea,#f1e7d3);border:1px solid rgba(150,118,60,.3);box-shadow:inset 0 1px 0 rgba(255,255,255,.7),var(--ax-sh-1);transition:transform var(--ax-t) var(--ax-ease)}
+.shw-dir::after{content:"";position:absolute;inset:0;z-index:6;border-radius:inherit;border:1px solid rgba(176,142,78,.85);opacity:0;pointer-events:none;transition:opacity .35s var(--ax-ease)}
+.shw-dir-st{aspect-ratio:1.25/1;--gl:color-mix(in srgb,var(--c2,#e2c27a) 22%,#fbefd2);
+  background:radial-gradient(70% 62% at 50% 0,rgba(255,244,214,.62),rgba(255,244,214,0) 72%),linear-gradient(180deg,rgba(252,248,240,.6),rgba(246,238,224,.3) 58%,rgba(120,92,56,.1)),var(--ax-wall) var(--wx) var(--wy)/var(--wz) auto,var(--ax-sand)}
 .shw-dir-st img{transition:transform .6s var(--ax-ease)}
-.shw-dir-cap{display:grid;gap:3px;padding:14px 18px 18px}
+/* глянцевая кромка пола с тонкой латунной линией */
+.shw-dir-st::before{box-shadow:inset 0 1.5px 0 rgba(255,251,238,.85),0 -1px 0 rgba(150,118,60,.5),inset 0 -18px 22px -18px rgba(70,46,18,.3)}
+/* ниша: латунный контур (внутри и снаружи), мягкий внутренний свет цвета бренда, глубина сверху */
+.shw-dir-st::after{content:"";position:absolute;z-index:0;pointer-events:none;left:15%;right:15%;top:9%;bottom:27%;border-radius:999px 999px 0 0;
+  background:radial-gradient(80% 92% at 50% 100%,color-mix(in srgb,var(--gl) 78%,#fff8e4),var(--gl) 58%,color-mix(in srgb,var(--gl) 70%,#d9c59a));
+  box-shadow:inset 0 0 0 1.5px rgba(176,142,78,.9),inset 0 14px 24px -10px rgba(70,46,18,.4),0 0 0 3px rgba(242,234,216,.92),0 0 0 4px rgba(176,142,78,.55),0 8px 14px -8px rgba(60,40,16,.4)}
+.shw-dir-st[data-v="1"]::after{left:11%;right:11%;top:12%;border-radius:12px 12px 0 0}
+.shw-dir-st[data-v="2"]::after{left:24%;right:24%;top:6%;bottom:auto;height:auto;aspect-ratio:1;border-radius:50%}
+.shw-dir-st[data-v="3"]::after{left:6%;right:6%;top:16%;border-radius:50% 50% 0 0/66% 66% 0 0}
+/* метки брендов категории */
+.shw-dir-bd{position:absolute;z-index:4;left:10px;top:10px;display:flex;gap:4px;pointer-events:none}
+.shw-dir-bd i{display:block;width:8px;height:8px;border-radius:50%;background:color-mix(in srgb,var(--b) 74%,#5d4a2a);box-shadow:0 0 0 1.5px rgba(250,244,230,.95),0 0 0 2.5px rgba(150,118,60,.4)}
+.shw-dir-cap{display:flex;align-items:center;gap:12px;padding:13px 14px 14px 18px;border-top:1px solid rgba(150,118,60,.3);background:linear-gradient(180deg,rgba(255,251,242,.7),rgba(246,236,216,.4))}
+.shw-dir-tx{display:grid;gap:3px;min-width:0;flex:1}
 .shw-dir-cap b{font:500 19px/1.2 var(--serif);color:var(--ax-ink)}
+.shw-dir-cap b::after{content:"";display:block;width:26px;height:2px;margin-top:7px;border-radius:2px;background:linear-gradient(90deg,color-mix(in srgb,var(--c1,#b08e4e) 70%,#5d4a2a),transparent)}
 .shw-dir-cap em{font:normal 12px/1.45 var(--sans);color:var(--ax-muted)}
-.shw-dir[aria-pressed="true"]{box-shadow:var(--ax-sh-2),0 0 0 2px var(--ax-ink)}
+.shw-dir-go{flex:none;display:grid;place-items:center;width:30px;height:30px;border-radius:50%;border:1px solid rgba(150,118,60,.42);background:rgba(255,252,244,.6);color:var(--ax-ink);transition:transform .45s var(--ax-ease)}
+.shw-dir-go .ic{width:14px;height:14px}
+.shw-dir[aria-pressed="true"]{box-shadow:inset 0 1px 0 rgba(255,255,255,.7),var(--ax-sh-2),0 0 0 2px var(--ax-ink)}
+.shw-dir[aria-pressed="true"]::after{opacity:0}
 @media (hover:hover) and (pointer:fine){
-  .shw-dir:hover{transform:translateY(-4px);box-shadow:var(--ax-sh-2),0 0 0 1px rgba(176,142,78,.5)}
+  .shw-dir:hover{transform:translateY(-3px)}
+  .shw-dir:hover::after{opacity:1}
   .shw-dir:hover .shw-dir-st img{transform:translateX(-50%) translateY(-5px)}
+  .shw-dir:hover .shw-dir-go{transform:translateX(3px)}
 }
 .shw-dir:focus-visible{outline:2px solid var(--ax-ink);outline-offset:3px}
 @media (max-width:1100px){.shw-dir-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
-@media (max-width:520px){.shw-dir-grid{gap:var(--ax-sp-2)}.shw-dir-cap{padding:12px 14px 14px}.shw-dir-cap b{font-size:16px}.shw-dir-cap em{font-size:11px}}
+@media (max-width:520px){.shw-dir-grid{gap:var(--ax-sp-2)}.shw-dir-cap{padding:10px 10px 11px 12px;gap:8px}.shw-dir-cap b{font-size:15.5px}.shw-dir-cap b::after{margin-top:5px;width:22px}.shw-dir-cap em{font-size:11px}.shw-dir-go{width:24px;height:24px}.shw-dir-go .ic{width:12px;height:12px}.shw-dir-bd{left:7px;top:7px}.shw-dir-bd i{width:6px;height:6px}}
+html.lite .shw-dir:hover{transform:none}html.lite .shw-dir::after{display:none}
 
 /* ---------- «Весь ассортимент списком»: свёрнут — фокус на витрине; раскрывается тем же гридом карточек ---------- */
 .shw-list{margin:clamp(40px,5vw,72px) 0 0;border-radius:var(--ax-r-l);background:linear-gradient(180deg,#faf6ee,#f3ead9);border:1px solid var(--ax-line);box-shadow:var(--ax-sh-1)}
@@ -156,8 +182,8 @@ html.js .shw-list .pcard.ax.reveal.rv-done:not(.in) .ax-stage>*,html.js .shw-lis
 html.js .shw-dir.reveal:not(.in) .shw-dir-st>*,html.js .shw-dir.reveal:not(.in) .shw-dir-cap>*{opacity:0}
 html.js .shw-dir.reveal.in .shw-dir-st>img{animation:axRise 1.1s var(--ax-ease) calc(var(--rd,0ms) + 380ms + var(--k,0) * 140ms) backwards}
 html.js .shw-dir.reveal.in .shw-dir-st>.ax-pod{animation:axPod .9s var(--ax-ease) calc(var(--rd,0ms) + 240ms + var(--k,0) * 140ms) backwards}
-html.js .shw-dir.reveal.in .shw-dir-cap>b{animation:axFade .8s var(--ax-ease) calc(var(--rd,0ms) + 520ms) backwards}
-html.js .shw-dir.reveal.in .shw-dir-cap>em{animation:axFade .8s var(--ax-ease) calc(var(--rd,0ms) + 640ms) backwards}
+html.js .shw-dir.reveal.in .shw-dir-tx>b{animation:axFade .8s var(--ax-ease) calc(var(--rd,0ms) + 520ms) backwards}
+html.js .shw-dir.reveal.in .shw-dir-tx>em{animation:axFade .8s var(--ax-ease) calc(var(--rd,0ms) + 640ms) backwards}
 html.js .shw-brand.reveal:not(.in) .shw-brand-l>*,html.js .shw-brand.reveal:not(.in) .shw-brand-c,html.js .shw-brand.reveal:not(.in) .shw-brand-t{opacity:0}
 html.js .shw-brand.reveal.in .shw-brand-l>*{animation:axSlide 1s var(--ax-ease) calc(var(--rd,0ms) + 260ms) backwards}
 html.js .shw-brand.reveal.in .shw-brand-c{animation:axFade .8s var(--ax-ease) calc(var(--rd,0ms) + 460ms) backwards}
@@ -202,7 +228,7 @@ html.js .shw-list .pcard.ax.reveal.in .pb>:nth-child(n+3){animation-delay:calc(v
 body[data-page="catalog"] #main{overflow-x:clip}                       /* растения и вода заходят до краёв экрана: лишнего горизонтального скролла быть не должно */
 /* знак «Астреи» — основной векторный логотип без букв (гора, дуга, жемчужина; assets/bg/astreya-mark-bg.svg — те же контуры, только прозрачнее), тёмно-синий, крупно на заднем фоне только за блоком «Выберите направление…» (справа); края мягко растворяются */
 .shw-dirs,.shw-brands,.shw-list{position:relative}
-.shw-dirs::after{content:"";position:absolute;z-index:-1;width:min(1060px,66vw);aspect-ratio:412/396;background:url(../assets/bg/astreya-mark-bg.svg?v=3de13cd9) 0 0/100% 100% no-repeat;pointer-events:none;-webkit-mask-image:radial-gradient(closest-side,#000 62%,transparent 100%);mask-image:radial-gradient(closest-side,#000 62%,transparent 100%)}
+.shw-dirs::after{content:"";position:absolute;z-index:-1;width:min(1060px,66vw);aspect-ratio:412/396;background:url(../assets/bg/astreya-mark-bg.svg?v=b1a37580) 0 0/100% 100% no-repeat;pointer-events:none;-webkit-mask-image:radial-gradient(closest-side,#000 62%,transparent 100%);mask-image:radial-gradient(closest-side,#000 62%,transparent 100%)}
 .shw-dirs::after{right:calc(50% - 50vw - 180px);top:-170px}
 /* палитра как на главной: «Выберите направление ухода» лежит на тёплой песочной полосе (как .rd-clinical на главной — тот же цвет #efe7d6 и мягкие края), во всю ширину экрана; текстура и знак — поверх полосы (isolation) */
 body[data-page="catalog"]{--clin:#efe7d6}

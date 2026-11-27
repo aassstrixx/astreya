@@ -56,13 +56,32 @@ module.exports = function product(ctx, C, P, p) {
         <img class="pdp-pk" src="${esc(C.u(P, src))}" alt="" decoding="async" fetchpriority="high">
       </div>`;
 
-  const tile = (n, title, html, cls = '') => `<article class="dt-tile reveal${cls ? ' ' + cls : ''}"><span class="dt-no" aria-hidden="true">${n}</span><h2>${title}</h2>${html}</article>`;
+  /* ячейка сведений: иконка в тонкой рамке, заголовок, содержимое; разделители — тонкие золотые линии (как «паспорт» на странице бренда) */
+  const cell = (title, html, ic, cls = '') => `<article class="dt-tile pdp-cell${cls ? ' ' + cls : ''}"><div class="dt-th"><span class="dt-ic" aria-hidden="true">${ic}</span><h2>${title}</h2></div>${html}</article>`;
   const have = (a) => a && a.length;
   const tasksHtml = `<div class="tasks-line">${p.tasks.map(t => `<a class="tag blue" href="${C.u(P, 'catalog.html')}?task=${t}">${esc(ctx.taskById[t].label)}</a>`).join('')}</div>
     <p class="muted">${T('product.route.p')}</p>`;
   const docsHtml = have(p.docs)
     ? `<ul class="docs">${p.docs.map(d => `<li><a href="${esc(d.url)}" target="_blank" rel="noopener">${I.doc}<span>${esc(d.title)}</span>${I.external}</a></li>`).join('')}</ul>`
     : `<p>${tbd}</p>`;
+  const SHOTS = ['photo-05-expertise', 'photo-02b-about', 'photo-02c-about', 'photo-01-hero'], PHO = {'photo-05-expertise': [683, 1024, '50% 28%'], 'photo-02c-about': [683, 1024, '50% 24%'], 'photo-02b-about': [768, 768, '50% 30%'], 'photo-01-hero': [626, 626, '50% 30%']};
+  const shot = SHOTS[Math.max(0, ctx.products.indexOf(p)) % SHOTS.length];                // репортажное фото в панели бренда: у соседних товаров разные
+  const brandCell = `<article class="dt-tile pdp-cell pdp-brand"><div class="dt-th"><span class="dt-ic" aria-hidden="true">${I.shield}</span><h2>${T('product.about.s2')}</h2></div>
+        <div class="pdp-bd">${b.logo ? `<img class="pdp-bl" src="${esc(C.u(P, b.logo))}" alt="${esc(b.name)}"${b.logoW ? ` width="${b.logoW}" height="${b.logoH}"` : ''} loading="lazy" decoding="async">` : `<b>${esc(b.name)}</b>`}</div>
+        <p>${T('product.about.tx')} ${esc(b.name)} — ${esc(lc(b.tag))}.</p>
+        <div class="pdp-links"><a class="lnk" href="${C.burl(P, b)}">${T('product.tabs.s3')} ${I.arrow}</a><a class="lnk" href="${C.u(P, 'training.html')}">${T('product.tabs.s4')} ${I.arrow}</a></div></article>
+      <figure class="pdp-ph" aria-hidden="true"><img src="${esc(C.u(P, 'assets/photos/' + shot + '.webp'))}" alt="" width="${PHO[shot][0]}" height="${PHO[shot][1]}" style="object-position:${PHO[shot][2]}" loading="lazy" decoding="async"></figure>`;
+  const TABS = [
+    [T('product.sections.s'), I.doc, `${cell(T('product.sections.s'), details.map(t => `<p>${esc(t)}</p>`).join(''), I.doc, 'is-wide')}${cell(T('product.sections.s2'), tasksHtml, I.filter)}`],
+    [T('product.tabs.s'), I.check, `${cell(T('product.sections.s3'), have(p.indications) ? list(p.indications) : `<p>${tbd}</p>`, I.check)}${cell(T('product.sections.s4'), have(p.actives) ? list(p.actives) : `<p>${tbd}</p>`, I.layers)}${cell(T('product.sections.s5'), p.usage ? `<p>${esc(p.usage)}</p>` : `<p>${tbd}</p>`, I.clock)}`],
+    [T('product.tabs.s2'), I.shield, brandCell],
+    [T('product.sections.s6'), I.book, cell(T('product.sections.s6'), docsHtml, I.book, 'is-wide')]
+  ];
+  const tabs = `<div class="pdp-tabs reveal" role="group" aria-label="${T('product.tabs.aria')}">
+      ${TABS.map((t, i) => `<input class="pdp-r" type="radio" name="pdp-tab-${p.id}" id="pdp-t${i}-${p.id}"${i ? '' : ' checked'}>`).join('')}
+      <div class="pdp-tb">${TABS.map((t, i) => `<label for="pdp-t${i}-${p.id}"><span class="pdp-ti" aria-hidden="true">${t[1]}</span><span>${t[0]}</span></label>`).join('')}</div>
+      <div class="pdp-pns">${TABS.map((t, i) => `<div class="pdp-pn pdp-pn-${i}">${t[2]}</div>`).join('')}</div>
+    </div>`;
 
   return `<div class="p-page pdp dt" style="${bstyle(b)}" data-product="${p.id}" data-page-root>
     <section class="dt-stage" data-dt-stage style="--px:${f1(PLINTH.x)};--py:${f1(PLINTH.y)}">
@@ -90,24 +109,17 @@ module.exports = function product(ctx, C, P, p) {
     </section>
 
     <section class="pdp-passport wrap p-detail">
-      <div class="pdp-mosaic">
-        ${tile('01', T('product.sections.s'), details.map(t => `<p>${esc(t)}</p>`).join(''), 'is-wide')}
-        ${tile('02', T('product.sections.s2'), tasksHtml)}
-        ${tile('03', T('product.sections.s3'), have(p.indications) ? list(p.indications) : `<p>${tbd}</p>`)}
-        ${tile('04', T('product.sections.s4'), have(p.actives) ? list(p.actives) : `<p>${tbd}</p>`)}
-        ${tile('05', T('product.sections.s5'), p.usage ? `<p>${esc(p.usage)}</p>` : `<p>${tbd}</p>`)}
-        ${tile('06', T('product.sections.s6'), docsHtml)}
-        <aside class="p-side pdp-side reveal is-wide">
-          <div class="card card-pad p-req">
-            <span class="eyebrow in">${T('product.side.eyebrow')}</span>
-            <h3>${T('product.side.h3')}</h3>
-            <p class="muted">${T('product.side.p')}</p>
-            ${request('btn btn-fill', 'product-side')}
-            <a class="lnk" href="tel:${ctx.site.contacts.phoneRaw}" data-track="phone_click">${I.phone} ${esc(ctx.site.contacts.phone)}</a>
-            ${C.callbackBtn('lnk', 'product-side')}
-          </div>
-        </aside>
-      </div>
+      ${tabs}
+      <aside class="p-side pdp-side reveal is-wide">
+        <div class="card card-pad p-req">
+          <span class="eyebrow in">${T('product.side.eyebrow')}</span>
+          <h3>${T('product.side.h3')}</h3>
+          <p class="muted">${T('product.side.p')}</p>
+          ${request('btn btn-fill', 'product-side')}
+          <a class="lnk" href="tel:${ctx.site.contacts.phoneRaw}" data-track="phone_click">${I.phone} ${esc(ctx.site.contacts.phone)}</a>
+          ${C.callbackBtn('lnk', 'product-side')}
+        </div>
+      </aside>
     </section>
 
     ${related.length ? `<section class="pdp-shelf"><div class="wrap">

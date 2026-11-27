@@ -55,7 +55,7 @@
       '<div class="qv-act"><button class="btn btn-fill" type="button" data-act="qv-ask" data-id="' + id + '">Запросить информацию ' + I.arrow + '</button>' +
       (X.requestList ? '<button class="btn btn-ghost" type="button" data-act="qv-list" data-id="' + id + '" aria-pressed="' + inList + '">' + (inList ? AT('ui.compare.k2', AT('ui.compare.k2', '✓ В списке запроса')) : AT('ui.compare.k3', AT('ui.compare.k3', '+ В список запроса'))) + '</button>' : '') +
       (X.compare ? '<button class="btn btn-ghost" type="button" data-act="qv-cmp" data-id="' + id + '" aria-pressed="' + inCmp + '">' + ICON.cmp + (inCmp ? ' В сравнении' : ' Сравнить') + '</button>' : '') +
-      (NAVI ? '<button class="btn btn-ghost" type="button" data-act="qv-stella" data-id="' + id + '">' + AT('ui.compare.k4', AT('ui.compare.k4', 'Спросить Стеллу')) + '</button>' : '') + '</div>' +
+      ((NAVI || X.assistant) ? '<button class="btn btn-ghost" type="button" data-act="qv-stella" data-id="' + id + '">' + AT('ui.compare.k4', AT('ui.compare.k4', 'Спросить Стеллу')) + '</button>' : '') + '</div>' +
       '<a class="lnk qv-more" href="' + esc(pUrl(p)) + '" data-track="qv_to_page">Страница товара ' + I.arrow + '</a></div>' +
       (many ? '<div class="qv-nav" role="group" aria-label="' + AT('ui.compare.k5', AT('ui.compare.k5', 'Листать товары')) + '"><button type="button" data-act="qv-prev" aria-label="' + AT('ui.compare.k6', AT('ui.compare.k6', 'Предыдущий товар')) + '">' + ICON.prev + '</button><span aria-live="polite">' + (qvAt + 1) + ' из ' + qvIds.length + '</span><button type="button" data-act="qv-next" aria-label="' + AT('ui.compare.k7', AT('ui.compare.k7', 'Следующий товар')) + '">' + ICON.next + '</button></div>' : '');
   }

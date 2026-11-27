@@ -156,9 +156,11 @@ module.exports = function showroom(ctx, C, P) {
     const lay = list.length === 1 ? [[50, 22, 1]] : list.length === 2 ? [[30, 18, .88], [70, 22, 1]] : [[17, 14, .8], [50, 21, 1], [83, 16, .86]];
     const body = list.map((p, i) => { const [x, ph, k] = lay[i], B0 = 9, pk = Math.round((B0 + ph * .79) * 10) / 10, th = Math.round(S.packH(p) * .5 * k * 10) / 10;
       return `<i class="ax-pod" style="--pr:.42;left:${x}%;bottom:${B0}%;height:${ph}%" aria-hidden="true"></i><img src="${esc(C.u(P, S.packOf(p)))}" alt="" style="left:${x}%;bottom:${pk}%;height:${th}%" loading="lazy" decoding="async">`; }).join('');
+    const top = Object.entries(products.filter(p => p.cat === c.id).reduce((m, p) => (m[p.brand] = (m[p.brand] || 0) + 1, m), {})).sort((a, b) => b[1] - a[1]).map(e => ctx.brandById[e[0]]).filter(Boolean),   // бренды категории по числу позиций: первый даёт тонкий цвет ниши и линии, до трёх — цветные метки в углу
+      dots = top.slice(0, 3).map(b => `<i style="--b:${esc(b.c1)}"></i>`).join(''), tint = top[0] ? `--c1:${esc(top[0].c1)};--c2:${esc(top[0].c2)}` : '';
     return `<button class="shw-dir reveal" type="button" data-act="shw-to" data-key="cat" data-id="${c.id}" aria-pressed="false" aria-label="${esc(c.name)}: ${n} ${S.plural(n, 'позиция', 'позиции', 'позиций')}">
-      <span class="ax-stage shw-dir-st" data-w="${(ci * 5 + 1) % 6}" aria-hidden="true">${body}</span>
-      <span class="shw-dir-cap"><b>${esc(c.name)}</b><em>${n} ${S.plural(n, 'позиция', 'позиции', 'позиций')}${bs.length ? ' · ' + esc(bs.slice(0, 3).join(', ')) : ''}</em></span>
+      <span class="ax-stage shw-dir-st" data-w="${(ci * 5 + 1) % 6}" data-v="${ci % 4}" style="${tint}" aria-hidden="true">${body}<span class="shw-dir-bd">${dots}</span></span>
+      <span class="shw-dir-cap"><span class="shw-dir-tx"><b>${esc(c.name)}</b><em>${n} ${S.plural(n, 'позиция', 'позиции', 'позиций')}${bs.length ? ' · ' + esc(bs.slice(0, 3).join(', ')) : ''}</em></span><span class="shw-dir-go" aria-hidden="true">${I.arrow}</span></span>
     </button>`;
   };
   /* «Подбор по задаче» — восемь задач из каталога с их пояснениями (data/catalog.json → tasks[].note) и числом товаров; клик перестраивает витрину под задачу */

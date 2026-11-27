@@ -43,7 +43,7 @@ def mats():
 
 def sun_and_fill(center, spread, fill_at, fill_energy):
     """солнце слева-спереди через невидимый переплёт (даёт диагональные окна света) + широкая заполняющая подсветка"""
-    sun = bpy.data.lights.new('sun', 'SUN'); sun.energy = ENVF('SUN', 6.0 if os.environ.get('DS_WHICH') == 'product' else 7.0); sun.angle = math.radians(ENVF('SUN_ANGLE', 1.6)); sun.color = S.E3('SUNC', (1.0, .93, .82))
+    sun = bpy.data.lights.new('sun', 'SUN'); sun.energy = ENVF('SUN', 7.0); sun.angle = math.radians(ENVF('SUN_ANGLE', 1.6)); sun.color = S.E3('SUNC', (1.0, .93, .82))
     so = bpy.data.objects.new('sun', sun); bpy.context.collection.objects.link(so)
     direction = Vector((.58, .66, -.48)).normalized(); so.rotation_euler = direction.to_track_quat('-Z', 'Y').to_euler(); so.location = (-30, -30, 30)
     mat = S.mat_simple('frame', (.1, .1, .1)); c0 = Vector(center) - direction * 26.0
@@ -105,31 +105,57 @@ def export(im, name):
     Кадр «Бренд» (витрина) — мягче: насыщенность 1,1, гамма .92, без молочной вуали (lift 0): иначе глубина ниши и свет светильников растворяются в кремовом"""
     from PIL import Image
     import numpy as np
-    brand = name == 'brand'
+    brand = name in ('brand', 'product')
     g = S.grade(np.asarray(im), sat=ENVF('BW_SAT', 1.10 if brand else 1.38), gamma=ENVF('BW_GAMMA', .92 if brand else .85), lift=ENVF('BW_LIFT', 0.0 if brand else .05))
     g = np.clip(g * np.array([float(x) for x in os.environ.get('BW_WARM', '1.0,.99,.955').split(',')], np.float32), 0, 255)
     if brand: g = unglass(g)
     im2 = Image.fromarray(g.astype(np.uint8)); os.makedirs(OUT, exist_ok=True)
-    im2.save(os.path.join(OUT, 'stage-%s.webp' % name), quality=int(ENVF('Q', 90)), method=6)
-    sw = 1600 if brand else 1440; im2.resize((sw, round(sw * PH / PW)), Image.LANCZOS).save(os.path.join(OUT, 'stage-%s-s.webp' % name), quality=int(ENVF('QS', 84 if brand else 88)), method=6)
+    im2.save(os.path.join(OUT, 'stage-%s.webp' % name), quality=int(ENVF('Q', 76 if brand else 90)), method=6)
+    sw = 1600 if brand else 1440; im2.resize((sw, round(sw * PH / PW)), Image.LANCZOS).save(os.path.join(OUT, 'stage-%s-s.webp' % name), quality=int(ENVF('QS', 72 if brand else 88)), method=6)
 
 
 # ---------------------------------------------------------------- товар
-P_WU = 8.0; P_HU = P_WU * PH / PW; P_PITCH = ENVF('PITCH', 6.5); P_XS = ENVF('XS', -1.25); P_TOP = .95; P_DIST = 64.0
+P_WU = ENVF('PWU', 7.6); P_HU = P_WU * PH / PW; P_PITCH = ENVF('PITCH', 5.0); P_XS = ENVF('XS', -1.25); P_TOP = ENVF('PTOP', .55); P_DIST = 64.0; P_WY = ENVF('WALLY', 8.0)
+P_NRX = ENVF('NRX', 1.7); P_NTOP = ENVF('NTOP', 3.0)
 
 
 def build_product(sc):
-    M = mats()
-    S.box('floor', M['floor'], -60, 60, -12, 40, -1.0, 0.0, G, bev=0.0)
-    wy = ENVF('WALLY', 8.0)
-    wall_with_niche(M, P_XS, ENVF('NRX', 2.0), ENVF('NTOP', 4.3), wy, 2.0, 1.55, 0.0)
-    S.cylinder('pl_base', M['block'], P_XS, 0, 1.95, 0.0, .20, G, seg=160, bev=.03)
-    S.cylinder('pl_main', M['block'], P_XS, 0, 1.55, .20, P_TOP, G, seg=160, bev=.035)
-    niche_lights(P_XS, 2 * ENVF('NRX', 2.0), ENVF('NTOP', 4.3), wy, 0.0)
-    sun_and_fill((0, wy, 3.0), 9.0, (-1.0, -40.0, 8.0), ENVF('FILL', 6500))
-    zc = P_HU / 2 + .0
+    """Общий кадр страницы товара («витрина»): стена из плит травертина (та же облицовка, что на странице бренда), арочная ниша с латунным контуром и травертиновой глубиной, подиум с латунным поясом,
+    точечный тёплый свет сверху, глянцевый пол с отражением, тени веток оливы на стене (сами ветки камере не видны), камень и стеклянная сфера на полу; длиннофокусная оптика мягко размывает стену.
+    Кадр бренд-нейтральный; цвет бренда HTML добавляет тонким акцентом."""
+    M = mats(); M['wall'] = S.mat_simple('wall_back', (.27, .23, .17), .9); br = MT.brass_champagne('brass', col=(.74, .54, .27, 1), rough=.30)
+    gf = MT.limestone_floor('floor_gloss', (.97, .93, .84), tile=ENVF('TILE', 6.0), rough=ENVF('FLOOR_R', .20)); nb = next(n for n in gf.node_tree.nodes if n.type == 'BSDF_PRINCIPLED')
+    for k_, v_ in (('Coat Weight', ENVF('FLOOR_COAT', .30)), ('Coat Roughness', .05)):
+        if k_ in nb.inputs: nb.inputs[k_].default_value = v_
+    S.box('floor', gf, -60, 60, -12, 40, -1.0, 0.0, G, bev=0.0)
+    tb = TG.stone_mat('trav_back', tile_units=5.0, joints=False, albedo=tuple(float(v) for v in os.environ.get('BACKT', '.62,.54,.43').split(',')), chroma=.55, honed=.45, pits=.5, seed=9, cboost=1.2, box=True)
+    wall_with_niche(M, P_XS, P_NRX, P_NTOP, P_WY, 2.0, 1.55, 0.0, cutmat=tb)
+    cladding(P_NTOP - P_NRX, P_XS, P_NRX, P_NTOP, 0.0, y0=P_WY)
+    S.arch_solid('back', tb, P_XS, P_NRX - .01, P_NTOP - P_NRX, P_WY + 1.4, P_WY + 1.6, G, z0=0.0)
+    S.arch_frame('brass_arch', br, P_XS, P_NRX - .02, P_NTOP - P_NRX, .03, P_WY - .13, P_WY - .045, G, z0=0.0)
+    # подиум: два яруса травертина и латунный пояс
+    S.cylinder('pl_base', M['block'], P_XS, 0, 1.75, 0.0, .16, G, seg=160, bev=.03)
+    S.cylinder('pl_main', M['block'], P_XS, 0, 1.38, .16, P_TOP, G, seg=160, bev=.035)
+    S.cylinder('pl_band', br, P_XS, 0, 1.395, .30, .335, G, seg=160, bev=.006)
+    # мелочи на полу: камень слева у ниши и стеклянная сфера справа (вне зоны таблички)
+    gm = bpy.data.materials.new('glass_sphere'); gm.use_nodes = True; b_ = gm.node_tree.nodes['Principled BSDF']
+    for k_, v_ in (('Transmission Weight', 1.0), ('Transmission', 1.0)):
+        if k_ in b_.inputs: b_.inputs[k_].default_value = v_
+    b_.inputs['Base Color'].default_value = (.93, .98, .95, 1); b_.inputs['Roughness'].default_value = .02; b_.inputs['IOR'].default_value = 1.5
+    S.decor.ball('stone', M['block'], P_XS - 2.65, -.9, 0.30, .55, G, sx=1.2, sy=.95, sz=.55, seg=64, n=32)
+    S.decor.ball('sph', gm, P_XS + 2.2, -1.3, .34, .34, G, seg=64, n=32)
+    # тени веток оливы: ветка стоит перед стеной на обратном луче солнца над нужной точкой тени (камере не видна)
+    d = Vector((.58, .66, -.48)); dist = 1.6; sh = lambda X, Z: (X - d.x / d.y * dist, P_WY - dist, Z + (-d.z) / d.y * dist)
+    plants([([sh(4.1, 3.3), sh(3.1, 2.95), sh(2.1, 2.65), sh(1.1, 2.8)], 20, 1.0), ([sh(-3.7, 3.3), sh(-3.6, 2.6), sh(-3.4, 1.9)], 11, .85)], camvis=False)
+    niche_lights(P_XS, 2 * P_NRX, P_NTOP, P_WY, 0.0)
+    for k, (dx, dy) in enumerate(((-.2, -.2),)):
+        sp = bpy.data.lights.new('spot%d' % k, 'SPOT'); sp.energy = ENVF('SPOT', 3200.0); sp.spot_size = math.radians(ENVF('SPOT_A', 34)); sp.spot_blend = .8; sp.shadow_soft_size = .15; sp.color = S.E3('SPOTC', (1.0, .91, .78))
+        so = bpy.data.objects.new('spot%d' % k, sp); bpy.context.collection.objects.link(so); so.location = (P_XS + dx + .6, -2.6, 5.6)
+        so.rotation_euler = (Vector((P_XS + dx, dy, P_TOP + 1.2)) - so.location).to_track_quat('-Z', 'Y').to_euler(); so.visible_camera = False
+    sun_and_fill((0, P_WY, 3.0), 9.0, (-1.0, -40.0, 8.0), ENVF('FILL', 6500))
+    zc = P_TOP + .30 * P_HU
     cz = zc + P_DIST * math.tan(math.radians(P_PITCH))
-    cam = camera(sc, (0.0, -P_DIST, cz), 18.0 * 64.0 / (P_WU / 2), P_PITCH, dof_dist=P_DIST / math.cos(math.radians(P_PITCH)), fstop=ENVF('FSTOP', .6))
+    cam = camera(sc, (0.0, -P_DIST, cz), 18.0 * 64.0 / (P_WU / 2), P_PITCH, dof_dist=P_DIST / math.cos(math.radians(P_PITCH)), fstop=ENVF('FSTOP', 1.4))
     return cam
 
 
@@ -219,26 +245,27 @@ def window_panel(strength):
     em = N.new('ShaderNodeEmission'); em.inputs['Color'].default_value = (1.0, .96, .88, 1); L.new(st.outputs[0], em.inputs['Strength']); L.new(em.outputs[0], out.inputs['Surface']); return m
 
 
-def cladding(zs):
+def cladding(zs, cx=None, rx=None, top=None, base=None, y0=0.0):
     """облицовка стены травертином (плиты 40×20 см «вразбежку», швы 2 мм, три близких оттенка): вместо ровной бежевой штукатурки — живая фактура, жилы и глубина; в нише плиты вырезаются по арке"""
+    cx = B_CX if cx is None else cx; rx = B_RX if rx is None else rx; top = B_TOP if top is None else top; base = B_BASE if base is None else base
     SW, SH, GAP, T = 4.0, 2.0, .018, .09; rnd = random.Random(11)
     mats = [TG.stone_mat('trav_wall%d' % i, tile_units=ENVF('WALL_TILE', 7.0), joints=False, albedo=tuple(c * ENVF('WALL_K', 1.0) for c in tt), chroma=.55, honed=.40, pits=ENVF('WALL_PITS', .55), seed=i + 1, cboost=ENVF('WALL_CB', 1.8), box=True) for i, tt in enumerate(((.80, .72, .60), (.84, .76, .63), (.77, .69, .58)))]
-    cut = S.arch_solid('ccut', mats[0], B_CX, B_RX, zs, -.6, .6, G, z0=B_BASE - .02); cut.hide_render = True; cut.display_type = 'WIRE'
+    cut = S.arch_solid('ccut', mats[0], cx, rx, zs, y0 - .6, y0 + .6, G, z0=base - .02); cut.hide_render = True; cut.display_type = 'WIRE'
     for row in range(0, 5):
-        z0 = B_BASE + row * SH; off = (row % 2) * SW / 2
+        z0 = base + row * SH; off = (row % 2) * SW / 2
         for col in range(-4, 4):
             x0 = col * SW - off - 2.0
             if x0 + SW < -9 or x0 > 9: continue
-            sb = S.box('slab', rnd.choice(mats), x0 + GAP / 2, x0 + SW - GAP / 2, -T, -.005, z0 + GAP / 2, z0 + SH - GAP / 2, G, bev=.012)
-            if x0 < B_CX + B_RX and x0 + SW > B_CX - B_RX and z0 < B_TOP + .1:
+            sb = S.box('slab', rnd.choice(mats), x0 + GAP / 2, x0 + SW - GAP / 2, y0 - T, y0 - .005, z0 + GAP / 2, z0 + SH - GAP / 2, G, bev=.012)
+            if x0 < cx + rx and x0 + SW > cx - rx and z0 < top + .1:
                 bm = sb.modifiers.new('cut', 'BOOLEAN'); bm.operation = 'DIFFERENCE'; bm.object = cut; bm.solver = 'EXACT'
 
 
-def olive_limb(pts, nodes, k, rnd, leaves, ms, bevel=.03):
+def olive_limb(pts, nodes, k, rnd, leaves, ms, bevel=.03, camvis=True):
     """ветка оливы по ломаной pts (мировые координаты): стебель-кривая и супротивные пары листьев (цвет по длине, поворот пары на 90° от узла к узлу) — те же листья, что у дерева на главной"""
     cu = bpy.data.curves.new('lb', 'CURVE'); cu.dimensions = '3D'; sp = cu.splines.new('POLY'); sp.points.add(len(pts) - 1)
     for i, p in enumerate(pts): sp.points[i].co = (*p, 1)
-    cu.bevel_depth = bevel; cu.materials.append(ms); ob0 = bpy.data.objects.new('lb', cu); bpy.context.collection.objects.link(ob0); ob0['grp'] = G
+    cu.bevel_depth = bevel; cu.materials.append(ms); ob0 = bpy.data.objects.new('lb', cu); bpy.context.collection.objects.link(ob0); ob0['grp'] = G; ob0.visible_camera = camvis
     P = [Vector(p) for p in pts]
     def at(t):
         f = t * (len(P) - 1); i = min(int(f), len(P) - 2); return P[i].lerp(P[i + 1], f - i)
@@ -246,21 +273,20 @@ def olive_limb(pts, nodes, k, rnd, leaves, ms, bevel=.03):
         t = i / (nodes + 1) * .90 + .08; pos = at(t); d = (at(min(1, t + .03)) - pos).normalized()
         for side, dv in enumerate(RL.pair_dirs(d, i, rnd, spread=1.0, up=.12, droop=.34)):
             ob = bpy.data.objects.new('lf', rnd.choice(leaves)); bpy.context.collection.objects.link(ob); ob['grp'] = G
-            ob.scale = ((1.15 - .45 * t) * (.75 + rnd.random() * .5) * k,) * 3; RL.orient(ob, dv, rnd, .8, RL.tint_for(t, rnd)); ob.location = pos
-    ob = bpy.data.objects.new('lf', leaves[0]); bpy.context.collection.objects.link(ob); ob['grp'] = G
+            ob.scale = ((1.15 - .45 * t) * (.75 + rnd.random() * .5) * k,) * 3; RL.orient(ob, dv, rnd, .8, RL.tint_for(t, rnd)); ob.location = pos; ob.visible_camera = camvis
+    ob = bpy.data.objects.new('lf', leaves[0]); bpy.context.collection.objects.link(ob); ob['grp'] = G; ob.visible_camera = camvis
     ob.scale = (k,) * 3; ob.rotation_euler = (at(1) - at(.92)).normalized().to_track_quat('Y', 'Z').to_euler(); ob.location = at(1)
 
 
-def plants():
+def plants(sets=None, camvis=True):
     """три ветки оливы свисают сверху (из-под шапки сайта): две справа над табличкой, одна слева у свода — мягкие тени листьев ложатся на каменную стену по лучу окна; ветки не заходят на логотип, упаковки и табличку"""
     rnd = random.Random(5)
     ma = RL.leaf_material('olA', (.05, .085, .035), (.17, .24, .08)); mb = RL.leaf_material('olB', (.09, .14, .055), (.25, .33, .12), under=True)
     ms = bpy.data.materials.new('olStem'); ms.use_nodes = True; ms.node_tree.nodes['Principled BSDF'].inputs['Base Color'].default_value = (.30, .25, .16, 1)
     leaves = []
     for m in (ma, mb): leaves.extend(RL.leaf_variants(.80, .115, 4, 'olive', (m,)))
-    olive_limb([(3.9, -1.2, 8.8), (3.5, -1.25, 7.5), (2.7, -1.35, 6.6), (1.8, -1.45, 6.0), (.8, -1.55, 5.6), (-.1, -1.6, 5.5)], 22, 1.0, rnd, leaves, ms)
-    olive_limb([(5.4, -1.1, 8.6), (5.1, -1.2, 7.2), (4.5, -1.3, 6.3), (3.9, -1.4, 5.9)], 13, .85, rnd, leaves, ms)
-    olive_limb([(-5.95, -1.0, 8.6), (-5.85, -1.1, 7.2), (-5.7, -1.15, 6.3), (-5.4, -1.2, 5.7)], 12, .85, rnd, leaves, ms)
+    sets = sets or [([(3.9, -1.2, 8.8), (3.5, -1.25, 7.5), (2.7, -1.35, 6.6), (1.8, -1.45, 6.0), (.8, -1.55, 5.6), (-.1, -1.6, 5.5)], 22, 1.0), ([(5.4, -1.1, 8.6), (5.1, -1.2, 7.2), (4.5, -1.3, 6.3), (3.9, -1.4, 5.9)], 13, .85), ([(-5.95, -1.0, 8.6), (-5.85, -1.1, 7.2), (-5.7, -1.15, 6.3), (-5.4, -1.2, 5.7)], 12, .85)]
+    for pts, nodes, k in sets: olive_limb(pts, nodes, k, rnd, leaves, ms, camvis=camvis)
 
 
 def decor(M, gt, br):
@@ -361,7 +387,7 @@ def main():
     pw = int(os.environ.get('DS_W', 1280 if mode == 'preview' else PW)); spp = int(os.environ.get('DS_SPP', 20 if mode == 'preview' else 72))
     S.settings(sc, pw, round(pw * PH / PW), spp)
     sc.render.threads_mode = 'FIXED'; sc.render.threads = int(os.environ.get('DS_THREADS', 4))
-    sc.view_settings.exposure = ENVF('EXPO', -1.0 if which == 'product' else -0.85)
+    sc.view_settings.exposure = ENVF('EXPO', -0.85)
     cam = (build_product if which == 'product' else build_brand)(sc)
     sc.render.film_transparent = False
     print('сцена собрана:', which, 'объектов', len(bpy.data.objects), flush=True)

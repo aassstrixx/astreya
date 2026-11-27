@@ -16,7 +16,7 @@ module.exports = function start(ctx, C, P) {
   return `<div class="st-page" data-start-page>
     <section class="st-scene" aria-labelledby="st-h">
       <div class="st-bg" aria-hidden="true">
-        <picture>${img('assets/house/room-editorial.webp', 1920, 1080, 'st-bg-img', ' fetchpriority="high"')}</picture>
+        <picture>${img('assets/utility/stella-bg.webp', 2880, 1620, 'st-bg-img', ' fetchpriority="high"')}</picture>
         <i class="st-wash"></i><i class="st-sun"></i>
         <i class="st-fade"></i>
       </div>
