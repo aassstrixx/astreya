@@ -85,6 +85,22 @@ function load() {
   ctx.news.forEach(n => { n.body = n.body.map(p => p.replace('{{discounts}}', disc)); });
   ctx.newsBySlug = byId(ctx.news, 'slug');
 
+  /* библиотека статей: data/articles.json (рубрики, статьи с блоками). Время чтения считается по тексту; у статьи может быть несколько рубрик — первая основная.
+     Те же объекты идут в блоки «Полезные статьи» на странице «Обучение» и на страницах брендов (раньше — data/training.json → articles) */
+  { const ar = readOpt('articles', {categories: [], items: []}), seen = new Set();
+    ctx.articleCats = ar.categories || []; ctx.articleCatById = byId(ctx.articleCats);
+    const words = a => { const parts = []; (a.blocks || []).forEach(b => { ['text', 'title', 'note', 'caption', 'by'].forEach(k => b[k] && parts.push(b[k])); (b.items || []).forEach(x => parts.push(x)); (b.head || []).forEach(x => parts.push(x)); (b.rows || []).forEach(r => r.forEach(x => parts.push(x))); }); return parts.concat([a.intro || '']).join(' ').split(/\s+/).filter(Boolean).length; };
+    ctx.articles = (ar.items || []).map(a => {
+      const bad = m => { throw new Error('data/articles.json → «' + (a.slug || a.title || '?') + '»: ' + m); };
+      if (!a.slug || !/^[a-z0-9-]+$/.test(a.slug)) bad('нужен slug из латиницы, цифр и дефисов'); if (seen.has(a.slug)) bad('повтор slug'); seen.add(a.slug);
+      if (!a.title || !a.date || !a.excerpt || !Array.isArray(a.blocks) || !a.blocks.length) bad('нужны title, date, excerpt и blocks');
+      const cats = (a.categories || []).filter(c => ctx.articleCatById[c]); if (!cats.length) bad('нужна хотя бы одна рубрика из categories');
+      if (a.brand && !ctx.brandById[a.brand]) bad('нет бренда «' + a.brand + '»');
+      return Object.assign({}, a, {cats, tag: ctx.articleCatById[cats[0]].name, min: Math.max(3, Math.round(words(a) / 180)), words: words(a)});
+    }).sort((a, b) => b.date.localeCompare(a.date));
+    ctx.articleBySlug = byId(ctx.articles, 'slug');
+    ctx.training.articles = ctx.articles; }
+
   ctx.sortedEvents = events.slice().sort((a, b) => a.date.localeCompare(b.date));
   ctx.stats = {brands: brands.length, products: products.length, offices: site.offices.length};
 

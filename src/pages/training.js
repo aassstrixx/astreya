@@ -138,7 +138,7 @@ function academyPage(ctx, C, P) {
 
   /* 07 · вопросы и статьи: левая половина — вопросы (заголовок в столбце слева), правая — «Полезные статьи» на тёплой панели с рендером журнала; «Читать все статьи» раскрывает остальные */
   const magSrc = exists('assets/academy/mag.webp') ? 'assets/academy/mag.webp' : '';
-  const pub = a => { const b = brandById[a.brand]; return `<li class="ac-pub" style="${bstyle(b)}"><span class="ac-pub-tag">${esc(a.tag)}</span><b>${esc(a.title)}</b><small>${dparts(a.date).full} · ${TX('common.pages.minRead', {min: a.min})}</small></li>`; };
+  const pub = a => { const b = brandById[a.brand]; return `<li class="ac-pub" style="${bstyle(b)}"><span class="ac-pub-tag">${esc(a.tag)}</span><b><a class="ac-pub-a" href="${C.u(P, 'articles/' + a.slug + '.html')}" data-track="article_click" data-place="training-pubs">${esc(a.title)}</a></b><small>${dparts(a.date).full} · ${TX('common.pages.minRead', {min: a.min})}</small><i class="ac-pub-go" aria-hidden="true">${arrow}</i></li>`; };
   const nPub = B.shown || 3, pubs = training.articles;
   const library = `<section class="ac-lib" id="library" aria-labelledby="ac-lib-h"><div class="ac-lib-grid">
     <div class="ac-faq-half">${bd('faq')}<div class="ac-faq-in">
@@ -148,9 +148,8 @@ function academyPage(ctx, C, P) {
     <div class="ac-pub-half" id="materials">
       ${magSrc ? `<figure class="ac-mag" aria-hidden="true"><img src="${C.u(P, magSrc)}" alt="" width="1600" height="1000" loading="lazy" decoding="async"></figure>` : ''}
       <div class="ac-pub-copy reveal"><h2>${esc(B.pubTitle)}</h2>${B.pubLead ? `<p class="ac-side-p">${esc(B.pubLead)}</p>` : ''}
-        ${pubs.length > nPub ? `<button class="ac-btn-o" type="button" data-act="acad-more" data-target="ac-pmore" aria-expanded="false" aria-controls="ac-pmore" data-more="${esc(B.pubMore || TX('training.media.s2'))}" data-less="${esc(B.pubLess || TX('training.media.s3'))}"><span>${esc(B.pubMore || TX('training.media.s2'))}</span> ${arrow}</button>` : ''}</div>
+        <a class="ac-btn-o" href="${C.u(P, 'articles.html')}" data-track="article_all" data-place="training-pubs"><span>${esc(B.pubMore || TX('training.media.s2'))}</span> ${arrow}</a></div>
       <ul class="grid ac-pubs reveal">${pubs.slice(0, nPub).map(pub).join('')}</ul>
-      ${pubs.length > nPub ? `<div class="ac-tmore ac-pmore" id="ac-pmore" aria-hidden="true" inert><div class="ac-tmore-in"><ul class="ac-pubs">${pubs.slice(nPub).map(pub).join('')}</ul></div></div>` : ''}
     </div>
   </div></section>`;
 
@@ -214,7 +213,7 @@ function trainingPage(ctx, C, P) {
 
   <section class="sec"${ctx.redesign ? ' id="materials"' : ''} style="padding-top:0"><div class="wrap">
     ${C.secHead(TX('training.articles.s'), TX('training.articles.s2'))}
-    <div class="grid g3">${training.articles.slice(0, 3).map(C.articleCard).join('')}</div>
+    <div class="grid g3">${training.articles.slice(0, 3).map(a => C.articleCard(a, P)).join('')}</div>
   </div></section>
 
   ${C.ctaBand(P, 'training-cta', C.closingCfg('training') && Object.assign({}, C.closingCfg('training'), {vars: {}}))}`;

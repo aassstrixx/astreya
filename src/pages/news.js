@@ -183,6 +183,12 @@ function newsPage(ctx, C, P) {
         <div class="np-pages" data-np-pages hidden>${pages.join('\n')}</div>
       </div>
     </section>
+    <section class="np-lib" aria-labelledby="np-lib-t">
+      <div class="np-lib-in"><span class="np-eyebrow">${T('news.library.eyebrow')}</span><h2 id="np-lib-t">${T('news.library.title')}</h2>
+        <p class="np-arch-l">${T('news.library.text')}</p>
+        <div class="grid g3">${ctx.articles.slice(0, 3).map(a => C.articleCard(a, P)).join('')}</div>
+        <p class="np-lib-all"><a class="btn btn-ghost" href="${C.u(P, 'articles.html')}" data-track="article_all" data-place="news">${T('news.library.all')} ${I.arrow}</a></p></div>
+    </section>
     <section class="np-arch" aria-labelledby="np-arch-t">
       <div class="np-arch-in"><span class="np-eyebrow">${T('news.archive.h2')}</span><h2 id="np-arch-t">${T('news.archive.kicker')}</h2>
         <p class="np-arch-l">${T('news.archive.text')}</p>

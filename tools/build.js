@@ -16,6 +16,7 @@ const {brandsPage, brandPage} = require('../src/pages/brands.js');
 const product = require('../src/pages/product.js');
 const {trainingPage, eventPage} = require('../src/pages/training.js');
 const {newsPage, articlePage} = require('../src/pages/news.js');
+const {libraryPage, materialPage} = require('../src/pages/articles.js');
 const company = require('../src/pages/company.js');
 const contacts = require('../src/pages/contacts.js');
 const partners = require('../src/pages/partners.js');
@@ -133,6 +134,14 @@ ctx.news.forEach(n => page({key: 'article', path: `news/${n.slug}.html`, nav: '/
   breadcrumbs: [[Traw('seo.crumbs.home'), 'index.html'], [Traw('seo.crumbs.news'), 'news.html'], [n.title, `news/${n.slug}.html`]],
   jsonld: structured ? [{'@context': 'https://schema.org', '@type': 'NewsArticle', headline: n.title, datePublished: n.date, description: n.excerpt, publisher: {'@type': 'Organization', name: site.name}}] : []}, P => articlePage(ctx, C, P, n)));
 
+/* ---- библиотека статей: articles.html и articles/<slug>.html (data/articles.json) ---- */
+page({key: 'library', path: 'articles.html', nav: '/training', title: Traw('seo.library.title'), description: Traw('seo.library.desc'), priority: 0.8,
+  breadcrumbs: [[Traw('seo.crumbs.home'), 'index.html'], [Traw('seo.crumbs.articles'), 'articles.html']]}, P => libraryPage(ctx, C, P));
+ctx.articles.forEach(a => page({key: 'material', path: `articles/${a.slug}.html`, nav: '/training', ogType: 'article', priority: 0.6, ...(a.cover && a.cover.src ? {image: a.cover.src} : {}),
+  title: a.seoTitle || Traw('seo.material.title', {title: a.title}), description: a.seoDescription || descr(a.excerpt, Traw('seo.material.desc')),
+  breadcrumbs: [[Traw('seo.crumbs.home'), 'index.html'], [Traw('seo.crumbs.articles'), 'articles.html'], [a.title, `articles/${a.slug}.html`]],
+  jsonld: structured ? [{'@context': 'https://schema.org', '@type': 'Article', headline: a.title, datePublished: a.date, description: a.excerpt, ...(a.cover && a.cover.src ? {image: L.absUrl(a.cover.src)} : {}), publisher: {'@type': 'Organization', name: site.name}}] : []}, P => materialPage(ctx, C, P, a)));
+
 /* ---- страницы из админки (data/pages.json): pages/<slug>.html ---- */
 { const bad = blocks.pageProblems(ctx.pagesRaw); if (bad.length) { console.error('data/pages.json: ' + bad.slice(0, 6).join(' ')); process.exit(1); } }
 ctx.customPages.forEach(pg => page({key: 'custom', path: `pages/${pg.slug}.html`, nav: pg.nav ? '/p/' + pg.slug : '', priority: 0.5, noindex: !!pg.noindex,
@@ -140,7 +149,7 @@ ctx.customPages.forEach(pg => page({key: 'custom', path: `pages/${pg.slug}.html`
   breadcrumbs: [[Traw('seo.crumbs.home'), 'index.html'], [pg.title, `pages/${pg.slug}.html`]]}, P => customPage(ctx, C, P, pg)));
 
 /* ---- запись файлов ---- */
-for (const d of ['brands', 'products', 'training', 'news', 'pages']) fs.rmSync(path.join(ROOT, d), {recursive: true, force: true});
+for (const d of ['brands', 'products', 'training', 'news', 'pages', 'articles']) fs.rmSync(path.join(ROOT, d), {recursive: true, force: true});
 for (const pg of pages) {
   const f = path.join(ROOT, pg.path);
   fs.mkdirSync(path.dirname(f), {recursive: true});
@@ -156,6 +165,7 @@ const index = [
     q: S.norm([b.name, b.tag, b.desc, b.group, b.country, b.tasks.map(t => ctx.taskById[t].label).join(' ')].join(' '))})),
   ...(ctx.sales ? [{t: 'page', title: ctx.sales.planner.eyebrow, url: ctx.sales.planner.path, sub: Traw('seo.og.planner'), q: S.norm([ctx.sales.planner.eyebrow, ctx.sales.planner.title, ctx.sales.planner.lead, 'с чего начать подбор план закупки ассортимент обучение условия старт'].join(' '))}] : []),
   ...ctx.customPages.filter(pg => !pg.noindex).map(pg => ({t: 'page', title: pg.title, url: `pages/${pg.slug}.html`, sub: pg.description || pg.lead || '', q: S.norm([pg.title, pg.description, pg.lead, ...pg.blocks.flatMap(b => [b.title, b.text, ...(b.paragraphs || []), ...(b.left || []), ...(b.right || []), ...(b.items || []).map(i => typeof i === 'string' ? i : [i.title, i.text, i.q, i.a, i.label].join(' '))])].filter(Boolean).join(' '))})),
+  ...ctx.articles.map(a => ({t: 'page', title: a.title, url: `articles/${a.slug}.html`, sub: `${a.tag} · ${S.dparts(a.date).full}`, q: S.norm([a.title, a.excerpt, a.intro || '', a.tag, a.cats.map(c => ctx.articleCatById[c].name).join(' '), a.blocks.filter(b => b.t === 'h2').map(b => b.text).join(' ')].join(' '))})),
   ...ctx.news.map(n => ({t: 'news', title: n.title, url: `news/${n.slug}.html`, sub: `${ctx.newsCatById[n.category].name} · ${S.dparts(n.date).full}`, q: S.norm([n.title, n.excerpt, n.body.join(' '), ctx.newsCatById[n.category].name].join(' '))})),
   ...ctx.sortedEvents.map(e => ({t: 'event', title: e.title, url: `training/${e.slug}.html`, sub: `${e.fmt} · ${e.city} · ${S.dparts(e.date).full}`, date: e.date, q: S.norm([e.title, e.description, e.city, e.fmt, e.speaker, brandName(e.brand), 'семинар мероприятие обучение запись'].join(' '))}))
 ];

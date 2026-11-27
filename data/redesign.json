@@ -1027,7 +1027,7 @@
     "product": {"css": ["pg-product"], "js": ["pg-product"]},
     "brand": {"css": ["pg-brand"], "js": ["pg-brand"]},
     "event": {"css": ["pg-event"], "js": ["pg-event"]},
-    "article": {"css": ["news-article"], "js": ["news-article"]},
+    "article": {"css": ["news-article"], "js": ["news-article"]}, "library": {"css": ["pg-articles"], "js": ["pg-articles"]}, "material": {"css": ["pg-articles"], "js": ["pg-articles"]},
     "start": {"css": ["pg-start"], "js": ["pg-start"]},
     "search": {"css": ["pg-search"], "js": ["pg-search"]},
     "privacy": {"css": ["pg-legal"], "js": ["pg-legal"]},

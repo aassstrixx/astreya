@@ -217,14 +217,15 @@ module.exports = function components(ctx) {
     </div>
   </div></section>`;
 
-  /* статья учебного центра: карточка без внешней ссылки */
-  const articleCard = a => {
+  /* статья библиотеки: карточка-ссылка (articles/<slug>.html) с обложкой статьи, рубрикой, датой, временем чтения и стрелкой; без slug или без P — прежняя карточка без ссылки */
+  const articleCard = (a, P) => {
     const b = brandById[a.brand];
-    const ph = [...String(a.title || a.tag)].reduce((n, c) => n + c.charCodeAt(0), 0) % 4;          // какой из четырёх снимков (css/components.css) станет обложкой
-    return `<div class="card art-card reveal" style="${bstyle(b)}" data-ph="${ph}">
-    <div class="cov"><i class="cov-ic" aria-hidden="true">${I.doc}</i><span>${esc(a.tag)}</span></div>
-    <div class="ab"><h3>${esc(a.title)}</h3><div class="meta"><span>${dparts(a.date).full}</span><span>${a.min} мин чтения</span></div></div>
-  </div>`;
+    const ph = [...String(a.title || a.tag)].reduce((n, c) => n + c.charCodeAt(0), 0) % 4;          // какой из четырёх снимков (css/components.css) станет обложкой, если у статьи нет своей
+    const cv = a.cover && a.cover.src && P ? ` style="--cv:url(${esc(u(P, a.cover.src))});--cvp:${esc(a.cover.pos || '50% 30%')}"` : '';
+    const inner = `<div class="cov"${cv}><i class="cov-ic" aria-hidden="true">${I.doc}</i><span>${esc(a.tag)}</span></div>
+    <div class="ab"><h3>${esc(a.title)}</h3><div class="meta"><span>${dparts(a.date).full}</span><span>${T('common.pages.minRead', {min: a.min})}</span></div></div>${a.slug && P ? `<i class="art-go" aria-hidden="true">${I.arrow}</i>` : ''}`;
+    return a.slug && P ? `<a class="card art-card art-link reveal" href="${u(P, 'articles/' + a.slug + '.html')}" style="${bstyle(b)}" data-ph="${ph}" data-track="article_click" data-place="article-card">${inner}</a>`
+      : `<div class="card art-card reveal" style="${bstyle(b)}" data-ph="${ph}">${inner}</div>`;
   };
 
   const noteBox = html => `<div class="note">${I.info}<span>${html}</span></div>`;

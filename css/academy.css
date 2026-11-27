@@ -79,7 +79,7 @@ body[data-page="training"].menu-open .hdr,body[data-page="training"].search-open
 
 /* ---------- 03 · «Как пройти регистрацию?»: маршрут на тонкой линии ---------- */
 .ac-reg{position:relative;z-index:3;isolation:isolate;background:linear-gradient(180deg,#f3ecdc 0,#eee4cf 26%,var(--ac-band) 58%,var(--ac-bg2) 100%)}
-.ac-reg::before{content:"";position:absolute;inset:0;z-index:-1;pointer-events:none;background:url(../assets/bg/stone-grain.webp?v=b1a37580) 0 0/512px 512px;opacity:.5}
+.ac-reg::before{content:"";position:absolute;inset:0;z-index:-1;pointer-events:none;background:url(../assets/bg/stone-grain.webp?v=324b1806) 0 0/512px 512px;opacity:.5}
 .ac-reg-in{position:relative;align-items:start;padding:clamp(24px,3.3vw,68px) 0 clamp(24px,3.1vw,64px)}
 .ac-reg-t p{margin-top:clamp(6px,.75vw,14px)}
 .ac-steps{position:relative;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:0 clamp(10px,1.9vw,40px);margin:clamp(4px,.5vw,10px) 0 0;padding:clamp(16px,1.7vw,34px) 0 0;list-style:none}
@@ -532,3 +532,13 @@ html.ac-sp-on .asst-fab,html.ac-sp-on .qc{opacity:0;pointer-events:none}
   .ac-steps::before,.ac-st::before{transform:none;transition:none}
   .ac-tmore,.ac-tmore .ac-tc,.ac-tc,.ac-ev,.ac-vid,.ac-pub{transition:none}
 }
+
+/* «Полезные статьи»: строки — ссылки на материалы библиотеки (вся строка кликабельна), справа стрелка со своим движением */
+.ac-pub{position:relative;grid-template-columns:minmax(0,1fr) auto;column-gap:clamp(8px,.8vw,16px);align-items:center}
+.ac-pub>.ac-pub-tag,.ac-pub>b,.ac-pub>small{grid-column:1}
+.ac-pub-a{color:inherit;text-decoration:none}
+.ac-pub-a::after{content:"";position:absolute;inset:0;border-radius:inherit}
+.ac-pub-a:focus-visible{outline:none}.ac-pub-a:focus-visible::after{outline:2px solid var(--ac-navy,#16223e);outline-offset:2px}
+.ac-pub-go{grid-column:2;grid-row:1/4;align-self:center;display:grid;place-items:center;width:clamp(26px,1.9vw,34px);height:clamp(26px,1.9vw,34px);border-radius:50%;border:1px solid rgba(22,34,62,.28);color:var(--ac-navy,#16223e);transition:transform .5s var(--ac-ease),background .35s,color .35s,border-color .35s}
+.ac-pub-go svg{width:52%;height:52%;transition:transform .5s var(--ac-ease)}
+@media (hover:hover){.ac-pub:hover .ac-pub-go{background:var(--ac-navy,#16223e);border-color:var(--ac-navy,#16223e);color:#fff}.ac-pub:hover .ac-pub-go svg{transform:translateX(2px)}}

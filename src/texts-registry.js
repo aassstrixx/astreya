@@ -26,6 +26,6 @@ function page(id, title, url, file, blocks) {
 function use(key, file) { if (!index[key]) throw new Error('use: нет ключа ' + key); if (!index[key].files.includes(file)) index[key].files.push(file); }
 
 /* страницы подключаются по порядку (порядок — как в списке страниц админки); каждый файл — одна страница или группа */
-['home', 'home-x', 'home-house', 'home-mag', 'home-path', 'catalog', 'showroom', 'brands', 'detail-brand', 'detail-product', 'training', 'detail-event', 'company', 'partners', 'news', 'contacts', 'messengers', 'layout', 'common', 'components', 'start', 'search', 'legal', 'notfound', 'seo', 'ui'].forEach(n => { try { require('./texts/' + n + '.js')(page, use); } catch (e) { if (e.code !== 'MODULE_NOT_FOUND' || !String(e.message).includes('/texts/' + n)) throw e; } });
+['home', 'home-x', 'home-house', 'home-mag', 'home-path', 'catalog', 'showroom', 'brands', 'detail-brand', 'detail-product', 'training', 'articles', 'detail-event', 'company', 'partners', 'news', 'contacts', 'messengers', 'layout', 'common', 'components', 'start', 'search', 'legal', 'notfound', 'seo', 'ui'].forEach(n => { try { require('./texts/' + n + '.js')(page, use); } catch (e) { if (e.code !== 'MODULE_NOT_FOUND' || !String(e.message).includes('/texts/' + n)) throw e; } });
 /* ================= ВСПОМОГАТЕЛЬНОЕ ================= */
 module.exports = {pages, index, page};

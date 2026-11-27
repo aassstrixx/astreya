@@ -154,7 +154,7 @@ module.exports = function brandPage(ctx, C, P, b) {
 
     ${arts.length ? `<section class="sec wrap" style="padding-top:0">
       ${C.secHead(T('brand.edu.s3'), T('common.pages.brandArticles', {brand: esc(b.name)}), C.lnk(C.u(P, 'training.html') + '#materials', T('brand.edu.s4')))}
-      <div class="grid g3">${arts.slice(0, 3).map(C.articleCard).join('')}</div>
+      <div class="grid g3">${arts.slice(0, 3).map(a => C.articleCard(a, P)).join('')}</div>
     </section>` : ''}
 
     <section class="sec wrap" style="padding-top:0">
