@@ -501,15 +501,12 @@ button.qc-item{width:100%;text-align:left}
 .asst-fab{background:linear-gradient(135deg,var(--blue-d),var(--blue));box-shadow:0 18px 36px -16px rgba(16,31,55,.62),0 0 0 1px rgba(201,162,92,.55) inset}
 .asst-fab.in.settled:hover{box-shadow:0 24px 44px -16px rgba(16,31,55,.7),0 0 0 1px rgba(222,188,118,.85) inset}
 .asst-fab-glow{background:radial-gradient(closest-side,rgba(240,212,150,.8),rgba(240,212,150,.28) 55%,transparent 74%)}
-.asst-fab-i{background:radial-gradient(circle at 50% 30%,#fcf5e4,#e4cf9f 78%);box-shadow:0 0 0 1px rgba(150,118,60,.5) inset}
 .asst-fab-ring{background:rgb(226,194,122)}
 .asst-fab.nudge .asst-fab-ring{background:rgb(201,162,92)}
 .asst-tip{background:linear-gradient(180deg,#fbf6ea,#f3ead6);color:var(--blue);box-shadow:0 18px 38px -18px rgba(16,31,55,.45),0 0 0 1px rgba(150,118,60,.3)}
 .asst-tip-x:hover{background:rgba(150,118,60,.14)}
 .asst{background:linear-gradient(180deg,#fbf6ea,#f4ebd8);box-shadow:0 44px 90px -34px rgba(16,31,55,.62),0 0 0 1px rgba(150,118,60,.3)}
 .asst-h{background:linear-gradient(135deg,var(--blue-d),var(--blue));box-shadow:0 1px 0 rgba(201,162,92,.5)}
-.asst-av{background:radial-gradient(circle at 50% 32%,#fcf5e4,#e4cf9f 80%);box-shadow:0 0 0 1px rgba(150,118,60,.5) inset}
-.asst-av::before{border-color:rgba(222,188,118,.7)}
 .asst-dot{background:#dcb968;animation-name:asstLiveG}
 @keyframes asstLiveG{0%{box-shadow:0 0 0 0 rgba(220,185,104,.7)}70%,100%{box-shadow:0 0 0 7px rgba(220,185,104,0)}}
 .asst-ib:hover{background:rgba(251,243,226,.14)}
