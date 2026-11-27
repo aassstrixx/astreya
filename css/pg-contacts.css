@@ -6,7 +6,7 @@
 
 .cp{--cp-ink:#16223e;--cp-navy:#0b1a33;--cp-bg:#f5f0e4;--cp-bg2:#efe5d0;--cp-line:rgba(120,84,40,.17);--cp-mut:#5f574a;--cp-gold:#b08e4e;--cp-ease:cubic-bezier(.22,.8,.2,1);
   --cp-g:clamp(18px,5.9vw,120px);--f-h1:clamp(38px,4.5vw,88px);--f-h2:clamp(27px,2.6vw,50px);--f-h3:clamp(18px,1.4vw,26px);--f-b:clamp(15px,1.06vw,20px);--f-s:clamp(13.5px,.92vw,17.5px);--f-xs:clamp(11.5px,.78vw,15px);
-  --cp-trav:url(../assets/showroom/pg-travertine.webp?v=c9f366fa);
+  --cp-trav:url(../assets/showroom/pg-travertine.webp?v=6a76e612);
   position:relative;margin-top:calc(var(--hdr,84px) * -1);background:var(--cp-bg);color:var(--cp-ink);overflow:clip}
 .cp-in{width:calc(100% - 2 * var(--cp-g));max-width:1800px;margin-inline:auto}
 .cp-eyebrow{display:inline-flex;align-items:center;gap:14px;font:700 var(--f-xs)/1 var(--sans);letter-spacing:.3em;text-transform:uppercase;color:var(--cp-ink)}
@@ -156,7 +156,7 @@ body[data-page="contacts"] .nav a.nl.on{border-bottom-color:#101f37}
 
 /* ---------- 05 · форма на тёмной плите с мягкими краями ---------- */
 .cp-write{padding:clamp(54px,6vw,110px) 0!important;background:linear-gradient(180deg,rgba(245,240,228,0) 0,#16294f 90px,#0e2147 55%,#13264c calc(100% - 90px),rgba(245,240,228,0) 100%);color:#f3ecdc;overflow:hidden}
-.cp-write::before{content:"";position:absolute;inset:0;background:url(../assets/bg/silk.webp?v=c9f366fa) 100% 0/60% auto no-repeat;opacity:.1;mix-blend-mode:screen;pointer-events:none}
+.cp-write::before{content:"";position:absolute;inset:0;background:url(../assets/bg/silk.webp?v=6a76e612) 100% 0/60% auto no-repeat;opacity:.1;mix-blend-mode:screen;pointer-events:none}
 .cp-write-in{position:relative;display:grid;grid-template-columns:minmax(0,.8fr) minmax(0,1.3fr);gap:clamp(20px,4vw,76px);align-items:start}
 .cp-write .cp-eyebrow,.cp-write h2{color:#f6efdd}
 .cp-write .cp-num{border-color:rgba(218,186,120,.8);color:#e7cf98;background:rgba(255,255,255,.06)}

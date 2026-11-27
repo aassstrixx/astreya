@@ -251,7 +251,7 @@ html.pg-top body[data-page="product"] .hdr,html.pg-top body[data-page="brand"] .
 .vb-row{--u:clamp(4.6px,.62vw,9.4px);--brass:linear-gradient(90deg,#8a6a32,#dcbc78 38%,#a9884a 70%,#8a6a32);position:relative;display:grid;grid-template-columns:minmax(250px,.34fr) minmax(0,1fr);gap:clamp(16px,3vw,52px);align-items:center;padding:clamp(18px,2.2vw,34px) clamp(18px,2.6vw,44px);border-radius:clamp(18px,1.8vw,28px);border:1px solid rgba(176,142,78,.5);overflow:hidden;
   background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 100' preserveAspectRatio='none'%3E%3Cpath d='M0 .5H200M0 50.5H200M.5 0V50M100.5 0V50M50.5 50V100M150.5 50V100' stroke='%233c2c16' stroke-opacity='.3' stroke-width='1' fill='none'/%3E%3C/svg%3E") 0 0/calc(var(--u) * 80) calc(var(--u) * 40),
     linear-gradient(135deg,rgba(255,255,255,.5),rgba(255,255,255,0) 46%),
-    url(../assets/detail/travertine-soft.webp?v=c9f366fa) 0 0/clamp(240px,26vw,380px),
+    url(../assets/detail/travertine-soft.webp?v=6a76e612) 0 0/clamp(240px,26vw,380px),
     color-mix(in srgb,var(--c2) 6%,#fffdf7);
   background-blend-mode:normal,normal,multiply,normal;
   box-shadow:inset 0 1px 0 rgba(255,255,255,.8),inset 0 0 0 1px rgba(255,255,255,.35),0 2px 3px rgba(86,60,30,.12),0 30px 44px -30px rgba(70,48,22,.62)}
@@ -259,7 +259,7 @@ html.pg-top body[data-page="product"] .hdr,html.pg-top body[data-page="brand"] .
 .vb-row:nth-child(even){grid-template-columns:minmax(0,1fr) minmax(250px,.34fr)}
 .vb-row:nth-child(even) .vb-rh{order:2}
 /* тень ветки оливы на стене: только на первом и четвёртом направлении, чтобы не перегружать страницу */
-.vb-row:first-child::after,.vb-row:nth-child(4)::after{content:"";position:absolute;z-index:0;left:-3%;top:-6%;width:min(54%,560px);aspect-ratio:880/472;background:url(../assets/detail/leaf-shadow.webp?v=c9f366fa) 0 0/100% 100% no-repeat;pointer-events:none}
+.vb-row:first-child::after,.vb-row:nth-child(4)::after{content:"";position:absolute;z-index:0;left:-3%;top:-6%;width:min(54%,560px);aspect-ratio:880/472;background:url(../assets/detail/leaf-shadow.webp?v=6a76e612) 0 0/100% 100% no-repeat;pointer-events:none}
 .vb-row:nth-child(4)::after{left:auto;right:-3%;transform:scaleX(-1)}
 /* табличка направления */
 .vb-rh{z-index:3;align-self:center;padding:clamp(16px,1.6vw,26px) clamp(16px,1.8vw,28px) clamp(14px,1.4vw,22px);border-radius:16px;border:1px solid rgba(176,142,78,.62);
@@ -272,7 +272,7 @@ html.pg-top body[data-page="product"] .hdr,html.pg-top body[data-page="brand"] .
 .vb-rh p{margin:clamp(10px,1vw,14px) 0 .8em;font:500 14px/1.4 var(--sans);color:var(--ax-muted,#56647d)}
 /* ниша: арка с латунной окантовкой, стеклянная лунетта цвета бренда, тёплый свет сверху */
 .vb-shelf{position:relative;z-index:2;display:flex;align-items:flex-end;justify-content:space-around;gap:calc(var(--u) * 1.4);padding:0 calc(var(--u) * 3) calc(var(--u) * 1.7);height:calc(var(--sh) * var(--u));border-radius:50% 50% 0 0/52% 52% 0 0;
-  background:radial-gradient(70% 90% at 50% 0,rgba(255,244,214,.55),rgba(255,244,214,0) 70%),url(../assets/detail/travertine-soft.webp?v=c9f366fa) 0 0/clamp(220px,24vw,340px),linear-gradient(180deg,#e6d8b8,#cdb990);background-blend-mode:normal,multiply,normal;
+  background:radial-gradient(70% 90% at 50% 0,rgba(255,244,214,.55),rgba(255,244,214,0) 70%),url(../assets/detail/travertine-soft.webp?v=6a76e612) 0 0/clamp(220px,24vw,340px),linear-gradient(180deg,#e6d8b8,#cdb990);background-blend-mode:normal,multiply,normal;
   box-shadow:inset 0 0 0 1px rgba(255,255,255,.28),inset 0 18px 40px -8px rgba(255,238,200,.4),inset 0 -26px 36px -22px rgba(50,34,14,.55),0 0 0 3px rgba(236,226,206,.92),0 0 0 4px #b8975a,0 0 0 5px rgba(120,90,40,.5),0 14px 20px -8px rgba(60,40,16,.4)}
 .vb-shelf::before{content:"";position:absolute;left:calc(var(--u) * 2);right:calc(var(--u) * 2);top:calc(var(--u) * 1.6);height:58%;z-index:-1;pointer-events:none;border-radius:50% 50% 0 0/64% 64% 0 0;border:1px solid rgba(190,150,80,.75);border-bottom:calc(var(--u) * .7) solid #d9c08a;
   background:radial-gradient(70% 100% at 50% 100%,color-mix(in srgb,var(--c2) 40%,#fff7e6) 0,color-mix(in srgb,var(--c2) 16%,#fff1d4) 62%,rgba(255,240,205,.18) 100%);box-shadow:inset 0 0 18px rgba(255,255,255,.5),0 0 22px -4px color-mix(in srgb,var(--c2) 45%,transparent),0 calc(var(--u) * .5) calc(var(--u) * .8) calc(var(--u) * -.2) rgba(60,40,16,.45)}
@@ -282,7 +282,7 @@ html.pg-top body[data-page="product"] .hdr,html.pg-top body[data-page="brand"] .
 .vb-item:nth-of-type(6n+2){--pl:6}.vb-item:nth-of-type(6n+3){--pl:1.6}.vb-item:nth-of-type(6n+4){--pl:4.6}.vb-item:nth-of-type(6n+5){--pl:2.2}.vb-item:nth-of-type(6n+6){--pl:5.4}
 /* травертиновая подставка под упаковкой (вместе с контактной тенью стоит на месте, когда упаковка приподнимается при наведении) */
 .vb-item::before{content:"";position:absolute;left:-24%;right:-24%;top:100%;height:calc(var(--pl) * var(--u));z-index:-1;pointer-events:none;border-radius:2px;border-top:2px solid rgba(255,252,240,.8);
-  background:linear-gradient(90deg,rgba(255,255,255,.3),rgba(255,255,255,0) 32%,rgba(50,32,10,.36)),url(../assets/detail/travertine-soft.webp?v=c9f366fa) 0 0/170px,#e9dcc0;background-blend-mode:normal,multiply,normal;box-shadow:0 calc(var(--u) * .5) calc(var(--u) * .8) calc(var(--u) * -.3) rgba(40,26,8,.5)}
+  background:linear-gradient(90deg,rgba(255,255,255,.3),rgba(255,255,255,0) 32%,rgba(50,32,10,.36)),url(../assets/detail/travertine-soft.webp?v=6a76e612) 0 0/170px,#e9dcc0;background-blend-mode:normal,multiply,normal;box-shadow:0 calc(var(--u) * .5) calc(var(--u) * .8) calc(var(--u) * -.3) rgba(40,26,8,.5)}
 /* пятно тёплого точечного света на задней стенке над упаковкой */
 .vb-shelf::after{content:"";position:absolute;left:calc(var(--u) * 4);bottom:calc(var(--u) * 1.7);width:calc(var(--u) * 7);aspect-ratio:1;border-radius:50%;z-index:1;pointer-events:none;background:radial-gradient(circle at 34% 28%,rgba(255,255,255,.95) 0 6%,rgba(255,255,255,.2) 18%,rgba(190,225,222,.25) 52%,rgba(120,160,160,.55) 100%);box-shadow:inset -3px -4px 8px rgba(255,255,255,.4),calc(var(--u) * .4) calc(var(--u) * .5) calc(var(--u) * .5) rgba(30,40,40,.3)}
 .vb-slab::after{content:"";position:absolute;right:calc(var(--u) * 4);bottom:100%;width:calc(var(--u) * 9);height:calc(var(--u) * 4.4);border-radius:50% 50% 44% 44%/62% 62% 38% 38%;background:radial-gradient(60% 70% at 36% 28%,#efe3c8,#cdb98f 70%,#a9936a);box-shadow:inset 0 -3px 6px rgba(70,48,20,.3),calc(var(--u) * .4) calc(var(--u) * .3) calc(var(--u) * .5) rgba(40,26,8,.4)}
@@ -308,7 +308,7 @@ html.lite .vb-row{box-shadow:0 14px 20px -16px rgba(70,48,22,.5)}
 html.lite .vb-row::after{display:none!important}
 /* подсветка витрины цветом бренда: слой-маска stage-brand-glow.webp (белый с альфой: матовое стекло «полумесяц», ореол, линия под полкой) заливается ещё более светлым пастельным --c2 бренда (42% + белый) через multiply — полумесяц остаётся светлым, а не серым;
    светящееся стекло окрашивается, камень и упаковки остаются нейтральными; под логотипом и упаковками (z-index 1 < 2), при уменьшении движения ничего не двигается */
-.dtb-glow{position:absolute;inset:0;z-index:1;pointer-events:none;background:color-mix(in srgb,var(--c2,#e2c27a) 42%,#fff);mix-blend-mode:multiply;opacity:.72;-webkit-mask:url(../assets/detail/stage-brand-glow.webp?v=c9f366fa) 0 0/100% 100% no-repeat;mask:url(../assets/detail/stage-brand-glow.webp?v=c9f366fa) 0 0/100% 100% no-repeat}
+.dtb-glow{position:absolute;inset:0;z-index:1;pointer-events:none;background:color-mix(in srgb,var(--c2,#e2c27a) 42%,#fff);mix-blend-mode:multiply;opacity:.72;-webkit-mask:url(../assets/detail/stage-brand-glow.webp?v=6a76e612) 0 0/100% 100% no-repeat;mask:url(../assets/detail/stage-brand-glow.webp?v=6a76e612) 0 0/100% 100% no-repeat}
 html.lite .dtb-glow{display:none}
 
 /* ---------- табличка бренда v3: матовая стеклянная пластина с латунной рамкой ----------
